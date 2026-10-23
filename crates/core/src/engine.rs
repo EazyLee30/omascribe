@@ -226,6 +226,9 @@ impl Engine {
         if !["note", "focus", "term", "opinion", "document"].contains(&kind) {
             bail!("无效的记录类型");
         }
+        if content.chars().count() > 200_000 {
+            bail!("文档超过 200,000 字符，请拆分后保存；原有内容未改动");
+        }
         let db = self.store.lock().unwrap();
         db.meeting(id)?;
         let nid = note_id.unwrap_or_else(|| Uuid::new_v4().to_string());
@@ -249,7 +252,7 @@ impl Engine {
         let n = UserNote {
             id: nid,
             meeting_id: id.into(),
-            content: content.chars().take(20_000).collect(),
+            content: content.to_owned(),
             kind: kind.into(),
             anchor_ms: anchor,
             updated_at: chrono::Utc::now().to_rfc3339(),
@@ -864,6 +867,31 @@ mod recovery_tests {
         assert_eq!(result.meeting.duration_ms, 1000);
         assert_eq!(fs::metadata(dir.join("000000.pcm"))?.len(), 32_000);
         assert!(dir.join("capture.done").exists());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod note_size_tests {
+    use super::*;
+    #[test]
+    fn long_markdown_is_preserved_and_oversize_edits_do_not_replace_saved_text() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let meeting = engine.create_meeting("Document integrity")?;
+        let content = "会议记录".repeat(8_000);
+        let saved = engine.save_note(&meeting.id, None, &content, "document", 0)?;
+        assert_eq!(saved.content, content);
+        assert!(engine
+            .save_note(
+                &meeting.id,
+                Some(saved.id),
+                &"字".repeat(200_001),
+                "document",
+                0
+            )
+            .is_err());
+        assert_eq!(engine.snapshot(&meeting.id)?.notes[0].content, content);
         Ok(())
     }
 }

@@ -58,7 +58,7 @@ Install the build dependencies on Arch / Omarchy:
 
 ```bash
 sudo pacman -S --needed base-devel git cmake pkgconf nodejs npm python \
-  gtk3 webkit2gtk-4.1 openssl librsvg ffmpeg pipewire wayland wayland-protocols
+  gtk3 webkit2gtk-4.1 openssl librsvg ffmpeg pipewire wayland wayland-protocols xdotool
 ```
 
 Install a current stable [Rust toolchain](https://www.rust-lang.org/tools/install), then:

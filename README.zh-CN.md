@@ -42,7 +42,7 @@
 
 ```bash
 sudo pacman -S --needed base-devel git cmake pkgconf nodejs npm python \
-  gtk3 webkit2gtk-4.1 openssl librsvg ffmpeg pipewire wayland wayland-protocols
+  gtk3 webkit2gtk-4.1 openssl librsvg ffmpeg pipewire wayland wayland-protocols xdotool
 ```
 
 准备稳定版 [Rust 工具链](https://www.rust-lang.org/tools/install)，然后：
