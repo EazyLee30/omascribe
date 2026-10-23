@@ -156,14 +156,12 @@ async function init() {
     signature = "";
     render();
   });
-  root
-    .querySelector("#float-snap")!
-    .addEventListener("change", () =>
-      patchViewSettings({
-        snap: (root.querySelector("#float-snap") as HTMLSelectElement)
-          .value as ViewPreferences["snap"],
-      }).catch(error),
-    );
+  root.querySelector("#float-snap")!.addEventListener("change", () =>
+    patchViewSettings({
+      snap: (root.querySelector("#float-snap") as HTMLSelectElement)
+        .value as ViewPreferences["snap"],
+    }).catch(error),
+  );
   await listen<ViewPreferences>("view-settings", (event) =>
     apply(event.payload),
   );
