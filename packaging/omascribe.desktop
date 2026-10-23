@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=OmaScribe
+Comment=Offline bilingual meeting notes
+Comment[zh_CN]=离线中英文会议笔记
+Comment[zh_TW]=離線中英文會議筆記
+Exec=omascribe
+Icon=omascribe
+Terminal=false
+Categories=Office;AudioVideo;Recorder;
+StartupWMClass=omascribe
+Keywords=meeting;notes;transcription;markdown;

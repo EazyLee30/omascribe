@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Run the real local model through the production pipeline; fixtures are fictional.
+This is a targeted regression harness, not an ASR accuracy benchmark or a factuality guarantee.
+"""
+
+import argparse, datetime, json, os, pathlib, re, sqlite3, subprocess, tempfile, time, uuid
+
+REPO = pathlib.Path(__file__).resolve().parents[1]
+
+
+def assess(case, snapshot):
+    sections = [s for s in snapshot["suggestions"] if s["status"] != "dismissed"]
+    text = "\n".join(s.get("focus", "") + " " + s["text"] for s in sections)
+    errors = []
+    if not sections:
+        errors.append("No document: " + snapshot["runtime"]["notes_status"])
+    for expression in case["required"]:
+        if not re.search(expression, text, re.I):
+            errors.append("Missing: " + expression)
+    for expression in case["forbidden"]:
+        if re.search(expression, text, re.I):
+            errors.append("Unsupported claim: " + expression)
+    for s in sections:
+        if not s["sources"]:
+            errors.append("Missing source")
+        for source in s["sources"]:
+            if not any(
+                t["id"] == source["segment_id"]
+                and t["revision"] == source["revision"]
+                and t["text"] == source["quote"]
+                for t in snapshot["segments"]
+            ):
+                errors.append("Invalid evidence link")
+    return errors
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--cli", type=pathlib.Path, default=REPO / "target/debug/omascribe-cli"
+    )
+    parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        default=pathlib.Path("/tmp/omascribe-evaluation.json"),
+    )
+    args = parser.parse_args()
+    cli = str(args.cli.resolve())
+    cases = json.loads((REPO / "tests/fixtures/document-cases.json").read_text())
+    results = []
+    data = (
+        pathlib.Path(
+            os.environ.get("XDG_DATA_HOME", str(pathlib.Path.home() / ".local/share"))
+        )
+        / "omascribe"
+    )
+    with tempfile.TemporaryDirectory(prefix="omascribe-eval-") as root:
+        env = dict(
+            os.environ,
+            OMASCRIBE_DATA_DIR=root,
+            OMASCRIBE_MODELS_DIR=os.environ.get(
+                "OMASCRIBE_MODELS_DIR", str(data / "models")
+            ),
+            OMASCRIBE_RUNTIME_DIR=os.environ.get(
+                "OMASCRIBE_RUNTIME_DIR", str(data / "runtime")
+            ),
+        )
+        subprocess.run(
+            [cli, "diagnose"], env=env, check=True, stdout=subprocess.DEVNULL
+        )
+        for case in cases:
+            mid = str(uuid.uuid4())
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            meeting = dict(
+                id=mid,
+                title=case["name"],
+                created_at=now,
+                status="ready",
+                duration_ms=10000 * len(case["transcript"]),
+                run=1,
+                notes_cursor=0,
+                auto_notes=False,
+                notes_fingerprint="",
+            )
+            with sqlite3.connect(pathlib.Path(root) / "meetings.sqlite3") as db:
+                db.execute(
+                    "INSERT INTO meetings VALUES(?,?)", (mid, json.dumps(meeting))
+                )
+                nid = str(uuid.uuid4())
+                note = dict(
+                    id=nid,
+                    meeting_id=mid,
+                    kind="document",
+                    content=case["focus"],
+                    anchor_ms=0,
+                    updated_at=now,
+                )
+                db.execute(
+                    "INSERT INTO notes VALUES(?,?,?)", (nid, mid, json.dumps(note))
+                )
+                for i, text in enumerate(case["transcript"]):
+                    sid = str(uuid.uuid4())
+                    seg = dict(
+                        id=sid,
+                        meeting_id=mid,
+                        run=1,
+                        seq=i + 1,
+                        start_ms=i * 10000,
+                        end_ms=(i + 1) * 10000,
+                        text=text,
+                        revision=1,
+                    )
+                    db.execute(
+                        "INSERT INTO segments VALUES(?,?,?,?,?)",
+                        (sid, mid, 1, i + 1, json.dumps(seg)),
+                    )
+            start = time.monotonic()
+            run = subprocess.run(
+                [cli, "generate", mid],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=240,
+                check=True,
+            )
+            snapshot = json.loads(run.stdout)
+            errors = assess(case, snapshot)
+            result = dict(
+                case=case["name"],
+                passed=not errors,
+                errors=errors,
+                seconds=round(time.monotonic() - start, 3),
+                document=snapshot["suggestions"],
+                status=snapshot["runtime"]["notes_status"],
+            )
+            results.append(result)
+            args.output.write_text(
+                json.dumps(
+                    dict(passed=all(r["passed"] for r in results), cases=results),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n"
+            )
+            print(case["name"], "PASS" if not errors else errors, flush=True)
+    if not all(r["passed"] for r in results):
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "asr": {
+    "name": "sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16.tar.bz2",
+    "sha256": "2b7c63322b32e5e0f2526043a1103366119ca58dd615cd7105a37c01db9553d7",
+    "bytes": 458187351,
+    "files": {
+      "encoder-epoch-99-avg-1.int8.onnx": {
+        "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+        "bytes": 42980793
+      },
+      "decoder-epoch-99-avg-1.onnx": {
+        "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+        "bytes": 13877276
+      },
+      "joiner-epoch-99-avg-1.int8.onnx": {
+        "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+        "bytes": 3228485
+      },
+      "tokens.txt": {
+        "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+        "bytes": 56317
+      },
+      "bpe.model": {
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
+        "bytes": 244836
+      }
+    }
+  },
+  "llm": {
+    "name": "Qwen3-1.7B-Q4_K_M.gguf",
+    "revision": "d7f544eead698dbd1f15126ef60b45a1e1933222",
+    "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "bytes": 1107409472,
+    "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
+    "publisher": "Unsloth",
+    "source_model": "Qwen/Qwen3-1.7B",
+    "license": "Apache-2.0"
+  },
+  "llama_cpp": {
+    "url": "https://github.com/ggml-org/llama.cpp.git",
+    "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "license": "MIT"
+  },
+  "gtk_layer_shell": {
+    "url": "https://github.com/wmww/gtk-layer-shell.git",
+    "revision": "fd88ba666c18ff65ea786bf7b2e270d840030817",
+    "version": "0.10.1",
+    "license": "LGPL-3.0-or-later"
+  }
+}

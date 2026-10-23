@@ -1,0 +1,9 @@
+{
+  "title": "Example · Friday prototype review",
+  "document": "# Friday prototype review\n\n## Focus\n\n- **预算** 3000？\n- **张老师** / **周五测试**\n- **Offline transcription**\n\n## My checklist\n\n- [x] Check the microphone\n- [ ] Confirm the test results\n\n> Personal thought: keep the first version small.\n",
+  "transcript": [
+    "张老师周五给测试结果，预算先不定，下周再看。",
+    "The prototype is ready for review. We will test the offline transcription on Friday.",
+    "今天先确定录音和转写这两项，系统音频采集放到下个版本。"
+  ]
+}

@@ -1,0 +1,77 @@
+export interface Meeting {
+  id: string;
+  title: string;
+  created_at: string;
+  status: string;
+  duration_ms: number;
+  run: number;
+  notes_cursor: number;
+  auto_notes: boolean;
+}
+export interface Segment {
+  id: string;
+  meeting_id: string;
+  run: number;
+  seq: number;
+  start_ms: number;
+  end_ms: number;
+  text: string;
+  revision: number;
+}
+export interface Note {
+  id: string;
+  meeting_id: string;
+  content: string;
+  kind: string;
+  anchor_ms: number;
+  updated_at: string;
+}
+export interface Source {
+  segment_id: string;
+  revision: number;
+  start_ms: number;
+  end_ms: number;
+  quote: string;
+}
+export interface Suggestion {
+  focus: string;
+  id: string;
+  meeting_id: string;
+  kind: string;
+  text: string;
+  sources: Source[];
+  status: string;
+  stale: boolean;
+}
+export interface Runtime {
+  meeting_id: string | null;
+  recording: boolean;
+  paused: boolean;
+  transcribing: boolean;
+  elapsed_ms: number;
+  processed_ms: number;
+  level: number;
+  partial: string;
+  asr_rtf: number;
+  notes_busy: boolean;
+  notes_status: string;
+  error: string | null;
+}
+export interface Snapshot {
+  meeting: Meeting;
+  segments: Segment[];
+  notes: Note[];
+  suggestions: Suggestion[];
+  runtime: Runtime;
+}
+export interface Diagnostic {
+  data_dir: string;
+  asr_ready: boolean;
+  llm_ready: boolean;
+  recorder_ready: boolean;
+  worker_ready: boolean;
+  server_ready: boolean;
+  available_memory_mib: number;
+  accent: string;
+  version: string;
+}

@@ -1,0 +1,11 @@
+[package]
+name = "omascribe-asr"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+serde_json = "1"
+omascribe-core = { path = "../core" }
+sherpa-onnx = "=1.13.8"

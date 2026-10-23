@@ -1,0 +1,134 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "zh_budget_guess",
+      "passed": true,
+      "errors": [],
+      "seconds": 24.419,
+      "document": [
+        {
+          "focus": "测试结果与预算安排",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "张老师周五给测试结果，预算先不定，下周再看。",
+              "revision": 1,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "张老师周五将提供测试结果，预算暂定，待下周再确定。"
+        }
+      ],
+      "status": "文档已同步 · 1 个章节"
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "errors": [],
+      "seconds": 23.829,
+      "document": [
+        {
+          "focus": "Release Report Schedule",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+              "revision": 1,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "status": "文档已同步 · 1 个章节"
+    },
+    {
+      "case": "zh_correction",
+      "passed": true,
+      "errors": [],
+      "seconds": 36.022,
+      "document": [
+        {
+          "focus": "预算初步确定",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "预算先按3000算，李明负责。",
+              "revision": 1,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "预算先按3000算，李明负责。"
+        },
+        {
+          "focus": "预算调整及负责人变更",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。",
+              "revision": 1,
+              "start_ms": 10000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
+        }
+      ],
+      "status": "文档已同步 · 2 个章节"
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true,
+      "errors": [],
+      "seconds": 35.824,
+      "document": [
+        {
+          "focus": "Offline Transcription Prototype Review",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+              "revision": 1,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The offline transcription prototype is ready for review and will be tested on Friday."
+        },
+        {
+          "focus": "Phase Implementation Details",
+          "kind": "section",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+              "revision": 1,
+              "start_ms": 10000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The current phase focuses on microphone recording and real-time transcription, while system audio collection is postponed to the next version."
+        }
+      ],
+      "status": "文档已同步 · 2 个章节"
+    }
+  ],
+  "scope": "Release CLI; fictional text fixtures; targeted regression, not ASR accuracy or a general factuality guarantee.",
+  "model": "unsloth/Qwen3-1.7B-GGUF Q4_K_M",
+  "date": "2026-10-24"
+}

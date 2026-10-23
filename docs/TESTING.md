@@ -1,0 +1,66 @@
+# Testing and evaluation
+
+Use fictional text or licensed public speech. Do not commit microphone audio, personal meetings, databases, model weights or local logs.
+
+## Deterministic checks
+
+```bash
+bin/test
+cargo clippy --workspace --all-targets --locked -- -D warnings
+```
+
+Rust tests cover sample-exact chunk boundaries, pause/resume append behavior, interrupted-recording recovery, the single-writer lock, Chinese/English retrieval, pending-prefix coverage, evidence rejection and atomic document updates. The Python tests ensure the model harness fails on missing required facts, unsupported claims and forged citations.
+
+## Real local writing model
+
+After `bin/setup`, build the CLI and run:
+
+```bash
+cargo build -p omascribe-core
+python3 tests/evaluate.py --cli target/debug/omascribe-cli \
+  --output /tmp/omascribe-evaluation.json
+```
+
+The harness uses the production retrieval → writer → validation → storage path with a fresh temporary database. It tests a guessed budget, English responsibility/deadline, a later correction and bilingual scope. It records output, citations, outcome and wall time, and exits nonzero on a failed case. These are narrow regression checks; passing four fixtures does not establish general meeting quality.
+
+## Actual Tauri / WebKit flow
+
+```bash
+npm run build
+cargo build -p omascribe --features ui-test -p omascribe-asr -p omascribe-core
+export OMASCRIBE_DATA_DIR=/tmp/omascribe-ui-validation
+export OMASCRIBE_MODELS_DIR="$HOME/.local/share/omascribe/models"
+export OMASCRIBE_RUNTIME_DIR="$HOME/.local/share/omascribe/runtime"
+target/debug/omascribe-cli diagnose
+python3 tests/seed-fixture.py "$OMASCRIBE_DATA_DIR"
+OMASCRIBE_UI_TEST_SCRIPT="$PWD/tests/native-ui.js" \
+OMASCRIBE_UI_TEST_REPORT=/tmp/omascribe-ui-report.json \
+  target/debug/omascribe
+```
+
+This test briefly records the real microphone. It checks slash commands and literal slashes, Markdown table roundtrip, Chinese composition, autosave, start/pause/resume/finish, frozen pause duration, finish while paused, WAV export, floating/compact/docked transcript, native top/bottom captions and automatic cited document generation. Run it on a disposable workspace and inspect the JSON report. A returned caption API call is not a visual pixel assertion; inspect the actual overlay as well.
+
+The test-only feature can also snapshot the app's own WebKit content to `OMASCRIBE_UI_SCREENSHOTS` for visual QA. It cannot capture other applications. All test commands and startup-script injection are absent from the default production build.
+
+## Verify without external networking
+
+On a Linux system permitting user/network namespaces:
+
+```bash
+unshare -Urn bash -c 'ip link set lo up; exec target/debug/omascribe'
+```
+
+Keep loopback up because Rust communicates with the local model server. The namespace has no external network interface. Models and runtime must already be installed. Audio capture still uses the local PipeWire socket.
+
+## Public speech and sustained load
+
+The upstream Zipformer archive includes short public `test_wavs` examples. Keep them outside this repository, then use:
+
+```bash
+omascribe-cli import /path/to/public-sample.wav
+omascribe-cli replay /path/to/public-sample.wav 3600
+```
+
+Replay paces the input and loops it through the real capture/ASR/scheduler path. Run `tests/monitor.py PID /tmp/resources.jsonl` to sample process-tree PSS, available system memory and thermal zones without collecting command lines. A repeated clip establishes stability of that input path, not Chinese CER, English WER, speaker handling or meeting comprehension. Use independent human references for accuracy evaluation; never treat ASR output as its own ground truth.
+
+See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and limitations.
