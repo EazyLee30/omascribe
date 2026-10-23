@@ -1,0 +1,15 @@
+{
+  "scope": "180-second public-sample replay; final 1.7B model; CLI + ASR + LLM; local release compilation ran concurrently; not GUI or meeting accuracy evaluation",
+  "duration_ms": 180000,
+  "audio_bytes": 5760000,
+  "sample_exact_match": true,
+  "sha256": "3909b0e3470bad43c543c3f699bed9c5b58e5e2e2017e6c27b1a6923cb144311",
+  "status": "ready",
+  "error": null,
+  "asr_compute_rtf": 0.11050751575,
+  "sampled_backlog_p95_ms": 320,
+  "sampled_backlog_max_ms": 320,
+  "sampled_tree_pss_peak_mib": 2188.2,
+  "sampled_available_memory_min_mib": 2403,
+  "generated_sections": 3
+}

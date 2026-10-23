@@ -42,6 +42,23 @@ See [`validation/document-cases.json`](validation/document-cases.json) for the r
 
 The final native automatic-document fixture committed three source-linked paragraphs in 76.8 seconds while a release build was running concurrently. The capture and UI checks used earlier development builds; the final default-model fixture and screenshots used the 1.7B document pipeline.
 
+## Final-model joint load (three minutes)
+
+A 180-second paced public clip loop exercised the release CLI, ASR and Qwen3-1.7B together in a network namespace with no external interface. A local release compilation ran concurrently.
+
+| Observation | Result |
+| --- | --- |
+| Audio duration / bytes | 180,000 ms / 5,760,000 bytes |
+| Full PCM comparison | Exact match |
+| Completion / recorder error | Ready / none |
+| Final ASR compute RTF | 0.111 |
+| Sampled processing backlog P95 / max | 320 / 320 ms |
+| Sampled process-tree peak PSS | 2,188.2 MiB (about 2.14 GiB) |
+| Lowest sampled available system memory | 2,403 MiB |
+| Current generated document | 3 cited sections |
+
+[Machine-readable result](validation/joint-load.json). This includes CLI + ASR + LLM, not the WebView, and is a short joint-load check rather than a full-hour final-app benchmark. No accuracy or visible-latency claim follows from the repeated audio.
+
 ## What is not established
 
 - Real-meeting Chinese CER or English WER against independent human transcripts.
