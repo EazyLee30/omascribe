@@ -273,7 +273,7 @@ def main():
             digest = hashlib.file_digest(f, "sha256").hexdigest()
         assert 1_000_000 < destination.stat().st_size < 2_000_000_000
         (output / (destination.name + ".sha256")).write_text(
-            digest + "  " + destination.name + "\n", encoding="utf-8"
+            digest + "  " + destination.name + "\n", encoding="utf-8", newline="\n"
         )
     shutil.make_archive(
         str(output / f"OmaScribe_{version}_{label}_validation"), "zip", results

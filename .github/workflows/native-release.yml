@@ -176,7 +176,7 @@ jobs:
           test "$(find release-assets -maxdepth 1 -name '*.AppImage' | wc -l)" -eq 1
           test "$(find release-assets -maxdepth 1 -name '*.deb' | wc -l)" -eq 1
           cd release-assets
-          cat ./*.sha256 > SHA256SUMS.txt
+          cat ./*.sha256 | tr -d '\r' > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
           cd ..
           gh release create "v$VERSION" --target "$GITHUB_SHA" --draft --title "OmaScribe $VERSION" --notes-file "docs/releases/v$VERSION.md"
