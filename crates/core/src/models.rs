@@ -80,6 +80,7 @@ pub struct Downloads {
 pub struct ModelStatus {
     pub model: Model,
     pub installed: bool,
+    pub installed_bytes: u64,
     pub managed: bool,
     pub selected: bool,
     pub download: Option<Download>,
@@ -140,6 +141,16 @@ impl Engine {
             .map(|m| ModelStatus {
                 model: m.clone(),
                 installed: self.model_directory(&m.id).is_ok(),
+                installed_bytes: self
+                    .model_directory(&m.id)
+                    .map(|dir| {
+                        m.files
+                            .iter()
+                            .filter_map(|a| fs::metadata(dir.join(&a.name)).ok())
+                            .map(|meta| meta.len())
+                            .sum()
+                    })
+                    .unwrap_or(0),
                 managed: complete(&self.root.join("model-store").join(&m.id), m),
                 selected: m.id == prefs.asr_model || m.id == prefs.llm_model,
                 download: progress.get(&m.id).cloned(),
@@ -148,7 +159,13 @@ impl Engine {
     }
     pub fn configuration_idle(&self) -> Result<()> {
         let s = self.status.lock().unwrap();
-        if s.recording || s.paused || s.transcribing || s.notes_busy || s.diarization_busy {
+        if s.recording
+            || s.paused
+            || s.transcribing
+            || s.notes_busy
+            || s.translation_busy
+            || s.diarization_busy
+        {
             bail!("Finish recording, transcription and writing before changing models");
         }
         Ok(())
@@ -169,8 +186,14 @@ impl Engine {
         }
         let context_changed = current.use_memory != prefs.use_memory
             || current.use_knowledge != prefs.use_knowledge
-            || current.llm_model != prefs.llm_model;
+            || current.llm_model != prefs.llm_model
+            || current.minutes_language != prefs.minutes_language;
         prefs.save(&self.root)?;
+        if current.translation_mode != prefs.translation_mode
+            && self.status.lock().unwrap().translation_busy
+        {
+            self.note_cancel.store(true, Ordering::SeqCst);
+        }
         *current = prefs.clone();
         drop(current);
         if context_changed {
@@ -265,6 +288,52 @@ impl Engine {
     }
 }
 fn download(
+    engine: &Engine,
+    id: &str,
+    asset: &Asset,
+    target: &Path,
+    cancel: &AtomicBool,
+) -> Result<()> {
+    let baseline = engine
+        .downloads
+        .status
+        .lock()
+        .unwrap()
+        .get(id)
+        .map(|p| p.downloaded)
+        .unwrap_or(0);
+    for attempt in 0..3 {
+        if cancel.load(Ordering::SeqCst) {
+            bail!("Download cancelled");
+        }
+        engine.require_model_network()?;
+        if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
+            p.downloaded = baseline;
+        }
+        match download_once(engine, id, asset, target, cancel) {
+            Ok(()) => return Ok(()),
+            Err(e)
+                if attempt < 2
+                    && e.chain().any(|c| {
+                        c.downcast_ref::<ureq::Error>()
+                            .is_some_and(|e| matches!(e, ureq::Error::Transport(_)))
+                            || c.is::<std::io::Error>()
+                    }) =>
+            {
+                // Reopen a fresh verified TLS connection; never weaken certificate or hash checks.
+                for _ in 0..(5 * (attempt + 1)) {
+                    if cancel.load(Ordering::SeqCst) {
+                        bail!("Download cancelled");
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    unreachable!()
+}
+fn download_once(
     engine: &Engine,
     id: &str,
     asset: &Asset,

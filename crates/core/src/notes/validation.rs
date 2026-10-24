@@ -223,6 +223,31 @@ pub fn validate_with_speakers(
 ) -> Result<Vec<Suggestion>> {
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
+    let unfinished = |text: &str| {
+        [
+            "未完成",
+            "还没有完成",
+            "还没完成",
+            "尚未完成",
+            "not completed",
+            "not yet complete",
+            "not finished",
+            "not yet finished",
+            "still pending",
+        ]
+        .iter()
+        .any(|v| text.to_lowercase().contains(v))
+    };
+    if segments.iter().any(|s| unfinished(&s.text))
+        && !draft.sections.iter().any(|s| {
+            unfinished(&s.body)
+                || s.body.contains("待完成")
+                || s.body.contains("尚待")
+                || s.body.to_lowercase().contains("pending")
+        })
+    {
+        bail!("纪要遗漏了尚未完成的状态，请明确保留未完成事项");
+    }
     if draft.sections.len() > 3 {
         bail!("文档超过本轮段落预算");
     }

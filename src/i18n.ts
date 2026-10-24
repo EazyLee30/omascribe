@@ -129,8 +129,6 @@ const en = {
   library: "MEETINGS",
   newMeeting: "New meeting",
   import: "Import audio",
-  local: "ON THIS DEVICE",
-  private: "Audio and notes stay here.",
   settings: "Settings",
   welcome: "Make room for the conversation.",
   welcomeSub:
@@ -356,8 +354,6 @@ const zh: typeof en = {
   library: "我的会议",
   newMeeting: "新建会议",
   import: "导入音频",
-  local: "保存在这台电脑",
-  private: "录音和笔记都留在本地。",
   settings: "设置",
   welcome: "把注意力留给对话。",
   welcomeSub:
@@ -580,8 +576,6 @@ const tw: typeof en = {
   library: "我的會議",
   newMeeting: "新增會議",
   import: "匯入音訊",
-  local: "儲存在這台電腦",
-  private: "錄音和筆記都留在本機。",
   settings: "設定",
   welcome: "把注意力留給對話。",
   welcomeSub:

@@ -164,9 +164,16 @@ pub fn get_view_settings(views: tauri::State<ViewState>) -> ViewPreferences {
     views.prefs.lock().unwrap().clone()
 }
 #[tauri::command]
-pub fn set_view_meeting(app: tauri::AppHandle, views: tauri::State<ViewState>, id: String) {
+pub fn set_view_meeting(
+    app: tauri::AppHandle,
+    views: tauri::State<ViewState>,
+    engine: tauri::State<AppState>,
+    id: String,
+) -> Reply<()> {
+    engine.focus_meeting(&id).map_err(|e| e.to_string())?;
     *views.meeting.lock().unwrap() = Some(id.clone());
     let _ = app.emit("view-meeting", id);
+    Ok(())
 }
 fn active_id(engine: &AppState, views: &Views) -> Option<String> {
     if views.prefs.lock().unwrap().follow_recording {
@@ -225,7 +232,18 @@ fn apply_windows(
     runtime: &std::path::Path,
     prefs: &ViewPreferences,
 ) -> Reply<()> {
-    overlay::apply(app, runtime, &prefs.captions)?;
+    let mut captions = prefs.captions.clone();
+    if app
+        .state::<AppState>()
+        .preferences
+        .lock()
+        .unwrap()
+        .translation_mode
+        == "bilingual"
+    {
+        captions.lines = captions.lines.max(2);
+    }
+    overlay::apply(app, runtime, &captions)?;
     if prefs.transcript_mode == "floating" {
         let old = views.prefs.lock().unwrap().clone();
         let window = if let Some(window) = app.get_webview_window("transcript") {
@@ -397,32 +415,33 @@ pub fn start(app: &tauri::AppHandle) {
             let text = active_id(engine.inner(), &views)
                 .and_then(|id| {
                     let status = engine.status.lock().unwrap().clone();
+                    let mode = engine.preferences.lock().unwrap().translation_mode.clone();
+                    let model = engine.preferences.lock().unwrap().llm_model.clone();
                     let db = engine.store.lock().unwrap();
                     let meeting = db.meeting(&id).ok()?;
-                    let mut lines: Vec<String> = db
-                        .recent_segments(&meeting, 2)
-                        .ok()?
-                        .into_iter()
-                        .map(|s| s.text)
-                        .collect();
-                    if status.meeting_id.as_deref() == Some(&id) && !status.partial.is_empty() {
-                        lines.push(status.partial);
-                    }
-                    let text = lines.join(" ");
+                    let segments = db.recent_segments(&meeting, 1).ok()?;
+                    let text = if mode == "off" && status.meeting_id.as_deref() == Some(&id) && !status.partial.is_empty() {
+                        status.partial
+                    } else if let Some(segment) = segments.last() {
+                        let translated = omascribe_core::translation::target_language(&mode, &segment.text).and_then(|target| {
+                            db.conn.query_row("SELECT json FROM translations WHERE segment_id=?1 AND revision=?2 AND target=?3 AND model=?4", (&segment.id,segment.revision,target,&model), |r|r.get::<_,String>(0)).ok().and_then(|v|serde_json::from_str::<omascribe_core::translation::Translation>(&v).ok())
+                        });
+                        match translated {
+                            Some(t) if mode == "bilingual" => format!("{}\n{} · {}",segment.text.replace('\n'," "),t.target.to_uppercase(), t.text.replace('\n'," ")),
+                            Some(t) => format!("{} · {}",t.target.to_uppercase(), t.text),
+                            None => segment.text.clone(),
+                        }
+                    } else { status.partial };
                     let limit = (prefs.captions.width_percent as usize * 3).min(300)
                         * prefs.captions.lines as usize;
-                    let chars: Vec<char> = text.chars().collect();
-                    Some(if chars.len() > limit {
-                        format!(
-                            "…{}",
-                            chars[chars.len() - limit..].iter().collect::<String>()
-                        )
-                    } else {
-                        text
-                    })
+                    Some(text.split('\n').map(|line| { let chars:Vec<_>=line.chars().collect(); if chars.len()>limit {format!("…{}", chars[chars.len()-limit..].iter().collect::<String>())}else{line.into()} }).collect::<Vec<String>>().join("\n"))
                 })
                 .unwrap_or_default();
-            overlay::render(&handle, &text, &prefs.captions);
+            let mut captions = prefs.captions.clone();
+            if engine.preferences.lock().unwrap().translation_mode == "bilingual" {
+                captions.lines = captions.lines.max(2);
+            }
+            overlay::render(&handle, &text, &captions);
         }
         if views.dirty.swap(false, Ordering::SeqCst) && views.persist().is_err() {
             views.dirty.store(true, Ordering::SeqCst);
@@ -529,6 +548,16 @@ pub fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> {
             }
         })
         .collect())
+}
+
+pub fn refresh_captions(app: &tauri::AppHandle) {
+    let prefs = app.state::<ViewState>().prefs.lock().unwrap().clone();
+    let engine = app.state::<AppState>();
+    let mut captions = prefs.captions;
+    if engine.preferences.lock().unwrap().translation_mode == "bilingual" {
+        captions.lines = captions.lines.max(2);
+    }
+    let _ = overlay::apply(app, &engine.runtime_dir, &captions);
 }
 
 #[cfg(test)]

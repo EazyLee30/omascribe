@@ -1,3 +1,4 @@
+import { confirmDelete } from "./interactions";
 import { invoke } from "@tauri-apps/api/core";
 import { esc, tr, glyph, navItems, type PageHandle } from "./workspace-ui";
 export interface LibraryEntry {
@@ -193,6 +194,18 @@ export async function mountLibrary(
       case "restore":
         await flush();
         if (selected) {
+          if (
+            b.dataset.library === "delete" &&
+            !(await confirmDelete(
+              tr("删除这条内容？", "Delete this entry?", "刪除此內容？"),
+              tr(
+                "可以在「已删除」列表中恢复。删除后不再用于纪要或知识库检索。",
+                "Restore it from Deleted. It will no longer be used in minutes or knowledge retrieval.",
+                "可於已刪除列表還原，刪除後不再用於紀要或知識庫檢索。",
+              ),
+            ))
+          )
+            return;
           selected.deleted = b.dataset.library === "delete";
           dirty = true;
           await flush();

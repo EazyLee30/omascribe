@@ -21,6 +21,10 @@ def assess(case, snapshot):
     for expression in case["forbidden"]:
         if re.search(expression, text, re.I):
             errors.append("Unsupported claim: " + expression)
+    if len(sections) > case.get("max_sections", len(sections)):
+        errors.append("Related material fragmented into too many paragraphs")
+    if case.get("merged_sources") and not any(len(s["sources"]) > 1 for s in sections):
+        errors.append("Related evidence was not synthesized")
     for s in sections:
         if not s["sources"]:
             errors.append("Missing source")
@@ -129,16 +133,15 @@ def main():
                         (sid, mid, 1, i + 1, json.dumps(seg)),
                     )
             start = time.monotonic()
-            run = subprocess.run(
-                [cli, "generate", mid],
-                env=env,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                timeout=650,
-                check=True,
-            )
-            snapshot = json.loads(run.stdout)
+            cursor = -1
+            for _ in range(len(case["transcript"]) + 1):
+                run = subprocess.run([cli, "generate", mid], env=env, capture_output=True,
+                    text=True, encoding="utf-8", timeout=650, check=True)
+                snapshot = json.loads(run.stdout)
+                next_cursor = snapshot["meeting"]["notes_cursor"]
+                if next_cursor >= len(case["transcript"]) or next_cursor <= cursor:
+                    break
+                cursor = next_cursor
             errors = assess(case, snapshot)
             result = dict(
                 case=case["name"],
@@ -146,6 +149,8 @@ def main():
                 errors=errors,
                 seconds=round(time.monotonic() - start, 3),
                 document=snapshot["suggestions"],
+                coverage=snapshot["meeting"]["notes_cursor"],
+                last_generation=json.loads((pathlib.Path(root) / "last-generation.json").read_text()) if (pathlib.Path(root) / "last-generation.json").exists() else None,
                 status=snapshot["runtime"]["notes_status"],
                 resource=json.loads((pathlib.Path(root) / "last-writer-resource.json").read_text(encoding="utf-8")) if (pathlib.Path(root) / "last-writer-resource.json").exists() else None,
                 writer_attempts=json.loads(

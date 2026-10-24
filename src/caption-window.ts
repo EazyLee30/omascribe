@@ -15,7 +15,15 @@ void listen<{ text: string; preferences: Preferences }>(
   "caption-text",
   ({ payload }) => {
     const p = payload.preferences;
-    caption.textContent = payload.text;
+    caption.replaceChildren();
+    const lines = payload.text.split("\n");
+    caption.classList.toggle("caption-bilingual", lines.length > 1);
+    for (const text of lines) {
+      const line = document.createElement("div");
+      line.className = "caption-line";
+      line.textContent = text;
+      caption.append(line);
+    }
     caption.style.fontSize = `${p.font_size}px`;
     caption.style.color = p.text_color;
     caption.style.backgroundColor = `${p.background_color}${Math.round(

@@ -38,6 +38,8 @@ pub struct Preferences {
     pub resource_mode: String,
     pub memory_budget_mib: u64,
     pub auto_notes: bool,
+    pub translation_mode: String,
+    pub minutes_language: String,
     pub diarization: bool,
     pub speaker_count: u32,
     pub use_knowledge: bool,
@@ -55,6 +57,8 @@ impl Default for Preferences {
             resource_mode: "balanced".into(),
             memory_budget_mib: 0,
             auto_notes: true,
+            translation_mode: "off".into(),
+            minutes_language: "auto".into(),
             diarization: false,
             speaker_count: 0,
             use_knowledge: false,
@@ -69,6 +73,11 @@ impl Preferences {
             || (self.memory_budget_mib != 0 && !(1024..=32768).contains(&self.memory_budget_mib))
         {
             bail!("Invalid local inference resource settings");
+        }
+        if !["off", "bilingual", "zh-en", "en-zh"].contains(&self.translation_mode.as_str())
+            || !["auto", "zh", "en"].contains(&self.minutes_language.as_str())
+        {
+            bail!("Invalid language setting");
         }
         let a = &self.appearance;
         if !["system", "light", "dark"].contains(&a.mode.as_str())

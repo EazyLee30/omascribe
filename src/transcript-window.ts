@@ -1,3 +1,5 @@
+import { passageHTML, translationSelect } from "./translation-ui";
+import { getPreferences, savePreferences } from "./preferences-client";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -77,6 +79,8 @@ async function render() {
     const next =
       JSON.stringify(snapshot.segments) +
       JSON.stringify(snapshot.meeting.speaker_names) +
+      JSON.stringify(snapshot.translations) +
+      snapshot.translation_mode +
       partial +
       query;
     if (next === signature) return;
@@ -87,7 +91,7 @@ async function render() {
         .filter((s) => s.text.toLocaleLowerCase().includes(query))
         .map(
           (s) =>
-            `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span><p>${esc(s.text)}</p></article>`,
+            `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span>${passageHTML(s, snapshot!)}</article>`,
         )
         .join("") +
       (!query && partial
@@ -105,7 +109,21 @@ async function render() {
 async function init() {
   await initAppearance();
   document.body.classList.add("floating-transcript-app");
-  root.innerHTML = `<header class="float-header"><div class="float-drag"><span class="float-status-dot"></span><div><strong id="float-state">${t("transcript")}</strong><small id="float-title">OmaScribe</small></div></div><div class="float-actions"><button data-action="dock" title="${t("dockRight")}" aria-label="${t("dockRight")}">⇥</button><button data-action="settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">⚙</button><button id="float-collapse" data-action="collapse" aria-label="${t("collapse")}">⌃</button><button data-action="close" title="${t("close")}" aria-label="${t("close")}">×</button></div></header><p id="float-preview"></p><div class="float-body"><div class="float-tools"><input id="float-search" placeholder="${t("search")}" aria-label="${t("search")}"><select id="float-snap" aria-label="${t("snapTo")}"><option value="free">${t("freePosition")}</option><option value="left">${t("screenLeft")}</option><option value="right">${t("screenRight")}</option></select></div><div id="float-error" role="alert" hidden></div><div id="float-transcript"></div><audio id="float-player" controls hidden></audio></div><span class="float-resize" role="separator" aria-label="${t("resizeWindow")}">◢</span>`;
+  root.innerHTML = `<header class="float-header"><div class="float-drag"><span class="float-status-dot"></span><div><strong id="float-state">${t("transcript")}</strong><small id="float-title">OmaScribe</small></div></div><div class="float-actions"><button data-action="dock" title="${t("dockRight")}" aria-label="${t("dockRight")}">⇥</button><button data-action="settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">⚙</button><button id="float-collapse" data-action="collapse" aria-label="${t("collapse")}">⌃</button><button data-action="close" title="${t("close")}" aria-label="${t("close")}">×</button></div></header><p id="float-preview"></p><div class="float-body"><div class="float-tools">${translationSelect("float-translation-mode")}<input id="float-search" placeholder="${t("search")}" aria-label="${t("search")}"><select id="float-snap" aria-label="${t("snapTo")}"><option value="free">${t("freePosition")}</option><option value="left">${t("screenLeft")}</option><option value="right">${t("screenRight")}</option></select></div><div id="float-error" role="alert" hidden></div><div id="float-transcript"></div><audio id="float-player" controls hidden></audio></div><span class="float-resize" role="separator" aria-label="${t("resizeWindow")}">◢</span>`;
+  const mode = root.querySelector<HTMLSelectElement>(
+    "#float-translation-mode",
+  )!;
+  mode.value = (await getPreferences()).translation_mode;
+  mode.onchange = async () => {
+    try {
+      const p = await getPreferences();
+      p.translation_mode = mode.value as typeof p.translation_mode;
+      await savePreferences(p);
+      await render();
+    } catch (e) {
+      error(e);
+    }
+  };
   apply(await getViewSettings());
   (document.querySelector("#float-snap") as HTMLSelectElement).value =
     prefs.snap;

@@ -10,6 +10,7 @@
   --chart-2: #6b9ee0;
   --chart-3: #80ab79;
   --chart-4: #a6a6a8;
+  --chart-5: #d9a17d;
   background: var(--bg);
   color: var(--text);
   font-family: var(--app-font);
@@ -1157,7 +1158,44 @@ dialog {
   }
 }
 
-/* One labelled entry for visibility, with no duplicate controls or empty rails. */
+/* Frequently used live views remain visible; the menu controls writing panes. */
+.session-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.session-display .text-button {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+.session-display .enabled {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+}
+.session-display .text-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+@media (max-width: 850px) {
+  .session-strip {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .session-right {
+    gap: 6px;
+  }
+  .session-right > [data-action="speakers"],
+  .session-right > [data-action="meeting-files"] {
+    font-size: 0;
+    gap: 0;
+  }
+  .session-right > [data-action="speakers"] span {
+    display: none;
+  }
+}
 #window-panels {
   position: relative;
   flex-shrink: 0;

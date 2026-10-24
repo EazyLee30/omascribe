@@ -20,3 +20,7 @@ pub mod preferences;
 pub mod speakers;
 
 pub mod update_signature;
+
+mod recycle;
+
+pub mod translation;

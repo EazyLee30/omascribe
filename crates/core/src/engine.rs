@@ -130,6 +130,7 @@ impl Engine {
         thread::spawn(move || {
             let mut attempted = std::collections::HashMap::<String, Instant>::new();
             let mut in_flight: Option<String> = None;
+            let mut translation_attempts = std::collections::HashMap::<String, Instant>::new();
             let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
             loop {
                 thread::sleep(Duration::from_secs(2));
@@ -150,7 +151,7 @@ impl Engine {
                     continue;
                 }
                 let mut ids = Vec::new();
-                if let Some(id) = status.meeting_id {
+                if let Some(id) = status.meeting_id.clone() {
                     ids.push(id);
                 }
                 if let Some(id) = engine.notes_target.lock().unwrap().clone() {
@@ -170,6 +171,34 @@ impl Engine {
                     let Ok(snapshot) = engine.snapshot(&id) else {
                         continue;
                     };
+                    let translation_due = (status.meeting_id.as_deref() == Some(&id)
+                        || engine.notes_target.lock().unwrap().as_deref() == Some(&id))
+                        && crate::translation::pending(&snapshot)
+                        && translation_attempts.get(&id).is_none_or(|t| {
+                            t.elapsed()
+                                > Duration::from_secs(
+                                    if status
+                                        .translation_status
+                                        .starts_with("translation:deferred")
+                                    {
+                                        30
+                                    } else {
+                                        2
+                                    },
+                                )
+                        });
+                    let minutes_due = snapshot.meeting.auto_notes
+                        && notes::needs_update(&snapshot)
+                        && attempted
+                            .get(&id)
+                            .is_none_or(|t| t.elapsed() > Duration::from_secs(45));
+                    if translation_due && (!minutes_due || !translation_attempts.contains_key(&id))
+                    {
+                        translation_attempts.insert(id.clone(), Instant::now());
+                        if engine.translate_pending(&id).unwrap_or(false) {
+                            break;
+                        }
+                    }
                     if snapshot.meeting.diarization
                         && !engine.diarization_cancelled.lock().unwrap().contains(&id)
                         && !status.recording
@@ -254,14 +283,29 @@ impl Engine {
     pub fn meetings(&self) -> Result<Vec<Meeting>> {
         self.store.lock().unwrap().meetings()
     }
+    pub fn focus_meeting(&self, id: &str) -> Result<()> {
+        self.snapshot(id)?;
+        *self.notes_target.lock().unwrap() = Some(id.into());
+        Ok(())
+    }
     pub fn snapshot(&self, id: &str) -> Result<Snapshot> {
+        let prefs = self.preferences.lock().unwrap().clone();
         let db = self.store.lock().unwrap();
         let mut m = db.meeting(id)?;
+        if db.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+            [id],
+            |r| r.get::<_, bool>(0),
+        )? {
+            bail!("This meeting is in Deleted; restore it from Settings → Storage");
+        }
         let runtime = self.status.lock().unwrap().clone();
         if runtime.meeting_id.as_deref() == Some(id) {
             m.duration_ms = m.duration_ms.max(runtime.elapsed_ms);
         }
         Ok(Snapshot {
+            translations: crate::translation::cached(&db, &m, &prefs)?,
+            translation_mode: prefs.translation_mode,
             segments: db.segments(&m)?,
             notes: db.notes(id)?,
             suggestions: db.suggestions(id)?,
@@ -442,6 +486,8 @@ impl Engine {
         let previous_status = self.status.lock().unwrap().clone();
         *self.status.lock().unwrap() = RuntimeStatus {
             notes_busy: previous_status.notes_busy,
+            translation_busy: previous_status.translation_busy,
+            translation_status: previous_status.translation_status,
             notes_status: previous_status.notes_status,
             notes_elapsed_ms: previous_status.notes_elapsed_ms,
             meeting_id: Some(id.into()),
@@ -889,24 +935,27 @@ impl Engine {
             }
         }
         text.push_str("\n## Meeting minutes / 会议纪要\n\n");
-        for n in data.suggestions.iter().filter(|n| n.status != "dismissed") {
-            text.push_str(&format!(
-                "### {}\n\n{}\n\n",
-                if n.focus.is_empty() {
-                    "Notes"
-                } else {
-                    &n.focus
-                },
-                n.text
-            ));
+        let mut footnotes = String::new();
+        for (index, n) in data
+            .suggestions
+            .iter()
+            .filter(|n| n.status != "dismissed")
+            .enumerate()
+        {
+            let reference = format!("minutes-{}", index + 1);
+            text.push_str(&format!("{}[^{reference}]\n\n", n.text.trim()));
             if n.stale {
                 text.push_str(
                     "> Source revised; review this paragraph. / 原文已修订，请复核本段。\n\n",
                 );
             }
-            for s in &n.sources {
-                text.push_str(&format!(
-                    "> [{}] {} (revision {})\n",
+            footnotes.push_str(&format!("[^{reference}]: "));
+            for (source_index, s) in n.sources.iter().enumerate() {
+                if source_index > 0 {
+                    footnotes.push_str("\n    ");
+                }
+                footnotes.push_str(&format!(
+                    "[{}] {} (revision {})\n",
                     timestamp(s.start_ms),
                     format_args!(
                         "{}{}",
@@ -914,13 +963,14 @@ impl Engine {
                             .as_ref()
                             .map(|n| format!("{n}: "))
                             .unwrap_or_default(),
-                        s.quote
+                        s.quote.replace('\n', " ")
                     ),
                     s.revision
                 ));
             }
-            text.push('\n');
+            footnotes.push('\n');
         }
+        text.push_str(&footnotes);
         text.push_str("\n## Transcript / 转写\n\n");
         for s in &data.segments {
             text.push_str(&format!(

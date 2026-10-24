@@ -1,6 +1,6 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
 mod retrieval;
-mod stream;
+pub(crate) mod stream;
 mod validation;
 mod writer;
 use crate::Engine;
@@ -44,58 +44,26 @@ impl Drop for Server {
     }
 }
 
-pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
-    let started = Instant::now();
-    let job = Uuid::new_v4().to_string();
-    let snapshot = engine.snapshot(meeting)?;
-    if !needs_update(&snapshot) {
-        bail!("纪要已与当前关键词和转写同步");
-    }
-    if engine.note_cancel.load(Ordering::SeqCst) {
-        bail!("已取消，待处理内容已保留");
-    }
-    if snapshot.runtime.transcribing
-        && snapshot
-            .runtime
-            .elapsed_ms
-            .saturating_sub(snapshot.runtime.processed_ms)
-            > 2500
-    {
-        bail!("字幕正在追赶，稍后自动整理");
-    }
-    if !engine.diagnostics().llm_ready {
-        bail!("笔记模型尚未安装，请运行 bin/setup");
-    }
-    let context = retrieval::retrieve(&snapshot);
-    let prefs = engine.preferences.lock().unwrap().clone();
-    engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v1","model":prefs.llm_model,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
-    let result = generate_inner(engine, meeting, &snapshot, context, &prefs);
-    let outcome = match &result {
-        Ok(n) => json!({"status":"committed","sections":n}),
-        Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
-    };
-    engine.store.lock().unwrap().finish_job(
-        &job,
-        &outcome,
-        started.elapsed().as_millis() as u64,
-    )?;
-    result
+pub(crate) struct LocalSession {
+    pub agent: ureq::Agent,
+    pub base: String,
+    pub auth: String,
+    pub budget: u64,
+    pub backend: crate::inference::Backend,
+    pub resource_stop: Arc<AtomicBool>,
+    pub budget_stop: Arc<AtomicBool>,
+    pub timed_out: Arc<AtomicBool>,
+    _server: Server,
 }
-fn generate_inner(
+pub(crate) fn open_session(
     engine: &Arc<Engine>,
-    meeting: &str,
-    snapshot: &crate::Snapshot,
-    mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
-) -> Result<usize> {
+) -> Result<LocalSession> {
     let budget = crate::inference::budget_mib(prefs);
     let estimate = crate::models::model(&prefs.llm_model)?.memory_mib
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4;
     if estimate > budget {
         bail!("writer:resource-budget:{estimate}:{budget}");
-    }
-    if prefs.resource_mode == "quality" && (snapshot.runtime.recording || snapshot.runtime.paused) {
-        bail!("质量模式将在录音结束后整理纪要");
     }
     // Loading under heavy swap pressure repeatedly makes the whole desktop unresponsive.
     check_memory(
@@ -103,8 +71,6 @@ fn generate_inner(
         crate::models::model(&prefs.llm_model)?.memory_mib
             + u64::from(prefs.context_size.saturating_sub(2048)) / 4,
     )?;
-    engine.status.lock().unwrap().notes_status = "writer:loading".into();
-    engine.status.lock().unwrap().notes_elapsed_ms = 0;
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let port = listener.local_addr()?.port();
     drop(listener);
@@ -217,6 +183,80 @@ fn generate_inner(
         thread::sleep(Duration::from_millis(200));
     }
 
+    Ok(LocalSession {
+        agent,
+        base,
+        auth,
+        budget,
+        backend,
+        resource_stop,
+        budget_stop,
+        timed_out,
+        _server: server,
+    })
+}
+
+pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
+    let started = Instant::now();
+    let job = Uuid::new_v4().to_string();
+    let snapshot = engine.snapshot(meeting)?;
+    if !needs_update(&snapshot) {
+        bail!("纪要已与当前关键词和转写同步");
+    }
+    if engine.note_cancel.load(Ordering::SeqCst) {
+        bail!("已取消，待处理内容已保留");
+    }
+    if snapshot.runtime.transcribing
+        && snapshot
+            .runtime
+            .elapsed_ms
+            .saturating_sub(snapshot.runtime.processed_ms)
+            > 2500
+    {
+        bail!("字幕正在追赶，稍后自动整理");
+    }
+    if !engine.diagnostics().llm_ready {
+        bail!("笔记模型尚未安装，请运行 bin/setup");
+    }
+    let context = retrieval::retrieve(&snapshot);
+    let prefs = engine.preferences.lock().unwrap().clone();
+    engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v1","model":prefs.llm_model,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
+    let result = generate_inner(engine, meeting, &snapshot, context, &prefs);
+    let outcome = match &result {
+        Ok(n) => json!({"status":"committed","sections":n}),
+        Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
+    };
+    engine.store.lock().unwrap().finish_job(
+        &job,
+        &outcome,
+        started.elapsed().as_millis() as u64,
+    )?;
+    result
+}
+fn generate_inner(
+    engine: &Arc<Engine>,
+    meeting: &str,
+    snapshot: &crate::Snapshot,
+    mut context: retrieval::Context,
+    prefs: &crate::preferences::Preferences,
+) -> Result<usize> {
+    if prefs.resource_mode == "quality" && (snapshot.runtime.recording || snapshot.runtime.paused) {
+        bail!("质量模式将在录音结束后整理纪要");
+    }
+    engine.status.lock().unwrap().notes_status = "writer:loading".into();
+    engine.status.lock().unwrap().notes_elapsed_ms = 0;
+    let session = open_session(engine, prefs)?;
+    let LocalSession {
+        agent,
+        base,
+        auth,
+        budget,
+        backend,
+        resource_stop,
+        budget_stop,
+        timed_out,
+        ..
+    } = &session;
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let mut background = engine.writer_context(
         &snapshot.notes,
@@ -228,10 +268,11 @@ fn generate_inner(
             .join(" "),
     )?;
     let (system, content) = loop {
-        let (system, content) = writer::prompt(snapshot, &context, &background);
+        let (system, content) =
+            writer::prompt(snapshot, &context, &background, &prefs.minutes_language);
         let tokens: Value = agent
             .post(&format!("{base}/tokenize"))
-            .set("Authorization", &auth)
+            .set("Authorization", auth)
             .send_json(json!({"content":format!("{system}\n{content}")}))?
             .into_json()?;
         if tokens["tokens"]
@@ -291,7 +332,7 @@ fn generate_inner(
             "writer:checking"
         }
         .into();
-        let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",&auth).send_json(json!({
+        let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
         "messages":messages,
         "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0,
         "response_format":{"type":"json_schema","json_schema":{"name":"document","strict":true,"schema":writer::schema(context.segments.len())}}
@@ -353,7 +394,7 @@ fn generate_inner(
                         .retain(|s| s.seq > snapshot.meeting.notes_cursor);
                 }
                 let (repair_system, repair_content) =
-                    writer::prompt(snapshot, &context, &json!({}));
+                    writer::prompt(snapshot, &context, &json!({}), &prefs.minutes_language);
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
                 let attribution = error.to_string().contains("speaker attribution");
                 if attribution {
@@ -361,7 +402,11 @@ fn generate_inner(
                         passage["speaker"] = Value::Null;
                     }
                 }
-                let hint = if attribution {
+                let hint = if error.to_string().contains("未完成") {
+                    "必须说明转写中提到的调整尚未完成，完成之后才会验证；引用对应状态片段。"
+                } else if error.to_string().contains("相对日期") {
+                    "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，并把该片段编号写进 sources；做不到就删去时间词，只保留有引用支持的内容。"
+                } else if attribution {
                     "所有片段采用中性叙述，不写人名，不推测是谁说的。"
                 } else if error.to_string().contains("attendee") {
                     "不要生成参会名单，只写转写明确支持的讨论内容。"
@@ -379,7 +424,7 @@ fn generate_inner(
                     .join("\n");
                 let tokens: Value = agent
                     .post(&format!("{base}/tokenize"))
-                    .set("Authorization", &auth)
+                    .set("Authorization", auth)
                     .send_json(json!({"content":repair_input}))?
                     .into_json()?;
                 if tokens["tokens"]

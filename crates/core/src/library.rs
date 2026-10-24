@@ -52,6 +52,17 @@ impl Engine {
             .query_map([], |r| r.get::<_, String>(0))?
             .map(|r| Ok(serde_json::from_str(&r?)?))
             .collect::<Result<_>>()?;
+        entries.retain(|e| {
+            e.meeting_id.as_ref().is_none_or(|id| {
+                !db.conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [id],
+                        |r| r.get::<_, bool>(0),
+                    )
+                    .unwrap_or(false)
+            })
+        });
         let map: HashMap<String, usize> = entries
             .iter()
             .enumerate()
@@ -112,7 +123,17 @@ impl Engine {
             }
         }
         if let Some(ref mid) = entry.meeting_id {
-            let notes = self.store.lock().unwrap().notes(mid)?;
+            let notes: Vec<UserNote> = {
+                let db = self.store.lock().unwrap();
+                let mut q = db
+                    .conn
+                    .prepare("SELECT json FROM notes WHERE meeting_id=?1")?;
+                let rows = q
+                    .query_map([mid], |r| r.get::<_, String>(0))?
+                    .map(|r| Ok(serde_json::from_str(&r?)?))
+                    .collect::<Result<Vec<_>>>()?;
+                rows
+            };
             let note = notes
                 .iter()
                 .find(|n| n.id == entry.id)
@@ -170,6 +191,7 @@ pub struct Storage {
     pub recordings: u64,
     pub database: u64,
     pub models: u64,
+    pub bundled_models: u64,
     pub downloads: u64,
     pub exports: u64,
     pub free: u64,
@@ -207,7 +229,21 @@ pub fn storage(engine: &Engine) -> Storage {
         database: size(&engine.root.join("meetings.sqlite3"))
             + size(&engine.root.join("meetings.sqlite3-wal")),
         models,
-        downloads,
+        // Count the actual bundled files as well as the user-managed model store.
+        // A model directory inside the managed store is already counted above.
+        bundled_models: if engine.models.canonicalize().ok().is_some_and(|p| {
+            engine
+                .root
+                .join("model-store")
+                .canonicalize()
+                .ok()
+                .is_some_and(|m| p.starts_with(m))
+        }) {
+            0
+        } else {
+            size(&engine.models)
+        },
+        downloads: downloads + size(&engine.root.join("updates")),
         exports: size(&engine.root.join("exports")),
         free: fs2::available_space(&engine.root).unwrap_or(0),
         root: engine.root.to_string_lossy().into_owned(),

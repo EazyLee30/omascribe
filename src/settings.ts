@@ -1,3 +1,5 @@
+import { translationChoices } from "./translation-ui";
+import { confirmDelete } from "./interactions";
 import { mountUpdates } from "./updates";
 import { invoke } from "@tauri-apps/api/core";
 import { t, locale, type Locale } from "./i18n";
@@ -30,6 +32,7 @@ const sections = () => [
   ["profiles", tr("配置分享", "Configuration sharing", "設定分享")],
   ["privacy", tr("隐私与联网", "Privacy & network", "隱私與連網")],
   ["updates", tr("软件更新", "Software updates", "軟體更新")],
+  ["shortcuts", tr("键盘快捷键", "Keyboard shortcuts", "鍵盤快捷鍵")],
   ["storage", tr("存储空间", "Storage", "儲存空間")],
 ];
 export async function mountSettings(
@@ -101,22 +104,31 @@ export async function mountSettings(
   }
   function modelCards() {
     return models
-      .map(({ model: m, installed, selected, managed, download: d }) => {
-        const working = d && ["downloading", "verifying"].includes(d.state),
-          size = m.files.reduce((n, f) => n + f.bytes, 0);
-        const group =
-          m.kind === "asr"
-            ? tr("转写", "Transcription", "轉寫")
-            : m.kind === "llm"
-              ? tr("纪要", "Minutes", "紀要")
-              : tr("说话人分离", "Speaker separation", "說話人分離");
-        const logo = m.id.startsWith("qwen3-")
-          ? '<img src="/brands/qwen.png" alt="Qwen" width="24" height="24">'
-          : m.kind === "asr"
-            ? '<img src="/brands/sherpa.png" alt="k2 / sherpa-onnx" width="24" height="24">'
-            : glyph("speakers");
-        return `<article class="model-card" data-model="${m.id}"><div class="model-icon">${logo}</div><div class="model-info"><div class="model-title"><h3>${esc(m.name)}</h3>${m.bundled ? `<span class="badge">${tr("随完整安装包内置", "Bundled in full installer", "隨完整安裝包內建")}</span>` : ""}${selected ? `<span class="badge selected">${tr("已选择", "Selected", "已選擇")}</span>` : ""}</div><p>${group} · ${esc(m.format.toUpperCase())} · ${bytes(size)} · ${m.license}</p><small>${tr("预估运行内存", "Estimated runtime memory", "預估執行記憶體")} ${(m.memory_mib / 1024).toFixed(1)} GiB · ${installed ? tr("已安装", "Installed", "已安裝") : tr("未安装", "Not installed", "未安裝")}</small>${working ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${d.state === "verifying" ? tr("正在校验文件", "Verifying files", "正在驗證檔案") : `${bytes(d.downloaded)} / ${bytes(d.total)}`}</small>` : ""}${d?.error ? `<p class="inline-error">${esc(d.error)}</p>` : ""}</div><div class="model-actions">${working ? `<button class="outline" data-model-action="cancel_download" data-id="${m.id}">${tr("取消", "Cancel")}</button>` : !installed ? `<button class="outline" data-model-action="download_model" data-id="${m.id}">${glyph("download")}${tr("下载", "Download", "下載")}</button>` : ""}${m.kind !== "diarization" && !selected ? `<button class="outline" data-model-action="select" data-id="${m.id}" data-kind="${m.kind}">${tr("选择", "Select", "選擇")}</button>` : ""}${managed && !selected && !working ? `<button class="subtle" data-model-action="delete_model" data-id="${m.id}" aria-label="${tr("删除", "Delete", "刪除")} ${esc(m.name)}">${glyph("trash")}</button>` : ""}</div></article>`;
-      })
+      .map(
+        ({
+          model: m,
+          installed,
+          installed_bytes,
+          selected,
+          managed,
+          download: d,
+        }) => {
+          const working = d && ["downloading", "verifying"].includes(d.state),
+            size = m.files.reduce((n, f) => n + f.bytes, 0);
+          const group =
+            m.kind === "asr"
+              ? tr("转写", "Transcription", "轉寫")
+              : m.kind === "llm"
+                ? tr("纪要", "Minutes", "紀要")
+                : tr("说话人分离", "Speaker separation", "說話人分離");
+          const logo = m.id.startsWith("qwen3-")
+            ? '<img src="/brands/qwen.png" alt="Qwen" width="24" height="24">'
+            : m.kind === "asr"
+              ? '<img src="/brands/sherpa.png" alt="k2 / sherpa-onnx" width="24" height="24">'
+              : glyph("speakers");
+          return `<article class="model-card" data-model="${m.id}"><div class="model-icon">${logo}</div><div class="model-info"><div class="model-title"><h3>${esc(m.name)}</h3>${m.bundled ? `<span class="badge">${tr("随完整安装包内置", "Bundled in full installer", "隨完整安裝包內建")}</span>` : ""}${selected ? `<span class="badge selected">${tr("已选择", "Selected", "已選擇")}</span>` : ""}</div><p>${group} · ${esc(m.format.toUpperCase())} · ${installed ? tr("存储占用", "Disk usage", "儲存佔用") : tr("文件大小", "File size", "檔案大小")} ${bytes(installed ? installed_bytes : size)} · ${m.license}</p><small>${tr("预估运行内存", "Estimated runtime memory", "預估執行記憶體")} ${(m.memory_mib / 1024).toFixed(1)} GiB · ${installed ? tr("已安装", "Installed", "已安裝") : tr("未安装", "Not installed", "未安裝")}</small>${working ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${d.state === "verifying" ? tr("正在校验文件", "Verifying files", "正在驗證檔案") : `${bytes(d.downloaded)} / ${bytes(d.total)}`}</small>` : ""}${d?.error ? `<p class="inline-error">${tr("下载连接中断，请检查网络后重试。模型只有通过完整校验才会安装。", "Download interrupted. Check your connection and retry. Models are installed only after verification.", "下載中斷，請檢查網路後重試；模型通過驗證才會安裝。")}</p><details class="model-error-detail"><summary>${tr("技术详情", "Technical details", "技術詳情")}</summary><code>${esc(d.error)}</code></details>` : ""}</div><div class="model-actions">${working ? `<button class="outline" data-model-action="cancel_download" data-id="${m.id}">${tr("取消", "Cancel")}</button>` : !installed ? `<button class="outline" data-model-action="download_model" data-id="${m.id}">${glyph("download")}${tr("下载", "Download", "下載")}</button>` : ""}${m.kind !== "diarization" && !selected ? `<button class="outline" data-model-action="select" data-id="${m.id}" data-kind="${m.kind}">${tr("选择", "Select", "選擇")}</button>` : ""}${managed && !selected && !working ? `<button class="subtle" data-model-action="delete_model" data-id="${m.id}" aria-label="${tr("删除", "Delete", "刪除")} ${esc(m.name)}">${glyph("trash")}${tr("删除", "Delete", "刪除")}</button>` : ""}</div></article>`;
+        },
+      )
       .join("");
   }
   function modelBody() {
@@ -269,7 +281,42 @@ export async function mountSettings(
       (root.querySelector("#settings-device") as HTMLSelectElement).value =
         localStorage.getItem("omascribe-device") || "auto";
     } else if (section === "transcription") {
-      content.innerHTML = `${header(tr("转写与纪要", "Transcription & minutes", "轉寫與紀要"), tr("新会议和音频导入的默认行为。已有会议可单独调整。", "Defaults for new meetings and imported audio. Existing meetings have their own controls.", "新會議及音訊匯入的預設行為，現有會議可個別調整。"))}<div class="settings-group">${toggle("auto_notes", tr("自动整理纪要", "Write minutes automatically", "自動整理紀要"), tr("随着转写更新，自动生成带出处的会议纪要。", "Compose source-linked minutes as transcription progresses.", "隨轉寫更新，自動生成附出處的會議紀要。"))}${toggle("diarization", tr("区分说话人", "Separate speakers", "區分說話人"), tr("录音和转写结束后，使用本地声纹模型分析。可在会议中改名和修正归属。", "Analyze voices locally after recording and transcription finish. Rename people and correct assignments in each meeting.", "錄音轉寫結束後以本機聲紋模型分析，可改名及修正歸屬。"))}${row(
+      content.innerHTML = `${header(tr("转写与纪要", "Transcription & minutes", "轉寫與紀要"), tr("新会议和音频导入的默认行为。已有会议可单独调整。", "Defaults for new meetings and imported audio. Existing meetings have their own controls.", "新會議及音訊匯入的預設行為，現有會議可個別調整。"))}<div class="settings-group">${row(
+        tr("实时转写与字幕", "Live transcript & captions", "即時轉寫及字幕"),
+        choice(
+          "translation_mode",
+          translationChoices().map(([value, label]) => [value, label]),
+          tr("实时翻译模式", "Live translation mode", "即時翻譯模式"),
+        ),
+        tr(
+          "原文：关闭翻译；双语：原文与译文对照；中译英 / 英译中：显示对应译文。使用本地模型，先显示原文，译文稍后补上；不改变音频、原文或纪要语言。",
+          "Original disables translation. Bilingual shows both. ZH → EN / EN → ZH shows the target language. Local translation follows the original with a delay; it never changes audio, source text, or the minutes language.",
+          "原文關閉翻譯；雙語並列原文與譯文；中譯英／英譯中顯示對應譯文。本機模型稍後補上譯文，不改動原文或紀要語言。",
+        ),
+      )}${row(
+        tr("纪要语言", "Minutes language", "紀要語言"),
+        choice(
+          "minutes_language",
+          [
+            [
+              "auto",
+              tr(
+                "自动（含中文时用中文）",
+                "Auto (Chinese for mixed speech)",
+                "自動（含中文時用中文）",
+              ),
+            ],
+            ["zh", "中文"],
+            ["en", "English"],
+          ],
+          tr("纪要语言", "Minutes language", "紀要語言"),
+        ),
+        tr(
+          "影响后续整理；已由你修改并保护的段落保持原样。界面语言在「常规」中设置。",
+          "Applies to subsequent writing. Your protected edits remain intact. Set the interface language in General.",
+          "影響後續整理，已修改保護的段落保留。介面語言於一般設定。",
+        ),
+      )}${toggle("auto_notes", tr("自动整理纪要", "Write minutes automatically", "自動整理紀要"), tr("随着转写更新，自动生成带出处的会议纪要。", "Compose source-linked minutes as transcription progresses.", "隨轉寫更新，自動生成附出處的會議紀要。"))}${toggle("diarization", tr("区分说话人", "Separate speakers", "區分說話人"), tr("录音和转写结束后，使用本地声纹模型分析。可在会议中改名和修正归属。", "Analyze voices locally after recording and transcription finish. Rename people and correct assignments in each meeting.", "錄音轉寫結束後以本機聲紋模型分析，可改名及修正歸屬。"))}${row(
         tr("预计说话人数", "Expected speakers", "預計說話人數"),
         choice(
           "speaker_count",
@@ -300,6 +347,19 @@ export async function mountSettings(
       const control = (key: keyof NetworkPolicy, label: string) =>
         `<input type="checkbox" role="switch" data-network="${key}" aria-label="${esc(label)}" ${network[key] ? "checked" : ""}>`;
       content.innerHTML = `${header(tr("隐私与联网", "Privacy & network", "隱私與連網"), tr("内容处理始终离线。可选联网功能单独授权，并且不会随分享配置开启。", "Content processing stays offline. Optional network features have separate device permissions that shared profiles cannot enable.", "內容處理始終離線；可選連網功能獨立授權，不隨分享設定開啟。"))}<div class="settings-group">${row(tr("录音与音频导入", "Recording & audio import", "錄音及音訊匯入"), offline)}${row(tr("转写与说话人分析", "Transcription & speaker analysis", "轉寫及說話人分析"), offline)}${row(tr("AI 纪要、知识库与记忆", "AI minutes, knowledge & memory", "AI 紀要、知識庫及記憶"), offline, tr("仅使用已安装模型。没有云端模型、遥测或内容上传接口。本机进程间通信不连接互联网。", "Uses installed models only. No cloud inference, telemetry, or content-upload endpoint. Local inter-process communication does not use the internet.", "僅使用已安裝模型，無雲端推理、遙測或內容上傳；本機程序通訊不連接網際網路。"))}</div><h2 class="settings-subtitle">${tr("可选联网功能", "Optional network features", "可選連網功能")}</h2><div class="settings-group">${row(tr("软件更新", "Software updates", "軟體更新"), `<button class="outline" data-section="updates">${tr("管理", "Manage")}</button>`, tr("单独授权，手动检查和下载 GitHub 上的签名安装包。", "Separate permission for manual checks and signed GitHub installers.", "獨立授權，手動檢查及下載 GitHub 上的簽章安裝包。"))}${row(tr("允许手动下载模型", "Allow manual model downloads", "允許手動下載模型"), control("allow_model_downloads", tr("允许手动下载模型", "Allow manual model downloads")), tr("只在你点击下载后连接 Hugging Face / GitHub 获取已固定版本的文件并核对哈希。关闭会取消进行中的下载。", "Only your Download action fetches pinned files from Hugging Face / GitHub and verifies hashes. Disabling cancels active downloads.", "僅點擊下載後從 Hugging Face / GitHub 取得固定檔案並核對雜湊；關閉會取消下載。"))}${row(tr("允许打开在线配置广场", "Allow opening the online gallery", "允許開啟線上設定廣場"), control("allow_online_recommendations", tr("允许打开在线配置广场", "Allow opening the online gallery")), tr("由默认浏览器访问 OmaScribe 官网和 Cloudflare。网站可看到网络地址；应用不附带硬件、录音、笔记或配置。投稿需在网页中另行操作。", "Your browser visits the OmaScribe site on Cloudflare, which receives normal web connection metadata. The app sends no hardware, recordings, notes or configuration. Publishing is a separate website action.", "由瀏覽器存取 Cloudflare 上的官網，網站可見網路位址；應用不附帶硬體、錄音、筆記或設定，投稿另行操作。"))}</div><p class="setting-help">${tr("本地文件目前不由应用加密；请使用系统磁盘加密。配置文件只含设置，个人资料备份则包含正文。", "Local files are not app-encrypted; use system disk encryption. Configuration files contain settings only; private-library backups contain your content.", "本機檔案目前未由應用加密，請使用系統磁碟加密。設定檔不含正文，個人資料備份則包含正文。")}</p>`;
+    } else if (section === "shortcuts") {
+      const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl";
+      const keys = [
+        ["⇧ R", "shortcutRecord"],
+        ["⇧ P", "pauseResume"],
+        ["N", "shortcutNew"],
+        ["F", "shortcutSearch"],
+        ["B / I", "formatInline"],
+        ["⌥ 1 / 2 / 3", "heading"],
+        ["⇧ 8 / 7 / 9", "lists"],
+        ["Z / ⇧ Z", "undoRedo"],
+      ];
+      content.innerHTML = `${header(tr("键盘快捷键", "Keyboard shortcuts", "鍵盤快捷鍵"), tr("工作区指令，以及笔记编辑器的格式快捷键。", "Workspace commands and formatting shortcuts for the note editor.", "工作區指令及筆記編輯快捷鍵。"))}<div class="settings-group shortcuts">${keys.map(([key, label]) => row(t(label as import("./i18n").Key), `<kbd>${mod} ${mod === "Ctrl" ? key.replaceAll("⇧", "Shift").replaceAll("⌥", "Alt") : key}</kbd>`)).join("")}</div>`;
     } else if (section === "storage") {
       const s = await invoke<Record<string, number | string>>("storage_usage");
       if (!alive || section !== active) return;
@@ -310,11 +370,14 @@ export async function mountSettings(
         ],
         ["database", tr("笔记与转写", "Notes & transcripts", "筆記與轉寫")],
         ["models", tr("下载的模型", "Downloaded models", "下載的模型")],
+        ["bundled_models", tr("内置模型", "Bundled models", "內建模型")],
         ["downloads", tr("下载缓存", "Downloads in progress", "下載快取")],
         ["exports", tr("导出文件", "Exports", "匯出檔案")],
       ];
+      const deleted =
+        await invoke<import("./types").Meeting[]>("deleted_meetings");
       const total = groups.reduce((n, [key]) => n + Number(s[key]), 0);
-      content.innerHTML = `${header(tr("存储空间", "Storage", "儲存空間"), tr("管理这台电脑上的本地数据。", "Manage data stored on this device.", "管理這台電腦的本機資料。"))}<div class="settings-section-title"><h2>${tr("此设备已用", "Used on this device", "此裝置已用")} ${bytes(total)}</h2><button class="outline" data-settings="refresh-storage">${tr("刷新", "Refresh", "重新整理")}</button></div><div class="storage-bar">${groups.map(([key], i) => `<span style="width:${total ? (Number(s[key]) / total) * 100 : 0}%;background:var(--chart-${i})"></span>`).join("")}</div><div class="storage-legend">${groups.map(([key, label], i) => `<span><i style="background:var(--chart-${i})"></i>${label}<strong>${bytes(Number(s[key]))}</strong></span>`).join("")}</div><p class="setting-help">${esc(s.root)}<br>${tr("磁盘剩余", "Free disk space", "磁碟剩餘")}: ${bytes(Number(s.free))}<br>${tr("应用内置模型计入应用安装体积，不计入此数据目录。", "Bundled models belong to the app installation and are not counted in this data directory.", "內建模型屬於應用安裝體積，不列入此資料目錄。")}</p><div class="settings-group">${row(tr("本地数据目录", "Local data folder", "本機資料目錄"), `<button class="outline" data-settings="open-data">${tr("打开", "Open", "開啟")}</button>`)}${row(tr("模型空间", "Model storage", "模型空間"), `<button class="outline" data-section="models">${tr("管理", "Manage")}</button>`)}${row(tr("个人资料备份", "Private library export", "個人資料備份"), `<button class="outline" data-settings="export-library">${tr("导出", "Export", "匯出")}</button>`, tr("单独导出笔记、术语和记忆。此文件包含个人内容，请勿当作配置分享。", "Export notes, terms, and memory separately. This file contains personal content and is not a shareable configuration.", "此檔案含筆記、術語及記憶等個人內容，請勿作為設定分享。"))}</div>`;
+      content.innerHTML = `${header(tr("存储空间", "Storage", "儲存空間"), tr("管理这台电脑上的本地数据。", "Manage data stored on this device.", "管理這台電腦的本機資料。"))}<div class="settings-section-title"><h2>${tr("此设备已用", "Used on this device", "此裝置已用")} ${bytes(total)}</h2><button class="outline" data-settings="refresh-storage">${tr("刷新", "Refresh", "重新整理")}</button></div><div class="storage-bar">${groups.map(([key], i) => `<span style="width:${total ? (Number(s[key]) / total) * 100 : 0}%;background:var(--chart-${i})"></span>`).join("")}</div><div class="storage-legend">${groups.map(([key, label], i) => `<span><i style="background:var(--chart-${i})"></i>${label}<strong>${bytes(Number(s[key]))}</strong></span>`).join("")}</div><p class="setting-help">${esc(s.root)}<br>${tr("磁盘剩余", "Free disk space", "磁碟剩餘")}: ${bytes(Number(s.free))}<br>${tr("已统计内置模型与下载模型的实际文件大小；内置模型存放于应用安装目录。", "Includes actual file sizes of bundled and downloaded models. Bundled weights are stored in the application installation.", "已統計內建及下載模型的實際檔案大小；內建模型存放於應用安裝目錄。")}</p><div class="settings-group">${row(tr("本地数据目录", "Local data folder", "本機資料目錄"), `<button class="outline" data-settings="open-data">${tr("打开", "Open", "開啟")}</button>`)}${row(tr("模型空间", "Model storage", "模型空間"), `<button class="outline" data-section="models">${tr("管理", "Manage")}</button>`)}${row(tr("个人资料备份", "Private library export", "個人資料備份"), `<button class="outline" data-settings="export-library">${tr("导出", "Export", "匯出")}</button>`, tr("单独导出笔记、术语和记忆。此文件包含个人内容，请勿当作配置分享。", "Export notes, terms, and memory separately. This file contains personal content and is not a shareable configuration.", "此檔案含筆記、術語及記憶等個人內容，請勿作為設定分享。"))}</div><h2 class="settings-subtitle">${tr("已删除的会议", "Deleted meetings", "已刪除的會議")}</h2><p class="setting-help">${tr("录音和笔记保留在本机，可以恢复。", "Audio and notes remain on this device and can be restored.", "錄音及筆記保留於本機，可還原。")}</p><div class="settings-group">${deleted.length ? deleted.map((m) => row(esc(m.title), `<button class="outline" data-settings="restore-meeting" data-id="${m.id}">${tr("恢复", "Restore", "還原")}</button>`)).join("") : `<p class="setting-help">${tr("没有已删除的会议", "No deleted meetings", "沒有已刪除的會議")}</p>`}</div>`;
     }
   }
   async function allowDownload() {
@@ -379,6 +442,22 @@ export async function mountSettings(
       const id = button.dataset.id!;
       button.disabled = true;
       try {
+        if (
+          button.dataset.modelAction === "delete_model" &&
+          !(await confirmDelete(
+            tr(
+              "删除下载的模型？",
+              "Delete downloaded model?",
+              "刪除下載的模型？",
+            ),
+            tr(
+              "模型文件将从磁盘移除，需要时可以重新下载。",
+              "Remove these model files from disk. You can download them again.",
+              "從磁碟移除此模型，可隨時重新下載。",
+            ),
+          ))
+        )
+          return;
         if (button.dataset.modelAction === "select")
           await save((p) => {
             p[button.dataset.kind === "asr" ? "asr_model" : "llm_model"] = id;
@@ -404,6 +483,13 @@ export async function mountSettings(
       return;
     }
     switch (button.dataset.settings) {
+      case "restore-meeting":
+        await invoke("set_meeting_deleted", {
+          id: button.dataset.id,
+          deleted: false,
+        });
+        await render();
+        return;
       case "open-community":
         network = await readNetwork();
         if (!network.allow_online_recommendations) {

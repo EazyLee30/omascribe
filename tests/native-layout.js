@@ -12,7 +12,7 @@
     assert(header && header.getBoundingClientRect().top < 20, 'Meeting header must be integrated into the top of the content');
     assert(document.querySelector('.window-toolbar [data-panel="sidebar"]'), 'Sidebar toggle missing at top');
     document.querySelector('[data-action="workspace-view"]').click();
-    for (const panel of ['notebook','minutes','transcript']) {
+    for (const panel of ['notebook','minutes']) {
       let button = document.querySelector(`#view-menu [data-panel="${panel}"]`);
       assert(button, 'Missing panel toggle ' + panel);
       const prior = button.getAttribute('aria-expanded');
@@ -23,24 +23,33 @@
     }
     document.querySelector('[data-action="workspace-view"]').click();
     assert(!document.querySelector('.columns .panel-rail'), 'Collapsed columns must not leave a confusing rail');
-    assert(!document.querySelector('.session-strip [data-action="toggle-transcript"]'), 'Duplicated view controls remain');
+    for (const action of ['toggle-transcript', 'captions']) {
+      const button = document.querySelector(`.session-strip [data-action="${action}"]`);
+      assert(button && button.getBoundingClientRect().width > 0, 'Live control hidden: ' + action);
+      assert(!document.querySelector(`#view-menu [data-action="${action}"]`), 'Live control duplicated in secondary menu');
+      const prior = button.getAttribute('aria-pressed');
+      button.click(); await sleep(500);
+      assert(button.getAttribute('aria-pressed') !== prior, 'Live control did not toggle: ' + action);
+      button.click(); await sleep(500);
+    }
     for (const selector of ['#meeting-title', '#record', '[data-action="workspace-view"]']) {
       const element = document.querySelector(selector), rect = element.getBoundingClientRect();
       assert(rect.left >= 0 && rect.right <= innerWidth, 'Top control outside viewport: ' + selector);
       assert(element.contains(document.elementFromPoint(rect.x + rect.width/2, rect.y + rect.height/2)), 'Top control obscured: ' + selector);
     }
     checks.push('Integrated meeting actions and all panel toggles are visible and clickable');
-    const footer = document.querySelector('#workspace footer');
-    const before = footer.getBoundingClientRect().bottom;
+    assert(!document.querySelector('#workspace footer'), 'Bottom footer must be removed');
+    const columns = document.querySelector('.columns');
+    const before = columns.getBoundingClientRect().bottom;
     window.scrollTo(0, 10000);
     document.documentElement.scrollTop = 10000;
     document.body.scrollTop = 10000;
     await sleep(100);
     assert(window.scrollY === 0 && document.documentElement.scrollTop === 0, 'Outer window scrolled');
-    assert(Math.abs(footer.getBoundingClientRect().bottom - before) < 1, 'Footer moved with outer scroll');
-    assert(Math.abs(before - innerHeight) < 2, 'White gap below footer');
+    assert(Math.abs(columns.getBoundingClientRect().bottom - before) < 1, 'Columns moved with outer scroll');
+    assert(Math.abs(before - innerHeight) < 2, 'White gap below workspace');
     assert(getComputedStyle(document.body).overscrollBehaviorY === 'none', 'Root overscroll enabled');
-    checks.push('Outer viewport fixed and footer meets window edge');
+    checks.push('Outer viewport fixed and workspace meets window edge');
     const terms = await invoke('extract_focus_terms', {content:'我正在测试软件的会议纪要功能，但是没有自动提取关键词，内容重复了一遍。'});
     assert(terms.length > 0 && terms.every(x => x.length < 12), 'Focus copied prose');
     checks.push('Focus terms are local keywords, not copied sentences');

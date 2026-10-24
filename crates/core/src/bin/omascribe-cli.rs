@@ -25,6 +25,10 @@ fn run() -> Result<()> {
     }
     let engine = Engine::open(default_root())?;
     let result = match command {
+        "translate" => {
+            omascribe_core::translation::run(&engine, arg(2)?)?;
+            serde_json::to_value(engine.snapshot(arg(2)?)?)?
+        }
         "models" => serde_json::to_value(engine.model_status())?,
         "hardware" => serde_json::to_value(omascribe_core::models::hardware(&engine.root))?,
         "network" => {

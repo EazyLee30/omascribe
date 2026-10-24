@@ -1,3 +1,4 @@
+import { confirmDelete, reveal } from "./interactions";
 import { invoke } from "@tauri-apps/api/core";
 import type { Snapshot, Segment, Meeting } from "./types";
 import { tr, esc, glyph } from "./workspace-ui";
@@ -40,14 +41,17 @@ export async function speakerDialog(
     )
       .map(
         ([id, name]) =>
-          `<div class="speaker-row"><input value="${esc(name)}" maxlength="60" data-speaker-name="${esc(id)}" aria-label="${tr("说话人姓名", "Speaker name", "說話人姓名")}"><button class="outline" data-speaker-rename="${esc(id)}">${tr("保存", "Save", "儲存")}</button></div>`,
+          `<div class="speaker-row"><input value="${esc(name)}" maxlength="60" data-speaker-name="${esc(id)}" aria-label="${tr("说话人姓名", "Speaker name", "說話人姓名")}"><button class="outline" data-speaker-rename="${esc(id)}">${tr("保存", "Save", "儲存")}</button><button class="subtle" data-speaker-delete="${esc(id)}" aria-label="${tr("删除说话人", "Delete speaker", "刪除說話人")} ${esc(name)}">${glyph("trash")}${tr("删除", "Delete", "刪除")}</button></div>`,
       )
       .join(
         "",
       )}</div><div class="speaker-row"><input id="new-speaker-name" maxlength="60" placeholder="${tr("添加一个姓名", "Add a name", "新增姓名")}" aria-label="${tr("新说话人姓名", "New speaker name", "新說話人姓名")}"><button class="outline" data-speaker-action="add">${glyph("plus")}${tr("添加", "Add", "新增")}</button></div>`;
   }
   body();
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) {
+    dialog.showModal();
+    reveal(dialog);
+  }
   const reload = async () => {
     snapshot = await invoke<Snapshot>("snapshot", { id: meeting });
     body();
@@ -57,6 +61,25 @@ export async function speakerDialog(
     const b = (event.target as HTMLElement).closest<HTMLElement>("button");
     if (!b) return;
     try {
+      if (b.dataset.speakerDelete) {
+        if (
+          !(await confirmDelete(
+            tr("删除说话人？", "Delete speaker?", "刪除說話人？"),
+            tr(
+              "相关转写将恢复为未分配，原文和音频会保留。",
+              "Their passages become unassigned. Original text and audio are kept.",
+              "相關轉寫恢復為未分配，原文及音訊保留。",
+            ),
+          ))
+        )
+          return;
+        await invoke("delete_speaker", {
+          meeting,
+          id: b.dataset.speakerDelete,
+        });
+        await reload();
+        return;
+      }
       if (b.dataset.speakerRename) {
         const id = b.dataset.speakerRename;
         const name = dialog.querySelector<HTMLInputElement>(

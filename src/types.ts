@@ -60,6 +60,8 @@ export interface Runtime {
   partial: string;
   asr_rtf: number;
   notes_busy: boolean;
+  translation_busy: boolean;
+  translation_status: string;
   diarization_busy: boolean;
   diarization_meeting_id: string | null;
   diarization_status: string;
@@ -73,6 +75,11 @@ export interface Snapshot {
   notes: Note[];
   suggestions: Suggestion[];
   runtime: Runtime;
+  translation_mode: string;
+  translations: Record<
+    string,
+    { text: string; target: string; revision: number }
+  >;
 }
 export interface Diagnostic {
   data_dir: string;

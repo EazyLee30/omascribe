@@ -50,6 +50,8 @@ pub fn set_preferences(
 ) -> Reply<Preferences> {
     let prefs = engine.update_preferences(preferences).map_err(err)?;
     let _ = app.emit("app-preferences", &prefs);
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || crate::views::refresh_captions(&handle));
     Ok(prefs)
 }
 #[tauri::command]
@@ -209,4 +211,17 @@ pub async fn export_library(
     })
     .await
     .map_err(err)?
+}
+
+#[tauri::command]
+pub fn deleted_meetings(engine: State<AppState>) -> Reply<Vec<omascribe_core::Meeting>> {
+    engine.deleted_meetings().map_err(err)
+}
+#[tauri::command]
+pub fn set_meeting_deleted(engine: State<AppState>, id: String, deleted: bool) -> Reply<()> {
+    engine.set_meeting_deleted(&id, deleted).map_err(err)
+}
+#[tauri::command]
+pub fn delete_speaker(engine: State<AppState>, meeting: String, id: String) -> Reply<()> {
+    engine.delete_speaker(&meeting, &id).map_err(err)
 }

@@ -242,25 +242,6 @@ h3 {
 .sidebar-bottom {
   padding-top: 18px;
 }
-.local-note {
-  padding: 13px 7px 18px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 10px;
-  display: flex;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-}
-.local-note small {
-  display: block;
-  font-weight: 400;
-  font-size: 10px;
-  letter-spacing: 0;
-  color: var(--muted);
-  margin-top: 6px;
-}
 .sidebar-bottom > button {
   width: 100%;
   justify-content: flex-start;
@@ -779,30 +760,6 @@ blockquote .timestamp {
   margin-top: 10px;
   opacity: 0.8;
 }
-footer {
-  padding: 9px 28px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 9px;
-}
-footer > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-footer svg {
-  width: 12px;
-  height: 12px;
-}
-footer .text-button {
-  font-size: 10px;
-}
-.footer-separator {
-  padding: 0 4px;
-  color: var(--muted);
-}
 .hide-transcript .transcript-pane {
   display: none;
 }
@@ -849,7 +806,9 @@ dialog {
   box-shadow: 0 25px 90px #0007;
 }
 dialog::backdrop {
-  background: var(--bg);
+  background: rgb(15 18 18 / 16%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 .modal-heading {
   display: flex;
@@ -1021,14 +980,6 @@ dialog p {
   }
   .brand-icon {
     width: 28px;
-  }
-  .sidebar-bottom .local-note {
-    font-size: 7px;
-    padding-left: 2px;
-    gap: 5px;
-  }
-  .local-note small {
-    font-size: 9px;
   }
   .header-actions .subtle {
     font-size: 0;
@@ -2222,14 +2173,12 @@ dialog {
   animation: pulse 1.5s infinite;
 }
 .minutes-document {
-  padding: 25px 26px 30px;
+  padding: 28px clamp(22px, 4vw, 42px) 36px;
   max-width: 760px;
   margin: auto;
 }
 .minutes-document-title {
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 22px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 .minutes-document-title > span {
   font-size: 9px;
@@ -2245,73 +2194,78 @@ dialog {
   text-wrap: balance;
 }
 .minutes-section {
-  margin: 0 0 26px;
-}
-.minutes-section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-}
-.minutes-section h3 {
-  font-size: 13px;
-  color: var(--text);
-  font-weight: 600;
-  margin: 0 0 10px;
-  line-height: 1.7;
+  margin: 0;
 }
 .minutes-section p {
-  font-size: 13px;
-  line-height: 1.95;
-  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0 0 1em;
   color: var(--text);
   overflow-wrap: anywhere;
 }
-.paragraph-tools {
-  display: flex;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.minutes-section:hover .paragraph-tools,
-.minutes-section:focus-within .paragraph-tools {
-  opacity: 1;
-}
-.paragraph-tools button {
-  padding: 3px;
-}
-.paragraph-tools svg {
-  width: 13px;
-  height: 13px;
-}
-.document-sources summary {
+.citation {
+  display: inline;
+  vertical-align: super;
   font-size: 10px;
-  color: var(--muted);
-  cursor: pointer;
-  line-height: 1.8;
+  line-height: 0;
+  white-space: nowrap;
 }
-.document-sources summary svg {
-  width: 11px;
-  height: 11px;
-  vertical-align: middle;
-}
-.document-sources summary span {
+.citation button {
+  display: inline;
+  padding: 3px 5px;
+  margin-left: 2px;
+  border-radius: 4px;
+  color: var(--accent);
+  font: inherit;
   font-variant-numeric: tabular-nums;
-  margin-left: 5px;
+  cursor: pointer;
+}
+.citation button:hover,
+.citation button:focus-visible {
+  background: var(--surface);
+  outline: 1px solid var(--accent);
+}
+.needs-review .citation button,
+.citation-review-note {
+  color: var(--text);
+}
+.citation-review-note {
+  display: block;
+  margin-top: 8px;
+}
+.citation-context {
+  line-height: 1.8;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+.citation-context small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
 }
-.document-sources blockquote {
+.citation-sources blockquote {
   border-left: 2px solid var(--line);
-  padding: 8px 12px;
-  margin: 12px 0;
+  padding: 0 0 0 14px;
+  margin: 20px 0;
   font-size: 12px;
   line-height: 1.8;
   color: var(--muted);
+}
+.citation-sources p {
+  margin: 8px 0 0;
+}
+.citation-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .document-colophon {
   font-size: 9px;
   letter-spacing: 0.04em;
   border-top: 1px solid var(--line);
-  padding-top: 18px;
+  padding-top: 16px;
+  margin-top: 28px;
   color: var(--muted);
 }
 .coverage {
@@ -2542,4 +2496,255 @@ dialog:has(.meeting-files) .modal-heading {
   .section-actions .document-label {
     display: none;
   }
+}
+
+/* Quiet document chrome, distinct live states, and restrained motion. */
+.editor-toolbar {
+  flex-wrap: nowrap;
+  gap: 3px;
+  padding: 7px 9px;
+  min-height: 44px;
+  position: relative;
+  z-index: 3;
+  background: var(--panel);
+}
+.editor-toolbar > button {
+  flex-shrink: 0;
+}
+.editor-toolbar .source-toggle {
+  width: 32px;
+}
+.format-more {
+  position: relative;
+  margin-left: auto;
+}
+.format-more summary {
+  cursor: pointer;
+  list-style: none;
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+.format-more summary::-webkit-details-marker {
+  display: none;
+}
+.format-more summary:hover,
+.format-more[open] summary {
+  background: var(--surface);
+}
+.format-menu {
+  position: absolute;
+  right: 0;
+  top: 34px;
+  width: 240px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px #0002;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.editor-toolbar .format-menu button {
+  width: auto;
+  height: 36px;
+  justify-content: flex-start;
+  padding: 6px;
+  gap: 8px;
+  font-size: 12px;
+}
+.format-menu button span {
+  width: 20px;
+  text-align: center;
+}
+.session-state {
+  gap: 10px;
+  border-radius: 12px;
+  padding: 6px 10px;
+  background: var(--surface);
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.session-state #state-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+.recording-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.recording-clock .time {
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  margin: 0;
+  color: inherit;
+}
+.recording-clock small {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  opacity: 0.7;
+}
+.session-state .dot {
+  background: currentColor;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+}
+.session-state[data-state="recording"] {
+  color: #d43b36;
+  background: color-mix(in srgb, #e44b42 8%, var(--panel));
+}
+.session-state[data-state="paused"] {
+  color: #b77a20;
+  background: color-mix(in srgb, #d49b36 10%, var(--panel));
+}
+.session-state[data-state="processing"] {
+  color: var(--text);
+}
+.session-state[data-state="recording"] .dot {
+  animation: recording-pulse 1.8s ease-in-out infinite;
+}
+.recording-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  width: 42px;
+}
+.recording-wave i {
+  width: 2px;
+  height: 20px;
+  background: currentColor;
+  border-radius: 2px;
+  transform: scaleY(0.16);
+}
+@keyframes recording-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(212 59 54 / 0%);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgb(212 59 54 / 12%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .session-state[data-state="recording"] .dot {
+    animation: none;
+  }
+}
+.confirm-dialog {
+  max-width: 420px;
+  border-radius: 18px;
+  padding: 28px;
+}
+.confirm-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 19px;
+}
+.confirm-dialog p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.confirm-dialog .modal-actions {
+  margin-top: 24px;
+}
+.meeting-item {
+  position: relative;
+}
+.meeting-item .meeting-link {
+  width: 100%;
+  padding-right: 32px;
+}
+.meeting-delete {
+  position: absolute;
+  right: 3px;
+  top: 7px;
+  opacity: 0.5;
+  width: 28px;
+  height: 28px;
+}
+.meeting-item:hover .meeting-delete,
+.meeting-delete:focus-visible {
+  opacity: 1;
+}
+@media (max-width: 1000px) {
+  .recording-clock small {
+    display: none;
+  }
+  .session-state {
+    gap: 6px;
+    padding: 6px;
+  }
+  .recording-wave {
+    width: 28px;
+    gap: 1px;
+  }
+}
+
+.transcript-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.transcript-heading h2 {
+  margin: 0;
+  flex: 1;
+}
+.transcript-heading .search {
+  flex-basis: 100%;
+}
+.translation-select {
+  width: auto;
+  max-width: 112px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  font-size: 11px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.segment .translated-text {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.translated-text small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+}
+.original-text {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.original-text summary {
+  cursor: pointer;
+}
+.model-error-detail {
+  font-size: 11px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.session-display .caption-toggle {
+  font: inherit;
+}
+.session-display .view-cc {
+  font-family: ui-monospace, monospace;
+}
+
+.translation-status {
+  flex-basis: 100%;
+  font-size: 10px;
+  color: var(--muted);
 }

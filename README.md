@@ -97,7 +97,7 @@ Setup needs a network connection, roughly 1.6 GB of model downloads, and additio
 
 1. Create a meeting and choose your microphone in **Settings**.
 2. **Start recording.** Write naturally; use the toolbar, Markdown shortcuts or `/` menu. Bold a topic or a name to guide retrieval.
-3. The AI document develops automatically on the right. Open **Transcript** for the right dock; use its arrow to open a floating view and **CC** for screen captions.
+3. The AI document develops automatically on the right. Open **Transcript** for the right dock; use its arrow to open a floating view and **CC** for screen captions. The transcript selector switches the live display between original, bilingual, or one-way on-device translation; the minutes language (auto/Chinese/English) is chosen in **Settings**.
 4. **Pause** when needed, then **Resume**. Click a source timestamp to listen, or edit a paragraph to preserve your wording.
 5. **Finish take** stops this recording. Once its transcript is saved, **Record another take** adds a new recording to the same meeting. **Files** opens the recording and transcript folder. Leave the app open for remaining document batches, then export.
 
@@ -136,7 +136,7 @@ Default storage on Linux: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascr
 | `OMASCRIBE_MODELS_DIR` | Model directory |
 | `OMASCRIBE_RUNTIME_DIR` | ASR worker and `llama/` runtime directory |
 
-A CLI is included: `omascribe-cli diagnose`, `import`, `record`, `replay`, `append`, `files`, `retranscribe`, `snapshot`, `note`, `generate`, and `export`. Results are JSON. Run `omascribe-cli help` for arguments. Only one process may write to a workspace at a time.
+A CLI is included: `omascribe-cli diagnose`, `import`, `record`, `replay`, `append`, `files`, `retranscribe`, `snapshot`, `note`, `generate`, `translate`, and `export`. Results are JSON. Run `omascribe-cli help` for arguments. Only one process may write to a workspace at a time.
 
 ## Validation and limits
 
@@ -148,10 +148,11 @@ Current boundaries:
 - Mandarin/English ASR is a small, older model. Names, far-field speech, overlap, and code-switching need your own evaluation.
 - Keywords guide **note retrieval**, not ASR hotword bias, in this release.
 - Small-model writing can omit facts or misread a correction. Generated paragraphs need review; edited paragraphs are never automatically rewritten.
+- On-device translation fills in after recording and writing go idle and never alters the originals; small models can still misread negation or numbers in a translation.
 - On Linux, floating-window edge placement integrates with Hyprland and screen captions require Wayland layer-shell. macOS/Windows use native always-on-top caption windows; behavior across full-screen Spaces and multiple monitors needs physical-device testing.
-- No translation mode or embedding-based semantic search. Retrieval uses bounded lexical matching, with opt-in knowledge notes and user-maintained memory.
+- No embedding-based semantic search. Retrieval uses bounded lexical matching, with opt-in knowledge notes and user-maintained memory.
 - Keep the machine awake during a meeting. Sleep/driver recovery and automatic sleep inhibition are not yet fully validated.
-- There is no cloud sync, cross-meeting search, or automatic app updater.
+- There is no cloud sync or cross-meeting search. Signed app updates are off by default and require an explicit opt-in.
 
 ## Project notes
 

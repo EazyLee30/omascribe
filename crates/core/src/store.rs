@@ -20,6 +20,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS document_history(id INTEGER PRIMARY KEY, meeting_id TEXT NOT NULL, created_at TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS inference_jobs(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, started_at TEXT NOT NULL, input TEXT NOT NULL, outcome TEXT, elapsed_ms INTEGER);
             CREATE TABLE IF NOT EXISTS recording_takes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, number INTEGER NOT NULL, json TEXT NOT NULL, UNIQUE(meeting_id,number));
+            CREATE TABLE IF NOT EXISTS translations(segment_id TEXT NOT NULL,revision INTEGER NOT NULL,target TEXT NOT NULL,model TEXT NOT NULL,json TEXT NOT NULL, PRIMARY KEY(segment_id,revision,target,model));
+            CREATE TABLE IF NOT EXISTS deleted_meetings(id TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
             PRAGMA user_version=4;")?;
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
@@ -50,7 +52,10 @@ impl Store {
         Ok(serde_json::from_str(&s)?)
     }
     pub fn meetings(&self) -> Result<Vec<Meeting>> {
-        let mut list: Vec<Meeting> = self.json_query("SELECT json FROM meetings", &[])?;
+        let mut list: Vec<Meeting> = self.json_query(
+            "SELECT json FROM meetings WHERE id NOT IN (SELECT id FROM deleted_meetings)",
+            &[],
+        )?;
         list.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         Ok(list)
     }
@@ -107,8 +112,12 @@ impl Store {
     }
     pub fn notes(&self, meeting: &str) -> Result<Vec<UserNote>> {
         let mut rows: Vec<UserNote> =
-            self.json_query("SELECT json FROM notes WHERE meeting_id=?1", &[&meeting])?;
-        rows.sort_by_key(|n| n.anchor_ms);
+            self.json_query("SELECT notes.json FROM notes LEFT JOIN library_entries l ON l.id=notes.id WHERE meeting_id=?1 AND COALESCE(json_extract(l.json,'$.deleted'),0)=0", &[&meeting])?;
+        rows.sort_by(|a, b| {
+            a.anchor_ms
+                .cmp(&b.anchor_ms)
+                .then(b.updated_at.cmp(&a.updated_at))
+        });
         Ok(rows)
     }
     pub fn save_note(&self, n: &UserNote) -> Result<()> {

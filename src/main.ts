@@ -1,3 +1,5 @@
+import { translationSelect, passageHTML } from "./translation-ui";
+import { confirmDelete, reveal, recordingMotion } from "./interactions";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t, locale, setLocale, type Key, type Locale } from "./i18n";
@@ -15,6 +17,7 @@ import { mountLibrary, type LibraryPage } from "./library";
 import {
   initAppearance,
   getPreferences,
+  savePreferences,
   type Profile,
 } from "./preferences-client";
 import { tr, glyph, navItems, type PageHandle } from "./workspace-ui";
@@ -70,7 +73,6 @@ const icons: Record<string, string> = {
   edit: "m14 4 6 6M4 20l5-1L20 8l-4-4L5 15l-1 5Z",
   refresh:
     "M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3",
-  shield: "m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3ZM8 12l3 3 5-6",
 };
 const icon = (name: string) =>
   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name] || icons.note}"/></svg>`;
@@ -184,7 +186,7 @@ function shell() {
       )
       .join(
         "",
-      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><div class="local-note">${icon("shield")}<span>${t("local")}<small>${t("private")}</small></span></div><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="new">${t("begin")}${icon("arrow")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
+      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="new">${t("begin")}${icon("arrow")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
   renderMeetings();
   if (current && page === "meeting") meetingShell();
   applyViews();
@@ -195,7 +197,7 @@ function meetingShell() {
   notebookEditor?.destroy();
   notebookEditor = null;
   $("#workspace").innerHTML =
-    `<header class="meeting-header" data-tauri-drag-region><div class="heading" data-tauri-drag-region><div class="eyebrow" id="meeting-date" data-tauri-drag-region></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="speakers" title="${tr("说话人与自动纪要", "Speakers and automatic minutes", "說話人及自動紀要")}">${glyph("speakers")}<span id="speaker-label">${tr("说话人", "Speakers", "說話人")}</span></button><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div id="notebook-content" class="pane-content"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><div class="section-actions"><span class="document-label">MARKDOWN</span></div></div><div id="user-notes"></div></div></section><aside class="minutes-pane"><div id="minutes-content" class="pane-content"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><div class="section-actions"><span class="auto-indicator"><i></i>${t("automatic")}</span><button id="generate-notes" class="subtle minutes-generate" data-action="generate" title="${t("generate")}" aria-label="${t("generate")}">${icon("refresh")}</button></div></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div id="transcript-content" class="pane-content"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></div></section></div><footer><span>${icon("shield")}${tr("内容处理：离线", "Processing: offline", "內容處理：離線")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
+    `<header class="meeting-header" data-tauri-drag-region><div class="heading" data-tauri-drag-region><div class="eyebrow" id="meeting-date" data-tauri-drag-region></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><div class="recording-clock"><span class="time" id="duration">00:00:00</span><small>${tr("已录制", "RECORDED", "已錄製")}</small></div><div class="recording-wave" aria-hidden="true">${"<i></i>".repeat(11)}</div></div><div class="session-right"><span id="sync">${t("saved")}</span><div class="session-display" role="group" aria-label="${tr("实时显示", "Live views", "即時顯示")}"><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-pressed="false" aria-controls="transcript-content">${icon("note")}<span>${tr("实时转写", "Live transcript", "即時轉寫")}</span></button><button class="text-button caption-toggle" data-action="captions" aria-pressed="false"><span class="view-cc" aria-hidden="true">CC</span><span>${tr("实时字幕", "Live captions", "即時字幕")}</span></button></div><button class="text-button" data-action="speakers" title="${tr("说话人与自动纪要", "Speakers and automatic minutes", "說話人及自動紀要")}">${glyph("speakers")}<span id="speaker-label">${tr("说话人", "Speakers", "說話人")}</span></button><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div id="notebook-content" class="pane-content"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><div class="section-actions"><button class="subtle square" data-action="delete-note" title="${tr("删除笔记", "Delete note", "刪除筆記")}" aria-label="${tr("删除笔记", "Delete note", "刪除筆記")}">${glyph("trash")}</button></div></div><div id="user-notes"></div></div></section><aside class="minutes-pane"><div id="minutes-content" class="pane-content"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><div class="section-actions"><span class="auto-indicator"><i></i>${t("automatic")}</span><button id="generate-notes" class="subtle minutes-generate" data-action="generate" title="${t("generate")}" aria-label="${t("generate")}">${icon("refresh")}</button></div></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div id="transcript-content" class="pane-content"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2>${translationSelect("translation-mode")}<span id="translation-status" class="translation-status" role="status"></span><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></div></section></div>`;
   $("#window-content").replaceChildren($(".meeting-header"));
   $("#window-panels").hidden = false;
   transcriptSignature = "";
@@ -241,7 +243,7 @@ function renderMeetings() {
   $("#meetings").innerHTML = meetings
     .map(
       (m) =>
-        `<button class="meeting-link ${current === m.id ? "selected" : ""}" data-meeting="${m.id}"><span class="meeting-link-title">${esc(m.title)}</span><span class="meeting-link-meta">${new Date(m.created_at).toLocaleDateString(t("dateLocale"), { month: "short", day: "numeric" })}<span>${clock(m.duration_ms).slice(3)}</span></span></button>`,
+        `<div class="meeting-item"><button class="meeting-link ${current === m.id ? "selected" : ""}" data-meeting="${m.id}"><span class="meeting-link-title">${esc(m.title)}</span><span class="meeting-link-meta">${new Date(m.created_at).toLocaleDateString(t("dateLocale"), { month: "short", day: "numeric" })}<span>${clock(m.duration_ms).slice(3)}</span></span></button><button class="meeting-delete subtle square" data-action="delete-meeting" data-id="${m.id}" aria-label="${esc(tr("删除会议", "Delete meeting", "刪除會議") + ": " + m.title)}">${glyph("trash")}</button></div>`,
     )
     .join("");
 }
@@ -321,7 +323,17 @@ async function refresh() {
     $("#state-dot").className =
       `dot ${recording ? "recording" : own && r.transcribing ? "processing" : ""}`;
     $("#duration").textContent = clock(data.meeting.duration_ms);
-    $("#level").style.width = `${Math.min(100, r.level * 500)}%`;
+    recordingMotion(
+      $(".session-state"),
+      recording
+        ? "recording"
+        : paused
+          ? "paused"
+          : own && r.transcribing
+            ? "processing"
+            : "ready",
+      own ? r.level : 0,
+    );
     const record = $<HTMLButtonElement>("#record");
     record.innerHTML =
       icon(paused ? "play" : "mic") +
@@ -504,34 +516,66 @@ async function flushNotes() {
 }
 function renderSuggestions() {
   if (!snap) return;
-  const sig = JSON.stringify(snap.suggestions);
+  const sig = JSON.stringify([snap.meeting.title, snap.suggestions]);
   if (sig === suggestionSignature) return;
   suggestionSignature = sig;
   const rows = snap.suggestions.filter((s) => s.status !== "dismissed");
   $("#suggestions").innerHTML = rows.length
     ? `<article class="minutes-document"><div class="minutes-document-title"><span>${t("meetingDocument")}</span><h1>${esc(snap.meeting.title)}</h1></div>${rows
         .map(
-          (s) =>
-            `<section class="minutes-section"><div class="minutes-section-heading"><h3>${esc(s.focus || t("meetingDocument"))}</h3><div class="paragraph-tools"><button class="text-button" data-edit-suggestion="${s.id}" title="${t("editLock")}" aria-label="${t("editLock")}">${icon("edit")}</button><button class="text-button" data-dismiss="${s.id}" title="${t("dismiss")}" aria-label="${t("dismiss")}">${icon("close")}</button></div></div>${s.text
+          (s, index) =>
+            `<section class="minutes-section${s.stale ? " needs-review" : ""}" aria-label="${esc(s.focus || t("meetingDocument"))}">${s.text
               .split(/\n\s*\n/)
-              .map((p) => `<p>${esc(p)}</p>`)
-              .join(
-                "",
-              )}${s.stale ? `<p class="stale">${t("stale")}</p>` : ""}<details class="document-sources"><summary>${s.status === "accepted" ? `${icon("check")}${t("protected")} · ` : ""}${t("source")} <span>${s.sources.map((q) => clock(q.start_ms)).join(" · ")}</span></summary>${s.sources.map((q) => `<blockquote><button class="timestamp" data-seek="${q.start_ms}" data-end="${q.end_ms}">${icon("play")}${clock(q.start_ms)}</button>${esc(q.quote)}</blockquote>`).join("")}</details></section>`,
+              .filter((p) => p.trim())
+              .map(
+                (p) =>
+                  `<p>${esc(p.trim().replace(/([^\n])\n(?=[^\n])/g, "$1 "))}<sup class="citation"><button data-citation="${esc(s.id)}" aria-label="${tr("查看引用", "View source", "查看引用")} ${index + 1}${s.stale ? ` · ${t("stale")}` : ""}" aria-haspopup="dialog" title="${tr("查看原话、回听或修改本段", "View source, listen or edit this paragraph", "查看原話、回聽或修改本段")}">${index + 1}${s.stale ? "*" : ""}</button></sup></p>`,
+              )
+              .join("")}</section>`,
         )
         .join(
           "",
-        )}<div class="document-colophon">${t("documentColophon")}</div></article>`
+        )}<div class="document-colophon">${tr("点击上标查看原话、回听或修改段落", "Select a superscript to view sources, listen or edit a paragraph", "點擊上標查看原話、回聽或修改段落")}${rows.some((s) => s.stale) ? `<span class="citation-review-note">* ${t("stale")}</span>` : ""}</div></article>`
     : `<div class="empty-suggestions">${icon("note")}<p>${t("emptySuggestions")}</p><small>${t("emptySuggestionsSub")}</small></div>`;
+}
+function showCitation(id: string) {
+  const rows = snap?.suggestions.filter((s) => s.status !== "dismissed") || [];
+  const s = rows.find((s) => s.id === id);
+  if (!s) return;
+  modal(
+    `${tr("引用", "Source", "引用")} ${rows.indexOf(s) + 1}`,
+    `<div class="citation-context"><p>${esc(s.text)}</p>${s.status === "accepted" ? `<small>${icon("check")}${t("protected")}</small>` : ""}${s.stale ? `<p class="stale">${t("stale")}</p>` : ""}</div><div class="citation-sources">${s.sources.map((q) => `<blockquote><div class="citation-source-meta"><button class="timestamp" data-seek="${q.start_ms}" data-end="${q.end_ms}" aria-label="${t("play")} ${clock(q.start_ms)}">${icon("play")}${clock(q.start_ms)}</button>${q.speaker_name ? `<span>${esc(q.speaker_name)}</span>` : ""}</div><p>${esc(q.quote)}</p></blockquote>`).join("")}</div>`,
+    `<button class="subtle" data-edit-suggestion="${esc(s.id)}">${icon("edit")}${t("editLock")}</button><button class="subtle" data-dismiss="${esc(s.id)}">${t("dismiss")}</button>`,
+  );
 }
 function renderTranscript() {
   if (!snap) return;
+  const status = document.querySelector<HTMLElement>("#translation-status");
+  if (status) {
+    status.hidden = snap.translation_mode === "off";
+    status.textContent = snap.runtime.translation_status?.startsWith(
+      "translation:deferred",
+    )
+      ? tr(
+          "翻译暂缓，原文已保留",
+          "Translation paused; original kept",
+          "翻譯暫緩，已保留原文",
+        )
+      : snap.runtime.translation_busy
+        ? tr("本地翻译中…", "Translating locally…", "本機翻譯中…")
+        : tr("本地翻译", "Local translation", "本機翻譯");
+  }
+  const select = document.querySelector<HTMLSelectElement>("#translation-mode");
+  if (select && document.activeElement !== select)
+    select.value = snap.translation_mode || "off";
   const query = $<HTMLInputElement>("#search").value.toLowerCase().trim();
   const partial =
     snap.runtime.meeting_id === current ? snap.runtime.partial : "";
   const sig =
     JSON.stringify(snap.segments) +
     JSON.stringify(snap.meeting.speaker_names) +
+    JSON.stringify(snap.translations) +
+    snap.translation_mode +
     partial +
     query;
   if (sig === transcriptSignature) return;
@@ -540,7 +584,13 @@ function renderTranscript() {
   const nearBottom =
     pane.scrollHeight - pane.scrollTop - pane.clientHeight < 90;
   const rows = snap.segments.filter((s) =>
-    (s.text + " " + speakerName(s, snap!.meeting))
+    (
+      s.text +
+      " " +
+      (snap!.translations?.[s.id]?.text || "") +
+      " " +
+      speakerName(s, snap!.meeting)
+    )
       .toLowerCase()
       .includes(query),
   );
@@ -549,7 +599,7 @@ function renderTranscript() {
     rows
       .map(
         (s) =>
-          `<article class="segment"><div class="segment-top"><button class="timestamp" data-seek="${s.start_ms}" data-end="${s.end_ms}">${clock(s.start_ms)}</button><button class="speaker-chip" data-speaker-segment="${s.id}">${esc(speakerName(s, snap!.meeting))}</button><button class="segment-edit" data-edit-segment="${s.id}" title="${t("edit")}" aria-label="${t("edit")}">${icon("edit")}</button></div><p>${esc(s.text)}</p></article>`,
+          `<article class="segment"><div class="segment-top"><button class="timestamp" data-seek="${s.start_ms}" data-end="${s.end_ms}">${clock(s.start_ms)}</button><button class="speaker-chip" data-speaker-segment="${s.id}">${esc(speakerName(s, snap!.meeting))}</button><button class="segment-edit" data-edit-segment="${s.id}" title="${t("edit")}" aria-label="${t("edit")}">${icon("edit")}</button></div>${passageHTML(s, snap!)}</article>`,
       )
       .join("") +
     (partial && !query
@@ -580,7 +630,10 @@ async function recording() {
 function modal(title: string, body: string, actions: string = "") {
   const dialog = $<HTMLDialogElement>("#modal");
   dialog.innerHTML = `<div class="modal-heading"><h2>${esc(title)}</h2><button class="subtle square" data-action="close-modal" aria-label="${t("close")}">${icon("close")}</button></div>${body}${actions ? `<div class="modal-actions">${actions}</div>` : ""}`;
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) {
+    dialog.showModal();
+    reveal(dialog);
+  }
 }
 function closeModal() {
   $<HTMLDialogElement>("#modal").close();
@@ -623,7 +676,11 @@ async function navigate(
       toast,
       section,
       profile,
-      back: () => navigate("meetings"),
+      back: async () => {
+        await refreshMeetings();
+        if (!current && meetings[0]) current = meetings[0].id;
+        await navigate("meetings");
+      },
       language: async (l) => {
         setLocale(l);
         await pageHandle?.close();
@@ -687,7 +744,7 @@ function renderViewMenu() {
     transcript: viewSettings.transcript_mode === "docked",
   };
   const count = Object.values(visible).filter(Boolean).length;
-  menu.innerHTML = `<div class="view-menu-caption">${tr("显示栏目", "SHOW PANELS", "顯示欄位")}</div>${(["notebook", "minutes", "transcript"] as const).map((panel) => `<button role="menuitemcheckbox" aria-checked="${visible[panel]}" aria-expanded="${visible[panel]}" data-panel="${panel}" ${visible[panel] && count === 1 ? "disabled" : ""}>${icon(panel === "transcript" ? "mic" : "note")}<span>${t(panelLabels[panel])}</span><span class="view-check">${visible[panel] ? icon("check") : ""}</span></button>`).join("")}<div class="view-menu-divider"></div><button role="menuitemcheckbox" aria-checked="${viewSettings.captions.enabled}" data-action="captions"><span class="view-cc">CC</span><span>${t("screenCaptions")}</span><span class="view-check">${viewSettings.captions.enabled ? icon("check") : ""}</span></button><button role="menuitem" data-action="float-transcript">${icon("arrow")}<span>${tr("独立转写窗口", "Pop out transcript", "獨立轉寫視窗")}</span></button><div class="view-menu-divider"></div><button role="menuitem" data-action="display-settings"><span>${tr("转写与字幕设置…", "Transcript & caption settings…", "轉寫與字幕設定…")}</span></button>`;
+  menu.innerHTML = `<div class="view-menu-caption">${tr("显示栏目", "SHOW PANELS", "顯示欄位")}</div>${(["notebook", "minutes"] as const).map((panel) => `<button role="menuitemcheckbox" aria-checked="${visible[panel]}" aria-expanded="${visible[panel]}" data-panel="${panel}" ${visible[panel] && count === 1 ? "disabled" : ""}>${icon("note")}<span>${t(panelLabels[panel])}</span><span class="view-check">${visible[panel] ? icon("check") : ""}</span></button>`).join("")}<div class="view-menu-divider"></div><button role="menuitem" data-action="float-transcript">${icon("arrow")}<span>${tr("独立转写窗口", "Pop out transcript", "獨立轉寫視窗")}</span></button><div class="view-menu-divider"></div><button role="menuitem" data-action="display-settings"><span>${tr("转写与字幕设置…", "Transcript & caption settings…", "轉寫與字幕設定…")}</span></button>`;
 }
 document.addEventListener("focusin", (event) => {
   if (!(event.target as HTMLElement).closest("#window-panels")) closeViewMenu();
@@ -733,19 +790,32 @@ function applyViews() {
     "--transcript-font",
     `${viewSettings.transcript_font}px`,
   );
-  document
-    .querySelector(".transcript-toggle")
-    ?.setAttribute(
-      "aria-expanded",
-      String(viewSettings.transcript_mode !== "hidden"),
-    );
-  document
-    .querySelector(".caption-toggle")
-    ?.classList.toggle("enabled", viewSettings.captions.enabled);
+  const transcript =
+    document.querySelector<HTMLButtonElement>(".transcript-toggle");
+  if (transcript) {
+    const visible = viewSettings.transcript_mode !== "hidden";
+    transcript.setAttribute("aria-pressed", String(visible));
+    transcript.setAttribute("aria-expanded", String(visible));
+    transcript.classList.toggle("enabled", visible);
+    transcript.disabled =
+      viewSettings.transcript_mode === "docked" &&
+      viewSettings.notebook_collapsed &&
+      viewSettings.minutes_collapsed;
+  }
+  const captions = document.querySelector<HTMLButtonElement>(".caption-toggle");
+  captions?.setAttribute("aria-pressed", String(viewSettings.captions.enabled));
+  captions?.classList.toggle("enabled", viewSettings.captions.enabled);
 }
 async function toggleTranscript(open?: boolean) {
   const p = await getViewSettings();
   const shown = open ?? p.transcript_mode === "hidden";
+  if (
+    !shown &&
+    p.transcript_mode === "docked" &&
+    p.notebook_collapsed &&
+    p.minutes_collapsed
+  )
+    return;
   viewSettings = await patchViewSettings({
     transcript_mode: shown ? "docked" : "hidden",
   });
@@ -881,21 +951,7 @@ async function exportMeeting() {
     });
 }
 function shortcuts() {
-  modal(
-    t("shortcuts"),
-    `<div class="shortcuts">${[
-      ["Ctrl Shift R", "shortcutRecord"],
-      ["Ctrl Shift P", "pauseResume"],
-      ["Ctrl N", "shortcutNew"],
-      ["Ctrl F", "shortcutSearch"],
-      ["Ctrl B / I", "formatInline"],
-      ["Ctrl Alt 1 / 2 / 3", "heading"],
-      ["Ctrl Shift 8 / 7 / 9", "lists"],
-      ["Ctrl Z / Shift Z", "undoRedo"],
-    ]
-      .map(([keys, label]) => `<p>${t(label as Key)}<kbd>${keys}</kbd></p>`)
-      .join("")}</div>`,
-  );
+  return navigate("settings", "shortcuts");
 }
 async function quit() {
   await pageHandle?.flush?.();
@@ -906,6 +962,7 @@ async function quit() {
     snap?.runtime.paused ||
     snap?.runtime.transcribing ||
     snap?.runtime.notes_busy ||
+    snap?.runtime.translation_busy ||
     snap?.runtime.diarization_busy
   ) {
     modal(
@@ -936,18 +993,32 @@ document.addEventListener("click", (e) => {
       );
     if (el.dataset.panel) return togglePanel(el.dataset.panel as Panel);
     if (el.dataset.meeting) return selectMeeting(el.dataset.meeting);
+    if (el.dataset.citation) return showCitation(el.dataset.citation);
     if (el.dataset.seek !== undefined)
       return play(
         Number(el.dataset.seek),
         el.dataset.end ? Number(el.dataset.end) : undefined,
       );
     if (el.dataset.accept || el.dataset.dismiss) {
+      if (
+        el.dataset.dismiss &&
+        !(await confirmDelete(
+          tr("删除这段纪要？", "Delete this paragraph?", "刪除此段紀要？"),
+          tr(
+            "原始录音和转写仍会保留。",
+            "The original recording and transcript will be kept.",
+            "原始錄音及轉寫仍會保留。",
+          ),
+        ))
+      )
+        return;
       await invoke("update_suggestion", {
         meeting: current,
         id: el.dataset.accept || el.dataset.dismiss,
         status: el.dataset.accept ? "accepted" : "dismissed",
         text: null,
       });
+      closeModal();
       return refresh();
     }
     if (el.dataset.editSegment) return editTranscript(el.dataset.editSegment);
@@ -959,6 +1030,55 @@ document.addEventListener("click", (e) => {
         name: el.dataset.file,
       });
     switch (el.dataset.action) {
+      case "delete-meeting": {
+        const id = el.dataset.id!;
+        if (
+          !(await confirmDelete(
+            tr("删除会议？", "Delete meeting?", "刪除會議？"),
+            tr(
+              "会议及笔记将移入已删除列表，可在设置的存储空间中恢复。",
+              "Move this meeting and its notes to Deleted. Restore it in Settings → Storage.",
+              "會議及筆記移入已刪除列表，可在設定的儲存空間中還原。",
+            ),
+          ))
+        )
+          return;
+        await flushNotes();
+        await invoke("set_meeting_deleted", { id, deleted: true });
+        if (current === id) {
+          await leavePage();
+          current = "";
+          snap = null;
+        }
+        await refreshMeetings();
+        if (meetings[0]) await selectMeeting(meetings[0].id);
+        else shell();
+        return;
+      }
+      case "delete-note": {
+        if (
+          !snap ||
+          !(await confirmDelete(
+            tr("删除这份笔记？", "Delete this note?", "刪除此筆記？"),
+            tr(
+              "笔记可在左侧「笔记 → 已删除」中恢复，录音与纪要保留。",
+              "Restore it from Notes → Deleted. Recording and minutes stay intact.",
+              "可在筆記的已刪除列表還原，錄音及紀要保留。",
+            ),
+          ))
+        )
+          return;
+        await flushNotes();
+        const note = snap.notes.find((n) => n.kind === "document");
+        const entries =
+          await invoke<import("./library").LibraryEntry[]>("list_library");
+        const entry = entries.find((e) => e.id === note?.id);
+        if (entry)
+          await invoke("save_library_entry", {
+            entry: { ...entry, deleted: true },
+          });
+        return current ? selectMeeting(current) : undefined;
+      }
       case "show-library":
         return navigate("meetings");
       case "speakers":
@@ -1048,6 +1168,21 @@ document.addEventListener("click", (e) => {
         return refresh();
     }
   });
+});
+document.addEventListener("change", (event) => {
+  const input = event.target as HTMLSelectElement;
+  if (input.id === "translation-mode")
+    guard(async () => {
+      input.disabled = true;
+      try {
+        const prefs = await getPreferences();
+        prefs.translation_mode = input.value as typeof prefs.translation_mode;
+        await savePreferences(prefs);
+        await refresh();
+      } finally {
+        input.disabled = false;
+      }
+    });
 });
 document.addEventListener("keydown", (e) => {
   if (e.isComposing || e.keyCode === 229) return;

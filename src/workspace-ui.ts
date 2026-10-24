@@ -14,6 +14,8 @@ export const bytes = (n: number) =>
     ? `${(n / 1024 ** 3).toFixed(1)} GiB`
     : `${(n / 1024 ** 2).toFixed(1)} MiB`;
 const paths: Record<string, string> = {
+  shortcuts:
+    "M3 5h18v14H3V5ZM6 9h1m3 0h1m3 0h1m3 0h1M6 12h1m3 0h1m3 0h1m3 0h1M7 16h10",
   appearance:
     "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 0-4h-1a2 2 0 0 1 0-4h6a3 3 0 0 0 3-3c0-4-4-7-9-7ZM7 9h.01M10 6h.01M15 6h.01",
   updates:

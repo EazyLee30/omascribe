@@ -34,6 +34,7 @@ note = dict(
     updated_at=now,
 )
 conn.execute("INSERT INTO notes VALUES (?,?,?)", (nid, mid, json.dumps(note)))
+segments = []
 for i, text in enumerate(fixture["transcript"]):
     sid = str(uuid.uuid4())
     segment = dict(
@@ -49,6 +50,39 @@ for i, text in enumerate(fixture["transcript"]):
     conn.execute(
         "INSERT INTO segments VALUES (?,?,?,?,?)",
         (sid, mid, 1, i + 1, json.dumps(segment)),
+    )
+    segments.append(segment)
+# One committed document section with real citations, so layout and
+# delete/restore checks run without waiting for the local writer model.
+# Opt-in only: native-ui.js must generate from a clean fixture, because a
+# pre-seeded section biases the writer and masks its commit status.
+if "--with-document" in sys.argv:
+    suggestion = dict(
+        id=str(uuid.uuid4()),
+        meeting_id=mid,
+        kind="section",
+        focus="原型评审与测试安排",
+        text=(
+            "张老师将在周五提交测试结果，预算问题留到下周再评估。"
+            "原型已可评审，离线转写安排在周五验证。"
+        ),
+        sources=[
+            dict(
+                segment_id=s["id"],
+                revision=1,
+                start_ms=s["start_ms"],
+                end_ms=s["end_ms"],
+                quote=s["text"],
+                speaker_name=None,
+            )
+            for s in segments[:2]
+        ],
+        status="pending",
+        stale=False,
+    )
+    conn.execute(
+        "INSERT INTO suggestions VALUES (?,?,?)",
+        (suggestion["id"], mid, json.dumps(suggestion, ensure_ascii=False)),
     )
 conn.commit()
 print(mid)

@@ -38,6 +38,10 @@ ln -sfn "$HOME/.local/share/omascribe/runtime/platform" /tmp/omascribe-test-runt
 export OMASCRIBE_RUNTIME_DIR=/tmp/omascribe-test-runtime
 target/debug/omascribe-cli diagnose
 python3 tests/seed-fixture.py "$OMASCRIBE_DATA_DIR"
+# native-refinement.js checks citations without waiting for the writer model;
+# seed a committed document section for that run only. native-ui.js must use a
+# clean fixture so it exercises the real generation pipeline:
+#   python3 tests/seed-fixture.py "$OMASCRIBE_DATA_DIR" --with-document
 OMASCRIBE_UI_TEST_SCRIPT="$PWD/tests/native-ui.js" \
 OMASCRIBE_UI_TEST_REPORT=/tmp/omascribe-ui-report.json \
   target/debug/omascribe

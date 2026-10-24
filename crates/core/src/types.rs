@@ -106,6 +106,10 @@ pub struct RuntimeStatus {
     pub partial: String,
     pub asr_rtf: f64,
     pub notes_busy: bool,
+    #[serde(default)]
+    pub translation_busy: bool,
+    #[serde(default)]
+    pub translation_status: String,
     pub notes_status: String,
     pub notes_elapsed_ms: u64,
     pub error: Option<String>,
@@ -123,6 +127,10 @@ pub struct Snapshot {
     pub notes: Vec<UserNote>,
     pub suggestions: Vec<Suggestion>,
     pub runtime: RuntimeStatus,
+    #[serde(default)]
+    pub translation_mode: String,
+    #[serde(default)]
+    pub translations: std::collections::HashMap<String, crate::translation::Translation>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Device {

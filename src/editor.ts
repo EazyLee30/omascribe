@@ -1,3 +1,4 @@
+import { tr } from "./workspace-ui";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -38,7 +39,23 @@ export class NotebookEditor {
       ["undo", "↶", "undo", "Ctrl Z"],
       ["redo", "↷", "redo", "Ctrl Shift Z"],
     ];
-    host.innerHTML = `<div class="editor-toolbar" role="toolbar" aria-label="${t("formatting")}"><select class="editor-heading" aria-label="${t("heading")}"><option value="0">${t("paragraph")}</option><option value="1">H1</option><option value="2">H2</option><option value="3">H3</option></select><span class="toolbar-divider"></span>${buttons.map(([action, label, key, keys]) => `<button type="button" data-format="${action}" title="${t(key)} · ${keys}" aria-label="${t(key)}" aria-pressed="false">${label}</button>`).join("")}<button class="source-toggle" type="button" data-format="source" title="${t("markdownSource")}" aria-label="${t("markdownSource")}">MD</button></div><div class="table-tools" hidden><span>${t("table")}</span><button data-table="addRowAfter">+ ${t("row")}</button><button data-table="addColumnAfter">+ ${t("column")}</button><button data-table="deleteRow">− ${t("row")}</button><button data-table="deleteColumn">− ${t("column")}</button><button data-table="deleteTable">${t("removeTable")}</button></div><div class="editor-scroll"><div class="editor-canvas"></div><textarea class="markdown-source" aria-label="${t("markdownSource")}" spellcheck="false" hidden></textarea></div><div class="editor-foot"><span>${t("editorHint")}</span><span class="editor-count"></span></div>`;
+    host.innerHTML = `<div class="editor-toolbar" role="toolbar" aria-label="${t("formatting")}"><select class="editor-heading" aria-label="${t("heading")}"><option value="0">${t("paragraph")}</option><option value="1">H1</option><option value="2">H2</option><option value="3">H3</option></select><span class="toolbar-divider"></span>${buttons
+      .filter(([action]) => ["bold", "italic", "bulletList"].includes(action))
+      .map(
+        ([action, label, key, keys]) =>
+          `<button type="button" data-format="${action}" title="${t(key)} · ${keys}" aria-label="${t(key)}" aria-pressed="false">${label}</button>`,
+      )
+      .join(
+        "",
+      )}<details class="format-more"><summary aria-label="${tr("更多格式", "More formatting", "更多格式")}" title="${tr("更多格式", "More formatting", "更多格式")}">•••</summary><div class="format-menu">${buttons
+      .filter(([action]) => !["bold", "italic", "bulletList"].includes(action))
+      .map(
+        ([action, label, key]) =>
+          `<button type="button" data-format="${action}" aria-label="${t(key)}" aria-pressed="false"><span aria-hidden="true">${label}</span>${t(key)}</button>`,
+      )
+      .join(
+        "",
+      )}</div></details><button class="source-toggle" type="button" data-format="source" title="${t("markdownSource")}" aria-label="${t("markdownSource")}">MD</button></div><div class="table-tools" hidden><span>${t("table")}</span><button data-table="addRowAfter">+ ${t("row")}</button><button data-table="addColumnAfter">+ ${t("column")}</button><button data-table="deleteRow">− ${t("row")}</button><button data-table="deleteColumn">− ${t("column")}</button><button data-table="deleteTable">${t("removeTable")}</button></div><div class="editor-scroll"><div class="editor-canvas"></div><textarea class="markdown-source" aria-label="${t("markdownSource")}" spellcheck="false" hidden></textarea></div><div class="editor-foot"><span>${t("editorHint")}</span><span class="editor-count"></span></div>`;
     this.source = host.querySelector("textarea")!;
     this.editor = new Editor({
       element: host.querySelector(".editor-canvas")!,
@@ -110,7 +127,10 @@ export class NotebookEditor {
       const action = (e.target as HTMLElement).closest<HTMLButtonElement>(
         "[data-format]",
       )?.dataset.format;
-      if (action) this.format(action);
+      if (action) {
+        this.format(action);
+        host.querySelector("details")?.removeAttribute("open");
+      }
     });
     host.querySelector("select")!.addEventListener("change", (e) => {
       const level = Number((e.target as HTMLSelectElement).value);

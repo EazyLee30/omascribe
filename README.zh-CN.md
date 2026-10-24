@@ -74,7 +74,7 @@ bin/install     # 安装到当前用户及应用启动器
 
 1. 新建会议，在设置中选择麦克风。
 2. 开始录音。用工具栏、Markdown 语法或 `/` 菜单记录，把重点词加粗。
-3. 右侧纪要自动更新。点击「实时转写」打开右侧栏，齿轮调整显示方式，**CC** 控制屏幕字幕。
+3. 右侧纪要自动更新。点击「实时转写」打开右侧栏，齿轮调整显示方式，**CC** 控制屏幕字幕。转写栏的下拉可在原文、双语、中译英、英译中之间切换实时显示，全部由本地模型完成；纪要语言（自动／中文／英文）在设置中选择。
 4. 按需暂停、继续。点击出处回听，编辑纪要段落可保留自己的措辞。
 5. 「结束本段」只停止当前录音。转写保存后，可在同一会议「录制新一段」；「会议文件」可打开录音与转写文件夹。剩余纪要会自动完成。
 
@@ -97,14 +97,15 @@ bin/install     # 安装到当前用户及应用启动器
 
 默认使用双语 Zipformer 和 Qwen3-1.7B Q4_K_M。写作默认单线程、单请求、2,048 token 上下文（线程和上下文可设置），每轮任务后释放模型。写作采用本地流式接收，显示处理阶段与耗时；内存不足时延后整理，连续失败会降低重试频率。转写持续积压时，自动让出写作算力。失败和取消不会推进已处理位置。
 
-Linux 默认数据位于 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`；macOS 和 Windows 路径见上方安装说明。Linux/macOS 目录仅当前用户可访问，Windows 使用用户账户继承的访问权限；应用本身不加密文件。可用 `OMASCRIBE_DATA_DIR`、`OMASCRIBE_MODELS_DIR`、`OMASCRIBE_RUNTIME_DIR` 指定位置。CLI 提供 `diagnose`、`import`、`record`、`replay`、`append`、`files`、`retranscribe`、`snapshot`、`note`、`generate`、`export`，输出 JSON。
+Linux 默认数据位于 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`；macOS 和 Windows 路径见上方安装说明。Linux/macOS 目录仅当前用户可访问，Windows 使用用户账户继承的访问权限；应用本身不加密文件。可用 `OMASCRIBE_DATA_DIR`、`OMASCRIBE_MODELS_DIR`、`OMASCRIBE_RUNTIME_DIR` 指定位置。CLI 提供 `diagnose`、`import`、`record`、`replay`、`append`、`files`、`retranscribe`、`snapshot`、`note`、`generate`、`translate`、`export`，输出 JSON。
 
 - 当前采集麦克风，尚未实现系统音频混录。可选本地说话人分离在转写结束后运行，单次最长两小时。
 - 小型 ASR 的人名、远场、重叠说话和中英混说准确率需要真实场景评估；关键词当前用于笔记检索，不做 ASR 热词偏置。
 - RAG 使用会议内 BM25、中文字符／双字及精确词匹配，不常驻向量模型。
+- 本地翻译在录音和写作空闲后补上译文，从不改动原文；小模型译文仍需核对数字与否定语气。
 - Linux 浮窗吸附集成 Hyprland，屏幕字幕使用 Wayland layer-shell；macOS/Windows 使用原生置顶字幕窗口，全屏空间与多显示器行为仍需真机测试。
 - 会议期间请保持电脑唤醒；睡眠、驱动切换后的恢复尚未充分验证。
-- 没有云同步、跨会议搜索或自动更新器。
+- 没有云同步或跨会议搜索；签名更新默认关闭，需手动开启。
 
 [实测报告](docs/BENCHMARKS.md) · [测试与回归 harness](docs/TESTING.md) · [架构](docs/ARCHITECTURE.md) · [模型与许可证](docs/MODELS.md) · [贡献](CONTRIBUTING.md) · [隐私](SECURITY.md)
 

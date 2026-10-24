@@ -19,6 +19,8 @@ export interface Preferences {
   resource_mode: "eco" | "balanced" | "quality";
   memory_budget_mib: number;
   auto_notes: boolean;
+  translation_mode: "off" | "bilingual" | "zh-en" | "en-zh";
+  minutes_language: "auto" | "zh" | "en";
   diarization: boolean;
   speaker_count: number;
   use_knowledge: boolean;
@@ -49,6 +51,7 @@ export interface ModelStatus {
     archive: { bytes: number } | null;
   };
   installed: boolean;
+  installed_bytes: number;
   managed: boolean;
   selected: boolean;
   download: {

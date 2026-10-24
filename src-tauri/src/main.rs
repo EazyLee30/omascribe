@@ -246,6 +246,25 @@ async fn quit(app: tauri::AppHandle, engine: State<'_, AppState>) -> Reply<()> {
 
 #[cfg(feature = "ui-test")]
 #[tauri::command]
+fn ui_test_resize(window: tauri::WebviewWindow, width: u32, height: u32) -> Reply<()> {
+    window
+        .set_size(tauri::LogicalSize::new(
+            width.clamp(740, 1600),
+            height.clamp(560, 1000),
+        ))
+        .map_err(err)
+}
+#[cfg(feature = "ui-test")]
+#[tauri::command]
+fn ui_test_replay(engine: State<AppState>, id: String) -> Reply<()> {
+    engine
+        .inner()
+        .replay_audio(&id, engine.root.join("test-recording.wav"), 30)
+        .map_err(err)
+}
+
+#[cfg(feature = "ui-test")]
+#[tauri::command]
 fn ui_test_report(report: serde_json::Value) -> Reply<()> {
     let path = std::env::var("OMASCRIBE_UI_TEST_REPORT").map_err(err)?;
     std::fs::write(path, serde_json::to_vec_pretty(&report).map_err(err)?).map_err(err)
@@ -308,6 +327,9 @@ fn main() {
         export_library,
         set_meeting_diarization,
         rename_speaker,
+        delete_speaker,
+        deleted_meetings,
+        set_meeting_deleted,
         assign_speaker,
         diarize,
         cancel_diarization,
@@ -348,8 +370,12 @@ fn main() {
         quit
     ];
     #[cfg(feature = "ui-test")]
-    let tester: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool =
-        tauri::generate_handler![ui_test_report, ui_test_screenshot];
+    let tester: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool = tauri::generate_handler![
+        ui_test_report,
+        ui_test_screenshot,
+        ui_test_resize,
+        ui_test_replay
+    ];
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -365,7 +391,7 @@ fn main() {
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
-            if ["ui_test_report", "ui_test_screenshot"].contains(&request.message.command()) {
+            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay"].contains(&request.message.command()) {
                 return tester(request);
             }
             regular(request)
