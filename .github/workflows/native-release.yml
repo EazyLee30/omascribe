@@ -5,7 +5,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: native-release-${{ github.ref }}
+  group: native-release-${{ github.sha }}
   cancel-in-progress: false
 env:
   CARGO_BUILD_JOBS: 3
@@ -155,6 +155,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
           VERSION=$(node -p 'require("./package.json").version')
           test "$(find release-assets -maxdepth 1 -name '*.dmg' | wc -l)" -eq 2
           test "$(find release-assets -maxdepth 1 -name '*.exe' | wc -l)" -eq 1
