@@ -36,7 +36,7 @@ CPU inference, microphone-only capture, and single-request writing are intention
 | --- | --- |
 | Linux | `$XDG_DATA_HOME/omascribe` or `~/.local/share/omascribe` |
 | macOS | `~/Library/Application Support/OmaScribe` |
-| Windows | `%LOCALAPPDATA%\OmaScribe` |
+| Windows | `%LOCALAPPDATA%\io.omarchy.omascribe` |
 
 Bundled models stay in the application’s read-only resources. Your recordings, notes, database and exports stay in the account’s data folder, separate from upgrades. The app does not encrypt these files. Environment overrides remain available for isolated testing.
 

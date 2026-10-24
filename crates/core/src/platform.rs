@@ -13,7 +13,8 @@ pub fn data_root() -> PathBuf {
         return path.into();
     }
     #[cfg(target_os = "windows")]
-    return PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_default()).join("OmaScribe");
+    return PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_default())
+        .join("io.omarchy.omascribe");
     #[cfg(target_os = "macos")]
     return PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
         .join("Library/Application Support/OmaScribe");

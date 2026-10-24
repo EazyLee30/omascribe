@@ -43,7 +43,7 @@
 
 Apple Silicon 选 `macOS-AppleSilicon.dmg`，Intel Mac 选 `macOS-Intel.dmg`，Windows 选 `Windows-x64.exe`。安装包包含离线模型和推理运行时；Windows 另包含离线 WebView2 安装器。WAV 可直接导入，其他压缩格式需要 PATH 中有 FFmpeg。macOS 使用临时签名、未公证；Windows 尚无发行者签名。查看[安装与测试指南](docs/NATIVE_TESTING.md)。三种安装包全部通过流水线检查后才发布。
 
-macOS 快捷键使用 **⌘** 替代 **Ctrl**。数据位于 `~/Library/Application Support/OmaScribe`；Windows 位于 `%LOCALAPPDATA%\OmaScribe`。
+macOS 快捷键使用 **⌘** 替代 **Ctrl**。数据位于 `~/Library/Application Support/OmaScribe`；Windows 位于 `%LOCALAPPDATA%\io.omarchy.omascribe`。
 
 ## 构建与安装
 

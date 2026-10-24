@@ -125,7 +125,7 @@ Markdown → keywords → lexical RAG → bounded writer → validation → docu
 
 The note model runs only when needed, with one thread, one request, and a 2,048-token context. It unloads after each pass. Writing streams locally with phase/elapsed-time feedback; incomplete responses never replace the saved document. Low available memory postpones writing, and repeated failures back off automatically. A sustained ASR backlog cancels note inference. Audio never passes through the WebView.
 
-Default storage on Linux: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascribe`). macOS uses `~/Library/Application Support/OmaScribe`; Windows uses `%LOCALAPPDATA%\OmaScribe`. It contains recordings, the SQLite database, and exports. Linux source installs also keep models and runtime here; native installers keep those in application resources. Linux/macOS directories are user-only and Windows uses the account’s inherited ACL; files are **not encrypted** by the app.
+Default storage on Linux: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascribe`). macOS uses `~/Library/Application Support/OmaScribe`; Windows uses `%LOCALAPPDATA%\io.omarchy.omascribe`. It contains recordings, the SQLite database, and exports. Linux source installs also keep models and runtime here; native installers keep those in application resources. Linux/macOS directories are user-only and Windows uses the account’s inherited ACL; files are **not encrypted** by the app.
 
 | Environment variable | Override |
 | --- | --- |
