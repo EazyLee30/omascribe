@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "source_commit": "852bfad5caae9ef63b989d92b4b0571bd47132af",
+  "environment": "Linux Tauri / WebKit, isolated fictional workspace",
+  "checks": [
+    "Immediate close-requested event after a Chinese Markdown source edit",
+    "Complete draft persisted before process exit",
+    "Desktop process exited without a quit loop"
+  ],
+  "microphone_used": false,
+  "does_not_verify": "macOS native Cmd-Q event dispatch"
+}

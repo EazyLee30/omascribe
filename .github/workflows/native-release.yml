@@ -83,17 +83,45 @@ jobs:
       - name: Generate platform icons
         run: npx tauri icon assets/icon.svg
       - run: cargo test -p omascribe-core --locked --target ${{ matrix.target }}
+      - uses: actions/cache/restore@v4
+        id: sherpa-cache
+        with:
+          path: build-assets/native-asr
+          key: sherpa-native-sdk-${{ matrix.target }}-${{ hashFiles('models.lock.json') }}
+      - name: Restore verified ASR libraries outside Cargo cache
+        run: python scripts/native-libraries.py --target ${{ matrix.target }}
+      - uses: actions/cache/save@v4
+        if: steps.sherpa-cache.outputs.cache-hit != 'true'
+        with:
+          path: build-assets/native-asr
+          key: ${{ steps.sherpa-cache.outputs.cache-primary-key }}
       - run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: model-cache
         with:
           path: build-assets/native/models
           key: native-models-${{ hashFiles('models.lock.json') }}
-      - uses: actions/cache@v4
+      - name: Download and verify offline models
+        env:
+          OMASCRIBE_MODELS_DIR: ${{ github.workspace }}/build-assets/native/models
+        run: python scripts/setup.py --models-only
+      - uses: actions/cache/save@v4
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        with:
+          path: build-assets/native/models
+          key: ${{ steps.model-cache.outputs.cache-primary-key }}
+      - uses: actions/cache/restore@v4
+        id: llama-cache
         with:
           path: build-assets/native/runtime/llama
-          key: native-llama-${{ matrix.target }}-${{ hashFiles('models.lock.json', 'scripts/native-package.py') }}
+          key: native-llama-${{ matrix.target }}-${{ hashFiles('models.lock.json') }}-cpu-static-v1
       - name: Prepare verified models and native inference runtime
         run: python scripts/native-package.py --target ${{ matrix.target }}
+      - uses: actions/cache/save@v4
+        if: always() && steps.llama-cache.outputs.cache-hit != 'true' && hashFiles('build-assets/native/runtime/llama/llama-server*') != ''
+        with:
+          path: build-assets/native/runtime/llama
+          key: ${{ steps.llama-cache.outputs.cache-primary-key }}
       - name: Build native installer
         run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
       - name: Verify installed assets and offline inference

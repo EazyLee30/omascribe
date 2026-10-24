@@ -50,5 +50,31 @@
     "revision": "fd88ba666c18ff65ea786bf7b2e270d840030817",
     "version": "0.10.1",
     "license": "LGPL-3.0-or-later"
+  },
+  "native_asr": {
+    "version": "1.13.8",
+    "license": "Apache-2.0",
+    "targets": {
+      "x86_64-pc-windows-msvc": {
+        "version": "1.13.8",
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-win-x64-static-MT-Release-lib.tar.bz2",
+        "archive_root": "sherpa-onnx-v1.13.8-win-x64-static-MT-Release-lib",
+        "sha256": "56ffcf3c454c1f14f7bc9887286cc8143e7e542dc632804e1c447d5f8d534eaf",
+        "bytes": 123206268,
+        "license": "Apache-2.0"
+      },
+      "aarch64-apple-darwin": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-osx-arm64-static-lib.tar.bz2",
+        "archive_root": "sherpa-onnx-v1.13.8-osx-arm64-static-lib",
+        "sha256": "9091bf160dc7fdacedbc906b212badf53c2993f4e5277a0e03998e96c31d60da",
+        "bytes": 20965936
+      },
+      "x86_64-apple-darwin": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-osx-x64-static-lib.tar.bz2",
+        "archive_root": "sherpa-onnx-v1.13.8-osx-x64-static-lib",
+        "sha256": "a3f88da3e54c850a12d61431e73f8affcd1f13738b75b768847dd79541835b4b",
+        "bytes": 20575933
+      }
+    }
   }
 }

@@ -34,7 +34,33 @@ def main():
         app = installed / "omascribe.exe"
     else:
         installer = next((bundle / "dmg").glob("*.dmg"))
-        application = next((bundle / "macos").glob("*.app"))
+        mount = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-dmg"
+        mount.mkdir(exist_ok=True)
+        subprocess.run(
+            [
+                "hdiutil",
+                "attach",
+                "-nobrowse",
+                "-readonly",
+                "-mountpoint",
+                str(mount),
+                str(installer),
+            ],
+            check=True,
+            timeout=120,
+        )
+        application = (
+            pathlib.Path(os.environ["RUNNER_TEMP"])
+            / "omascribe-installed/OmaScribe.app"
+        )
+        application.parent.mkdir(exist_ok=True)
+        try:
+            source = next(mount.glob("*.app"))
+            subprocess.run(
+                ["ditto", str(source), str(application)], check=True, timeout=120
+            )
+        finally:
+            subprocess.run(["hdiutil", "detach", str(mount)], check=True, timeout=60)
         subprocess.run(
             ["codesign", "--verify", "--deep", "--strict", str(application)], check=True
         )
