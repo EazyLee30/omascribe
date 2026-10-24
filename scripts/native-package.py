@@ -248,7 +248,7 @@ def prepare(target):
             "infoPlist": "Info.plist",
         }
     else:
-        config["bundle"]["linux"] = {"deb": {"depends": ["pipewire-bin", "ffmpeg", "libgtk-layer-shell0"]}}
+        config["bundle"]["linux"] = {"deb": {"depends": ["pipewire-bin", "ffmpeg", "libgtk-layer-shell0", "desktop-file-utils", "xdg-utils"]}}
     (ROOT / "src-tauri/tauri.release.conf.json").write_text(
         json.dumps(config, indent=2), encoding="utf-8"
     )

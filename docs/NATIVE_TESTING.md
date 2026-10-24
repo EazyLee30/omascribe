@@ -19,7 +19,7 @@ Allow microphone access when prompted. On macOS check **Privacy & Security → M
 
 All five installers include the pinned ASR and writing models, the ASR worker, CLI, llama.cpp runtime (Metal + CPU on Apple Silicon, CPU elsewhere), license notices and build manifest. Windows includes an offline WebView2 installer. No Python, Rust, Node or model download is required to run the app. WAV import is built in. Other audio formats require FFmpeg on `PATH`; Finder-launched macOS apps may not inherit a shell-modified PATH, so use WAV if FFmpeg is not available to the app.
 
-Linux recording needs `pipewire-bin` and a running PipeWire user session. The Debian installer declares PipeWire and FFmpeg dependencies. AppImage users must install them with their distribution package manager. AppImage mounting may require FUSE 2; `--appimage-extract-and-run` is available if mounting is unavailable. Linux binaries are built on Ubuntu 22.04; older glibc distributions and ARM Linux are not supported by these packages.
+Linux recording needs `pipewire-bin` and a running PipeWire user session. The Debian installer declares PipeWire, FFmpeg and desktop link-registration dependencies (`desktop-file-utils`, `xdg-utils`). AppImage users install these through their distribution package manager. Without the link-registration tools, the offline workspace still opens and configuration files can be imported in Settings. AppImage mounting may require FUSE 2; `--appimage-extract-and-run` is available if mounting is unavailable. Linux binaries are built on Ubuntu 22.04; older glibc distributions and ARM Linux are not supported by these packages.
 
 ## Test a complete meeting
 

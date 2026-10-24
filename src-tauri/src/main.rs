@@ -374,7 +374,11 @@ fn main() {
                 }
             }
             #[cfg(any(target_os = "windows", target_os = "linux"))]
-            app.deep_link().register_all()?;
+            if let Err(error) = app.deep_link().register_all() {
+                // Desktop integration is optional; missing Linux tools or registry
+                // permissions must not prevent access to the offline workspace.
+                eprintln!("Configuration link registration unavailable: {error}. Configuration files can still be imported in Settings.");
+            }
             views::start(app.handle());
             #[cfg(feature = "ui-test")]
             if let Ok(path) = std::env::var("OMASCRIBE_UI_TEST_SCRIPT") {

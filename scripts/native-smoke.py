@@ -41,7 +41,7 @@ def main():
         deb = next((bundle / "deb").glob("*.deb"))
         appimage = next((bundle / "appimage").glob("*.AppImage"))
         dependencies = subprocess.check_output(["dpkg-deb", "-f", str(deb), "Depends"], text=True).strip()
-        assert all(dep in dependencies for dep in ["pipewire-bin", "ffmpeg", "libwebkit2gtk-4.1-0", "libgtk-3-0"]), dependencies
+        assert all(dep in dependencies for dep in ["pipewire-bin", "ffmpeg", "libwebkit2gtk-4.1-0", "libgtk-3-0", "desktop-file-utils", "xdg-utils"]), dependencies
         (results / "linux-package-dependencies.json").write_text(json.dumps({"depends":dependencies}), encoding="utf-8")
         extracted = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-linux"
         extracted.mkdir(exist_ok=True)
@@ -120,6 +120,24 @@ def main():
                 finally:
                     probe.unlink()
                 launcher = folder / "AppRun" if source.suffix == ".AppImage" else binary
+                if source.suffix == ".deb":
+                    # A minimal desktop without link-registration tools must still start.
+                    empty_path = pathlib.Path(data) / "no-desktop-tools"
+                    empty_path.mkdir()
+                    fallback_log = results / "deb-no-desktop-tools-launch.log"
+                    with fallback_log.open("wb") as log:
+                        process = subprocess.Popen([str(binary)], env=dict(package_env, PATH=str(empty_path)), stdout=log, stderr=log, start_new_session=True)
+                        try:
+                            time.sleep(12)
+                            assert process.poll() is None, f"Offline workspace failed without desktop tools: {process.returncode}"
+                        finally:
+                            import signal
+                            try:
+                                os.killpg(process.pid, signal.SIGTERM)
+                            except ProcessLookupError:
+                                pass
+                            process.wait(timeout=30)
+                    assert "Configuration link registration unavailable" in fallback_log.read_text(encoding="utf-8", errors="replace")
                 with (results / (source.suffix.lstrip(".") + "-launch.log")).open("wb") as log:
                     process = subprocess.Popen([str(launcher)], env=package_env, stdout=log, stderr=log, start_new_session=True)
                     try:
@@ -132,6 +150,8 @@ def main():
                         except ProcessLookupError:
                             pass
                         process.wait(timeout=30)
+                launch_log = results / (source.suffix.lstrip(".") + "-launch.log")
+                assert "Configuration link registration unavailable" not in launch_log.read_text(encoding="utf-8", errors="replace"), launch_log
             env["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
         # The installed CLI and GUI share asset resolution. Do not mask a broken bundle path.
         discovery_env = dict(env)
