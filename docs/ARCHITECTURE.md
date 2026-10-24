@@ -21,20 +21,28 @@ flowchart LR
 
 ## Recording state machine
 
-`draft → recording ⇄ paused → transcribing → ready`.
+`draft → recording ⇄ paused → transcribing → ready → recording …`.
+
+A meeting owns numbered recording takes. Finish closes a take, not the meeting. Starting again appends at the persisted sample count and starts a fresh ASR recognizer at that offset and the next segment sequence number. The transcript run, human revisions, notes cursor and citation IDs are retained. The same path works after reopening the workspace. A full retranscription flushes and resets recognition at persisted take boundaries, keeping each take’s text aligned with its own WAV. Legacy recordings are migrated additively to take 1; interrupted takes keep every stored sample.
 
 The capture process is stopped and drained on pause. PCM stays contiguous, so timestamps measure recorded audio rather than wall time including pauses. Resume validates the persisted sample count and appends; it does not restart or overwrite the meeting. A pause marker lets ASR finalize a pending phrase without terminating the recognizer. Finish from either recording or paused state marks capture complete and drains remaining ASR input. Capture, pause and finish transitions are serialized.
 
 The writer rotates every 30 seconds and flushes regularly. ASR reads the stored stream independently. An inference crash does not remove audio. The next startup recovers interrupted PCM, marks the meeting interrupted, and offers retranscription. Recovery is not a guarantee of seamless device/suspend recovery.
 
+## Readable meeting files
+
+`meetings/<id>/files/` contains `recording-001.wav`, `transcript-001.txt`, subsequent numbered takes, and a complete `transcript.md`. WAV export streams a sample-exact range of the contiguous PCM timeline with bounded memory. Text mirrors update after finalized ASR segments and in-app corrections; per-take text uses take-relative timestamps, while the complete transcript and citations use the continuous meeting timeline. These are generated mirrors: edit transcript text in the app so revisions and citations remain consistent. PCM and SQLite remain authoritative.
+
+File writes are serialized and replaced atomically; no UI operation deletes original media. The Files dialog refreshes while open and offers FileManager1 reveal with a folder-open fallback. Unfinished takes remain in PCM and cannot be opened as WAV until finalized.
+
 ## Automatic document pipeline
 
 The code is split into `notes/retrieval.rs`, `notes/writer.rs`, `notes/validation.rs`, the local process adapter in `notes.rs`, and the transactional repository in `store.rs`.
 
-1. **Schedule.** A two-second coordinator detects committed transcript, keyword and source-revision changes. Manual editing gets a five-second debounce. Repeated work on one meeting waits at least 45 seconds after the previous task completes, with one generation in flight. A live meeting gets priority; unfinished enabled meetings are also drained. No UI update action is required.
+1. **Schedule.** A two-second coordinator detects committed transcript, keyword and source-revision changes. Manual editing gets a five-second debounce. Repeated work on one meeting waits at least 45 seconds after the previous task completes, with one generation in flight. Consecutive failures increase the cooldown to 90/180/360 seconds, reset by success. A live meeting gets priority; unfinished enabled meetings are also drained. No UI update action is required.
 2. **Retrieve.** A transient per-meeting lexical index combines BM25, English tokens, Chinese characters/bigrams and exact keyword hits, including two-character names. The oldest unprocessed prefix prevents silent coverage gaps. Related earlier evidence and stale paragraph sources add context within a fixed budget. There is no resident embedding model or cross-meeting database search.
-3. **Budget.** The real llama.cpp tokenizer enforces a 1,400-token input budget within a 2,048-token context. Historical hits are removed before pending content. Removing pending content also rolls back the proposed coverage cursor.
-4. **Compose.** Qwen3-1.7B Q4_K_M writes up to three titled prose sections. Keywords guide topics and are explicitly not evidence. The model only supplies text and evidence IDs. Rust assigns stable section IDs and chooses merge targets; the model cannot address arbitrary paragraphs. Writing language follows the selected transcript (Chinese when Chinese content is present, otherwise English).
+3. **Budget.** The real llama.cpp tokenizer enforces a 900-token input budget within a 2,048-token context. Historical hits are removed before pending content. Removing pending content also rolls back the proposed coverage cursor.
+4. **Compose.** Qwen3-1.7B Q4_K_M writes up to three short titled prose sections (440 output tokens maximum). Keywords guide topics and are explicitly not evidence. The model only supplies text and evidence IDs. Rust assigns stable section IDs and chooses merge targets; the model cannot address arbitrary paragraphs. Writing language follows the selected transcript (Chinese when Chinese content is present, otherwise English).
 5. **Validate.** Reject invalid IDs, missing evidence, unsupported numeric literals, malformed sections and some lost-uncertainty cases. Quotes are taken from stored transcript, never trusted from model output. These checks are guardrails, not a semantic proof: names, relationships and nuanced negations can still be wrong.
 6. **Merge.** Check transcript run/revisions, user-note fingerprint and manual protection again. Save document history, paragraphs and coverage in one SQLite transaction. Related unlocked paragraphs are recomposed only when their entire evidence is present in the selected context. Unrelated and human-edited paragraphs remain intact. The preceding document is archived so model omissions remain auditable. Cancelled, failed or superseded jobs never advance coverage.
 7. **Observe.** `inference_jobs` records selected evidence revisions, model, pipeline version, outcome and elapsed time locally. `document_history` retains previous paragraph sets. `last-generation.json` retains the latest draft locally for diagnosis. These are developer recovery/audit data; there is no history browser yet.
@@ -43,7 +51,9 @@ The UI renders a single document with section headings, paragraphs and collapsed
 
 ## Resource policy
 
-Audio capture and ASR outrank writing. ASR and LLM begin at one CPU thread each; the local model server handles one request and unloads after each task. A sustained ASR backlog terminates writing and preserves pending work. The authenticated HTTP endpoint binds only to `127.0.0.1`, uses a per-process random key, and ignores proxy environment variables.
+Audio capture and ASR outrank writing. Loading is deferred below 1,400 MiB of available system memory. ASR and LLM begin at one CPU thread each; the local model server handles one request and unloads after each task. A sustained ASR backlog terminates writing and preserves pending work. SSE replaces the previous non-streaming 180-second request. Connection/write limits are 3/15 seconds, reads have a 300-second idle limit, startup is capped at 120 seconds, and a watchdog terminates a whole job after 600 seconds. Phase, elapsed time and received-character counts are visible without rendering unvalidated partial prose. A successful finish reason and terminal SSE event are required before validation/commit. Socket failures leave prior document and coverage intact.
+
+The authenticated HTTP endpoint binds only to `127.0.0.1`, uses a per-process random key, and ignores proxy environment variables.
 
 The UI polls snapshots; active editor DOM and selection are not replaced. Markdown saves are debounced and serialized per document, with IME composition guards. The auxiliary transcript WebView uses a separate frontend entry so it does not load the editor bundle.
 

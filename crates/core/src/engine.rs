@@ -17,6 +17,7 @@ use uuid::Uuid;
 
 pub struct Active {
     pub id: String,
+    pub take_number: Option<u32>,
     pub capture_pid: AtomicU32,
     pub worker_pid: AtomicU32,
     pub capture_done: AtomicBool,
@@ -36,6 +37,8 @@ pub struct Engine {
     pub status: Mutex<RuntimeStatus>,
     pub active: Mutex<Option<Arc<Active>>>,
     pub note_busy: AtomicBool,
+    pub note_failures: AtomicU32,
+    pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
     pub llm_pid: AtomicU32,
     notes_target: Mutex<Option<String>>,
@@ -84,6 +87,7 @@ impl Engine {
                 }
             }
         }
+        crate::files::recover(&store, &root)?;
         Ok(Arc::new(Self {
             root,
             models,
@@ -92,6 +96,8 @@ impl Engine {
             status: Mutex::new(RuntimeStatus::default()),
             active: Mutex::new(None),
             note_busy: AtomicBool::new(false),
+            note_failures: AtomicU32::new(0),
+            files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
             llm_pid: AtomicU32::new(0),
             notes_target: Mutex::new(None),
@@ -143,10 +149,12 @@ impl Engine {
                     }
                     // Coalesce bursts, retry failed jobs without advancing their coverage, and never
                     // require an explicit UI action. A finished recording gets the next free slot.
-                    if attempted
-                        .get(&id)
-                        .is_some_and(|t| t.elapsed() < Duration::from_secs(45))
-                    {
+                    if attempted.get(&id).is_some_and(|t| {
+                        t.elapsed()
+                            < Duration::from_secs(
+                                45 * 2u64.pow(engine.note_failures.load(Ordering::SeqCst).min(3)),
+                            )
+                    }) {
                         continue;
                     }
                     let editing = snapshot
@@ -265,7 +273,16 @@ impl Engine {
         if text.chars().count() > 4000 {
             bail!("片段文字过长");
         }
-        self.store.lock().unwrap().edit_segment(id, text, revision)
+        let meeting = {
+            let mut db = self.store.lock().unwrap();
+            db.edit_segment(id, text, revision)?;
+            db.conn
+                .query_row("SELECT meeting_id FROM segments WHERE id=?1", [id], |r| {
+                    r.get::<_, String>(0)
+                })?
+        };
+        self.sync_meeting_files(&meeting);
+        Ok(())
     }
     pub fn worker_path(&self) -> PathBuf {
         let installed = self.runtime_dir.join("omascribe-asr");
@@ -305,9 +322,6 @@ impl Engine {
             bail!("请先结束当前录音或转写");
         }
         let mut m = self.store.lock().unwrap().meeting(id)?;
-        if m.duration_ms > 0 {
-            bail!("这场会议已有音频，请新建会议后开始录音");
-        }
         if !self.diagnostics().asr_ready || !self.worker_path().exists() {
             bail!("离线转写模型或运行时尚未准备好，请运行 bin/setup");
         }
@@ -317,7 +331,17 @@ impl Engine {
             }
         }
         let dir = self.audio_dir(id)?;
-        let _ = fs::remove_file(dir.join("capture.done"));
+        let initial = audio::samples_on_disk(&dir)?;
+        let (take_number, next_seq) = {
+            let db = self.store.lock().unwrap();
+            (
+                db.takes(id)?.last().map_or(1, |t| t.number + 1),
+                db.segments(&m)?.last().map_or(1, |s| s.seq + 1),
+            )
+        };
+        for marker in ["capture.done", "capture.paused", "capture.error"] {
+            let _ = fs::remove_file(dir.join(marker));
+        }
         let live = input.is_none() || replay_seconds.is_some();
         let mut child = audio::spawn_capture(
             device,
@@ -328,6 +352,7 @@ impl Engine {
         let output = child.stdout.take().context("无法读取录音流")?;
         let active = Arc::new(Active {
             id: id.into(),
+            take_number: Some(take_number),
             capture_pid: AtomicU32::new(child.id()),
             worker_pid: AtomicU32::new(0),
             capture_done: AtomicBool::new(false),
@@ -337,23 +362,43 @@ impl Engine {
             device: device.to_owned(),
             resumable: input.is_none(),
             transition: Mutex::new(()),
-            samples: AtomicU64::new(0),
+            samples: AtomicU64::new(initial),
         });
+        if let Err(error) = self.store.lock().unwrap().save_take(&RecordingTake {
+            id: Uuid::new_v4().to_string(),
+            meeting_id: id.into(),
+            number: take_number,
+            started_at: chrono::Utc::now().to_rfc3339(),
+            start_sample: initial,
+            end_sample: None,
+            status: "recording".into(),
+        }) {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
         m.status = if live { "recording" } else { "importing" }.into();
         self.store.lock().unwrap().save_meeting(&m)?;
+        let previous_status = self.status.lock().unwrap().clone();
         *self.status.lock().unwrap() = RuntimeStatus {
+            notes_busy: previous_status.notes_busy,
+            notes_status: previous_status.notes_status,
+            notes_elapsed_ms: previous_status.notes_elapsed_ms,
             meeting_id: Some(id.into()),
             recording: live,
+            elapsed_ms: initial * 1000 / SAMPLE_RATE,
+            processed_ms: initial * 1000 / SAMPLE_RATE,
             transcribing: true,
             ..Default::default()
         };
         *active_guard = Some(active.clone());
         drop(active_guard);
-        if let Err(e) = self.spawn_asr(active.clone(), m.run) {
+        if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq) {
             let _ = child.kill();
             let _ = child.wait();
             active.capture_done.store(true, Ordering::SeqCst);
             active.worker_done.store(true, Ordering::SeqCst);
+            self.finish_take(&active, true)?;
             self.status.lock().unwrap().recording = false;
             self.status.lock().unwrap().transcribing = false;
             m.status = "interrupted".into();
@@ -412,7 +457,7 @@ impl Engine {
             if marker.is_err() {
                 failure = Some("无法写入录音结束标记".into());
             }
-            if count == 0 {
+            if count == initial {
                 failure = Some("没有采集到音频，请检查麦克风或导入文件".into());
             }
             if !stopped && exit.as_ref().is_ok_and(|s| !s.success()) {
@@ -424,6 +469,9 @@ impl Engine {
                 && count > 0
             {
                 failure = Some("录音期间检测到输入时间缺口，请回听确认；已有音频已保存".into());
+            }
+            if let Err(e) = engine.finish_take(&active, failure.is_some()) {
+                failure = Some(format!("录音片段保存失败：{e}"));
             }
             let db = engine.store.lock().unwrap();
             if let Ok(mut meeting) = db.meeting(&active.id) {
@@ -447,13 +495,35 @@ impl Engine {
                 let _ = fs::write(dir.join("capture.error"), &error);
                 status.error = Some(error);
             }
+            drop(status);
+            engine.sync_meeting_files(&active.id);
         });
     }
-    fn spawn_asr(self: &Arc<Self>, active: Arc<Active>, run: u32) -> Result<()> {
+    fn spawn_asr(
+        self: &Arc<Self>,
+        active: Arc<Active>,
+        run: u32,
+        start_sample: u64,
+        next_seq: u32,
+    ) -> Result<()> {
         let dir = self.audio_dir(&active.id)?;
+        let boundaries = self
+            .store
+            .lock()
+            .unwrap()
+            .takes(&active.id)?
+            .iter()
+            .filter_map(|take| take.end_sample)
+            .filter(|end| *end > start_sample && *end < active.samples.load(Ordering::SeqCst))
+            .map(|end| end.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
         let mut child = audio::child_command(self.worker_path())
             .arg(self.models.join("zipformer"))
             .arg(&dir)
+            .arg(start_sample.to_string())
+            .arg(next_seq.to_string())
+            .arg(boundaries)
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")
             .stdin(Stdio::null())
@@ -498,6 +568,7 @@ impl Engine {
                             engine.status.lock().unwrap().error =
                                 Some(format!("转写保存失败：{e}"));
                         }
+                        engine.sync_meeting_files(&active.id);
                     }
                     AsrEvent::Done { processed_ms, rtf } => {
                         complete = true;
@@ -513,7 +584,7 @@ impl Engine {
             }
             let exit = child.wait();
             active.worker_pid.store(0, Ordering::SeqCst);
-            active.worker_done.store(true, Ordering::SeqCst);
+            let _transition = active.transition.lock().unwrap();
             let db = engine.store.lock().unwrap();
             if let Ok(mut m) = db.meeting(&active.id) {
                 m.duration_ms = active.samples.load(Ordering::SeqCst) * 1000 / SAMPLE_RATE;
@@ -528,12 +599,14 @@ impl Engine {
                 let _ = db.save_meeting(&m);
             }
             drop(db);
+            engine.sync_meeting_files(&active.id);
             let mut s = engine.status.lock().unwrap();
             s.transcribing = false;
             s.partial.clear();
             if !complete || exit.as_ref().is_ok_and(|x| !x.success()) {
                 s.error = Some("转写进程中断，录音仍独立保存；结束后可重新转写".into());
             }
+            active.worker_done.store(true, Ordering::SeqCst);
         });
         Ok(())
     }
@@ -606,6 +679,7 @@ impl Engine {
             }
         } else if active.paused.swap(false, Ordering::SeqCst) {
             let dir = self.audio_dir(&active.id)?;
+            self.finish_take(active, false)?;
             let db = self.store.lock().unwrap();
             let mut meeting = db.meeting(&active.id)?;
             meeting.status = "transcribing".into();
@@ -650,6 +724,7 @@ impl Engine {
         drop(db);
         let active = Arc::new(Active {
             id: id.into(),
+            take_number: None,
             capture_pid: AtomicU32::new(0),
             worker_pid: AtomicU32::new(0),
             capture_done: AtomicBool::new(true),
@@ -669,7 +744,7 @@ impl Engine {
             transcribing: true,
             ..Default::default()
         };
-        self.spawn_asr(active, m.run)
+        self.spawn_asr(active, m.run, 0, 1)
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
         self.store.lock().unwrap().meeting(id)?;
@@ -690,6 +765,11 @@ impl Engine {
             engine.note_busy.store(false, Ordering::SeqCst);
             let mut s = engine.status.lock().unwrap();
             s.notes_busy = false;
+            if result.is_ok() {
+                engine.note_failures.store(0, Ordering::SeqCst);
+            } else {
+                engine.note_failures.fetch_add(1, Ordering::SeqCst);
+            }
             s.notes_status = match result {
                 Ok(n) => format!("文档已同步 · {n} 个章节"),
                 Err(e) => format!("{e:#}"),
@@ -867,6 +947,16 @@ mod recovery_tests {
         assert_eq!(result.meeting.duration_ms, 1000);
         assert_eq!(fs::metadata(dir.join("000000.pcm"))?.len(), 32_000);
         assert!(dir.join("capture.done").exists());
+        let takes = reopened.store.lock().unwrap().takes(&meeting.id)?;
+        assert_eq!(takes.len(), 1);
+        assert_eq!(takes[0].start_sample, 0);
+        assert_eq!(takes[0].end_sample, Some(16_000));
+        let files = reopened.meeting_files(&meeting.id)?;
+        let wav = files.files.iter().find(|f| f.kind == "audio").unwrap();
+        assert_eq!(hound::WavReader::open(&wav.path)?.duration(), 16_000);
+        drop(reopened);
+        let reopened = Engine::open(tmp.path().into())?;
+        assert_eq!(reopened.store.lock().unwrap().takes(&meeting.id)?.len(), 1);
         Ok(())
     }
 }

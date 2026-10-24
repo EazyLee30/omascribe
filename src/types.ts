@@ -55,6 +55,7 @@ export interface Runtime {
   asr_rtf: number;
   notes_busy: boolean;
   notes_status: string;
+  notes_elapsed_ms: number;
   error: string | null;
 }
 export interface Snapshot {
@@ -74,4 +75,19 @@ export interface Diagnostic {
   available_memory_mib: number;
   accent: string;
   version: string;
+}
+
+export interface MeetingFile {
+  name: string;
+  path: string;
+  kind: "audio" | "transcript";
+  bytes: number;
+  take: number | null;
+  start_ms: number;
+  duration_ms: number;
+  status: string;
+}
+export interface MeetingFiles {
+  directory: string;
+  files: MeetingFile[];
 }

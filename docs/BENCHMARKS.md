@@ -68,3 +68,11 @@ A 180-second paced public clip loop exercised the release CLI, ASR and Qwen3-1.7
 - A universal bound on memory, temperature, battery drain or document latency.
 
 A public short-clip loop is useful for persistence and scheduling tests, but cannot replace a representative meeting evaluation. Reproduce the tests with [TESTING.md](TESTING.md), then evaluate your own audio and notes before relying on them.
+
+## v0.1.1 regression (2026-10-24)
+
+The real Tauri/WebKit flow passed 11 checks, including two separate finished recordings in one meeting, pause/resume, file-manager reveal, five readable meeting files, automatic cited minutes and preservation of a manually edited paragraph. Loading, reading and writing phases were all observed. The fictional document task completed in about 193 seconds while the CPU was observed around 800 MHz with a power-saving energy preference. This run verifies completion under slow conditions; it is not a new throughput or latency benchmark. [Machine-readable result](validation/native-v0.1.1.json).
+
+The Rust suite includes 12 tests: SSE completion/truncation/error handling, source/uncertainty validation, transactional cancellation, legacy recording recovery, sample-exact append and WAV export across chunk boundaries. The two Python harness unit tests also pass.
+
+A separate public-speech regression imported the same sherpa example into two takes, restarting the app between them. All 321,700 samples (20.106 seconds) were retained; the first WAV and a saved transcript correction were unchanged. New segment IDs and timestamps continued monotonically. A full retranscription also respected the take boundary and left both WAVs unchanged. This verifies data integrity, not recognition accuracy. [Machine-readable result](validation/multitake-v0.1.1.json).

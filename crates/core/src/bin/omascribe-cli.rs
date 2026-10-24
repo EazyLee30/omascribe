@@ -9,7 +9,7 @@ fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let command = args.get(1).map(|s| s.as_str()).unwrap_or("help");
     if command == "help" {
-        println!("OmaScribe CLI\n  diagnose\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  diagnose\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
@@ -17,16 +17,23 @@ fn run() -> Result<()> {
     let result = match command {
         "diagnose" => serde_json::to_value(engine.diagnostics())?,
         "list" => serde_json::to_value(engine.meetings()?)?,
+        "files" => serde_json::to_value(engine.meeting_files(arg(2)?)?)?,
         "snapshot" => serde_json::to_value(engine.snapshot(arg(2)?)?)?,
-        "import" | "record" | "replay" => {
-            let m = engine.create_meeting(if command == "replay" {
-                "Public sample · paced replay"
+        "import" | "record" | "replay" | "append" => {
+            let m = if command == "append" {
+                engine.snapshot(arg(2)?)?.meeting
             } else {
-                args.get(3)
-                    .map(|s| s.as_str())
-                    .unwrap_or("Local audio test")
-            })?;
-            let input = if command == "import" {
+                engine.create_meeting(if command == "replay" {
+                    "Public sample · paced replay"
+                } else {
+                    args.get(3)
+                        .map(|s| s.as_str())
+                        .unwrap_or("Local audio test")
+                })?
+            };
+            let input = if command == "append" {
+                Some(PathBuf::from(arg(3)?))
+            } else if command == "import" {
                 Some(PathBuf::from(arg(2)?))
             } else {
                 None
@@ -69,6 +76,19 @@ fn run() -> Result<()> {
                 thread::sleep(Duration::from_millis(200));
             }
             serde_json::to_value(engine.snapshot(&m.id)?)?
+        }
+        "retranscribe" => {
+            let id = arg(2)?;
+            engine.retranscribe(id)?;
+            let start = Instant::now();
+            while engine.status.lock().unwrap().transcribing {
+                if start.elapsed() > Duration::from_secs(14_500) {
+                    engine.shutdown();
+                    bail!("转写超时，原始录音仍已保存");
+                }
+                thread::sleep(Duration::from_millis(200));
+            }
+            serde_json::to_value(engine.snapshot(id)?)?
         }
         "note" => serde_json::to_value(engine.save_note(
             arg(2)?,

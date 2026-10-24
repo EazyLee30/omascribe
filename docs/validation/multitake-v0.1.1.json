@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "takes": 2,
+  "samples": 321700,
+  "segments": 6,
+  "duration_ms": 20106,
+  "first_take_sha256": "7d93384ca14702cc584a7a33fe2fed92e89e708549161cb12ea38c916882103b",
+  "checks": [
+    "Sample-exact append across app restart",
+    "Stable original segments and human revision",
+    "Monotonic segment IDs and meeting timestamps",
+    "Separate playable WAV and text files",
+    "Updated complete transcript mirror",
+    "Full retranscription respects take boundaries without rewriting WAVs"
+  ]
+}

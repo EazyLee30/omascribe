@@ -30,7 +30,12 @@ npm run build
 cargo build -p omascribe --features ui-test -p omascribe-asr -p omascribe-core
 export OMASCRIBE_DATA_DIR=/tmp/omascribe-ui-validation
 export OMASCRIBE_MODELS_DIR="$HOME/.local/share/omascribe/models"
-export OMASCRIBE_RUNTIME_DIR="$HOME/.local/share/omascribe/runtime"
+# Use the newly built ASR worker, not an older installed binary.
+mkdir -p /tmp/omascribe-test-runtime
+ln -sfn "$PWD/target/debug/omascribe-asr" /tmp/omascribe-test-runtime/omascribe-asr
+ln -sfn "$HOME/.local/share/omascribe/runtime/llama" /tmp/omascribe-test-runtime/llama
+ln -sfn "$HOME/.local/share/omascribe/runtime/platform" /tmp/omascribe-test-runtime/platform
+export OMASCRIBE_RUNTIME_DIR=/tmp/omascribe-test-runtime
 target/debug/omascribe-cli diagnose
 python3 tests/seed-fixture.py "$OMASCRIBE_DATA_DIR"
 OMASCRIBE_UI_TEST_SCRIPT="$PWD/tests/native-ui.js" \
@@ -38,7 +43,7 @@ OMASCRIBE_UI_TEST_REPORT=/tmp/omascribe-ui-report.json \
   target/debug/omascribe
 ```
 
-This test briefly records the real microphone. It checks slash commands and literal slashes, Markdown table roundtrip, Chinese composition, autosave, start/pause/resume/finish, frozen pause duration, finish while paused, WAV export, floating/compact/docked transcript, native top/bottom captions and automatic cited document generation. Run it on a disposable workspace and inspect the JSON report. A returned caption API call is not a visual pixel assertion; inspect the actual overlay as well.
+This test briefly records the real microphone. It checks slash commands and literal slashes, Markdown table roundtrip, Chinese composition, autosave, start/pause/resume/finish, frozen pause duration, finish while paused, a second take in the same meeting, the Files dialog, WAV export, floating/compact/docked transcript, native top/bottom captions and automatic cited document generation. Run it on a disposable workspace and inspect the JSON report. A returned caption API call is not a visual pixel assertion; inspect the actual overlay as well.
 
 The test-only feature can also snapshot the app's own WebKit content to `OMASCRIBE_UI_SCREENSHOTS` for visual QA. It cannot capture other applications. All test commands and startup-script injection are absent from the default production build.
 
@@ -64,3 +69,9 @@ omascribe-cli replay /path/to/public-sample.wav 3600
 Replay paces the input and loops it through the real capture/ASR/scheduler path. Run `tests/monitor.py PID /tmp/resources.jsonl` to sample process-tree PSS, available system memory and thermal zones without collecting command lines. A repeated clip establishes stability of that input path, not Chinese CER, English WER, speaker handling or meeting comprehension. Use independent human references for accuracy evaluation; never treat ASR output as its own ground truth.
 
 See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and limitations.
+
+## Multiple takes and readable files
+
+After `bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
+
+SSE unit cases cover Unicode chunks, usage events, normal completion, premature EOF, token-limit termination, error events and oversized data. `tests/evaluate.py` uses the real server and validates the complete streamed generation/validation/commit path.

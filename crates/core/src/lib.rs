@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod engine;
+pub mod files;
 pub mod notes;
 pub mod store;
 pub mod types;

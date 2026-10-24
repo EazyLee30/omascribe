@@ -2327,3 +2327,73 @@ dialog {
 .minutes-pane .empty-suggestions {
   padding: 28px;
 }
+
+.meeting-files {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.file-help {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0 0 18px;
+}
+#meeting-file-list {
+  max-height: 45vh;
+  overflow: auto;
+}
+.meeting-file {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.file-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.file-description {
+  flex: 1;
+  min-width: 0;
+}
+.file-description strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.file-description small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+dialog[open]:has(.meeting-files) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 620px;
+}
+dialog:has(.meeting-files) .modal-heading,
+dialog:has(.meeting-files) .modal-actions {
+  flex-shrink: 0;
+}
+dialog:has(.meeting-files) .modal-heading {
+  margin-bottom: 12px;
+}
+.meeting-files .file-help,
+.meeting-files .export-path {
+  flex-shrink: 0;
+}
+.meeting-files #meeting-file-list {
+  min-height: 80px;
+  flex-shrink: 1;
+}

@@ -1,7 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t, locale, setLocale, type Key, type Locale } from "./i18n";
-import type { Meeting, Snapshot, Note, Diagnostic } from "./types";
+import type {
+  Meeting,
+  Snapshot,
+  Note,
+  Diagnostic,
+  MeetingFiles,
+} from "./types";
 import "./style.css";
 import { NotebookEditor } from "./editor";
 import {
@@ -31,6 +37,7 @@ const clock = (ms: number) => {
     .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 };
 const icons: Record<string, string> = {
+  folder: "M3 7V4h6l3 3h9v13H3V7Z",
   plus: "M12 5v14M5 12h14",
   mic: "M9 6a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V6ZM5 11v1a7 7 0 0 0 14 0v-1M12 19v3M8 22h8",
   pause: "M8 5v14M16 5v14",
@@ -92,7 +99,7 @@ function meetingShell() {
   notebookEditor?.destroy();
   notebookEditor = null;
   $("#workspace").innerHTML =
-    `<header class="meeting-header"><div class="heading"><div class="eyebrow" id="meeting-date"></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-expanded="false">${icon("note")}${t("transcript")}</button><button class="text-button caption-toggle" data-action="captions" title="${t("screenCaptions")}" aria-label="${t("screenCaptions")}">CC</button><button class="text-button" data-action="display-settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">${icon("settings")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><span class="document-label">MARKDOWN</span></div><div id="user-notes"></div></section><aside class="minutes-pane"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><span class="auto-indicator"><i></i>${t("automatic")}</span></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label><button class="subtle square" data-action="float-transcript" title="${t("floating")}" aria-label="${t("floating")}">↗</button><button class="subtle square" data-action="toggle-transcript" aria-label="${t("close")}">${icon("close")}</button></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></section></div><footer><span>${icon("shield")}${t("offline")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
+    `<header class="meeting-header"><div class="heading"><div class="eyebrow" id="meeting-date"></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-expanded="false">${icon("note")}${t("transcript")}</button><button class="text-button caption-toggle" data-action="captions" title="${t("screenCaptions")}" aria-label="${t("screenCaptions")}">CC</button><button class="text-button" data-action="display-settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">${icon("settings")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><span class="document-label">MARKDOWN</span></div><div id="user-notes"></div></section><aside class="minutes-pane"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><span class="auto-indicator"><i></i>${t("automatic")}</span></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label><button class="subtle square" data-action="float-transcript" title="${t("floating")}" aria-label="${t("floating")}">↗</button><button class="subtle square" data-action="toggle-transcript" aria-label="${t("close")}">${icon("close")}</button></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></section></div><footer><span>${icon("shield")}${t("offline")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
   transcriptSignature = "";
   noteSignature = "";
   suggestionSignature = "";
@@ -215,14 +222,16 @@ async function refresh() {
     $("#level").style.width = `${Math.min(100, r.level * 500)}%`;
     const record = $<HTMLButtonElement>("#record");
     record.innerHTML =
-      icon(paused ? "play" : "mic") + t(paused ? "resume" : "record");
+      icon(paused ? "play" : "mic") +
+      t(
+        paused
+          ? "resume"
+          : data.meeting.duration_ms > 0
+            ? "recordAnother"
+            : "record",
+      );
     record.hidden = recording;
-    record.disabled =
-      !paused &&
-      (data.meeting.duration_ms > 0 ||
-        r.recording ||
-        r.paused ||
-        r.transcribing);
+    record.disabled = !paused && (r.recording || r.paused || r.transcribing);
     $<HTMLButtonElement>("#pause-recording").hidden = !recording;
     $<HTMLButtonElement>("#end-recording").hidden = !recording && !paused;
     const automatic = $(".auto-indicator");
@@ -242,7 +251,7 @@ async function refresh() {
     const progress = $("#notes-progress");
     progress.hidden = !r.notes_busy && !r.notes_status;
     progress.textContent = r.notes_busy
-      ? t("notesWorking")
+      ? `${localizedStatus(r.notes_status) || t("notesWorking")} · ${clock(r.notes_elapsed_ms || 0)}`
       : localizedStatus(r.notes_status);
     progress.classList.toggle("working", r.notes_busy);
     if (recording && r.elapsed_ms - r.processed_ms > 2500)
@@ -258,6 +267,10 @@ async function refresh() {
   }
 }
 function localizedStatus(status: string) {
+  if (status === "writer:loading") return t("writerLoading");
+  if (status === "writer:reading") return t("writerReading");
+  if (status.startsWith("writer:writing:"))
+    return t("writerWriting").replace("{n}", status.split(":")[2]);
   const count = status.match(/^文档已同步 · (\d+) 个章节/);
   if (count) return t("generated").replace("{n}", count[1]);
   if (status === "纪要已与当前关键词和转写同步") return t("minutesSynced");
@@ -546,6 +559,42 @@ async function editSuggestion(id: string) {
       await refresh();
     });
 }
+let fileMeeting: string | null = null;
+let filesBusy = false;
+async function refreshFiles() {
+  const id = fileMeeting;
+  if (!id || !document.querySelector("#meeting-file-list") || filesBusy) return;
+  filesBusy = true;
+  try {
+    const data = await invoke<MeetingFiles>("meeting_files", { id });
+    if (fileMeeting !== id || !document.querySelector("#meeting-file-list"))
+      return;
+    $("#meeting-files-path").textContent = data.directory;
+    const size = (n: number) =>
+      n >= 1024 * 1024
+        ? `${(n / 1024 / 1024).toFixed(1)} MB`
+        : `${Math.ceil(n / 1024)} KB`;
+    const html = data.files
+      .map(
+        (f) =>
+          `<article class="meeting-file"><span class="file-icon">${icon(f.kind === "audio" ? "mic" : "note")}</span><div class="file-description"><strong>${esc(f.name)}</strong><small>${f.take ? t("take").replace("{n}", String(f.take)) + " · " : t("fullTranscript") + " · "}${f.kind === "audio" ? clock(f.duration_ms) + " · " : ""}${f.status === "recording" ? t("fileRecording") : size(f.bytes)}${f.status === "interrupted" ? " · " + t("interrupted") : ""}</small></div><button class="subtle square" data-file="${esc(f.name)}" ${f.kind === "audio" && f.status === "recording" ? "disabled" : ""} title="${t("showInFolder")}" aria-label="${t("showInFolder")}: ${esc(f.name)}">${icon("folder")}</button></article>`,
+      )
+      .join("");
+    const list = $("#meeting-file-list");
+    if (list.innerHTML !== html) list.innerHTML = html;
+  } finally {
+    filesBusy = false;
+  }
+}
+async function showMeetingFiles() {
+  fileMeeting = current;
+  modal(
+    t("files"),
+    `<div class="meeting-files"><p class="file-help">${t("filesHint")}</p><div id="meeting-file-list" aria-live="polite"></div><p class="export-path" id="meeting-files-path"></p></div>`,
+    `<button class="primary" data-action="open-meeting-folder">${icon("folder")}${t("openMeetingFolder")}</button>`,
+  );
+  await refreshFiles();
+}
 async function exportMeeting() {
   await flushNotes();
   modal(
@@ -622,7 +671,16 @@ document.addEventListener("click", (e) => {
     if (el.dataset.editSegment) return editTranscript(el.dataset.editSegment);
     if (el.dataset.editSuggestion)
       return editSuggestion(el.dataset.editSuggestion);
+    if (el.dataset.file)
+      return invoke("open_meeting_files", {
+        id: fileMeeting,
+        name: el.dataset.file,
+      });
     switch (el.dataset.action) {
+      case "meeting-files":
+        return showMeetingFiles();
+      case "open-meeting-folder":
+        return invoke("open_meeting_files", { id: fileMeeting, name: null });
       case "new":
         return newMeeting();
       case "record":
@@ -727,6 +785,7 @@ async function init() {
   if (meetings.length) await selectMeeting(meetings[0].id);
   await listen("close-requested", () => guard(quit));
   setInterval(() => guard(refresh), 600);
+  setInterval(() => guard(refreshFiles), 3000);
   setInterval(
     () =>
       guard(async () => {

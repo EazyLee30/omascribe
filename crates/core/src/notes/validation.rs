@@ -163,6 +163,15 @@ pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Ve
             .any(|topic| {
                 evidence.to_lowercase().contains(topic) && body.to_lowercase().contains(topic)
             });
+        if shares_uncertain_topic
+            && body.contains("暂定")
+            && !evidence.contains("暂定")
+            && ["不定", "未定", "未确定", "没有确定", "未决定"]
+                .iter()
+                .any(|s| evidence.contains(s))
+        {
+            bail!("文档将尚未决定写成暂定，本轮未提交");
+        }
         if shares_uncertain_topic && uncertain(&evidence) && !uncertain(body) {
             bail!("文档可能遗漏待确认状态，本轮未提交");
         }
@@ -203,6 +212,7 @@ mod tests {
             r#"{"sections":[{"title":"预算","body":"预算确定为3000。","sources":[1]}]}"#,
             r#"{"sections":[{"title":"预算","body":"预算已确定。","sources":[1]}]}"#,
             r#"{"sections":[{"title":"预算","body":"预算未定。","sources":[2]}]}"#,
+            r#"{"sections":[{"title":"预算","body":"预算暂定，待下周再定。","sources":[1]}]}"#,
         ] {
             assert!(validate(input, &data(), "m").is_err());
         }

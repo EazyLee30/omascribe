@@ -27,12 +27,14 @@ Built around a 2016 12-inch MacBook running Omarchy, with a dual-core Intel CPU 
 
 ![Slash commands in the Markdown editor](docs/screenshots/slash-menu.png)
 ![Transcript dock beside the notebook and generated document](docs/screenshots/transcript-dock.png)
+![Separate recordings, automatic transcripts, and file-manager access](docs/screenshots/meeting-files.png)
 
 </details>
 
 ## A notebook that listens
 
-- **Start, pause, resume, finish.** Recording has its own file writer. Pauses do not create silence in the saved audio; continuing appends to the same meeting. WAV, MP3, M4A, FLAC, Ogg and other FFmpeg-supported files can also be imported.
+- **Start, pause, resume, finish.** Recording has its own file writer. Pauses do not create silence in the saved audio; resuming continues the current take. After **Finish take**, use **Record another take** in the same meeting—even after restarting the app. Earlier audio, corrections and sources stay intact. WAV, MP3, M4A, FLAC, Ogg and other FFmpeg-supported files can also be imported.
+- **Find your files.** **Files** shows each take’s WAV and transcript, plus the complete meeting transcript. Open the folder or reveal an individual file in your file manager. Files update automatically; a WAV becomes available when its take finishes.
 - **Write in Markdown, see a document.** A matching dark editor with headings, lists, tasks, tables, quotes, code, links, undo/redo, a toolbar, source mode, and Chinese input support.
 - **Type `/` for tools.** Search blocks, insert a timestamp, highlight a keyword or start from a meeting template. Escape keeps the slash; a slash inside normal text or a path stays ordinary text.
 - **Let the minutes develop automatically.** Your keywords guide bilingual lexical retrieval. A local model turns relevant transcript evidence into titled, readable paragraphs. No update button is required.
@@ -82,7 +84,7 @@ Setup needs a network connection, roughly 1.6 GB of model downloads, and additio
 2. **Start recording.** Write naturally; use the toolbar, Markdown shortcuts or `/` menu. Bold a topic or a name to guide retrieval.
 3. The AI document develops automatically on the right. Open **Transcript** for a floating view; use the display gear for docking and **CC** for screen captions.
 4. **Pause** when needed, then **Resume**. Click a source timestamp to listen, or edit a paragraph to preserve your wording.
-5. **Finish** recording. Leave the app open while the remaining transcript and document batches complete, then export.
+5. **Finish take** stops this recording. Once its transcript is saved, **Record another take** adds a new recording to the same meeting. **Files** opens the recording and transcript folder. Leave the app open for remaining document batches, then export.
 
 | Shortcut | Action |
 | --- | --- |
@@ -107,7 +109,7 @@ Markdown → keywords → lexical RAG → bounded writer → validation → docu
                                                         automatic merge · playback · export
 ```
 
-The note model runs only when needed, with one thread, one request, and a 2,048-token context. It unloads after each pass. A sustained ASR backlog cancels note inference. Audio never passes through the WebView.
+The note model runs only when needed, with one thread, one request, and a 2,048-token context. It unloads after each pass. Writing streams locally with phase/elapsed-time feedback; incomplete responses never replace the saved document. Low available memory postpones writing, and repeated failures back off automatically. A sustained ASR backlog cancels note inference. Audio never passes through the WebView.
 
 Default storage: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascribe`). It contains recordings, the SQLite database, models, runtime, and exports. This directory is user-only; files are **not encrypted** by the app.
 
@@ -117,7 +119,7 @@ Default storage: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascribe`). It
 | `OMASCRIBE_MODELS_DIR` | Model directory |
 | `OMASCRIBE_RUNTIME_DIR` | ASR worker and `llama/` runtime directory |
 
-A CLI is included: `omascribe-cli diagnose`, `import`, `record`, `replay`, `snapshot`, `note`, `generate`, and `export`. Results are JSON. Run `omascribe-cli help` for arguments. Only one process may write to a workspace at a time.
+A CLI is included: `omascribe-cli diagnose`, `import`, `record`, `replay`, `append`, `files`, `retranscribe`, `snapshot`, `note`, `generate`, and `export`. Results are JSON. Run `omascribe-cli help` for arguments. Only one process may write to a workspace at a time.
 
 ## Validation and limits
 

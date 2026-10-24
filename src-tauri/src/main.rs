@@ -158,6 +158,64 @@ async fn import_audio(
     .map_err(err)?
 }
 #[tauri::command]
+async fn meeting_files(
+    engine: State<'_, AppState>,
+    id: String,
+) -> Reply<omascribe_core::MeetingFiles> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.meeting_files(&id).map_err(err))
+        .await
+        .map_err(err)?
+}
+#[tauri::command]
+async fn open_meeting_files(
+    engine: State<'_, AppState>,
+    id: String,
+    name: Option<String>,
+) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let files = e.meeting_files(&id).map_err(err)?;
+        if let Some(name) = name {
+            let file = files
+                .files
+                .iter()
+                .find(|f| f.name == name)
+                .ok_or("Unknown meeting file")?;
+            if !std::path::Path::new(&file.path).is_file() {
+                return Err("Recording is still being saved".into());
+            }
+            let uri = tauri::Url::from_file_path(&file.path).map_err(|_| "Invalid file path")?;
+            // FileManager1 selects the actual file; desktops without it open its folder instead.
+            if std::process::Command::new("gdbus")
+                .args([
+                    "call",
+                    "--session",
+                    "--dest",
+                    "org.freedesktop.FileManager1",
+                    "--object-path",
+                    "/org/freedesktop/FileManager1",
+                    "--method",
+                    "org.freedesktop.FileManager1.ShowItems",
+                    &format!("['{uri}']"),
+                    "",
+                ])
+                .output()
+                .is_ok_and(|o| o.status.success())
+            {
+                return Ok(());
+            }
+        }
+        std::process::Command::new("xdg-open")
+            .arg(files.directory)
+            .spawn()
+            .map_err(err)?;
+        Ok(())
+    })
+    .await
+    .map_err(err)?
+}
+#[tauri::command]
 fn open_exports(engine: State<AppState>) -> Reply<()> {
     let dir = engine.root.join("exports");
     std::fs::create_dir_all(&dir).map_err(err)?;
@@ -249,6 +307,8 @@ fn main() {
         export_meeting,
         import_audio,
         open_exports,
+        meeting_files,
+        open_meeting_files,
         quit
     ];
     #[cfg(feature = "ui-test")]

@@ -19,7 +19,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS suggestions(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS document_history(id INTEGER PRIMARY KEY, meeting_id TEXT NOT NULL, created_at TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS inference_jobs(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, started_at TEXT NOT NULL, input TEXT NOT NULL, outcome TEXT, elapsed_ms INTEGER);
-            PRAGMA user_version=2;")?;
+            CREATE TABLE IF NOT EXISTS recording_takes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, number INTEGER NOT NULL, json TEXT NOT NULL, UNIQUE(meeting_id,number));
+            PRAGMA user_version=3;")?;
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
         Ok(Self { conn })
     }
@@ -28,6 +29,16 @@ impl Store {
             "INSERT INTO meetings VALUES(?1,?2) ON CONFLICT(id) DO UPDATE SET json=excluded.json",
             params![m.id, serde_json::to_string(m)?],
         )?;
+        Ok(())
+    }
+    pub fn takes(&self, meeting: &str) -> Result<Vec<RecordingTake>> {
+        self.json_query(
+            "SELECT json FROM recording_takes WHERE meeting_id=?1 ORDER BY number",
+            &[&meeting],
+        )
+    }
+    pub fn save_take(&self, take: &RecordingTake) -> Result<()> {
+        self.conn.execute("INSERT INTO recording_takes VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET json=excluded.json", params![take.id,take.meeting_id,take.number,serde_json::to_string(take)?])?;
         Ok(())
     }
     pub fn meeting(&self, id: &str) -> Result<Meeting> {

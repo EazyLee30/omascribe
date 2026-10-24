@@ -230,6 +230,14 @@ pub fn wav_bytes(samples: &[i16]) -> Result<Vec<u8>> {
 }
 
 pub fn export_wav(dir: &Path, target: &Path) -> Result<()> {
+    export_wav_range(dir, target, 0, samples_on_disk(dir)?)
+}
+
+/// Sample-exact, bounded-memory export of one take from the continuous meeting timeline.
+pub fn export_wav_range(dir: &Path, target: &Path, start: u64, end: u64) -> Result<()> {
+    if end < start || end > samples_on_disk(dir)? {
+        bail!("录音片段范围无效");
+    }
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate: SAMPLE_RATE as u32,
@@ -238,12 +246,19 @@ pub fn export_wav(dir: &Path, target: &Path) -> Result<()> {
     };
     let tmp = target.with_extension("wav.part");
     let mut writer = hound::WavWriter::create(&tmp, spec)?;
-    let total = samples_on_disk(dir)?;
-    for chunk in 0..total.div_ceil(CHUNK_SAMPLES) {
-        let data = fs::read(dir.join(format!("{chunk:06}.pcm")))?;
+    let mut position = start;
+    while position < end {
+        let chunk = position / CHUNK_SAMPLES;
+        let offset = position % CHUNK_SAMPLES;
+        let count = (CHUNK_SAMPLES - offset).min(end - position);
+        let mut file = File::open(dir.join(format!("{chunk:06}.pcm")))?;
+        file.seek(SeekFrom::Start(offset * 2))?;
+        let mut data = vec![0; count as usize * 2];
+        file.read_exact(&mut data)?;
         for p in data.as_chunks::<2>().0.iter() {
             writer.write_sample(i16::from_le_bytes([p[0], p[1]]))?;
         }
+        position += count;
     }
     writer.finalize()?;
     fs::rename(tmp, target)?;
@@ -292,6 +307,16 @@ mod tests {
         let wave = wav_bytes(&clip)?;
         let reader = hound::WavReader::new(std::io::Cursor::new(wave))?;
         assert_eq!(reader.duration(), 48);
+        let output = tmp.path().join("take.wav");
+        export_wav_range(tmp.path(), &output, CHUNK_SAMPLES - 17, CHUNK_SAMPLES + 13)?;
+        let mut reader = hound::WavReader::open(output)?;
+        let actual = reader
+            .samples::<i16>()
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        assert_eq!(
+            actual,
+            samples[(CHUNK_SAMPLES - 17) as usize..(CHUNK_SAMPLES + 13) as usize]
+        );
         Ok(())
     }
 }

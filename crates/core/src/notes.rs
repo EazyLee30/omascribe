@@ -1,5 +1,6 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
 mod retrieval;
+mod stream;
 mod validation;
 mod writer;
 use crate::{audio, Engine};
@@ -8,6 +9,7 @@ pub use retrieval::{document_notes, fingerprint, focus_terms, needs_update};
 use serde_json::{json, Value};
 use std::{
     fs::File,
+    io::BufReader,
     net::TcpListener,
     process::{Child, Stdio},
     sync::{
@@ -71,6 +73,12 @@ fn generate_inner(
     snapshot: &crate::Snapshot,
     mut context: retrieval::Context,
 ) -> Result<usize> {
+    // Loading under heavy swap pressure repeatedly makes the whole desktop unresponsive.
+    if engine.diagnostics().available_memory_mib < 1400 {
+        bail!("可用内存不足，已暂缓整理；录音与转写继续，内存恢复后自动重试");
+    }
+    engine.status.lock().unwrap().notes_status = "writer:loading".into();
+    engine.status.lock().unwrap().notes_elapsed_ms = 0;
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let port = listener.local_addr()?.port();
     drop(listener);
@@ -118,12 +126,29 @@ fn generate_inner(
     let pid = server.0.id();
     engine.llm_pid.store(pid, Ordering::SeqCst);
     let weak = Arc::downgrade(engine);
+    let deadline = Instant::now();
+    let timed_out = Arc::new(AtomicBool::new(false));
+    let timeout_flag = timed_out.clone();
     thread::spawn(move || {
         let mut lag_count = 0;
         while !done.load(Ordering::SeqCst) {
             thread::sleep(Duration::from_millis(500));
+            if done.load(Ordering::SeqCst) {
+                break;
+            }
             let Some(engine) = weak.upgrade() else { break };
-            let s = engine.status.lock().unwrap().clone();
+            let s = {
+                let mut s = engine.status.lock().unwrap();
+                s.notes_elapsed_ms = deadline.elapsed().as_millis() as u64;
+                s.clone()
+            };
+            if deadline.elapsed() > Duration::from_secs(600) {
+                timeout_flag.store(true, Ordering::SeqCst);
+                unsafe {
+                    libc::kill(pid as i32, libc::SIGTERM);
+                }
+                break;
+            }
             if s.recording && s.elapsed_ms.saturating_sub(s.processed_ms) > 4000 {
                 lag_count += 1;
             } else {
@@ -141,7 +166,10 @@ fn generate_inner(
     // This HTTP client only talks to an authenticated loopback process; proxies are disabled.
     let agent = ureq::AgentBuilder::new()
         .try_proxy_from_env(false)
-        .timeout(Duration::from_secs(180))
+        .timeout_connect(Duration::from_secs(3))
+        .timeout_write(Duration::from_secs(15))
+        // This is an idle-read limit, not a limit on the total streamed response.
+        .timeout_read(Duration::from_secs(300))
         .build();
     let base = format!("http://127.0.0.1:{port}");
     let auth = format!("Bearer {token}");
@@ -159,7 +187,7 @@ fn generate_inner(
         {
             break;
         }
-        if start.elapsed() > Duration::from_secs(90) {
+        if start.elapsed() > Duration::from_secs(120) {
             bail!("笔记模型启动超时");
         }
         thread::sleep(Duration::from_millis(200));
@@ -176,7 +204,7 @@ fn generate_inner(
             .as_array()
             .context("Invalid tokenizer response")?
             .len()
-            <= 1400
+            <= 900
         {
             break (system, content);
         }
@@ -200,28 +228,41 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
+    engine.status.lock().unwrap().notes_status = "writer:reading".into();
     let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",&auth).send_json(json!({
         "messages":[{"role":"system","content":system},{"role":"user","content":content}],
-        "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":false,"cache_prompt":false,
+        "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":false,
         "response_format":{"type":"json_schema","json_schema":{"name":"document","strict":true,"schema":writer::schema(context.segments.len())}}
     }));
+    let generated = response.map_err(anyhow::Error::from).and_then(|response| {
+        stream::read(BufReader::new(response.into_reader()), |characters| {
+            engine.status.lock().unwrap().notes_status = format!("writer:writing:{characters}");
+        })
+    });
     if engine.note_cancel.load(Ordering::SeqCst) {
         bail!("已优先处理录音与字幕，纪要稍后自动继续");
     }
-    let value: Value = response.context("本地写作模型请求失败")?.into_json()?;
-    if value["choices"][0]["finish_reason"].as_str() == Some("length") {
-        bail!("纪要输出不完整，本轮保留待处理内容");
+    if timed_out.load(Ordering::SeqCst) {
+        bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
     }
-    let text = value["choices"][0]["message"]["content"]
-        .as_str()
-        .context("模型没有返回文档")?;
+    let (text, usage) = generated.map_err(|error| {
+        // Transport details (ephemeral URLs and nested socket errors) are not useful in the UI.
+        if error
+            .chain()
+            .any(|e| e.is::<ureq::Error>() || e.is::<std::io::Error>())
+        {
+            anyhow::anyhow!("本地模型响应中断或等待过久；原文已保留，稍后自动重试")
+        } else {
+            error
+        }
+    })?;
     std::fs::write(
         engine.root.join("last-generation.json"),
         serde_json::to_vec_pretty(
-            &json!({"meeting_id":meeting,"model":MODEL_FILE,"draft":text,"usage":value["usage"]}),
+            &json!({"meeting_id":meeting,"model":MODEL_FILE,"draft":text,"usage":usage}),
         )?,
     )?;
-    let sections = validate(text, &context.segments, meeting)?;
+    let sections = validate(&text, &context.segments, meeting)?;
     let mut db = engine.store.lock().unwrap();
     db.commit_document(
         snapshot,

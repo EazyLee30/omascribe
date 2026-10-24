@@ -1,0 +1,27 @@
+{
+  "checks": [
+    "Slash command inserts a Markdown table",
+    "Escape preserves literal slash and inline slash stays text",
+    "Markdown rendering, task list, Chinese composition and autosave",
+    "Start → pause (duration freezes) → resume (append) → finish",
+    "Finish → record another take in the same meeting; five readable files and folder controls",
+    "Local WAV playback and Markdown + audio export",
+    "Finish while paused drains ASR and saves meeting",
+    "Floating, compact, edge snap and right dock modes",
+    "Native screen captions at top and bottom",
+    "Automatic keyword + transcript pipeline produces cited document without update button",
+    "Edited paragraph protected and full minutes exported"
+  ],
+  "document_latency_ms": 192595,
+  "passed": true,
+  "recording_duration_ms": 6140,
+  "rtf": 0.2869842438701666,
+  "writer_phases": [
+    "loading",
+    "reading",
+    "writing"
+  ],
+  "version": "0.1.1",
+  "scope": "Real Tauri/WebKit on the target laptop; fictional document fixture and brief isolated microphone control tests.",
+  "environment_note": "CPU observed near 800 MHz with power energy preference. This is a functional regression, not a latency benchmark."
+}

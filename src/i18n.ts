@@ -1,4 +1,17 @@
 const en = {
+  openMeetingFolder: "Open meeting folder",
+  files: "Files",
+  filesHint:
+    "Each recording is saved as its own WAV. Transcripts update automatically. Finish a take to make its audio file available.",
+  take: "Take {n}",
+  fullTranscript: "Complete meeting transcript",
+  fileRecording: "Recording · saved continuously",
+  showInFolder: "Show in file manager",
+  recordAnother: "Record another take",
+  writerLoading: "Loading the local writer",
+  writerReading: "Reading the conversation",
+  writerWriting: "Composing · {n} characters",
+
   automatic: "Automatic",
   meetingDocument: "MEETING RECORD",
   editLock: "Edit and protect this paragraph",
@@ -7,7 +20,7 @@ const en = {
   pauseResume: "Pause / resume recording",
   pause: "Pause",
   resume: "Resume",
-  finish: "Finish",
+  finish: "Finish take",
   paused: "Paused",
   transcriptWindow: "Transcript panel",
   displayMode: "Panel mode",
@@ -209,6 +222,19 @@ const en = {
   dateLocale: "en-US",
 };
 const zh: typeof en = {
+  openMeetingFolder: "打开会议文件夹",
+  files: "会议文件",
+  filesHint:
+    "每段录音独立保存为 WAV，转写文本自动同步。结束当前段后，即可在文件管理器中打开音频。",
+  take: "第 {n} 段",
+  fullTranscript: "整场会议转写",
+  fileRecording: "录音中 · 持续保存",
+  showInFolder: "在文件管理器中显示",
+  recordAnother: "录制新一段",
+  writerLoading: "正在加载本地写作模型",
+  writerReading: "正在阅读会议内容",
+  writerWriting: "正在撰写 · {n} 字符",
+
   automatic: "自动整理",
   meetingDocument: "会议记录",
   editLock: "编辑并保护本段",
@@ -217,7 +243,7 @@ const zh: typeof en = {
   pauseResume: "暂停 / 继续录音",
   pause: "暂停",
   resume: "继续",
-  finish: "结束",
+  finish: "结束本段",
   paused: "已暂停",
   transcriptWindow: "实时转写面板",
   displayMode: "面板模式",
@@ -415,6 +441,18 @@ const zh: typeof en = {
 };
 const tw: typeof en = {
   ...zh,
+  openMeetingFolder: "開啟會議資料夾",
+  files: "會議檔案",
+  filesHint:
+    "每段錄音獨立儲存為 WAV，轉寫文字自動同步。結束目前段落後，即可在檔案管理員中開啟音訊。",
+  take: "第 {n} 段",
+  fullTranscript: "整場會議轉寫",
+  fileRecording: "錄音中 · 持續儲存",
+  showInFolder: "在檔案管理員中顯示",
+  recordAnother: "錄製新一段",
+  writerLoading: "正在載入本機寫作模型",
+  writerReading: "正在閱讀會議內容",
+  writerWriting: "正在撰寫 · {n} 字元",
   automatic: "自動整理",
   meetingDocument: "會議記錄",
   editLock: "編輯並保護本段",
@@ -423,7 +461,7 @@ const tw: typeof en = {
   pauseResume: "暫停 / 繼續錄音",
   pause: "暫停",
   resume: "繼續",
-  finish: "結束",
+  finish: "結束本段",
   paused: "已暫停",
   transcriptWindow: "即時轉寫面板",
   displayMode: "面板模式",

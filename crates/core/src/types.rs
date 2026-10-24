@@ -17,6 +17,32 @@ pub struct Meeting {
     pub notes_fingerprint: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecordingTake {
+    pub id: String,
+    pub meeting_id: String,
+    pub number: u32,
+    pub started_at: String,
+    pub start_sample: u64,
+    pub end_sample: Option<u64>,
+    pub status: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingFile {
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub bytes: u64,
+    pub take: Option<u32>,
+    pub start_ms: u64,
+    pub duration_ms: u64,
+    pub status: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MeetingFiles {
+    pub directory: String,
+    pub files: Vec<MeetingFile>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Segment {
     pub id: String,
     pub meeting_id: String,
@@ -69,6 +95,7 @@ pub struct RuntimeStatus {
     pub asr_rtf: f64,
     pub notes_busy: bool,
     pub notes_status: String,
+    pub notes_elapsed_ms: u64,
     pub error: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]

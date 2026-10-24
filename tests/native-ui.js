@@ -21,6 +21,7 @@
     if (!v) throw Error(m);
   };
   const checks = [];
+  const writerPhases = new Set();
   let capture;
   const source = async (text) => {
     click('[data-format="source"]');
@@ -159,6 +160,28 @@
       "Resume did not append audio",
     );
     checks.push("Start → pause (duration freezes) → resume (append) → finish");
+    await until(() => !document.querySelector('#record').disabled);
+    click('[data-action="record"]');
+    await until(async () => (await invoke('snapshot', {id: mid})).runtime.recording);
+    await sleep(2200);
+    click('[data-action="stop-recording"]');
+    await until(async () => {
+      const s = await invoke('snapshot', {id: mid});
+      return !s.runtime.recording && !s.runtime.transcribing;
+    }, 45000);
+    const appended = await invoke('snapshot', {id: mid});
+    assert(appended.meeting.duration_ms > capture.meeting.duration_ms + 1200, 'Second take did not append');
+    const files = await invoke('meeting_files', {id: mid});
+    assert(files.files.filter(f => f.kind === 'audio').length === 2, 'Expected two WAV files');
+    assert(files.files.every(f => f.status === 'ready'), 'Unfinished file');
+    click('[data-action="meeting-files"]');
+    await until(() => document.querySelectorAll('.meeting-file').length === 5);
+    assert(document.querySelector('#meeting-files-path').textContent === files.directory, 'Wrong folder');
+    if (window.__OMASCRIBE_SCREENSHOTS__) await invoke('ui_test_screenshot', {name: 'meeting-files'});
+    await invoke('open_meeting_files', {id: mid, name: 'recording-001.wav'});
+    click('[data-action="close-modal"]');
+    checks.push('Finish → record another take in the same meeting; five readable files and folder controls');
+
     const clip = await invoke("audio_clip", {
       id: mid,
       startMs: 0,
@@ -240,6 +263,7 @@
     );
     await until(async () => {
       const s = await invoke("snapshot", { id: fixture.id });
+      if (s.runtime.notes_status.startsWith('writer:')) writerPhases.add(s.runtime.notes_status.split(':')[1]);
       if (
         !s.runtime.notes_busy &&
         s.runtime.notes_status &&
@@ -247,7 +271,7 @@
       )
         throw Error(s.runtime.notes_status);
       return s.suggestions.length > 0 && !s.runtime.notes_busy;
-    }, 240000);
+    }, 620000);
     const result = await invoke("snapshot", { id: fixture.id });
     assert(
       result.suggestions.every((s) => s.sources.length),
@@ -295,6 +319,7 @@
         export_path: exported,
         document_export: path,
         document_latency_ms: Date.now() - started,
+        writer_phases: [...writerPhases],
         model_document: result.suggestions,
         fixture_id: fixture.id,
       },
