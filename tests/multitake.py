@@ -2,6 +2,7 @@
 """Real ASR regression using the public sherpa sample; never opens the user's workspace."""
 
 import argparse, hashlib, json, os, pathlib, sqlite3, subprocess, tempfile, wave
+from contextlib import closing
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -45,7 +46,8 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
     )
     # Simulate a saved human correction, then restart and append. It must survive unchanged.
     corrected = dict(first["segments"][0], text="人工修订 · public sample", revision=2)
-    with sqlite3.connect(root / "meetings.sqlite3") as db:
+    # A connection context commits/rolls back; closing also releases the Windows file handle.
+    with closing(sqlite3.connect(root / "meetings.sqlite3")) as db, db:
         db.execute(
             "update segments set json=? where id=?",
             (json.dumps(corrected), corrected["id"]),

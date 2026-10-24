@@ -94,12 +94,12 @@ bin/install     # 安裝到當前使用者及應用啟動器
 
 預設使用雙語 Zipformer 和 Qwen3-1.7B Q4_K_M。寫作模型單執行緒、單請求、2,048 token 上下文，每輪任務後釋放模型。寫作採用本機串流接收，顯示處理階段與耗時；記憶體不足時延後整理，連續失敗會降低重試頻率。轉寫持續積壓時，自動讓出寫作算力。失敗和取消不會推進已處理位置。
 
-預設資料位於 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`。目錄僅當前使用者可訪問，應用本身不加密檔案。可用 `OMASCRIBE_DATA_DIR`、`OMASCRIBE_MODELS_DIR`、`OMASCRIBE_RUNTIME_DIR` 指定位置。CLI 提供 `diagnose`、`import`、`record`、`replay`、`append`、`files`、`retranscribe`、`snapshot`、`note`、`generate`、`export`，輸出 JSON。
+Linux 預設資料位於 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`；macOS 和 Windows 路徑見上方安裝說明。Linux/macOS 目錄僅當前使用者可存取，Windows 使用使用者帳戶繼承的存取權限；應用本身不加密檔案。可用 `OMASCRIBE_DATA_DIR`、`OMASCRIBE_MODELS_DIR`、`OMASCRIBE_RUNTIME_DIR` 指定位置。CLI 提供 `diagnose`、`import`、`record`、`replay`、`append`、`files`、`retranscribe`、`snapshot`、`note`、`generate`、`export`，輸出 JSON。
 
 - 當前採集麥克風，尚未實現系統音訊混錄和說話人分離。
 - 小型 ASR 的人名、遠場、重疊說話和中英混說準確率需要真實場景評估；關鍵詞當前用於筆記檢索，不做 ASR 熱詞偏置。
 - RAG 使用會議內 BM25、中文字元／雙字及精確詞匹配，不常駐向量模型。
-- 浮窗吸附針對 Hyprland；螢幕字幕需要支援 layer-shell 的 Wayland 合成器。
+- Linux 浮窗吸附整合 Hyprland，螢幕字幕使用 Wayland layer-shell；macOS/Windows 使用原生置頂字幕視窗，全螢幕空間與多顯示器行為仍需實機測試。
 - 會議期間請保持電腦喚醒；睡眠、驅動切換後的恢復尚未充分驗證。
 - 沒有云同步、跨會議搜尋或自動更新器。
 

@@ -4,6 +4,7 @@ This is a targeted regression harness, not an ASR accuracy benchmark or a factua
 """
 
 import argparse, datetime, json, os, pathlib, re, sqlite3, subprocess, tempfile, time, uuid
+from contextlib import closing
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
@@ -89,7 +90,10 @@ def main():
                 auto_notes=False,
                 notes_fingerprint="",
             )
-            with sqlite3.connect(pathlib.Path(root) / "meetings.sqlite3") as db:
+            with (
+                closing(sqlite3.connect(pathlib.Path(root) / "meetings.sqlite3")) as db,
+                db,
+            ):
                 db.execute(
                     "INSERT INTO meetings VALUES(?,?)", (mid, json.dumps(meeting))
                 )

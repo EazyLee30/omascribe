@@ -145,7 +145,7 @@ Current boundaries:
 - Mandarin/English ASR is a small, older model. Names, far-field speech, overlap, and code-switching need your own evaluation.
 - Keywords guide **note retrieval**, not ASR hotword bias, in this release.
 - Small-model writing can omit facts or misread a correction. Generated paragraphs need review; edited paragraphs are never automatically rewritten.
-- Floating window edge placement is integrated with Hyprland. Screen captions require a Wayland compositor supporting layer-shell. They are not macOS/Windows overlays.
+- On Linux, floating-window edge placement integrates with Hyprland and screen captions require Wayland layer-shell. macOS/Windows use native always-on-top caption windows; behavior across full-screen Spaces and multiple monitors needs physical-device testing.
 - No speaker diarization, translation mode or embedding-based semantic search. The current RAG is bounded, per-meeting BM25 plus Chinese character/bigram and exact keyword matching.
 - Keep the machine awake during a meeting. Sleep/driver recovery and automatic sleep inhibition are not yet fully validated.
 - There is no cloud sync, cross-meeting search, or automatic app updater.
