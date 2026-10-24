@@ -73,6 +73,7 @@ jobs:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.99.0"
           targets: ${{ matrix.target }}
           components: clippy
       - name: Match sherpa-onnx's static Windows CRT
