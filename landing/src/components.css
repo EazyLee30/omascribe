@@ -7,6 +7,9 @@
 .platform-links { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 24px; }
 .platform-links a { display: inline-flex; align-items: center; gap: 8px; color: inherit; font-size: 14px; text-decoration: none; }
 .platform-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
-#platform-tabs wa-tab::part(base) { gap: 8px; }
+#platform-tabs wa-tab::part(tab) { gap: 8px; }
 .linux-downloads { display: flex; flex-wrap: wrap; gap: 16px; }
-@media (max-width: 480px) { .platform-links { gap: 16px; } #platform-tabs wa-tab::part(base) { padding-inline: 12px; } }
+@media (max-width: 480px) { .platform-links { gap: 16px; } #platform-tabs wa-tab::part(tab) { padding-inline: 12px; } }
+
+wa-tab[active] { color: #fff; }
+wa-tab[active] .platform-icon { filter: invert(1); }

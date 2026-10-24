@@ -19,6 +19,8 @@ serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["rt", "sync"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+# deep-link 2.6.2 initializes ParseOption explicitly; rust-ini 0.21.3 added fields.
+rust-ini = "=0.21.1"
 gtk = "0.18"
 libloading = "0.8"
 webkit2gtk = {version="2", optional=true}
