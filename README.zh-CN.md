@@ -3,7 +3,7 @@
 <p align="center">
 <a href="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml"><img src="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-d8b76e?style=flat-square" alt="MIT"></a>
-<img src="https://img.shields.io/badge/Linux-Omarchy-91a87d?style=flat-square&logo=linux&logoColor=white" alt="Linux / Omarchy">
+<img src="https://img.shields.io/badge/desktop-Linux%20%C2%B7%20macOS%20%C2%B7%20Windows-91a87d?style=flat-square" alt="Linux, macOS and Windows">
 <img src="https://img.shields.io/badge/runtime-offline-647950?style=flat-square" alt="离线运行">
 <img src="https://img.shields.io/badge/Rust-Tauri_2-b6c1a8?style=flat-square&logo=rust&logoColor=white" alt="Rust + Tauri 2">
 </p>

@@ -1,6 +1,11 @@
 use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, UserNote};
-use std::{path::PathBuf, sync::Arc};
-#[cfg(feature = "ui-test")]
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 use tauri::Manager;
 mod file_manager;
 #[cfg(target_os = "linux")]
@@ -16,6 +21,7 @@ use views::{
     transcript_snapshot,
 };
 type AppState = Arc<Engine>;
+struct ExitPermit(AtomicBool);
 type Reply<T> = Result<T, String>;
 fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
@@ -214,6 +220,7 @@ async fn quit(app: tauri::AppHandle, engine: State<'_, AppState>) -> Reply<()> {
     tauri::async_runtime::spawn_blocking(move || e.shutdown())
         .await
         .map_err(err)?;
+    app.state::<ExitPermit>().0.store(true, Ordering::SeqCst);
     app.exit(0);
     Ok(())
 }
@@ -302,6 +309,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(engine)
         .manage(view_state)
+        .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
             if ["ui_test_report", "ui_test_screenshot"].contains(&request.message.command()) {
@@ -334,6 +342,18 @@ fn main() {
                 let _ = window.emit("close-requested", ());
             }
         })
-        .run(tauri::generate_context!())
-        .expect("OmaScribe could not start");
+        .build(tauri::generate_context!())
+        .expect("OmaScribe could not start")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                if !app.state::<ExitPermit>().0.load(Ordering::SeqCst) {
+                    // Native menu / Cmd-Q follows the same autosave and active-take confirmation
+                    // as the close button. Only the completed frontend quit flow permits exit.
+                    api.prevent_exit();
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.emit("close-requested", ());
+                    }
+                }
+            }
+        });
 }

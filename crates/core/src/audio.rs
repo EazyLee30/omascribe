@@ -1,3 +1,5 @@
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub use crate::native_audio::devices;
 use crate::types::*;
 use anyhow::{bail, Context, Result};
 #[cfg(target_os = "linux")]
@@ -326,6 +328,3 @@ mod tests {
         Ok(())
     }
 }
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-pub use crate::native_audio::devices;

@@ -73,6 +73,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}-native
+          cache-on-failure: true
       - uses: actions/cache@v4
         with:
           path: ~/.cache/omascribe/downloads

@@ -66,6 +66,12 @@ impl Capture {
 impl Drop for Capture {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::SeqCst);
+        if let Some(child) = &mut self.child {
+            if child.try_wait().ok().flatten().is_none() {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
+        }
     }
 }
 
