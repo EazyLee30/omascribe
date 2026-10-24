@@ -12,23 +12,30 @@ document.querySelector("#language")?.addEventListener("change", (event) => {
 const dialog = document.querySelector("#profile-dialog");
 if (dialog) {
   let catalog, profiles;
-  try {
-    const responses = await Promise.all([
-      fetch("/data/catalog.json"),
-      fetch("/data/profiles.json"),
-    ]);
-    if (responses.some((r) => !r.ok))
-      throw Error("Unable to load configuration catalog");
-    [catalog, profiles] = await Promise.all(responses.map((r) => r.json()));
-  } catch (error) {
-    document.querySelector("#share-status").textContent = t(
-      "目录加载失败，请刷新页面后重试。",
-      "目錄載入失敗，請重新整理後重試。",
-      "The catalog could not be loaded. Refresh to try again.",
-    );
-  }
+  // Filtering and navigation do not depend on catalog downloads. Attach their
+  // listeners immediately so a fast interaction cannot be lost on a cold load.
+  const catalogReady = (async () => {
+    try {
+      const responses = await Promise.all([
+        fetch("/data/catalog.json"),
+        fetch("/data/profiles.json"),
+      ]);
+      if (responses.some((r) => !r.ok))
+        throw Error("Unable to load configuration catalog");
+      [catalog, profiles] = await Promise.all(responses.map((r) => r.json()));
+    } catch (error) {
+      document.querySelector("#share-status").textContent = t(
+        "目录加载失败，请刷新页面后重试。",
+        "目錄載入失敗，請重新整理後重試。",
+        "The catalog could not be loaded. Refresh to try again.",
+      );
+    }
+  })();
   document.querySelectorAll(".preview-profile").forEach((button) =>
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
+      button.loading = true;
+      await catalogReady;
+      button.loading = false;
       const entry = profiles?.find((p) => p.id === button.dataset.id);
       if (!entry || !catalog) return;
       try {
@@ -92,6 +99,7 @@ if (dialog) {
   document
     .querySelector("#profile-search")
     .addEventListener("wa-clear", filter);
+  Promise.all(filters.map((field) => field.updateComplete)).then(filter);
   let localProfile = null,
     readId = 0;
   const status = document.querySelector("#share-status"),
@@ -107,9 +115,11 @@ if (dialog) {
       const file = event.target.files?.[0];
       if (!file) return;
       try {
-        if (!catalog) throw Error("Configuration catalog is unavailable");
         if (file.size > MAX_PROFILE_BYTES)
           throw Error("Configuration exceeds 64 KiB");
+        await catalogReady;
+        if (readId !== id) return;
+        if (!catalog) throw Error("Configuration catalog is unavailable");
         const raw = await file.text();
         if (readId !== id) return;
         const p = validateProfile(raw, catalog);
