@@ -25,6 +25,8 @@ def main():
     linux = platform.system() == "Linux"
     suffix = ".exe" if windows else ""
     linux_packages = []
+    results = ROOT / "ci-results"
+    results.mkdir(exist_ok=True)
     bundle = ROOT / "target" / args.target / "release/bundle"
     if windows:
         installer = next((bundle / "nsis").glob("*.exe"))
@@ -37,6 +39,9 @@ def main():
     elif linux:
         deb = next((bundle / "deb").glob("*.deb"))
         appimage = next((bundle / "appimage").glob("*.AppImage"))
+        dependencies = subprocess.check_output(["dpkg-deb", "-f", str(deb), "Depends"], text=True).strip()
+        assert all(dep in dependencies for dep in ["pipewire-bin", "ffmpeg", "libwebkit2gtk-4.1-0", "libgtk-3-0"]), dependencies
+        (results / "linux-package-dependencies.json").write_text(json.dumps({"depends":dependencies}), encoding="utf-8")
         extracted = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-linux"
         extracted.mkdir(exist_ok=True)
         subprocess.run(["dpkg-deb", "-x", str(deb), str(extracted / "deb")], check=True, timeout=180)
@@ -44,7 +49,7 @@ def main():
         with (ROOT / "build-assets/appimage-extract.log").open("wb") as log:
             subprocess.run([str(appimage), "--appimage-extract"], cwd=extracted, stdout=log, stderr=log, check=True, timeout=180)
         for source, folder in [(deb, extracted / "deb"), (appimage, extracted / "squashfs-root")]:
-            linux_packages.append((source, folder / "usr/lib/omascribe/native", folder / "usr/bin/omascribe", folder))
+            linux_packages.append((source, folder / "usr/lib/oma-scribe/native", folder / "usr/bin/omascribe", folder))
         installer, assets, app, _ = linux_packages[0]
     else:
         installer = next((bundle / "dmg").glob("*.dmg"))
@@ -105,6 +110,14 @@ def main():
                 package_env.pop("OMASCRIBE_RUNTIME_DIR", None)
                 discovered_package = json.loads(subprocess.check_output([str(package_assets / "runtime/omascribe-cli"), "diagnose"], env=package_env, timeout=30))
                 assert all(discovered_package[k] for k in ["asr_ready", "llm_ready", "worker_ready", "server_ready"]), discovered_package
+                # Probe from the GUI executable directory, not only the nested runtime folder.
+                probe = binary.parent / "omascribe-resource-check"
+                shutil.copy2(package_assets / "runtime/omascribe-cli", probe)
+                try:
+                    gui_discovery = json.loads(subprocess.check_output([str(probe), "diagnose"], env=package_env, timeout=30))
+                    assert all(gui_discovery[k] for k in ["asr_ready", "llm_ready", "worker_ready", "server_ready"]), gui_discovery
+                finally:
+                    probe.unlink()
                 launcher = folder / "AppRun" if source.suffix == ".AppImage" else binary
                 with (results / (source.suffix.lstrip(".") + "-launch.log")).open("wb") as log:
                     process = subprocess.Popen([str(launcher)], env=package_env, stdout=log, stderr=log, start_new_session=True)

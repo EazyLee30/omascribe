@@ -108,6 +108,13 @@ fn generate_inner(
     drop(listener);
     let token = Uuid::new_v4().to_string();
     let (mut command, backend) = crate::inference::server_command(engine, prefs, port, &token)?;
+    let resource_path = engine.root.join("last-writer-resource.json");
+    std::fs::write(
+        &resource_path,
+        serde_json::to_vec(
+            &json!({"backend": backend.name(), "budget_mib": budget, "available_before_mib": crate::platform::available_memory_mib()}),
+        )?,
+    )?;
     let log = File::create(engine.root.join("llm-runtime.log"))?;
     let child = command
         .stdin(Stdio::null())
@@ -125,6 +132,8 @@ fn generate_inner(
     let timeout_flag = timed_out.clone();
     let resource_stop = Arc::new(AtomicBool::new(false));
     let resource_flag = resource_stop.clone();
+    let budget_stop = Arc::new(AtomicBool::new(false));
+    let budget_flag = budget_stop.clone();
     thread::spawn(move || {
         let mut lag_count = 0;
         let mut memory = sysinfo::System::new();
@@ -135,11 +144,13 @@ fn generate_inner(
                 break;
             }
             memory.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[process]), true);
-            let over_budget = memory
-                .process(process)
-                .is_some_and(|p| p.memory() / 1024 / 1024 > budget);
-            let pressure = crate::platform::available_memory_mib().is_some_and(|m| m < 512);
+            let rss_mib = memory.process(process).map(|p| p.memory() / 1024 / 1024);
+            let available_mib = crate::platform::available_memory_mib();
+            let over_budget = rss_mib.is_some_and(|m| m > budget);
+            let pressure = available_mib.is_some_and(|m| m < 512);
             if over_budget || pressure {
+                let _ = std::fs::write(&resource_path, serde_json::to_vec(&json!({"backend":backend.name(), "reason":if over_budget {"process_budget"} else {"system_pressure"}, "budget_mib":budget,"rss_mib":rss_mib,"available_mib":available_mib})).unwrap_or_default());
+                budget_flag.store(over_budget, Ordering::SeqCst);
                 resource_flag.store(true, Ordering::SeqCst);
                 crate::platform::stop_process(pid, false);
                 break;
@@ -181,6 +192,9 @@ fn generate_inner(
     let start = Instant::now();
     loop {
         if resource_stop.load(Ordering::SeqCst) {
+            if budget_stop.load(Ordering::SeqCst) {
+                bail!("writer:resource-budget-hit:{budget}");
+            }
             bail!("writer:resource-pressure");
         }
         if server.0.try_wait()?.is_some() {
@@ -289,6 +303,9 @@ fn generate_inner(
             bail!("已优先处理录音与字幕，纪要稍后自动继续");
         }
         if resource_stop.load(Ordering::SeqCst) {
+            if budget_stop.load(Ordering::SeqCst) {
+                bail!("writer:resource-budget-hit:{budget}");
+            }
             bail!("writer:resource-pressure");
         }
         if timed_out.load(Ordering::SeqCst) {

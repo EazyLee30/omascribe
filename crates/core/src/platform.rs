@@ -35,22 +35,31 @@ pub fn asset_dir(root: &Path, name: &str, variable: &str) -> PathBuf {
     if user.is_dir() {
         return user;
     }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            // Tauri: beside the executable on Windows, Resources on macOS,
-            // usr/lib/omascribe on Linux (also relative to an extracted AppImage/deb).
-            for bundle in std::iter::once(parent.join("../Resources/native"))
-                .chain(std::iter::once(parent.join("../lib/omascribe/native")))
-                .chain(parent.ancestors().take(3).map(|p| p.join("native")))
-            {
-                let candidate = bundle.join(name);
-                if candidate.is_dir() {
-                    return candidate;
-                }
+    if let Some(path) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| bundled_asset_dir(&exe, name))
+    {
+        return path;
+    }
+    user
+}
+
+fn bundled_asset_dir(exe: &Path, name: &str) -> Option<PathBuf> {
+    if let Some(parent) = exe.parent() {
+        // Tauri: beside the executable on Windows, Resources on macOS,
+        // usr/lib/oma-scribe on Linux (also relative to an extracted AppImage/deb).
+        for bundle in std::iter::once(parent.join("../Resources/native"))
+            .chain(std::iter::once(parent.join("../lib/oma-scribe/native")))
+            .chain(std::iter::once(parent.join("../lib/omascribe/native")))
+            .chain(parent.ancestors().take(3).map(|p| p.join("native")))
+        {
+            let candidate = bundle.join(name);
+            if candidate.is_dir() {
+                return Some(candidate);
             }
         }
     }
-    user
+    None
 }
 
 pub fn child_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
@@ -171,6 +180,27 @@ fn reclaimable_memory_mib(free: u64, file_backed: u64, purgeable: u64, page_size
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn linux_gui_and_cli_find_tauris_kebab_cased_resource_directory() {
+        let root = tempfile::tempdir().unwrap();
+        let native = root.path().join("usr/lib/oma-scribe/native");
+        std::fs::create_dir_all(native.join("models")).unwrap();
+        std::fs::create_dir_all(native.join("runtime")).unwrap();
+        std::fs::create_dir_all(root.path().join("usr/bin")).unwrap();
+        for exe in [
+            root.path().join("usr/bin/omascribe"),
+            native.join("runtime/omascribe-cli"),
+        ] {
+            assert_eq!(
+                bundled_asset_dir(&exe, "models")
+                    .unwrap()
+                    .canonicalize()
+                    .unwrap(),
+                native.join("models").canonicalize().unwrap()
+            );
+        }
+    }
 
     #[test]
     fn macos_cache_remains_available_on_a_compressed_system() {

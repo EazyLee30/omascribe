@@ -66,3 +66,5 @@ These are warm-model short generation measurements. They exclude application ret
 - [MLX-LM loading implementation](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/utils.py), [generation implementation](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/generate.py)
 - [Hugging Face offline environment variables](https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables)
 - [Pinned MLX model source](https://huggingface.co/mlx-community/Qwen3-1.7B-4bit/tree/3b1b1768f8f8cf8351c712464f906e86c2b8269e)
+
+The automatic balanced writer budget uses 40% of physical memory, capped at 4 GiB. A 7 GiB host receives approximately 2.8 GiB, allowing the default CPU writer’s measured approximately 2.5 GiB RSS working set. Explicit budgets remain strict, and the independent 512 MiB system-availability guard still pauses work. CPU mode explicitly disables GPU device offload and uses smaller processing batches.

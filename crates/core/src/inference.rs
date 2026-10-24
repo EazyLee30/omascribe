@@ -98,10 +98,15 @@ pub fn budget_mib(prefs: &Preferences) -> u64 {
     let mut system = sysinfo::System::new();
     system.refresh_memory();
     let total = system.total_memory() / 1024 / 1024;
-    match prefs.resource_mode.as_str() {
+    default_budget_mib(total, &prefs.resource_mode)
+}
+fn default_budget_mib(total: u64, mode: &str) -> u64 {
+    match mode {
         "eco" => (total / 4).clamp(1024, 2048),
         "quality" => (total / 2).clamp(2048, 8192),
-        _ => (total / 3).clamp(1536, 4096),
+        // CPU repacking plus the bundled writer peaks around 2.5 GiB RSS.
+        // Leave most RAM for the desktop while permitting that working set on 7–8 GiB hosts.
+        _ => (total * 2 / 5).clamp(1536, 4096),
     }
 }
 pub fn server_command(
@@ -140,10 +145,12 @@ pub fn server_command(
         } else {
             prefs.threads
         };
-        let batch = if prefs.resource_mode == "quality" {
-            "512"
-        } else {
-            "128"
+        let (batch, ubatch) = match (backend, prefs.resource_mode.as_str()) {
+            (_, "quality") => ("512", "128"),
+            (Backend::Cpu, "eco") => ("32", "32"),
+            (Backend::Cpu, _) => ("64", "64"),
+            (_, "eco") => ("64", "64"),
+            _ => ("128", "128"),
         };
         c.arg("-m")
             .arg(engine.model_file(&prefs.llm_model)?)
@@ -167,7 +174,7 @@ pub fn server_command(
                 "--batch-size",
                 batch,
                 "--ubatch-size",
-                "128",
+                ubatch,
                 "--prio",
                 "-1",
                 "--poll",
@@ -181,6 +188,9 @@ pub fn server_command(
                 "--offline",
             ])
             .env("LD_LIBRARY_PATH", engine.runtime_dir.join("llama"));
+        if backend == Backend::Cpu {
+            c.args(["--device", "none"]);
+        }
         c
     };
     command
@@ -234,5 +244,14 @@ mod tests {
         assert_eq!(budget_mib(&p), 2048);
         p.memory_budget_mib = 100;
         assert!(p.validate().is_err());
+    }
+    #[test]
+    fn balanced_default_fits_bundled_cpu_writer_without_consuming_most_ram() {
+        for total in [7168, 8192] {
+            let budget = default_budget_mib(total, "balanced");
+            assert!(budget >= 2600 && budget < total / 2);
+        }
+        assert_eq!(default_budget_mib(24576, "balanced"), 4096);
+        assert_eq!(default_budget_mib(8192, "eco"), 2048);
     }
 }

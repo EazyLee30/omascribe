@@ -3,7 +3,7 @@
 This is a targeted regression harness, not an ASR accuracy benchmark or a factuality guarantee.
 """
 
-import argparse, datetime, json, os, pathlib, re, sqlite3, subprocess, tempfile, time, uuid
+import argparse, datetime, json, os, pathlib, re, shutil, sqlite3, subprocess, tempfile, time, uuid
 from contextlib import closing
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -46,6 +46,7 @@ def main():
         default=pathlib.Path("/tmp/omascribe-evaluation.json"),
     )
     parser.add_argument("--case", help="Run one named fixture")
+    parser.add_argument("--preferences", type=pathlib.Path, help="Optional local preferences for resource/backend regression checks")
     args = parser.parse_args()
     cli = str(args.cli.resolve())
     cases = json.loads(
@@ -73,6 +74,8 @@ def main():
                 "OMASCRIBE_RUNTIME_DIR", str(data / "runtime")
             ),
         )
+        if args.preferences:
+            shutil.copyfile(args.preferences, pathlib.Path(root) / "preferences.json")
         subprocess.run(
             [cli, "diagnose"], env=env, check=True, stdout=subprocess.DEVNULL
         )
@@ -144,6 +147,7 @@ def main():
                 seconds=round(time.monotonic() - start, 3),
                 document=snapshot["suggestions"],
                 status=snapshot["runtime"]["notes_status"],
+                resource=json.loads((pathlib.Path(root) / "last-writer-resource.json").read_text(encoding="utf-8")) if (pathlib.Path(root) / "last-writer-resource.json").exists() else None,
                 writer_attempts=json.loads(
                     (pathlib.Path(root) / "last-generation.json").read_text(
                         encoding="utf-8"

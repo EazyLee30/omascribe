@@ -376,6 +376,25 @@ function localizedStatus(status: string) {
       .replace("{required}", (Number(lowMemory[2]) / 1024).toFixed(1));
   if (status === "writer:memory-unavailable")
     return t("writerMemoryUnavailable");
+  if (status.startsWith("writer:resource-budget-hit:"))
+    return tr(
+      "整理已暂停以控制内存占用，原文已保留。可选择较小模型或调整资源预算后重试。",
+      "Minutes paused to limit memory use; your transcript is preserved. Try a smaller model or adjust the resource budget.",
+      "整理已暫停以控制記憶體用量，原文已保留。可選擇較小模型或調整資源預算後重試。",
+    );
+  if (status === "writer:resource-pressure")
+    return tr(
+      "系统可用内存过低，已暂停整理。原文已保留，内存恢复后会自动重试。",
+      "Available system memory is low. Minutes are paused and will retry when memory recovers; your transcript is preserved.",
+      "系統可用記憶體過低，已暫停整理。原文已保留，記憶體恢復後會自動重試。",
+    );
+  const resourceBudget = status.match(/^writer:resource-budget:(\d+):(\d+)$/);
+  if (resourceBudget)
+    return tr(
+      "所选模型超过当前内存预算。请换用较小模型，或在设置中调整预算。",
+      "This model exceeds the current memory budget. Choose a smaller model or adjust the budget in Settings.",
+      "所選模型超過目前記憶體預算。請改用較小模型，或於設定中調整預算。",
+    );
   if (status === "writer:loading") return t("writerLoading");
   if (status === "writer:reading") return t("writerReading");
   if (status === "writer:checking") return t("writerChecking");
