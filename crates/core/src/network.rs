@@ -17,6 +17,7 @@ static POLICY_IO: Mutex<()> = Mutex::new(());
 pub struct NetworkPolicy {
     pub allow_model_downloads: bool,
     pub allow_online_recommendations: bool,
+    pub allow_update_checks: bool,
 }
 
 impl NetworkPolicy {
@@ -107,6 +108,22 @@ mod tests {
             engine.get_network_policy().unwrap(),
             NetworkPolicy::default()
         );
+        assert!(engine.require_model_network().is_err());
+        assert!(engine.require_online_recommendations().is_err());
+        assert!(!engine.get_network_policy().unwrap().allow_update_checks);
+        // A policy saved by 0.3.0 must never silently opt into update traffic.
+        fs::write(
+            root.path().join("network-policy.json"),
+            br#"{"allow_model_downloads":false,"allow_online_recommendations":false}"#,
+        )
+        .unwrap();
+        assert!(!engine.get_network_policy().unwrap().allow_update_checks);
+        engine
+            .set_network_policy(NetworkPolicy {
+                allow_update_checks: true,
+                ..Default::default()
+            })
+            .unwrap();
         assert!(engine.require_model_network().is_err());
         assert!(engine.require_online_recommendations().is_err());
         let model_only = NetworkPolicy {

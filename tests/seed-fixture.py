@@ -4,7 +4,7 @@
 import datetime, json, pathlib, sqlite3, sys, uuid
 
 root = pathlib.Path(sys.argv[1]).resolve()
-if root.name == "omascribe" or not str(root).startswith("/tmp/"):
+if root.name == "omascribe" or not str(root).startswith(("/tmp/", "/private/tmp/")):
     raise SystemExit("Fixture seeding is restricted to a /tmp test workspace.")
 fixture = json.loads(
     (pathlib.Path(__file__).parent / "fixtures/meeting.json").read_text()

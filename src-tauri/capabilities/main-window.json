@@ -1,0 +1,10 @@
+{
+  "identifier": "main-window",
+  "description": "Drag the native main window by its compact toolbar",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:window:allow-start-dragging"
+  ]
+}

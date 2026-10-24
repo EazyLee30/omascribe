@@ -501,6 +501,7 @@ mod tests {
             .set_network_policy(crate::network::NetworkPolicy {
                 allow_model_downloads: true,
                 allow_online_recommendations: false,
+                allow_update_checks: false,
             })
             .unwrap();
         fn fixture(body: &'static [u8]) -> String {

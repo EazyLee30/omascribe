@@ -9,11 +9,21 @@ fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let command = args.get(1).map(|s| s.as_str()).unwrap_or("help");
     if command == "help" {
-        println!("OmaScribe CLI\n  diagnose\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        return Ok(());
+    }
+    let arg = |i| args.get(i).context("缺少命令参数");
+    if command == "verify-update" {
+        omascribe_core::update_signature::verify(
+            std::path::Path::new(arg(2)?),
+            &std::fs::read_to_string(arg(3)?)?,
+            &std::fs::read_to_string(arg(4)?)?,
+            arg(5)?,
+        )?;
+        println!("{}", serde_json::json!({"verified":true,"version":arg(5)?}));
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
-    let arg = |i| args.get(i).context("缺少命令参数");
     let result = match command {
         "models" => serde_json::to_value(engine.model_status())?,
         "hardware" => serde_json::to_value(omascribe_core::models::hardware(&engine.root))?,

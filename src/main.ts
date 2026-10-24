@@ -141,6 +141,13 @@ let panelUpdates = Promise.resolve();
 function togglePanel(panel: Panel) {
   const update = panelUpdates.then(async () => {
     const prefs = await getViewSettings();
+    const open = [
+      !prefs.notebook_collapsed,
+      !prefs.minutes_collapsed,
+      prefs.transcript_mode === "docked",
+    ];
+    const index = ["notebook", "minutes", "transcript"].indexOf(panel);
+    if (index >= 0 && open[index] && open.filter(Boolean).length === 1) return;
     if (panel === "transcript") {
       prefs.transcript_mode =
         prefs.transcript_mode === "docked" ? "hidden" : "docked";
@@ -164,8 +171,13 @@ function togglePanel(panel: Panel) {
   return update;
 }
 function shell() {
+  document.body.classList.add("main-window");
+  document.body.classList.toggle(
+    "platform-macos",
+    /Mac/.test(navigator.platform),
+  );
   $("#app").innerHTML =
-    `<aside class="sidebar">${panelRail("sidebar")}<div id="sidebar-content"><div class="sidebar-toggle">${panelButton("sidebar", true)}</div><div class="brand"><span class="brand-icon">${brand}</span><div>OmaScribe<small>OFFLINE NOTEBOOK</small></div></div><button class="primary new-meeting" data-action="new">${icon("plus")}${t("newMeeting")}</button><button class="subtle import" data-action="import">${icon("upload")}${t("import")}</button><nav class="workspace-navigation">${navItems()
+    `<div class="window-toolbar" data-tauri-drag-region>${panelButton("sidebar", true)}<div id="window-content" data-tauri-drag-region></div><div id="window-panels" hidden><button class="subtle view-trigger" data-action="workspace-view" aria-haspopup="menu" aria-controls="view-menu" aria-expanded="false">${icon("panelRight")}<span>${tr("视图", "View", "檢視")}</span><span aria-hidden="true">⌄</span></button><div id="view-menu" class="view-menu" role="menu" aria-label="${tr("工作区视图", "Workspace view", "工作區檢視")}" hidden></div></div></div><aside class="sidebar">${panelRail("sidebar")}<div id="sidebar-content"><div class="brand"><span class="brand-icon">${brand}</span><div>OmaScribe<small>OFFLINE NOTEBOOK</small></div></div><button class="primary new-meeting" data-action="new">${icon("plus")}${t("newMeeting")}</button><button class="subtle import" data-action="import">${icon("upload")}${t("import")}</button><nav class="workspace-navigation">${navItems()
       .map(
         ([id, label]) =>
           `<button class="subtle" data-page="${id}">${glyph(id)}${label}</button>`,
@@ -183,7 +195,9 @@ function meetingShell() {
   notebookEditor?.destroy();
   notebookEditor = null;
   $("#workspace").innerHTML =
-    `<header class="meeting-header"><div class="heading"><div class="eyebrow" id="meeting-date"></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="speakers" title="${tr("说话人与自动纪要", "Speakers and automatic minutes", "說話人及自動紀要")}">${glyph("speakers")}<span id="speaker-label">${tr("说话人", "Speakers", "說話人")}</span></button><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-expanded="false">${icon("note")}${t("transcript")}</button><button class="text-button caption-toggle" data-action="captions" title="${t("screenCaptions")}" aria-label="${t("screenCaptions")}">CC</button><button class="text-button" data-action="display-settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">${icon("settings")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook">${panelRail("notebook")}<div id="notebook-content" class="pane-content"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><div class="section-actions"><span class="document-label">MARKDOWN</span>${panelButton("notebook", true)}</div></div><div id="user-notes"></div></div></section><aside class="minutes-pane">${panelRail("minutes")}<div id="minutes-content" class="pane-content"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><div class="section-actions"><span class="auto-indicator"><i></i>${t("automatic")}</span><button id="generate-notes" class="subtle square" data-action="generate" title="${t("generate")}" aria-label="${t("generate")}">${icon("refresh")}</button>${panelButton("minutes", true)}</div></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></div></aside><section class="transcript-pane" aria-label="${t("transcript")}">${panelRail("transcript")}<div id="transcript-content" class="pane-content"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label><button class="subtle square" data-action="float-transcript" title="${t("floating")}" aria-label="${t("floating")}">↗</button>${panelButton("transcript", true)}</div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></div></section></div><footer><span>${icon("shield")}${tr("内容处理：离线", "Processing: offline", "內容處理：離線")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
+    `<header class="meeting-header" data-tauri-drag-region><div class="heading" data-tauri-drag-region><div class="eyebrow" id="meeting-date" data-tauri-drag-region></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="speakers" title="${tr("说话人与自动纪要", "Speakers and automatic minutes", "說話人及自動紀要")}">${glyph("speakers")}<span id="speaker-label">${tr("说话人", "Speakers", "說話人")}</span></button><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div id="notebook-content" class="pane-content"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><div class="section-actions"><span class="document-label">MARKDOWN</span></div></div><div id="user-notes"></div></div></section><aside class="minutes-pane"><div id="minutes-content" class="pane-content"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><div class="section-actions"><span class="auto-indicator"><i></i>${t("automatic")}</span><button id="generate-notes" class="subtle minutes-generate" data-action="generate" title="${t("generate")}" aria-label="${t("generate")}">${icon("refresh")}</button></div></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div id="transcript-content" class="pane-content"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></div></section></div><footer><span>${icon("shield")}${tr("内容处理：离线", "Processing: offline", "內容處理：離線")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
+  $("#window-content").replaceChildren($(".meeting-header"));
+  $("#window-panels").hidden = false;
   transcriptSignature = "";
   noteSignature = "";
   suggestionSignature = "";
@@ -327,9 +341,11 @@ async function refresh() {
     const generateLabel = t(r.notes_busy ? "cancel" : "generate");
     generate.title = generateLabel;
     generate.setAttribute("aria-label", generateLabel);
-    generate.innerHTML = icon(r.notes_busy ? "close" : "refresh");
+    generate.innerHTML =
+      icon(r.notes_busy ? "close" : "refresh") +
+      `<span>${r.notes_busy ? t("cancel") : tr("整理", "Generate", "整理")}</span>`;
     automatic.classList.toggle("working", r.notes_busy);
-    automatic.innerHTML = `<i></i>${t(data.meeting.auto_notes ? "automatic" : "paused")}`;
+    automatic.innerHTML = `<i></i>${data.meeting.auto_notes ? t("automatic") : tr("自动整理已关闭", "Auto notes off", "自動整理已關閉")}`;
     const banner = $("#error-banner");
     banner.hidden = !(
       (own && r.error) ||
@@ -433,16 +449,26 @@ function renderNotes() {
   );
   renderFocus(note.content);
 }
+let focusTimer: ReturnType<typeof setTimeout> | undefined;
+let focusRequest = 0;
 function renderFocus(content: string) {
-  const bold = [...content.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1]);
-  const lines = content
-    .split(/\n|[，,；;]/)
-    .map((s) => s.replace(/^[#>*\-\d.\s]+/, "").trim())
-    .filter((s) => s.length > 0 && s.length <= 24);
-  const words = [...new Set(bold.length ? bold : lines)].slice(0, 6);
-  $("#focus-context").innerHTML = words.length
-    ? `<span>${t("following")}</span>${words.map((w) => `<span class="focus-chip">${esc(w)}</span>`).join("")}`
-    : `<span>${t("focusHint")}</span>`;
+  clearTimeout(focusTimer);
+  const request = ++focusRequest;
+  const meeting = current;
+  focusTimer = setTimeout(() => {
+    void invoke<string[]>("extract_focus_terms", { content })
+      .then((words) => {
+        const root = document.querySelector("#focus-context");
+        if (!root || request !== focusRequest || meeting !== current) return;
+        root.innerHTML = words.length
+          ? `<span>${t("following")}</span>${words.map((w) => `<span class="focus-chip">${esc(w)}</span>`).join("")}`
+          : `<span>${t("focusHint")}</span>`;
+      })
+      .catch(() => {
+        const root = document.querySelector("#focus-context");
+        if (root && request === focusRequest) root.textContent = t("focusHint");
+      });
+  }, 250);
 }
 async function persist(id: string) {
   clearTimeout(timers.get(id));
@@ -579,6 +605,11 @@ async function navigate(
     return;
   }
   page = destination;
+  $("#window-content").textContent =
+    destination === "settings"
+      ? t("settings")
+      : navItems().find(([id]) => id === destination)?.[1] || "";
+  $("#window-panels").hidden = true;
   document
     .querySelectorAll<HTMLElement>("[data-page]")
     .forEach((b) =>
@@ -637,6 +668,31 @@ async function importAudio() {
       }
     });
 }
+
+function closeViewMenu(focus = false) {
+  const menu = document.getElementById("view-menu");
+  if (menu) menu.hidden = true;
+  const trigger = document.querySelector<HTMLButtonElement>(
+    "[data-action='workspace-view']",
+  );
+  trigger?.setAttribute("aria-expanded", "false");
+  if (focus) trigger?.focus();
+}
+function renderViewMenu() {
+  const menu = document.getElementById("view-menu");
+  if (!menu || !viewSettings) return;
+  const visible = {
+    notebook: !viewSettings.notebook_collapsed,
+    minutes: !viewSettings.minutes_collapsed,
+    transcript: viewSettings.transcript_mode === "docked",
+  };
+  const count = Object.values(visible).filter(Boolean).length;
+  menu.innerHTML = `<div class="view-menu-caption">${tr("显示栏目", "SHOW PANELS", "顯示欄位")}</div>${(["notebook", "minutes", "transcript"] as const).map((panel) => `<button role="menuitemcheckbox" aria-checked="${visible[panel]}" aria-expanded="${visible[panel]}" data-panel="${panel}" ${visible[panel] && count === 1 ? "disabled" : ""}>${icon(panel === "transcript" ? "mic" : "note")}<span>${t(panelLabels[panel])}</span><span class="view-check">${visible[panel] ? icon("check") : ""}</span></button>`).join("")}<div class="view-menu-divider"></div><button role="menuitemcheckbox" aria-checked="${viewSettings.captions.enabled}" data-action="captions"><span class="view-cc">CC</span><span>${t("screenCaptions")}</span><span class="view-check">${viewSettings.captions.enabled ? icon("check") : ""}</span></button><button role="menuitem" data-action="float-transcript">${icon("arrow")}<span>${tr("独立转写窗口", "Pop out transcript", "獨立轉寫視窗")}</span></button><div class="view-menu-divider"></div><button role="menuitem" data-action="display-settings"><span>${tr("转写与字幕设置…", "Transcript & caption settings…", "轉寫與字幕設定…")}</span></button>`;
+}
+document.addEventListener("focusin", (event) => {
+  if (!(event.target as HTMLElement).closest("#window-panels")) closeViewMenu();
+});
+
 function applyViews() {
   if (!viewSettings) return;
   const states: Record<Panel, boolean> = {
@@ -646,13 +702,24 @@ function applyViews() {
     transcript: viewSettings.transcript_mode !== "docked",
   };
   for (const [panel, collapsed] of Object.entries(states)) {
+    const control = document.querySelector<HTMLButtonElement>(
+      `.window-toolbar [data-panel="${panel}"]`,
+    );
+    if (control) {
+      const label = `${t(collapsed ? "expand" : "collapse")} · ${t(panelLabels[panel as Panel])}`;
+      control.setAttribute("aria-expanded", String(!collapsed));
+      control.setAttribute("aria-label", label);
+      control.title = label;
+      control.classList.toggle("enabled", !collapsed);
+    }
     const content = document.getElementById(`${panel}-content`);
     if (!content) continue;
     content.hidden = collapsed;
     content.parentElement!.classList.toggle("is-collapsed", collapsed);
-    document.querySelector<HTMLElement>(`[data-rail="${panel}"]`)!.hidden =
-      !collapsed;
+    const rail = document.querySelector<HTMLElement>(`[data-rail="${panel}"]`);
+    if (rail) rail.hidden = !collapsed;
   }
+  renderViewMenu();
   if (!current || page !== "meeting") return;
   $("#workspace").classList.toggle(
     "dock-transcript",
@@ -849,6 +916,7 @@ async function quit() {
   } else await invoke("quit");
 }
 document.addEventListener("click", (e) => {
+  if (!(e.target as HTMLElement).closest("#window-panels")) closeViewMenu();
   const el = (e.target as HTMLElement).closest<HTMLElement>("button");
   if (!el) return;
   guard(async () => {
@@ -937,16 +1005,33 @@ document.addEventListener("click", (e) => {
       case "retry":
         await invoke("retranscribe", { id: current });
         return refresh();
+      case "workspace-view": {
+        const menu = $("#view-menu");
+        const open = menu.hidden;
+        menu.hidden = !open;
+        el.setAttribute("aria-expanded", String(open));
+        if (open)
+          menu
+            .querySelector<HTMLButtonElement>("button:not(:disabled)")
+            ?.focus();
+        return;
+      }
       case "toggle-transcript":
         return toggleTranscript();
       case "float-transcript":
+        closeViewMenu();
         viewSettings = await patchViewSettings({
           transcript_mode: "floating",
           compact: false,
+          ...(viewSettings?.notebook_collapsed &&
+          viewSettings?.minutes_collapsed
+            ? { notebook_collapsed: false }
+            : {}),
         });
         applyViews();
         return;
       case "display-settings":
+        closeViewMenu();
         return showDisplaySettings();
       case "captions": {
         const p = await getViewSettings();
@@ -966,6 +1051,30 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.isComposing || e.keyCode === 229) return;
+  const menu = document.querySelector<HTMLElement>("#view-menu:not([hidden])");
+  if (
+    menu &&
+    ["Escape", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)
+  ) {
+    e.preventDefault();
+    if (e.key === "Escape") {
+      closeViewMenu(true);
+      return;
+    }
+    const buttons = Array.from(
+      menu.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+    );
+    const i = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? buttons.length - 1
+          : (i + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) %
+            buttons.length;
+    buttons[next]?.focus();
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
     e.preventDefault();
     guard(newMeeting);

@@ -98,11 +98,31 @@ fn normalize_date_numbers(text: &str) -> String {
     result
 }
 fn numbers(s: &str) -> HashSet<String> {
-    normalize_date_numbers(s)
+    normalize_clock_numbers(&normalize_date_numbers(s))
         .split(|c: char| !c.is_ascii_digit() && c != '.')
         .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
         .map(|s| s.trim_matches('.').to_owned())
         .collect()
+}
+fn normalize_clock_numbers(text: &str) -> String {
+    // Only reinterpret a complete hour/minute expression, never unrelated
+    // Chinese numbers such as “十分重要” or a decimal amount like 5.44.
+    static CLOCK: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    CLOCK
+        .get_or_init(|| regex::Regex::new(r"(凌晨|早上|上午|中午|下午|傍晚|晚上|晚间)?([零〇一二两三四五六七八九十0-9]{1,4})[点點时時:：]([零〇一二两三四五六七八九十0-9]{1,4})(?:分)?").unwrap())
+        .replace_all(text, |captures: &regex::Captures<'_>| {
+            let parse = |s: &str| s.parse::<u32>().ok().or_else(|| chinese_number(s));
+            match (parse(&captures[2]), parse(&captures[3])) {
+                (Some(mut h), Some(m)) if h < 24 && m < 60 => {
+                    let period = captures.get(1).map_or("", |p| p.as_str());
+                    if ["中午", "下午", "傍晚", "晚上", "晚间"].contains(&period) && h < 12 { h += 12; }
+                    if ["凌晨", "早上", "上午"].contains(&period) && h == 12 { h = 0; }
+                    format!("{h}:{m:02}")
+                },
+                _ => captures[0].to_owned(),
+            }
+        })
+        .into_owned()
 }
 fn uncertain(s: &str) -> bool {
     let s = s.to_lowercase();
@@ -248,6 +268,29 @@ pub fn validate_with_speakers(
             .map(|s| format!("{} {}", s.speaker_name.as_deref().unwrap_or(""), s.quote))
             .collect::<Vec<_>>()
             .join(" ");
+        if [
+            "参会者：",
+            "参与者：",
+            "出席者：",
+            "attendees:",
+            "participants:",
+        ]
+        .iter()
+        .any(|label| body.to_lowercase().contains(label))
+            && ![
+                "参会",
+                "参与者",
+                "出席",
+                "参加",
+                "attendee",
+                "participant",
+                "attended",
+            ]
+            .iter()
+            .any(|word| evidence.to_lowercase().contains(word))
+        {
+            bail!("The cited transcript does not provide an attendee list. Interests and user notes are not participant names. Remove the attendee list and summarize the actual transcript.");
+        }
         for name in names.values().filter(|n| !n.is_empty()) {
             if body.contains(name) && !evidence.contains(name) {
                 bail!("Unsupported speaker attribution: {name}. Passage IDs are not speaker numbers. The cited evidence is: {evidence}. Remove this name unless it appears in that evidence; describe an unassigned passage without naming a speaker.");
@@ -346,6 +389,28 @@ pub fn validate_with_speakers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn spoken_clock_notation_and_twenty_four_hour_time_are_equivalent() {
+        let mut source = data();
+        source[0].text = "会议时间是二零二五年十月二十三日下午五点四十四分，讨论离线转写。".into();
+        for time in ["下午5:44", "17:44"] {
+            let draft = serde_json::json!({"sections":[{"title":"转写测试", "body":format!("2025年10月23日{time}讨论离线转写。"),"sources":[1]}]});
+            assert!(validate(&draft.to_string(), &source, "m").is_ok());
+        }
+        for time in ["下午5:45", "上午5:44", "18:44"] {
+            let draft = serde_json::json!({"sections":[{"title":"转写测试", "body":format!("会议时间是{time}。"),"sources":[1]}]});
+            assert!(validate(&draft.to_string(), &source, "m").is_err());
+        }
+        assert!(!numbers("十分重要").contains("10"));
+        assert_ne!(numbers("5.44"), numbers("五点四十四分"));
+    }
+    #[test]
+    fn topic_preferences_cannot_become_an_attendee_list() {
+        let mut source = data();
+        source[0].text = "正在测试会议纪要和关键词提取。".into();
+        let draft = serde_json::json!({"sections":[{"title":"参与者", "body":"会议参与者：测试、关键词、会议纪要。","sources":[1]}]});
+        assert!(validate(&draft.to_string(), &source, "m").is_err());
+    }
     fn data() -> Vec<Segment> {
         vec![Segment {
             id: "s1".into(),

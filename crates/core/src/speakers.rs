@@ -149,6 +149,7 @@ impl Engine {
     }
     pub fn diarize(self: &Arc<Self>, id: &str) -> Result<()> {
         let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
         self.configuration_idle()?;
         let before = self.snapshot(id)?;
         if before.segments.is_empty() {

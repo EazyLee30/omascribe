@@ -218,6 +218,7 @@ def prepare(target):
     config = {
         "bundle": {
             "active": True,
+            "createUpdaterArtifacts": True,
             "category": "Productivity",
             "shortDescription": "Offline meeting notes, in your own words.",
             "resources": {"../build-assets/native/": "native/"},

@@ -45,6 +45,7 @@ pub struct Engine {
     pub status: Mutex<RuntimeStatus>,
     pub active: Mutex<Option<Arc<Active>>>,
     pub note_busy: AtomicBool,
+    pub maintenance: AtomicBool,
     pub note_failures: AtomicU32,
     pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
@@ -52,10 +53,21 @@ pub struct Engine {
     notes_target: Mutex<Option<String>>,
     _lock: File,
 }
+impl Drop for Engine {
+    fn drop(&mut self) {
+        let _ = fs2::FileExt::unlock(&self._lock);
+    }
+}
 pub fn default_root() -> PathBuf {
     platform::data_root()
 }
 impl Engine {
+    pub fn require_available(&self) -> Result<()> {
+        if self.maintenance.load(Ordering::SeqCst) {
+            bail!("update:installing");
+        }
+        Ok(())
+    }
     pub fn open(root: PathBuf) -> Result<Arc<Self>> {
         use fs2::FileExt;
         #[cfg(unix)]
@@ -102,6 +114,7 @@ impl Engine {
             status: Mutex::new(RuntimeStatus::default()),
             active: Mutex::new(None),
             note_busy: AtomicBool::new(false),
+            maintenance: AtomicBool::new(false),
             note_failures: AtomicU32::new(0),
             files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
@@ -356,6 +369,7 @@ impl Engine {
         replay_seconds: Option<u64>,
     ) -> Result<()> {
         let _config = self.config_lock.lock().unwrap();
+        self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {
             bail!("Cancel speaker analysis before starting another recording");
         }
@@ -809,6 +823,7 @@ impl Engine {
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
         let _config = self.config_lock.lock().unwrap();
+        self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {
             bail!("Wait for speaker analysis to finish");
         }

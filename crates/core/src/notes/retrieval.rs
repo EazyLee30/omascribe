@@ -9,44 +9,146 @@ pub fn document_notes(notes: &[UserNote]) -> Vec<&UserNote> {
         notes.iter().collect()
     }
 }
-pub fn focus_terms(notes: &[UserNote]) -> Vec<String> {
-    let mut result = Vec::new();
-    for note in document_notes(notes) {
-        if note.kind == "opinion" {
-            continue;
+/// Shared by retrieval and the UI: local dictionary + TF-IDF, never a cloud request.
+pub fn extract_focus(content: &str) -> Vec<String> {
+    use jieba_rs::{Jieba, KeywordExtract, KeywordExtractConfig, TfIdf};
+    use std::sync::OnceLock;
+    static EXTRACTOR: OnceLock<(Jieba, TfIdf)> = OnceLock::new();
+    let content: String = content.chars().take(20_000).collect();
+    let explicit: Vec<String> = content
+        .split("**")
+        .enumerate()
+        .filter(|(i, _)| i % 2 == 1)
+        .map(|(_, text)| text.trim().to_owned())
+        .filter(|text| {
+            (2..=24).contains(&text.chars().count()) && !text.contains(['。', '！', '？', '\n'])
+        })
+        .collect();
+    let candidates = if explicit.is_empty() {
+        let (jieba, extractor) = EXTRACTOR.get_or_init(|| {
+            let mut config = KeywordExtractConfig::builder().min_keyword_length(2);
+            for word in [
+                "现在",
+                "正在",
+                "目前",
+                "这个",
+                "这些",
+                "那个",
+                "那些",
+                "什么",
+                "为什么",
+                "怎么",
+                "没有",
+                "不是",
+                "是否",
+                "可以",
+                "能够",
+                "需要",
+                "希望",
+                "感觉",
+                "觉得",
+                "然后",
+                "但是",
+                "所以",
+                "因为",
+                "这里",
+                "那边",
+                "这边",
+                "内容",
+                "东西",
+                "事情",
+                "一下",
+                "一些",
+                "已经",
+                "还有",
+                "我们",
+                "你们",
+                "自己",
+                "请问",
+                "时候",
+                "出来",
+                "进行",
+                "一个",
+                "want",
+                "would",
+                "could",
+                "should",
+                "please",
+                "about",
+                "some",
+                "just",
+                "what",
+                "when",
+                "where",
+                "why",
+                "how",
+                "now",
+                "need",
+                "our",
+                "your",
+                "was",
+                "were",
+                "been",
+                "also",
+                "will",
+                "them",
+                "they",
+                "but",
+                "does",
+                "did",
+                "very",
+                "into",
+                "than",
+                "there",
+                "these",
+                "those",
+            ] {
+                config = config.add_stop_word(word);
+            }
+            (
+                Jieba::new(),
+                TfIdf::new(None::<&mut std::io::Cursor<Vec<u8>>>, config.build()),
+            )
+        });
+        extractor
+            .extract_keywords(
+                jieba,
+                &content,
+                24,
+                ["n", "nr", "ns", "nt", "nz", "vn", "eng"]
+                    .into_iter()
+                    .map(str::to_owned)
+                    .collect(),
+            )
+            .into_iter()
+            .map(|word| word.keyword)
+            .collect()
+    } else {
+        explicit
+    };
+    let mut result = Vec::<String>::new();
+    for word in candidates {
+        if (2..=24).contains(&word.chars().count())
+            && word.chars().any(char::is_alphabetic)
+            && !result.iter().any(|old| old.eq_ignore_ascii_case(&word))
+        {
+            result.push(word);
         }
-        // Explicit bold keywords take precedence. Remaining short phrases are useful Chinese queries.
-        let bold: Vec<&str> = note
-            .content
-            .split("**")
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 1)
-            .map(|(_, s)| s)
-            .collect();
-        let explicit = !bold.is_empty();
-        let candidates: Vec<&str> = if explicit {
-            bold
-        } else {
-            note.content
-                .split(['，', ',', '；', ';', '\n', ' ', '？', '?', '：', ':'])
-                .collect()
-        };
-        for term in candidates {
-            let term = term.trim_matches(|c: char| c.is_whitespace() || "#*-[]()>_`".contains(c));
-            if !term.chars().all(|c| c.is_ascii_digit() || c == '.')
-                && (2..=24).contains(&term.chars().count())
-                && !result
-                    .iter()
-                    .any(|v: &String| v.to_lowercase() == term.to_lowercase())
-            {
-                result.push(term.to_string());
-            }
-            if result.len() >= 16 {
-                return result;
-            }
+        if result.len() == 6 {
+            break;
         }
     }
     result
+}
+pub fn focus_terms(notes: &[UserNote]) -> Vec<String> {
+    extract_focus(
+        &document_notes(notes)
+            .into_iter()
+            .filter(|note| note.kind != "opinion")
+            .map(|note| note.content.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )
 }
 pub fn fingerprint(notes: &[UserNote], segments: &[Segment], cursor: u32) -> String {
     // Stable FNV-1a digest is a change marker, not a security primitive.
@@ -239,6 +341,32 @@ pub fn retrieve(snapshot: &Snapshot) -> Context {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn prose_becomes_topics_instead_of_sentence_copies() {
+        let text = "我正在测试会议纪要功能，但是没有自动提取关键词，然后关注那边全部是我写的内容。";
+        let words = extract_focus(text);
+        assert!(!words.is_empty());
+        assert!(words.iter().all(|w| w.chars().count() <= 8), "{words:?}");
+        assert!(
+            words
+                .iter()
+                .any(|w| w.contains("纪要") || w.contains("关键词")),
+            "{words:?}"
+        );
+        assert!(!words
+            .iter()
+            .any(|w| ["正在", "没有", "内容", "然后"].contains(&w.as_str())));
+        assert_eq!(
+            extract_focus("请关注 **离线转写** 和 **项目预算**"),
+            ["离线转写", "项目预算"]
+        );
+        assert!(extract_focus("现在我正在这里，然后为什么呢？").is_empty());
+        let english = extract_focus(
+            "We need offline transcription and speaker identification for the research interview.",
+        );
+        assert!(english.iter().any(|s| s == "transcription"));
+        assert!(!english.iter().any(|s| s == "need" || s == "the"));
+    }
     fn segment(seq: u32, text: &str) -> Segment {
         Segment {
             id: format!("s{seq}"),

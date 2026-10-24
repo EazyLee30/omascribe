@@ -5,7 +5,9 @@ mod validation;
 mod writer;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
-pub use retrieval::{document_notes, fingerprint, focus_terms, needs_update, ranked_text};
+pub use retrieval::{
+    document_notes, extract_focus, fingerprint, focus_terms, needs_update, ranked_text,
+};
 use serde_json::{json, Value};
 use std::{
     fs::File,
@@ -339,8 +341,37 @@ fn generate_inner(
                 break;
             }
             Err(error) if attempt == 0 => {
-                messages.push(json!({"role":"assistant","content":text}));
-                messages.push(json!({"role":"user","content":format!("Validation failed: {error}. Recheck each section against the exact transcript passage IDs. Sources are transcript IDs, NOT section numbers. Correct wrong citations; remove unsupported claims instead of inventing evidence. Preserve uncertainty and original dates. Return corrected JSON only.")}));
+                // Rebuild from the pending evidence instead of feeding the failed draft back
+                // as an example: small local models otherwise repeat its invalid attributions.
+                if context
+                    .segments
+                    .iter()
+                    .any(|s| s.seq > snapshot.meeting.notes_cursor)
+                {
+                    context
+                        .segments
+                        .retain(|s| s.seq > snapshot.meeting.notes_cursor);
+                }
+                let (repair_system, repair_content) =
+                    writer::prompt(snapshot, &context, &json!({}));
+                let mut repair: Value = serde_json::from_str(&repair_content)?;
+                let attribution = error.to_string().contains("speaker attribution");
+                if attribution {
+                    for passage in repair["transcript"].as_array_mut().unwrap() {
+                        passage["speaker"] = Value::Null;
+                    }
+                }
+                let hint = if attribution {
+                    "所有片段采用中性叙述，不写人名，不推测是谁说的。"
+                } else if error.to_string().contains("attendee") {
+                    "不要生成参会名单，只写转写明确支持的讨论内容。"
+                } else {
+                    "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
+                };
+                messages = vec![
+                    json!({"role":"system","content":format!("{repair_system} {hint}")}),
+                    json!({"role":"user","content":serde_json::to_string(&repair)?}),
+                ];
                 let repair_input = messages
                     .iter()
                     .filter_map(|m| m["content"].as_str())

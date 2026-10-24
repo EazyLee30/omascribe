@@ -1,3 +1,4 @@
+import { mountUpdates } from "./updates";
 import { invoke } from "@tauri-apps/api/core";
 import { t, locale, type Locale } from "./i18n";
 import type { Diagnostic } from "./types";
@@ -28,6 +29,7 @@ const sections = () => [
   ["transcription", tr("转写与纪要", "Transcription & minutes", "轉寫與紀要")],
   ["profiles", tr("配置分享", "Configuration sharing", "設定分享")],
   ["privacy", tr("隐私与联网", "Privacy & network", "隱私與連網")],
+  ["updates", tr("软件更新", "Software updates", "軟體更新")],
   ["storage", tr("存储空间", "Storage", "儲存空間")],
 ];
 export async function mountSettings(
@@ -49,9 +51,11 @@ export async function mountSettings(
       return {
         allow_model_downloads: false,
         allow_online_recommendations: false,
+        allow_update_checks: false,
       };
     }
   };
+  let updateCleanup: (() => void) | undefined;
   let network = await readNetwork();
   const diagnostics = await invoke<Diagnostic>("diagnostics");
   root.classList.add("workspace-page");
@@ -195,6 +199,8 @@ export async function mountSettings(
     <div id="model-list">${modelCards()}</div><p class="setting-help">${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => esc(m.model.name)).join(" + ")}</p>`;
   }
   async function render() {
+    updateCleanup?.();
+    updateCleanup = undefined;
     const section = active;
     root.querySelectorAll<HTMLElement>("[data-section]").forEach((b) => {
       b.classList.toggle("selected", b.dataset.section === active);
@@ -281,13 +287,19 @@ export async function mountSettings(
       )}</div><button class="outline" data-section="models">${tr("管理说话人模型", "Manage speaker models", "管理說話人模型")}</button><h2 class="settings-subtitle">${tr("辅助背景", "Supporting context", "輔助背景")}</h2><div class="settings-group">${toggle("use_knowledge", tr("使用知识库", "Use knowledge base", "使用知識庫"), tr("只检索你明确加入知识库的笔记。用于理解背景，不作为会议事实来源。", "Retrieve notes you explicitly add to the knowledge base as context, never as meeting evidence.", "僅檢索明確加入知識庫的筆記作為背景。"))}${toggle("use_memory", tr("使用记忆", "Use memory", "使用記憶"), tr("使用你维护的表达偏好与工作背景，不自动保存新记忆。", "Use your saved writing preferences and work context. New memories are never saved automatically.", "使用你維護的寫作偏好及背景，不自動新增記憶。"))}</div><p class="setting-help">${tr("已启用的专有名词供纪要参考；转写原文不自动替换。", "Enabled glossary entries guide the writer; original transcripts are not automatically replaced.", "啟用的專有名詞供紀要參考，不自動取代轉寫原文。")}</p>`;
     } else if (section === "profiles") {
       content.innerHTML = `${header(tr("配置分享", "Configuration sharing", "設定分享"), tr("把适合某台电脑的模型搭配与外观保存为文件。", "Save a device-specific model pair and appearance as a portable file.", "將適合某台電腦的模型搭配及外觀存為檔案。"))}<div class="settings-group">${row(tr("配置名称", "Configuration name", "設定名稱"), `<input id="profile-name" maxlength="160" value="${tr("我的离线配置", "My offline configuration", "我的離線設定")}">`)}${row(tr("导出当前配置", "Export current configuration", "匯出目前設定"), `<button class="outline" data-settings="export-profile">${glyph("upload")}${tr("导出分享文件", "Export share file", "匯出分享檔案")}</button>`, tr("包含模型 ID、推理参数和外观；不包含模型权重或个人内容。", "Includes model IDs, inference settings, and appearance. No model weights or personal content.", "包含模型 ID、推理參數及外觀，不含模型權重或個人內容。"))}${row(tr("使用别人的配置", "Use a shared configuration", "使用別人的設定"), `<button class="outline" data-settings="import-profile">${glyph("download")}${tr("导入配置文件", "Import configuration", "匯入設定檔")}</button>`, tr("先预览，再应用；缺少的模型可以随后下载。", "Preview before applying, then download any missing models.", "預覽後套用，再下載缺少的模型。"))}</div><button class="outline" data-settings="open-community">${tr("打开官网配置广场", "Open configuration gallery", "開啟官網設定廣場")} ↗</button><p class="setting-help">${tr("在浏览器中查看和投稿；本地导入无需联网。外部配置只供预览，不会自动应用或下载模型。", "Browse and contribute in your browser. Local imports work offline. External profiles are previewed, never automatically applied or downloaded.", "透過瀏覽器查看及投稿，本機匯入不需連網；外部設定僅供預覽，不自動套用或下載。")}</p>${profile ? `<div class="profile-preview"><span class="badge">${tr("待应用配置", "Configuration preview", "待套用設定")}</span><h2>${esc(profile.name)}</h2><p>${esc(profile.hardware_hint)}</p><dl><dt>${tr("转写", "Transcription", "轉寫")}</dt><dd>${esc(profile.preferences.asr_model)}</dd><dt>LLM</dt><dd>${esc(profile.preferences.llm_model)}</dd><dt>${tr("线程 / 上下文", "Threads / context", "執行緒 / 上下文")}</dt><dd>${profile.preferences.threads} / ${profile.preferences.context_size}</dd><dt>${tr("后端 / 资源策略", "Backend / resource policy", "後端 / 資源策略")}</dt><dd>${esc(profile.preferences.inference_backend)} / ${esc(profile.preferences.resource_mode)}</dd><dt>${tr("生成内存预算", "Writer memory budget", "生成記憶體預算")}</dt><dd>${profile.preferences.memory_budget_mib ? `${profile.preferences.memory_budget_mib / 1024} GiB` : tr("自动", "Automatic", "自動")}</dd><dt>${tr("外观 / 自动纪要", "Appearance / automatic minutes", "外觀 / 自動紀要")}</dt><dd>${esc(profile.preferences.appearance.theme)} · ${esc(profile.preferences.appearance.mode)} · ${profile.preferences.appearance.font_size}px / ${profile.preferences.auto_notes ? tr("启用", "On", "啟用") : tr("关闭", "Off", "關閉")}</dd><dt>${tr("说话人 / 知识库 / 记忆", "Speakers / knowledge / memory", "說話人 / 知識庫 / 記憶")}</dt><dd>${[profile.preferences.diarization, profile.preferences.use_knowledge, profile.preferences.use_memory].map((v) => (v ? tr("启用", "On", "啟用") : tr("关闭", "Off", "關閉"))).join(" / ")}</dd></dl><div class="button-row"><button class="primary" data-settings="apply-profile">${tr("应用此配置", "Apply configuration", "套用此設定")}</button><button class="subtle" data-settings="dismiss-profile">${tr("取消", "Cancel")}</button></div></div>` : ""}`;
+    } else if (section === "updates") {
+      updateCleanup = await mountUpdates(
+        content,
+        diagnostics.version,
+        options.toast,
+      );
     } else if (section === "privacy") {
       network = await readNetwork();
       if (!alive || section !== active) return;
       const offline = `<span class="badge">${tr("仅本机 · 不可开启上传", "Local only · no upload option", "僅本機 · 無上傳選項")}</span>`;
       const control = (key: keyof NetworkPolicy, label: string) =>
         `<input type="checkbox" role="switch" data-network="${key}" aria-label="${esc(label)}" ${network[key] ? "checked" : ""}>`;
-      content.innerHTML = `${header(tr("隐私与联网", "Privacy & network", "隱私與連網"), tr("内容处理始终离线。可选联网功能单独授权，并且不会随分享配置开启。", "Content processing stays offline. Optional network features have separate device permissions that shared profiles cannot enable.", "內容處理始終離線；可選連網功能獨立授權，不隨分享設定開啟。"))}<div class="settings-group">${row(tr("录音与音频导入", "Recording & audio import", "錄音及音訊匯入"), offline)}${row(tr("转写与说话人分析", "Transcription & speaker analysis", "轉寫及說話人分析"), offline)}${row(tr("AI 纪要、知识库与记忆", "AI minutes, knowledge & memory", "AI 紀要、知識庫及記憶"), offline, tr("仅使用已安装模型。没有云端模型、遥测或内容上传接口。本机进程间通信不连接互联网。", "Uses installed models only. No cloud inference, telemetry, or content-upload endpoint. Local inter-process communication does not use the internet.", "僅使用已安裝模型，無雲端推理、遙測或內容上傳；本機程序通訊不連接網際網路。"))}</div><h2 class="settings-subtitle">${tr("可选联网功能", "Optional network features", "可選連網功能")}</h2><div class="settings-group">${row(tr("允许手动下载模型", "Allow manual model downloads", "允許手動下載模型"), control("allow_model_downloads", tr("允许手动下载模型", "Allow manual model downloads")), tr("只在你点击下载后连接 Hugging Face / GitHub 获取已固定版本的文件并核对哈希。关闭会取消进行中的下载。", "Only your Download action fetches pinned files from Hugging Face / GitHub and verifies hashes. Disabling cancels active downloads.", "僅點擊下載後從 Hugging Face / GitHub 取得固定檔案並核對雜湊；關閉會取消下載。"))}${row(tr("允许打开在线配置广场", "Allow opening the online gallery", "允許開啟線上設定廣場"), control("allow_online_recommendations", tr("允许打开在线配置广场", "Allow opening the online gallery")), tr("由默认浏览器访问 OmaScribe 官网和 Cloudflare。网站可看到网络地址；应用不附带硬件、录音、笔记或配置。投稿需在网页中另行操作。", "Your browser visits the OmaScribe site on Cloudflare, which receives normal web connection metadata. The app sends no hardware, recordings, notes or configuration. Publishing is a separate website action.", "由瀏覽器存取 Cloudflare 上的官網，網站可見網路位址；應用不附帶硬體、錄音、筆記或設定，投稿另行操作。"))}</div><p class="setting-help">${tr("本地文件目前不由应用加密；请使用系统磁盘加密。配置文件只含设置，个人资料备份则包含正文。", "Local files are not app-encrypted; use system disk encryption. Configuration files contain settings only; private-library backups contain your content.", "本機檔案目前未由應用加密，請使用系統磁碟加密。設定檔不含正文，個人資料備份則包含正文。")}</p>`;
+      content.innerHTML = `${header(tr("隐私与联网", "Privacy & network", "隱私與連網"), tr("内容处理始终离线。可选联网功能单独授权，并且不会随分享配置开启。", "Content processing stays offline. Optional network features have separate device permissions that shared profiles cannot enable.", "內容處理始終離線；可選連網功能獨立授權，不隨分享設定開啟。"))}<div class="settings-group">${row(tr("录音与音频导入", "Recording & audio import", "錄音及音訊匯入"), offline)}${row(tr("转写与说话人分析", "Transcription & speaker analysis", "轉寫及說話人分析"), offline)}${row(tr("AI 纪要、知识库与记忆", "AI minutes, knowledge & memory", "AI 紀要、知識庫及記憶"), offline, tr("仅使用已安装模型。没有云端模型、遥测或内容上传接口。本机进程间通信不连接互联网。", "Uses installed models only. No cloud inference, telemetry, or content-upload endpoint. Local inter-process communication does not use the internet.", "僅使用已安裝模型，無雲端推理、遙測或內容上傳；本機程序通訊不連接網際網路。"))}</div><h2 class="settings-subtitle">${tr("可选联网功能", "Optional network features", "可選連網功能")}</h2><div class="settings-group">${row(tr("软件更新", "Software updates", "軟體更新"), `<button class="outline" data-section="updates">${tr("管理", "Manage")}</button>`, tr("单独授权，手动检查和下载 GitHub 上的签名安装包。", "Separate permission for manual checks and signed GitHub installers.", "獨立授權，手動檢查及下載 GitHub 上的簽章安裝包。"))}${row(tr("允许手动下载模型", "Allow manual model downloads", "允許手動下載模型"), control("allow_model_downloads", tr("允许手动下载模型", "Allow manual model downloads")), tr("只在你点击下载后连接 Hugging Face / GitHub 获取已固定版本的文件并核对哈希。关闭会取消进行中的下载。", "Only your Download action fetches pinned files from Hugging Face / GitHub and verifies hashes. Disabling cancels active downloads.", "僅點擊下載後從 Hugging Face / GitHub 取得固定檔案並核對雜湊；關閉會取消下載。"))}${row(tr("允许打开在线配置广场", "Allow opening the online gallery", "允許開啟線上設定廣場"), control("allow_online_recommendations", tr("允许打开在线配置广场", "Allow opening the online gallery")), tr("由默认浏览器访问 OmaScribe 官网和 Cloudflare。网站可看到网络地址；应用不附带硬件、录音、笔记或配置。投稿需在网页中另行操作。", "Your browser visits the OmaScribe site on Cloudflare, which receives normal web connection metadata. The app sends no hardware, recordings, notes or configuration. Publishing is a separate website action.", "由瀏覽器存取 Cloudflare 上的官網，網站可見網路位址；應用不附帶硬體、錄音、筆記或設定，投稿另行操作。"))}</div><p class="setting-help">${tr("本地文件目前不由应用加密；请使用系统磁盘加密。配置文件只含设置，个人资料备份则包含正文。", "Local files are not app-encrypted; use system disk encryption. Configuration files contain settings only; private-library backups contain your content.", "本機檔案目前未由應用加密，請使用系統磁碟加密。設定檔不含正文，個人資料備份則包含正文。")}</p>`;
     } else if (section === "storage") {
       const s = await invoke<Record<string, number | string>>("storage_usage");
       if (!alive || section !== active) return;
@@ -555,6 +567,7 @@ export async function mountSettings(
       await queue;
     },
     async close() {
+      updateCleanup?.();
       alive = false;
       clearInterval(timer);
       await queue;

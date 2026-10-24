@@ -132,6 +132,9 @@ jobs:
           path: build-assets/native/runtime/llama
           key: ${{ steps.llama-cache.outputs.cache-primary-key }}
       - name: Build native installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
       - name: Verify installed assets and offline inference
         run: |
@@ -165,6 +168,22 @@ jobs:
           pattern: package-*
           merge-multiple: true
           path: release-assets
+      - name: Prepare Arch package recipe
+        run: python scripts/aur-package.py
+      - name: Build and install the Arch package in an official Arch container
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work archlinux:base-devel bash -euc '
+            pacman -Syu --noconfirm --needed sudo gtk3 webkit2gtk-4.1 libayatana-appindicator gtk-layer-shell pipewire ffmpeg desktop-file-utils xdg-utils
+            useradd -m builder
+            chown -R builder:builder /work/build-assets/aur
+            su builder -c "cd /work/build-assets/aur && makepkg --printsrcinfo > .SRCINFO && makepkg --noconfirm"
+            pacman -U --noconfirm /work/build-assets/aur/omascribe-bin-*.pkg.tar.zst
+            OMASCRIBE_DATA_DIR=/tmp/omascribe-arch /usr/lib/OmaScribe/native/runtime/omascribe-cli diagnose > /work/build-assets/aur/diagnostics.json
+            test -f /usr/share/applications/OmaScribe.desktop
+          '
+          python scripts/aur-package.py --archive
+      - name: Create signed update manifest
+        run: python scripts/update-manifest.py
       - name: Publish all five tested installers as a stable release
         env:
           GH_TOKEN: ${{ github.token }}

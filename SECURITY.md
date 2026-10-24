@@ -11,3 +11,13 @@ Diagnostic job/history records stay in the local SQLite database and can contain
 Please report a vulnerability without attaching real meeting audio or private notes. The repository's GitHub security reporting feature is the preferred channel when available. For ordinary bugs, use a synthetic reproduction and redact paths or personal content.
 
 Shared configuration JSON contains only validated settings and model IDs (plus a user-chosen name and hardware description); it excludes meeting/library content and filesystem paths. The separate private-library export includes notes, terms and memory. Knowledge and memory are opt-in context, not evidence. Speaker clustering stays local; users supply names manually. Downloads are checked against catalog hashes before installation. Imported configuration cannot change URLs or run commands.
+
+Since 0.3.1, software update checks/downloads require a third, independently saved
+permission (`allow_update_checks`), off by default and excluded from shared profiles.
+Updates are manual and contact only the fixed GitHub release endpoint, followed by
+GitHub asset delivery redirects. No meeting or hardware content is included.
+Installers must pass Minisign verification with the embedded public key and signed
+version binding. Downloads can be cancelled; turning permission off cancels the
+request. Recording or processing prevents installation. Debian/Arch installations
+use the system package manager; AppImage, macOS and Windows use the signed updater.
+The website does not silently install updates. 0.3.0 needs a manual 0.3.1 install.

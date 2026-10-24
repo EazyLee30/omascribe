@@ -1,0 +1,20 @@
+# Maintainer: OmaScribe project <https://github.com/EazyLee30/omascribe>
+pkgname=omascribe-bin
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='Offline meeting recorder, bilingual transcription and local AI minutes'
+arch=('x86_64')
+url='https://github.com/EazyLee30/omascribe'
+license=('MIT')
+depends=('gtk3' 'webkit2gtk-4.1' 'libayatana-appindicator' 'gtk-layer-shell' 'pipewire' 'ffmpeg' 'desktop-file-utils' 'xdg-utils')
+provides=('omascribe')
+conflicts=('omascribe')
+options=('!strip' '!debug')
+source=("${url}/releases/download/v${pkgver}/OmaScribe_${pkgver}_Linux-x64.deb" 'LICENSE')
+sha256sums=('@SHA256@' '@LICENSE_SHA256@')
+
+package() {
+  # makepkg extracts the ar archive; bsdtar handles Tauri's data.tar.gz/xz/zst.
+  bsdtar -xf "${srcdir}/data.tar."* -C "${pkgdir}"
+  install -Dm644 "${srcdir}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

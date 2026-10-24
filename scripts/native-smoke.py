@@ -275,6 +275,34 @@ def main():
         (output / (destination.name + ".sha256")).write_text(
             digest + "  " + destination.name + "\n", encoding="utf-8", newline="\n"
         )
+    # Verify each updater payload and its signed version before publishing metadata.
+    if windows:
+        updater = installer
+        updater_name = f"OmaScribe_{version}_{label}.exe"
+    elif linux:
+        updater = appimage
+        updater_name = f"OmaScribe_{version}_{label}.AppImage"
+    else:
+        updater = next((bundle / "macos").glob("*.app.tar.gz"))
+        updater_name = f"OmaScribe_{version}_{label}.app.tar.gz"
+    destination = output / updater_name
+    if not destination.exists():
+        shutil.copy2(updater, destination)
+        with destination.open("rb") as f:
+            digest = hashlib.file_digest(f, "sha256").hexdigest()
+        (output / (updater_name + ".sha256")).write_text(digest + "  " + updater_name + "\n", encoding="utf-8", newline="\n")
+    sig = output / (updater_name + ".sig")
+    shutil.copy2(pathlib.Path(str(updater) + ".sig"), sig)
+    key_file = results / "updater.pub"
+    key_file.write_text(json.loads((ROOT / "src-tauri/tauri.conf.json").read_text(encoding="utf-8"))["plugins"]["updater"]["pubkey"], encoding="utf-8")
+    subprocess.run([str(cli), "verify-update", str(destination), str(sig), str(key_file), version], check=True, timeout=180)
+    # Corrupted bytes and relabeled versions must be rejected by the same verifier.
+    corrupt = results / "corrupt-update.bin"
+    corrupt.write_bytes(b"not the signed installer")
+    for payload, expected_version in [(corrupt, version), (destination, "99.0.0")]:
+        result = subprocess.run([str(cli), "verify-update", str(payload), str(sig), str(key_file), expected_version], capture_output=True, timeout=180)
+        assert result.returncode != 0, "Invalid update was accepted"
+    (output / (updater_name + ".verified.json")).write_text(json.dumps({"verified": True, "version": version, "file": updater_name}), encoding="utf-8")
     shutil.make_archive(
         str(output / f"OmaScribe_{version}_{label}_validation"), "zip", results
     )

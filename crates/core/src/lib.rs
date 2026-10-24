@@ -18,3 +18,5 @@ pub mod models;
 pub mod network;
 pub mod preferences;
 pub mod speakers;
+
+pub mod update_signature;

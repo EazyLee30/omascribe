@@ -11,7 +11,7 @@ Download the matching installer from [Releases](https://github.com/EazyLee30/oma
 | macOS 11+, Apple Silicon | Open `macOS-AppleSilicon.dmg`; drag OmaScribe into Applications. |
 | macOS 11+, Intel with AVX2 | Open `macOS-Intel.dmg`; drag OmaScribe into Applications. |
 | Windows 10/11, x64 with AVX2 | Run `Windows-x64.exe`; installs for the current user. |
-| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.0_Linux-x64.deb`, or make the AppImage executable and launch it. |
+| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.1_Linux-x64.deb`, or make the AppImage executable and launch it. |
 
 The Mac app uses an ad-hoc signature and is not notarized. macOS may require **System Settings → Privacy & Security → Open Anyway** for this particular downloaded app. Windows may show SmartScreen because the app has no publisher certificate. Use the application-specific confirmation after checking the repository and filename; do not disable system-wide protection.
 
@@ -50,3 +50,7 @@ When reporting a problem, include app version, OS version, CPU/architecture, mic
 Linux CI is a prerequisite for the exact same source commit. The workflow publishes a stable release only when all five installers have passed. Each native runner executes core tests and strict Clippy, builds the app and inference binaries, packages the verified models, and exercises the actual installed/bundled resources; Linux checks the payload and desktop launch from both the extracted Debian package and AppImage. Public speech checks two takes, restart persistence and retranscription boundaries. Fictional Chinese-date and English-owner/deadline fixtures exercise the real local writing model, evidence checks and transactional storage. A desktop-process launch smoke test checks for immediate startup failure. Validation JSON accompanies each installer.
 
 Physical microphone capture, permission dialogs, visual layout, caption behavior across Spaces/monitors, and sustained thermal performance are explicitly outside these hosted-runner checks.
+
+## 0.3.1 update and Arch checks
+
+Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. Upgrade 0.3.0 manually once; test future updates with a genuinely newer signed version. Arch recipes are built and installed in an official Arch container; the AUR listing is pending. See [packaging/aur](../packaging/aur/README.md).

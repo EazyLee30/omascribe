@@ -33,6 +33,7 @@ export interface Profile {
 export interface NetworkPolicy {
   allow_model_downloads: boolean;
   allow_online_recommendations: boolean;
+  allow_update_checks: boolean;
 }
 export interface ModelStatus {
   model: {

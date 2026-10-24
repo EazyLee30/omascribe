@@ -16,11 +16,13 @@ mod overlay;
 #[path = "overlay_native.rs"]
 mod overlay;
 mod profiles;
+mod updates;
 mod views;
 mod workspace;
 use tauri::{Emitter, State};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::DialogExt;
+use updates::*;
 use views::{
     display_monitors, drag_transcript, get_view_settings, set_view_meeting, set_view_settings,
     transcript_snapshot,
@@ -44,6 +46,12 @@ fn create_meeting(engine: State<AppState>, title: String) -> Reply<Meeting> {
 #[tauri::command]
 fn snapshot(engine: State<AppState>, id: String) -> Reply<Snapshot> {
     engine.snapshot(&id).map_err(err)
+}
+#[tauri::command]
+async fn extract_focus_terms(content: String) -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(move || omascribe_core::notes::extract_focus(&content))
+        .await
+        .unwrap_or_default()
 }
 #[tauri::command]
 fn diagnostics(engine: State<AppState>) -> Diagnostics {
@@ -303,10 +311,16 @@ fn main() {
         assign_speaker,
         diarize,
         cancel_diarization,
+        update_status,
+        check_update,
+        download_update,
+        cancel_update,
+        install_update,
         list_meetings,
         create_meeting,
         snapshot,
         diagnostics,
+        extract_focus_terms,
         list_devices,
         update_meeting,
         save_note,
@@ -345,6 +359,8 @@ fn main() {
         }))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(Updates::default())
         .manage(profiles::PendingProfile::default())
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
