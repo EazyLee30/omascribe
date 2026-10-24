@@ -12,6 +12,16 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "wrangler": "4.152.0"
+  },
+  "dependencies": {
+    "@awesome.me/webawesome": "3.14.0",
+    "@fontsource/barlow-condensed": "5.2.7"
+  },
+  "overrides": {
+    "miniflare": {
+      "undici": "7.30.1"
+    }
   }
 }

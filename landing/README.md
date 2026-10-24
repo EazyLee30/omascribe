@@ -6,7 +6,7 @@ Production: https://omascribe.eazylee.si/ — Cloudflare Worker `omascribe-site`
 
 Five separate pages: `/`, `/download/`, `/models/`, `/community/`, `/privacy/`. English equivalents use `/en/`; Traditional Chinese uses `/zh-TW/`. All 15 routes are built with canonical and alternate links, a sitemap and a real 404 page.
 
-- `../model-catalog.json` supplies model names, sizes, licenses and supported model IDs. `src/copy.mjs` and `scripts/build.mjs` contain the three localized page versions.
+- `../model-catalog.json` supplies model names, sizes, licenses and supported model IDs. `src/copy.mjs`, `src/design.mjs` and `scripts/build.mjs` contain the three localized page versions.
 - `../docs/benchmarks/*.json` supplies measured results. Summaries are checked against raw runs; no measurements means explicitly unmeasured. RSS is not unified GPU memory or whole-machine power. Conditions and raw results remain downloadable.
 - `../community/profiles/*.json` is the reviewed gallery. Official suggestions and community submissions retain separate attribution. `../community/submissions/` is validated but excluded from the public gallery until a maintainer reviews and moves a file.
 - `../community/profile-schema.mjs` validates both at build time and in the browser. Unknown fields, network permissions, arbitrary model URLs, commands and private paths are unsupported. Only known model IDs and bounded parameters are accepted.
@@ -27,7 +27,7 @@ npm run dev          # http://localhost:8787
 npm run deploy       # deploy existing Worker using authorized Wrangler credentials
 ```
 
-`dist/` is generated and ignored. The build copies only required static assets and the shared schema. Website builds do not run or contact local inference. Local checks do not require a deployment token.
+`dist/` is generated and ignored. The build copies static assets, bundles the client with esbuild, and includes the shared validation schema. Website builds do not run or contact local inference. Local checks do not require a deployment token.
 
 ## GitHub deployment setup
 
@@ -45,3 +45,16 @@ For a fresh deployment, complete the setup below. The local OAuth session must n
 An alternative is connecting the existing Worker to GitHub through Cloudflare Workers Builds (Settings → Builds), with `cd landing && npm ci && npm run sync:release && npm run check` and deployment command `cd landing && npx wrangler deploy`. That Git connection requires account authorization and does not alone refresh on releases; the included GitHub workflow covers both code and release events.
 
 Official references: [Cloudflare GitHub Actions](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/), [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/), [GitHub trigger restrictions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow), [Releases API](https://docs.github.com/en/rest/releases/releases#list-releases).
+
+## Visual system and components
+
+The 2026-10-24 redesign uses the maintainer-supplied transparent mechanical illustrations, black/white typography and thin rules. Home is an overview; download, configurations, models/performance and privacy remain independent pages. Illustration concepts do not override release metadata, measured results or current feature limitations.
+
+- Web Awesome 3.14.0 provides buttons, select menus, inputs, textareas, tabs, dialogs, the mobile drawer and expandable measurement details. `src/components.css` imports its theme and a self-hosted Barlow Condensed font; `public/site.css` supplies the monochrome theme and responsive layout.
+- `src/client.js` imports only the used components. `public/site.js` handles shared configuration validation, filtering, preview and local file submission. No remote autoloader or CDN is used.
+- The build materializes Web Awesome's embedded system SVGs under `/assets/ui-icons/` and registers both icon libraries against this origin. This keeps `connect-src 'self'` intact. The package is pinned; the build fails if its icon source layout changes. License comments are preserved.
+- The homepage workspace uses explicitly labeled, prepared text. Tabs, source navigation, editing, Markdown export and a reset confirmation work locally. It does not capture audio or invoke a model.
+- `public/assets/NOTICE.md` documents artwork, component, font and original model-brand sources. Transparent illustrations are resized losslessly to WebP, with below-fold art lazy-loaded.
+- A scoped Miniflare override pins `undici` to 7.30.1 to fix the inherited 7.29.1 security advisories without downgrading Wrangler. Revisit this override when upgrading Wrangler.
+
+Manual browser acceptance: all 15 routes; 320, 390, 768, 1024 and 1440 px layouts; keyboard tabs, Escape and restored focus; search/filter empty states; valid and invalid local profiles; form submission downloads; current-edits Markdown export; architecture-specific release links; same-origin-only assets and zero browser errors. Test configuration files are generated locally and never submitted to GitHub.

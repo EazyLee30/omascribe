@@ -1,0 +1,3 @@
+/* Theme only: no global native resets, CDN assets, or unused utility framework. */
+@import "@awesome.me/webawesome/dist/styles/themes/default.css";
+@import "@fontsource/barlow-condensed/latin-800.css";
