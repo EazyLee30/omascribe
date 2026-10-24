@@ -1,4 +1,4 @@
-use crate::{audio, notes, store::Store, types::*};
+use crate::{audio, notes, platform, store::Store, types::*};
 use anyhow::{bail, Context, Result};
 use base64::Engine as _;
 use std::{
@@ -19,6 +19,8 @@ pub struct Active {
     pub id: String,
     pub take_number: Option<u32>,
     pub capture_pid: AtomicU32,
+    pub capture_running: AtomicBool,
+    pub capture_stop: Mutex<Option<Arc<AtomicBool>>>,
     pub worker_pid: AtomicU32,
     pub capture_done: AtomicBool,
     pub worker_done: AtomicBool,
@@ -45,35 +47,26 @@ pub struct Engine {
     _lock: File,
 }
 pub fn default_root() -> PathBuf {
-    if let Some(path) = std::env::var_os("OMASCRIBE_DATA_DIR") {
-        return PathBuf::from(path);
-    }
-    std::env::var_os("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local/share")
-        })
-        .join("omascribe")
+    platform::data_root()
 }
 impl Engine {
     pub fn open(root: PathBuf) -> Result<Arc<Self>> {
-        use std::os::{fd::AsRawFd, unix::fs::PermissionsExt};
+        use fs2::FileExt;
+        #[cfg(unix)]
+        use std::os::unix::fs::PermissionsExt;
         fs::create_dir_all(root.join("meetings"))?;
+        #[cfg(unix)]
         fs::set_permissions(&root, fs::Permissions::from_mode(0o700))?;
         let lock = std::fs::OpenOptions::new()
             .create(true)
             .truncate(false)
             .write(true)
             .open(root.join("app.lock"))?;
-        if unsafe { libc::flock(lock.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+        if FileExt::try_lock_exclusive(&lock).is_err() {
             bail!("OmaScribe 已在运行，请切换到已打开的窗口");
         }
-        let models = std::env::var_os("OMASCRIBE_MODELS_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| root.join("models"));
-        let runtime_dir = std::env::var_os("OMASCRIBE_RUNTIME_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| root.join("runtime"));
+        let models = platform::asset_dir(&root, "models", "OMASCRIBE_MODELS_DIR");
+        let runtime_dir = platform::asset_dir(&root, "runtime", "OMASCRIBE_RUNTIME_DIR");
         let store = Store::open(&root.join("meetings.sqlite3"))?;
         // A previous process can leave raw chunks behind. Recovery never deletes those chunks.
         for mut m in store.meetings()? {
@@ -285,13 +278,13 @@ impl Engine {
         Ok(())
     }
     pub fn worker_path(&self) -> PathBuf {
-        let installed = self.runtime_dir.join("omascribe-asr");
+        let installed = self.runtime_dir.join(platform::executable("omascribe-asr"));
         if installed.exists() {
             return installed;
         }
         std::env::current_exe()
             .unwrap_or_default()
-            .with_file_name("omascribe-asr")
+            .with_file_name(platform::executable("omascribe-asr"))
     }
     pub fn start_recording(
         self: &Arc<Self>,
@@ -354,6 +347,8 @@ impl Engine {
             id: id.into(),
             take_number: Some(take_number),
             capture_pid: AtomicU32::new(child.id()),
+            capture_running: AtomicBool::new(true),
+            capture_stop: Mutex::new(Some(child.stop.clone())),
             worker_pid: AtomicU32::new(0),
             capture_done: AtomicBool::new(false),
             worker_done: AtomicBool::new(false),
@@ -411,8 +406,8 @@ impl Engine {
     fn capture_thread(
         self: &Arc<Self>,
         active: Arc<Active>,
-        mut child: std::process::Child,
-        output: std::process::ChildStdout,
+        mut child: crate::capture::Capture,
+        output: Box<dyn std::io::Read + Send>,
         dir: PathBuf,
         live: bool,
     ) {
@@ -429,6 +424,7 @@ impl Engine {
             let exit = child.wait();
             let _transition = active.transition.lock().unwrap();
             active.capture_pid.store(0, Ordering::SeqCst);
+            active.capture_running.store(false, Ordering::SeqCst);
             let count = active.samples.load(Ordering::SeqCst);
             if active.paused.load(Ordering::SeqCst)
                 && !active.stopping.load(Ordering::SeqCst)
@@ -460,7 +456,7 @@ impl Engine {
             if count == initial {
                 failure = Some("没有采集到音频，请检查麦克风或导入文件".into());
             }
-            if !stopped && exit.as_ref().is_ok_and(|s| !s.success()) {
+            if !stopped && exit.as_ref().is_ok_and(|s| !*s) {
                 failure = Some("音频输入异常结束，已保留采集到的音频".into());
             }
             if live
@@ -622,10 +618,11 @@ impl Engine {
         }
         active.paused.store(true, Ordering::SeqCst);
         let pid = active.capture_pid.load(Ordering::SeqCst);
-        if pid > 0 {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGINT);
-            }
+        if let Some(stop) = active.capture_stop.lock().unwrap().as_ref() {
+            stop.store(true, Ordering::SeqCst);
+        }
+        if active.capture_running.load(Ordering::SeqCst) {
+            platform::stop_process(pid, true);
         }
         Ok(())
     }
@@ -644,13 +641,15 @@ impl Engine {
         {
             bail!("当前录音不能继续");
         }
-        if active.capture_pid.load(Ordering::SeqCst) > 0 || !self.status.lock().unwrap().paused {
+        if active.capture_running.load(Ordering::SeqCst) || !self.status.lock().unwrap().paused {
             bail!("正在暂停，请稍后继续");
         }
         let dir = self.audio_dir(&active.id)?;
         let mut child = audio::spawn_capture(&active.device, None, None, &dir.join("capture.log"))?;
         let output = child.stdout.take().context("无法读取录音流")?;
         active.capture_pid.store(child.id(), Ordering::SeqCst);
+        active.capture_running.store(true, Ordering::SeqCst);
+        *active.capture_stop.lock().unwrap() = Some(child.stop.clone());
         active.paused.store(false, Ordering::SeqCst);
         let _ = fs::remove_file(dir.join("capture.paused"));
         let db = self.store.lock().unwrap();
@@ -673,10 +672,11 @@ impl Engine {
         let _transition = active.transition.lock().unwrap();
         active.stopping.store(true, Ordering::SeqCst);
         let pid = active.capture_pid.load(Ordering::SeqCst);
-        if pid > 0 {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGINT);
-            }
+        if let Some(stop) = active.capture_stop.lock().unwrap().as_ref() {
+            stop.store(true, Ordering::SeqCst);
+        }
+        if active.capture_running.load(Ordering::SeqCst) {
+            platform::stop_process(pid, true);
         } else if active.paused.swap(false, Ordering::SeqCst) {
             let dir = self.audio_dir(&active.id)?;
             self.finish_take(active, false)?;
@@ -726,6 +726,8 @@ impl Engine {
             id: id.into(),
             take_number: None,
             capture_pid: AtomicU32::new(0),
+            capture_running: AtomicBool::new(false),
+            capture_stop: Mutex::new(None),
             worker_pid: AtomicU32::new(0),
             capture_done: AtomicBool::new(true),
             worker_done: AtomicBool::new(false),
@@ -781,9 +783,7 @@ impl Engine {
         self.note_cancel.store(true, Ordering::SeqCst);
         let pid = self.llm_pid.load(Ordering::SeqCst);
         if pid > 0 {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGTERM);
-            }
+            platform::stop_process(pid, false);
         }
     }
     pub fn clip(&self, id: &str, start_ms: u64, end_ms: u64) -> Result<String> {
@@ -855,14 +855,7 @@ impl Engine {
             "joiner-epoch-99-avg-1.int8.onnx",
             "tokens.txt",
         ];
-        let mem = fs::read_to_string("/proc/meminfo")
-            .unwrap_or_default()
-            .lines()
-            .find(|l| l.starts_with("MemAvailable:"))
-            .and_then(|l| l.split_whitespace().nth(1))
-            .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(0)
-            / 1024;
+        let mem = platform::available_memory_mib();
         let accent_path = PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
             .join(".local/state/omarchy/current/theme/colors.toml");
         let accent = fs::read_to_string(accent_path)
@@ -887,9 +880,14 @@ impl Engine {
                 .iter()
                 .all(|n| self.models.join("zipformer").join(n).is_file()),
             llm_ready: self.models.join(notes::MODEL_FILE).is_file(),
-            recorder_ready: Path::new("/usr/bin/pw-record").exists(),
+            recorder_ready: cfg!(any(target_os = "macos", target_os = "windows"))
+                || Path::new("/usr/bin/pw-record").exists(),
             worker_ready: self.worker_path().exists(),
-            server_ready: self.runtime_dir.join("llama/llama-server").exists(),
+            server_ready: self
+                .runtime_dir
+                .join("llama")
+                .join(platform::executable("llama-server"))
+                .exists(),
             available_memory_mib: mem,
             accent,
             version: env!("CARGO_PKG_VERSION").into(),
@@ -914,9 +912,7 @@ impl Engine {
             for p in [&a.capture_pid, &a.worker_pid] {
                 let pid = p.load(Ordering::SeqCst);
                 if pid > 0 {
-                    unsafe {
-                        libc::kill(pid as i32, libc::SIGTERM);
-                    }
+                    platform::stop_process(pid, false);
                 }
             }
         }

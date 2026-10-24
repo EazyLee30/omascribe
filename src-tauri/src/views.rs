@@ -1,4 +1,5 @@
 use crate::{overlay, AppState, Reply};
+#[cfg(target_os = "linux")]
 use gtk::prelude::*;
 use omascribe_core::Snapshot;
 use serde::{Deserialize, Serialize};
@@ -217,7 +218,7 @@ fn apply_windows(
     runtime: &std::path::Path,
     prefs: &ViewPreferences,
 ) -> Reply<()> {
-    overlay::apply(runtime, &prefs.captions)?;
+    overlay::apply(app, runtime, &prefs.captions)?;
     if prefs.transcript_mode == "floating" {
         let old = views.prefs.lock().unwrap().clone();
         let window = if let Some(window) = app.get_webview_window("transcript") {
@@ -253,7 +254,10 @@ fn apply_windows(
             || old.floating_width != prefs.floating_width
             || old.compact != prefs.compact
         {
+            #[cfg(target_os = "linux")]
             place_hyprland_window(prefs.clone());
+            #[cfg(not(target_os = "linux"))]
+            place_native_window(&window, prefs)?;
         }
     } else if let Some(window) = app.get_webview_window("transcript") {
         window.hide().map_err(|e| e.to_string())?;
@@ -262,6 +266,7 @@ fn apply_windows(
 }
 // Wayland clients cannot place ordinary windows themselves. Target only our own auxiliary surface;
 // transient compositor commands do not edit the user's Hyprland or Omarchy configuration.
+#[cfg(target_os = "linux")]
 fn place_hyprland_window(prefs: ViewPreferences) {
     if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_none() {
         return;
@@ -345,6 +350,7 @@ pub struct MonitorInfo {
     width: i32,
     height: i32,
 }
+#[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> {
     let (send, receive) = tokio::sync::oneshot::channel();
@@ -376,7 +382,7 @@ pub async fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> 
 }
 pub fn start(app: &tauri::AppHandle) {
     let handle = app.clone();
-    gtk::glib::timeout_add_local(Duration::from_millis(350), move || {
+    let tick = move || {
         let engine = handle.state::<AppState>();
         let views = handle.state::<ViewState>();
         let prefs = views.prefs.lock().unwrap().clone();
@@ -409,15 +415,42 @@ pub fn start(app: &tauri::AppHandle) {
                     })
                 })
                 .unwrap_or_default();
-            overlay::render(&text, &prefs.captions);
+            overlay::render(&handle, &text, &prefs.captions);
         }
         if views.dirty.swap(false, Ordering::SeqCst) && views.persist().is_err() {
             views.dirty.store(true, Ordering::SeqCst);
         }
+    };
+    #[cfg(target_os = "linux")]
+    gtk::glib::timeout_add_local(Duration::from_millis(350), move || {
+        tick();
         gtk::glib::ControlFlow::Continue
     });
+    #[cfg(not(target_os = "linux"))]
+    {
+        let app = app.clone();
+        std::thread::spawn(move || loop {
+            std::thread::sleep(Duration::from_millis(350));
+            let tick = tick.clone();
+            if app.run_on_main_thread(tick).is_err() {
+                break;
+            }
+        });
+    }
 }
 pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool {
+    if window.label() == "captions" {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            api.prevent_close();
+            let _ = window.hide();
+            let views = window.state::<ViewState>();
+            let mut prefs = views.prefs.lock().unwrap();
+            prefs.captions.enabled = false;
+            let _ = window.app_handle().emit("view-settings", prefs.clone());
+            views.dirty.store(true, Ordering::SeqCst);
+        }
+        return true;
+    }
     if window.label() != "transcript" {
         return false;
     }
@@ -445,4 +478,48 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool 
         views.dirty.store(true, Ordering::SeqCst);
     }
     true
+}
+
+#[cfg(not(target_os = "linux"))]
+fn place_native_window(window: &tauri::WebviewWindow, prefs: &ViewPreferences) -> Reply<()> {
+    if prefs.snap == "free" {
+        return Ok(());
+    }
+    if let Some(monitor) = window.current_monitor().map_err(|e| e.to_string())? {
+        let size = monitor.size().to_logical::<f64>(monitor.scale_factor());
+        let offset = if prefs.snap == "left" {
+            16.
+        } else {
+            (size.width - prefs.floating_width as f64 - 16.).max(0.)
+        };
+        window
+            .set_position(tauri::PhysicalPosition::new(
+                monitor.position().x + (offset * monitor.scale_factor()) as i32,
+                monitor.position().y + (60. * monitor.scale_factor()) as i32,
+            ))
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+#[cfg(not(target_os = "linux"))]
+#[tauri::command]
+pub fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> {
+    Ok(app
+        .available_monitors()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .enumerate()
+        .map(|(i, m)| {
+            let size = m.size().to_logical::<i32>(m.scale_factor());
+            MonitorInfo {
+                id: i as i32,
+                name: m
+                    .name()
+                    .cloned()
+                    .unwrap_or_else(|| format!("Display {}", i + 1)),
+                width: size.width,
+                height: size.height,
+            }
+        })
+        .collect())
 }

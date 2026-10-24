@@ -747,15 +747,20 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.isComposing || e.keyCode === 229) return;
-  if (e.ctrlKey && e.key.toLowerCase() === "n") {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
     e.preventDefault();
     guard(newMeeting);
   }
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "r") {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "r") {
     e.preventDefault();
     guard(recording);
   }
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p" && current) {
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    e.shiftKey &&
+    e.key.toLowerCase() === "p" &&
+    current
+  ) {
     e.preventDefault();
     guard(async () => {
       await invoke(
@@ -764,7 +769,7 @@ document.addEventListener("keydown", (e) => {
       await refresh();
     });
   }
-  if (e.ctrlKey && e.key.toLowerCase() === "f" && current) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f" && current) {
     e.preventDefault();
     guard(async () => {
       await toggleTranscript(true);

@@ -83,7 +83,10 @@ fn generate_inner(
     let port = listener.local_addr()?.port();
     drop(listener);
     let token = Uuid::new_v4().to_string();
-    let server_path = engine.runtime_dir.join("llama/llama-server");
+    let server_path = engine
+        .runtime_dir
+        .join("llama")
+        .join(crate::platform::executable("llama-server"));
     let log = File::create(engine.root.join("llm-runtime.log"))?;
     let child = audio::child_command(&server_path)
         .arg("-m")
@@ -144,9 +147,7 @@ fn generate_inner(
             };
             if deadline.elapsed() > Duration::from_secs(600) {
                 timeout_flag.store(true, Ordering::SeqCst);
-                unsafe {
-                    libc::kill(pid as i32, libc::SIGTERM);
-                }
+                crate::platform::stop_process(pid, false);
                 break;
             }
             if s.recording && s.elapsed_ms.saturating_sub(s.processed_ms) > 4000 {
@@ -156,9 +157,7 @@ fn generate_inner(
             }
             if engine.note_cancel.load(Ordering::SeqCst) || lag_count >= 6 {
                 engine.note_cancel.store(true, Ordering::SeqCst);
-                unsafe {
-                    libc::kill(pid as i32, libc::SIGTERM);
-                }
+                crate::platform::stop_process(pid, false);
                 break;
             }
         }

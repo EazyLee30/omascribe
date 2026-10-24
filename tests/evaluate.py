@@ -47,7 +47,9 @@ def main():
     parser.add_argument("--case", help="Run one named fixture")
     args = parser.parse_args()
     cli = str(args.cli.resolve())
-    cases = json.loads((REPO / "tests/fixtures/document-cases.json").read_text())
+    cases = json.loads(
+        (REPO / "tests/fixtures/document-cases.json").read_text(encoding="utf-8")
+    )
     if args.case:
         cases = [case for case in cases if case["name"] == args.case]
         if not cases:
@@ -125,6 +127,7 @@ def main():
                 env=env,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 timeout=650,
                 check=True,
             )
@@ -138,7 +141,9 @@ def main():
                 document=snapshot["suggestions"],
                 status=snapshot["runtime"]["notes_status"],
                 writer_attempts=json.loads(
-                    (pathlib.Path(root) / "last-generation.json").read_text()
+                    (pathlib.Path(root) / "last-generation.json").read_text(
+                        encoding="utf-8"
+                    )
                 ).get("attempt", 1)
                 if (pathlib.Path(root) / "last-generation.json").exists()
                 else 0,
@@ -150,7 +155,8 @@ def main():
                     ensure_ascii=False,
                     indent=2,
                 )
-                + "\n"
+                + "\n",
+                encoding="utf-8",
             )
             print(case["name"], "PASS" if not errors else errors, flush=True)
     if not all(r["passed"] for r in results):

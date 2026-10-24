@@ -1,27 +1,20 @@
 use crate::types::*;
 use anyhow::{bail, Context, Result};
+#[cfg(target_os = "linux")]
 use serde_json::Value;
+#[cfg(target_os = "linux")]
+use std::process::Command;
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
     path::Path,
-    process::{Child, Command, Stdio},
+    process::Stdio,
     time::{Duration, Instant},
 };
 
-pub fn child_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
-    use std::os::unix::process::CommandExt;
-    let mut cmd = Command::new(program);
-    // No inference or recording subprocess should outlive an unexpectedly closed app.
-    unsafe {
-        cmd.pre_exec(|| {
-            libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
-            Ok(())
-        });
-    }
-    cmd
-}
+pub use crate::platform::child_command;
 
+#[cfg(target_os = "linux")]
 pub fn devices() -> Result<Vec<Device>> {
     let output = Command::new("pw-dump")
         .output()
@@ -53,7 +46,18 @@ pub fn spawn_capture(
     input: Option<&Path>,
     replay_seconds: Option<u64>,
     log: &Path,
-) -> Result<Child> {
+) -> Result<crate::capture::Capture> {
+    if replay_seconds.is_none() {
+        if let Some(path) =
+            input.filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("wav")))
+        {
+            return crate::capture::wav(path);
+        }
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    if input.is_none() {
+        return crate::native_audio::capture(device);
+    }
     let mut cmd = if let Some(input) = input {
         let mut c = child_command("ffmpeg");
         c.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
@@ -88,8 +92,10 @@ pub fn spawn_capture(
     cmd.stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(File::create(log)?);
-    cmd.spawn()
-        .context("无法启动音频采集，请检查 PipeWire / ffmpeg")
+    crate::capture::Capture::process(
+        cmd.spawn()
+            .context("Cannot start audio input; compressed-file imports require ffmpeg")?,
+    )
 }
 
 pub fn capture_stream(
@@ -320,3 +326,6 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub use crate::native_audio::devices;

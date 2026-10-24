@@ -10,7 +10,7 @@
 
 # 你寫幾個詞，會議補全上下文。
 
-**OmaScribe 是面向 Linux 的離線錄音、中英轉寫與 Markdown 會議筆記應用。** 左側隨手記錄關鍵詞，右側結合會議原話，自動整理為有標題、有段落、可回聽的會議文件。
+**OmaScribe 是面向桌面的離線錄音、中英轉寫與 Markdown 會議筆記應用。** 左側隨手記錄關鍵詞，右側結合會議原話，自動整理為有標題、有段落、可回聽的會議文件。
 
 圍繞一臺執行 Omarchy 的 2016 年 12 英寸 MacBook 開發：雙核 Intel、8GB 記憶體。名字來自 **Oma**rchy 與 **Scribe**。
 
@@ -37,9 +37,17 @@
 
 系統合併頻繁變化，單次只執行一個寫作任務。在這臺老電腦上，紀要按批次出現，錄音和轉寫優先。**小模型仍可能理解錯誤或遺漏內容**；出處、數字和未定狀態校驗只能減少部分錯誤，不能證明所有內容都正確。
 
+## 下載原生測試版
+
+[**GitHub Releases →**](https://github.com/EazyLee30/omascribe/releases) · [建置狀態](https://github.com/EazyLee30/omascribe/actions/workflows/native-release.yml)
+
+Apple Silicon 選 `macOS-AppleSilicon.dmg`，Intel Mac 選 `macOS-Intel.dmg`，Windows 選 `Windows-x64.exe`。安裝包包含離線模型及推理執行環境；Windows 另包含離線 WebView2 安裝器。WAV 可直接匯入，其他壓縮格式需要 PATH 中有 FFmpeg。macOS 使用臨時簽章、未公證；Windows 尚無發行者簽章。請查看[安裝與測試指南](docs/NATIVE_TESTING.md)。三種安裝包全部通過流程檢查後才發佈。
+
+macOS 快捷鍵以 **⌘** 取代 **Ctrl**。資料位於 `~/Library/Application Support/OmaScribe`；Windows 位於 `%LOCALAPPDATA%\OmaScribe`。
+
 ## 構建與安裝
 
-當前支援 **x86-64 / AVX2 Linux、PipeWire、GTK3、WebKitGTK 4.1**，在 Omarchy 上驗證。暫不支援 macOS 或 Windows。
+當前支援 **x86-64 / AVX2 Linux、PipeWire、GTK3、WebKitGTK 4.1**，在 Omarchy 上驗證。macOS 11+（Apple Silicon／Intel AVX2）及 Windows 10/11 x64 AVX2 提供由 GitHub Actions 建置的原生測試預覽版。
 
 ```bash
 sudo pacman -S --needed base-devel git cmake pkgconf nodejs npm python \

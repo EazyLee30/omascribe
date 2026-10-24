@@ -16,3 +16,8 @@ __pycache__/
 .env.*
 
 /src-tauri/gen/
+
+/build-assets/
+/release-assets/
+/ci-results/
+/src-tauri/tauri.release.conf.json

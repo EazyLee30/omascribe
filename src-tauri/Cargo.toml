@@ -1,6 +1,6 @@
 [package]
 name = "omascribe"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 
@@ -13,12 +13,16 @@ tauri-plugin-dialog = "2"
 omascribe-core = { path = "../crates/core" }
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-gtk = "0.18"
-libloading = "0.8"
 tokio = { version = "1", features = ["rt", "sync"] }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+libloading = "0.8"
 webkit2gtk = {version="2", optional=true}
 cairo-rs = {version="0.18", features=["png"], optional=true}
+
+[target.'cfg(target_os = "macos")'.dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
 
 [features]
 default = ["custom-protocol"]

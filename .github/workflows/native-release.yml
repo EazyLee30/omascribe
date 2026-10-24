@@ -1,0 +1,130 @@
+name: Native release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: native-release-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  CARGO_BUILD_JOBS: 3
+  PYTHONUTF8: "1"
+jobs:
+  linux-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require green Linux CI for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, time
+          for attempt in range(90):
+              runs = json.loads(subprocess.check_output(["gh", "api", "repos/" + os.environ["GITHUB_REPOSITORY"] + "/actions/workflows/ci.yml/runs?head_sha=" + os.environ["GITHUB_SHA"]]))["workflow_runs"]
+              if runs and runs[0]["status"] == "completed":
+                  assert runs[0]["conclusion"] == "success", "Linux CI must pass before native packaging"
+                  print("Linux CI passed:", runs[0]["html_url"])
+                  break
+              time.sleep(20)
+          else:
+              raise SystemExit("Linux CI gate timed out")
+          PY
+  build:
+    needs: linux-gate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: clippy
+      - name: Match sherpa-onnx's static Windows CRT
+        if: runner.os == 'Windows'
+        run: echo 'RUSTFLAGS=-C target-feature=+crt-static' >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}-native
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/omascribe/downloads
+          key: offline-asr-${{ hashFiles('models.lock.json') }}
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: cargo test -p omascribe-core --locked --target ${{ matrix.target }}
+      - run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
+      - name: Prepare verified models and native inference runtime
+        run: python scripts/native-package.py --target ${{ matrix.target }}
+      - name: Generate platform icons
+        run: npx tauri icon assets/icon.svg
+      - name: Build native installer
+        run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
+      - name: Verify installed assets and offline inference
+        run: python scripts/native-smoke.py --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.target }}
+          path: ci-results/
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.target }}
+          path: release-assets/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          merge-multiple: true
+          path: release-assets
+      - name: Publish all three tested installers together
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          test "$(find release-assets -maxdepth 1 -name '*.dmg' | wc -l)" -eq 2
+          test "$(find release-assets -maxdepth 1 -name '*.exe' | wc -l)" -eq 1
+          cd release-assets
+          cat ./*.sha256 > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+          cd ..
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --draft --prerelease --title "OmaScribe $VERSION · Native desktop preview" --notes-file docs/releases/v0.2.0.md
+          gh release upload "v$VERSION" release-assets/*
+          gh release edit "v$VERSION" --draft=false

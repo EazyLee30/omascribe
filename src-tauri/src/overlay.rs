@@ -193,7 +193,11 @@ impl Overlay {
         }
     }
 }
-pub fn apply(runtime: &Path, p: &CaptionPreferences) -> Result<(), String> {
+pub fn apply(
+    _app: &tauri::AppHandle,
+    runtime: &Path,
+    p: &CaptionPreferences,
+) -> Result<(), String> {
     OVERLAY.with(|state| {
         let mut state = state.borrow_mut();
         if !p.enabled {
@@ -210,7 +214,7 @@ pub fn apply(runtime: &Path, p: &CaptionPreferences) -> Result<(), String> {
         Ok(())
     })
 }
-pub fn render(text: &str, p: &CaptionPreferences) {
+pub fn render(_app: &tauri::AppHandle, text: &str, p: &CaptionPreferences) {
     OVERLAY.with(|state| {
         if let Some(overlay) = state.borrow_mut().as_mut() {
             if p.enabled {

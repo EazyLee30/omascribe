@@ -26,7 +26,9 @@
         "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
         "bytes": 244836
       }
-    }
+    },
+    "license": "Apache-2.0",
+    "source_model": "csukuangfj/k2fsa-zipformer-bilingual-zh-en-t"
   },
   "llm": {
     "name": "Qwen3-1.7B-Q4_K_M.gguf",

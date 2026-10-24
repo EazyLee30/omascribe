@@ -64,3 +64,11 @@ The main WebView owns the Markdown editor, minutes and optional right dock. An a
 ## Boundaries
 
 A source citation proves where a paragraph points, not whether the paragraph faithfully paraphrases it. ASR errors can propagate. A long recording may require multiple writing batches; the coverage display measures processed input, not completeness of every fact. The current model, retrieval policy and written style are replaceable adapters, with a reproducible regression harness rather than claims based on a generic benchmark.
+
+## Desktop platform boundary
+
+Linux retains PipeWire capture and GTK layer-shell captions. macOS/Windows use CPAL (CoreAudio/WASAPI); the audio callback sends mono float blocks through a bounded queue. A separate reader resamples to 16 kHz PCM with delay compensation and exact end flushing. Queue overflow or a device error ends the take visibly and preserves completed audio. Pause drains the current capture before resume opens a new stream. WAV import uses the same streaming resampler and requires no external decoder.
+
+Data roots, file locks, subprocess termination, available-memory checks, and executable suffixes live behind a small platform boundary. Native packages resolve read-only models and binaries from their own resources; account data stays separate. macOS/Windows captions use an always-on-top transparent Tauri window; Linux keeps the compositor-native overlay.
+
+The native release workflow gates on Linux CI for the exact commit, builds on three native hosted runners, verifies installed inference paths and public/fictional fixtures, then publishes all packages together. See [native testing](NATIVE_TESTING.md) for the distinction between hosted-runner checks and physical-device acceptance.

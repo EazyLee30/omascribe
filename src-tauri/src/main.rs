@@ -2,6 +2,11 @@ use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, UserNote};
 use std::{path::PathBuf, sync::Arc};
 #[cfg(feature = "ui-test")]
 use tauri::Manager;
+mod file_manager;
+#[cfg(target_os = "linux")]
+mod overlay;
+#[cfg(not(target_os = "linux"))]
+#[path = "overlay_native.rs"]
 mod overlay;
 mod views;
 use tauri::{Emitter, State};
@@ -33,8 +38,10 @@ fn diagnostics(engine: State<AppState>) -> Diagnostics {
     engine.diagnostics()
 }
 #[tauri::command]
-fn list_devices() -> Reply<Vec<Device>> {
-    omascribe_core::audio::devices().map_err(err)
+async fn list_devices() -> Reply<Vec<Device>> {
+    tauri::async_runtime::spawn_blocking(|| omascribe_core::audio::devices().map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 fn update_meeting(
@@ -78,19 +85,22 @@ fn update_suggestion(
         .map_err(err)
 }
 #[tauri::command]
-fn start_recording(engine: State<AppState>, id: String, device: String) -> Reply<()> {
-    engine
-        .inner()
-        .start_recording(&id, &device, None)
-        .map_err(err)
+async fn start_recording(engine: State<'_, AppState>, id: String, device: String) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.start_recording(&id, &device, None).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 fn pause_recording(engine: State<AppState>) -> Reply<()> {
     engine.pause_recording().map_err(err)
 }
 #[tauri::command]
-fn resume_recording(engine: State<AppState>) -> Reply<()> {
-    engine.inner().resume_recording().map_err(err)
+async fn resume_recording(engine: State<'_, AppState>) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.resume_recording().map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 fn stop_recording(engine: State<AppState>) -> Reply<()> {
@@ -185,32 +195,9 @@ async fn open_meeting_files(
             if !std::path::Path::new(&file.path).is_file() {
                 return Err("Recording is still being saved".into());
             }
-            let uri = tauri::Url::from_file_path(&file.path).map_err(|_| "Invalid file path")?;
-            // FileManager1 selects the actual file; desktops without it open its folder instead.
-            if std::process::Command::new("gdbus")
-                .args([
-                    "call",
-                    "--session",
-                    "--dest",
-                    "org.freedesktop.FileManager1",
-                    "--object-path",
-                    "/org/freedesktop/FileManager1",
-                    "--method",
-                    "org.freedesktop.FileManager1.ShowItems",
-                    &format!("['{uri}']"),
-                    "",
-                ])
-                .output()
-                .is_ok_and(|o| o.status.success())
-            {
-                return Ok(());
-            }
+            return file_manager::open(std::path::Path::new(&file.path), true);
         }
-        std::process::Command::new("xdg-open")
-            .arg(files.directory)
-            .spawn()
-            .map_err(err)?;
-        Ok(())
+        file_manager::open(std::path::Path::new(&files.directory), false)
     })
     .await
     .map_err(err)?
@@ -219,11 +206,7 @@ async fn open_meeting_files(
 fn open_exports(engine: State<AppState>) -> Reply<()> {
     let dir = engine.root.join("exports");
     std::fs::create_dir_all(&dir).map_err(err)?;
-    std::process::Command::new("xdg-open")
-        .arg(dir)
-        .spawn()
-        .map_err(err)?;
-    Ok(())
+    file_manager::open(&dir, false)
 }
 #[tauri::command]
 async fn quit(app: tauri::AppHandle, engine: State<'_, AppState>) -> Reply<()> {

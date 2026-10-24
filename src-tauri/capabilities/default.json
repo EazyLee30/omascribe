@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Local notebook and transcript windows",
-  "windows": ["main", "transcript"],
+  "windows": ["main", "transcript", "captions"],
   "permissions": ["core:default", "core:window:allow-start-resize-dragging"]
 }

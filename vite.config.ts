@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     rollupOptions: {
-      input: { main: "index.html", transcript: "transcript.html" },
+      input: { main: "index.html", transcript: "transcript.html", captions: "captions.html" },
       output: {
         manualChunks: {
           editor: [

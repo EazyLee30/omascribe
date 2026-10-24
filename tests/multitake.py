@@ -18,8 +18,10 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
     env = dict(
         os.environ,
         OMASCRIBE_DATA_DIR=directory,
-        OMASCRIBE_MODELS_DIR=str(data / "models"),
-        OMASCRIBE_RUNTIME_DIR=str(cli.parent),
+        OMASCRIBE_MODELS_DIR=os.environ.get(
+            "OMASCRIBE_MODELS_DIR", str(data / "models")
+        ),
+        OMASCRIBE_RUNTIME_DIR=os.environ.get("OMASCRIBE_RUNTIME_DIR", str(cli.parent)),
     )
 
     def call(*arguments):
@@ -27,7 +29,11 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
             subprocess.check_output([str(cli), *arguments], env=env, timeout=180)
         )
 
-    sample = data / "models/zipformer/test_wavs/0.wav"
+    sample = pathlib.Path(
+        os.environ.get(
+            "OMASCRIBE_TEST_WAV", str(data / "models/zipformer/test_wavs/0.wav")
+        )
+    )
     first = call("import", str(sample), "Public sample · two separate takes")
     mid = first["meeting"]["id"]
     assert first["meeting"]["status"] == "ready", first["runtime"]["error"]
@@ -66,9 +72,15 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
     assert b"".join(waves) == pcm
     files = call("files", mid)
     assert len(files["files"]) == 5
-    assert "人工修订" in (folder / "files/transcript-001.txt").read_text()
-    assert "人工修订" in (folder / "files/transcript.md").read_text()
-    assert (folder / "files/transcript-002.txt").read_text().startswith("[00:00:00]")
+    assert "人工修订" in (folder / "files/transcript-001.txt").read_text(
+        encoding="utf-8"
+    )
+    assert "人工修订" in (folder / "files/transcript.md").read_text(encoding="utf-8")
+    assert (
+        (folder / "files/transcript-002.txt")
+        .read_text(encoding="utf-8")
+        .startswith("[00:00:00]")
+    )
     retranscribed = call("retranscribe", mid)
     boundary = first["meeting"]["duration_ms"]
     assert retranscribed["meeting"]["status"] == "ready"
@@ -78,7 +90,11 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
         s["start_ms"] < boundary < s["end_ms"] for s in retranscribed["segments"]
     )
     assert (folder / "files/recording-001.wav").read_bytes() == first_audio
-    assert (folder / "files/transcript-002.txt").read_text().startswith("[00:00:00]")
+    assert (
+        (folder / "files/transcript-002.txt")
+        .read_text(encoding="utf-8")
+        .startswith("[00:00:00]")
+    )
     result = dict(
         passed=True,
         takes=2,
