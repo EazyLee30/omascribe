@@ -15,8 +15,91 @@ struct Section {
     body: String,
     sources: Vec<usize>,
 }
+// Date spelling may legitimately change between ASR and prose. Normalize only
+// calendar-number fields; ordinary Chinese numerals remain untouched.
+fn chinese_number(text: &str) -> Option<u32> {
+    fn digit(c: char) -> Option<u32> {
+        match c {
+            '零' | '〇' => Some(0),
+            '一' => Some(1),
+            '二' | '两' => Some(2),
+            '三' => Some(3),
+            '四' => Some(4),
+            '五' => Some(5),
+            '六' => Some(6),
+            '七' => Some(7),
+            '八' => Some(8),
+            '九' => Some(9),
+            _ => None,
+        }
+    }
+    if text.is_empty() || text.chars().count() > 12 {
+        return None;
+    }
+    if text.chars().all(|c| digit(c).is_some()) {
+        return text
+            .chars()
+            .try_fold(0u32, |n, c| n.checked_mul(10)?.checked_add(digit(c)?));
+    }
+    let (mut sum, mut current, mut previous_unit) = (0u32, None, 10_000u32);
+    for c in text.chars() {
+        if let Some(d) = digit(c) {
+            if current.is_some_and(|n| n != 0) {
+                return None;
+            }
+            current = Some(d);
+        } else {
+            let unit = match c {
+                '十' => 10,
+                '百' => 100,
+                '千' => 1000,
+                _ => return None,
+            };
+            if unit >= previous_unit {
+                return None;
+            }
+            sum += current.unwrap_or(1) * unit;
+            current = None;
+            previous_unit = unit;
+        }
+    }
+    Some(sum + current.unwrap_or(0))
+}
+fn normalize_date_numbers(text: &str) -> String {
+    let mut result = String::new();
+    let mut pending = String::new();
+    for c in text.chars() {
+        if "零〇一二两三四五六七八九十百千".contains(c) {
+            pending.push(c);
+            continue;
+        }
+        if !pending.is_empty() {
+            let max = match c {
+                '年' => 9999,
+                '月' => 12,
+                '日' | '号' => 31,
+                _ => 0,
+            };
+            // Digit-by-digit years are common; "一二月" can mean January or
+            // February, so do not reinterpret bare multi-digit month/day words.
+            let unambiguous =
+                c == '年' || pending.chars().count() == 1 || pending.contains(['十', '百', '千']);
+            if let Some(n) = chinese_number(&pending).filter(|n| unambiguous && *n > 0 && *n <= max)
+            {
+                result.push_str(&n.to_string());
+            } else {
+                result.push_str(&pending);
+            }
+            pending.clear();
+        }
+        result.push(c);
+    }
+    result.push_str(&pending);
+    result
+}
 fn numbers(s: &str) -> HashSet<String> {
-    s.split(|c: char| !c.is_ascii_digit() && c != '.')
+    normalize_date_numbers(s)
+        .split(|c: char| !c.is_ascii_digit() && c != '.')
         .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
         .map(|s| s.trim_matches('.').to_owned())
         .collect()
@@ -42,6 +125,42 @@ fn uncertain(s: &str) -> bool {
     ]
     .iter()
     .any(|q| s.contains(q))
+}
+fn calendar_weekdays(text: &str) -> HashSet<String> {
+    use chrono::Datelike;
+    let text = normalize_date_numbers(text);
+    let mut days = HashSet::new();
+    for (index, _) in text.match_indices('年') {
+        let year: String = text[..index]
+            .trim_end()
+            .chars()
+            .rev()
+            .take_while(|c| c.is_ascii_digit())
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect();
+        if year.len() != 4 {
+            continue;
+        }
+        let Some((month, rest)) = text[index + '年'.len_utf8()..].split_once('月') else {
+            continue;
+        };
+        let day = rest.split(['日', '号']).next().unwrap_or("");
+        let (Ok(year), Ok(month), Ok(day)) =
+            (year.parse(), month.trim().parse(), day.trim().parse())
+        else {
+            continue;
+        };
+        if let Some(date) = chrono::NaiveDate::from_ymd_opt(year, month, day) {
+            days.insert(format!(
+                "周{}",
+                ["一", "二", "三", "四", "五", "六", "日"]
+                    [date.weekday().num_days_from_monday() as usize]
+            ));
+        }
+    }
+    days
 }
 fn normalized_time(text: &str) -> String {
     let mut text = text.to_lowercase();
@@ -81,7 +200,7 @@ pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Ve
     }
     let mut result = Vec::new();
     let mut seen = HashSet::new();
-    for section in draft.sections {
+    for (index, section) in draft.sections.into_iter().enumerate() {
         let body = section.body.trim();
         let title = section.title.trim();
         if body.is_empty()
@@ -121,9 +240,13 @@ pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Ve
             .collect::<Vec<_>>()
             .join(" ");
         if !numbers(&format!("{title} {body}")).is_subset(&numbers(&evidence)) {
-            bail!("文档出现无出处的数字，本轮未提交");
+            bail!(
+                "第 {} 段的数字或日期不在其引用的原文中，请核对出处编号；本轮未提交",
+                index + 1
+            );
         }
-        // A conservative uncertainty check catches the common 'budget undecided → approved' reversal.
+        let calendar_days = calendar_weekdays(&evidence);
+        // An exact calendar date can support its actual weekday, never an arbitrary weekday.
         for time in [
             "今天",
             "明天",
@@ -148,6 +271,7 @@ pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Ve
         ] {
             if normalized_time(body).contains(&normalized_time(time))
                 && !normalized_time(&evidence).contains(&normalized_time(time))
+                && !calendar_days.contains(&normalized_time(time))
             {
                 bail!("文档包含与出处不符的相对日期（{time}），本轮未提交");
             }
@@ -218,6 +342,35 @@ mod tests {
         }
         let sections=validate(r#"{"sections":[{"title":"测试与预算","body":"张老师将于周五提供测试结果。预算尚未确定，将于下周继续讨论。","sources":[1]}]}"#,&data(),"m").unwrap();
         assert_eq!(sections[0].sources[0].quote, data()[0].text);
+    }
+    #[test]
+    fn chinese_calendar_spelling_is_equivalent_but_new_numbers_are_rejected() {
+        let mut source = data();
+        source[0].text = "会议日期是二〇二四年五月八日。".into();
+        assert!(validate(
+            r#"{"sections":[{"title":"日期","body":"会议日期为2024年5月8日。","sources":[1]}]}"#,
+            &source,
+            "m"
+        )
+        .is_ok());
+        assert!(validate(r#"{"sections":[{"title":"日期","body":"会议日期为2024年5月8日（周三）。","sources":[1]}]}"#, &source, "m").is_ok());
+        for body in [
+            "会议日期为2024年5月9日。",
+            "会议日期为2024年5月8日（周四）。",
+            "预算为3000元。",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"会议", "body":body, "sources":[1]}]});
+            assert!(validate(&draft.to_string(), &source, "m").is_err());
+        }
+        assert_eq!(
+            normalize_date_numbers("二千零二十四年十二月二十三日"),
+            "2024年12月23日"
+        );
+        assert_eq!(
+            normalize_date_numbers("预算两千元，一百个问题，十四月，四十日，一二月"),
+            "预算两千元，一百个问题，十四月，四十日，一二月"
+        );
     }
     #[test]
     fn bilingual_date_translation_is_not_an_unsupported_date() {

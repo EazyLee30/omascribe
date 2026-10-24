@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "zh_calendar_citations",
+      "passed": true,
+      "errors": [],
+      "seconds": 40.625,
+      "document": [
+        {
+          "focus": "会议确认日期及录音转写流程",
+          "id": "da991a07-31ab-4de4-a787-1e397ea38e34",
+          "kind": "section",
+          "meeting_id": "b155ff17-d2cd-4e3c-9cb3-8788f7b7274a",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。",
+              "revision": 1,
+              "segment_id": "598719b8-2a4f-4935-a3ac-1985953c3960",
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "会议日期是二〇二四年五月八日，本次先确认测试安排。",
+              "revision": 1,
+              "segment_id": "4eb7ed6c-43a2-41bb-b817-0a3c79cca2dd",
+              "start_ms": 10000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "会议确认了日期为2024年5月8日，并讨论了录音和转写流程。结束一段后可以接着录下一段。"
+        },
+        {
+          "focus": "日期确认及测试安排未明确",
+          "id": "ef4f3607-9919-4137-a831-13dd39a3c4c2",
+          "kind": "section",
+          "meeting_id": "b155ff17-d2cd-4e3c-9cb3-8788f7b7274a",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "会议日期是二〇二四年五月八日，本次先确认测试安排。",
+              "revision": 1,
+              "segment_id": "4eb7ed6c-43a2-41bb-b817-0a3c79cca2dd",
+              "start_ms": 10000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "会议未明确具体测试安排细节，仅确认了日期。"
+        }
+      ],
+      "status": "文档已同步 · 2 个章节",
+      "writer_attempts": 1
+    }
+  ]
+}

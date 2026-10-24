@@ -44,9 +44,14 @@ def main():
         type=pathlib.Path,
         default=pathlib.Path("/tmp/omascribe-evaluation.json"),
     )
+    parser.add_argument("--case", help="Run one named fixture")
     args = parser.parse_args()
     cli = str(args.cli.resolve())
     cases = json.loads((REPO / "tests/fixtures/document-cases.json").read_text())
+    if args.case:
+        cases = [case for case in cases if case["name"] == args.case]
+        if not cases:
+            parser.error("Unknown fixture name")
     results = []
     data = (
         pathlib.Path(
@@ -120,7 +125,7 @@ def main():
                 env=env,
                 capture_output=True,
                 text=True,
-                timeout=240,
+                timeout=650,
                 check=True,
             )
             snapshot = json.loads(run.stdout)
@@ -132,6 +137,11 @@ def main():
                 seconds=round(time.monotonic() - start, 3),
                 document=snapshot["suggestions"],
                 status=snapshot["runtime"]["notes_status"],
+                writer_attempts=json.loads(
+                    (pathlib.Path(root) / "last-generation.json").read_text()
+                ).get("attempt", 1)
+                if (pathlib.Path(root) / "last-generation.json").exists()
+                else 0,
             )
             results.append(result)
             args.output.write_text(

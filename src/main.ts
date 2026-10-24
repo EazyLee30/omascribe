@@ -269,6 +269,7 @@ async function refresh() {
 function localizedStatus(status: string) {
   if (status === "writer:loading") return t("writerLoading");
   if (status === "writer:reading") return t("writerReading");
+  if (status === "writer:checking") return t("writerChecking");
   if (status.startsWith("writer:writing:"))
     return t("writerWriting").replace("{n}", status.split(":")[2]);
   const count = status.match(/^文档已同步 · (\d+) 个章节/);

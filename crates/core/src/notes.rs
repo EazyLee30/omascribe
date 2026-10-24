@@ -228,41 +228,83 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
-    engine.status.lock().unwrap().notes_status = "writer:reading".into();
-    let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",&auth).send_json(json!({
-        "messages":[{"role":"system","content":system},{"role":"user","content":content}],
-        "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":false,
+    let mut messages = vec![
+        json!({"role":"system","content":system}),
+        json!({"role":"user","content":content}),
+    ];
+    let mut verified = None;
+    // One evidence-guided repair, inside the same overall deadline. Never relax validation.
+    for attempt in 0..2 {
+        engine.status.lock().unwrap().notes_status = if attempt == 0 {
+            "writer:reading"
+        } else {
+            "writer:checking"
+        }
+        .into();
+        let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",&auth).send_json(json!({
+        "messages":messages,
+        "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0,
         "response_format":{"type":"json_schema","json_schema":{"name":"document","strict":true,"schema":writer::schema(context.segments.len())}}
     }));
-    let generated = response.map_err(anyhow::Error::from).and_then(|response| {
-        stream::read(BufReader::new(response.into_reader()), |characters| {
-            engine.status.lock().unwrap().notes_status = format!("writer:writing:{characters}");
-        })
-    });
-    if engine.note_cancel.load(Ordering::SeqCst) {
-        bail!("已优先处理录音与字幕，纪要稍后自动继续");
-    }
-    if timed_out.load(Ordering::SeqCst) {
-        bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
-    }
-    let (text, usage) = generated.map_err(|error| {
-        // Transport details (ephemeral URLs and nested socket errors) are not useful in the UI.
-        if error
-            .chain()
-            .any(|e| e.is::<ureq::Error>() || e.is::<std::io::Error>())
-        {
-            anyhow::anyhow!("本地模型响应中断或等待过久；原文已保留，稍后自动重试")
-        } else {
-            error
+        let generated = response.map_err(anyhow::Error::from).and_then(|response| {
+            stream::read(BufReader::new(response.into_reader()), |characters| {
+                engine.status.lock().unwrap().notes_status = format!("writer:writing:{characters}");
+            })
+        });
+        if engine.note_cancel.load(Ordering::SeqCst) {
+            bail!("已优先处理录音与字幕，纪要稍后自动继续");
         }
-    })?;
-    std::fs::write(
-        engine.root.join("last-generation.json"),
-        serde_json::to_vec_pretty(
-            &json!({"meeting_id":meeting,"model":MODEL_FILE,"draft":text,"usage":usage}),
-        )?,
-    )?;
-    let sections = validate(&text, &context.segments, meeting)?;
+        if timed_out.load(Ordering::SeqCst) {
+            bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
+        }
+        let (text, usage) = generated.map_err(|error| {
+            // Transport details (ephemeral URLs and nested socket errors) are not useful in the UI.
+            if error
+                .chain()
+                .any(|e| e.is::<ureq::Error>() || e.is::<std::io::Error>())
+            {
+                anyhow::anyhow!("本地模型响应中断或等待过久；原文已保留，稍后自动重试")
+            } else {
+                error
+            }
+        })?;
+        std::fs::write(
+            engine.root.join("last-generation.json"),
+            serde_json::to_vec_pretty(
+                &json!({"meeting_id":meeting,"model":MODEL_FILE,"draft":text,"usage":usage,"attempt":attempt + 1}),
+            )?,
+        )?;
+        match validate(&text, &context.segments, meeting) {
+            Ok(sections) => {
+                verified = Some(sections);
+                break;
+            }
+            Err(error) if attempt == 0 => {
+                messages.push(json!({"role":"assistant","content":text}));
+                messages.push(json!({"role":"user","content":format!("Validation failed: {error}. Recheck each section against the exact transcript passage IDs. Sources are transcript IDs, NOT section numbers. Correct wrong citations; remove unsupported claims instead of inventing evidence. Preserve uncertainty and original dates. Return corrected JSON only.")}));
+                let repair_input = messages
+                    .iter()
+                    .filter_map(|m| m["content"].as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let tokens: Value = agent
+                    .post(&format!("{base}/tokenize"))
+                    .set("Authorization", &auth)
+                    .send_json(json!({"content":repair_input}))?
+                    .into_json()?;
+                if tokens["tokens"]
+                    .as_array()
+                    .context("Invalid tokenizer response")?
+                    .len()
+                    > 1450
+                {
+                    return Err(error.context("复核超出上下文预算，待处理内容已保留"));
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    let sections = verified.context("纪要复核未完成，待处理内容已保留")?;
     let mut db = engine.store.lock().unwrap();
     db.commit_document(
         snapshot,

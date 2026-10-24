@@ -2,9 +2,20 @@
   {
     "name": "zh_budget_guess",
     "focus": "**预算** 3000？\n**张老师** **周五测试**",
-    "transcript": ["张老师周五给测试结果，预算先不定，下周再看。"],
-    "required": ["张老师", "周五", "预算", "未|不定|待"],
-    "forbidden": ["3000", "预算已确定", "预算已经确定"]
+    "transcript": [
+      "张老师周五给测试结果，预算先不定，下周再看。"
+    ],
+    "required": [
+      "张老师",
+      "周五",
+      "预算",
+      "未|不定|待"
+    ],
+    "forbidden": [
+      "3000",
+      "预算已确定",
+      "预算已经确定"
+    ]
   },
   {
     "name": "en_owner_and_deadline",
@@ -12,8 +23,15 @@
     "transcript": [
       "Morgan will send the release report on Thursday. We have not approved the launch date yet."
     ],
-    "required": ["Morgan", "Thursday", "not|pending|unconfirmed|undecided"],
-    "forbidden": ["Friday", "launch date is approved"]
+    "required": [
+      "Morgan",
+      "Thursday",
+      "not|pending|unconfirmed|undecided"
+    ],
+    "forbidden": [
+      "Friday",
+      "launch date is approved"
+    ]
   },
   {
     "name": "zh_correction",
@@ -22,8 +40,15 @@
       "预算先按3000算，李明负责。",
       "更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
     ],
-    "required": ["2000", "王华"],
-    "forbidden": ["最终确定为3000", "李明负责预算", "李明将负责"]
+    "required": [
+      "2000",
+      "王华"
+    ],
+    "forbidden": [
+      "最终确定为3000",
+      "李明负责预算",
+      "李明将负责"
+    ]
   },
   {
     "name": "bilingual_scope",
@@ -37,6 +62,27 @@
       "转写|transcription",
       "下一?个版本|后续版本|next version|next release"
     ],
-    "forbidden": ["已经完成系统音频", "system audio is ready"]
+    "forbidden": [
+      "已经完成系统音频",
+      "system audio is ready"
+    ]
+  },
+  {
+    "name": "zh_calendar_citations",
+    "focus": "**日期** **录音** **转写**",
+    "transcript": [
+      "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。",
+      "会议日期是二〇二四年五月八日，本次先确认测试安排。"
+    ],
+    "required": [
+      "2024|二〇二四|二零二四",
+      "5月|五月",
+      "8日|八日"
+    ],
+    "forbidden": [
+      "3000",
+      "2025",
+      "预算"
+    ]
   }
 ]

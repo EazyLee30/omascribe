@@ -10,6 +10,7 @@ const en = {
   recordAnother: "Record another take",
   writerLoading: "Loading the local writer",
   writerReading: "Reading the conversation",
+  writerChecking: "Checking the draft against its sources",
   writerWriting: "Composing · {n} characters",
 
   automatic: "Automatic",
@@ -233,6 +234,7 @@ const zh: typeof en = {
   recordAnother: "录制新一段",
   writerLoading: "正在加载本地写作模型",
   writerReading: "正在阅读会议内容",
+  writerChecking: "正在根据原话复核纪要",
   writerWriting: "正在撰写 · {n} 字符",
 
   automatic: "自动整理",
@@ -452,6 +454,7 @@ const tw: typeof en = {
   recordAnother: "錄製新一段",
   writerLoading: "正在載入本機寫作模型",
   writerReading: "正在閱讀會議內容",
+  writerChecking: "正在依據原話覆核紀要",
   writerWriting: "正在撰寫 · {n} 字元",
   automatic: "自動整理",
   meetingDocument: "會議記錄",
