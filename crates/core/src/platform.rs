@@ -47,8 +47,9 @@ pub fn asset_dir(root: &Path, name: &str, variable: &str) -> PathBuf {
 fn bundled_asset_dir(exe: &Path, name: &str) -> Option<PathBuf> {
     if let Some(parent) = exe.parent() {
         // Tauri: beside the executable on Windows, Resources on macOS,
-        // usr/lib/oma-scribe on Linux (also relative to an extracted AppImage/deb).
+        // usr/lib/OmaScribe on Linux (also relative to an extracted AppImage/deb).
         for bundle in std::iter::once(parent.join("../Resources/native"))
+            .chain(std::iter::once(parent.join("../lib/OmaScribe/native")))
             .chain(std::iter::once(parent.join("../lib/oma-scribe/native")))
             .chain(std::iter::once(parent.join("../lib/omascribe/native")))
             .chain(parent.ancestors().take(3).map(|p| p.join("native")))
@@ -182,9 +183,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn linux_gui_and_cli_find_tauris_kebab_cased_resource_directory() {
+    fn linux_gui_and_cli_find_tauris_product_named_resource_directory() {
         let root = tempfile::tempdir().unwrap();
-        let native = root.path().join("usr/lib/oma-scribe/native");
+        let native = root.path().join("usr/lib/OmaScribe/native");
         std::fs::create_dir_all(native.join("models")).unwrap();
         std::fs::create_dir_all(native.join("runtime")).unwrap();
         std::fs::create_dir_all(root.path().join("usr/bin")).unwrap();

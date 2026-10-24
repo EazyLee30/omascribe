@@ -25,6 +25,7 @@ def main():
     linux = platform.system() == "Linux"
     suffix = ".exe" if windows else ""
     linux_packages = []
+    product_name = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text(encoding="utf-8"))["productName"]
     results = ROOT / "ci-results"
     results.mkdir(exist_ok=True)
     bundle = ROOT / "target" / args.target / "release/bundle"
@@ -49,7 +50,7 @@ def main():
         with (ROOT / "build-assets/appimage-extract.log").open("wb") as log:
             subprocess.run([str(appimage), "--appimage-extract"], cwd=extracted, stdout=log, stderr=log, check=True, timeout=180)
         for source, folder in [(deb, extracted / "deb"), (appimage, extracted / "squashfs-root")]:
-            linux_packages.append((source, folder / "usr/lib/oma-scribe/native", folder / "usr/bin/omascribe", folder))
+            linux_packages.append((source, folder / "usr/lib" / product_name / "native", folder / "usr/bin/omascribe", folder))
         installer, assets, app, _ = linux_packages[0]
     else:
         installer = next((bundle / "dmg").glob("*.dmg"))
@@ -86,7 +87,7 @@ def main():
         assets = application / "Contents/Resources/native"
         app = application / "Contents/MacOS/omascribe"
     assert app.is_file(), app
-    assert assets.is_dir(), assets
+    assert assets.is_dir(), (str(assets), [str(p) for p in assets.parent.parent.iterdir()] if assets.parent.parent.is_dir() else [])
     runtime = assets / "runtime"
     cli = runtime / ("omascribe-cli" + suffix)
     results = ROOT / "ci-results"
