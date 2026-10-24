@@ -31,7 +31,9 @@ npm run deploy       # deploy existing Worker using authorized Wrangler credenti
 
 ## GitHub deployment setup
 
-The workflows are code-ready, but **automatic deployment is not active until they are committed/pushed and a dedicated credential is configured**. The local OAuth session must not be copied into GitHub.
+Automatic deployment for `EazyLee30/omascribe` was enabled and verified on 2026-10-24: a push to main passed [Website deployment](https://github.com/EazyLee30/omascribe/actions/runs/40072472731) and [Website validation](https://github.com/EazyLee30/omascribe/actions/runs/40072472966). The dedicated deployment credential expires on 2027-10-24 and must be rotated before then. No credential belongs in this repository or its logs.
+
+For a fresh deployment, complete the setup below. The local OAuth session must not be copied into GitHub.
 
 1. In Cloudflare, create a scoped API token for the existing account `e4548d8e3c1446f8ed5f7d4cc8cfb318` and Worker deployment: Account → Workers Scripts → Edit. For the configured custom-domain route also allow Zone → Workers Routes → Edit and Zone → Zone → Read, scoped to the `eazylee.si` zone. Follow Cloudflare's current Workers deployment-token documentation; do not grant unrelated account access.
 2. Add that token as repository Actions secret `CLOUDFLARE_API_TOKEN`. The non-secret account ID and existing route are in `wrangler.jsonc`.
