@@ -15,7 +15,7 @@
 
 # A few words from you. The context from your meeting.
 
-**OmaScribe is an offline meeting recorder, bilingual transcriber, and Markdown notebook for Linux, with native macOS and Windows previews.** Write a keyword on the left; related meeting content appears in the AI minutes on the right, with the original source and an audio timestamp.
+**OmaScribe is an offline meeting recorder, bilingual transcriber, and Markdown notebook for Linux, macOS and Windows.** Write a keyword on the left; related meeting content appears in the AI minutes on the right, with the original source and an audio timestamp.
 
 Built around a 2016 12-inch MacBook running Omarchy, with a dual-core Intel CPU and 8 GB RAM. The name combines **Oma**rchy and **Scribe**.
 
@@ -38,6 +38,7 @@ Built around a 2016 12-inch MacBook running Omarchy, with a dual-core Intel CPU 
 - **Write in Markdown, see a document.** A matching dark editor with headings, lists, tasks, tables, quotes, code, links, undo/redo, a toolbar, source mode, and Chinese input support.
 - **Type `/` for tools.** Search blocks, insert a timestamp, highlight a keyword or start from a meeting template. Escape keeps the slash; a slash inside normal text or a path stays ordinary text.
 - **Let the minutes develop automatically.** Your keywords guide bilingual lexical retrieval. A local model turns relevant transcript evidence into titled, readable paragraphs. No update button is required.
+- **Choose your layout.** Collapse or expand the meeting list, your notes, AI minutes and transcript independently using each column’s panel icon. Collapsed columns keep a restore control; notes keep saving. The first three columns remember their layout; transcript visibility resets on restart for privacy. Narrow windows scroll horizontally instead of covering another column.
 - **Place the transcript where you want it.** Right dock, movable/resizable floating window, compact mode, and left/right edge snap. Desktop captions can sit at the top or bottom of a chosen screen, with font, color, opacity, width, line count, alignment, margin and click-through controls.
 - **Keep your authorship.** Your Markdown is never rewritten by AI. Editing a generated paragraph protects it from subsequent generation. Sources and audio timestamps stay attached; revised sources are flagged.
 - **Export the whole meeting.** Your document, current AI minutes, original sources and transcript export to Markdown, optionally alongside WAV. English, 简体中文 and 繁體中文 interfaces are included.
@@ -52,7 +53,7 @@ The intended result is a short written paragraph: “张老师将于周五提供
 
 The pipeline coalesces changes and runs one local writing task at a time. On this older laptop, minutes arrive in batches rather than word by word. Recording and transcription have priority. Generative prose can still be wrong: source, number and uncertainty checks reduce specific mistakes, but **do not prove factual correctness**.
 
-## Download a native preview
+## Download
 
 [**Releases →**](https://github.com/EazyLee30/omascribe/releases) · [Build status](https://github.com/EazyLee30/omascribe/actions/workflows/native-release.yml)
 
@@ -62,11 +63,13 @@ The pipeline coalesces changes and runs one local writing task at a time. On thi
 | Intel Mac | `macOS-Intel.dmg` |
 | Windows x64 | `Windows-x64.exe` |
 
-Each native package includes ASR, the writing model and CPU inference runtimes. Windows also includes the offline WebView2 installer. WAV import works without extra software; compressed audio imports require FFmpeg on `PATH`. macOS packages are ad-hoc signed, not notarized; Windows packages have no publisher signature. See the [installation and test guide](docs/NATIVE_TESTING.md) for first launch, permissions and known limits. The release workflow publishes all three packages only after Linux CI and native package checks pass.
+Each native package includes ASR, the writing model and local inference runtimes (Metal + CPU on Apple Silicon). Windows also includes the offline WebView2 installer. WAV import works without extra software; compressed audio imports require FFmpeg on `PATH`. macOS packages are ad-hoc signed, not notarized; Windows packages have no publisher signature. See the [installation and test guide](docs/NATIVE_TESTING.md) for first launch, permissions and known limits. The release workflow publishes all five packages only after Linux CI and native package checks pass.
+
+Linux x64 AVX2 packages are available as AppImage and `.deb` for Ubuntu 22.04+ and compatible distributions. Recording requires PipeWire. See the installation guide for dependencies.
 
 ## Build and install on Linux
 
-**Current target:** x86-64 Linux with AVX2, PipeWire, GTK3, and WebKitGTK 4.1. Tested on Omarchy. This remains the hardware-tested baseline. macOS 11+ (Apple Silicon and Intel AVX2) and Windows 10/11 x64 AVX2 are native test previews built on GitHub Actions.
+**Current target:** x86-64 Linux with AVX2, PipeWire, GTK3, and WebKitGTK 4.1. Tested on Omarchy. This remains the hardware-tested baseline. macOS 11+ (Apple Silicon and Intel AVX2) and Windows 10/11 x64 AVX2 are native packages built on GitHub Actions.
 
 Install the build dependencies on Arch / Omarchy:
 
@@ -86,7 +89,7 @@ bin/install        # Install to your user account and app launcher
 ~/.local/bin/omascribe
 ```
 
-Setup needs a network connection, roughly 1.6 GB of model downloads, and additional space for build caches. **After setup, recording, transcription, editing, inference, and export run offline.** No account or API key is required. Models are not stored in Git. Native macOS/Windows installers include the verified models; Linux source installs download them during setup.
+Setup needs a network connection, roughly 1.6 GB of model downloads, and additional space for build caches. **After setup, recording, transcription, editing, inference, and export run offline.** No account or API key is required. Models are not stored in Git. Native installers include the verified models; Linux source installs download them during setup.
 
 `OMASCRIBE_BUILD_JOBS=2 bin/build` allows a faster build on a machine with more headroom. Compiling on a fanless MacBook can make it warm and temporarily slow the desktop.
 
@@ -94,7 +97,7 @@ Setup needs a network connection, roughly 1.6 GB of model downloads, and additio
 
 1. Create a meeting and choose your microphone in **Settings**.
 2. **Start recording.** Write naturally; use the toolbar, Markdown shortcuts or `/` menu. Bold a topic or a name to guide retrieval.
-3. The AI document develops automatically on the right. Open **Transcript** for a floating view; use the display gear for docking and **CC** for screen captions.
+3. The AI document develops automatically on the right. Open **Transcript** for the right dock; use its arrow to open a floating view and **CC** for screen captions.
 4. **Pause** when needed, then **Resume**. Click a source timestamp to listen, or edit a paragraph to preserve your wording.
 5. **Finish take** stops this recording. Once its transcript is saved, **Record another take** adds a new recording to the same meeting. **Files** opens the recording and transcript folder. Leave the app open for remaining document batches, then export.
 
@@ -123,7 +126,7 @@ Markdown → keywords → lexical RAG → bounded writer → validation → docu
                                                         automatic merge · playback · export
 ```
 
-The note model runs only when needed, with one thread, one request, and a 2,048-token context. It unloads after each pass. Writing streams locally with phase/elapsed-time feedback; incomplete responses never replace the saved document. Low available memory postpones writing, and repeated failures back off automatically. A sustained ASR backlog cancels note inference. Audio never passes through the WebView.
+The note model runs only when needed, with one request. Defaults are one thread and a 2,048-token context; both are configurable. It unloads after each pass. Writing streams locally with phase/elapsed-time feedback; incomplete responses never replace the saved document. Low available memory postpones writing, and repeated failures back off automatically. A sustained ASR backlog cancels note inference. Audio never passes through the WebView.
 
 Default storage on Linux: `~/.local/share/omascribe/` (or `$XDG_DATA_HOME/omascribe`). macOS uses `~/Library/Application Support/OmaScribe`; Windows uses `%LOCALAPPDATA%\io.omarchy.omascribe`. It contains recordings, the SQLite database, and exports. Linux source installs also keep models and runtime here; native installers keep those in application resources. Linux/macOS directories are user-only and Windows uses the account’s inherited ACL; files are **not encrypted** by the app.
 
@@ -141,12 +144,12 @@ See the [hardware test report](docs/BENCHMARKS.md) and [reproduction guide](docs
 
 Current boundaries:
 
-- Microphone capture and file import; no system-audio mixer or speaker diarization yet.
+- Microphone capture and file import; no system-audio mixer yet. Optional local speaker separation runs after transcription (up to two hours).
 - Mandarin/English ASR is a small, older model. Names, far-field speech, overlap, and code-switching need your own evaluation.
 - Keywords guide **note retrieval**, not ASR hotword bias, in this release.
 - Small-model writing can omit facts or misread a correction. Generated paragraphs need review; edited paragraphs are never automatically rewritten.
 - On Linux, floating-window edge placement integrates with Hyprland and screen captions require Wayland layer-shell. macOS/Windows use native always-on-top caption windows; behavior across full-screen Spaces and multiple monitors needs physical-device testing.
-- No speaker diarization, translation mode or embedding-based semantic search. The current RAG is bounded, per-meeting BM25 plus Chinese character/bigram and exact keyword matching.
+- No translation mode or embedding-based semantic search. Retrieval uses bounded lexical matching, with opt-in knowledge notes and user-maintained memory.
 - Keep the machine awake during a meeting. Sleep/driver recovery and automatic sleep inhibition are not yet fully validated.
 - There is no cloud sync, cross-meeting search, or automatic app updater.
 
@@ -158,3 +161,7 @@ Current boundaries:
 - Built with [Tauri](https://tauri.app/), [Tiptap](https://tiptap.dev/), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [llama.cpp](https://github.com/ggml-org/llama.cpp), and [Qwen](https://huggingface.co/Qwen).
 
 Code and original artwork: [MIT](LICENSE). Third-party models and dependencies retain their own licenses.
+
+## Local workspace
+
+Appearance, hardware-based model presets, verified model download/removal, portable JSON configurations, notes, opt-in knowledge, glossary, memory and editable speaker labels are available from the sidebar and Settings. See the [local workspace guide](docs/LOCAL_WORKSPACE.md) for behavior and limits.

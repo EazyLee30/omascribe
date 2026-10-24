@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { validateProfile, validateSubmission, deepLink } from '../../community/profile-schema.mjs';
-import { selectRelease } from '../scripts/sync-release.mjs';
+import { selectRelease, releaseAssetNames } from '../scripts/sync-release.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const catalog=JSON.parse(await readFile(resolve(root,'model-catalog.json')));
 const preset=JSON.parse(await readFile(resolve(root,'community/profiles/apple-16gb-balanced.json')));
@@ -41,7 +41,7 @@ test('community cannot claim official origin and markup remains inert text',()=>
  p.author=' ';assert.throws(()=>validateSubmission(p,catalog));
 });
 function release(version='1.0.0',extra={}){
- const tag=`v${version}`;return {draft:false,prerelease:false,published_at:'2026-10-24T00:00:00Z',tag_name:tag,assets:[`OmaScribe_${version}_macOS-AppleSilicon.dmg`,`OmaScribe_${version}_macOS-Intel.dmg`,`OmaScribe_${version}_Windows-x64.exe`,'SHA256SUMS.txt'].map(name=>({name,state:'uploaded',size:100,browser_download_url:`https://github.com/EazyLee30/omascribe/releases/download/${tag}/${name}`})),...extra};
+ const tag=`v${version}`;return {draft:false,prerelease:false,published_at:'2026-10-24T00:00:00Z',tag_name:tag,assets:Object.values(releaseAssetNames(version)).map(name=>({name,state:'uploaded',size:100,browser_download_url:`https://github.com/EazyLee30/omascribe/releases/download/${tag}/${name}`})),...extra};
 }
 test('release selection supports complete prereleases and skips drafts/partial uploads',()=>{
  const good=release('0.2.0',{prerelease:true});const partial=release('1.0.0',{assets:[],published_at:'2026-10-25T00:00:00Z'});
@@ -69,4 +69,14 @@ test('hosted pages forbid automatic script injection and browser device access',
  assert.match(headers,/connect-src 'self';/);
  assert.match(headers,/microphone=\(\)/);
  assert.match(headers,/frame-ancestors 'none'/);
+});
+
+test('stable releases outrank newer previews, and 0.3 requires both Linux packages',()=>{
+ const stable=release('0.3.0'); const preview=release('0.4.0',{prerelease:true,published_at:'2026-11-01T00:00:00Z'});
+ assert.equal(selectRelease([preview,stable]).tag,'v0.3.0');
+ assert.equal(Object.keys(selectRelease([stable]).assets).length,6);
+ for(const extension of ['.AppImage','.deb']) {
+   const partial=release('0.3.0');partial.assets=partial.assets.filter(a=>!a.name.endsWith(extension));
+   assert.throws(()=>selectRelease([partial]));
+ }
 });

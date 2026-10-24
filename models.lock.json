@@ -74,6 +74,12 @@
         "archive_root": "sherpa-onnx-v1.13.8-osx-x64-static-lib",
         "sha256": "a3f88da3e54c850a12d61431e73f8affcd1f13738b75b768847dd79541835b4b",
         "bytes": 20575933
+      },
+      "x86_64-unknown-linux-gnu": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2",
+        "archive_root": "sherpa-onnx-v1.13.8-linux-x64-static-lib",
+        "sha256": "e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6",
+        "bytes": 22952328
       }
     }
   }

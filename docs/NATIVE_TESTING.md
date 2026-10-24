@@ -1,6 +1,6 @@
-# Native desktop preview
+# Desktop installation and release verification
 
-macOS and Windows packages are built only on GitHub-hosted runners. The Linux development laptop does not cross-compile them. See [Native release](../.github/workflows/native-release.yml) for the exact source commit, runner and validation logs. This preview needs physical-device testing; a green workflow is not a microphone or visual-quality certification.
+macOS, Windows and Linux packages are built on matching GitHub-hosted runners. See [Native release](../.github/workflows/native-release.yml) for the exact source commit, runner and validation logs. Hosted-runner checks do not certify physical microphones or visual quality on every device.
 
 ## Install
 
@@ -11,12 +11,15 @@ Download the matching installer from [Releases](https://github.com/EazyLee30/oma
 | macOS 11+, Apple Silicon | Open `macOS-AppleSilicon.dmg`; drag OmaScribe into Applications. |
 | macOS 11+, Intel with AVX2 | Open `macOS-Intel.dmg`; drag OmaScribe into Applications. |
 | Windows 10/11, x64 with AVX2 | Run `Windows-x64.exe`; installs for the current user. |
+| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.0_Linux-x64.deb`, or make the AppImage executable and launch it. |
 
-The Mac app uses an ad-hoc signature and is not notarized. macOS may require **System Settings → Privacy & Security → Open Anyway** for this particular downloaded app. Windows may show SmartScreen because the preview has no publisher certificate. Use the application-specific confirmation after checking the repository and filename; do not disable system-wide protection.
+The Mac app uses an ad-hoc signature and is not notarized. macOS may require **System Settings → Privacy & Security → Open Anyway** for this particular downloaded app. Windows may show SmartScreen because the app has no publisher certificate. Use the application-specific confirmation after checking the repository and filename; do not disable system-wide protection.
 
 Allow microphone access when prompted. On macOS check **Privacy & Security → Microphone**; on Windows check **Privacy & security → Microphone**, including desktop-app access. Relaunch after changing permissions. Choose the desired microphone in OmaScribe Settings. Bluetooth/device changes may require ending the current take and selecting the device again.
 
-All three installers include the pinned ASR and writing models, the ASR worker, CLI, llama.cpp CPU runtime, license notices and build manifest. Windows includes an offline WebView2 installer. No Python, Rust, Node or model download is required to run the app. WAV import is built in. Other audio formats require FFmpeg on `PATH`; Finder-launched macOS apps may not inherit a shell-modified PATH, so use WAV for this preview.
+All five installers include the pinned ASR and writing models, the ASR worker, CLI, llama.cpp runtime (Metal + CPU on Apple Silicon, CPU elsewhere), license notices and build manifest. Windows includes an offline WebView2 installer. No Python, Rust, Node or model download is required to run the app. WAV import is built in. Other audio formats require FFmpeg on `PATH`; Finder-launched macOS apps may not inherit a shell-modified PATH, so use WAV if FFmpeg is not available to the app.
+
+Linux recording needs `pipewire-bin` and a running PipeWire user session. The Debian installer declares PipeWire and FFmpeg dependencies. AppImage users must install them with their distribution package manager. AppImage mounting may require FUSE 2; `--appimage-extract-and-run` is available if mounting is unavailable. Linux binaries are built on Ubuntu 22.04; older glibc distributions and ARM Linux are not supported by these packages.
 
 ## Test a complete meeting
 
@@ -28,7 +31,7 @@ All three installers include the pinned ASR and writing models, the ASR worker, 
 6. Edit a generated paragraph and continue speaking. Your paragraph should be retained, with new material added separately. Test toolbar, `/`, literal slash, Chinese input, and Cmd/Ctrl shortcuts.
 7. Disconnect external networking while keeping loopback available, relaunch, then record, transcribe, generate notes and export.
 
-CPU inference, microphone-only capture, and single-request writing are intentional in this preview. System-audio mixing, speaker identification and GPU acceleration are not included. Long meetings and device-specific microphone behavior remain to be tested on real Macs and PCs.
+Microphone-only capture and single-request writing are intentional. Apple Silicon selects Metal when the bundled runtime and an actual Metal device are available, otherwise CPU. Optional local speaker clustering is available after recording; download its models first. MLX remains a separately installed experimental backend. System-audio mixing is not included. Long meetings and device-specific microphone behavior need physical-device testing.
 
 ## Data and feedback
 
@@ -44,6 +47,6 @@ When reporting a problem, include app version, OS version, CPU/architecture, mic
 
 ## What CI verifies
 
-Linux CI is a prerequisite for the exact same source commit. Each native runner executes core tests and strict Clippy, builds the app and inference binaries, packages the verified models, and exercises the actual installed/bundled resources. Public speech checks two takes, restart persistence and retranscription boundaries. Fictional Chinese-date and English-owner/deadline fixtures exercise the real local writing model, evidence checks and transactional storage. A desktop-process launch smoke test checks for immediate startup failure. Validation JSON accompanies each installer.
+Linux CI is a prerequisite for the exact same source commit. The workflow publishes a stable release only when all five installers have passed. Each native runner executes core tests and strict Clippy, builds the app and inference binaries, packages the verified models, and exercises the actual installed/bundled resources; Linux checks the payload and desktop launch from both the extracted Debian package and AppImage. Public speech checks two takes, restart persistence and retranscription boundaries. Fictional Chinese-date and English-owner/deadline fixtures exercise the real local writing model, evidence checks and transactional storage. A desktop-process launch smoke test checks for immediate startup failure. Validation JSON accompanies each installer.
 
 Physical microphone capture, permission dialogs, visual layout, caption behavior across Spaces/monitors, and sustained thermal performance are explicitly outside these hosted-runner checks.

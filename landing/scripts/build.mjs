@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir, readdir, cp, rm } from "node:fs/promises";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { releaseAssetNames } from "./sync-release.mjs";
 import { createDesign } from "../src/design.mjs";
 import {
   validateProfile,
@@ -67,12 +68,7 @@ if (
   !Number.isFinite(Date.parse(releases.published_at))
 )
   throw Error("Invalid release snapshot");
-const releaseNames = {
-  mac_arm: `OmaScribe_${releases.version}_macOS-AppleSilicon.dmg`,
-  mac_intel: `OmaScribe_${releases.version}_macOS-Intel.dmg`,
-  windows: `OmaScribe_${releases.version}_Windows-x64.exe`,
-  checksums: "SHA256SUMS.txt",
-};
+const releaseNames = releaseAssetNames(releases.version);
 for (const [key, name] of Object.entries(releaseNames)) {
   const a = releases.assets?.[key];
   if (
@@ -231,6 +227,7 @@ for (const b of benchmarks)
     JSON.stringify(b, null, 2),
   );
 function note(lang) {
+  if (releases.assets.linux_appimage) return `<p class="notice">${t(lang, "0.3.0 起包含配置分享、说话人管理与 Apple Silicon Metal 加速。MLX 为可选实验后端，需单独安装本地运行环境。", "0.3.0 起包含設定分享、說話人管理與 Apple Silicon Metal 加速。MLX 為選用實驗後端，需另行安裝本機執行環境。", "Version 0.3.0 includes configuration sharing, speaker management and Apple Silicon Metal acceleration. MLX is an optional experimental backend requiring a separate local runtime.")}</p>`;
   return `<p class="notice">${t(lang, "配置、说话人与加速功能对应当前开发版。下载页标明已发布安装包的版本；旧版可能不支持配置链接。", "設定、說話人與加速功能對應目前開發版。下載頁標明已發布安裝包的版本；舊版可能不支援設定連結。", "Configuration sharing, speaker tools and acceleration describe the current development build. See Downloads for released installer versions; older versions may not support app links.")}</p>`;
 }
 const { button, header, footer, home, downloadChooser } = createDesign({
@@ -247,7 +244,7 @@ function heading(lang, eyebrow, title, description) {
   return `<div class="page-heading"><p class="eyebrow">${e(eyebrow)}</p><h1>${e(title)}</h1><p class="lede">${e(description)}</p></div>`;
 }
 function download(lang) {
-  return `${heading(lang, "DOWNLOAD", copy.titles[lang][1], t(lang, "安装包包含默认离线模型。选择与你的处理器匹配的版本。", "安裝包包含預設離線模型。選擇與處理器相符的版本。", "Installers include the default offline models. Choose the build matching your processor."))}<div class="release-bar"><span class="badge">${e(releases.tag)} · ${releases.prerelease ? t(lang, "预发布", "預發布", "Prerelease") : t(lang, "正式版", "正式版", "Stable")}</span><span>${t(lang, "发布于", "發布於", "Published")} ${e(releases.published_at.slice(0, 10))}</span>${external(releases.url, t(lang, "更新日志", "更新紀錄", "Release notes"))}</div>${downloadChooser(lang)}<section class="text-section"><h2>${t(lang, "版本与安装说明", "版本與安裝說明", "Version and installation notes")}</h2><p>${t(lang, "此处显示的是 GitHub 上已经发布且三个安装包齐全的版本。新配置广场、说话人设置与 Apple Silicon 加速需要包含这些功能的新版或源码构建，不能通过下载旧版自动获得。", "此處顯示 GitHub 上已發布且三個安裝包齊全的版本。新設定廣場、說話人設定及 Apple Silicon 加速需要含這些功能的新版或原始碼建置，下載舊版不會自動取得。", "This page lists a published GitHub release with all three installers present. The new configuration gallery, speaker settings and Apple Silicon acceleration require a build containing those features; downloading an older release does not add them.")}</p><p>${t(lang, "当前预览包使用 macOS 临时签名，尚未公证；Windows 尚无发行者签名。安装前请阅读原生测试版说明。", "目前預覽包使用 macOS 臨時簽章，尚未公證；Windows 尚無發行者簽章。安裝前請閱讀原生測試版說明。", "Current preview packages use ad-hoc signing on macOS and are not notarized; Windows packages have no publisher signature. Read the native testing guide before installation.")}</p><div class="actions">${external(releases.assets.checksums.url, "SHA-256")}${external("https://github.com/EazyLee30/omascribe/blob/main/docs/NATIVE_TESTING.md", t(lang, "安装与验证说明", "安裝與驗證說明", "Installation and verification"))}</div><p class="small muted">${t(lang, "版本数据核对时间", "版本資料核對時間", "Release metadata checked")} ${e(releases.fetched_at.slice(0, 10))} · GitHub Releases API</p></section>`;
+  return `${heading(lang, "DOWNLOAD", copy.titles[lang][1], t(lang, "安装包包含默认离线模型。选择与你的处理器匹配的版本。", "安裝包包含預設離線模型。選擇與處理器相符的版本。", "Installers include the default offline models. Choose the build matching your processor."))}<div class="release-bar"><span class="badge">${e(releases.tag)} · ${releases.prerelease ? t(lang, "预发布", "預發布", "Prerelease") : t(lang, "正式版", "正式版", "Stable")}</span><span>${t(lang, "发布于", "發布於", "Published")} ${e(releases.published_at.slice(0, 10))}</span>${external(releases.url, t(lang, "更新日志", "更新紀錄", "Release notes"))}</div>${downloadChooser(lang)}<section class="text-section"><h2>${t(lang, "版本与安装说明", "版本與安裝說明", "Version and installation notes")}</h2>${note(lang)}<p>${t(lang, "下载版本与 GitHub Release 同步，仅显示安装包和校验文件齐全的发布。优先提供正式版。", "下載版本與 GitHub Release 同步，只顯示安裝包及校驗檔案齊全的發布。優先提供正式版。", "Downloads follow GitHub Releases and require a complete set of installers and checksums. Stable releases take priority.")}</p><p>${t(lang, "macOS 安装包使用临时签名，尚未公证；Windows 尚无发行者签名。安装前请阅读安装与验证说明。", "macOS 安裝包使用臨時簽章，尚未公證；Windows 尚無發行者簽章。安裝前請閱讀安裝與驗證說明。", "Packages use ad-hoc signing on macOS and are not notarized; Windows packages have no publisher signature. Read the installation guide before installation.")}</p><div class="actions">${external(releases.assets.checksums.url, "SHA-256")}${external("https://github.com/EazyLee30/omascribe/blob/main/docs/NATIVE_TESTING.md", t(lang, "安装与验证说明", "安裝與驗證說明", "Installation and verification"))}</div><p class="small muted">${t(lang, "版本数据核对时间", "版本資料核對時間", "Release metadata checked")} ${e(releases.fetched_at.slice(0, 10))} · GitHub Releases API</p></section>`;
 }
 function modelCards(lang) {
   return publicCatalog.models

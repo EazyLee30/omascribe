@@ -7,6 +7,9 @@ export interface Meeting {
   run: number;
   notes_cursor: number;
   auto_notes: boolean;
+  diarization: boolean;
+  diarization_cursor: number;
+  speaker_names: Record<string, string>;
 }
 export interface Segment {
   id: string;
@@ -17,6 +20,8 @@ export interface Segment {
   end_ms: number;
   text: string;
   revision: number;
+  speaker: string | null;
+  speaker_manual: boolean;
 }
 export interface Note {
   id: string;
@@ -32,6 +37,7 @@ export interface Source {
   start_ms: number;
   end_ms: number;
   quote: string;
+  speaker_name?: string | null;
 }
 export interface Suggestion {
   focus: string;
@@ -54,6 +60,9 @@ export interface Runtime {
   partial: string;
   asr_rtf: number;
   notes_busy: boolean;
+  diarization_busy: boolean;
+  diarization_meeting_id: string | null;
+  diarization_status: string;
   notes_status: string;
   notes_elapsed_ms: number;
   error: string | null;
@@ -72,7 +81,7 @@ export interface Diagnostic {
   recorder_ready: boolean;
   worker_ready: boolean;
   server_ready: boolean;
-  available_memory_mib: number;
+  available_memory_mib: number | null;
   accent: string;
   version: string;
 }

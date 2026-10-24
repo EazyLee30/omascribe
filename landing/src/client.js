@@ -35,6 +35,14 @@ drawer?.querySelectorAll("a").forEach((a) =>
   }),
 );
 
+const platformTabs = document.querySelector("#platform-tabs");
+function selectPlatformFromLink() {
+  const platform = location.hash.slice(1);
+  if (platformTabs && ["mac", "windows", "linux"].includes(platform)) platformTabs.active = platform;
+}
+selectPlatformFromLink();
+window.addEventListener("hashchange", selectPlatformFromLink);
+
 const architecture = document.querySelector("#mac-architecture");
 architecture?.addEventListener("change", () => {
   const download = document.querySelector("#mac-download");

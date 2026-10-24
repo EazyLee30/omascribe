@@ -47,6 +47,9 @@ jobs:
           - runner: windows-2022
             target: x86_64-pc-windows-msvc
             bundles: nsis
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     defaults:
@@ -56,6 +59,11 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - uses: actions/checkout@v4
+      - name: Install Linux desktop and test dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf libfuse2 pipewire-bin ffmpeg xvfb dbus-x11
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -82,7 +90,6 @@ jobs:
       - run: npm run build
       - name: Generate platform icons
         run: npx tauri icon assets/icon.svg
-      - run: cargo test -p omascribe-core --locked --target ${{ matrix.target }}
       - uses: actions/cache/restore@v4
         id: sherpa-cache
         with:
@@ -95,6 +102,7 @@ jobs:
         with:
           path: build-assets/native-asr
           key: ${{ steps.sherpa-cache.outputs.cache-primary-key }}
+      - run: cargo test --workspace --locked --target ${{ matrix.target }}
       - run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
       - uses: actions/cache/restore@v4
         id: model-cache
@@ -114,7 +122,7 @@ jobs:
         id: llama-cache
         with:
           path: build-assets/native/runtime/llama
-          key: native-llama-${{ matrix.target }}-${{ hashFiles('models.lock.json') }}-cpu-static-v1
+          key: native-llama-${{ matrix.target }}-${{ hashFiles('models.lock.json', 'scripts/native-package.py') }}-native-v2
       - name: Prepare verified models and native inference runtime
         run: python scripts/native-package.py --target ${{ matrix.target }}
       - uses: actions/cache/save@v4
@@ -125,7 +133,12 @@ jobs:
       - name: Build native installer
         run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
       - name: Verify installed assets and offline inference
-        run: python scripts/native-smoke.py --target ${{ matrix.target }}
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a dbus-run-session -- python scripts/native-smoke.py --target ${{ matrix.target }}
+          else
+            python scripts/native-smoke.py --target ${{ matrix.target }}
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -151,7 +164,7 @@ jobs:
           pattern: package-*
           merge-multiple: true
           path: release-assets
-      - name: Publish all three tested installers together
+      - name: Publish all five tested installers as a stable release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -159,10 +172,12 @@ jobs:
           VERSION=$(node -p 'require("./package.json").version')
           test "$(find release-assets -maxdepth 1 -name '*.dmg' | wc -l)" -eq 2
           test "$(find release-assets -maxdepth 1 -name '*.exe' | wc -l)" -eq 1
+          test "$(find release-assets -maxdepth 1 -name '*.AppImage' | wc -l)" -eq 1
+          test "$(find release-assets -maxdepth 1 -name '*.deb' | wc -l)" -eq 1
           cd release-assets
           cat ./*.sha256 > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
           cd ..
-          gh release create "v$VERSION" --target "$GITHUB_SHA" --draft --prerelease --title "OmaScribe $VERSION · Native desktop preview" --notes-file docs/releases/v0.2.0.md
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --draft --title "OmaScribe $VERSION" --notes-file "docs/releases/v$VERSION.md"
           gh release upload "v$VERSION" release-assets/*
-          gh release edit "v$VERSION" --draft=false
+          gh release edit "v$VERSION" --draft=false --prerelease=false --latest

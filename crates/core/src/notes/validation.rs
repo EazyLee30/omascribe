@@ -193,6 +193,14 @@ fn normalized_time(text: &str) -> String {
     text
 }
 pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Vec<Suggestion>> {
+    validate_with_speakers(content, segments, meeting, &Default::default())
+}
+pub fn validate_with_speakers(
+    content: &str,
+    segments: &[Segment],
+    meeting: &str,
+    names: &std::collections::BTreeMap<String, String>,
+) -> Result<Vec<Suggestion>> {
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
     if draft.sections.len() > 3 {
@@ -231,14 +239,34 @@ pub fn validate(content: &str, segments: &[Segment], meeting: &str) -> Result<Ve
                     start_ms: s.start_ms,
                     end_ms: s.end_ms,
                     quote: s.text.clone(),
+                    speaker_name: s.speaker.as_ref().and_then(|id| names.get(id)).cloned(),
                 });
             }
         }
         let evidence = sources
             .iter()
-            .map(|s| s.quote.as_str())
+            .map(|s| format!("{} {}", s.speaker_name.as_deref().unwrap_or(""), s.quote))
             .collect::<Vec<_>>()
             .join(" ");
+        for name in names.values().filter(|n| !n.is_empty()) {
+            if body.contains(name) && !evidence.contains(name) {
+                bail!("Unsupported speaker attribution: {name}. Passage IDs are not speaker numbers. The cited evidence is: {evidence}. Remove this name unless it appears in that evidence; describe an unassigned passage without naming a speaker.");
+            }
+        }
+        let attributes_speaker = sources.iter().any(|s| {
+            s.speaker_name
+                .as_ref()
+                .is_some_and(|name| body.contains(name))
+        });
+        if attributes_speaker
+            && sources.iter().any(|s| {
+                s.speaker_name
+                    .as_ref()
+                    .is_none_or(|name| !body.contains(name))
+            })
+        {
+            bail!("Ambiguous speaker attribution: this paragraph names a speaker but also cites another or unassigned voice without identifying it. Name each cited speaker with their own statement, or remove speaker names and summarize neutrally. Do not attribute all cited statements to one speaker. Evidence: {evidence}");
+        }
         if !numbers(&format!("{title} {body}")).is_subset(&numbers(&evidence)) {
             bail!(
                 "第 {} 段的数字或日期不在其引用的原文中，请核对出处编号；本轮未提交",
@@ -328,6 +356,8 @@ mod tests {
             end_ms: 1000,
             text: "张老师周五提供测试结果，预算尚未确定，下周讨论。".into(),
             revision: 1,
+            speaker: None,
+            speaker_manual: false,
         }]
     }
     #[test]
@@ -383,5 +413,58 @@ mod tests {
         )
         .is_ok());
         assert!(validate(r#"{"sections":[{"title":"测试安排","body":"原型将于下周一进行测试。","sources":[1]}]}"#,&source,"m").is_err());
+    }
+    #[test]
+    fn speaker_metadata_is_citable_without_changing_the_original_quote() {
+        let mut segments = data();
+        segments[0].speaker = Some("a".into());
+        let names = std::collections::BTreeMap::from([
+            ("a".into(), "Speaker 1".into()),
+            ("b".into(), "Speaker 2".into()),
+        ]);
+        let draft = r#"{"sections":[{"title":"预算","body":"Speaker 1 提到预算尚未确定。","sources":[1]}]}"#;
+        let result = validate_with_speakers(draft, &segments, "m", &names).unwrap();
+        assert_eq!(result[0].sources[0].quote, segments[0].text);
+        assert_eq!(
+            result[0].sources[0].speaker_name.as_deref(),
+            Some("Speaker 1")
+        );
+        assert!(validate_with_speakers(
+            &draft.replace("Speaker 1", "Speaker 2"),
+            &segments,
+            "m",
+            &names
+        )
+        .is_err());
+    }
+    #[test]
+    fn rejects_merging_other_voices_under_one_speaker_name() {
+        let mut segments = data();
+        segments[0].text = "我们播放测试音频。".into();
+        segments[0].speaker = Some("a".into());
+        let mut other = segments[0].clone();
+        other.id = "s2".into();
+        other.text = "我在阳台上吹风。".into();
+        other.speaker = Some("b".into());
+        segments.push(other);
+        let names = std::collections::BTreeMap::from([
+            ("a".into(), "Speaker 1".into()),
+            ("b".into(), "Speaker 2".into()),
+        ]);
+        let check = |body: &str, segments: &[Segment]| {
+            let draft =
+                serde_json::json!({"sections":[{"title":"测试音频","body":body,"sources":[1,2]}]});
+            validate_with_speakers(&draft.to_string(), segments, "m", &names)
+        };
+        assert!(check("Speaker 1 播放测试音频，随后提到在阳台上吹风。", &segments).is_err());
+        assert!(check(
+            "Speaker 1 播放测试音频，Speaker 2 提到在阳台上吹风。",
+            &segments
+        )
+        .is_ok());
+        assert!(check("播放了测试音频，其中提到在阳台上吹风。", &segments).is_ok());
+        segments[1].speaker = None;
+        assert!(check("Speaker 1 播放测试音频，随后提到在阳台上吹风。", &segments).is_err());
+        assert!(check("播放了测试音频，其中提到在阳台上吹风。", &segments).is_ok());
     }
 }

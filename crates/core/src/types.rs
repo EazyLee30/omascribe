@@ -15,6 +15,12 @@ pub struct Meeting {
     pub auto_notes: bool,
     #[serde(default)]
     pub notes_fingerprint: String,
+    #[serde(default)]
+    pub diarization: bool,
+    #[serde(default)]
+    pub diarization_cursor: u32,
+    #[serde(default)]
+    pub speaker_names: std::collections::BTreeMap<String, String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordingTake {
@@ -52,6 +58,10 @@ pub struct Segment {
     pub end_ms: u64,
     pub text: String,
     pub revision: u32,
+    #[serde(default)]
+    pub speaker: Option<String>,
+    #[serde(default)]
+    pub speaker_manual: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserNote {
@@ -69,6 +79,8 @@ pub struct Source {
     pub start_ms: u64,
     pub end_ms: u64,
     pub quote: String,
+    #[serde(default)]
+    pub speaker_name: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Suggestion {
@@ -97,6 +109,12 @@ pub struct RuntimeStatus {
     pub notes_status: String,
     pub notes_elapsed_ms: u64,
     pub error: Option<String>,
+    #[serde(default)]
+    pub diarization_busy: bool,
+    #[serde(default)]
+    pub diarization_meeting_id: Option<String>,
+    #[serde(default)]
+    pub diarization_status: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -119,7 +137,7 @@ pub struct Diagnostics {
     pub recorder_ready: bool,
     pub worker_ready: bool,
     pub server_ready: bool,
-    pub available_memory_mib: u64,
+    pub available_memory_mib: Option<u64>,
     pub accent: String,
     pub version: String,
 }

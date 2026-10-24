@@ -6,3 +6,5 @@
 - Model brand marks: see [original source credits](brands/NOTICE.md). Illustrative hardware modules do not represent official model logos.
 
 No external font, icon CDN, or visitor analytics is used.
+
+- Apple, Windows and Linux platform marks: Font Awesome Free Brands 7.3.1, https://fontawesome.com. SVG artwork licensed CC BY 4.0; [license](platforms/LICENSE.txt). Trademarks belong to their respective owners.

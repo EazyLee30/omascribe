@@ -15,13 +15,17 @@ mod overlay;
 #[cfg(not(target_os = "linux"))]
 #[path = "overlay_native.rs"]
 mod overlay;
+mod profiles;
 mod views;
+mod workspace;
 use tauri::{Emitter, State};
+use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::DialogExt;
 use views::{
     display_monitors, drag_transcript, get_view_settings, set_view_meeting, set_view_settings,
     transcript_snapshot,
 };
+use workspace::*;
 type AppState = Arc<Engine>;
 struct ExitPermit(AtomicBool);
 type Reply<T> = Result<T, String>;
@@ -148,6 +152,7 @@ async fn export_meeting(engine: State<'_, AppState>, id: String, audio: bool) ->
 #[tauri::command]
 async fn import_audio(
     app: tauri::AppHandle,
+    diarization: Option<bool>,
     engine: State<'_, AppState>,
 ) -> Reply<Option<Meeting>> {
     let e = engine.inner().clone();
@@ -168,7 +173,11 @@ async fn import_audio(
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("Imported audio");
-        let m = e.create_meeting(title).map_err(err)?;
+        let mut m = e.create_meeting(title).map_err(err)?;
+        if let Some(enabled) = diarization {
+            e.set_meeting_diarization(&m.id, enabled).map_err(err)?;
+            m.diarization = enabled;
+        }
         e.start_recording(&m.id, "auto", Some(path)).map_err(err)?;
         Ok(Some(m))
     })
@@ -234,7 +243,7 @@ fn ui_test_report(report: serde_json::Value) -> Reply<()> {
     std::fs::write(path, serde_json::to_vec_pretty(&report).map_err(err)?).map_err(err)
 }
 
-#[cfg(feature = "ui-test")]
+#[cfg(all(feature = "ui-test", target_os = "linux"))]
 #[tauri::command]
 async fn ui_test_screenshot(window: tauri::WebviewWindow, name: String) -> Reply<()> {
     use webkit2gtk::WebViewExt;
@@ -263,16 +272,37 @@ async fn ui_test_screenshot(window: tauri::WebviewWindow, name: String) -> Reply
     receive.await.map_err(err)?
 }
 
+#[cfg(all(feature = "ui-test", not(target_os = "linux")))]
+#[tauri::command]
+async fn ui_test_screenshot(_window: tauri::WebviewWindow, _name: String) -> Reply<()> {
+    Err("Use a native screen capture on this platform".into())
+}
+
 fn main() {
-    let engine = match Engine::open(omascribe_core::engine::default_root()) {
-        Ok(e) => e,
-        Err(e) => {
-            eprintln!("OmaScribe: {e:#}");
-            return;
-        }
-    };
-    engine.start_scheduler();
     let regular: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool = tauri::generate_handler![
+        profiles::take_pending_profile,
+        get_network_policy,
+        set_network_policy,
+        open_configuration_gallery,
+        get_preferences,
+        set_preferences,
+        model_status,
+        download_model,
+        cancel_download,
+        delete_model,
+        hardware_profile,
+        storage_usage,
+        list_library,
+        save_library_entry,
+        export_profile,
+        import_profile,
+        open_data_folder,
+        export_library,
+        set_meeting_diarization,
+        rename_speaker,
+        assign_speaker,
+        diarize,
+        cancel_diarization,
         list_meetings,
         create_meeting,
         snapshot,
@@ -306,11 +336,16 @@ fn main() {
     #[cfg(feature = "ui-test")]
     let tester: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool =
         tauri::generate_handler![ui_test_report, ui_test_screenshot];
-    let view_state = views::Views::new(engine.root.clone());
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(engine)
-        .manage(view_state)
+        .manage(profiles::PendingProfile::default())
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
@@ -320,6 +355,26 @@ fn main() {
             regular(request)
         })
         .setup(|app| {
+            // Single-instance forwarding runs before taking the workspace lock.
+            let engine = Engine::open(omascribe_core::engine::default_root())?;
+            let view_state = views::Views::new(engine.root.clone());
+            engine.start_scheduler();
+            app.manage(engine);
+            app.manage(view_state);
+            let handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                if let Some(url) = event.urls().last() {
+                    profiles::receive(&handle, url.as_str());
+                }
+            });
+            // Subscribe before draining startup URLs so an open event cannot fall in a gap.
+            if let Some(urls) = app.deep_link().get_current()? {
+                if let Some(url) = urls.last() {
+                    profiles::receive(app.handle(), url.as_str());
+                }
+            }
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
+            app.deep_link().register_all()?;
             views::start(app.handle());
             #[cfg(feature = "ui-test")]
             if let Ok(path) = std::env::var("OMASCRIBE_UI_TEST_SCRIPT") {

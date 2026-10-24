@@ -4,17 +4,38 @@ use crate::types::*;
 use anyhow::{bail, Context, Result};
 #[cfg(target_os = "linux")]
 use serde_json::Value;
-#[cfg(target_os = "linux")]
-use std::process::Command;
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
     path::Path,
-    process::Stdio,
+    process::{Command, Stdio},
     time::{Duration, Instant},
 };
 
 pub use crate::platform::child_command;
+
+fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
+    let mut command = child_command("ffmpeg");
+    command.args([
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostdin",
+        // A local container or disguised playlist can reference a remote stream.
+        // Decode only local files and pipes, including nested protocol requests.
+        "-protocol_whitelist",
+        "file,pipe",
+    ]);
+    if replay_seconds.is_some() {
+        command.args(["-re", "-stream_loop", "-1"]);
+    }
+    command.arg("-i").arg(input);
+    if let Some(seconds) = replay_seconds {
+        command.arg("-t").arg(seconds.to_string());
+    }
+    command.args(["-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"]);
+    command
+}
 
 #[cfg(target_os = "linux")]
 pub fn devices() -> Result<Vec<Device>> {
@@ -61,17 +82,7 @@ pub fn spawn_capture(
         return crate::native_audio::capture(device);
     }
     let mut cmd = if let Some(input) = input {
-        let mut c = child_command("ffmpeg");
-        c.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
-        if replay_seconds.is_some() {
-            c.args(["-re", "-stream_loop", "-1"]);
-        }
-        c.arg("-i").arg(input);
-        if let Some(seconds) = replay_seconds {
-            c.arg("-t").arg(seconds.to_string());
-        }
-        c.args(["-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"]);
-        c
+        ffmpeg_input(input, replay_seconds)
     } else {
         let mut c = child_command("pw-record");
         c.args([
@@ -276,6 +287,115 @@ pub fn export_wav_range(dir: &Path, target: &Path, start: u64, end: u64) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn has_ffmpeg() -> bool {
+        Command::new("ffmpeg")
+            .arg("-version")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success())
+    }
+
+    #[test]
+    fn ffmpeg_decodes_local_compressed_audio_with_network_protocols_disabled() -> Result<()> {
+        if !has_ffmpeg() {
+            eprintln!("FFmpeg is not installed; compressed audio integration check skipped");
+            return Ok(());
+        }
+        let root = tempfile::tempdir()?;
+        let wav = root.path().join("input.wav");
+        let samples: Vec<i16> = (0..8000)
+            .map(|n| ((n as f32 * 440. * std::f32::consts::TAU / 16000.).sin() * 8000.) as i16)
+            .collect();
+        fs::write(&wav, wav_bytes(&samples)?)?;
+        for extension in ["mp3", "m4a"] {
+            let compressed = root.path().join(format!("input.{extension}"));
+            let encoded = Command::new("ffmpeg")
+                .args(["-hide_banner", "-loglevel", "error", "-nostdin", "-i"])
+                .arg(&wav)
+                .arg(&compressed)
+                .output()?;
+            anyhow::ensure!(
+                encoded.status.success(),
+                "fixture encoding failed: {}",
+                String::from_utf8_lossy(&encoded.stderr)
+            );
+            let mut capture = spawn_capture(
+                "auto",
+                Some(&compressed),
+                None,
+                &root.path().join("decode.log"),
+            )?;
+            let mut pcm = Vec::new();
+            capture.stdout.take().unwrap().read_to_end(&mut pcm)?;
+            assert!(capture.wait()?);
+            // Lossy formats add encoder padding; this verifies useful decoded PCM,
+            // its duration and sample amplitude instead of mirroring command flags.
+            assert!(
+                (15_000..=20_000).contains(&pcm.len()),
+                "unexpected {extension} duration: {} bytes",
+                pcm.len()
+            );
+            assert!(pcm
+                .chunks_exact(2)
+                .any(|b| i16::from_le_bytes([b[0], b[1]]).unsigned_abs() > 1000));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn local_playlist_cannot_contact_a_network_endpoint() -> Result<()> {
+        if !has_ffmpeg() {
+            eprintln!("FFmpeg is not installed; network protocol integration check skipped");
+            return Ok(());
+        }
+        let root = tempfile::tempdir()?;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+        listener.set_nonblocking(true)?;
+        let endpoint = listener.local_addr()?;
+        let path = root.path().join("local-playlist.m3u8");
+        fs::write(&path, format!("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:1.0,\nhttp://{endpoint}/audio.ts\n#EXT-X-ENDLIST\n"))?;
+        let stderr = root.path().join("ffmpeg.log");
+        let mut child = ffmpeg_input(&path, None)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(File::create(&stderr)?)
+            .spawn()?;
+        let start = Instant::now();
+        let mut connections = 0;
+        let status = loop {
+            if let Ok((mut stream, _)) = listener.accept() {
+                connections += 1;
+                stream.set_write_timeout(Some(Duration::from_millis(100)))?;
+                let _ = stream.write_all(
+                    b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                );
+            }
+            if let Some(status) = child.try_wait()? {
+                break status;
+            }
+            if start.elapsed() > Duration::from_secs(5) {
+                let _ = child.kill();
+                let _ = child.wait();
+                bail!("FFmpeg did not reject the network playlist in time");
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        };
+        // Check queued accepts too: process exit is not evidence of no connection.
+        while listener.accept().is_ok() {
+            connections += 1;
+        }
+        assert_eq!(
+            connections, 0,
+            "local audio decoding attempted a network connection"
+        );
+        assert!(!status.success());
+        let message = fs::read_to_string(stderr)?;
+        assert!(message.contains("not on whitelist"), "{message}");
+        Ok(())
+    }
+
     #[test]
     fn pause_resume_appends_without_overwriting_audio() -> Result<()> {
         let tmp = tempfile::tempdir()?;

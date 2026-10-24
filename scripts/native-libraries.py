@@ -17,6 +17,7 @@ parser.add_argument("--target", required=True)
 args = parser.parse_args()
 if os.environ.get("GITHUB_ACTIONS") != "true" or platform.system() not in [
     "Darwin",
+    "Linux",
     "Windows",
 ]:
     raise SystemExit("Native GitHub runner required")

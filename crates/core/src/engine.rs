@@ -33,6 +33,12 @@ pub struct Active {
 }
 pub struct Engine {
     pub root: PathBuf,
+    pub preferences: Mutex<crate::preferences::Preferences>,
+    pub context_revision: AtomicU64,
+    pub downloads: crate::models::Downloads,
+    pub config_lock: Mutex<()>,
+    pub diarization_pid: AtomicU32,
+    pub diarization_cancelled: Mutex<std::collections::HashSet<String>>,
     pub models: PathBuf,
     pub runtime_dir: PathBuf,
     pub store: Mutex<Store>,
@@ -81,7 +87,14 @@ impl Engine {
             }
         }
         crate::files::recover(&store, &root)?;
-        Ok(Arc::new(Self {
+        let preferences = crate::preferences::Preferences::load(&root)?;
+        let engine = Arc::new(Self {
+            preferences: Mutex::new(preferences),
+            context_revision: AtomicU64::new(0),
+            downloads: crate::models::Downloads::default(),
+            config_lock: Mutex::new(()),
+            diarization_pid: AtomicU32::new(0),
+            diarization_cancelled: Mutex::new(Default::default()),
             root,
             models,
             runtime_dir,
@@ -95,13 +108,16 @@ impl Engine {
             llm_pid: AtomicU32::new(0),
             notes_target: Mutex::new(None),
             _lock: lock,
-        }))
+        });
+        engine.recover_downloads()?;
+        Ok(engine)
     }
     pub fn start_scheduler(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
         thread::spawn(move || {
             let mut attempted = std::collections::HashMap::<String, Instant>::new();
             let mut in_flight: Option<String> = None;
+            let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
             loop {
                 thread::sleep(Duration::from_secs(2));
                 let Some(engine) = weak.upgrade() else { break };
@@ -112,6 +128,9 @@ impl Engine {
                     attempted.insert(id, Instant::now());
                 }
                 let status = engine.status.lock().unwrap().clone();
+                if status.diarization_busy {
+                    continue;
+                }
                 if status.transcribing
                     && status.elapsed_ms.saturating_sub(status.processed_ms) > 2500
                 {
@@ -128,7 +147,8 @@ impl Engine {
                 }
                 if let Ok(meetings) = engine.meetings() {
                     for meeting in meetings {
-                        if meeting.auto_notes && !ids.contains(&meeting.id) {
+                        if (meeting.auto_notes || meeting.diarization) && !ids.contains(&meeting.id)
+                        {
                             ids.push(meeting.id);
                         }
                     }
@@ -137,6 +157,29 @@ impl Engine {
                     let Ok(snapshot) = engine.snapshot(&id) else {
                         continue;
                     };
+                    if snapshot.meeting.diarization
+                        && !engine.diarization_cancelled.lock().unwrap().contains(&id)
+                        && !status.recording
+                        && !status.paused
+                        && !status.transcribing
+                        && snapshot
+                            .segments
+                            .last()
+                            .is_some_and(|s| s.seq > snapshot.meeting.diarization_cursor)
+                        && speaker_attempts
+                            .get(&id)
+                            .is_none_or(|t| t.elapsed() > Duration::from_secs(90))
+                    {
+                        speaker_attempts.insert(id.clone(), Instant::now());
+                        match engine.diarize(&id) {
+                            Ok(()) => break,
+                            Err(error) => {
+                                let mut runtime = engine.status.lock().unwrap();
+                                runtime.diarization_meeting_id = Some(id.clone());
+                                runtime.diarization_status = error.to_string();
+                            }
+                        }
+                    }
                     if !snapshot.meeting.auto_notes || !notes::needs_update(&snapshot) {
                         continue;
                     }
@@ -172,6 +215,7 @@ impl Engine {
         Ok(self.root.join("meetings").join(id).join("audio"))
     }
     pub fn create_meeting(&self, title: &str) -> Result<Meeting> {
+        let defaults = self.preferences.lock().unwrap().clone();
         let m = Meeting {
             id: Uuid::new_v4().to_string(),
             title: if title.trim().is_empty() {
@@ -184,7 +228,10 @@ impl Engine {
             duration_ms: 0,
             run: 1,
             notes_cursor: 0,
-            auto_notes: true,
+            auto_notes: defaults.auto_notes,
+            diarization: defaults.diarization,
+            speaker_names: Default::default(),
+            diarization_cursor: 0,
             notes_fingerprint: String::new(),
         };
         fs::create_dir_all(self.audio_dir(&m.id)?)?;
@@ -308,6 +355,10 @@ impl Engine {
         input: Option<PathBuf>,
         replay_seconds: Option<u64>,
     ) -> Result<()> {
+        let _config = self.config_lock.lock().unwrap();
+        if self.status.lock().unwrap().diarization_busy {
+            bail!("Cancel speaker analysis before starting another recording");
+        }
         let mut active_guard = self.active.lock().unwrap();
         if active_guard.as_ref().is_some_and(|a| {
             !a.worker_done.load(Ordering::SeqCst) || !a.capture_done.load(Ordering::SeqCst)
@@ -514,12 +565,14 @@ impl Engine {
             .map(|end| end.to_string())
             .collect::<Vec<_>>()
             .join(",");
+        let prefs = self.preferences.lock().unwrap().clone();
         let mut child = audio::child_command(self.worker_path())
-            .arg(self.models.join("zipformer"))
+            .arg(self.model_directory(&prefs.asr_model)?)
             .arg(&dir)
             .arg(start_sample.to_string())
             .arg(next_seq.to_string())
             .arg(boundaries)
+            .env("OMASCRIBE_ASR_THREADS", prefs.threads.to_string())
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")
             .stdin(Stdio::null())
@@ -559,6 +612,8 @@ impl Engine {
                             end_ms,
                             text,
                             revision: 1,
+                            speaker: None,
+                            speaker_manual: false,
                         };
                         if let Err(e) = engine.store.lock().unwrap().save_segment(&segment) {
                             engine.status.lock().unwrap().error =
@@ -696,6 +751,8 @@ impl Engine {
         Ok(())
     }
     pub fn retranscribe(self: &Arc<Self>, id: &str) -> Result<()> {
+        let _gate = self.config_lock.lock().unwrap();
+        self.configuration_idle()?;
         let mut guard = self.active.lock().unwrap();
         if guard.as_ref().is_some_and(|a| {
             !a.capture_done.load(Ordering::SeqCst) || !a.worker_done.load(Ordering::SeqCst)
@@ -714,6 +771,8 @@ impl Engine {
         let db = self.store.lock().unwrap();
         let mut m = db.meeting(id)?;
         m.run += 1;
+        m.diarization_cursor = 0;
+        m.speaker_names.clear();
         m.notes_cursor = 0;
         m.status = "transcribing".into();
         db.save_meeting(&m)?;
@@ -749,6 +808,10 @@ impl Engine {
         self.spawn_asr(active, m.run, 0, 1)
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
+        let _config = self.config_lock.lock().unwrap();
+        if self.status.lock().unwrap().diarization_busy {
+            bail!("Wait for speaker analysis to finish");
+        }
         self.store.lock().unwrap().meeting(id)?;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("已有笔记正在生成");
@@ -830,7 +893,14 @@ impl Engine {
                 text.push_str(&format!(
                     "> [{}] {} (revision {})\n",
                     timestamp(s.start_ms),
-                    s.quote,
+                    format_args!(
+                        "{}{}",
+                        s.speaker_name
+                            .as_ref()
+                            .map(|n| format!("{n}: "))
+                            .unwrap_or_default(),
+                        s.quote
+                    ),
                     s.revision
                 ));
             }
@@ -838,7 +908,11 @@ impl Engine {
         }
         text.push_str("\n## Transcript / 转写\n\n");
         for s in &data.segments {
-            text.push_str(&format!("**[{}]** {}\n\n", timestamp(s.start_ms), s.text));
+            text.push_str(&format!(
+                "**[{}]** {}\n\n",
+                timestamp(s.start_ms),
+                crate::speakers::labeled_text(s, &data.meeting)
+            ));
         }
         let tmp = target.with_extension("md.part");
         fs::write(&tmp, text)?;
@@ -849,6 +923,7 @@ impl Engine {
         Ok(target.to_string_lossy().into_owned())
     }
     pub fn diagnostics(&self) -> Diagnostics {
+        let prefs = self.preferences.lock().unwrap().clone();
         let names = [
             "encoder-epoch-99-avg-1.int8.onnx",
             "decoder-epoch-99-avg-1.onnx",
@@ -876,26 +951,36 @@ impl Engine {
             .unwrap_or_else(|| "#e5b866".into());
         Diagnostics {
             data_dir: self.root.to_string_lossy().into_owned(),
-            asr_ready: names
-                .iter()
-                .all(|n| self.models.join("zipformer").join(n).is_file()),
-            llm_ready: self.models.join(notes::MODEL_FILE).is_file(),
+            asr_ready: names.iter().all(|n| {
+                self.model_directory(&prefs.asr_model)
+                    .is_ok_and(|path| path.join(n).is_file())
+            }),
+            llm_ready: self.model_file(&prefs.llm_model).is_ok(),
             recorder_ready: cfg!(any(target_os = "macos", target_os = "windows"))
                 || Path::new("/usr/bin/pw-record").exists(),
             worker_ready: self.worker_path().exists(),
-            server_ready: self
-                .runtime_dir
-                .join("llama")
-                .join(platform::executable("llama-server"))
-                .exists(),
+            server_ready: crate::inference::resolve(&prefs, &self.runtime_dir).is_ok_and(
+                |backend| {
+                    if backend == crate::inference::Backend::Mlx {
+                        self.runtime_dir.join("mlx/venv/bin/python3").is_file()
+                    } else {
+                        self.runtime_dir
+                            .join("llama")
+                            .join(platform::executable("llama-server"))
+                            .is_file()
+                    }
+                },
+            ),
             available_memory_mib: mem,
             accent,
             version: env!("CARGO_PKG_VERSION").into(),
         }
     }
     pub fn shutdown(&self) {
+        self.cancel_all_downloads();
         let _ = self.stop_recording();
         self.cancel_notes();
+        platform::stop_process(self.diarization_pid.load(Ordering::SeqCst), false);
         for _ in 0..30 {
             if self
                 .active

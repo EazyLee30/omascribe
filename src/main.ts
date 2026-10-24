@@ -9,6 +9,16 @@ import type {
   MeetingFiles,
 } from "./types";
 import "./style.css";
+import "./workspace.css";
+import { mountSettings } from "./settings";
+import { mountLibrary, type LibraryPage } from "./library";
+import {
+  initAppearance,
+  getPreferences,
+  type Profile,
+} from "./preferences-client";
+import { tr, glyph, navItems, type PageHandle } from "./workspace-ui";
+import { speakerDialog, speakerName } from "./speaker-ui";
 import { NotebookEditor } from "./editor";
 import {
   getViewSettings,
@@ -37,6 +47,11 @@ const clock = (ms: number) => {
     .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 };
 const icons: Record<string, string> = {
+  panelLeft:
+    "M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16",
+  panelRight:
+    "M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM15 4v16",
+  library: "M4 4h4v16H4V4ZM10 4h4v16h-4V4Zm6 1 4-1 3 15-4 1-3-15Z",
   folder: "M3 7V4h6l3 3h9v13H3V7Z",
   plus: "M12 5v14M5 12h14",
   mic: "M9 6a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V6ZM5 11v1a7 7 0 0 0 14 0v-1M12 19v3M8 22h8",
@@ -60,6 +75,9 @@ const icons: Record<string, string> = {
 const icon = (name: string) =>
   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name] || icons.note}"/></svg>`;
 const brand = `<svg viewBox="0 0 256 256" fill="none" aria-hidden="true"><path d="M55 62c0-11 9-20 20-20h106v157H75c-11 0-20 7-20 17V62Z" fill="currentColor" opacity=".16"/><path d="M181 42H77c-12 0-22 10-22 22v137c0-12 10-22 22-22h104V42ZM77 179v35h104" stroke="currentColor" stroke-width="10" stroke-linejoin="round"/><path d="M94 99v32m26-51v70m26-59v49" stroke="currentColor" stroke-width="11" stroke-linecap="round"/><path d="m165 150 24-24 15 15-24 24-20 5 5-20Z" fill="currentColor" stroke="#191b17" stroke-width="5" stroke-linejoin="round"/></svg>`;
+let page = "meeting";
+let pageHandle: PageHandle | null = null;
+let navigation = Promise.resolve();
 let notebookEditor: NotebookEditor | null = null;
 let viewSettings: ViewPreferences | null = null;
 let current: string | null = null,
@@ -77,6 +95,12 @@ const drafts = new Map<string, { note: Note; content: string; kind: string }>();
 let toastTimer: ReturnType<typeof setTimeout>,
   audioUrl: string | null = null;
 function toast(message: string, error = false) {
+  if (!document.getElementById("toast")) {
+    const el = document.createElement("div");
+    el.id = "toast";
+    el.setAttribute("role", "alert");
+    document.body.append(el);
+  }
   $("#toast").textContent = message;
   $("#toast").className = `toast visible ${error ? "error" : ""}`;
   clearTimeout(toastTimer);
@@ -89,17 +113,77 @@ async function guard(action: () => Promise<unknown>) {
     toast(String(e), true);
   }
 }
+type Panel = "sidebar" | "notebook" | "minutes" | "transcript";
+const panelLabels: Record<Panel, Key> = {
+  sidebar: "library",
+  notebook: "yourNotes",
+  minutes: "assistant",
+  transcript: "transcript",
+};
+function panelButton(panel: Panel, expanded: boolean) {
+  const label = `${t(expanded ? "collapse" : "expand")} · ${t(panelLabels[panel])}`;
+  return `<button class="subtle square panel-toggle" data-panel="${panel}" title="${label}" aria-label="${label}" aria-expanded="${expanded}" aria-controls="${panel}-content">${icon(panel === "sidebar" || panel === "notebook" ? "panelLeft" : "panelRight")}</button>`;
+}
+function panelRail(panel: Panel) {
+  if (panel === "sidebar") {
+    return `<div class="panel-rail sidebar-rail" data-rail="sidebar" hidden>${panelButton(panel, false)}<nav class="rail-navigation" aria-label="${t("library")}"><button class="rail-action rail-primary" data-action="new" title="${t("newMeeting")}" aria-label="${t("newMeeting")}">${icon("plus")}</button><button class="rail-action" data-action="import" title="${t("import")}" aria-label="${t("import")}">${icon("upload")}</button>${navItems()
+      .map(
+        ([id, label]) =>
+          `<button class="rail-action" data-page="${id}" title="${label}" aria-label="${label}">${glyph(id)}</button>`,
+      )
+      .join(
+        "",
+      )}</nav><div class="rail-bottom"><button class="rail-action" data-page="settings" title="${t("settings")}" aria-label="${t("settings")}">${icon("settings")}</button></div></div>`;
+  }
+  return `<div class="panel-rail" data-rail="${panel}" hidden>${panelButton(panel, false)}<span aria-hidden="true">${t(panelLabels[panel])}</span></div>`;
+}
+let panelUpdates = Promise.resolve();
+function togglePanel(panel: Panel) {
+  const update = panelUpdates.then(async () => {
+    const prefs = await getViewSettings();
+    if (panel === "transcript") {
+      prefs.transcript_mode =
+        prefs.transcript_mode === "docked" ? "hidden" : "docked";
+    } else {
+      const key = `${panel}_collapsed` as const;
+      prefs[key] = !prefs[key];
+    }
+    viewSettings = await setViewSettings(prefs);
+    applyViews();
+    const expanded =
+      panel === "transcript"
+        ? prefs.transcript_mode === "docked"
+        : !prefs[`${panel}_collapsed`];
+    document
+      .querySelector<HTMLButtonElement>(
+        `[data-panel="${panel}"][aria-expanded="${expanded}"]`,
+      )
+      ?.focus();
+  });
+  panelUpdates = update.catch(() => {});
+  return update;
+}
 function shell() {
   $("#app").innerHTML =
-    `<aside class="sidebar"><div class="brand"><span class="brand-icon">${brand}</span><div>OmaScribe<small>OFFLINE NOTEBOOK</small></div></div><button class="primary new-meeting" data-action="new">${icon("plus")}${t("newMeeting")}</button><button class="subtle import" data-action="import">${icon("upload")}${t("import")}</button><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><div class="local-note">${icon("shield")}<span>${t("local")}<small>${t("private")}</small></span></div><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMARCHY, MEET YOUR NOTEBOOK.</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="new">${t("begin")}${icon("arrow")}</button><div class="welcome-foot">中文 + English <span>·</span> 100% ${t("offline")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
+    `<aside class="sidebar">${panelRail("sidebar")}<div id="sidebar-content"><div class="sidebar-toggle">${panelButton("sidebar", true)}</div><div class="brand"><span class="brand-icon">${brand}</span><div>OmaScribe<small>OFFLINE NOTEBOOK</small></div></div><button class="primary new-meeting" data-action="new">${icon("plus")}${t("newMeeting")}</button><button class="subtle import" data-action="import">${icon("upload")}${t("import")}</button><nav class="workspace-navigation">${navItems()
+      .map(
+        ([id, label]) =>
+          `<button class="subtle" data-page="${id}">${glyph(id)}${label}</button>`,
+      )
+      .join(
+        "",
+      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><div class="local-note">${icon("shield")}<span>${t("local")}<small>${t("private")}</small></span></div><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="new">${t("begin")}${icon("arrow")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
   renderMeetings();
-  if (current) meetingShell();
+  if (current && page === "meeting") meetingShell();
+  applyViews();
 }
 function meetingShell() {
+  page = "meeting";
+  $("#workspace").classList.remove("workspace-page");
   notebookEditor?.destroy();
   notebookEditor = null;
   $("#workspace").innerHTML =
-    `<header class="meeting-header"><div class="heading"><div class="eyebrow" id="meeting-date"></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-expanded="false">${icon("note")}${t("transcript")}</button><button class="text-button caption-toggle" data-action="captions" title="${t("screenCaptions")}" aria-label="${t("screenCaptions")}">CC</button><button class="text-button" data-action="display-settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">${icon("settings")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><span class="document-label">MARKDOWN</span></div><div id="user-notes"></div></section><aside class="minutes-pane"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><span class="auto-indicator"><i></i>${t("automatic")}</span></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></aside><section class="transcript-pane" aria-label="${t("transcript")}"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label><button class="subtle square" data-action="float-transcript" title="${t("floating")}" aria-label="${t("floating")}">↗</button><button class="subtle square" data-action="toggle-transcript" aria-label="${t("close")}">${icon("close")}</button></div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></section></div><footer><span>${icon("shield")}${t("offline")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
+    `<header class="meeting-header"><div class="heading"><div class="eyebrow" id="meeting-date"></div><input id="meeting-title" aria-label="Meeting title" maxlength="160" spellcheck="false"></div><div class="header-actions"><button class="subtle square" data-action="retry" title="${t("retry")}" aria-label="${t("retry")}">${icon("refresh")}</button><button class="subtle" data-action="export">${icon("download")}${t("export")}</button><button id="record" class="record" data-action="record">${icon("mic")}${t("record")}</button><button id="pause-recording" class="outline" data-action="pause-recording" hidden>${icon("pause")}${t("pause")}</button><button id="end-recording" class="record active" data-action="stop-recording" hidden>${icon("stop")}${t("finish")}</button></div></header><div class="session-strip"><div class="session-state"><span id="state-dot" class="dot"></span><span id="state-label"></span><span class="time" id="duration">00:00:00</span><div class="meter" aria-hidden="true"><i id="level"></i></div></div><div class="session-right"><span id="sync">${t("saved")}</span><button class="text-button" data-action="speakers" title="${tr("说话人与自动纪要", "Speakers and automatic minutes", "說話人及自動紀要")}">${glyph("speakers")}<span id="speaker-label">${tr("说话人", "Speakers", "說話人")}</span></button><button class="text-button" data-action="meeting-files">${icon("folder")}${t("files")}</button><button class="text-button transcript-toggle" data-action="toggle-transcript" aria-expanded="false">${icon("note")}${t("transcript")}</button><button class="text-button caption-toggle" data-action="captions" title="${t("screenCaptions")}" aria-label="${t("screenCaptions")}">CC</button><button class="text-button" data-action="display-settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">${icon("settings")}</button></div></div><div id="error-banner" role="alert" hidden></div><div class="columns"><section class="notebook">${panelRail("notebook")}<div id="notebook-content" class="pane-content"><div class="section-heading"><div><h2>${t("yourNotes")}</h2><p>${t("notesHint")}</p></div><div class="section-actions"><span class="document-label">MARKDOWN</span>${panelButton("notebook", true)}</div></div><div id="user-notes"></div></div></section><aside class="minutes-pane">${panelRail("minutes")}<div id="minutes-content" class="pane-content"><div class="minutes-heading"><div class="section-heading"><div><h2>${t("assistant")}</h2><p>${t("assistantHint")}</p></div><div class="section-actions"><span class="auto-indicator"><i></i>${t("automatic")}</span><button id="generate-notes" class="subtle square" data-action="generate" title="${t("generate")}" aria-label="${t("generate")}">${icon("refresh")}</button>${panelButton("minutes", true)}</div></div><div id="focus-context" class="focus-context"></div><div id="notes-progress" class="notes-progress" role="status" hidden></div><div id="coverage" class="coverage"></div></div><div id="suggestions"></div></div></aside><section class="transcript-pane" aria-label="${t("transcript")}">${panelRail("transcript")}<div id="transcript-content" class="pane-content"><div class="dock-resizer" role="separator" aria-label="${t("panelWidth")}"></div><div class="transcript-heading"><h2>${t("transcript")}<span id="segment-count">0</span></h2><label class="search">${icon("search")}<input id="search" placeholder="${t("search")}" aria-label="${t("search")}"></label><button class="subtle square" data-action="float-transcript" title="${t("floating")}" aria-label="${t("floating")}">↗</button>${panelButton("transcript", true)}</div><div id="transcript" class="transcript-list"></div><div class="player"><span id="player-label">${t("nothingPlaying")}</span><audio id="player" controls hidden></audio></div></div></section></div><footer><span>${icon("shield")}${tr("内容处理：离线", "Processing: offline", "內容處理：離線")} <span class="footer-separator">/</span> ${t("local")}</span><button class="text-button" data-action="shortcuts">? ${t("help")}</button></footer>`;
   transcriptSignature = "";
   noteSignature = "";
   suggestionSignature = "";
@@ -152,6 +236,7 @@ async function refreshMeetings() {
   renderMeetings();
 }
 async function selectMeeting(id: string) {
+  await leavePage();
   await flushNotes();
   const data = await invoke<Snapshot>("snapshot", { id });
   if (!data.notes.some((n) => n.kind === "document"))
@@ -194,13 +279,16 @@ function stateText(s: Snapshot) {
   );
 }
 async function refresh() {
-  if (!current || busy) return;
+  if (!current || busy || page !== "meeting") return;
   busy = true;
   const id = current;
   try {
     const data = await invoke<Snapshot>("snapshot", { id });
-    if (current !== id) return;
+    if (current !== id || page !== "meeting") return;
     snap = data;
+    $("#speaker-label").textContent = data.runtime.diarization_busy
+      ? tr("分析中…", "Analyzing…")
+      : tr("说话人", "Speakers", "說話人");
     const r = data.runtime,
       own = r.meeting_id === id,
       recording = own && r.recording,
@@ -235,6 +323,11 @@ async function refresh() {
     $<HTMLButtonElement>("#pause-recording").hidden = !recording;
     $<HTMLButtonElement>("#end-recording").hidden = !recording && !paused;
     const automatic = $(".auto-indicator");
+    const generate = $("#generate-notes");
+    const generateLabel = t(r.notes_busy ? "cancel" : "generate");
+    generate.title = generateLabel;
+    generate.setAttribute("aria-label", generateLabel);
+    generate.innerHTML = icon(r.notes_busy ? "close" : "refresh");
     automatic.classList.toggle("working", r.notes_busy);
     automatic.innerHTML = `<i></i>${t(data.meeting.auto_notes ? "automatic" : "paused")}`;
     const banner = $("#error-banner");
@@ -267,6 +360,22 @@ async function refresh() {
   }
 }
 function localizedStatus(status: string) {
+  if (
+    status.includes("Unsupported speaker attribution:") ||
+    status.includes("Ambiguous speaker attribution:")
+  )
+    return tr(
+      "纪要中的说话人归属未通过核对，本轮未更新。可核对转写姓名或换用更大模型后重试。",
+      "Speaker attribution could not be verified, so these minutes were not updated. Check transcript names or try a larger model.",
+      "紀要中的說話人歸屬未通過核對，本輪未更新。可核對轉寫姓名或換用更大模型後重試。",
+    );
+  const lowMemory = status.match(/^writer:low-memory:(\d+):(\d+)$/);
+  if (lowMemory)
+    return t("writerLowMemory")
+      .replace("{available}", (Number(lowMemory[1]) / 1024).toFixed(1))
+      .replace("{required}", (Number(lowMemory[2]) / 1024).toFixed(1));
+  if (status === "writer:memory-unavailable")
+    return t("writerMemoryUnavailable");
   if (status === "writer:loading") return t("writerLoading");
   if (status === "writer:reading") return t("writerReading");
   if (status === "writer:checking") return t("writerChecking");
@@ -375,21 +484,27 @@ function renderTranscript() {
   const query = $<HTMLInputElement>("#search").value.toLowerCase().trim();
   const partial =
     snap.runtime.meeting_id === current ? snap.runtime.partial : "";
-  const sig = JSON.stringify(snap.segments) + partial + query;
+  const sig =
+    JSON.stringify(snap.segments) +
+    JSON.stringify(snap.meeting.speaker_names) +
+    partial +
+    query;
   if (sig === transcriptSignature) return;
   transcriptSignature = sig;
   const pane = $("#transcript");
   const nearBottom =
     pane.scrollHeight - pane.scrollTop - pane.clientHeight < 90;
   const rows = snap.segments.filter((s) =>
-    s.text.toLowerCase().includes(query),
+    (s.text + " " + speakerName(s, snap!.meeting))
+      .toLowerCase()
+      .includes(query),
   );
   $("#segment-count").textContent = String(snap.segments.length);
   pane.innerHTML =
     rows
       .map(
         (s) =>
-          `<article class="segment"><div class="segment-top"><button class="timestamp" data-seek="${s.start_ms}" data-end="${s.end_ms}">${clock(s.start_ms)}</button><button class="segment-edit" data-edit-segment="${s.id}" title="${t("edit")}" aria-label="${t("edit")}">${icon("edit")}</button></div><p>${esc(s.text)}</p></article>`,
+          `<article class="segment"><div class="segment-top"><button class="timestamp" data-seek="${s.start_ms}" data-end="${s.end_ms}">${clock(s.start_ms)}</button><button class="speaker-chip" data-speaker-segment="${s.id}">${esc(speakerName(s, snap!.meeting))}</button><button class="segment-edit" data-edit-segment="${s.id}" title="${t("edit")}" aria-label="${t("edit")}">${icon("edit")}</button></div><p>${esc(s.text)}</p></article>`,
       )
       .join("") +
     (partial && !query
@@ -425,40 +540,101 @@ function modal(title: string, body: string, actions: string = "") {
 function closeModal() {
   $<HTMLDialogElement>("#modal").close();
 }
+async function leavePage() {
+  await pageHandle?.close();
+  pageHandle = null;
+  await flushNotes();
+  notebookEditor?.destroy();
+  notebookEditor = null;
+}
+async function navigate(
+  destination: string,
+  section?: string,
+  profile?: Profile,
+) {
+  await leavePage();
+  if (destination === "meetings") {
+    if (current) return selectMeeting(current);
+    page = "meeting";
+    shell();
+    return;
+  }
+  page = destination;
+  document
+    .querySelectorAll<HTMLElement>("[data-page]")
+    .forEach((b) =>
+      b.classList.toggle("selected", b.dataset.page === destination),
+    );
+  const root = $("#workspace");
+  root.classList.remove("dock-transcript");
+  root.innerHTML = `<div class="page-loading">${tr("正在打开…", "Opening…", "正在開啟…")}</div>`;
+  if (destination === "settings") {
+    pageHandle = await mountSettings(root, {
+      toast,
+      section,
+      profile,
+      back: () => navigate("meetings"),
+      language: async (l) => {
+        setLocale(l);
+        await pageHandle?.close();
+        pageHandle = null;
+        shell();
+        await navigate("settings", "general");
+      },
+      display: showDisplaySettings,
+      device: (id) => {
+        chosenDevice = id;
+        localStorage.setItem("omascribe-device", id);
+      },
+    });
+  } else {
+    pageHandle = await mountLibrary(root, destination as LibraryPage, {
+      toast,
+      meeting: selectMeeting,
+      settings: () => navigate("settings", "transcription"),
+    });
+  }
+  applyViews();
+}
 async function settings() {
-  diag = await invoke<Diagnostic>("diagnostics");
-  const devices = await invoke<{ id: string; name: string }[]>("list_devices");
+  return navigate("settings");
+}
+async function importAudio() {
+  await flushNotes();
+  const prefs = await getPreferences();
   modal(
-    t("settings"),
-    `<label class="setting">${t("language")}<select id="language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option></select></label><label class="setting">${t("device")}<select id="device">${devices.map((d) => `<option value="${esc(d.id)}">${esc(d.id === "auto" ? t("defaultDevice") : d.name)}</option>`).join("")}</select></label>${snap ? `<label class="check-setting"><input type="checkbox" id="auto-notes" ${snap.meeting.auto_notes ? "checked" : ""}>${t("auto")}</label><p class="setting-help">${t("autoHelp")}</p>` : ""}<div class="model-status"><h3>${t("models")}</h3><p>${t("asr")}<span class="${diag.asr_ready && diag.worker_ready ? "ok" : "bad"}">${diag.asr_ready && diag.worker_ready ? t("installed") : t("missing")}</span></p><p>${t("llm")}<span class="${diag.llm_ready && diag.server_ready ? "ok" : "bad"}">${diag.llm_ready && diag.server_ready ? t("installed") : t("missing")}</span></p></div><p class="setting-help">${t("termHelp")}</p><div class="storage"><h3>${t("storage")}</h3><code>${esc(diag.data_dir)}</code><p>${t("memory")}: ${(diag.available_memory_mib / 1024).toFixed(1)} GiB</p></div><p class="about">OmaScribe ${diag.version}<br>${t("about")}</p>`,
+    t("import"),
+    `<p class="setting-help">${tr("选择音频后在本机转写。可在转写结束后区分说话人。", "Transcribe audio on this device and optionally separate speakers after transcription.", "選擇音訊後於本機轉寫，可在完成後區分說話人。")}</p><label class="check-setting"><input id="import-speakers" type="checkbox" ${prefs.diarization ? "checked" : ""}>${tr("区分说话人", "Separate speakers", "區分說話人")}</label>`,
+    `<button class="primary" id="choose-audio">${tr("选择音频文件", "Choose audio file", "選擇音訊檔案")}</button>`,
   );
-  $<HTMLSelectElement>("#language").value = locale;
-  $<HTMLSelectElement>("#device").value = chosenDevice;
-  $("#language").addEventListener("change", () =>
+  $("#choose-audio").onclick = () =>
     guard(async () => {
-      await flushNotes();
-      setLocale($<HTMLSelectElement>("#language").value as Locale);
-      shell();
-      await refresh();
-    }),
-  );
-  $("#device").addEventListener("change", () => {
-    chosenDevice = $<HTMLSelectElement>("#device").value;
-    localStorage.setItem("omascribe-device", chosenDevice);
-  });
-  document.querySelector("#auto-notes")?.addEventListener("change", () =>
-    guard(async () => {
-      await invoke("update_meeting", {
-        id: current,
-        title: snap!.meeting.title,
-        autoNotes: $<HTMLInputElement>("#auto-notes").checked,
-      });
-      await refresh();
-    }),
-  );
+      const diarization = $<HTMLInputElement>("#import-speakers").checked;
+      closeModal();
+      const m = await invoke<Meeting | null>("import_audio", { diarization });
+      if (m) {
+        await refreshMeetings();
+        await selectMeeting(m.id);
+      }
+    });
 }
 function applyViews() {
-  if (!viewSettings || !current) return;
+  if (!viewSettings) return;
+  const states: Record<Panel, boolean> = {
+    sidebar: viewSettings.sidebar_collapsed,
+    notebook: viewSettings.notebook_collapsed,
+    minutes: viewSettings.minutes_collapsed,
+    transcript: viewSettings.transcript_mode !== "docked",
+  };
+  for (const [panel, collapsed] of Object.entries(states)) {
+    const content = document.getElementById(`${panel}-content`);
+    if (!content) continue;
+    content.hidden = collapsed;
+    content.parentElement!.classList.toggle("is-collapsed", collapsed);
+    document.querySelector<HTMLElement>(`[data-rail="${panel}"]`)!.hidden =
+      !collapsed;
+  }
+  if (!current || page !== "meeting") return;
   $("#workspace").classList.toggle(
     "dock-transcript",
     viewSettings.transcript_mode === "docked",
@@ -485,7 +661,7 @@ async function toggleTranscript(open?: boolean) {
   const p = await getViewSettings();
   const shown = open ?? p.transcript_mode === "hidden";
   viewSettings = await patchViewSettings({
-    transcript_mode: shown ? (open ? "docked" : "floating") : "hidden",
+    transcript_mode: shown ? "docked" : "hidden",
   });
   applyViews();
 }
@@ -636,12 +812,15 @@ function shortcuts() {
   );
 }
 async function quit() {
+  await pageHandle?.flush?.();
+  if (current) snap = await invoke<Snapshot>("snapshot", { id: current });
   await flushNotes();
   if (
     snap?.runtime.recording ||
     snap?.runtime.paused ||
     snap?.runtime.transcribing ||
-    snap?.runtime.notes_busy
+    snap?.runtime.notes_busy ||
+    snap?.runtime.diarization_busy
   ) {
     modal(
       "OmaScribe",
@@ -654,6 +833,21 @@ document.addEventListener("click", (e) => {
   const el = (e.target as HTMLElement).closest<HTMLElement>("button");
   if (!el) return;
   guard(async () => {
+    if (el.dataset.page) {
+      navigation = navigation
+        .then(() => navigate(el.dataset.page!))
+        .catch((e) => toast(String(e), true));
+      return navigation;
+    }
+    if (el.dataset.speakerSegment && current)
+      return speakerDialog(
+        $<HTMLDialogElement>("#modal"),
+        current,
+        el.dataset.speakerSegment,
+        refresh,
+        toast,
+      );
+    if (el.dataset.panel) return togglePanel(el.dataset.panel as Panel);
     if (el.dataset.meeting) return selectMeeting(el.dataset.meeting);
     if (el.dataset.seek !== undefined)
       return play(
@@ -678,6 +872,18 @@ document.addEventListener("click", (e) => {
         name: el.dataset.file,
       });
     switch (el.dataset.action) {
+      case "show-library":
+        return navigate("meetings");
+      case "speakers":
+        if (current)
+          return speakerDialog(
+            $<HTMLDialogElement>("#modal"),
+            current,
+            undefined,
+            refresh,
+            toast,
+          );
+        return;
       case "meeting-files":
         return showMeetingFiles();
       case "open-meeting-folder":
@@ -697,17 +903,11 @@ document.addEventListener("click", (e) => {
       case "open-exports":
         return invoke("open_exports");
       case "quit":
+        await pageHandle?.flush?.();
         await flushNotes();
         return invoke("quit");
-      case "import": {
-        await flushNotes();
-        const m = await invoke<Meeting | null>("import_audio");
-        if (m) {
-          await refreshMeetings();
-          await selectMeeting(m.id);
-        }
-        return;
-      }
+      case "import":
+        return importAudio();
       case "generate":
         await flushNotes();
         await invoke(
@@ -769,7 +969,12 @@ document.addEventListener("keydown", (e) => {
       await refresh();
     });
   }
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f" && current) {
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    e.key.toLowerCase() === "f" &&
+    current &&
+    page === "meeting"
+  ) {
     e.preventDefault();
     guard(async () => {
       await toggleTranscript(true);
@@ -777,7 +982,11 @@ document.addEventListener("keydown", (e) => {
     });
   }
 });
+document.addEventListener("open-settings", (event) =>
+  guard(() => navigate("settings", (event as CustomEvent<string>).detail)),
+);
 async function init() {
+  await initAppearance();
   viewSettings = await getViewSettings();
   await listen<ViewPreferences>("view-settings", (event) => {
     viewSettings = event.payload;
@@ -787,9 +996,15 @@ async function init() {
   shell();
   await refreshMeetings();
   diag = await invoke<Diagnostic>("diagnostics");
-  document.documentElement.style.setProperty("--accent", diag.accent);
+
   if (meetings.length) await selectMeeting(meetings[0].id);
   await listen("close-requested", () => guard(quit));
+  const previewProfile = async () => {
+    const profile = await invoke<Profile | null>("take_pending_profile");
+    if (profile) await navigate("settings", "profiles", profile);
+  };
+  await listen("profile-import-available", () => guard(previewProfile));
+  await guard(previewProfile);
   setInterval(() => guard(refresh), 600);
   setInterval(() => guard(refreshFiles), 3000);
   setInterval(
@@ -797,7 +1012,6 @@ async function init() {
       guard(async () => {
         await refreshMeetings();
         diag = await invoke<Diagnostic>("diagnostics");
-        document.documentElement.style.setProperty("--accent", diag.accent);
       }),
     5000,
   );

@@ -14,7 +14,7 @@ Five separate pages: `/`, `/download/`, `/models/`, `/community/`, `/privacy/`. 
 - `data/releases.json` is the latest verified metadata snapshot. `npm run sync:release` queries the official GitHub Releases API and selects the newest published release (including prereleases) containing all three platform installers and `SHA256SUMS.txt`. It validates exact repository asset URLs, nonzero sizes and upload completion; a failed refresh leaves the snapshot unchanged and exits unsuccessfully.
 - `public/assets/brands/NOTICE.md` records upstream logo sources, hashes and software licenses. All assets are hosted on this origin.
 
-The released v0.2.0 installers predate the new configuration and acceleration work. Pages state this explicitly; a new website deployment does not update an installed desktop application.
+Release metadata selects a complete stable release before considering previews. Starting with 0.3.0 it requires two macOS DMGs, a Windows EXE, Linux AppImage and Debian package, plus SHA256SUMS.txt. Pages describe capabilities according to the published version. A website deployment does not update an installed desktop application.
 
 ## Local commands
 

@@ -1,3 +1,4 @@
+mod diarization;
 use anyhow::{Context, Result};
 use omascribe_core::{AsrEvent, CHUNK_SAMPLES, SAMPLE_RATE};
 use sherpa_onnx::{OnlineRecognizer, OnlineRecognizerConfig};
@@ -14,6 +15,9 @@ fn emit(event: AsrEvent) {
 }
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).is_some_and(|a| a == "--diarize") {
+        return diarization::run(&args);
+    }
     let model = Path::new(
         args.get(1)
             .context("用法：omascribe-asr MODEL_DIR AUDIO_DIR")?,
@@ -25,7 +29,11 @@ fn run() -> Result<()> {
     config.model_config.transducer.decoder = path("decoder-epoch-99-avg-1.onnx");
     config.model_config.transducer.joiner = path("joiner-epoch-99-avg-1.int8.onnx");
     config.model_config.tokens = path("tokens.txt");
-    config.model_config.num_threads = 1;
+    config.model_config.num_threads = std::env::var("OMASCRIBE_ASR_THREADS")
+        .ok()
+        .and_then(|v| v.parse::<i32>().ok())
+        .unwrap_or(1)
+        .clamp(1, 16);
     config.model_config.provider = Some("cpu".into());
     config.decoding_method = Some("greedy_search".into());
     config.enable_endpoint = true;

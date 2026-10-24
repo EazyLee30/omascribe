@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native release preparation. Runs ONLY on GitHub-hosted macOS/Windows runners."""
+"""Native release preparation. Runs ONLY on GitHub-hosted macOS, Windows and Linux runners."""
 
 import argparse
 import hashlib
@@ -17,6 +17,7 @@ LOCK = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))
 ASSETS = ROOT / "build-assets/native"
 RUNTIME = ASSETS / "runtime"
 WINDOWS = platform.system() == "Windows"
+MACOS = platform.system() == "Darwin"
 SUFFIX = ".exe" if WINDOWS else ""
 
 
@@ -35,6 +36,7 @@ def download(url, target):
 
 
 def prepare(target):
+    metal = target == "aarch64-apple-darwin"
     RUNTIME.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, OMASCRIBE_MODELS_DIR=str(ASSETS / "models"))
     run("python", ROOT / "scripts/setup.py", "--models-only", env=env)
@@ -71,15 +73,19 @@ def prepare(target):
         LOCK["llama_cpp"]["revision"],
     )
     run("git", "-C", llama, "checkout", "--detach", "FETCH_HEAD")
-    if not (RUNTIME / "llama" / ("llama-server" + SUFFIX)).is_file():
+    runtime_stamp = RUNTIME / "llama/build-info.json"
+    expected = {"revision": LOCK["llama_cpp"]["revision"], "metal": metal, "format": 1}
+    if not ((RUNTIME / "llama" / ("llama-server" + SUFFIX)).is_file()
+            and runtime_stamp.is_file() and json.loads(runtime_stamp.read_text()) == expected):
         build = llama / "build-native"
         flags = [
             "-DCMAKE_BUILD_TYPE=Release",
             "-DBUILD_SHARED_LIBS=OFF",
             "-DGGML_BACKEND_DL=OFF",
             "-DGGML_NATIVE=OFF",
-            "-DGGML_METAL=OFF",
-            "-DGGML_ACCELERATE=OFF",
+            "-DGGML_METAL=" + ("ON" if metal else "OFF"),
+            "-DGGML_METAL_EMBED_LIBRARY=" + ("ON" if metal else "OFF"),
+            "-DGGML_ACCELERATE=" + ("ON" if metal else "OFF"),
             "-DGGML_BLAS=OFF",
             "-DGGML_OPENMP=OFF",
             "-DGGML_CUDA=OFF",
@@ -87,6 +93,8 @@ def prepare(target):
             "-DLLAMA_CURL=OFF",
             "-DLLAMA_BUILD_TESTS=OFF",
             "-DLLAMA_BUILD_EXAMPLES=OFF",
+            "-DLLAMA_BUILD_UI=OFF",
+            "-DLLAMA_USE_PREBUILT_UI=OFF",
             "-DLLAMA_BUILD_SERVER=ON",
         ]
         if target.startswith("x86_64"):
@@ -99,7 +107,7 @@ def prepare(target):
             ]
         if WINDOWS:
             flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
-        else:
+        elif MACOS:
             flags += ["-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"]
         run("cmake", "-S", llama, "-B", build, *flags)
         run(
@@ -116,6 +124,7 @@ def prepare(target):
         server = next(build.rglob("llama-server" + SUFFIX))
         (RUNTIME / "llama").mkdir(exist_ok=True)
         shutil.copy2(server, RUNTIME / "llama" / server.name)
+        runtime_stamp.write_text(json.dumps(expected, indent=2) + "\n")
     run(
         "cargo",
         "build",
@@ -140,7 +149,8 @@ def prepare(target):
             RUNTIME / "llama/llama-server",
         ]:
             binary.chmod(0o755)
-            run("codesign", "--force", "--sign", "-", binary)
+            if MACOS:
+                run("codesign", "--force", "--sign", "-", binary)
 
     licenses = ASSETS / "licenses"
     licenses.mkdir(exist_ok=True)
@@ -198,7 +208,8 @@ def prepare(target):
                 "llama_cpp": LOCK["llama_cpp"]["revision"],
                 "asr": LOCK["asr"]["name"],
                 "llm": LOCK["llm"]["name"],
-                "gpu": False,
+                "gpu": metal,
+                "inference_backends": ["cpu", "metal"] if metal else ["cpu"],
             },
             indent=2,
         ),
@@ -228,7 +239,7 @@ def prepare(target):
                 "displayLanguageSelector": True,
             },
         }
-    else:
+    elif MACOS:
         config["app"] = {"macOSPrivateApi": True}
         config["bundle"]["macOS"] = {
             "minimumSystemVersion": "11.0",
@@ -236,6 +247,8 @@ def prepare(target):
             "entitlements": "Entitlements.plist",
             "infoPlist": "Info.plist",
         }
+    else:
+        config["bundle"]["linux"] = {"deb": {"depends": ["pipewire-bin", "ffmpeg", "libgtk-layer-shell0"]}}
     (ROOT / "src-tauri/tauri.release.conf.json").write_text(
         json.dumps(config, indent=2), encoding="utf-8"
     )
@@ -247,9 +260,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if os.environ.get("GITHUB_ACTIONS") != "true" or platform.system() not in [
         "Darwin",
+        "Linux",
         "Windows",
     ]:
         raise SystemExit(
-            "Native packages must be built on GitHub Actions macOS/Windows runners, never on the Linux workstation."
+            "Native packages must be built on matching GitHub Actions runners."
         )
+    hosts = {"aarch64-apple-darwin": "Darwin", "x86_64-apple-darwin": "Darwin", "x86_64-pc-windows-msvc": "Windows", "x86_64-unknown-linux-gnu": "Linux"}
+    if hosts.get(args.target) != platform.system():
+        raise SystemExit("The release target must match the runner OS")
     prepare(args.target)

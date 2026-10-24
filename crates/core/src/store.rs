@@ -20,7 +20,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS document_history(id INTEGER PRIMARY KEY, meeting_id TEXT NOT NULL, created_at TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS inference_jobs(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, started_at TEXT NOT NULL, input TEXT NOT NULL, outcome TEXT, elapsed_ms INTEGER);
             CREATE TABLE IF NOT EXISTS recording_takes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, number INTEGER NOT NULL, json TEXT NOT NULL, UNIQUE(meeting_id,number));
-            PRAGMA user_version=3;")?;
+            CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
+            PRAGMA user_version=4;")?;
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
         Ok(Self { conn })
     }
@@ -315,6 +316,8 @@ mod tests {
             end_ms: 1000,
             text: "预算确定".into(),
             revision: 1,
+            speaker: None,
+            speaker_manual: false,
         };
         db.save_segment(&segment)?;
         db.save_suggestion(&Suggestion {
@@ -329,6 +332,7 @@ mod tests {
                 start_ms: 0,
                 end_ms: 1000,
                 quote: "预算确定".into(),
+                speaker_name: None,
             }],
             status: "accepted".into(),
             stale: false,
@@ -365,6 +369,8 @@ mod document_tests {
             end_ms: 1000,
             text: "预算未定".into(),
             revision: 1,
+            speaker: None,
+            speaker_manual: false,
         };
         engine.store.lock().unwrap().save_segment(&segment)?;
         let before = engine.snapshot(&m.id)?;
@@ -380,6 +386,7 @@ mod document_tests {
                 start_ms: 0,
                 end_ms: 1000,
                 quote: segment.text.clone(),
+                speaker_name: None,
             }],
             status: "pending".into(),
             stale: false,

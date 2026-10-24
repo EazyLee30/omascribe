@@ -9,12 +9,62 @@ fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let command = args.get(1).map(|s| s.as_str()).unwrap_or("help");
     if command == "help" {
-        println!("OmaScribe CLI\n  diagnose\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  diagnose\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
     let arg = |i| args.get(i).context("缺少命令参数");
     let result = match command {
+        "models" => serde_json::to_value(engine.model_status())?,
+        "hardware" => serde_json::to_value(omascribe_core::models::hardware(&engine.root))?,
+        "network" => {
+            let mut policy = engine.get_network_policy()?;
+            if let Some(feature) = args.get(2) {
+                let enabled = match arg(3)?.as_str() {
+                    "on" => true,
+                    "off" => false,
+                    _ => bail!("Use network [downloads|recommendations] [on|off]"),
+                };
+                match feature.as_str() {
+                    "downloads" => policy.allow_model_downloads = enabled,
+                    "recommendations" => policy.allow_online_recommendations = enabled,
+                    _ => bail!("Use network [downloads|recommendations] [on|off]"),
+                }
+                policy = engine.set_network_policy(policy)?;
+            }
+            serde_json::to_value(policy)?
+        }
+        "download-model" => {
+            let id = arg(2)?;
+            engine.download_model(id)?;
+            loop {
+                let status = engine
+                    .model_status()
+                    .into_iter()
+                    .find(|m| m.model.id == *id)
+                    .context("Unknown model")?;
+                if status.installed {
+                    break serde_json::to_value(status)?;
+                }
+                if let Some(progress) = status.download {
+                    if progress.state == "failed" || progress.state == "cancelled" {
+                        bail!("{}", progress.error.unwrap_or(progress.state));
+                    }
+                }
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+        "diarize" => {
+            engine.diarize(arg(2)?)?;
+            while engine.status.lock().unwrap().diarization_busy {
+                thread::sleep(Duration::from_millis(200));
+            }
+            let status = engine.status.lock().unwrap().clone();
+            if status.diarization_status != "done" {
+                bail!("{}", status.diarization_status);
+            }
+            serde_json::to_value(engine.snapshot(arg(2)?)?)?
+        }
         "diagnose" => serde_json::to_value(engine.diagnostics())?,
         "list" => serde_json::to_value(engine.meetings()?)?,
         "files" => serde_json::to_value(engine.meeting_files(arg(2)?)?)?,

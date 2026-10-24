@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 """Pinned, checksum-verified offline assets. Network access is setup-only."""
 
-import argparse, hashlib, json, os, pathlib, shutil, subprocess, tarfile, urllib.request
+import argparse, hashlib, json, os, pathlib, platform, shutil, subprocess, tarfile, urllib.request
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((REPO / "models.lock.json").read_text())
+DEFAULT_DATA = (
+    pathlib.Path.home() / "Library/Application Support/OmaScribe"
+    if platform.system() == "Darwin"
+    else pathlib.Path(os.environ.get("LOCALAPPDATA", str(pathlib.Path.home()))) / "io.omarchy.omascribe"
+    if platform.system() == "Windows"
+    else pathlib.Path(os.environ.get("XDG_DATA_HOME", str(pathlib.Path.home() / ".local/share"))) / "omascribe"
+)
 DATA = pathlib.Path(
-    os.environ.get(
-        "OMASCRIBE_DATA_DIR",
-        str(
-            pathlib.Path(
-                os.environ.get(
-                    "XDG_DATA_HOME", str(pathlib.Path.home() / ".local/share")
-                )
-            )
-            / "omascribe"
-        ),
-    )
+    os.environ.get("OMASCRIBE_DATA_DIR", str(DEFAULT_DATA))
 )
 MODELS = pathlib.Path(os.environ.get("OMASCRIBE_MODELS_DIR", str(DATA / "models")))
 RUNTIME = pathlib.Path(os.environ.get("OMASCRIBE_RUNTIME_DIR", str(DATA / "runtime")))
@@ -84,11 +81,13 @@ def run(*args, **kwargs):
 
 def runtime():
     spec = LOCK["llama_cpp"]
+    metal = platform.system() == "Darwin" and platform.machine() == "arm64"
     target = RUNTIME / "llama"
     stamp = target / "build-info.json"
     if (
         stamp.exists()
         and json.loads(stamp.read_text()).get("revision") == spec["revision"]
+        and json.loads(stamp.read_text()).get("metal", False) == metal
         and (target / "llama-server").exists()
     ):
         print("Pinned llama.cpp runtime already installed")
@@ -112,6 +111,11 @@ def runtime():
         "-B",
         str(build),
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=OFF",
+        "-DGGML_BACKEND_DL=OFF",
+        "-DGGML_METAL=" + ("ON" if metal else "OFF"),
+        "-DGGML_METAL_EMBED_LIBRARY=" + ("ON" if metal else "OFF"),
+        "-DGGML_ACCELERATE=" + ("ON" if metal else "OFF"),
         "-DGGML_NATIVE=OFF",
         "-DGGML_AVX=ON",
         "-DGGML_AVX2=ON",
@@ -120,8 +124,11 @@ def runtime():
         "-DGGML_AVX512=OFF",
         "-DGGML_OPENMP=OFF",
         "-DLLAMA_OPENSSL=OFF",
+        "-DLLAMA_CURL=OFF",
         "-DLLAMA_BUILD_TESTS=OFF",
         "-DLLAMA_BUILD_EXAMPLES=OFF",
+        "-DLLAMA_BUILD_UI=OFF",
+        "-DLLAMA_USE_PREBUILT_UI=OFF",
     )
     run(
         "cmake",
@@ -138,7 +145,7 @@ def runtime():
     shutil.copy2(source / "LICENSE", target / "LICENSE")
     stamp.write_text(
         json.dumps(
-            dict(revision=spec["revision"], cpu="x86-64 AVX2", build="local"), indent=2
+            dict(revision=spec["revision"], cpu=platform.machine(), metal=metal, build="local"), indent=2
         )
         + "\n"
     )
@@ -146,6 +153,9 @@ def runtime():
 
 
 def overlay():
+    if platform.system() != "Linux":
+        print("Wayland caption runtime is Linux-only; native desktop captions need no GTK runtime")
+        return
     spec = LOCK["gtk_layer_shell"]
     target = RUNTIME / "platform"
     stamp = target / "build-info.json"

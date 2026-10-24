@@ -76,7 +76,7 @@ impl Engine {
                     "[{}–{}] {}\n\n",
                     timestamp(s.start_ms),
                     timestamp(s.end_ms),
-                    s.text
+                    crate::speakers::labeled_text(s, &meeting)
                 ))
                 .collect::<String>()
         );
@@ -123,7 +123,7 @@ impl Engine {
                             s.start_ms
                                 .saturating_sub(take.start_sample * 1000 / SAMPLE_RATE)
                         ),
-                        s.text
+                        crate::speakers::labeled_text(s, &meeting)
                     )
                 })
                 .collect::<String>();

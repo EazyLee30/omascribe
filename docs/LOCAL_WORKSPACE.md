@@ -1,0 +1,41 @@
+# Local workspace and shareable configurations
+
+## Settings and navigation
+
+The sidebar switches between meetings, notes, knowledge base, glossary and memory. Collapse it to an icon rail; the notebook, minutes and transcript also collapse independently. Navigation flushes pending note saves. Meeting capture and inference continue while settings or a library page is open.
+
+Settings contain General, Appearance, Models & performance, Transcription & minutes, Configuration sharing, Privacy & network and Storage. Appearance supports system/light/dark, Forest/Neutral/Slate, custom accent/background/foreground, system/serif/monospace fonts, 11–20 px UI text and reset. Transcript/caption-specific controls remain separate. Hardware information reports the CPU, logical cores, RAM, available memory and free disk; recommendations are capacity estimates, not speed benchmarks. CPU inference remains available on all platforms. Apple Silicon builds also support Metal; an optional MLX runtime uses its own pinned model format. Resource modes control batching, threads and writer admission budgets; models unload after each task. An explicit memory budget is not an OS memory quota.
+
+## Models
+
+The full installers still bundle Zipformer Small + Qwen3 1.7B Q4_K_M. Settings can also select the larger bilingual Zipformer, Qwen3 0.6B, Qwen3 4B, and Pyannote 3.0 + 3D-Speaker for speaker separation. The compact, balanced and quality presets set an ASR/LLM pair plus thread/context settings. A recommendation does not prove that a model will fit under the current system load; each writer job checks available memory before loading.
+
+[`model-catalog.json`](../model-catalog.json) pins model URLs, revisions, sizes and SHA-256 hashes. A download is staged and fully verified before its directory becomes available. Progress, cancellation, errors and retry are visible. Interrupted staging directories are removed on the next launch. Downloading requires internet; recording, inference and editing do not. Manual downloads require a separate permission in Privacy & network. Downloads go to `model-store/<id>` under the app's data directory and survive removal of the application bundle. App-bundled weights are read-only; managed copies can be deleted after deselecting them. Model changes and deletion are blocked while recording, paused, transcribing, writing or analyzing speakers. Missing runtime programs require a full installer or developer setup; model downloads only provide weights.
+
+CLI equivalents: `omascribe-cli models`, `hardware`, `download-model MODEL_ID`, and `diarize MEETING_ID`. Downloads are currently restartable, not byte-resumable. The 0.6B writer saves memory at a substantial quality cost; rejected drafts leave existing minutes and coverage untouched.
+
+## Sharing a setup
+
+Export produces a schema-1 JSON file with a user-chosen name, a hardware description, model IDs, inference parameters, appearance and default behavior. It excludes recordings, transcripts, notes, glossary entries, memory, paths and model weights. No file is uploaded. The recipient imports it, inspects the preview and applies it, then downloads missing supported models if desired. Only curated model IDs and validated settings are accepted; files cannot supply download URLs, local paths or executable commands. Configuration files are limited to 64 KiB. Website links use a maximum 16 KiB `omascribe://profile?data=...` URL containing only a base64url JSON payload. A link opens the same import preview; it cannot apply settings, fetch a URL, install a model, record, or upload content. Network permissions are device-local and never part of this profile.
+
+## Notes, knowledge, glossary and memory
+
+Meeting notes and standalone Markdown notes share the Notes page. A checkbox explicitly adds each note to the knowledge base. Retrieval must also be enabled in settings. It uses bounded lexical matching against the meeting's current transcript and keywords; no embedding model runs in the background. The writer sees relevant background notes as context, never as meeting evidence.
+
+The glossary records a canonical term, aliases and a definition. Enabled entries guide the writer's spelling; they do not silently rewrite ASR output. Memory contains user-maintained writing preferences and context, is off by default, and is never automatically created. Entries can be disabled, soft-deleted and restored. The separate private-library export includes personal content and is deliberately distinct from configuration sharing. There is no library-import/merge UI yet.
+
+## Speakers
+
+Enable separation as a default, for an audio import, or per meeting. Analysis runs after recording and ASR finish, using local segmentation and speaker embeddings. The speaker-count setting is automatic or 1–16. The current offline worker supports recordings up to two hours; longer recordings must be split. Overlapping/ambiguous passages remain unassigned when no voice covers a clear majority. This is voice clustering, not identification of a real person.
+
+Click a transcript speaker label to change that passage's assignment, rename a group or add a name. Renaming confirms the group's existing assignments; manual assignments survive reanalysis. Newly analyzed clusters receive fresh anonymous IDs, so an old personal name is never silently transferred to a different voice. Renames/assignments increment source revisions, retain history and flag affected minutes for review. The writer receives the mapped name and can produce “张三提到…”. Raw source quotes stay intact; readable transcripts and exports include speaker names. Automatic labels and generated prose still need review against the recording.
+
+Cancelling analysis stops automatic retries for that meeting in the current app session. Explicitly analyzing again or re-enabling separation clears that pause. Ambiguous named attributions in generated minutes are rejected; the UI preserves existing content and suggests reviewing names or selecting a larger writer.
+
+## Validation
+
+Rust tests cover configuration validation/persistence, download checksum and cancellation, active-job locking, knowledge/memory opt-in, source attribution, speaker edit history and export, plus existing recording/document tests. `tests/native-workspace.js` is an optional native IPC/UI check with the `ui-test` feature; run it only against an isolated test data directory. Browser interaction checks cover appearance, narrow widths, page transitions/autosave, library restore, profiles and speaker editing.
+
+On 2026-10-24, native macOS validation on Apple M5 / 24 GiB exercised the settings, actual hardware/model inventory, SQLite autosave, speaker renaming, and native JSON export → import preview → apply. A public 56.9-second [sherpa-onnx four-speaker sample](https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav) was transcribed into 10 passages and clustered into four voices; nine passages received labels and one ambiguous passage remained unassigned. Downloads of default ASR, Qwen3 0.6B/1.7B and speaker models passed size/hash verification. The default 1.7B writer processed all 10 passages over two batches after assigning fictional test names. Some drafts using anonymous labels failed attribution validation and were correctly left uncommitted. Linux and Windows native runtime/UI execution has not been repeated for this change.
+
+The same day, `tests/native-config-security.js` verified real IPC permission enforcement, independent persistent network switches, and resource presets. Native file import was separately exercised: preview left preferences unchanged; explicit Apply persisted the selected local model/resource mode while both network permissions remained false. URL parsing/size/field rejection is tested, but the browser automation security policy blocked the custom-scheme jump; browser-to-OS activation still needs manual acceptance on packaged macOS, Windows and Linux builds. See [Apple Silicon validation](APPLE_SILICON.md) for measured CPU/Metal performance and MLX limitations, and [network boundaries](NETWORK_BOUNDARIES.zh-CN.md) for the exact online/offline contract. These are development changes, not a claim that the public v0.2.0 installer includes them.

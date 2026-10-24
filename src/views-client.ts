@@ -17,6 +17,9 @@ export interface CaptionPreferences {
   monitor: number;
 }
 export interface ViewPreferences {
+  sidebar_collapsed: boolean;
+  notebook_collapsed: boolean;
+  minutes_collapsed: boolean;
   transcript_mode: "hidden" | "docked" | "floating";
   dock_width: number;
   floating_width: number;
@@ -141,6 +144,9 @@ export async function displaySettings(
     queue = queue
       .then(async () => {
         prefs = {
+          sidebar_collapsed: false,
+          notebook_collapsed: false,
+          minutes_collapsed: false,
           transcript_mode: "hidden",
           dock_width: 320,
           floating_width: 380,

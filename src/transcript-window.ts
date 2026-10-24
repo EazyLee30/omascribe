@@ -10,6 +10,9 @@ import {
 import type { Snapshot } from "./types";
 import { t } from "./i18n";
 import "./style.css";
+import "./workspace.css";
+import { initAppearance } from "./preferences-client";
+import { speakerName } from "./speaker-ui";
 const esc = (value: string) =>
   value.replace(
     /[&<>"']/g,
@@ -71,7 +74,11 @@ async function render() {
       snapshot.runtime.meeting_id === snapshot.meeting.id
         ? snapshot.runtime.partial
         : "";
-    const next = JSON.stringify(snapshot.segments) + partial + query;
+    const next =
+      JSON.stringify(snapshot.segments) +
+      JSON.stringify(snapshot.meeting.speaker_names) +
+      partial +
+      query;
     if (next === signature) return;
     signature = next;
     const bottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
@@ -80,7 +87,7 @@ async function render() {
         .filter((s) => s.text.toLocaleLowerCase().includes(query))
         .map(
           (s) =>
-            `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><p>${esc(s.text)}</p></article>`,
+            `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span><p>${esc(s.text)}</p></article>`,
         )
         .join("") +
       (!query && partial
@@ -96,6 +103,7 @@ async function render() {
   }
 }
 async function init() {
+  await initAppearance();
   document.body.classList.add("floating-transcript-app");
   root.innerHTML = `<header class="float-header"><div class="float-drag"><span class="float-status-dot"></span><div><strong id="float-state">${t("transcript")}</strong><small id="float-title">OmaScribe</small></div></div><div class="float-actions"><button data-action="dock" title="${t("dockRight")}" aria-label="${t("dockRight")}">⇥</button><button data-action="settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">⚙</button><button id="float-collapse" data-action="collapse" aria-label="${t("collapse")}">⌃</button><button data-action="close" title="${t("close")}" aria-label="${t("close")}">×</button></div></header><p id="float-preview"></p><div class="float-body"><div class="float-tools"><input id="float-search" placeholder="${t("search")}" aria-label="${t("search")}"><select id="float-snap" aria-label="${t("snapTo")}"><option value="free">${t("freePosition")}</option><option value="left">${t("screenLeft")}</option><option value="right">${t("screenRight")}</option></select></div><div id="float-error" role="alert" hidden></div><div id="float-transcript"></div><audio id="float-player" controls hidden></audio></div><span class="float-resize" role="separator" aria-label="${t("resizeWindow")}">◢</span>`;
   apply(await getViewSettings());

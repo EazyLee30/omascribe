@@ -22,7 +22,9 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This installed-package check runs on GitHub Actions only")
     windows = platform.system() == "Windows"
+    linux = platform.system() == "Linux"
     suffix = ".exe" if windows else ""
+    linux_packages = []
     bundle = ROOT / "target" / args.target / "release/bundle"
     if windows:
         installer = next((bundle / "nsis").glob("*.exe"))
@@ -32,6 +34,18 @@ def main():
         )
         assets = installed / "native"
         app = installed / "omascribe.exe"
+    elif linux:
+        deb = next((bundle / "deb").glob("*.deb"))
+        appimage = next((bundle / "appimage").glob("*.AppImage"))
+        extracted = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-linux"
+        extracted.mkdir(exist_ok=True)
+        subprocess.run(["dpkg-deb", "-x", str(deb), str(extracted / "deb")], check=True, timeout=180)
+        appimage.chmod(0o755)
+        with (ROOT / "build-assets/appimage-extract.log").open("wb") as log:
+            subprocess.run([str(appimage), "--appimage-extract"], cwd=extracted, stdout=log, stderr=log, check=True, timeout=180)
+        for source, folder in [(deb, extracted / "deb"), (appimage, extracted / "squashfs-root")]:
+            linux_packages.append((source, folder / "usr/lib/omascribe/native", folder / "usr/bin/omascribe", folder))
+        installer, assets, app, _ = linux_packages[0]
     else:
         installer = next((bundle / "dmg").glob("*.dmg"))
         mount = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-dmg"
@@ -81,6 +95,30 @@ def main():
             OMASCRIBE_TEST_WAV=str(ROOT / "build-assets/public-sample.wav"),
             PYTHONUTF8="1",
         )
+        if linux:
+            # Also verify the AppImage payload independently of the Debian package.
+            for source, package_assets, binary, folder in linux_packages:
+                assert binary.is_file(), binary
+                assert package_assets.is_dir(), package_assets
+                package_env = dict(env, WEBKIT_DISABLE_DMABUF_RENDERER="1")
+                package_env.pop("OMASCRIBE_MODELS_DIR", None)
+                package_env.pop("OMASCRIBE_RUNTIME_DIR", None)
+                discovered_package = json.loads(subprocess.check_output([str(package_assets / "runtime/omascribe-cli"), "diagnose"], env=package_env, timeout=30))
+                assert all(discovered_package[k] for k in ["asr_ready", "llm_ready", "worker_ready", "server_ready"]), discovered_package
+                launcher = folder / "AppRun" if source.suffix == ".AppImage" else binary
+                with (results / (source.suffix.lstrip(".") + "-launch.log")).open("wb") as log:
+                    process = subprocess.Popen([str(launcher)], env=package_env, stdout=log, stderr=log, start_new_session=True)
+                    try:
+                        time.sleep(12)
+                        assert process.poll() is None, f"{source.name} exited: {process.returncode}"
+                    finally:
+                        import signal
+                        try:
+                            os.killpg(process.pid, signal.SIGTERM)
+                        except ProcessLookupError:
+                            pass
+                        process.wait(timeout=30)
+            env["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
         # The installed CLI and GUI share asset resolution. Do not mask a broken bundle path.
         discovery_env = dict(env)
         discovery_env.pop("OMASCRIBE_MODELS_DIR", None)
@@ -191,15 +229,18 @@ def main():
         "aarch64-apple-darwin": "macOS-AppleSilicon",
         "x86_64-apple-darwin": "macOS-Intel",
         "x86_64-pc-windows-msvc": "Windows-x64",
+        "x86_64-unknown-linux-gnu": "Linux-x64",
     }[args.target]
-    destination = output / f"OmaScribe_{version}_{label}{installer.suffix}"
-    shutil.copy2(installer, destination)
-    with destination.open("rb") as f:
-        digest = hashlib.file_digest(f, "sha256").hexdigest()
-    assert 1_000_000 < destination.stat().st_size < 2_000_000_000
-    (output / (destination.name + ".sha256")).write_text(
-        digest + "  " + destination.name + "\n", encoding="utf-8"
-    )
+    installers = [item[0] for item in linux_packages] if linux else [installer]
+    for package in installers:
+        destination = output / f"OmaScribe_{version}_{label}{package.suffix}"
+        shutil.copy2(package, destination)
+        with destination.open("rb") as f:
+            digest = hashlib.file_digest(f, "sha256").hexdigest()
+        assert 1_000_000 < destination.stat().st_size < 2_000_000_000
+        (output / (destination.name + ".sha256")).write_text(
+            digest + "  " + destination.name + "\n", encoding="utf-8"
+        )
     shutil.make_archive(
         str(output / f"OmaScribe_{version}_{label}_validation"), "zip", results
     )

@@ -112,7 +112,13 @@ fn tokens(text: &str) -> Vec<String> {
 }
 /// A transient per-meeting index avoids a resident embedding model on an 8 GB device.
 pub fn ranked(all: &[Segment], query: &[String]) -> Vec<usize> {
-    let documents: Vec<Vec<String>> = all.iter().map(|s| tokens(&s.text)).collect();
+    ranked_text(
+        &all.iter().map(|s| s.text.as_str()).collect::<Vec<_>>(),
+        query,
+    )
+}
+pub fn ranked_text(all: &[&str], query: &[String]) -> Vec<usize> {
+    let documents: Vec<Vec<String>> = all.iter().map(|s| tokens(s)).collect();
     let terms: HashSet<String> = query.iter().flat_map(|q| tokens(q)).collect();
     let average =
         documents.iter().map(Vec::len).sum::<usize>() as f64 / documents.len().max(1) as f64;
@@ -134,7 +140,7 @@ pub fn ranked(all: &[Segment], query: &[String]) -> Vec<usize> {
                 score += idf * frequency * 2.2
                     / (frequency + 1.2 * (0.25 + 0.75 * document.len() as f64 / average.max(1.)));
             }
-            let lower = all[i].text.to_lowercase();
+            let lower = all[i].to_lowercase();
             score += query
                 .iter()
                 .filter(|q| lower.contains(&q.to_lowercase()))
@@ -243,6 +249,8 @@ mod tests {
             end_ms: 1000,
             text: text.into(),
             revision: 1,
+            speaker: None,
+            speaker_manual: false,
         }
     }
     #[test]

@@ -55,6 +55,9 @@ impl Default for CaptionPreferences {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ViewPreferences {
+    pub sidebar_collapsed: bool,
+    pub notebook_collapsed: bool,
+    pub minutes_collapsed: bool,
     pub transcript_mode: String,
     pub dock_width: u32,
     pub floating_width: u32,
@@ -68,6 +71,9 @@ pub struct ViewPreferences {
 impl Default for ViewPreferences {
     fn default() -> Self {
         Self {
+            sidebar_collapsed: false,
+            notebook_collapsed: false,
+            minutes_collapsed: false,
             transcript_mode: "hidden".into(),
             dock_width: 320,
             floating_width: 380,
@@ -80,6 +86,7 @@ impl Default for ViewPreferences {
         }
     }
 }
+
 impl ViewPreferences {
     fn normalize(&mut self) -> Reply<()> {
         if !["hidden", "docked", "floating"].contains(&self.transcript_mode.as_str())
@@ -522,4 +529,35 @@ pub fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> {
             }
         })
         .collect())
+}
+
+#[cfg(test)]
+mod preference_tests {
+    use super::ViewPreferences;
+
+    #[test]
+    fn old_preferences_keep_the_main_columns_open() {
+        let prefs: ViewPreferences =
+            serde_json::from_str(r#"{"transcript_mode":"docked","dock_width":380}"#).unwrap();
+        assert!(!prefs.sidebar_collapsed);
+        assert!(!prefs.notebook_collapsed);
+        assert!(!prefs.minutes_collapsed);
+        assert_eq!(prefs.dock_width, 380);
+        assert_eq!(prefs.transcript_mode, "docked");
+    }
+
+    #[test]
+    fn collapsed_columns_survive_serialization() {
+        let prefs = ViewPreferences {
+            sidebar_collapsed: true,
+            notebook_collapsed: true,
+            minutes_collapsed: true,
+            ..ViewPreferences::default()
+        };
+        let restored: ViewPreferences =
+            serde_json::from_slice(&serde_json::to_vec(&prefs).unwrap()).unwrap();
+        assert!(
+            restored.sidebar_collapsed && restored.notebook_collapsed && restored.minutes_collapsed
+        );
+    }
 }

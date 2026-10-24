@@ -1,4 +1,9 @@
 const en = {
+  unavailable: "Unavailable",
+  writerLowMemory:
+    "Minutes paused: {available} GiB available; {required} GiB needed. Recording and transcription continue. Retrying automatically.",
+  writerMemoryUnavailable:
+    "Unable to read available memory. Minutes will retry automatically; recording and transcription continue.",
   openMeetingFolder: "Open meeting folder",
   files: "Files",
   filesHint:
@@ -223,6 +228,11 @@ const en = {
   dateLocale: "en-US",
 };
 const zh: typeof en = {
+  unavailable: "无法读取",
+  writerLowMemory:
+    "纪要暂缓：可用内存 {available} GiB，需要 {required} GiB。录音和转写继续，内存恢复后自动重试。",
+  writerMemoryUnavailable:
+    "暂时无法读取可用内存，纪要将自动重试；录音和转写继续。",
   openMeetingFolder: "打开会议文件夹",
   files: "会议文件",
   filesHint:
@@ -443,6 +453,11 @@ const zh: typeof en = {
 };
 const tw: typeof en = {
   ...zh,
+  unavailable: "無法讀取",
+  writerLowMemory:
+    "紀要暫緩：可用記憶體 {available} GiB，需要 {required} GiB。錄音和轉寫繼續，記憶體恢復後自動重試。",
+  writerMemoryUnavailable:
+    "暫時無法讀取可用記憶體，紀要將自動重試；錄音和轉寫繼續。",
   openMeetingFolder: "開啟會議資料夾",
   files: "會議檔案",
   filesHint:
