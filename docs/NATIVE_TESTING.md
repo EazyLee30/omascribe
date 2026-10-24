@@ -51,6 +51,6 @@ Linux CI is a prerequisite for the exact same source commit. The workflow publis
 
 Physical microphone capture, permission dialogs, visual layout, caption behavior across Spaces/monitors, and sustained thermal performance are explicitly outside these hosted-runner checks.
 
-## 0.3.1 update and Arch checks
+## 0.3.1 update checks
 
-Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. Upgrade 0.3.0 manually once; test future updates with a genuinely newer signed version. Arch recipes are built and installed in an official Arch container; the AUR listing is pending. See [packaging/aur](../packaging/aur/README.md).
+Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. Upgrade 0.3.0 manually once; test future updates with a genuinely newer signed version. AUR integration is deferred; this release provides AppImage and deb for Linux.

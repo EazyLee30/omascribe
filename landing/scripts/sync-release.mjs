@@ -6,7 +6,7 @@ export function releaseAssetNames(version) {
   const names = {mac_arm:`OmaScribe_${version}_macOS-AppleSilicon.dmg`,mac_intel:`OmaScribe_${version}_macOS-Intel.dmg`,windows:`OmaScribe_${version}_Windows-x64.exe`,checksums:'SHA256SUMS.txt'};
   const [major,minor,patch] = version.split('.').map(Number);
   if (major > 0 || minor >= 3) Object.assign(names, {linux_appimage:`OmaScribe_${version}_Linux-x64.AppImage`,linux_deb:`OmaScribe_${version}_Linux-x64.deb`});
-  if (major > 0 || minor > 3 || (minor === 3 && patch >= 1)) Object.assign(names, {arch_recipe:`OmaScribe_${version}_Arch-PKGBUILD.tar.gz`,updater:'latest.json'});
+  if (major > 0 || minor > 3 || (minor === 3 && patch >= 1)) Object.assign(names, {updater:'latest.json'});
   return names;
 }
 export function selectRelease(releases) {

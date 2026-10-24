@@ -20,7 +20,7 @@ Cached bytes alone cannot authorize installation after restart.
 
 User data is outside the application bundle. Finish recording/transcription, speaker
 analysis and note generation before installation. No automatic restart occurs.
-Debian and Arch packages remain package-managed. Version 0.3.0 has no updater and
+Debian packages remain package-managed. Version 0.3.0 has no updater and
 must be upgraded manually once.
 
 Platform validation reports cover installed inference and signature rejection.
