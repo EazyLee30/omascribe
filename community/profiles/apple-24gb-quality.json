@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "apple-24gb-quality",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "Apple Silicon · 24 GB 会后整理",
+    "tw": "Apple Silicon · 24 GB 會後整理",
+    "en": "Apple Silicon · 24 GB after-meeting"
+  },
+  "description": {
+    "zh": "使用 4B 模型和较长上下文，适合会后主动整理。更多内存不等于保证更快；请结合当前负载选择。",
+    "tw": "使用 4B 模型及較長上下文，適合會後主動整理。更多記憶體不保證更快，請考慮目前負載。",
+    "en": "A 4B model and longer context for deliberate after-meeting work. More memory does not guarantee higher speed; consider current load."
+  },
+  "platform": "apple-silicon",
+  "memory_gib": 24,
+  "profile": {
+    "schema": 1,
+    "name": "Apple Silicon · 24 GB after-meeting",
+    "hardware_hint": "Apple M-series · 24 GB or more",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-4b",
+      "inference_backend": "auto",
+      "resource_mode": "quality",
+      "memory_budget_mib": 6144,
+      "threads": 4,
+      "context_size": 4096,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}

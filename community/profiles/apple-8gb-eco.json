@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "apple-8gb-eco",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "Apple Silicon · 8 GB 省资源",
+    "tw": "Apple Silicon · 8 GB 省資源",
+    "en": "Apple Silicon · 8 GB economy"
+  },
+  "description": {
+    "zh": "适合同时开会与办公。小模型、短上下文，任务结束释放模型。推荐档位，不代表该机型实测。",
+    "tw": "適合同時開會及辦公。小模型、短上下文，任務結束釋放模型。屬建議檔位，非該機型實測。",
+    "en": "For meetings alongside other apps. Small model, short context, unloaded after each task. A suggested starting point, not a measured result."
+  },
+  "platform": "apple-silicon",
+  "memory_gib": 8,
+  "profile": {
+    "schema": 1,
+    "name": "Apple Silicon · 8 GB economy",
+    "hardware_hint": "Apple M-series · 8 GB",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-0.6b",
+      "inference_backend": "auto",
+      "resource_mode": "eco",
+      "memory_budget_mib": 2048,
+      "threads": 1,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}

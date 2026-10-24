@@ -1,0 +1,9 @@
+# Upstream model and framework marks
+
+These files identify the upstream projects used by OmaScribe. The marks remain the property of their respective owners. No affiliation or endorsement is implied. Repository software licenses do not grant trademark rights. OmaScribe does not claim ownership or relicense these marks.
+
+- `qwen.png`: unmodified Qwen3 mark linked by the official [QwenLM/Qwen3 README](https://github.com/QwenLM/Qwen3/blob/7a2f61ffc7a20d47efcd2bf97f6f2bf52729042e/README.md). [Original image](https://qianwen-res.oss-accelerate-overseas.aliyuncs.com/logo_qwen3.png). No separate logo reuse license or root LICENSE file is published in this repository at the referenced revision; this is an unchanged upstream identifier used only to identify Qwen models. Model-weight licenses are separate and listed in the catalog. SHA-256: `92230027e2363b313bf10f118396b5a148276ab9c1274b07917f666481d616d8`.
+- `mlx.svg`: unmodified [MLX logo](https://github.com/ml-explore/mlx/blob/56c2bf9236d929097f61e2c6e55be4e4bb6da249/docs/logo/mlx_logo.svg), from Apple's ml-explore/mlx repository. Upstream repository: MIT; see MLX-LICENSE.txt. SHA-256: `cc4dc6a9d782f1a4f548fbcc77c7ae941176ef3468167d77bf7bada66f6771e1`.
+- `sherpa.png`: unmodified [k2 project logo shipped in sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx/blob/88204440c2ad19158fe77dbf470bb1fe7fdee613/python-api-examples/web/k2-logo.png). This identifies the k2 / sherpa-onnx project, not a separate Zipformer brand. Upstream repository: Apache-2.0; see SHERPA-LICENSE.txt. SHA-256: `cd06a6bfb2628c538e85b3a76e935909995a92ce68c4ffebbf12b315bd98b0db`.
+
+Retrieved 2026-10-24. Assets are served from OmaScribe's own origin; viewing a mark does not contact its upstream host. The speaker model uses a neutral letter marker rather than an invented upstream logo.

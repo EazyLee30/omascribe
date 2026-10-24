@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "apple-m5-24gb-metal",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "M5 · 24 GB · Metal 实测组合",
+    "tw": "M5 · 24 GB · Metal 實測組合",
+    "en": "M5 · 24 GB · measured Metal writer"
+  },
+  "description": {
+    "zh": "Qwen3 1.7B 生成速度已测；Zipformer 转写与两模型并行负载尚未测量。结果仅代表此 M5 测试机。",
+    "tw": "Qwen3 1.7B 生成速度已測；Zipformer 轉寫及兩模型同時運作尚未測量。結果僅代表此 M5 測試機。",
+    "en": "Qwen3 1.7B generation is measured. ASR and concurrent ASR + LLM load are unmeasured. Results apply to this M5 test machine only."
+  },
+  "platform": "apple-silicon",
+  "memory_gib": 24,
+  "profile": {
+    "schema": 1,
+    "name": "Apple M5 24 GB · Metal",
+    "hardware_hint": "Apple M5 / 24 GB / macOS",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "inference_backend": "metal",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 3072,
+      "threads": 2,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": [
+    "apple-m5-24gb-2026-10-24"
+  ]
+}

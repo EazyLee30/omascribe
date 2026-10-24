@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "id": "apple-m5-24gb-2026-10-24",
+  "measured_at": "2026-10-24T06:44:03.252912+00:00",
+  "hardware": {
+    "chip": "Apple M5",
+    "memory_gib": 24.0,
+    "os": "macOS 27.0.1",
+    "arch": "arm64"
+  },
+  "method": {
+    "kind": "llama-server-completion",
+    "prompt_sha256": "d1073ca91137cbd8b8c777e44e3634b6d02a3f492eaf4805ec47f5f68c9654fb",
+    "server_sha256": "4bc6b545e77fc15471493503fe2d63a3e7dfee0a46e6735b2244c8f4eb934bf5",
+    "llama_cpp_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "app_commit": "5cadd45b7a78e2c6abec380dcc2f6a89d31d3b66",
+    "app_dirty": true,
+    "generation_tokens_requested": 128,
+    "repetitions": 3,
+    "cache": "prompt cache disabled; model warm after one unmeasured 16-token request",
+    "rss_sampling_interval_ms": 100,
+    "synthetic_input": true
+  },
+  "runs": [
+    {
+      "backend": "cpu",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 1,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 69.94376521276894,
+      "generation_tps": 14.33738855643834,
+      "ttft_ms": 2229.2705830004707,
+      "elapsed_ms": 11087.756208002247,
+      "peak_rss_mib": 2426.140625,
+      "model_startup_ms": 1155.787625000812
+    },
+    {
+      "backend": "cpu",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 2,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 70.28299106272418,
+      "generation_tps": 13.149203075464003,
+      "ttft_ms": 2212.9676250006014,
+      "elapsed_ms": 11871.683083001699,
+      "peak_rss_mib": 2425.9375,
+      "model_startup_ms": 1155.787625000812
+    },
+    {
+      "backend": "cpu",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 3,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 74.8387707321501,
+      "generation_tps": 13.522211296796035,
+      "ttft_ms": 2075.5097910005134,
+      "elapsed_ms": 11468.28537500187,
+      "peak_rss_mib": 2424.34375,
+      "model_startup_ms": 1155.787625000812
+    },
+    {
+      "backend": "metal",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 1,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 1492.1924639467047,
+      "generation_tps": 78.32220274103041,
+      "ttft_ms": 108.68612500053132,
+      "elapsed_ms": 1730.8535000011034,
+      "peak_rss_mib": 1431.234375,
+      "model_startup_ms": 421.6401660014526
+    },
+    {
+      "backend": "metal",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 2,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 1612.668289739268,
+      "generation_tps": 79.66917844139485,
+      "ttft_ms": 101.90095800135168,
+      "elapsed_ms": 1696.255208000366,
+      "peak_rss_mib": 1431.328125,
+      "model_startup_ms": 421.6401660014526
+    },
+    {
+      "backend": "metal",
+      "model_id": "qwen3-1.7b",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "quantization": "Q4_K_M",
+      "context_size": 2048,
+      "threads": 2,
+      "batch_size": 128,
+      "ubatch_size": 128,
+      "repeat": 3,
+      "prompt_tokens": 155,
+      "generated_tokens": 128,
+      "prompt_tps": 1631.991239892183,
+      "generation_tps": 75.12925781758379,
+      "ttft_ms": 99.5325830008369,
+      "elapsed_ms": 1790.172207998694,
+      "peak_rss_mib": 1431.234375,
+      "model_startup_ms": 421.6401660014526
+    }
+  ],
+  "summary": [
+    {
+      "backend": "cpu",
+      "model_id": "qwen3-1.7b",
+      "median_generation_tps": 13.522211296796035,
+      "median_ttft_ms": 2212.9676250006014,
+      "max_peak_rss_mib": 2426.140625
+    },
+    {
+      "backend": "metal",
+      "model_id": "qwen3-1.7b",
+      "median_generation_tps": 78.32220274103041,
+      "median_ttft_ms": 101.90095800135168,
+      "max_peak_rss_mib": 1431.328125
+    }
+  ],
+  "limitations": [
+    "Single machine; not a prediction for other M-series chips.",
+    "Generation speed is not transcription accuracy or meeting-summary quality.",
+    "RSS is a sampled process-resident-memory peak, not total unified/GPU allocation.",
+    "Power draw and thermal throttling were not measured.",
+    "128 output tokens are forced for comparability; this is a short synthetic benchmark."
+  ],
+  "backend_evidence": [
+    {
+      "backend": "cpu",
+      "gpu_layers": 0,
+      "total_layers": 29,
+      "log_sha256": "b3b8ce62e4484f0a020957b246e5489c3ee8f0d919090639313124d23eec5023"
+    },
+    {
+      "backend": "metal",
+      "gpu_layers": 29,
+      "total_layers": 29,
+      "log_sha256": "f9d78a409c7d3298f0ab3c0849225328867fe306ee52e6cfd877494b5019df2d"
+    }
+  ]
+}

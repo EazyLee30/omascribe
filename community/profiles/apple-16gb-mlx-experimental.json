@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "apple-16gb-mlx-experimental",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "Apple Silicon · 16 GB · MLX 实验配置",
+    "tw": "Apple Silicon · 16 GB · MLX 實驗設定",
+    "en": "Apple Silicon · 16 GB · experimental MLX"
+  },
+  "description": {
+    "zh": "需要另行安装兼容 MLX 运行时和独立 MLX 权重。尚未发布实测速度，不作为默认推荐。",
+    "tw": "需另行安裝相容 MLX 執行環境及獨立 MLX 權重。尚未發布實測速度，不作預設建議。",
+    "en": "Requires a compatible MLX runtime and separate MLX weights. No published speed measurement; not the default recommendation."
+  },
+  "platform": "apple-silicon",
+  "memory_gib": 16,
+  "profile": {
+    "schema": 1,
+    "name": "Apple Silicon 16 GB · MLX experimental",
+    "hardware_hint": "Apple M-series · 16 GB",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b-mlx-4bit",
+      "inference_backend": "mlx",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 3072,
+      "threads": 2,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}

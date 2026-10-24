@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "cpu-16gb-balanced",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "通用 CPU · 16 GB 日常",
+    "tw": "通用 CPU · 16 GB 日常",
+    "en": "General CPU · 16 GB everyday"
+  },
+  "description": {
+    "zh": "使用默认 1.7B 模型与两个线程。不要仅根据内存判断速度，旧款 CPU 和低功耗设备需要单独测量。",
+    "tw": "使用預設 1.7B 模型及兩個執行緒。勿只依記憶體判斷速度，舊款 CPU 與低功耗裝置需個別測量。",
+    "en": "Default 1.7B model with two threads. Memory alone is not a speed estimate; older and low-power CPUs need their own measurements."
+  },
+  "platform": "cross-platform",
+  "memory_gib": 16,
+  "profile": {
+    "schema": 1,
+    "name": "General CPU · 16 GB everyday",
+    "hardware_hint": "Intel / AMD / Apple · 16 GB or more",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "inference_backend": "cpu",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 3072,
+      "threads": 2,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}

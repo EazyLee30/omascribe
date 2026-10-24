@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "tag": "v0.2.0",
+  "version": "0.2.0",
+  "prerelease": true,
+  "published_at": "2026-10-24T04:50:12Z",
+  "url": "https://github.com/EazyLee30/omascribe/releases/tag/v0.2.0",
+  "assets": {
+    "mac_arm": {
+      "name": "OmaScribe_0.2.0_macOS-AppleSilicon.dmg",
+      "size": 1176036183,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.2.0/OmaScribe_0.2.0_macOS-AppleSilicon.dmg",
+      "digest": "sha256:bc734f8edfbfc4ed4b692cf906b07da42ae2b09fc708c970f56db049a95ffb47"
+    },
+    "mac_intel": {
+      "name": "OmaScribe_0.2.0_macOS-Intel.dmg",
+      "size": 1178260396,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.2.0/OmaScribe_0.2.0_macOS-Intel.dmg",
+      "digest": "sha256:445f806858611a423201e368ccef64d36d861178130a28acceb8d8a2cd976d77"
+    },
+    "windows": {
+      "name": "OmaScribe_0.2.0_Windows-x64.exe",
+      "size": 1368833878,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.2.0/OmaScribe_0.2.0_Windows-x64.exe",
+      "digest": "sha256:375a4f64a37177ab59699dbd5858e625e122db8dd925c22eb745bc91b9959227"
+    },
+    "checksums": {
+      "name": "SHA256SUMS.txt",
+      "size": 302,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.2.0/SHA256SUMS.txt",
+      "digest": "sha256:851811a184bd976d07d781b11a04dd25f503a92f2d448f93fddc5a02d1b366b4"
+    }
+  },
+  "fetched_at": "2026-10-24T06:37:25.437Z"
+}

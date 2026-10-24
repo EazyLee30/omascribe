@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "cpu-8gb-compact",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "通用 CPU · 8 GB 起步",
+    "tw": "通用 CPU · 8 GB 起步",
+    "en": "General CPU · from 8 GB"
+  },
+  "description": {
+    "zh": "适用于 Windows、Linux 与 Mac 的保守配置。小模型更省资源，生成质量可能低于较大模型。",
+    "tw": "適用 Windows、Linux 及 Mac 的保守設定。小模型較省資源，生成品質可能低於較大模型。",
+    "en": "A conservative setup for Windows, Linux and Mac. Smaller models use fewer resources but may produce weaker summaries."
+  },
+  "platform": "cross-platform",
+  "memory_gib": 8,
+  "profile": {
+    "schema": 1,
+    "name": "General CPU · from 8 GB",
+    "hardware_hint": "Intel / AMD / Apple · 8 GB or more",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-0.6b",
+      "inference_backend": "cpu",
+      "resource_mode": "eco",
+      "memory_budget_mib": 2048,
+      "threads": 1,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}

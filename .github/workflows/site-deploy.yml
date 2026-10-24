@@ -1,0 +1,63 @@
+name: Website deployment
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'landing/**'
+      - 'community/**'
+      - 'model-catalog.json'
+      - 'docs/benchmarks/**'
+      - '.github/workflows/site*.yml'
+  release:
+    types: [published]
+  # Releases made with GITHUB_TOKEN do not trigger release workflows.
+  workflow_run:
+    workflows: [Native release]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: website-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      # Always deploy reviewed main; never execute a workflow_run artifact or PR ref.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+      - name: Check deployment authorization
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo '::error::Add the scoped CLOUDFLARE_API_TOKEN repository secret. See landing/README.md. No deployment was attempted.'
+            exit 1
+          fi
+      - run: npm ci --no-audit --no-fund
+        working-directory: landing
+      - name: Fetch verified release metadata
+        run: npm run sync:release
+        working-directory: landing
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: npm run check
+        working-directory: landing
+      - name: Deploy existing Cloudflare Worker
+        run: npx --no-install wrangler deploy
+        working-directory: landing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

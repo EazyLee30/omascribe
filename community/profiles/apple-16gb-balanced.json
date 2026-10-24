@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "apple-16gb-balanced",
+  "origin": "official",
+  "author": "OmaScribe",
+  "title": {
+    "zh": "Apple Silicon · 16 GB 日常",
+    "tw": "Apple Silicon · 16 GB 日常",
+    "en": "Apple Silicon · 16 GB everyday"
+  },
+  "description": {
+    "zh": "默认 1.7B 写作模型，兼顾纪要与日常应用。自动后端按运行时能力选择，执行前检查可用内存。",
+    "tw": "預設 1.7B 寫作模型，兼顧紀要及日常應用。自動後端依執行環境選擇，執行前檢查可用記憶體。",
+    "en": "Default 1.7B writer alongside everyday apps. Automatic backend selection checks runtime capability and available memory."
+  },
+  "platform": "apple-silicon",
+  "memory_gib": 16,
+  "profile": {
+    "schema": 1,
+    "name": "Apple Silicon · 16 GB everyday",
+    "hardware_hint": "Apple M-series · 16 GB",
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "inference_backend": "auto",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 3072,
+      "threads": 2,
+      "context_size": 2048,
+      "auto_notes": true,
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    }
+  },
+  "benchmark_ids": []
+}
