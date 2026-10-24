@@ -55,6 +55,25 @@ def main():
             OMASCRIBE_TEST_WAV=str(ROOT / "build-assets/public-sample.wav"),
             PYTHONUTF8="1",
         )
+        # The installed CLI and GUI share asset resolution. Do not mask a broken bundle path.
+        discovery_env = dict(env)
+        discovery_env.pop("OMASCRIBE_MODELS_DIR", None)
+        discovery_env.pop("OMASCRIBE_RUNTIME_DIR", None)
+        discovered = json.loads(
+            subprocess.check_output(
+                [str(cli), "diagnose"], env=discovery_env, timeout=30
+            )
+        )
+        assert all(
+            discovered[key]
+            for key in ["asr_ready", "llm_ready", "worker_ready", "server_ready"]
+        ), discovered
+        subprocess.run(
+            ["python", str(ROOT / "scripts/setup.py"), "--verify"],
+            env=env,
+            check=True,
+            timeout=120,
+        )
         diagnose = json.loads(
             subprocess.check_output([str(cli), "diagnose"], env=env, timeout=30)
         )
@@ -104,7 +123,9 @@ def main():
             )
         # Smoke launch checks main process survival, not microphone permission or visual quality.
         with (results / "launch.log").open("wb") as log:
-            process = subprocess.Popen([str(app)], env=env, stdout=log, stderr=log)
+            process = subprocess.Popen(
+                [str(app)], env=discovery_env, stdout=log, stderr=log
+            )
             time.sleep(12)
             try:
                 assert process.poll() is None, (

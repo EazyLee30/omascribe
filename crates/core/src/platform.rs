@@ -37,7 +37,9 @@ pub fn asset_dir(root: &Path, name: &str, variable: &str) -> PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(parent) = exe.parent() {
             // Tauri resources: beside the executable on Windows, Contents/Resources on macOS.
-            for bundle in [parent.join("native"), parent.join("../Resources/native")] {
+            for bundle in std::iter::once(parent.join("../Resources/native"))
+                .chain(parent.ancestors().take(3).map(|p| p.join("native")))
+            {
                 let candidate = bundle.join(name);
                 if candidate.is_dir() {
                     return candidate;

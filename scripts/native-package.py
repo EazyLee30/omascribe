@@ -71,50 +71,51 @@ def prepare(target):
         LOCK["llama_cpp"]["revision"],
     )
     run("git", "-C", llama, "checkout", "--detach", "FETCH_HEAD")
-    build = llama / "build-native"
-    flags = [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_SHARED_LIBS=OFF",
-        "-DGGML_BACKEND_DL=OFF",
-        "-DGGML_NATIVE=OFF",
-        "-DGGML_METAL=OFF",
-        "-DGGML_ACCELERATE=OFF",
-        "-DGGML_BLAS=OFF",
-        "-DGGML_OPENMP=OFF",
-        "-DGGML_CUDA=OFF",
-        "-DLLAMA_OPENSSL=OFF",
-        "-DLLAMA_CURL=OFF",
-        "-DLLAMA_BUILD_TESTS=OFF",
-        "-DLLAMA_BUILD_EXAMPLES=OFF",
-        "-DLLAMA_BUILD_SERVER=ON",
-    ]
-    if target.startswith("x86_64"):
-        flags += [
-            "-DGGML_AVX=ON",
-            "-DGGML_AVX2=ON",
-            "-DGGML_FMA=ON",
-            "-DGGML_F16C=ON",
-            "-DGGML_AVX512=OFF",
+    if not (RUNTIME / "llama" / ("llama-server" + SUFFIX)).is_file():
+        build = llama / "build-native"
+        flags = [
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_SHARED_LIBS=OFF",
+            "-DGGML_BACKEND_DL=OFF",
+            "-DGGML_NATIVE=OFF",
+            "-DGGML_METAL=OFF",
+            "-DGGML_ACCELERATE=OFF",
+            "-DGGML_BLAS=OFF",
+            "-DGGML_OPENMP=OFF",
+            "-DGGML_CUDA=OFF",
+            "-DLLAMA_OPENSSL=OFF",
+            "-DLLAMA_CURL=OFF",
+            "-DLLAMA_BUILD_TESTS=OFF",
+            "-DLLAMA_BUILD_EXAMPLES=OFF",
+            "-DLLAMA_BUILD_SERVER=ON",
         ]
-    if WINDOWS:
-        flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
-    else:
-        flags += ["-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"]
-    run("cmake", "-S", llama, "-B", build, *flags)
-    run(
-        "cmake",
-        "--build",
-        build,
-        "--config",
-        "Release",
-        "--target",
-        "llama-server",
-        "--parallel",
-        "3",
-    )
-    server = next(build.rglob("llama-server" + SUFFIX))
-    (RUNTIME / "llama").mkdir(exist_ok=True)
-    shutil.copy2(server, RUNTIME / "llama" / server.name)
+        if target.startswith("x86_64"):
+            flags += [
+                "-DGGML_AVX=ON",
+                "-DGGML_AVX2=ON",
+                "-DGGML_FMA=ON",
+                "-DGGML_F16C=ON",
+                "-DGGML_AVX512=OFF",
+            ]
+        if WINDOWS:
+            flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+        else:
+            flags += ["-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"]
+        run("cmake", "-S", llama, "-B", build, *flags)
+        run(
+            "cmake",
+            "--build",
+            build,
+            "--config",
+            "Release",
+            "--target",
+            "llama-server",
+            "--parallel",
+            "3",
+        )
+        server = next(build.rglob("llama-server" + SUFFIX))
+        (RUNTIME / "llama").mkdir(exist_ok=True)
+        shutil.copy2(server, RUNTIME / "llama" / server.name)
     run(
         "cargo",
         "build",

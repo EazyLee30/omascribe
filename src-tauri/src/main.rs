@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, UserNote};
 use std::{
     path::PathBuf,

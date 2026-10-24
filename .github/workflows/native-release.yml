@@ -80,12 +80,20 @@ jobs:
           key: offline-asr-${{ hashFiles('models.lock.json') }}
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: cargo test -p omascribe-core --locked --target ${{ matrix.target }}
-      - run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
-      - name: Prepare verified models and native inference runtime
-        run: python scripts/native-package.py --target ${{ matrix.target }}
       - name: Generate platform icons
         run: npx tauri icon assets/icon.svg
+      - run: cargo test -p omascribe-core --locked --target ${{ matrix.target }}
+      - run: cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
+      - uses: actions/cache@v4
+        with:
+          path: build-assets/native/models
+          key: native-models-${{ hashFiles('models.lock.json') }}
+      - uses: actions/cache@v4
+        with:
+          path: build-assets/native/runtime/llama
+          key: native-llama-${{ matrix.target }}-${{ hashFiles('models.lock.json', 'scripts/native-package.py') }}
+      - name: Prepare verified models and native inference runtime
+        run: python scripts/native-package.py --target ${{ matrix.target }}
       - name: Build native installer
         run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
       - name: Verify installed assets and offline inference
