@@ -11,7 +11,7 @@ Download the matching installer from [Releases](https://github.com/EazyLee30/oma
 | macOS 11+, Apple Silicon | Open `macOS-AppleSilicon.dmg`; drag OmaScribe into Applications. |
 | macOS 11+, Intel with AVX2 | Open `macOS-Intel.dmg`; drag OmaScribe into Applications. |
 | Windows 10/11, x64 with AVX2 | Run `Windows-x64.exe`; installs for the current user. |
-| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.1_Linux-x64.deb`, or make the AppImage executable and launch it. |
+| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.2_Linux-x64.deb`, or make the AppImage executable and launch it. |
 
 The Mac app uses an ad-hoc signature and is not notarized. macOS may require **System Settings → Privacy & Security → Open Anyway** for this particular downloaded app. Windows may show SmartScreen because the app has no publisher certificate. Use the application-specific confirmation after checking the repository and filename; do not disable system-wide protection.
 
@@ -51,6 +51,6 @@ Linux CI is a prerequisite for the exact same source commit. The workflow publis
 
 Physical microphone capture, permission dialogs, visual layout, caption behavior across Spaces/monitors, and sustained thermal performance are explicitly outside these hosted-runner checks.
 
-## 0.3.1 update checks
+## 0.3.2 update checks
 
-Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. Upgrade 0.3.0 manually once; test future updates with a genuinely newer signed version. AUR integration is deferred; this release provides AppImage and deb for Linux.
+Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. 0.3.1 installs can upgrade to 0.3.2 through Settings → Software updates; 0.3.0 needs a manual install first. AUR integration is deferred; this release provides AppImage and deb for Linux.

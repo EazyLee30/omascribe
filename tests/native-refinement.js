@@ -60,6 +60,7 @@
   checks.push('Meeting deletion is confirmed and recoverable from Storage');
   document.querySelector('[data-settings="back"]').click();await sleep(1500);
   document.querySelector(`[data-meeting="${m.id}"]`)?.click();await sleep(600);
+  check(document.querySelectorAll('.meeting-header').length===1,'Duplicated meeting header after reopening');
   await invoke('ui_test_resize',{width:740,height:560});await sleep(700);
   for(const selector of ['.transcript-toggle','.caption-toggle','#record']) {const e=document.querySelector(selector),r=e.getBoundingClientRect();check(r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,'Control outside narrow viewport: '+selector);check(e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),'Obscured control: '+selector);}
   check(document.documentElement.scrollWidth<=innerWidth,'Outer horizontal overflow');

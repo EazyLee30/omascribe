@@ -24,11 +24,15 @@
     await sleep(6000);
     for (const language of ["en", "zh-CN", "zh-TW"]) {
       document.querySelector('[data-action="settings"]').click();
-      await until(() => document.querySelector("#language"));
-      const select = document.querySelector("#language");
+      await until(() => document.querySelector('[data-section="general"]'));
+      document.querySelector('[data-section="general"]').click();
+      await until(() => document.querySelector("#settings-language"));
+      const select = document.querySelector("#settings-language");
       select.value = language;
-      select.dispatchEvent(new Event("change"));
+      select.dispatchEvent(new Event("change", { bubbles: true }));
       await sleep(2000);
+      document.querySelector('[data-settings="back"]').click();
+      await sleep(900);
       await invoke("ui_test_screenshot", { name: "workspace-" + language });
     }
     await invoke("update_meeting", {
