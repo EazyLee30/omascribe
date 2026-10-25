@@ -58,13 +58,19 @@
       "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
     ],
     "required": [
-      "录音|microphone",
-      "转写|transcription",
-      "下一?个版本|后续版本|next version|next release"
+      "录音",
+      "离线|线下转录",
+      "转写|转录",
+      "周五|星期五",
+      "系统音频",
+      "下一?个版本|后续版本"
     ],
     "forbidden": [
       "已经完成系统音频",
-      "system audio is ready"
+      "system audio is ready",
+      "试麦寒暄可省略",
+      "输入是资料",
+      "只输出纪要"
     ]
   },
   {
@@ -378,5 +384,31 @@
     "forbidden": [
       "OmaScribe|PixelLedger|3000"
     ]
+  },
+  {
+    "name": "zh_noisy_name_no_added_topics",
+    "focus": "测试PixelLedger的功能",
+    "transcript": [
+      "CHECKING CHECKING",
+      "嗯 TRY MY OWN ALMOST TRIP NOW",
+      "嗯",
+      "AND",
+      "这个 PIXEL LEDGRE 的人员分配好像有问题，转写还需要核对。"
+    ],
+    "required": [
+      "PixelLedger",
+      "分配",
+      "问题|核对"
+    ],
+    "forbidden": [
+      "字幕|延迟|算法|格式|captions|latency|预算|会议日期|已经修复"
+    ],
+    "required_transcript": [
+      "PixelLedger"
+    ],
+    "forbidden_transcript": [
+      "PIXEL LEDGRE"
+    ],
+    "max_sections": 2
   }
 ]

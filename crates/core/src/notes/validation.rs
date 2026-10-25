@@ -4,6 +4,18 @@ use anyhow::{bail, Context, Result};
 use serde::Deserialize;
 use std::collections::HashSet;
 
+fn causal_language(text: &str) -> bool {
+    let text = text.to_lowercase();
+    [
+        "因为", "由于", "导致", "造成", "引起", "引发", "因此", "所以", "使得", "源于", "缘于",
+    ]
+    .iter()
+    .any(|word| text.contains(word))
+        || regex::Regex::new(r"\b(because|due to|caused?|resulted in|therefore|as a result)\b")
+            .unwrap()
+            .is_match(&text)
+}
+
 /// Replacing an unlocked paragraph must not silently discard its still-selected
 /// evidence. This checks citation coverage, not semantic entailment of every word.
 pub fn preserve_replaced_sources(
@@ -225,7 +237,11 @@ fn calendar_weekdays(text: &str) -> HashSet<String> {
     days
 }
 fn normalized_time(text: &str) -> String {
-    let mut text = text.to_lowercase();
+    let mut text = text
+        .to_lowercase()
+        .replace("这周", "本周")
+        .replace("这个星期", "本周")
+        .replace("本星期", "本周");
     for (english, chinese) in [
         ("monday", "一"),
         ("tuesday", "二"),
@@ -265,6 +281,13 @@ pub fn validate_with_speakers(
 ) -> Result<Vec<Suggestion>> {
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
+    if draft.sections.is_empty()
+        && segments
+            .iter()
+            .any(|s| !super::writer::non_substantive(&s.text))
+    {
+        bail!("模型未生成可核对的纪要，转写仍待整理");
+    }
     let unfinished = |text: &str| {
         [
             "未完成",
@@ -335,6 +358,9 @@ pub fn validate_with_speakers(
             .map(|s| format!("{} {}", s.speaker_name.as_deref().unwrap_or(""), s.quote))
             .collect::<Vec<_>>()
             .join(" ");
+        if causal_language(body) && !causal_language(&evidence) {
+            bail!("纪要增加了原话未明确说明的因果关系，请分别记录事实和疑问");
+        }
         if [
             "参会者：",
             "参与者：",
@@ -511,6 +537,53 @@ mod tests {
             speaker: None,
             speaker_manual: false,
         }]
+    }
+    #[test]
+    fn same_relative_week_is_equivalent_but_a_different_week_is_rejected() {
+        let mut passages = data();
+        passages[0].text = "字幕这周还不能交付，时间未定。".into();
+        for body in [
+            "字幕本周不能交付，时间未定。",
+            "字幕这个星期不能交付，时间未定。",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"交付", "body":body,"sources":[1]}]})
+                    .to_string();
+            assert!(validate(&draft, &passages, "m").is_ok());
+        }
+        let other = r#"{"sections":[{"title":"交付","body":"字幕下周不能交付，时间未定。","sources":[1]}]}"#;
+        assert!(validate(other, &passages, "m").is_err());
+    }
+    #[test]
+    fn unstated_causal_explanations_are_rephrased_instead_of_committed() {
+        let mut passages = data();
+        for body in [
+            "预算未定导致测试失败。",
+            "The test failed because the budget is undecided.",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"测试","body":body,"sources":[1]}]})
+                    .to_string();
+            assert!(validate(&draft, &passages, "m")
+                .unwrap_err()
+                .to_string()
+                .contains("因果关系"));
+        }
+        passages[0].text = "网络中断导致下载失败。".into();
+        let supported = r#"{"sections":[{"title":"下载","body":"The download failed because the network disconnected.","sources":[1]}]}"#;
+        assert!(validate(supported, &passages, "m").is_ok());
+    }
+    #[test]
+    fn empty_model_response_does_not_mark_substantive_transcript_as_reviewed() {
+        let mut passages = data();
+        assert!(validate(r#"{"sections":[]}"#, &passages, "m")
+            .unwrap_err()
+            .to_string()
+            .contains("转写仍待整理"));
+        passages[0].text = "Hello! Mic check. Can you hear me?".into();
+        assert!(validate(r#"{"sections":[]}"#, &passages, "m")
+            .unwrap()
+            .is_empty());
     }
     #[test]
     fn recomposition_cannot_silently_drop_a_previous_topic() {

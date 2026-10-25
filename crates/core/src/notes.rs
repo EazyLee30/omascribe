@@ -220,7 +220,7 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     }
     let context = retrieval::retrieve(&snapshot);
     let prefs = engine.preferences.lock().unwrap().clone();
-    engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v1","model":prefs.llm_model,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
+    engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
     let result = generate_inner(engine, meeting, &snapshot, context, &prefs);
     let outcome = match &result {
         Ok(n) => json!({"status":"committed","sections":n}),
@@ -361,11 +361,10 @@ fn generate_inner(
         let generation_started = Instant::now();
         let mut first_token_ms = None;
         let mut partial_draft = String::new();
-        let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
-        "messages":messages,
-        "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0,
-        "response_format":{"type":"json_schema","json_schema":{"name":"document","strict":true,"schema":writer::schema(context.segments.len())}}
-    }));
+        let response = agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
+            "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
+            "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0
+        }));
         let generated = response.map_err(anyhow::Error::from).and_then(|response| {
             stream::read_observed(BufReader::new(response.into_reader()), |draft| {
                 partial_draft = draft.to_owned();
@@ -399,7 +398,7 @@ fn generate_inner(
         if timed_out.load(Ordering::SeqCst) {
             bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
         }
-        let (text, usage) = generated.map_err(|error| {
+        let (raw_body, usage) = generated.map_err(|error| {
             // Transport details (ephemeral URLs and nested socket errors) are not useful in the UI.
             if error
                 .chain()
@@ -410,7 +409,19 @@ fn generate_inner(
                 error
             }
         })?;
-        let normalized = terms.normalize_draft(&text);
+        let normalized = writer::validate_language(
+            &raw_body,
+            writer::chinese(snapshot, &prefs.minutes_language),
+        )
+        .and_then(|()| {
+            writer::document(
+                &terms.normalize(&raw_body),
+                &context.segments,
+                &snapshot.meeting.speaker_names,
+            )
+        })
+        .and_then(|text| terms.normalize_draft(&text));
+        let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
         let validation = normalized
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -429,10 +440,10 @@ fn generate_inner(
                 Ok(sections)
             });
         attempts.push(json!({
-            "attempt":attempt+1, "draft":text, "normalized_draft":normalized.ok(), "usage":usage,
+            "attempt":attempt+1, "draft":text, "body_draft":raw_body, "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
-            "input_tokens":prompt_tokens, "context_size":prefs.context_size,
+            "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
             "selected":context.segments.iter().map(|s|json!({"id":s.id,"seq":s.seq,"revision":s.revision})).collect::<Vec<_>>(),
         }));
         std::fs::write(
@@ -458,11 +469,12 @@ fn generate_inner(
                     .get("spellings")
                     .map(|v| json!({"spellings":v}))
                     .unwrap_or_else(|| json!({}));
-                let (repair_system, repair_content) = writer::prompt(
+                let (repair_system, repair_content) = writer::prompt_mode(
                     snapshot,
                     &context,
                     &spelling_context,
                     &prefs.minutes_language,
+                    error.to_string().contains("数字或日期"),
                 );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
                 let attribution = error.to_string().contains("speaker attribution");
@@ -471,13 +483,23 @@ fn generate_inner(
                         passage["speaker"] = Value::Null;
                     }
                 }
-                let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不能只补引用编号。Preserve facts and unresolved items from these missing historical passages, not just citation numbers.");
+                let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                 let hint = if error.to_string().contains("历史来源") {
                     &history_hint
+                } else if error.to_string().contains("转写仍待整理") {
+                    "提问和问题反馈也是实质内容。仅整理可理解的原话，保留疑问而不将它写成确认结论；不能因部分片段含混而忽略全部内容。Questions and reported problems are substantive. Keep them as questions, not confirmed conclusions; unclear passages do not invalidate the rest."
+                } else if error.to_string().contains("输出语言") {
+                    if writer::chinese(snapshot, &prefs.minutes_language) {
+                        "用中文重写纪要正文，所有英文句子必须译成中文，专有名称保留原文。"
+                    } else {
+                        "Write the entire minutes body in English. Translate Chinese sentences into English, preserving only proper names in their original spelling."
+                    }
+                } else if error.to_string().contains("因果关系") {
+                    "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
                 } else if error.to_string().contains("未完成") {
-                    "必须说明转写中提到的调整尚未完成，完成之后才会验证；引用对应状态片段。"
+                    "必须说明转写中提到的调整尚未完成，完成之后才会验证。"
                 } else if error.to_string().contains("相对日期") {
-                    "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，并把该片段编号写进 sources；做不到就删去时间词，只保留有引用支持的内容。"
+                    "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，做不到就删去时间词，只保留原话支持的内容。"
                 } else if attribution {
                     "所有片段采用中性叙述，不写人名，不推测是谁说的。"
                 } else if error.to_string().contains("attendee") {

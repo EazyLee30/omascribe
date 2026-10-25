@@ -166,7 +166,7 @@ pub fn fingerprint(notes: &[UserNote], segments: &[Segment], cursor: u32) -> Str
     };
     // Revisit old automatic drafts once when spelling guidance changes, including
     // meetings whose transcript was already correct. Human paragraphs remain protected.
-    add(b"document-v2-spellings");
+    add(b"document-v3-prose-spellings");
     for note in document_notes(notes) {
         add(note.content.as_bytes());
         add(note.kind.as_bytes());

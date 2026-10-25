@@ -17,6 +17,7 @@ def main():
     p.add_argument("--notes", type=pathlib.Path, required=True, help="UTF-8 note file")
     p.add_argument("--expected", action="append", required=True, help="Canonical spelling required in transcript and minutes")
     p.add_argument("--forbidden", action="append", default=[], help="Unexpected name regex, transcript and minutes")
+    p.add_argument("--forbidden-minutes", action="append", default=[], help="Unsupported topics or phrases prohibited only in minutes")
     p.add_argument("--language", choices=["auto", "zh", "en"], default="auto")
     p.add_argument("--output", type=pathlib.Path, required=True)
     a = p.parse_args()
@@ -47,7 +48,7 @@ def main():
         for name in a.expected:
             if name not in text: errors.append("Transcript missing canonical spelling: " + name)
             if name not in minutes: errors.append("Minutes missing canonical spelling: " + name)
-        errors.extend(assess(dict(forbidden=a.forbidden, forbidden_transcript=a.forbidden), snapshot))
+        errors.extend(assess(dict(forbidden=a.forbidden+a.forbidden_minutes, forbidden_transcript=a.forbidden), snapshot))
         with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
             edits = db.execute("SELECT id,revision FROM segment_text_edits WHERE origin='terminology'").fetchall()
             for sid, revision in edits:

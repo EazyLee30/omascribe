@@ -88,6 +88,7 @@ impl Terms {
                 "OMA SCRIB",
                 "奥马SCRIB",
                 "奥马 SCRIB",
+                "奥马斯",
                 "奥马的SCRIB",
                 "奥马（OMA）的SCRIB",
                 "奥马 (OMA) 的 SCRIB",
@@ -386,6 +387,7 @@ mod tests {
             ("这个 ALMA SCRIBE的功能", "这个 OmaScribe的功能"),
             ("I use OMA SCRIBE today", "I use OmaScribe today"),
             ("测试奥马 SCRIB的一些功能", "测试OmaScribe的一些功能"),
+            ("左侧已经写了奥马斯", "左侧已经写了OmaScribe"),
             (
                 "测试 PIXEL LEDGER 和 PIXEL LEDGRE",
                 "测试 PixelLedger 和 PixelLedger",
@@ -426,6 +428,15 @@ mod tests {
             }],
         );
         assert_eq!(terms.normalize("Alma SCRIBE"), "Alma SCRIBE");
+        let terms = Terms::new(
+            &[note("测试OmaScribe")],
+            &[Entry {
+                kind: "term".into(),
+                title: "奥马斯".into(),
+                ..Default::default()
+            }],
+        );
+        assert_eq!(terms.normalize("奥马斯的方案"), "奥马斯的方案");
     }
     #[test]
     fn draft_normalization_keeps_source_ids_and_only_changes_prose() {

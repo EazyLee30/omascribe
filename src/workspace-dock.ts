@@ -6,6 +6,7 @@ import {
 } from "dockview";
 import "dockview/dist/styles/dockview.css";
 import { esc, tr } from "./workspace-ui";
+import { computePosition, flip, offset, shift } from "@floating-ui/dom";
 export type DockPanel = "notebook" | "minutes" | "transcript";
 const keys: DockPanel[] = ["notebook", "minutes", "transcript"];
 const title = (id: DockPanel) =>
@@ -44,6 +45,7 @@ export class WorkspaceDock {
   private observer: ResizeObserver;
   private menu: HTMLDivElement;
   private disposed = false;
+  private menuTrigger: HTMLElement | undefined;
   constructor(
     private host: HTMLElement,
     private panels: Record<DockPanel, HTMLElement>,
@@ -55,6 +57,28 @@ export class WorkspaceDock {
     this.menu.hidden = true;
     this.menu.setAttribute("role", "menu");
     document.body.append(this.menu);
+    this.menu.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.menu.hidden = true;
+        this.menuTrigger?.focus();
+      } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+        e.preventDefault();
+        const items = Array.from(
+          this.menu.querySelectorAll<HTMLButtonElement>("button"),
+        );
+        const index = items.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
+        items[
+          e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? items.length - 1
+              : (index + (e.key === "ArrowDown" ? 1 : -1) + items.length) %
+                items.length
+        ]?.focus();
+      }
+    });
     this.api = createDockview(host, {
       theme: {
         ...themeLight,
@@ -63,6 +87,32 @@ export class WorkspaceDock {
       floatingGroupBounds: "boundedWithinViewport",
       floatingGroupDragHandle: "tabbar",
       singleTabMode: "default",
+      defaultTabComponent: "column-title",
+      createTabComponent: () => {
+        const element = document.createElement("div");
+        element.className = "oma-panel-tab";
+        let disposeTitle: { dispose(): void } | undefined;
+        return {
+          element,
+          init(params) {
+            const render = (value: string) => {
+              element.textContent = value;
+              element.title = tr(
+                "拖动调整栏目位置",
+                "Drag to rearrange columns",
+                "拖曳調整欄位位置",
+              );
+            };
+            render(params.title);
+            disposeTitle = params.api.onDidTitleChange(({ title }) =>
+              render(title),
+            );
+          },
+          dispose() {
+            disposeTitle?.dispose();
+          },
+        };
+      },
       dndStrategy: "pointer",
       transformFloatingGroupDrag: ({ proposed, container }) => ({
         left:
@@ -185,13 +235,19 @@ export class WorkspaceDock {
         component: id,
         title: title(id),
         renderer: "always",
-        initialWidth: 360,
+        initialWidth: Math.max(280, Math.round(this.host.clientWidth * 0.28)),
         minimumWidth: 220,
         minimumHeight: 180,
-        position: this.api.panels[0]
-          ? { referencePanel: this.api.panels[0], direction: "right" }
+        position: this.api.panels.length
+          ? {
+              referencePanel:
+                this.api.getPanel("minutes") ||
+                this.api.panels[this.api.panels.length - 1],
+              direction: this.host.clientWidth < 960 ? "within" : "right",
+            }
           : undefined,
       });
+      if (!floating) this.balance();
     }
     if (floating)
       this.api.addFloatingGroup(p, {
@@ -202,6 +258,28 @@ export class WorkspaceDock {
       });
     p.api.setActive();
     this.notify();
+  }
+  private balance() {
+    const panels = keys.map((id) => this.api.getPanel(id)).filter((p) => !!p);
+    if (
+      panels.length < 2 ||
+      new Set(panels.map((p) => p.group.id)).size !== panels.length ||
+      panels.some((p) => p.api.location.type !== "grid")
+    )
+      return;
+    const grid = this.api.toJSON().grid;
+    // Preserve stacked and nested custom layouts; balance only a simple row.
+    if (
+      grid.orientation !== "HORIZONTAL" ||
+      !Array.isArray(grid.root.data) ||
+      grid.root.data.some((node) => node.type !== "leaf")
+    )
+      return;
+    const width = this.host.clientWidth;
+    const ratios = panels.length === 3 ? [0.36, 0.38, 0.26] : [0.5, 0.5];
+    panels.forEach((p, i) =>
+      p.api.setSize({ width: Math.round(width * ratios[i]) }),
+    );
   }
   hide(id: DockPanel) {
     const p = this.api.getPanel(id);
@@ -308,17 +386,27 @@ export class WorkspaceDock {
       ["center", tr("合并为标签页", "Merge into tabs", "合併為分頁")],
       ["float", tr("窗口内浮动", "Float inside window", "視窗內浮動")],
       ["focus", tr("最大化 / 还原", "Maximize / restore", "最大化 / 還原")],
-      ["hide", tr("隐藏面板", "Hide panel", "隱藏面板")],
+      ["balance", tr("均衡列宽", "Balance column widths", "均衡欄寬")],
+      ["hide", tr("隐藏此栏", "Hide this column", "隱藏此欄")],
     ]
       .map(
         ([action, label]) =>
           `<button role="menuitem" data-place="${action}">${label}</button>`,
       )
-      .join("")}`;
+      .join(
+        "",
+      )}<div class="dock-menu-hint">${tr("隐藏后可从「视图」恢复，内容保留。", "Restore hidden columns from View. Content is kept.", "隱藏後可從「檢視」恢復，內容保留。")}</div>`;
+    this.menuTrigger = trigger;
     this.menu.hidden = false;
-    const r = trigger.getBoundingClientRect();
-    this.menu.style.left = `${Math.max(8, Math.min(innerWidth - 200, r.right - 190))}px`;
-    this.menu.style.top = `${Math.min(innerHeight - 300, r.bottom + 6)}px`;
+    void computePosition(trigger, this.menu, {
+      strategy: "fixed",
+      placement: "bottom-end",
+      middleware: [offset(6), flip(), shift({ padding: 8 })],
+    }).then(({ x, y }) => {
+      if (!this.menu.hidden)
+        Object.assign(this.menu.style, { left: `${x}px`, top: `${y}px` });
+    });
+    this.menu.querySelector<HTMLButtonElement>("button")?.focus();
     this.menu.onclick = (e) => {
       const action = (e.target as HTMLElement).closest<HTMLElement>(
         "[data-place]",
@@ -327,6 +415,7 @@ export class WorkspaceDock {
       this.menu.hidden = true;
       if (action === "float") this.show(id, true);
       else if (action === "hide") this.hide(id);
+      else if (action === "balance") this.balance();
       else if (action === "focus") {
         if (p.api.isMaximized()) p.api.exitMaximized();
         else p.api.maximize();

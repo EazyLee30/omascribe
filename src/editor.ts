@@ -8,6 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { t, type Key } from "./i18n";
 import { TableKit } from "@tiptap/extension-table";
 import { SlashMenu } from "./slash";
+import { BlockControls } from "./block-controls";
 
 /** One local Markdown document. Polling never replaces the active editor or its selection. */
 export class NotebookEditor {
@@ -17,6 +18,7 @@ export class NotebookEditor {
   private sourceMode = false;
   private composing = false;
   private slash: SlashMenu;
+  private blocks: BlockControls;
   constructor(
     private host: HTMLElement,
     markdown: string,
@@ -63,15 +65,27 @@ export class NotebookEditor {
     this.toolbar.classList.add("selection-toolbar");
     this.toolbar.hidden = true;
     document.body.append(this.toolbar);
+    this.blocks = new BlockControls(
+      () => this.editor,
+      (from, anchor) => this.slash.openForBlock(from, anchor),
+    );
     this.editor = new Editor({
       element: host.querySelector(".editor-canvas")!,
       extensions: [
         StarterKit.configure({ link: { openOnClick: false, autolink: false } }),
         Markdown,
+        this.blocks.extension,
         TableKit.configure({ table: { resizable: true } }),
         TaskList,
         TaskItem.configure({ nested: true }),
-        Placeholder.configure({ placeholder: t("notePlaceholder") }),
+        Placeholder.configure({
+          placeholder: tr(
+            "输入 / 搜索块…",
+            "Type / to search blocks…",
+            "輸入 / 搜尋區塊…",
+          ),
+          showOnlyCurrent: true,
+        }),
       ],
       content: markdown,
       contentType: "markdown",
@@ -85,6 +99,11 @@ export class NotebookEditor {
         handleKeyDown: (_view, event) => {
           if (event.isComposing || event.keyCode === 229) return false;
           if (this.slash?.keydown(event)) return true;
+          if ((event.ctrlKey || event.metaKey) && event.key === "/") {
+            event.preventDefault();
+            this.blocks.openAtSelection();
+            return true;
+          }
           if (
             (event.ctrlKey || event.metaKey) &&
             event.key.toLowerCase() === "k"
@@ -250,6 +269,7 @@ export class NotebookEditor {
     }
     if (action === "source") {
       this.slash.hide();
+      this.blocks.close();
       this.sourceMode = !this.sourceMode;
       (this.host.querySelector(".source-exit") as HTMLElement).hidden =
         !this.sourceMode;
@@ -453,6 +473,7 @@ export class NotebookEditor {
     else this.editor.commands.focus("end");
   }
   destroy() {
+    this.blocks.destroy();
     this.slash.destroy();
     this.toolbar.remove();
     this.editor.destroy();

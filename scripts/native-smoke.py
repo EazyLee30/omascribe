@@ -197,13 +197,11 @@ def main():
             check=True,
             timeout=600,
         )
-        for case in ["zh_calendar_citations", "en_owner_and_deadline", "zh_empty_greetings", "zh_phased_correction", "zh_named_speakers", "zh_long_context_state", "zh_note_name_spelling", "en_generic_note_name", "zh_name_context_is_not_evidence"]:
-            cases = json.loads(
-                (ROOT / "tests/fixtures/document-cases.json").read_text(
-                    encoding="utf-8"
-                )
-            )
-            assert case in [c["name"] for c in cases], case
+        cases = json.loads(
+            (ROOT / "tests/fixtures/document-cases.json").read_text(encoding="utf-8")
+        )
+        assert cases and len({c["name"] for c in cases}) == len(cases)
+        for case in [c["name"] for c in cases]:
             subprocess.run(
                 [
                     "python",

@@ -12,8 +12,10 @@
     "format:check": "prettier --check src"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.7.6",
     "@tauri-apps/api": "^2.10.0",
     "@tiptap/core": "^3.32.0",
+    "@tiptap/extension-drag-handle": "3.32.0",
     "@tiptap/extension-placeholder": "^3.32.0",
     "@tiptap/extension-table": "^3.32.0",
     "@tiptap/extension-task-item": "^3.32.0",

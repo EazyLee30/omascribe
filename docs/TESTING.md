@@ -21,7 +21,7 @@ python3 tests/evaluate.py --cli target/debug/omascribe-cli \
   --output /tmp/omascribe-evaluation.json
 ```
 
-The harness uses production retrieval → writer → validation → storage with an isolated database. Fourteen scenarios cover later corrections across phases, language selection, named speakers, pure mic checks, source closure beyond nine passages, and human-protected paragraphs. Inputs, drafts, validation failures, citations, timing and token usage survive failed cases. Output paths must be fresh. These targeted checks do not establish general meeting quality.
+The harness uses production retrieval → writer → validation → storage with an isolated database. Eighteen scenarios cover later corrections across phases, language selection, named speakers, pure mic checks, source closure beyond nine passages, and human-protected paragraphs. Inputs, drafts, validation failures, citations, timing and token usage survive failed cases. Output paths must be fresh. These targeted checks do not establish general meeting quality.
 
 For the unified offline ASR/minutes harness, public corpus preparation, baseline comparisons, hotword compatibility and optional 30-minute stress runs, see [CORE-HARNESS.md](CORE-HARNESS.md).
 
@@ -81,3 +81,9 @@ See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and
 After `bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
 
 SSE unit cases cover Unicode chunks, usage events, normal completion, premature EOF, token-limit termination, error events and oversized data. `tests/evaluate.py` uses the real server and validates the complete streamed generation/validation/commit path.
+
+## Block editor and column controls
+
+`tests/native-editor.js` is a focused `ui-test` startup script for a disposable data directory. It creates a fictional meeting and checks slash search/Enter, the platform block-menu shortcut, moving/duplicating blocks, deletion confirmation/cancellation, independent undo, literal slashes, Chinese composition, persisted Markdown and hide/restore at narrow widths. It does not start microphone capture. Keep its report and any screenshots outside Git. When running beside the normal application, build with a separate Tauri identifier (for example `TAURI_CONFIG='{"identifier":"si.eazylee.omascribe.editorqa"}'`) so the single-instance bridge does not forward into the user's open app.
+
+Also perform pointer drag/drop and menu-position checks in the rendered editor: a newly written block must move without losing text, undo must undo just that move, menus must remain in the viewport, and changing layouts must preserve the same document. Native acceptance and browser pointer checks complement each other; a synthetic DOM event alone is not a real pointer-drag test.
