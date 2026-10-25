@@ -2748,3 +2748,17 @@ dialog:has(.meeting-files) .modal-heading {
   font-size: 10px;
   color: var(--muted);
 }
+
+.speaker-count {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  font-size: 13px;
+}
+.speaker-count select {
+  width: 180px;
+}
+.speaker-count small {
+  color: var(--muted);
+  line-height: 1.6;
+}

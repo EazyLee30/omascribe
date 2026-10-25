@@ -43,15 +43,6 @@ function selectPlatformFromLink() {
 selectPlatformFromLink();
 window.addEventListener("hashchange", selectPlatformFromLink);
 
-const architecture = document.querySelector("#mac-architecture");
-architecture?.addEventListener("change", () => {
-  const download = document.querySelector("#mac-download");
-  const intel = architecture.value === "mac_intel";
-  download.href = intel ? download.dataset.intelUrl : download.dataset.armUrl;
-  document.querySelector("#installer-size").textContent =
-    `${intel ? download.dataset.intelSize : download.dataset.armSize} · ${download.dataset.version}`;
-});
-
 const notes = document.querySelector("#demo-notes");
 if (notes) {
   const initial = notes.value;

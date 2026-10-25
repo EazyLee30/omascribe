@@ -77,8 +77,8 @@ export interface Hardware {
 }
 export const defaultAppearance: Appearance = {
   mode: "system",
-  theme: "forest",
-  accent: "#e5b866",
+  theme: "neutral",
+  accent: "#d83b36",
   background: "",
   foreground: "",
   font: "system",

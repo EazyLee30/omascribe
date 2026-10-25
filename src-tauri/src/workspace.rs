@@ -112,14 +112,21 @@ pub fn assign_speaker(
     segment: String,
     speaker: Option<String>,
     revision: u32,
+    all_matching: Option<bool>,
 ) -> Reply<()> {
     engine
-        .assign_speaker(&meeting, &segment, speaker, revision)
+        .assign_speaker_group(
+            &meeting,
+            &segment,
+            speaker,
+            revision,
+            all_matching.unwrap_or(false),
+        )
         .map_err(err)
 }
 #[tauri::command]
-pub fn diarize(engine: State<AppState>, id: String) -> Reply<()> {
-    engine.inner().diarize(&id).map_err(err)
+pub fn diarize(engine: State<AppState>, id: String, count: Option<u32>) -> Reply<()> {
+    engine.inner().diarize_with_count(&id, count).map_err(err)
 }
 #[tauri::command]
 pub fn cancel_diarization(engine: State<AppState>) {

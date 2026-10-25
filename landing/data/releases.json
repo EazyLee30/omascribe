@@ -1,47 +1,53 @@
 {
   "schema": 1,
-  "tag": "v0.3.0",
-  "version": "0.3.0",
+  "tag": "v0.3.2",
+  "version": "0.3.2",
   "prerelease": false,
-  "published_at": "2026-10-24T09:26:22Z",
-  "url": "https://github.com/EazyLee30/omascribe/releases/tag/v0.3.0",
+  "published_at": "2026-10-24T15:53:51Z",
+  "url": "https://github.com/EazyLee30/omascribe/releases/tag/v0.3.2",
   "assets": {
     "mac_arm": {
-      "name": "OmaScribe_0.3.0_macOS-AppleSilicon.dmg",
-      "size": 1176380078,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/OmaScribe_0.3.0_macOS-AppleSilicon.dmg",
-      "digest": "sha256:abc0796bcc066de619f97a13e28fb26e10cdf659614b6d6a03f2aa6386bd6d34"
+      "name": "OmaScribe_0.3.2_macOS-AppleSilicon.dmg",
+      "size": 1185267162,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/OmaScribe_0.3.2_macOS-AppleSilicon.dmg",
+      "digest": "sha256:c00bd84938d9afec0d67dc5b26b3f360616ef22952c41a0eeb0ab95ba49ca638"
     },
     "mac_intel": {
-      "name": "OmaScribe_0.3.0_macOS-Intel.dmg",
-      "size": 1177768466,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/OmaScribe_0.3.0_macOS-Intel.dmg",
-      "digest": "sha256:9f74d4794aae43038a09467adf57413b2595299e44473392d9c0cb728c9b80f3"
+      "name": "OmaScribe_0.3.2_macOS-Intel.dmg",
+      "size": 1087069191,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/OmaScribe_0.3.2_macOS-Intel.dmg",
+      "digest": "sha256:b085fdfbff788bfc94e148d26f0a7ecb49a0330030cff7a01374ee6bb073f19d"
     },
     "windows": {
-      "name": "OmaScribe_0.3.0_Windows-x64.exe",
-      "size": 1368358199,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/OmaScribe_0.3.0_Windows-x64.exe",
-      "digest": "sha256:de9a349730dc4331dbb7a0031d42acb94dcbedca6238da178ee656f25775c0f5"
+      "name": "OmaScribe_0.3.2_Windows-x64.exe",
+      "size": 1376443802,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/OmaScribe_0.3.2_Windows-x64.exe",
+      "digest": "sha256:290e82317fb9898b2c6ab6a2bd601f0c9b89251749e4711a36732fd4f030f2e5"
     },
     "checksums": {
       "name": "SHA256SUMS.txt",
-      "size": 498,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/SHA256SUMS.txt",
-      "digest": "sha256:f33b4c6109a414d1656db481faf36ba87a503d0b8c17ff2808a0b4f776de43e4"
+      "size": 617,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/SHA256SUMS.txt",
+      "digest": "sha256:aa6c3a6ab5300b3fb82c22dc16be0e7eb9076d3280a987ec88383f651ad55bbb"
     },
     "linux_appimage": {
-      "name": "OmaScribe_0.3.0_Linux-x64.AppImage",
-      "size": 1241819640,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/OmaScribe_0.3.0_Linux-x64.AppImage",
-      "digest": "sha256:689a7f800156489bdd23ee3eec8d6690257313f97b2bbd73fcf085253afd8d1c"
+      "name": "OmaScribe_0.3.2_Linux-x64.AppImage",
+      "size": 1250560504,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/OmaScribe_0.3.2_Linux-x64.AppImage",
+      "digest": "sha256:31bd77167ea0310cce076f0c7f8ea11c1a61ba0a9d560a95032f225a4fe9088c"
     },
     "linux_deb": {
-      "name": "OmaScribe_0.3.0_Linux-x64.deb",
-      "size": 1167284936,
-      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.0/OmaScribe_0.3.0_Linux-x64.deb",
-      "digest": "sha256:c9f5f2ffad02e4c35855501bc102c48d6fc69b4be1cd1fc7610ecd1ef26b034c"
+      "name": "OmaScribe_0.3.2_Linux-x64.deb",
+      "size": 1176437940,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/OmaScribe_0.3.2_Linux-x64.deb",
+      "digest": "sha256:e2a2fb660ba41fbb1bdfd8df25280bfe11d4108434e96521c88172594ee61239"
+    },
+    "updater": {
+      "name": "latest.json",
+      "size": 5282,
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/v0.3.2/latest.json",
+      "digest": "sha256:047701f361cbdbc45a7ad2ad6e5bf7610d93388fd299402181a73e9dadf9a2f0"
     }
   },
-  "fetched_at": "2026-10-24T09:27:44.968Z"
+  "fetched_at": "2026-10-25T07:02:14.183Z"
 }

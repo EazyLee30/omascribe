@@ -6,7 +6,9 @@ export const reduceMotion = () =>
 export function reveal(element: HTMLElement) {
   if (!reduceMotion())
     animate(
-      Array.from(element.children),
+      Array.from(element.children).filter(
+        (child) => child.getClientRects().length > 0,
+      ),
       {
         opacity: [0.65, 1],
         transform: ["translateY(5px)", "translateY(0)"],
@@ -53,7 +55,8 @@ export function recordingMotion(
         ? 0.16 +
           Math.min(1, level * 7) * (0.4 + 0.6 * Math.abs(Math.sin(i * 1.9)))
         : 0.16;
-    if (reduceMotion()) bar.style.transform = `scaleY(${height})`;
+    if (state !== "recording" || reduceMotion() || !bar.getClientRects().length)
+      bar.style.transform = `scaleY(${height})`;
     else
       animate(
         bar,

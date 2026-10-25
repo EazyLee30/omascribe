@@ -2946,7 +2946,7 @@ dependencies = [
 
 [[package]]
 name = "omascribe"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64 0.22.1",
  "cairo-rs",
@@ -2968,7 +2968,7 @@ dependencies = [
 
 [[package]]
 name = "omascribe-asr"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "omascribe-core",
@@ -2978,7 +2978,7 @@ dependencies = [
 
 [[package]]
 name = "omascribe-core"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

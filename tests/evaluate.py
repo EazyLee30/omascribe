@@ -78,6 +78,12 @@ def main():
                 "OMASCRIBE_RUNTIME_DIR", str(data / "runtime")
             ),
         )
+        if os.environ.get("OMASCRIBE_TEST_MODEL_STORE"):
+            def reuse_model(source, target):
+                try: return os.link(source, target)
+                except OSError: return shutil.copy2(source, target)
+            shutil.copytree(os.environ["OMASCRIBE_TEST_MODEL_STORE"], pathlib.Path(root) / "model-store", copy_function=reuse_model)
+
         if args.preferences:
             shutil.copyfile(args.preferences, pathlib.Path(root) / "preferences.json")
         subprocess.run(

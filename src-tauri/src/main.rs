@@ -9,6 +9,7 @@ use std::{
     },
 };
 use tauri::Manager;
+mod companion;
 mod file_manager;
 #[cfg(target_os = "linux")]
 mod overlay;
@@ -25,7 +26,7 @@ use tauri_plugin_dialog::DialogExt;
 use updates::*;
 use views::{
     display_monitors, drag_transcript, get_view_settings, set_view_meeting, set_view_settings,
-    transcript_snapshot,
+    show_main_window, transcript_snapshot,
 };
 use workspace::*;
 type AppState = Arc<Engine>;
@@ -256,6 +257,12 @@ fn ui_test_resize(window: tauri::WebviewWindow, width: u32, height: u32) -> Repl
 }
 #[cfg(feature = "ui-test")]
 #[tauri::command]
+fn ui_test_windows(app: tauri::AppHandle) -> serde_json::Value {
+    use tauri::Manager;
+    serde_json::json!(app.webview_windows().iter().map(|(label,w)|serde_json::json!({"label":label,"visible":w.is_visible().unwrap_or(false),"position":w.outer_position().ok().map(|p|(p.x,p.y)),"size":w.inner_size().ok().map(|s|(s.width,s.height))})).collect::<Vec<_>>())
+}
+#[cfg(feature = "ui-test")]
+#[tauri::command]
 fn ui_test_replay(engine: State<AppState>, id: String) -> Reply<()> {
     engine
         .inner()
@@ -356,7 +363,11 @@ fn main() {
         set_view_settings,
         set_view_meeting,
         transcript_snapshot,
+        show_main_window,
         drag_transcript,
+        companion::set_companion_expanded,
+        companion::companion_start,
+        companion::companion_snapshot,
         display_monitors,
         retranscribe,
         generate_notes,
@@ -374,7 +385,8 @@ fn main() {
         ui_test_report,
         ui_test_screenshot,
         ui_test_resize,
-        ui_test_replay
+        ui_test_replay,
+        ui_test_windows
     ];
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -391,7 +403,7 @@ fn main() {
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
-            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay"].contains(&request.message.command()) {
+            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay", "ui_test_windows"].contains(&request.message.command()) {
                 return tester(request);
             }
             regular(request)
@@ -436,6 +448,9 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if companion::window_event(window, event) {
+                return;
+            }
             if views::window_event(window, event) {
                 return;
             }

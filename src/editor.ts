@@ -13,6 +13,7 @@ import { SlashMenu } from "./slash";
 export class NotebookEditor {
   editor: Editor;
   private source: HTMLTextAreaElement;
+  private toolbar: HTMLElement;
   private sourceMode = false;
   private composing = false;
   private slash: SlashMenu;
@@ -25,6 +26,7 @@ export class NotebookEditor {
       play: () => {},
     },
   ) {
+    const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl";
     const buttons: [string, string, Key, string][] = [
       ["bold", "<b>B</b>", "bold", "Ctrl B"],
       ["italic", "<i>I</i>", "italic", "Ctrl I"],
@@ -43,7 +45,7 @@ export class NotebookEditor {
       .filter(([action]) => ["bold", "italic", "bulletList"].includes(action))
       .map(
         ([action, label, key, keys]) =>
-          `<button type="button" data-format="${action}" title="${t(key)} · ${keys}" aria-label="${t(key)}" aria-pressed="false">${label}</button>`,
+          `<button type="button" data-format="${action}" title="${t(key)} · ${keys.replace("Ctrl", mod)}" aria-label="${t(key)}" aria-pressed="false">${label}</button>`,
       )
       .join(
         "",
@@ -55,8 +57,12 @@ export class NotebookEditor {
       )
       .join(
         "",
-      )}</div></details><button class="source-toggle" type="button" data-format="source" title="${t("markdownSource")}" aria-label="${t("markdownSource")}">MD</button></div><div class="table-tools" hidden><span>${t("table")}</span><button data-table="addRowAfter">+ ${t("row")}</button><button data-table="addColumnAfter">+ ${t("column")}</button><button data-table="deleteRow">− ${t("row")}</button><button data-table="deleteColumn">− ${t("column")}</button><button data-table="deleteTable">${t("removeTable")}</button></div><div class="editor-scroll"><div class="editor-canvas"></div><textarea class="markdown-source" aria-label="${t("markdownSource")}" spellcheck="false" hidden></textarea></div><div class="editor-foot"><span>${t("editorHint")}</span><span class="editor-count"></span></div>`;
+      )}</div></details><button class="source-toggle" type="button" data-format="source" title="${t("markdownSource")}" aria-label="${t("markdownSource")}">MD</button></div><div class="table-tools" hidden><span>${t("table")}</span><button data-table="addRowAfter">+ ${t("row")}</button><button data-table="addColumnAfter">+ ${t("column")}</button><button data-table="deleteRow">− ${t("row")}</button><button data-table="deleteColumn">− ${t("column")}</button><button data-table="deleteTable">${t("removeTable")}</button></div><button class="source-exit" type="button" hidden>← ${tr("返回编辑", "Back to editor", "返回編輯")}</button><div class="editor-scroll"><div class="editor-canvas"></div><textarea class="markdown-source" aria-label="${t("markdownSource")}" spellcheck="false" hidden></textarea></div><div class="editor-foot"><span>${t("editorHint")}</span><span class="editor-count"></span></div>`;
     this.source = host.querySelector("textarea")!;
+    this.toolbar = host.querySelector(".editor-toolbar")!;
+    this.toolbar.classList.add("selection-toolbar");
+    this.toolbar.hidden = true;
+    document.body.append(this.toolbar);
     this.editor = new Editor({
       element: host.querySelector(".editor-canvas")!,
       extensions: [
@@ -103,6 +109,9 @@ export class NotebookEditor {
       onUpdate: () => {
         if (!this.composing) this.changed();
       },
+      onBlur: () => {
+        this.toolbar.hidden = true;
+      },
       onSelectionUpdate: () => {
         this.updateToolbar();
         this.slash?.update(this.composing);
@@ -118,21 +127,19 @@ export class NotebookEditor {
       this.composing = false;
       setTimeout(() => this.changed(), 0);
     });
-    host
-      .querySelector(".editor-toolbar")!
-      .addEventListener("mousedown", (e) => {
-        if ((e.target as HTMLElement).closest("button")) e.preventDefault();
-      });
-    host.querySelector(".editor-toolbar")!.addEventListener("click", (e) => {
+    this.toolbar.addEventListener("mousedown", (e) => {
+      if ((e.target as HTMLElement).closest("button")) e.preventDefault();
+    });
+    this.toolbar.addEventListener("click", (e) => {
       const action = (e.target as HTMLElement).closest<HTMLButtonElement>(
         "[data-format]",
       )?.dataset.format;
       if (action) {
         this.format(action);
-        host.querySelector("details")?.removeAttribute("open");
+        this.toolbar.querySelector("details")?.removeAttribute("open");
       }
     });
-    host.querySelector("select")!.addEventListener("change", (e) => {
+    this.toolbar.querySelector("select")!.addEventListener("change", (e) => {
       const level = Number((e.target as HTMLSelectElement).value);
       if (level)
         this.editor
@@ -143,6 +150,9 @@ export class NotebookEditor {
       else this.editor.chain().focus().setParagraph().run();
       this.updateToolbar();
     });
+    host
+      .querySelector(".source-exit")!
+      .addEventListener("click", () => this.format("source"));
     this.source.addEventListener("input", () => {
       this.onChange(this.source.value);
       this.count(this.source.value);
@@ -201,7 +211,7 @@ export class NotebookEditor {
   }
   private updateToolbar() {
     if (!this.editor) return;
-    this.host
+    this.toolbar
       .querySelectorAll<HTMLButtonElement>("[data-format]")
       .forEach((button) => {
         const action = button.dataset.format!;
@@ -221,9 +231,17 @@ export class NotebookEditor {
       });
     (this.host.querySelector(".table-tools") as HTMLElement).hidden =
       this.sourceMode || !this.editor.isActive("table");
-    const select = this.host.querySelector("select")!;
+    const select = this.toolbar.querySelector("select")!;
     select.disabled = this.sourceMode;
     select.value = String(this.editor.getAttributes("heading").level || 0);
+    const selection = this.editor.state.selection;
+    this.toolbar.hidden =
+      this.sourceMode || selection.empty || !this.editor.isFocused;
+    if (!this.toolbar.hidden) {
+      const c = this.editor.view.coordsAtPos(selection.from);
+      this.toolbar.style.left = `${Math.max(8, Math.min(innerWidth - this.toolbar.offsetWidth - 8, c.left))}px`;
+      this.toolbar.style.top = `${Math.max(8, c.top - this.toolbar.offsetHeight - 8)}px`;
+    }
   }
   private format(action: string) {
     if (action === "link") {
@@ -233,6 +251,8 @@ export class NotebookEditor {
     if (action === "source") {
       this.slash.hide();
       this.sourceMode = !this.sourceMode;
+      (this.host.querySelector(".source-exit") as HTMLElement).hidden =
+        !this.sourceMode;
       if (this.sourceMode) {
         this.source.value = this.editor.getMarkdown();
         this.source.hidden = false;
@@ -293,6 +313,14 @@ export class NotebookEditor {
       return;
     }
     switch (id) {
+      case "source":
+        chain.run();
+        this.format("source");
+        break;
+      case "link":
+        chain.run();
+        this.openLink();
+        break;
       case "paragraph":
         chain.setParagraph().run();
         break;
@@ -417,12 +445,16 @@ export class NotebookEditor {
     dialog.showModal();
     input.focus();
   }
+  toggleSource() {
+    this.format("source");
+  }
   focus() {
     if (this.sourceMode) this.source.focus();
     else this.editor.commands.focus("end");
   }
   destroy() {
     this.slash.destroy();
+    this.toolbar.remove();
     this.editor.destroy();
   }
 }

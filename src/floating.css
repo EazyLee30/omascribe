@@ -1,0 +1,240 @@
+.floating-transcript-app #app {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.floating-transcript-app .float-header {
+  gap: 6px;
+  min-height: 48px;
+  height: 48px;
+  padding: 6px 9px;
+  background: var(--bg);
+  align-items: center;
+}
+.float-header > .float-drag {
+  flex: 1;
+  min-width: 80px;
+  gap: 6px;
+}
+.float-drag > * {
+  pointer-events: none;
+}
+#float-elapsed {
+  font:
+    600 14px/1.2 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  color: var(--text);
+}
+.float-header button,
+.float-header summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 5px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.float-header button[hidden] {
+  display: none;
+}
+.float-header button:hover,
+.float-header summary:hover {
+  background: var(--surface);
+}
+.float-header button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 -2px var(--accent);
+}
+.float-record-controls {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.float-record-controls .float-stop {
+  background: #d83b36;
+  color: white;
+  font-size: 11px;
+  padding: 5px 8px;
+  gap: 4px;
+}
+.float-status-dot {
+  background: var(--muted);
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+}
+#app[data-recording="recording"] .float-status-dot {
+  background: #d83b36;
+  box-shadow: 0 0 0 3px #d83b3620;
+  animation: recording-pulse 1.8s ease-in-out infinite;
+}
+#app[data-recording="paused"] .float-status-dot {
+  background: #ba8125;
+}
+.float-separator {
+  height: 20px;
+  border-left: 1px solid var(--border);
+  margin: 0 1px;
+}
+.float-language {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.float-language select {
+  font-size: 11px;
+  width: 76px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+}
+.float-more {
+  position: relative;
+}
+.float-more > summary {
+  list-style: none;
+}
+.float-more > summary::-webkit-details-marker {
+  display: none;
+}
+.float-more-menu {
+  position: absolute;
+  right: 0;
+  top: 37px;
+  z-index: 40;
+  padding: 6px;
+  width: 210px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 8px 24px #0002;
+}
+.float-more-menu button {
+  justify-content: flex-start;
+  width: 100%;
+  padding: 8px 10px;
+  height: auto;
+  font-size: 12px;
+  gap: 8px;
+  text-align: left;
+}
+.float-more-menu label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  margin: 5px 10px;
+}
+.float-more-menu select {
+  font-size: 11px;
+  max-width: 100px;
+  padding: 4px;
+}
+.float-context {
+  height: 27px;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--muted);
+}
+#float-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.float-tools {
+  padding: 8px 14px;
+}
+.float-tools[hidden] {
+  display: none;
+}
+#float-transcript {
+  padding: 0 15px 10px;
+}
+#float-transcript .segment {
+  padding: 13px 0;
+}
+#float-transcript .segment p {
+  font-size: 13px;
+  line-height: 1.75;
+}
+#float-transcript .timestamp {
+  font-size: 10px;
+}
+#float-transcript .speaker-chip {
+  font-size: 9px;
+}
+.float-return {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px 15px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.float-return:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.float-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 13px;
+  height: 13px;
+  cursor: se-resize;
+}
+.compact .float-context {
+  display: none;
+}
+.compact #float-preview {
+  display: block;
+  padding: 0 10px;
+  margin: 0;
+  font-size: 10px;
+  height: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 480px) {
+  .float-header > .float-drag {
+    min-width: 64px;
+    gap: 3px;
+  }
+  .float-drag > svg {
+    display: none;
+  }
+  .floating-transcript-app .float-header {
+    gap: 3px;
+    padding: 5px;
+  }
+  .float-language > svg {
+    display: none;
+  }
+  .float-language select {
+    width: 70px;
+  }
+  #float-elapsed {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #app[data-recording="recording"] .float-status-dot {
+    animation: none;
+  }
+}

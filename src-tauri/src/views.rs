@@ -42,8 +42,8 @@ impl Default for CaptionPreferences {
             width_percent: 80,
             margin: 32,
             opacity: 0.8,
-            text_color: "#f1f4eb".into(),
-            background_color: "#182014".into(),
+            text_color: "#f5f5f5".into(),
+            background_color: "#101010".into(),
             click_through: true,
             idle_seconds: 12,
             radius: 10,
@@ -67,6 +67,9 @@ pub struct ViewPreferences {
     pub follow_recording: bool,
     pub transcript_font: u32,
     pub captions: CaptionPreferences,
+    pub companion_enabled: bool,
+    pub companion_animation: bool,
+    pub companion_anchor: Option<(i32, i32)>,
 }
 impl Default for ViewPreferences {
     fn default() -> Self {
@@ -76,13 +79,16 @@ impl Default for ViewPreferences {
             minutes_collapsed: false,
             transcript_mode: "hidden".into(),
             dock_width: 320,
-            floating_width: 380,
-            floating_height: 560,
+            floating_width: 540,
+            floating_height: 420,
             compact: false,
             snap: "right".into(),
             follow_recording: true,
             transcript_font: 15,
             captions: CaptionPreferences::default(),
+            companion_enabled: true,
+            companion_animation: true,
+            companion_anchor: None,
         }
     }
 }
@@ -104,7 +110,7 @@ impl ViewPreferences {
             }
         }
         self.dock_width = self.dock_width.clamp(240, 560);
-        self.floating_width = self.floating_width.clamp(280, 1000);
+        self.floating_width = self.floating_width.clamp(480, 1000);
         self.floating_height = self.floating_height.clamp(220, 1200);
         self.transcript_font = self.transcript_font.clamp(11, 28);
         let c = &mut self.captions;
@@ -133,6 +139,9 @@ pub struct Views {
 }
 pub type ViewState = Arc<Views>;
 impl Views {
+    pub(crate) fn mark_dirty(&self) {
+        self.dirty.store(true, Ordering::SeqCst);
+    }
     pub fn new(root: PathBuf) -> ViewState {
         let mut prefs = fs::read(root.join("view-preferences.json"))
             .ok()
@@ -220,6 +229,14 @@ pub async fn set_view_settings(
     Ok(result)
 }
 #[tauri::command]
+pub fn show_main_window(app: tauri::AppHandle) -> Reply<()> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or("Main window unavailable")?;
+    window.show().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())
+}
+#[tauri::command]
 pub fn drag_transcript(app: tauri::AppHandle) -> Reply<()> {
     app.get_webview_window("transcript")
         .ok_or("Transcript window is not open")?
@@ -232,6 +249,7 @@ fn apply_windows(
     runtime: &std::path::Path,
     prefs: &ViewPreferences,
 ) -> Reply<()> {
+    crate::companion::apply(app, prefs.companion_enabled)?;
     let mut captions = prefs.captions.clone();
     if app
         .state::<AppState>()
@@ -256,10 +274,11 @@ fn apply_windows(
             )
             .title("OmaScribe — Live transcript")
             .inner_size(prefs.floating_width as f64, prefs.floating_height as f64)
-            .min_inner_size(280., 56.)
+            .min_inner_size(480., 64.)
             .decorations(false)
             .resizable(true)
             .always_on_top(true)
+            .accept_first_mouse(true)
             .build()
             .map_err(|e| e.to_string())?
         };
@@ -328,7 +347,7 @@ fn place_hyprland_window(prefs: ViewPreferences) {
                     .output();
             };
             run(format!(
-                "hl.dispatch(hl.dsp.window.float({{action='on',window='{target}'}}))"
+                "hl.dispatch(hl.dsp.window.float({{action='set',window='{target}'}}))"
             ));
             std::thread::sleep(Duration::from_millis(120));
             let height = if prefs.compact {
@@ -411,6 +430,15 @@ pub fn start(app: &tauri::AppHandle) {
         let engine = handle.state::<AppState>();
         let views = handle.state::<ViewState>();
         let prefs = views.prefs.lock().unwrap().clone();
+        if let Err(error) = crate::companion::apply(&handle, prefs.companion_enabled) {
+            // A failed optional companion must not interrupt recording or the notebook.
+            eprintln!("Companion unavailable: {error}");
+            let mut current = views.prefs.lock().unwrap();
+            current.companion_enabled = false;
+            let _ = handle.emit("view-settings", current.clone());
+            let _ = handle.emit("companion-error", error);
+            views.mark_dirty();
+        }
         if prefs.captions.enabled {
             let text = active_id(engine.inner(), &views)
                 .and_then(|id| {
@@ -485,7 +513,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool 
         let mut prefs = views.prefs.lock().unwrap();
         let scale = window.scale_factor().unwrap_or(1.);
         let logical = size.to_logical::<u32>(scale);
-        if logical.width >= 280 {
+        if logical.width >= 480 {
             prefs.floating_width = logical.width.min(1000);
         }
         if !prefs.compact && logical.height >= 220 {
@@ -499,7 +527,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool 
         let views = window.state::<ViewState>();
         let mut prefs = views.prefs.lock().unwrap();
         prefs.transcript_mode = "hidden".into();
-        let _ = window.emit("view-settings", prefs.clone());
+        let _ = window.app_handle().emit("view-settings", prefs.clone());
         drop(prefs);
         views.dirty.store(true, Ordering::SeqCst);
     }

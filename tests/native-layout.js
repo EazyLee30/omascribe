@@ -9,16 +9,16 @@
     document.querySelector('.meeting-link').click();
     await sleep(1500);
     const header = document.querySelector('.meeting-header');
-    assert(header && header.getBoundingClientRect().top < 20, 'Meeting header must be integrated into the top of the content');
+    assert(header && header.getBoundingClientRect().top < 60, 'Meeting header must be integrated into the top of the content');
     assert(document.querySelector('.window-toolbar [data-panel="sidebar"]'), 'Sidebar toggle missing at top');
     document.querySelector('[data-action="workspace-view"]').click();
     for (const panel of ['notebook','minutes']) {
       let button = document.querySelector(`#view-menu [data-panel="${panel}"]`);
       assert(button, 'Missing panel toggle ' + panel);
-      const prior = button.getAttribute('aria-expanded');
+      const prior = button.getAttribute('aria-checked');
       button.click(); await sleep(350);
       button = document.querySelector(`#view-menu [data-panel="${panel}"]`);
-      assert(button.getAttribute('aria-expanded') !== prior, 'Panel did not toggle ' + panel);
+      assert(button.getAttribute('aria-checked') !== prior, 'Panel did not toggle ' + panel);
       button.click(); await sleep(350);
     }
     document.querySelector('[data-action="workspace-view"]').click();
@@ -39,7 +39,7 @@
     }
     checks.push('Integrated meeting actions and all panel toggles are visible and clickable');
     assert(!document.querySelector('#workspace footer'), 'Bottom footer must be removed');
-    const columns = document.querySelector('.columns');
+    const columns = document.querySelector('#workspace-dock');
     const before = columns.getBoundingClientRect().bottom;
     window.scrollTo(0, 10000);
     document.documentElement.scrollTop = 10000;

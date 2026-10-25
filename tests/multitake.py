@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real ASR regression using the public sherpa sample; never opens the user's workspace."""
 
-import argparse, hashlib, json, os, pathlib, sqlite3, subprocess, tempfile, wave
+import argparse, hashlib, json, os, pathlib, sqlite3, subprocess, tempfile, wave, shutil
 from contextlib import closing
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -24,6 +24,12 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
         ),
         OMASCRIBE_RUNTIME_DIR=os.environ.get("OMASCRIBE_RUNTIME_DIR", str(cli.parent)),
     )
+
+    if os.environ.get("OMASCRIBE_TEST_MODEL_STORE"):
+        def reuse_model(source, target):
+            try: return os.link(source, target)
+            except OSError: return shutil.copy2(source, target)
+        shutil.copytree(os.environ["OMASCRIBE_TEST_MODEL_STORE"], pathlib.Path(root) / "model-store", copy_function=reuse_model)
 
     def call(*arguments):
         return json.loads(
@@ -52,6 +58,7 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
             "update segments set json=? where id=?",
             (json.dumps(corrected), corrected["id"]),
         )
+    call("note", mid, "OmaScribe public sample", "focus")
     second = call("append", mid, str(sample))
     assert second["meeting"]["status"] == "ready", second["runtime"]["error"]
     assert (

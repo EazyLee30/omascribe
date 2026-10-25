@@ -9,6 +9,20 @@ export interface SlashCommand {
 }
 const commands: SlashCommand[] = [
   {
+    id: "source",
+    label: "markdownSource",
+    hint: "plainTextHint",
+    glyph: "MD",
+    search: "markdown source 源码 原始碼",
+  },
+  {
+    id: "link",
+    label: "link",
+    hint: "plainTextHint",
+    glyph: "↗",
+    search: "link 链接 連結",
+  },
+  {
     id: "paragraph",
     label: "paragraph",
     hint: "plainTextHint",

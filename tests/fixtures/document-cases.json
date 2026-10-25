@@ -110,5 +110,22 @@
     ],
     "max_sections": 2,
     "merged_sources": true
+  },
+  {
+    "name": "zh_product_spelling",
+    "focus": "OmaScribe，实时转写，纪要测试",
+    "transcript": [
+      "我正在测试奥马（OMA）的SCRIB的转写功能。",
+      "omascribe的会议纪要仍然需要优化，这项调整尚未完成。"
+    ],
+    "required": [
+      "OmaScribe",
+      "未完成|尚待|待.*测试|仍.*优化"
+    ],
+    "forbidden": [
+      "奥马|SCRIB的|已经完成|已完成"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
   }
 ]

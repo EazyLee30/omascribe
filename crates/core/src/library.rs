@@ -150,6 +150,14 @@ impl Engine {
         self.store.lock().unwrap().conn.execute("INSERT INTO library_entries(id,json,updated_at) VALUES(?1,?2,?3) ON CONFLICT(id) DO UPDATE SET json=excluded.json,updated_at=excluded.updated_at",rusqlite::params![entry.id,serde_json::to_string(&entry)?,entry.updated_at])?;
         if was_context || relevant(&entry) {
             self.invalidate_background()?;
+            if entry.kind == "term" && entry.enabled && !entry.deleted {
+                for meeting in self.meetings()? {
+                    self.correct_terminology(&meeting.id)?;
+                }
+            }
+            if entry.kind == "term" {
+                self.refresh_live_hotwords()?;
+            }
         }
         Ok(entry)
     }

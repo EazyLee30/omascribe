@@ -15,6 +15,11 @@ pub fn extract_focus(content: &str) -> Vec<String> {
     use std::sync::OnceLock;
     static EXTRACTOR: OnceLock<(Jieba, TfIdf)> = OnceLock::new();
     let content: String = content.chars().take(20_000).collect();
+    let content = content
+        .replace("&nbsp;", " ")
+        .replace("&#160;", " ")
+        .replace("&amp;", "&")
+        .replace("\u{a0}", " ");
     let explicit: Vec<String> = content
         .split("**")
         .enumerate()

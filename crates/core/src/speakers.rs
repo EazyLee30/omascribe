@@ -25,7 +25,43 @@ pub fn dominant_speaker(segment: &Segment, turns: &[Turn]) -> Option<u32> {
     }
     let total: u64 = overlap.values().sum();
     let (&speaker, &best) = overlap.iter().max_by_key(|(_, n)| *n)?;
-    (best >= 300 && best.saturating_mul(100) >= total.saturating_mul(65)).then_some(speaker)
+    let minimum = (segment.end_ms.saturating_sub(segment.start_ms) / 4).clamp(300, 1000);
+    (best >= minimum && best.saturating_mul(100) >= total.saturating_mul(70)).then_some(speaker)
+}
+/// Relate new clusters to human-labelled examples. Ambiguous clusters keep a fresh identity.
+fn anchored_names(segments: &[Segment], turns: &[Turn]) -> BTreeMap<u32, String> {
+    let mut votes = BTreeMap::<u32, BTreeMap<String, u64>>::new();
+    for s in segments
+        .iter()
+        .filter(|s| s.speaker_manual && s.speaker.is_some())
+    {
+        if let Some(cluster) = dominant_speaker(s, turns) {
+            let weight = turns
+                .iter()
+                .filter(|t| t.speaker == cluster)
+                .map(|t| {
+                    s.end_ms
+                        .min(t.end_ms)
+                        .saturating_sub(s.start_ms.max(t.start_ms))
+                })
+                .sum::<u64>();
+            *votes
+                .entry(cluster)
+                .or_default()
+                .entry(s.speaker.clone().unwrap())
+                .or_default() += weight;
+        }
+    }
+    let mut result = BTreeMap::new();
+    for (cluster, names) in votes {
+        let total = names.values().sum::<u64>();
+        if let Some((name, weight)) = names.into_iter().max_by_key(|(_, n)| *n) {
+            if weight >= 1000 && weight * 100 >= total * 85 {
+                result.insert(cluster, name);
+            }
+        }
+    }
+    result
 }
 pub fn labeled_text(s: &Segment, m: &crate::Meeting) -> String {
     match s.speaker.as_ref().and_then(|id| m.speaker_names.get(id)) {
@@ -102,7 +138,17 @@ impl Engine {
         speaker: Option<String>,
         revision: u32,
     ) -> Result<()> {
-        let db = self.store.lock().unwrap();
+        self.assign_speaker_group(meeting, segment, speaker, revision, false)
+    }
+    pub fn assign_speaker_group(
+        &self,
+        meeting: &str,
+        segment: &str,
+        speaker: Option<String>,
+        revision: u32,
+        all_matching: bool,
+    ) -> Result<()> {
+        let mut db = self.store.lock().unwrap();
         let m = db.meeting(meeting)?;
         if speaker
             .as_ref()
@@ -110,7 +156,7 @@ impl Engine {
         {
             bail!("Unknown speaker");
         }
-        let mut s = db
+        let s = db
             .segments(&m)?
             .into_iter()
             .find(|s| s.id == segment)
@@ -118,20 +164,50 @@ impl Engine {
         if s.revision != revision {
             bail!("Passage changed; refresh before editing");
         }
-        db.conn.execute(
-            "INSERT OR IGNORE INTO segment_history VALUES(?1,?2,?3)",
-            rusqlite::params![s.id, s.revision, serde_json::to_string(&s)?],
-        )?;
-        s.speaker = speaker;
-        s.speaker_manual = true;
-        s.revision += 1;
-        db.save_segment(&s)?;
-        for mut suggestion in db.suggestions(meeting)? {
-            if suggestion.sources.iter().any(|q| q.segment_id == segment) {
+        let group = s.speaker.clone();
+        let targets: Vec<_> = db
+            .segments(&m)?
+            .into_iter()
+            .filter(|p| {
+                p.id == segment
+                    || all_matching && group.is_some() && p.speaker == group && !p.speaker_manual
+            })
+            .collect();
+        let suggestions = db.suggestions(meeting)?;
+        let tx = db.conn.transaction()?;
+        let mut changed = std::collections::HashSet::new();
+        for mut passage in targets {
+            tx.execute(
+                "INSERT OR IGNORE INTO segment_history VALUES(?1,?2,?3)",
+                rusqlite::params![
+                    passage.id,
+                    passage.revision,
+                    serde_json::to_string(&passage)?
+                ],
+            )?;
+            changed.insert(passage.id.clone());
+            passage.speaker = speaker.clone();
+            passage.speaker_manual = true;
+            passage.revision += 1;
+            tx.execute(
+                "UPDATE segments SET json=?2 WHERE id=?1",
+                rusqlite::params![passage.id, serde_json::to_string(&passage)?],
+            )?;
+        }
+        for mut suggestion in suggestions {
+            if suggestion
+                .sources
+                .iter()
+                .any(|q| changed.contains(&q.segment_id))
+            {
                 suggestion.stale = true;
-                db.save_suggestion(&suggestion)?;
+                tx.execute(
+                    "UPDATE suggestions SET json=?2 WHERE id=?1",
+                    rusqlite::params![suggestion.id, serde_json::to_string(&suggestion)?],
+                )?;
             }
         }
+        tx.commit()?;
         drop(db);
         self.sync_meeting_files(meeting);
         Ok(())
@@ -148,9 +224,15 @@ impl Engine {
         crate::platform::stop_process(self.diarization_pid.load(Ordering::SeqCst), false);
     }
     pub fn diarize(self: &Arc<Self>, id: &str) -> Result<()> {
+        self.diarize_with_count(id, None)
+    }
+    pub fn diarize_with_count(self: &Arc<Self>, id: &str, count: Option<u32>) -> Result<()> {
         let _gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         self.configuration_idle()?;
+        if count.is_some_and(|n| n > 16) {
+            bail!("Speaker count must be 0–16");
+        }
         let before = self.snapshot(id)?;
         if before.segments.is_empty() {
             bail!("Transcribe audio before separating speakers");
@@ -172,7 +254,7 @@ impl Engine {
             .arg(dir.join("embedding.onnx"))
             .arg(self.audio_dir(id)?)
             .arg(&output)
-            .arg(prefs.speaker_count.to_string())
+            .arg(count.unwrap_or(prefs.speaker_count).to_string())
             .arg(prefs.threads.to_string())
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -230,19 +312,23 @@ impl Engine {
                 {
                     bail!("Transcript changed during speaker analysis; run it again");
                 }
+                let anchors = anchored_names(&segments, &turns);
                 let mut names = BTreeMap::new();
                 for segment in &mut segments {
                     if segment.speaker_manual {
                         continue;
                     }
                     segment.speaker = dominant_speaker(segment, &turns).map(|speaker| {
+                        if let Some(id) = anchors.get(&speaker) {
+                            return id.clone();
+                        }
                         let id = format!("{job}-{speaker}");
                         names.insert(id.clone(), format!("Speaker {}", speaker + 1));
                         id
                     });
                     segment.revision += 1;
                 }
-                // Fresh cluster IDs avoid transferring a person's name to a different voice on reruns.
+                // Only human-labelled audio anchors can carry names across reanalysis.
                 m.speaker_names
                     .retain(|id, _| segments.iter().any(|s| s.speaker.as_ref() == Some(id)));
                 m.speaker_names.extend(names);
@@ -409,5 +495,94 @@ mod tests {
         assert!(e
             .rename_speaker(&meeting.id, Some("unknown".into()), "Someone")
             .is_err());
+    }
+    #[test]
+    fn manual_voice_anchors_follow_reordered_clusters_but_not_ambiguous_voices() {
+        let segment = |id: &str, start, end, name: &str| Segment {
+            id: id.into(),
+            meeting_id: "test".into(),
+            run: 1,
+            seq: 1,
+            start_ms: start,
+            end_ms: end,
+            text: "原文".into(),
+            revision: 1,
+            speaker: Some(name.into()),
+            speaker_manual: true,
+        };
+        let segments = vec![
+            segment("a", 0, 2000, "Alice"),
+            segment("b", 2000, 4000, "Bob"),
+        ];
+        let turns = vec![
+            Turn {
+                start_ms: 0,
+                end_ms: 2000,
+                speaker: 8,
+            },
+            Turn {
+                start_ms: 2000,
+                end_ms: 4000,
+                speaker: 3,
+            },
+        ];
+        assert_eq!(
+            anchored_names(&segments, &turns),
+            BTreeMap::from([(3, "Bob".into()), (8, "Alice".into())])
+        );
+        let ambiguous = vec![Turn {
+            start_ms: 0,
+            end_ms: 4000,
+            speaker: 0,
+        }];
+        assert!(anchored_names(&segments, &ambiguous).is_empty());
+        let mut long = segments[0].clone();
+        long.end_ms = 12000;
+        assert_eq!(
+            dominant_speaker(
+                &long,
+                &[Turn {
+                    start_ms: 0,
+                    end_ms: 350,
+                    speaker: 0
+                }]
+            ),
+            None
+        );
+    }
+    #[test]
+    fn assigning_a_voice_group_preserves_other_human_assignments() {
+        let dir = tempfile::tempdir().unwrap();
+        let e = Engine::open(dir.path().into()).unwrap();
+        let m = e.create_meeting("Group").unwrap();
+        let group = e.rename_speaker(&m.id, None, "Speaker 1").unwrap();
+        let alice = e.rename_speaker(&m.id, None, "Alice").unwrap();
+        for seq in 1..=3 {
+            let s = Segment {
+                id: format!("{}:1:{seq}", m.id),
+                meeting_id: m.id.clone(),
+                run: 1,
+                seq,
+                start_ms: seq as u64 * 1000,
+                end_ms: seq as u64 * 1000 + 1000,
+                text: "预算未定".into(),
+                revision: 1,
+                speaker: Some(group.clone()),
+                speaker_manual: seq == 3,
+            };
+            e.store.lock().unwrap().save_segment(&s).unwrap();
+        }
+        e.assign_speaker_group(
+            &m.id,
+            &format!("{}:1:1", m.id),
+            Some(alice.clone()),
+            1,
+            true,
+        )
+        .unwrap();
+        let snap = e.snapshot(&m.id).unwrap();
+        assert_eq!(snap.segments[0].speaker.as_ref(), Some(&alice));
+        assert_eq!(snap.segments[1].speaker.as_ref(), Some(&alice));
+        assert_eq!(snap.segments[2].speaker.as_ref(), Some(&group));
     }
 }

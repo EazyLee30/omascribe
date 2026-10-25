@@ -284,6 +284,7 @@ impl Engine {
         self.store.lock().unwrap().meetings()
     }
     pub fn focus_meeting(&self, id: &str) -> Result<()> {
+        self.correct_terminology(id)?;
         self.snapshot(id)?;
         *self.notes_target.lock().unwrap() = Some(id.into());
         Ok(())
@@ -363,8 +364,25 @@ impl Engine {
             updated_at: chrono::Utc::now().to_rfc3339(),
         };
         db.save_note(&n)?;
+        drop(db);
+        self.correct_terminology(id)?;
+        self.refresh_live_hotwords()?;
         *self.notes_target.lock().unwrap() = Some(id.to_owned());
         Ok(n)
+    }
+    pub(crate) fn refresh_live_hotwords(&self) -> Result<()> {
+        let id = self.active.lock().unwrap().as_ref().map(|a| a.id.clone());
+        if let Some(id) = id {
+            let dir = self.audio_dir(&id)?;
+            let words = self.terminology(&id)?.hotwords.join("\n").to_uppercase();
+            let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
+            fs::write(&temp, words)?;
+            if let Err(error) = fs::rename(&temp, dir.join("hotwords.txt")) {
+                let _ = fs::remove_file(temp);
+                return Err(error.into());
+            }
+        }
+        Ok(())
     }
     pub fn edit_segment(&self, id: &str, text: &str, revision: u32) -> Result<()> {
         if text.chars().count() > 4000 {
@@ -626,12 +644,21 @@ impl Engine {
             .collect::<Vec<_>>()
             .join(",");
         let prefs = self.preferences.lock().unwrap().clone();
+        let hotwords = dir.join("hotwords.txt");
+        fs::write(
+            &hotwords,
+            self.terminology(&active.id)?
+                .hotwords
+                .join("\n")
+                .to_uppercase(),
+        )?;
         let mut child = audio::child_command(self.worker_path())
             .arg(self.model_directory(&prefs.asr_model)?)
             .arg(&dir)
             .arg(start_sample.to_string())
             .arg(next_seq.to_string())
             .arg(boundaries)
+            .arg(hotwords)
             .env("OMASCRIBE_ASR_THREADS", prefs.threads.to_string())
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")
@@ -678,6 +705,10 @@ impl Engine {
                         if let Err(e) = engine.store.lock().unwrap().save_segment(&segment) {
                             engine.status.lock().unwrap().error =
                                 Some(format!("转写保存失败：{e}"));
+                        }
+                        if let Err(e) = engine.correct_terminology(&active.id) {
+                            engine.status.lock().unwrap().error =
+                                Some(format!("术语纠正失败：{e}"));
                         }
                         engine.sync_meeting_files(&active.id);
                     }
@@ -868,6 +899,7 @@ impl Engine {
         self.spawn_asr(active, m.run, 0, 1)
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
+        self.correct_terminology(id)?;
         let _config = self.config_lock.lock().unwrap();
         self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {

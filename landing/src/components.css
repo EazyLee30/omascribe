@@ -13,3 +13,8 @@
 
 wa-tab[active] { color: #fff; }
 wa-tab[active] .platform-icon { filter: invert(1); }
+
+.mac-downloads {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0;}
+.mac-downloads>div {padding:18px;border:1px solid var(--line);border-radius:8px;}
+.mac-downloads h3 {font-size:18px;margin:0 0 10px;}
+@media(max-width:600px){.mac-downloads{grid-template-columns:1fr;}}

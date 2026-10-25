@@ -29,6 +29,9 @@ export interface ViewPreferences {
   follow_recording: boolean;
   transcript_font: number;
   captions: CaptionPreferences;
+  companion_enabled: boolean;
+  companion_animation: boolean;
+  companion_anchor: [number, number] | null;
 }
 export const getViewSettings = () =>
   invoke<ViewPreferences>("get_view_settings");
@@ -149,12 +152,15 @@ export async function displaySettings(
           minutes_collapsed: false,
           transcript_mode: "hidden",
           dock_width: 320,
-          floating_width: 380,
-          floating_height: 560,
+          floating_width: 540,
+          floating_height: 420,
           compact: false,
           snap: "right",
           follow_recording: true,
           transcript_font: 15,
+          companion_enabled: true,
+          companion_animation: true,
+          companion_anchor: null,
           captions: {
             enabled: false,
             position: "bottom",
@@ -163,8 +169,8 @@ export async function displaySettings(
             width_percent: 80,
             margin: 32,
             opacity: 0.8,
-            text_color: "#f1f4eb",
-            background_color: "#182014",
+            text_color: "#f5f5f5",
+            background_color: "#101010",
             click_through: true,
             idle_seconds: 12,
             radius: 10,

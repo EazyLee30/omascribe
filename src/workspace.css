@@ -1275,3 +1275,44 @@ dialog {
 .main-window .sidebar-rail > .panel-toggle {
   display: none;
 }
+
+/* The title edits in place, sized to its text, without a toolbar-wide focus frame. */
+.window-toolbar .title-line {
+  display: inline-grid;
+  max-width: 100%;
+  min-width: 4ch;
+  vertical-align: top;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.title-line > * {
+  grid-area: 1 / 1;
+}
+#meeting-title-size {
+  visibility: hidden;
+  white-space: pre;
+  overflow: hidden;
+}
+.window-toolbar #meeting-title {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  text-overflow: ellipsis;
+  caret-color: var(--accent);
+}
+.window-toolbar #meeting-title:focus-visible {
+  outline: none;
+}
+.session-state[data-state="ready"] {
+  background: transparent;
+  padding-left: 0;
+}
+.session-state[data-state="ready"] .recording-wave,
+.session-state[data-state="ready"] .recording-clock small {
+  display: none;
+}

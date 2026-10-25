@@ -1,6 +1,6 @@
 [package]
 name = "omascribe"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 license = "MIT"
 
@@ -8,7 +8,7 @@ license = "MIT"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
@@ -25,9 +25,6 @@ gtk = "0.18"
 libloading = "0.8"
 webkit2gtk = {version="2", optional=true}
 cairo-rs = {version="0.18", features=["png"], optional=true}
-
-[target.'cfg(target_os = "macos")'.dependencies]
-tauri = { version = "2", features = ["macos-private-api"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 tauri-plugin-updater = "2"

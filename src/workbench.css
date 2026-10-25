@@ -1,0 +1,638 @@
+/* Quiet document chrome. Dockview owns pane sizing, docking, tabs and floating groups. */
+.main-window .window-toolbar {
+  height: 44px;
+  grid-template-columns: var(--chrome-leading) minmax(0, 1fr) auto;
+  padding-right: 10px;
+  background: var(--sidebar);
+  border-bottom: 1px solid var(--border);
+}
+.main-window #workspace {
+  padding-top: 44px;
+}
+.main-window .sidebar {
+  padding-top: 56px;
+}
+.main-window .sidebar::after {
+  top: 44px;
+}
+.main-window .window-toolbar #window-content {
+  padding: 0 8px;
+  height: 44px;
+  overflow: hidden;
+}
+.window-toolbar .view-trigger {
+  font-size: 12px;
+  padding: 5px 8px;
+}
+.window-toolbar .view-trigger svg {
+  width: 15px;
+  height: 15px;
+}
+.meeting-tabs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 2px;
+}
+.meeting-tab {
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+  max-width: 230px;
+  flex: 0 1 210px;
+  height: 36px;
+  border-radius: 6px 6px 0 0;
+  color: var(--muted);
+}
+.meeting-tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 0 var(--bg);
+}
+.meeting-tab > button[role="tab"] {
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+  padding: 0 8px;
+  font-size: 12px;
+  justify-content: flex-start;
+}
+.meeting-tab > button[role="tab"] svg {
+  width: 14px;
+  height: 14px;
+}
+.meeting-tab > button[role="tab"] span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meeting-tab-close {
+  width: 22px;
+  height: 24px;
+  opacity: 0;
+  flex-shrink: 0;
+  font-size: 16px;
+  padding: 0;
+}
+.meeting-tab:hover .meeting-tab-close,
+.meeting-tab:focus-within .meeting-tab-close {
+  opacity: 0.65;
+}
+.new-tab {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  font-size: 23px;
+  color: var(--muted);
+}
+#workspace.workbench {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+.workbench > .meeting-header {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 20px;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.workbench .meeting-header .heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+.workbench .meeting-header .eyebrow {
+  display: none;
+}
+.workbench .title-line {
+  display: inline-grid;
+  max-width: 100%;
+  min-width: 4ch;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.workbench #meeting-title {
+  font-size: 13px;
+  letter-spacing: 0;
+  font-weight: 500;
+  outline: none;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  line-height: 1.4;
+}
+.workbench #sync {
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.meeting-more {
+  position: relative;
+  flex-shrink: 0;
+}
+.meeting-more > summary {
+  list-style: none;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.meeting-more > summary::-webkit-details-marker {
+  display: none;
+}
+.meeting-more > summary:hover {
+  background: var(--surface);
+}
+.meeting-actions-menu {
+  position: absolute;
+  right: 0;
+  top: 32px;
+  z-index: 45;
+  background: var(--panel);
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 210px;
+  box-shadow: 0 8px 30px #0002;
+}
+.meeting-actions-menu button {
+  width: 100%;
+  padding: 9px 10px;
+  justify-content: flex-start;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.meeting-actions-menu button:hover {
+  background: var(--surface);
+}
+#workspace-dock {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+.panel-parking[hidden] {
+  display: none !important;
+}
+#workspace.workbench .notebook,
+#workspace.workbench .minutes-pane,
+#workspace.workbench .transcript-pane {
+  position: static;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+.workbench #notebook-content {
+  height: 100%;
+  padding: 12px 18px 66px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.workbench #notebook-content > .section-heading {
+  display: none;
+}
+.workbench #user-notes {
+  flex: 1;
+  min-height: 0;
+}
+.workbench .document-editor {
+  border: 0;
+}
+.workbench .tiptap {
+  padding: 24px 8px;
+}
+.workbench #minutes-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.workbench .minutes-heading {
+  padding: 10px 22px;
+  gap: 6px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.workbench .minutes-heading > .section-heading {
+  margin: 0;
+  min-height: 26px;
+}
+.workbench .minutes-heading .section-heading > div:first-child {
+  display: none;
+}
+.workbench .minutes-heading .section-actions {
+  width: 100%;
+  justify-content: space-between;
+}
+.workbench .minutes-generate {
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.workbench .auto-indicator {
+  font-size: 10px;
+}
+.workbench .focus-context {
+  font-size: 10px;
+  gap: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: auto;
+  margin: 0;
+}
+.workbench .focus-chip {
+  padding: 2px 5px;
+  font-size: 10px;
+  background: transparent;
+  border: 0;
+}
+.workbench .coverage {
+  font-size: 10px;
+  margin: 0;
+}
+.workbench .notes-progress {
+  font-size: 11px;
+  padding-top: 3px;
+}
+.workbench .minutes-document {
+  max-width: 800px;
+  margin: auto;
+  padding: 28px 32px 90px;
+}
+.workbench .minutes-document-title {
+  margin-bottom: 24px;
+}
+.workbench .minutes-document-title > span {
+  display: none;
+}
+.workbench .minutes-document-title h1 {
+  font: 650 24px/1.35 var(--app-font);
+  letter-spacing: -0.4px;
+}
+.workbench .minutes-section p {
+  font-size: 14px;
+  line-height: 1.85;
+  margin-bottom: 16px;
+}
+.workbench .minutes-colophon {
+  margin-top: 28px;
+}
+.workbench #transcript-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.workbench .dock-resizer {
+  display: none;
+}
+.workbench .transcript-heading {
+  padding: 10px 14px;
+  gap: 8px;
+}
+.workbench .transcript-heading h2 {
+  font-size: 11px;
+}
+.workbench .transcript-heading .search {
+  margin: 0;
+  height: 30px;
+}
+.workbench .transcript-list {
+  flex: 1;
+  min-height: 0;
+  padding: 0 14px;
+}
+.workbench .transcript-pane .segment {
+  padding: 15px 0;
+}
+.workbench .transcript-pane .segment p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.workbench .transcript-pane .player {
+  padding: 8px 14px;
+  font-size: 10px;
+}
+.recording-console.session-strip {
+  position: static;
+  z-index: 18;
+  max-width: none;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-height: 34px;
+}
+.recording-console .session-right {
+  gap: 0;
+  margin: 0;
+}
+.recording-console .session-state {
+  padding: 0 6px;
+  gap: 7px;
+  border-radius: 8px;
+  background: transparent;
+}
+.recording-console .session-state #state-label {
+  font-size: 10px;
+}
+.recording-console .recording-clock .time {
+  font-size: 15px;
+}
+.recording-console .recording-clock small {
+  display: none;
+}
+.recording-console .recording-wave {
+  width: 30px;
+  height: 18px;
+  gap: 1px;
+}
+.recording-console .recording-wave i {
+  height: 16px;
+}
+.recording-console .session-display {
+  gap: 2px;
+}
+.recording-console .session-display .text-button {
+  font-size: 11px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+}
+.recording-console .session-display .text-button svg {
+  width: 14px;
+  height: 14px;
+}
+.recording-console .header-actions {
+  gap: 3px;
+}
+.recording-console .record,
+.recording-console .outline {
+  padding: 7px 10px;
+  margin: 0;
+  border-radius: 9px;
+  font-size: 11px;
+  min-height: 30px;
+  background: var(--text);
+  color: var(--bg);
+  border: 0;
+}
+.recording-console .record.active {
+  background: #d83b36;
+  color: white;
+}
+.recording-console .session-state[data-state="recording"],
+.recording-console .session-state[data-state="paused"] {
+  background: transparent;
+}
+.oma-dock-theme {
+  --dv-background-color: var(--bg);
+  --dv-group-view-background-color: var(--bg);
+  --dv-tabs-and-actions-container-background-color: var(--bg);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--bg);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--bg);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--bg);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--bg);
+  --dv-activegroup-visiblepanel-tab-color: var(--text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--text);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-tab-divider-color: transparent;
+  --dv-separator-border: var(--border);
+  --dv-paneview-header-border-color: var(--border);
+  --dv-tabs-and-actions-container-height: 34px;
+  --dv-font-family: var(--app-font);
+  --dv-tab-font-size: 12px;
+  --dv-drag-over-background-color: color-mix(
+    in srgb,
+    var(--accent) 8%,
+    transparent
+  );
+  --dv-drag-over-border: 1px solid var(--accent);
+  --dv-floating-box-shadow: 0 12px 50px #0002;
+}
+.oma-dock-theme .dv-tabs-and-actions-container {
+  border-bottom: 1px solid var(--border);
+}
+.oma-dock-theme .dv-tab.dv-active-tab {
+  border-bottom: 2px solid var(--text);
+}
+.oma-dock-theme .dv-floating-group-container {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.oma-dock-theme .dv-content-container {
+  overflow: hidden;
+}
+.dock-group-menu {
+  height: 28px;
+  width: 28px;
+  font-size: 18px;
+  color: var(--muted);
+}
+.dock-panel-menu {
+  position: fixed;
+  z-index: 80;
+  width: 190px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 6px;
+  background: var(--panel);
+  box-shadow: 0 8px 30px #0002;
+}
+.dock-panel-menu[hidden] {
+  display: none;
+}
+.dock-panel-menu small {
+  display: block;
+  padding: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.dock-panel-menu button {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.dock-panel-menu button:hover {
+  background: var(--surface);
+}
+.dock-empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  height: 100%;
+  color: var(--muted);
+  gap: 12px;
+}
+.dock-empty button {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.tab-picker {
+  display: flex;
+  flex-direction: column;
+  max-height: 50vh;
+  overflow: auto;
+  gap: 4px;
+}
+.tab-picker button {
+  padding: 10px;
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 6px;
+}
+.tab-picker button:hover {
+  background: var(--surface);
+}
+.saved-layouts > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.saved-layouts > div > span {
+  flex: 1;
+}
+#layout-name {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 18px;
+}
+.main-window .new-meeting {
+  background: var(--text);
+  color: var(--bg);
+}
+@media (max-width: 1100px) {
+  .recording-console.session-strip {
+    gap: 4px;
+  }
+  .recording-console .session-display .text-button > span:not(.view-cc) {
+    display: none;
+  }
+  .recording-console .session-state #state-label {
+    display: none;
+  }
+  .recording-console .session-display .text-button {
+    padding: 6px;
+  }
+  .recording-console .recording-wave {
+    display: none;
+  }
+  .workbench .minutes-document {
+    padding: 22px 24px 90px;
+  }
+  .workbench > .meeting-header {
+    padding: 0 12px;
+  }
+  .meeting-tab {
+    min-width: 80px;
+  }
+  .workbench #sync {
+    display: none;
+  }
+}
+
+.dock-panel-content {
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.oma-dock-theme .dv-resize-container {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.workbench #notebook-content {
+  padding: 0;
+}
+.workbench #user-notes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--bg);
+}
+.workbench .tiptap {
+  padding: 18px 20px 80px;
+  max-width: none;
+}
+.workbench .editor-foot {
+  display: none;
+}
+.editor-toolbar.selection-toolbar {
+  position: fixed;
+  z-index: 75;
+  width: max-content;
+  max-width: calc(100vw - 16px);
+  min-height: 36px;
+  padding: 4px 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px #0002;
+}
+.editor-toolbar.selection-toolbar[hidden] {
+  display: none !important;
+}
+.selection-toolbar .source-toggle {
+  display: none;
+}
+.source-exit {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 8px 12px;
+  color: var(--muted);
+}
+.source-exit[hidden] {
+  display: none;
+}
+
+.workbench .auto-indicator:not(.working) i {
+  background: var(--muted);
+  opacity: 0.6;
+}
+
+.sidebar-new {
+  justify-content: flex-start;
+  padding: 8px 12px;
+  width: 100%;
+  margin-top: 6px;
+}
+.sidebar .quick-record {
+  min-height: 46px;
+  font-size: 14px;
+  gap: 8px;
+}

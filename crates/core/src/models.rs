@@ -130,6 +130,66 @@ impl Engine {
         }
         bail!("Model not installed: {}", spec.name)
     }
+    /// Keep verified model files outside the replaceable application before a runtime-only update.
+    pub fn preserve_bundled_models(&self) -> Result<()> {
+        let store = self.root.join("model-store");
+        fs::create_dir_all(&store)?;
+        for spec in catalog().iter().filter(|s| s.bundled) {
+            let target = store.join(&spec.id);
+            if complete(&target, spec) {
+                continue;
+            }
+            let source = if spec.kind == "asr" {
+                self.models.join("zipformer")
+            } else {
+                self.models.clone()
+            };
+            if !complete(&source, spec) {
+                continue;
+            }
+            if target.exists() {
+                bail!(
+                    "Incomplete model copy exists: {}. Remove it in Settings before updating.",
+                    spec.name
+                );
+            }
+            let stage = store.join(format!(".download-{}", uuid::Uuid::new_v4()));
+            fs::create_dir(&stage)?;
+            let result = (|| -> Result<()> {
+                for a in &spec.files {
+                    let file = source.join(&a.name);
+                    if !fs::symlink_metadata(&file)?.file_type().is_file() {
+                        bail!("Unexpected model file");
+                    }
+                    let mut input = File::open(file)?;
+                    let mut output = File::create(stage.join(&a.name))?;
+                    let mut hash = Sha256::new();
+                    let mut buf = [0_u8; 65536];
+                    let mut bytes = 0;
+                    loop {
+                        let n = input.read(&mut buf)?;
+                        if n == 0 {
+                            break;
+                        }
+                        hash.update(&buf[..n]);
+                        output.write_all(&buf[..n])?;
+                        bytes += n as u64;
+                    }
+                    if bytes != a.bytes || format!("{:x}", hash.finalize()) != a.sha256 {
+                        bail!("Model checksum mismatch; application was not replaced");
+                    }
+                    output.sync_all()?;
+                }
+                fs::rename(&stage, &target)?;
+                Ok(())
+            })();
+            if result.is_err() {
+                let _ = fs::remove_dir_all(&stage);
+            }
+            result?;
+        }
+        Ok(())
+    }
     pub fn model_file(&self, id: &str) -> Result<PathBuf> {
         Ok(self.model_directory(id)?.join(&model(id)?.files[0].name))
     }

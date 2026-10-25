@@ -17,8 +17,8 @@ impl Default for Appearance {
     fn default() -> Self {
         Self {
             mode: "system".into(),
-            theme: "forest".into(),
-            accent: "#e5b866".into(),
+            theme: "neutral".into(),
+            accent: "#d83b36".into(),
             background: String::new(),
             foreground: String::new(),
             font: "system".into(),

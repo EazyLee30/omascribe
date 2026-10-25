@@ -11,7 +11,7 @@ Download the matching installer from [Releases](https://github.com/EazyLee30/oma
 | macOS 11+, Apple Silicon | Open `macOS-AppleSilicon.dmg`; drag OmaScribe into Applications. |
 | macOS 11+, Intel with AVX2 | Open `macOS-Intel.dmg`; drag OmaScribe into Applications. |
 | Windows 10/11, x64 with AVX2 | Run `Windows-x64.exe`; installs for the current user. |
-| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.2_Linux-x64.deb`, or make the AppImage executable and launch it. |
+| Linux x64 with AVX2, Ubuntu 22.04+ or compatible | Install the `.deb` with `sudo apt install ./OmaScribe_0.3.3_Linux-x64.deb`, or make the AppImage executable and launch it. |
 
 The Mac app uses an ad-hoc signature and is not notarized. macOS may require **System Settings → Privacy & Security → Open Anyway** for this particular downloaded app. Windows may show SmartScreen because the app has no publisher certificate. Use the application-specific confirmation after checking the repository and filename; do not disable system-wide protection.
 
@@ -47,10 +47,19 @@ When reporting a problem, include app version, OS version, CPU/architecture, mic
 
 ## What CI verifies
 
-Linux CI is a prerequisite for the exact same source commit. The workflow publishes a stable release only when all five installers have passed. Each native runner executes core tests and strict Clippy, builds the app and inference binaries, packages the verified models, and exercises the actual installed/bundled resources; Linux checks the payload and desktop launch from both the extracted Debian package and AppImage. Public speech checks two takes, restart persistence and retranscription boundaries. Fictional Chinese-date and English-owner/deadline fixtures exercise the real local writing model, evidence checks and transactional storage. A desktop-process launch smoke test checks for immediate startup failure. Validation JSON accompanies each installer.
+Linux CI is a prerequisite for the exact same source commit. The workflow publishes a stable release only when all five installers have passed. Each native runner executes core tests and strict Clippy, builds the app and inference binaries, packages the verified models, and exercises the actual installed/bundled resources; Linux checks the payload and desktop launch from both the extracted Debian package and AppImage. Public speech checks two takes, restart persistence and retranscription boundaries. Fictional Chinese-date and English-owner/deadline fixtures exercise the real local writing model, evidence checks and transactional storage. A desktop-process launch smoke test checks for immediate startup failure. Validation JSON is retained in the GitHub Actions artifacts.
 
 Physical microphone capture, permission dialogs, visual layout, caption behavior across Spaces/monitors, and sustained thermal performance are explicitly outside these hosted-runner checks.
 
 ## 0.3.2 update checks
 
 Verify update consent is off, cancellation works, signatures reject changed bytes and version labels, and active work prevents installation. 0.3.1 installs can upgrade to 0.3.2 through Settings → Software updates; 0.3.0 needs a manual install first. AUR integration is deferred; this release provides AppImage and deb for Linux.
+
+
+## 0.3.3 workspace and smaller updates
+
+The first-time installers still include the default offline models. Version 0.3.3 and later use `latest-runtime.json` for routine application/runtime updates. Before replacing the application, the updater copies bundled weights to `model-store/` with the pinned SHA-256 checks; a failed copy stops installation. Existing managed models are reused. These are component-separated updates, not binary delta patches. Clients through 0.3.2 continue to use the compatible full payload in `latest.json` for one transition update.
+
+Each native release job builds both packages, verifies their signatures, extracts/installs the smaller package, confirms it contains no model weights, migrates models from a full installation and then runs real local ASR and minutes with the migrated models. The smaller payload has a 350 MB upper bound. Validation remains in the Actions artifacts; the normal release description starts with five direct installer links.
+
+`tests/native-workbench.js` exercises meeting tabs, fixed and unframed editor chrome, separate OS transcript windows, docking, named layouts and 740×560 controls in an isolated native WebView. macOS manual UI checks also cover slash commands and the selection-only formatting toolbar. These checks use fictional data; they do not establish speaker-identification accuracy on general meetings. A one-speaker public recording checks preservation of an explicitly named voice; overlap/uncertainty and grouped assignments have unit tests.

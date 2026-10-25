@@ -24,3 +24,5 @@ pub mod update_signature;
 mod recycle;
 
 pub mod translation;
+
+pub mod terminology;

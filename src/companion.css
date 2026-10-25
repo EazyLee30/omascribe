@@ -1,0 +1,302 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #181818;
+  font-size: 12px;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+button,
+select {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button {
+  border: 0;
+  background: transparent;
+}
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #d83b36;
+  outline-offset: 2px;
+}
+button[hidden],
+[hidden] {
+  display: none !important;
+}
+#companion {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.pet-character {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  width: 88px;
+  height: 92px;
+}
+#pet {
+  width: 88px;
+  height: 92px;
+  position: relative;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  border-radius: 20px;
+}
+#pet:active {
+  cursor: grabbing;
+}
+.pet-sprite {
+  position: absolute;
+  inset: 0 0 4px;
+  background-size: 400% 200%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  filter: grayscale(1) drop-shadow(0 3px 2px #0002);
+  pointer-events: none;
+}
+.animated .pet-sprite {
+  animation: pet-breathe 4s ease-in-out infinite;
+}
+#pet-time {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 1px;
+  background: #181818;
+  color: #fff;
+  font:
+    600 11px/19px ui-monospace,
+    monospace;
+  border-radius: 9px;
+  pointer-events: none;
+}
+#pet-time:empty {
+  display: none;
+}
+.pet-rec-dot {
+  display: none;
+  position: absolute;
+  right: 13px;
+  top: 16px;
+  background: #d83b36;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  pointer-events: none;
+}
+[data-state="recording"] .pet-rec-dot {
+  display: block;
+  animation: pet-signal 1.6s ease-in-out infinite;
+}
+[data-state="paused"] .pet-rec-dot {
+  display: block;
+  background: #777;
+}
+#pet-grip {
+  position: absolute;
+  top: 23px;
+  left: -18px;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  z-index: 2;
+  cursor: grab;
+}
+#pet-grip svg {
+  pointer-events: none;
+}
+.pet-panel {
+  display: none;
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  right: 8px;
+  bottom: 88px;
+  padding: 13px 15px;
+  background: #fffffff5;
+  border: 1px solid #dedede;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px #0002;
+  backdrop-filter: blur(18px);
+  overflow: auto;
+}
+.expanded .pet-panel {
+  display: block;
+}
+.expanded .pet-character {
+  bottom: 2px;
+  height: 92px;
+  width: 88px;
+}
+.expanded #pet {
+  height: 92px;
+  width: 88px;
+}
+.expanded .pet-sprite {
+  inset: 0 0 4px;
+}
+.expanded #pet-time {
+  left: -48px;
+  right: 95px;
+  bottom: 13px;
+  min-width: 57px;
+  text-align: center;
+}
+.pet-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.pet-panel header > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pet-panel header i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #aaa;
+}
+[data-state="recording"] .pet-panel header i {
+  background: #d83b36;
+}
+.pet-panel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 7px;
+  padding: 6px 8px;
+}
+.pet-panel button:hover {
+  background: #eee;
+}
+#pet-meeting {
+  margin: 7px 0 2px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pet-local {
+  font-size: 10px;
+  color: #777;
+  margin: 0 0 10px;
+}
+.pet-record {
+  display: flex;
+  gap: 7px;
+}
+.pet-record button {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  flex: 1;
+  background: #ededed;
+}
+.pet-record .pet-primary {
+  background: #181818;
+  color: #fff;
+}
+.pet-record .pet-stop {
+  background: #d83b36;
+  color: #fff;
+}
+.pet-record .pet-primary:hover {
+  background: #333;
+}
+.pet-record .pet-stop:hover {
+  background: #bc2f2c;
+}
+.pet-views {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  margin-top: 8px;
+}
+.pet-views button {
+  padding: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pet-views button[aria-pressed="true"] {
+  box-shadow: inset 0 -2px #d83b36;
+  background: #f4f4f4;
+}
+.pet-views label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pet-views select {
+  border: 0;
+  background: transparent;
+  padding: 5px 0;
+  font-size: 11px;
+  max-width: 80px;
+}
+.pet-panel-foot {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-top: 1px solid #eee;
+  margin-top: 7px;
+  padding-top: 5px;
+  font-size: 10px;
+  color: #666;
+}
+.pet-panel-foot button:first-child {
+  margin-right: auto;
+}
+.pet-panel-foot button {
+  padding: 4px;
+}
+#pet-error {
+  margin: 5px 0;
+  color: #b22;
+  font-size: 10px;
+}
+@keyframes pet-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes pet-signal {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animated .pet-sprite,
+  [data-state="recording"] .pet-rec-dot {
+    animation: none;
+  }
+}

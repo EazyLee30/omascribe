@@ -1,0 +1,49 @@
+import {
+  createElement,
+  Mic,
+  Pause,
+  Play,
+  Square,
+  Languages,
+  Maximize2,
+  Minimize2,
+  MoreHorizontal,
+  PanelRightClose,
+  X,
+  Captions,
+  Search,
+  ArrowUpRight,
+  GripVertical,
+  ChevronDown,
+} from "lucide";
+const icons = {
+  mic: Mic,
+  pause: Pause,
+  play: Play,
+  stop: Square,
+  translate: Languages,
+  maximize: Maximize2,
+  collapse: Minimize2,
+  more: MoreHorizontal,
+  dock: PanelRightClose,
+  close: X,
+  captions: Captions,
+  search: Search,
+  return: ArrowUpRight,
+  grip: GripVertical,
+  chevron: ChevronDown,
+};
+export function uiIcon(name: keyof typeof icons, size = 18) {
+  const [tag, attrs, children] = icons[name];
+  return createElement([
+    tag,
+    {
+      ...attrs,
+      width: size,
+      height: size,
+      "stroke-width": 1.7,
+      "aria-hidden": "true",
+    },
+    children,
+  ]).outerHTML;
+}

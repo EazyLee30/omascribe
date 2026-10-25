@@ -54,9 +54,14 @@ fn trusted_url(url: &tauri::Url, version: &str) -> bool {
         && url.port().is_none()
         && url.query().is_none()
         && url.fragment().is_none()
-        && url.path().starts_with(&format!(
-            "/EazyLee30/omascribe/releases/download/v{version}/OmaScribe_{version}_"
-        ))
+        && [
+            format!("/EazyLee30/omascribe/releases/download/v{version}/OmaScribe_{version}_"),
+            format!(
+                "/EazyLee30/omascribe/releases/download/v{version}-updates/OmaScribe_{version}_"
+            ),
+        ]
+        .iter()
+        .any(|prefix| url.path().starts_with(prefix))
         && !version.is_empty()
         && version.bytes().all(|c| c.is_ascii_digit() || c == b'.')
 }
@@ -208,6 +213,7 @@ pub async fn install_update(
     let result = tauri::async_runtime::spawn_blocking(move || -> Reply<()> {
         let bytes = std::fs::read(e.root.join("updates/verified-update.bin")).map_err(err)?;
         update.verify(&bytes).map_err(err)?;
+        e.preserve_bundled_models().map_err(err)?;
         e.shutdown();
         update.install(bytes).map_err(err)
     })
@@ -230,6 +236,9 @@ mod tests {
     fn release_urls_are_fixed_to_this_repository_and_version() {
         let good = "https://github.com/EazyLee30/omascribe/releases/download/v0.3.1/OmaScribe_0.3.1_macOS-AppleSilicon.app.tar.gz";
         assert!(trusted_url(&good.parse().unwrap(), "0.3.1"));
+        let runtime = "https://github.com/EazyLee30/omascribe/releases/download/v0.3.3-updates/OmaScribe_0.3.3_macOS-AppleSilicon-runtime.app.tar.gz";
+        assert!(trusted_url(&runtime.parse().unwrap(), "0.3.3"));
+        assert!(!trusted_url(&runtime.parse().unwrap(), "0.3.2"));
         for bad in [
             good.replace("https:", "http:"),
             good.replace("github.com/", "github.com.evil.test/"),

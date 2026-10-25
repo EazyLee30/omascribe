@@ -21,3 +21,5 @@ __pycache__/
 /release-assets/
 /ci-results/
 /src-tauri/tauri.release.conf.json
+
+/src-tauri/tauri.runtime.conf.json

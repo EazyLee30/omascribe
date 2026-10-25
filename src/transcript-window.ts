@@ -1,3 +1,5 @@
+import { uiIcon } from "./ui-icons";
+import { tr } from "./workspace-ui";
 import { passageHTML, translationSelect } from "./translation-ui";
 import { getPreferences, savePreferences } from "./preferences-client";
 import { invoke } from "@tauri-apps/api/core";
@@ -13,6 +15,7 @@ import type { Snapshot } from "./types";
 import { t } from "./i18n";
 import "./style.css";
 import "./workspace.css";
+import "./floating.css";
 import { initAppearance } from "./preferences-client";
 import { speakerName } from "./speaker-ui";
 const esc = (value: string) =>
@@ -37,8 +40,10 @@ let prefs: ViewPreferences,
 const root = document.querySelector<HTMLElement>("#app")!;
 function error(e: unknown) {
   const el = document.querySelector<HTMLElement>("#float-error")!;
-  el.textContent = String(e);
-  el.hidden = false;
+  if (el) {
+    el.textContent = String(e);
+    el.hidden = false;
+  }
 }
 function apply(p: ViewPreferences) {
   prefs = p;
@@ -63,10 +68,36 @@ async function render() {
     }
     document.querySelector("#float-title")!.textContent =
       snapshot.meeting.title;
-    document.querySelector("#float-state")!.textContent = snapshot.runtime
-      .paused
+    const own = snapshot.runtime.meeting_id === snapshot.meeting.id;
+    const recording = own && snapshot.runtime.recording,
+      paused = own && snapshot.runtime.paused;
+    root.dataset.recording = recording
+      ? "recording"
+      : paused
+        ? "paused"
+        : "ready";
+    document.querySelector("#float-elapsed")!.textContent = time(
+      snapshot.meeting.duration_ms,
+    );
+    const pause = root.querySelector<HTMLButtonElement>(
+      "[data-action='pause']",
+    )!;
+    pause.hidden = !recording && !paused;
+    pause.innerHTML = uiIcon(paused ? "play" : "pause");
+    pause.title = paused ? t("resume") : t("pause");
+    pause.setAttribute("aria-label", pause.title);
+    (root.querySelector("[data-action='stop']") as HTMLElement).hidden =
+      !recording && !paused;
+    (root.querySelector("[data-action='record']") as HTMLElement).hidden =
+      recording || paused;
+    root.querySelector<HTMLSelectElement>("#float-translation-mode")!.value =
+      snapshot.translation_mode;
+    root
+      .querySelector("[data-action='captions']")!
+      .setAttribute("aria-pressed", String(prefs.captions.enabled));
+    document.querySelector("#float-state")!.textContent = paused
       ? t("paused")
-      : snapshot.runtime.recording
+      : recording
         ? t("live")
         : t("transcript");
     const query = (
@@ -88,7 +119,11 @@ async function render() {
     const bottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
     pane.innerHTML =
       snapshot.segments
-        .filter((s) => s.text.toLocaleLowerCase().includes(query))
+        .filter((s) =>
+          (s.text + " " + (snapshot?.translations?.[s.id]?.text || ""))
+            .toLocaleLowerCase()
+            .includes(query),
+        )
         .map(
           (s) =>
             `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span>${passageHTML(s, snapshot!)}</article>`,
@@ -109,7 +144,7 @@ async function render() {
 async function init() {
   await initAppearance();
   document.body.classList.add("floating-transcript-app");
-  root.innerHTML = `<header class="float-header"><div class="float-drag"><span class="float-status-dot"></span><div><strong id="float-state">${t("transcript")}</strong><small id="float-title">OmaScribe</small></div></div><div class="float-actions"><button data-action="dock" title="${t("dockRight")}" aria-label="${t("dockRight")}">⇥</button><button data-action="settings" title="${t("displaySettings")}" aria-label="${t("displaySettings")}">⚙</button><button id="float-collapse" data-action="collapse" aria-label="${t("collapse")}">⌃</button><button data-action="close" title="${t("close")}" aria-label="${t("close")}">×</button></div></header><p id="float-preview"></p><div class="float-body"><div class="float-tools">${translationSelect("float-translation-mode")}<input id="float-search" placeholder="${t("search")}" aria-label="${t("search")}"><select id="float-snap" aria-label="${t("snapTo")}"><option value="free">${t("freePosition")}</option><option value="left">${t("screenLeft")}</option><option value="right">${t("screenRight")}</option></select></div><div id="float-error" role="alert" hidden></div><div id="float-transcript"></div><audio id="float-player" controls hidden></audio></div><span class="float-resize" role="separator" aria-label="${t("resizeWindow")}">◢</span>`;
+  root.innerHTML = `<header class="float-header"><div class="float-drag" data-tauri-drag-region title="${tr("拖动独立浮窗", "Drag this window", "拖曳獨立浮窗")}">${uiIcon("grip", 14)}<span class="float-status-dot"></span><span id="float-elapsed">00:00:00</span></div><div class="float-record-controls"><button data-action="record" title="${t("record")}" aria-label="${t("record")}">${uiIcon("mic")}</button><button data-action="pause" title="${t("pause")}" aria-label="${t("pause")}" hidden>${uiIcon("pause")}</button><button data-action="stop" class="float-stop" hidden>${uiIcon("stop", 14)}${tr("结束", "End", "結束")}</button></div><span class="float-separator"></span><label class="float-language" title="${tr("本地翻译 · 保留原文", "On-device translation · Original kept", "本機翻譯 · 保留原文")}">${uiIcon("translate", 16)}${translationSelect("float-translation-mode")}</label><button data-action="captions" title="${tr("实时字幕", "Live captions", "即時字幕")}" aria-label="${tr("实时字幕", "Live captions", "即時字幕")}" aria-pressed="false">${uiIcon("captions")}</button><button data-action="maximize" title="${tr("最大化 / 还原", "Maximize / restore", "最大化 / 還原")}" aria-label="${tr("最大化 / 还原", "Maximize / restore", "最大化 / 還原")}">${uiIcon("maximize")}</button><details class="float-more"><summary aria-label="${tr("更多操作", "More actions", "更多操作")}">${uiIcon("more")}</summary><div class="float-more-menu"><button data-action="dock">${uiIcon("dock")}${tr("停靠到主窗口", "Dock in main window", "停靠至主視窗")}</button><button data-action="search">${uiIcon("search")}${tr("搜索转写", "Search transcript", "搜尋轉寫")}</button><button id="float-collapse" data-action="collapse">${uiIcon("collapse")}${tr("收起 / 展开", "Collapse / expand", "收起 / 展開")}</button><label>${tr("屏幕位置", "Screen position", "螢幕位置")}<select id="float-snap" aria-label="${t("snapTo")}"><option value="free">${t("freePosition")}</option><option value="left">${t("screenLeft")}</option><option value="right">${t("screenRight")}</option></select></label><button data-action="settings">${tr("字幕与显示设置…", "Caption & display settings…", "字幕及顯示設定…")}</button></div></details><button data-action="close" title="${t("close")}" aria-label="${t("close")}">${uiIcon("close", 16)}</button></header><div class="float-context"><span id="float-state"></span><small id="float-title">OmaScribe</small></div><p id="float-preview"></p><div class="float-body"><div class="float-tools" hidden><input id="float-search" placeholder="${t("search")}" aria-label="${t("search")}"></div><div id="float-error" role="alert" hidden></div><div id="float-transcript"></div><audio id="float-player" controls hidden></audio><button class="float-return" data-action="return">${uiIcon("return", 16)}${tr("回到会议", "Back to meeting", "回到會議")}</button></div><span class="float-resize" role="separator" aria-label="${t("resizeWindow")}"></span>`;
   const mode = root.querySelector<HTMLSelectElement>(
     "#float-translation-mode",
   )!;
@@ -127,9 +162,6 @@ async function init() {
   apply(await getViewSettings());
   (document.querySelector("#float-snap") as HTMLSelectElement).value =
     prefs.snap;
-  root.querySelector(".float-drag")!.addEventListener("mousedown", (e) => {
-    if ((e as MouseEvent).button === 0) invoke("drag_transcript").catch(error);
-  });
   root
     .querySelector(".float-resize")!
     .addEventListener("mousedown", () =>
@@ -139,9 +171,45 @@ async function init() {
     const button = (event.target as HTMLElement).closest<HTMLElement>("button");
     if (!button) return;
     try {
+      button.closest("details")?.removeAttribute("open");
       switch (button.dataset.action) {
+        case "record":
+          if (snapshot)
+            await invoke("start_recording", {
+              id: snapshot.meeting.id,
+              device: localStorage.getItem("omascribe-device") || "auto",
+            });
+          break;
+        case "pause":
+          await invoke(
+            snapshot?.runtime.paused ? "resume_recording" : "pause_recording",
+          );
+          break;
+        case "stop":
+          await invoke("stop_recording");
+          break;
+        case "captions":
+          await patchViewSettings({
+            captions: { ...prefs.captions, enabled: !prefs.captions.enabled },
+          });
+          break;
+        case "maximize":
+          await getCurrentWindow().toggleMaximize();
+          break;
+        case "return":
+          await invoke("show_main_window");
+          break;
+        case "search": {
+          const tools = root.querySelector<HTMLElement>(".float-tools")!;
+          tools.hidden = !tools.hidden;
+          if (!tools.hidden)
+            root.querySelector<HTMLInputElement>("#float-search")!.focus();
+          break;
+        }
+
         case "dock":
           await patchViewSettings({ transcript_mode: "docked" });
+          await invoke("show_main_window");
           return;
         case "close":
           await patchViewSettings({ transcript_mode: "hidden" });
