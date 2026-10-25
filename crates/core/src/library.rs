@@ -168,6 +168,7 @@ impl Engine {
     ) -> Result<serde_json::Value> {
         let prefs = self.preferences.lock().unwrap().clone();
         let entries = self.library_entries()?;
+        let spellings = crate::terminology::Terms::new(notes, &entries).spellings(transcript);
         let terms:Vec<_>=entries.iter().filter(|e|!e.deleted&&e.enabled&&e.kind=="term").take(40).map(|e|serde_json::json!({"term":e.title,"aliases":e.aliases,"definition":e.content.chars().take(160).collect::<String>()})).collect();
         let memory: Vec<_> = entries
             .iter()
@@ -190,7 +191,7 @@ impl Engine {
             let e=candidates[i];serde_json::json!({"title":e.title,"context":e.content.chars().take(320).collect::<String>()})
         }).collect();
         Ok(
-            serde_json::json!({"glossary":terms,"writing_preferences":memory,"background_notes":knowledge}),
+            serde_json::json!({"spellings":spellings,"glossary":terms,"writing_preferences":memory,"background_notes":knowledge}),
         )
     }
 }

@@ -349,6 +349,7 @@ fn generate_inner(
     ];
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
+    let terms = engine.terminology(meeting)?;
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
@@ -409,14 +410,20 @@ fn generate_inner(
                 error
             }
         })?;
-        let validation = validation::validate_with_speakers(
-            &text,
-            &context.segments,
-            meeting,
-            &snapshot.meeting.speaker_names,
-        );
+        let normalized = terms.normalize_draft(&text);
+        let validation = normalized
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("{e}"))
+            .and_then(|draft| {
+                validation::validate_with_speakers(
+                    draft,
+                    &context.segments,
+                    meeting,
+                    &snapshot.meeting.speaker_names,
+                )
+            });
         attempts.push(json!({
-            "attempt":attempt+1, "draft":text, "usage":usage,
+            "attempt":attempt+1, "draft":text, "normalized_draft":normalized.ok(), "usage":usage,
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
             "input_tokens":prompt_tokens, "context_size":prefs.context_size,
@@ -441,8 +448,12 @@ fn generate_inner(
                 // Rebuild from the pending evidence instead of feeding the failed draft back
                 // as an example: small local models otherwise repeat its invalid attributions.
                 // Keep historical evidence too: a repair must not forget earlier decisions.
-                let (repair_system, repair_content) =
-                    writer::prompt(snapshot, &context, &json!({}), &prefs.minutes_language);
+                let (repair_system, repair_content) = writer::prompt(
+                    snapshot,
+                    &context,
+                    &json!({"spellings":background["spellings"]}),
+                    &prefs.minutes_language,
+                );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
                 let attribution = error.to_string().contains("speaker attribution");
                 if attribution {

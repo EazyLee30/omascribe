@@ -15,6 +15,7 @@ impl Store {
             CREATE TABLE IF NOT EXISTS segments(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, run INTEGER NOT NULL, seq INTEGER NOT NULL, json TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS segments_meeting ON segments(meeting_id,run,seq);
             CREATE TABLE IF NOT EXISTS segment_history(id TEXT NOT NULL, revision INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY(id,revision));
+            CREATE TABLE IF NOT EXISTS segment_text_edits(id TEXT NOT NULL, revision INTEGER NOT NULL, origin TEXT NOT NULL, PRIMARY KEY(id,revision));
             CREATE TABLE IF NOT EXISTS notes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS suggestions(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, json TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS document_history(id INTEGER PRIMARY KEY, meeting_id TEXT NOT NULL, created_at TEXT NOT NULL, json TEXT NOT NULL);
@@ -23,7 +24,7 @@ impl Store {
             CREATE TABLE IF NOT EXISTS translations(segment_id TEXT NOT NULL,revision INTEGER NOT NULL,target TEXT NOT NULL,model TEXT NOT NULL,json TEXT NOT NULL, PRIMARY KEY(segment_id,revision,target,model));
             CREATE TABLE IF NOT EXISTS deleted_meetings(id TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
-            PRAGMA user_version=4;")?;
+            PRAGMA user_version=5;")?;
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
         Ok(Self { conn })
     }
@@ -79,6 +80,15 @@ impl Store {
         Ok(())
     }
     pub fn edit_segment(&mut self, id: &str, text: &str, expected_revision: u32) -> Result<()> {
+        self.edit_segment_text(id, text, expected_revision, "human")
+    }
+    pub(crate) fn edit_segment_text(
+        &mut self,
+        id: &str,
+        text: &str,
+        expected_revision: u32,
+        origin: &str,
+    ) -> Result<()> {
         let original: String =
             self.conn
                 .query_row("SELECT json FROM segments WHERE id=?1", [id], |r| r.get(0))?;
@@ -96,6 +106,10 @@ impl Store {
         tx.execute(
             "UPDATE segments SET json=?2 WHERE id=?1",
             params![id, serde_json::to_string(&s)?],
+        )?;
+        tx.execute(
+            "INSERT INTO segment_text_edits VALUES(?1,?2,?3)",
+            params![id, s.revision, origin],
         )?;
         tx.commit()?;
         for mut suggestion in self.suggestions(&s.meeting_id)? {

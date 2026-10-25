@@ -674,6 +674,8 @@ impl Engine {
         let engine = self.clone();
         thread::spawn(move || {
             let mut complete = false;
+            let mut partial_terms = engine.terminology(&active.id).ok();
+            let mut terms_refreshed = Instant::now();
             for line in BufReader::new(output).lines() {
                 let Ok(line) = line else { break };
                 let Ok(event) = serde_json::from_str::<AsrEvent>(&line) else {
@@ -681,7 +683,17 @@ impl Engine {
                 };
                 match event {
                     AsrEvent::Ready => {}
-                    AsrEvent::Partial { text } => engine.status.lock().unwrap().partial = text,
+                    AsrEvent::Partial { text } => {
+                        // A live caption uses the same spellings as a finalized passage.
+                        // Refresh at most once a second, not on every decoder event.
+                        if terms_refreshed.elapsed() >= Duration::from_secs(1) {
+                            partial_terms = engine.terminology(&active.id).ok();
+                            terms_refreshed = Instant::now();
+                        }
+                        engine.status.lock().unwrap().partial = partial_terms
+                            .as_ref()
+                            .map_or_else(|| text.clone(), |terms| terms.normalize(&text));
+                    }
                     AsrEvent::Progress { processed_ms, rtf } => {
                         let mut s = engine.status.lock().unwrap();
                         s.processed_ms = processed_ms;

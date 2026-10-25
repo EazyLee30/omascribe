@@ -18,6 +18,11 @@ def assess(case, snapshot):
         if not re.search(expression, text, re.I): errors.append("Missing: " + expression)
     for expression in case.get("forbidden", []):
         if re.search(expression, text, re.I): errors.append("Unsupported claim: " + expression)
+    transcript = "\n".join(s["text"] for s in snapshot["segments"])
+    for expression in case.get("required_transcript", []):
+        if not re.search(expression, transcript): errors.append("Transcript missing canonical name: " + expression)
+    for expression in case.get("forbidden_transcript", []):
+        if re.search(expression, transcript): errors.append("Uncorrected transcript: " + expression)
     if len(sections) > case.get("max_sections", len(sections)):
         errors.append("Related material fragmented into too many paragraphs")
     if case.get("merged_sources") and not any(len(s["sources"]) > 1 for s in sections):
