@@ -11,6 +11,8 @@ try{
  check(document.querySelector('#workspace-dock .dv-dockview'),'Docking library missing');
  check(document.querySelectorAll('.meeting-header').length===1,'Duplicate meeting toolbar');
  const title=document.querySelector('#meeting-title');title.focus();check(getComputedStyle(title).outlineStyle==='none','Long title focus frame');
+ check(!document.querySelector('#sync'),'Redundant persistent save label returned');
+ check(title.getBoundingClientRect().right<=document.querySelector('.recording-console').getBoundingClientRect().left+1,'Toolbar actions overlap the meeting title');
  check(title.getBoundingClientRect().width<document.querySelector('.meeting-header').clientWidth*.8,'Title fills toolbar');title.blur();
  check(document.querySelector('.window-toolbar').getBoundingClientRect().height===44,'Title bar too tall');
  check(document.querySelector('#workspace-dock').getBoundingClientRect().top<100,'Too much chrome above content');
@@ -65,6 +67,5 @@ try{
  check((await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Companion cannot be restored');
  checks.push('Desktop pet has a separate transparent surface; controls expand and the visibility preference persists');
  await invoke('ui_test_report',{report:{passed:true,checks}});
- await invoke('set_companion_expanded',{expanded:true});
 }catch(e){await invoke('ui_test_report',{report:{passed:false,error:String(e),checks,diagnostics:{mode:document.querySelector(".transcript-toggle")?.getAttribute("aria-pressed"),floating:document.querySelectorAll(".dv-resize-container").length,transcriptParent:document.querySelector(".transcript-pane")?.parentElement?.outerHTML.slice(0,400),visibleText:document.querySelector(".transcript-pane")?.innerText.slice(0,160)}}})}
 })();

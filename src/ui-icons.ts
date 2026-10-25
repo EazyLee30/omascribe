@@ -2,6 +2,7 @@ import {
   createElement,
   Mic,
   Bot,
+  FileText,
   Pause,
   Play,
   Square,
@@ -20,6 +21,7 @@ import {
 const icons = {
   mic: Mic,
   bot: Bot,
+  transcript: FileText,
   pause: Pause,
   play: Play,
   stop: Square,

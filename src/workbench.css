@@ -357,7 +357,7 @@
   background: transparent;
 }
 .recording-console .session-state #state-label {
-  font-size: 10px;
+  display: none;
 }
 .recording-console .recording-clock .time {
   font-size: 15px;
@@ -646,4 +646,44 @@
   justify-content: flex-start;
   text-align: left;
   white-space: nowrap;
+}
+
+.workbench .meeting-header .heading {
+  min-width: 80px;
+  overflow: hidden;
+}
+.workbench .title-line {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr);
+}
+.workbench #meeting-title {
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.recording-console
+  .session-state:not([data-state="recording"])
+  .recording-wave {
+  display: none;
+}
+.recording-console .session-state[data-state="recording"] .time {
+  color: #d83b36;
+}
+.recording-console .session-state[data-state="paused"] .time {
+  color: #9b6a20;
+}
+.recording-console .session-display .text-button {
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+}
+.recording-console .session-display .text-button svg {
+  width: 18px;
+  height: 18px;
+}
+.recording-console #pause-recording,
+.recording-console #end-recording {
+  width: 30px;
+  padding: 6px;
 }
