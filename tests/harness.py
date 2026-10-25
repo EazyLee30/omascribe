@@ -3,7 +3,7 @@
 Use prepare_asr_fixtures.py explicitly to prepare pinned public audio first.
 """
 import argparse, json, os, pathlib, subprocess, sys, time
-from harness_support import REPO, read_json, write_json
+from harness_support import suite_passed, REPO, read_json, write_json
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
             failure=None if run.returncode==0 else f"exit {run.returncode}"
         except Exception as error:failure=str(error)
         report["runs"].append(dict(suite=name,passed=failure is None,error=failure,seconds=round(time.monotonic()-start,3)))
-        report["passed"]=all(r["passed"] for r in report["runs"])
+        report["passed"]=suite_passed(report["runs"], len(jobs))
         write_json(a.output/"report.json",report)
     raise SystemExit(0 if report["passed"] else 1)
 

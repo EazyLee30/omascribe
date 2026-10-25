@@ -49,5 +49,13 @@ class AsrMetricTests(unittest.TestCase):
         self.assertTrue(asr.regression({"model/en": {"error_rate":.1}}, {"model/en": {"error_rate":.13}}, .02))
         self.assertFalse(asr.regression({"model/en": {"error_rate":.1}}, {"model/en": {"error_rate":.09}}, .02))
 
+class CompletionTests(unittest.TestCase):
+    def test_partial_and_empty_runs_cannot_report_success(self):
+        from harness_support import suite_passed
+        self.assertFalse(suite_passed([], 0))
+        self.assertFalse(suite_passed([{"passed": True}], 2))
+        self.assertFalse(suite_passed([{"passed": True}, {"passed": False}], 2))
+        self.assertTrue(suite_passed([{"passed": True}, {"passed": True}], 2))
+
 if __name__ == "__main__":
     unittest.main()

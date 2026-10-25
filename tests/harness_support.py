@@ -3,6 +3,9 @@ import hashlib, json, os, pathlib, platform, shutil, signal, subprocess, time
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
+def suite_passed(results, expected):
+    return expected > 0 and len(results) == expected and all(r.get("passed") is True for r in results)
+
 def write_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     part = path.with_suffix(path.suffix + ".part")

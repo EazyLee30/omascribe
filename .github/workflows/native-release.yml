@@ -157,7 +157,9 @@ jobs:
         if: always()
         with:
           name: validation-${{ matrix.target }}
-          path: ci-results/
+          path: |
+            ci-results/
+            !ci-results/**/model-store/**
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:

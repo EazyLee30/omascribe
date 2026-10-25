@@ -34,3 +34,13 @@ class UpdateManifestTests(unittest.TestCase):
                 self.assertIn('/v0.3.3-updates/',data['url'])
                 self.assertIn('-runtime.',data['url'])
             with self.assertRaises(AssertionError):module.manifest(assets,'0.3.3','Notes')
+
+
+class RuntimeInventoryTests(unittest.TestCase):
+    def test_payload_inventory_rejects_models_but_allows_runtime_libraries(self):
+        spec = importlib.util.spec_from_file_location("runtime_update", pathlib.Path(__file__).parents[1] / "scripts/native-runtime-update.py")
+        runtime = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runtime)
+        runtime.assert_runtime_inventory("Path = update.exe\nPath = native\\runtime\\sherpa-onnx-c-api.dll\n")
+        for member in ["native\\models\\tokens.txt", "native\\weights.gguf", "native\\encoder.onnx"]:
+            with self.assertRaises(AssertionError): runtime.assert_runtime_inventory("Path = update.exe\nPath = " + member)

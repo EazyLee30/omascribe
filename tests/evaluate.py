@@ -4,7 +4,7 @@ Fictional inputs only. Pattern checks catch targeted regressions, not all semant
 """
 import argparse, datetime, json, pathlib, re, shutil, sqlite3, time, uuid
 from contextlib import closing
-from harness_support import REPO, command, environment, isolated_env, read_json, sha256, write_json
+from harness_support import suite_passed, REPO, command, environment, isolated_env, read_json, sha256, write_json
 
 
 def assess(case, snapshot):
@@ -123,7 +123,7 @@ def evaluate(args):
             coverage=snapshot["meeting"]["notes_cursor"] if snapshot else 0,
             status=snapshot["runtime"]["notes_status"] if snapshot else "failed")
         report["cases"].append(result)
-        report["passed"] = all(r["passed"] for r in report["cases"])
+        report["passed"] = suite_passed(report["cases"], len(cases))
         write_json(output, report)
         print(case["name"], "PASS" if not errors else errors, flush=True)
     return report["passed"]

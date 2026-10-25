@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real worker compatibility tests: local/shared/missing tokenizer and silence."""
 import argparse, json, os, pathlib, subprocess, time, wave
-from harness_support import REPO, read_json, write_json
+from harness_support import suite_passed, REPO, read_json, write_json
 
 
 def main():
@@ -51,7 +51,7 @@ def main():
             if name != "hotwords_on_silence" and not segments: errors.append("No speech recognized")
         except Exception as error: errors.append(f"{type(error).__name__}: {error}")
         report["cases"].append(dict(case=name,passed=not errors,errors=errors,config=config,seconds=round(time.monotonic()-start,3)))
-        report["passed"]=all(c["passed"] for c in report["cases"])
+        report["passed"]=suite_passed(report["cases"], len(cases))
         write_json(a.output,report)
         print(name,"PASS" if not errors else errors,flush=True)
     raise SystemExit(0 if report["passed"] else 1)
