@@ -49,6 +49,8 @@ python3 tests/harness.py \
 
 跨平台安装包烟测另外执行六个本地纪要场景，覆盖中文日期、英文期限、试麦过滤、多轮更正、说话人和长上下文。轻量 CI 执行评分器测试、Rust 校验及流式中断/原文保护测试；公开语料全套需要显式准备后运行。
 
+本轮固定样本的前后对照及限制见 [core-0.3.3.json](evaluation/core-0.3.3.json)。
+
 ## 语料和指标范围
 
 [FLEURS, Google](https://huggingface.co/datasets/google/fleurs)，CC BY 4.0，固定 revision `70bb2e84b976b7e960aa89f1c648e09c59f894dd`。处理包括选取固定句子和转换为 16 kHz 单声道 PCM；原始音频及转换音频均记录摘要，所有文本使用官方参考。中文参考有英文专名括注，因此 CER 也包含这些字符；不人为删除模型识别困难的词。

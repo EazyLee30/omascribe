@@ -300,3 +300,44 @@ button[hidden],
     animation: none;
   }
 }
+
+.pet-hover-hide {
+  position: absolute;
+  top: -11px;
+  right: 0;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 23px;
+  padding: 3px 6px;
+  border: 1px solid #d6d6d6;
+  border-radius: 8px;
+  background: #fffffff5;
+  box-shadow: 0 2px 6px #0001;
+  color: #292929;
+  font-size: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.pet-character:hover .pet-hover-hide,
+.pet-character:focus-within .pet-hover-hide {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pet-hover-hide svg {
+  pointer-events: none;
+}
+@media (hover: none) {
+  .pet-hover-hide {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pet-hover-hide {
+    transition: none;
+  }
+}

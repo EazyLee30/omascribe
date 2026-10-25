@@ -1,4 +1,5 @@
-import { bindWindowDrag, macDesktop } from "./window-drag";
+import { bindTitlebar, macDesktop } from "./window-drag";
+import { bindWindowResize } from "./window-resize";
 import { uiIcon } from "./ui-icons";
 import { WorkspaceDock, type DockPanel } from "./workspace-dock";
 import { translationSelect, passageHTML } from "./translation-ui";
@@ -153,7 +154,7 @@ function panelRail(panel: Panel) {
       )
       .join(
         "",
-      )}</nav><div class="rail-bottom"><button class="rail-action" data-page="settings" title="${t("settings")}" aria-label="${t("settings")}">${icon("settings")}</button></div></div>`;
+      )}</nav><div class="rail-bottom"><button class="rail-action" data-action="toggle-companion">${uiIcon("bot")}</button><button class="rail-action" data-page="settings" title="${t("settings")}" aria-label="${t("settings")}">${icon("settings")}</button></div></div>`;
   }
   return `<div class="panel-rail" data-rail="${panel}" hidden>${panelButton(panel, false)}<span aria-hidden="true">${t(panelLabels[panel])}</span></div>`;
 }
@@ -204,9 +205,9 @@ function shell() {
       )
       .join(
         "",
-      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><button class="subtle" data-action="show-companion" title="${tr("显示桌面录音助手", "Show desktop recording companion", "顯示桌面錄音助手")}">${uiIcon("bot")}${tr("桌面助手", "Desktop pet", "桌面助手")}</button><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="quick-record">${icon("mic")}${tr("开始录音", "Start recording", "開始錄音")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
-  if (macDesktop)
-    bindWindowDrag($(".window-toolbar"), (e) => toast(String(e), true), true);
+      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><button class="subtle companion-toggle" data-action="toggle-companion">${uiIcon("bot")}<span class="pet-toggle-label">${tr("桌面助手", "Desktop pet", "桌面助手")}</span><span class="pet-toggle-hint"></span></button><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="quick-record">${icon("mic")}${tr("开始录音", "Start recording", "開始錄音")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
+  bindTitlebar($(".window-toolbar"), (e) => toast(String(e), true));
+  bindWindowResize($("#app"), (e) => toast(String(e), true));
   renderMeetings();
   if (current && page === "meeting") meetingShell();
   applyViews();
@@ -871,7 +872,7 @@ function renderViewMenu() {
     minutes: !viewSettings.minutes_collapsed,
     transcript: viewSettings.transcript_mode === "docked",
   };
-  menu.innerHTML = `<button role="menuitem" data-action="show-companion">${uiIcon("bot")}${tr("显示桌面小助手", "Show desktop companion", "顯示桌面助手")}</button><div class="view-menu-divider"></div><div class="view-menu-caption">${tr("布局", "LAYOUTS", "佈局")}</div>${[
+  menu.innerHTML = `<button role="menuitem" data-action="toggle-companion">${uiIcon("bot")}${viewSettings?.companion_enabled ? tr("隐藏桌面小助手", "Hide desktop companion", "隱藏桌面助手") : tr("显示桌面小助手", "Show desktop companion", "顯示桌面助手")}</button><div class="view-menu-divider"></div><div class="view-menu-caption">${tr("布局", "LAYOUTS", "佈局")}</div>${[
     [
       "default",
       tr("默认 · 笔记与纪要", "Default · Notes & minutes", "預設 · 筆記與紀要"),
@@ -894,6 +895,21 @@ document.addEventListener("focusin", (event) => {
 
 function applyViews() {
   if (!viewSettings) return;
+  for (const button of Array.from(
+    document.querySelectorAll<HTMLButtonElement>(
+      "[data-action='toggle-companion']",
+    ),
+  )) {
+    const visible = viewSettings.companion_enabled;
+    const action = visible
+      ? tr("隐藏", "Hide", "隱藏")
+      : tr("显示", "Show", "顯示");
+    button.title = `${action} · ${tr("桌面助手", "Desktop pet", "桌面助手")}`;
+    button.setAttribute("aria-label", button.title);
+    button.setAttribute("aria-pressed", String(visible));
+    const hint = button.querySelector(".pet-toggle-hint");
+    if (hint) hint.textContent = action;
+  }
   const states: Record<Panel, boolean> = {
     sidebar: viewSettings.sidebar_collapsed,
     notebook: viewSettings.notebook_collapsed,
@@ -1306,10 +1322,15 @@ document.addEventListener("click", (e) => {
             toast,
           );
         return;
-      case "show-companion":
-        viewSettings = await patchViewSettings({ companion_enabled: true });
+      case "toggle-companion": {
+        const prefs = await getViewSettings();
+        viewSettings = await patchViewSettings({
+          companion_enabled: !prefs.companion_enabled,
+        });
+        applyViews();
         closeViewMenu();
         return;
+      }
       case "quick-record": {
         const status = await invoke<{
           runtime: {

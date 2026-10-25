@@ -63,9 +63,39 @@ try{
  await invoke('set_companion_expanded',{expanded:false});
  await invoke('set_view_settings',{preferences:{...await invoke('get_view_settings'),companion_enabled:false}});await sleep(250);
  check(!(await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Companion hide preference failed');
- const restore=document.querySelector('.sidebar-bottom [data-action="show-companion"]');check(restore,'Pet restore entry missing from the sidebar');restore.click();await sleep(500);
+ const restore=document.querySelector('.sidebar-bottom [data-action="toggle-companion"]');check(restore,'Pet restore entry missing from the sidebar');restore.click();await sleep(500);
  check((await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Companion cannot be restored');
- checks.push('Desktop pet has a separate transparent surface; controls expand and the visibility preference persists');
+ await invoke('show_main_window');await sleep(250);restore.focus();await sleep(250);
+ check(Number(getComputedStyle(restore.querySelector('.pet-toggle-hint')).opacity)>0.9,'Pet hover/focus action is not visible');
+ check(restore.getAttribute('aria-pressed')==='true'&&/Hide|隐藏|隱藏/.test(restore.querySelector('.pet-toggle-hint').textContent),'Pet action did not change to Hide');
+ restore.click();await sleep(500);
+ check(!(await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Sidebar Hide did not hide the pet');
+ check(/Show|显示|顯示/.test(restore.querySelector('.pet-toggle-hint').textContent),'Hidden pet action did not change to Show');
+ restore.click();await sleep(500);
+ check((await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Sidebar Show failed to restore pet');
+ checks.push('Desktop pet has a separate transparent surface; controls expand, hover/focus reveals Show or Hide, and the sidebar toggles visibility');
+ if(/Mac/.test(navigator.platform)){
+   await invoke('show_main_window');
+   const main=async()=>(await invoke('ui_test_windows')).find(w=>w.label==='main');
+   const before=await main();
+   document.querySelector('.window-toolbar').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,button:0}));
+   await until(async()=> (await main()).maximized!==before.maximized);
+   document.querySelector('.window-toolbar').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,button:0}));
+   await until(async()=> (await main()).maximized===before.maximized);
+   const restored=await main();check(restored.size.every((v,i)=>Math.abs(v-before.size[i])<=2),'Double click did not restore the prior window dimensions');
+   check(document.querySelectorAll('[data-window-resize]').length===8,'Window edge or corner resize grip missing');
+   const edge=document.querySelector('[data-window-resize="se"]');
+   edge.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:91,button:0,screenX:100,screenY:100}));await sleep(150);
+   edge.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:91,screenX:160,screenY:130}));await sleep(200);
+   edge.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:91,button:0,screenX:160,screenY:130}));await sleep(200);
+   const resized=await main();check(resized.size[0]>before.size[0]&&resized.size[1]>before.size[1],'Corner gesture did not resize the native window');
+   edge.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:92,button:0,screenX:100,screenY:100}));await sleep(150);
+   edge.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:92,screenX:-2000,screenY:-2000}));await sleep(200);
+   edge.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:92,button:0,screenX:-2000,screenY:-2000}));await sleep(200);
+   const minimum=await main();check(minimum.size[0]>=740*devicePixelRatio&&minimum.size[1]>=560*devicePixelRatio,'Resize broke the minimum window size');
+   await invoke('ui_test_resize',{width:1160,height:780});
+   checks.push('Titlebar double click maximizes/restores; all eight edge grips exist and a corner pointer gesture changes the native window size');
+ }
  await invoke('ui_test_report',{report:{passed:true,checks}});
 }catch(e){await invoke('ui_test_report',{report:{passed:false,error:String(e),checks,diagnostics:{mode:document.querySelector(".transcript-toggle")?.getAttribute("aria-pressed"),floating:document.querySelectorAll(".dv-resize-container").length,transcriptParent:document.querySelector(".transcript-pane")?.parentElement?.outerHTML.slice(0,400),visibleText:document.querySelector(".transcript-pane")?.innerText.slice(0,160)}}})}
 })();

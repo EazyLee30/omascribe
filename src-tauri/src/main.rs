@@ -259,7 +259,7 @@ fn ui_test_resize(window: tauri::WebviewWindow, width: u32, height: u32) -> Repl
 #[tauri::command]
 fn ui_test_windows(app: tauri::AppHandle) -> serde_json::Value {
     use tauri::Manager;
-    serde_json::json!(app.webview_windows().iter().map(|(label,w)|serde_json::json!({"label":label,"visible":w.is_visible().unwrap_or(false),"position":w.outer_position().ok().map(|p|(p.x,p.y)),"size":w.inner_size().ok().map(|s|(s.width,s.height))})).collect::<Vec<_>>())
+    serde_json::json!(app.webview_windows().iter().map(|(label,w)|serde_json::json!({"label":label,"visible":w.is_visible().unwrap_or(false),"maximized":w.is_maximized().unwrap_or(false),"position":w.outer_position().ok().map(|p|(p.x,p.y)),"size":w.inner_size().ok().map(|s|(s.width,s.height))})).collect::<Vec<_>>())
 }
 #[cfg(feature = "ui-test")]
 #[tauri::command]

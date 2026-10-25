@@ -23,7 +23,10 @@
         "trafficLightPosition": {
           "x": 16,
           "y": 28
-        }
+        },
+        "resizable": true,
+        "maximizable": true,
+        "minimizable": true
       }
     ],
     "security": {

@@ -113,3 +113,24 @@ export function bindWindowDrag(
     return result;
   };
 }
+
+/** The macOS overlay uses custom pointer movement, so handle its double click explicitly. */
+export function bindTitlebar(
+  element: HTMLElement,
+  error: (e: unknown) => void,
+) {
+  if (!macDesktop) return; // Other platforms retain Tauri/native titlebar behavior.
+  bindWindowDrag(element, error, true);
+  element.addEventListener("dblclick", (event) => {
+    if (
+      event.button !== 0 ||
+      (event.target as Element).closest(
+        "button,input,select,a,summary,[role='tab'],[contenteditable='true']",
+      )
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    getCurrentWindow().toggleMaximize().catch(error);
+  });
+}
