@@ -166,14 +166,46 @@
       document.querySelector(".tiptap").textContent.includes("中文输入"),
       "Layout restore lost notes",
     );
+    await invoke("ui_test_resize", { width: 1400, height: 780 });
+    await sleep(300);
+    click('[data-action="workspace-view"]');
+    click('[data-layout="meeting"]');
+    await sleep(300);
+    const columnCount = () =>
+      document.querySelectorAll("#workspace-dock .dock-group-menu").length;
+    check(columnCount() === 3, "Wide layout should have three columns");
     await invoke("ui_test_resize", { width: 740, height: 560 });
     await sleep(400);
     check(
       document.documentElement.scrollWidth <= innerWidth,
       "Outer horizontal overflow",
     );
+    const hostBox = document
+      .querySelector("#workspace-dock")
+      .getBoundingClientRect();
+    for (const header of document.querySelectorAll(
+      "#workspace-dock .dv-tabs-and-actions-container",
+    )) {
+      const box = header.getBoundingClientRect();
+      check(
+        box.left >= hostBox.left - 1 && box.right <= hostBox.right + 1,
+        "Column cropped outside narrow workspace",
+      );
+    }
+    check(columnCount() < 3, "Narrow window did not group columns into tabs");
+    check(
+      document.querySelectorAll("#workspace-dock .dv-tab").length === 3,
+      "Narrow window lost a panel",
+    );
+    await invoke("ui_test_resize", { width: 1400, height: 780 });
+    await sleep(400);
+    check(columnCount() === 3, "Widening did not restore three columns");
+    check(
+      document.querySelector(".tiptap").textContent.includes("中文输入"),
+      "Responsive layout lost notes",
+    );
     checks.push(
-      "Explicit column hide and layout restore preserve notes; 740×560 stays bounded",
+      "Explicit column hide/restore preserves notes; continuous resizing groups narrow columns into tabs and restores the wide layout",
     );
     await invoke("ui_test_resize", { width: 1160, height: 780 });
     await sleep(300);

@@ -41,6 +41,10 @@ function read(): SavedState {
 export class WorkspaceDock {
   readonly api: DockviewApi;
   private saving = false;
+  private adapting = false;
+  private compact:
+    | { layout: SerializedDockview; width: number; height: number }
+    | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private observer: ResizeObserver;
   private menu: HTMLDivElement;
@@ -188,23 +192,84 @@ export class WorkspaceDock {
         }
       } else this.preset("default");
     }
+    this.api.onDidMovePanel(() => {
+      if (!this.adapting) this.compact = undefined;
+    });
     this.api.onDidLayoutChange(() => {
+      if (
+        !this.adapting &&
+        (this.api.minimumWidth > host.clientWidth ||
+          this.api.minimumHeight > host.clientHeight)
+      )
+        queueMicrotask(() => this.resize());
       clearTimeout(this.timer);
       this.timer = setTimeout(() => {
         if (this.disposed) return;
         const s = read();
-        s.current = this.api.toJSON();
+        s.current = this.compact?.layout || this.api.toJSON();
         localStorage.setItem(storageKey, JSON.stringify(s));
         this.notify();
       }, 180);
     });
-    this.observer = new ResizeObserver(() =>
-      this.api.layout(host.clientWidth, host.clientHeight),
-    );
+    this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
     document.addEventListener("pointerdown", this.outside);
     document.addEventListener("keydown", this.escape);
     queueMicrotask(() => this.notify());
+  }
+  private resize() {
+    if (
+      this.adapting ||
+      this.disposed ||
+      !this.host.clientWidth ||
+      !this.host.clientHeight
+    )
+      return;
+    this.adapting = true;
+    const width = this.host.clientWidth,
+      height = this.host.clientHeight;
+    try {
+      if (
+        this.compact &&
+        width >= this.compact.width + 24 &&
+        height >= this.compact.height
+      ) {
+        const layout = this.compact.layout;
+        const active = this.api.activePanel?.id;
+        this.compact = undefined;
+        this.load(layout);
+        if (active) this.api.getPanel(active)?.api.setActive();
+      }
+      if (this.api.minimumWidth > width || this.api.minimumHeight > height) {
+        const active = this.api.activePanel?.id;
+        this.compact ||= {
+          layout: this.api.toJSON(),
+          width: this.api.minimumWidth,
+          height: this.api.minimumHeight,
+        };
+        // Keep every column reachable as a tab instead of cropping its content.
+        for (
+          let i = 0;
+          i < keys.length &&
+          (this.api.minimumWidth > width || this.api.minimumHeight > height);
+          i++
+        ) {
+          const panels = keys
+            .map((id) => this.api.getPanel(id))
+            .filter((p) => p?.api.location.type === "grid");
+          const groups = [...new Set(panels.map((p) => p!.group))];
+          if (groups.length < 2) break;
+          const from = groups[groups.length - 1],
+            to = groups[groups.length - 2];
+          for (const panel of [...from.panels])
+            panel.api.moveTo({ group: to, position: "center" });
+        }
+        if (active) this.api.getPanel(active)?.api.setActive();
+      }
+      this.api.layout(width, height);
+    } finally {
+      this.adapting = false;
+    }
   }
   private outside = (e: Event) => {
     if (
@@ -229,6 +294,7 @@ export class WorkspaceDock {
   }
   show(id: DockPanel, floating = false) {
     let p = this.api.getPanel(id);
+    if (!p || floating) this.compact = undefined;
     if (!p) {
       p = this.api.addPanel({
         id,
@@ -282,11 +348,13 @@ export class WorkspaceDock {
     );
   }
   hide(id: DockPanel) {
+    this.compact = undefined;
     const p = this.api.getPanel(id);
     if (p) this.api.removePanel(p);
     this.notify();
   }
   preset(name: string) {
+    this.compact = undefined;
     const preferred = read().layouts.find((l) => l.id === read().defaultId);
     if (name === "default" && preferred) {
       try {
@@ -323,6 +391,7 @@ export class WorkspaceDock {
     this.notify();
   }
   private load(layout: SerializedDockview) {
+    this.compact = undefined;
     if (
       JSON.stringify(layout).length > 100000 ||
       Object.keys(layout.panels).some((id) => !keys.includes(id as DockPanel))
@@ -352,7 +421,7 @@ export class WorkspaceDock {
     s.layouts.push({
       id,
       name: name.trim().slice(0, 40) || tr("我的布局", "My layout", "我的佈局"),
-      layout: this.api.toJSON(),
+      layout: this.compact?.layout || this.api.toJSON(),
     });
     s.layouts = s.layouts.slice(-12);
     localStorage.setItem(storageKey, JSON.stringify(s));
