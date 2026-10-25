@@ -58,7 +58,9 @@ def main():
             native=installed/'native'
             # Remove one owned test file; the updater must actually reinstall it.
             installed_cli=native/'runtime/omascribe-cli.exe'
-            installed_cli.rename(folder/'previous-cli.exe')
+            # Windows runners keep RUNNER_TEMP on D: and Python's temp directory
+            # on C:. A cross-volume rename fails before the updater is exercised.
+            shutil.move(installed_cli,folder/'previous-cli.exe')
             run(payload,'/S','/UPDATE',f'/D={installed}',timeout=600)
             assert installed_cli.is_file(), 'Runtime installer did not apply its files'
             assert hashlib.sha256(installed_cli.read_bytes()).digest() == hashlib.sha256(full_cli.read_bytes()).digest(), 'Installed runtime CLI differs from the signed package source'
