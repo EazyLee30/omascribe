@@ -1,3 +1,5 @@
+import { bindWindowDrag, macDesktop } from "./window-drag";
+import { uiIcon } from "./ui-icons";
 import { WorkspaceDock, type DockPanel } from "./workspace-dock";
 import { translationSelect, passageHTML } from "./translation-ui";
 import { confirmDelete, reveal, recordingMotion } from "./interactions";
@@ -202,7 +204,9 @@ function shell() {
       )
       .join(
         "",
-      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="quick-record">${icon("mic")}${tr("开始录音", "Start recording", "開始錄音")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
+      )}</nav><div class="library-label">${t("library")}<span id="meeting-count">0</span></div><nav id="meetings" aria-label="${t("library")}"></nav><div class="sidebar-bottom"><button class="subtle" data-action="show-companion" title="${tr("显示桌面录音助手", "Show desktop recording companion", "顯示桌面錄音助手")}">${uiIcon("bot")}${tr("桌面助手", "Desktop pet", "桌面助手")}</button><button class="subtle" data-action="settings">${icon("settings")}${t("settings")}</button></div></div></aside><main id="workspace"><section class="welcome"><div class="welcome-mark">${brand}</div><p class="eyebrow">OMASCRIBE</p><h1>${t("welcome")}</h1><p>${t("welcomeSub")}</p><button class="primary" data-action="quick-record">${icon("mic")}${tr("开始录音", "Start recording", "開始錄音")}</button><div class="welcome-foot">中文 + English <span>·</span> ${tr("录音、转写与纪要在本机处理", "Recording, transcription and minutes run on device", "錄音、轉寫及紀要在本機處理")}</div></section></main><div id="toast" class="toast" role="status"></div><dialog id="modal"></dialog>`;
+  if (macDesktop)
+    bindWindowDrag($(".window-toolbar"), (e) => toast(String(e), true), true);
   renderMeetings();
   if (current && page === "meeting") meetingShell();
   applyViews();
@@ -329,7 +333,7 @@ function renderMeetingTabs() {
   if (current && !openTabs.includes(current)) openTabs.push(current);
   openTabs = openTabs.slice(-12);
   localStorage.setItem("omascribe-meeting-tabs", JSON.stringify(openTabs));
-  host.innerHTML = `<div class="meeting-tabs" role="tablist" aria-label="${tr("打开的会议", "Open meetings", "開啟的會議")}">${openTabs
+  host.innerHTML = `<div class="meeting-tabs" data-tauri-drag-region role="tablist" aria-label="${tr("打开的会议", "Open meetings", "開啟的會議")}">${openTabs
     .map((id) => {
       const m = meetings.find((m) => m.id === id);
       return m
@@ -339,6 +343,13 @@ function renderMeetingTabs() {
     .join(
       "",
     )}<button class="new-tab" data-action="new-tab" aria-label="${tr("新建标签页", "New tab", "新增分頁")}">+</button></div>`;
+  if (macDesktop) {
+    const toolbar = $(".window-toolbar");
+    toolbar.removeAttribute("data-tauri-drag-region");
+    toolbar
+      .querySelectorAll("[data-tauri-drag-region]")
+      .forEach((e) => e.removeAttribute("data-tauri-drag-region"));
+  }
 }
 function renderMeetings() {
   $("#meeting-count").textContent = String(meetings.length);
@@ -851,7 +862,7 @@ function renderViewMenu() {
     minutes: !viewSettings.minutes_collapsed,
     transcript: viewSettings.transcript_mode === "docked",
   };
-  menu.innerHTML = `<div class="view-menu-caption">${tr("布局", "LAYOUTS", "佈局")}</div>${[
+  menu.innerHTML = `<button role="menuitem" data-action="show-companion">${uiIcon("bot")}${tr("显示桌面小助手", "Show desktop companion", "顯示桌面助手")}</button><div class="view-menu-divider"></div><div class="view-menu-caption">${tr("布局", "LAYOUTS", "佈局")}</div>${[
     [
       "default",
       tr("默认 · 笔记与纪要", "Default · Notes & minutes", "預設 · 筆記與紀要"),
@@ -1285,6 +1296,10 @@ document.addEventListener("click", (e) => {
             refresh,
             toast,
           );
+        return;
+      case "show-companion":
+        viewSettings = await patchViewSettings({ companion_enabled: true });
+        closeViewMenu();
         return;
       case "quick-record": {
         const status = await invoke<{

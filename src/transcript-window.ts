@@ -1,3 +1,4 @@
+import { bindWindowDrag, macDesktop } from "./window-drag";
 import { uiIcon } from "./ui-icons";
 import { tr } from "./workspace-ui";
 import { passageHTML, translationSelect } from "./translation-ui";
@@ -159,6 +160,11 @@ async function init() {
       error(e);
     }
   };
+  if (macDesktop) {
+    const handle = root.querySelector<HTMLElement>(".float-drag")!;
+    handle.removeAttribute("data-tauri-drag-region");
+    bindWindowDrag(handle, error);
+  }
   apply(await getViewSettings());
   (document.querySelector("#float-snap") as HTMLSelectElement).value =
     prefs.snap;

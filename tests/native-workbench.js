@@ -15,6 +15,9 @@ try{
  check(document.querySelector('.window-toolbar').getBoundingClientRect().height===44,'Title bar too tall');
  check(document.querySelector('#workspace-dock').getBoundingClientRect().top<100,'Too much chrome above content');
  check(!document.querySelector('footer'),'Footer returns');
+ for(const e of [document.documentElement,document.body,document.querySelector('#workspace'),...document.querySelectorAll('.oma-dock-theme .dv-view')]){
+   check(e.scrollWidth<=e.clientWidth+1&&e.scrollHeight<=e.clientHeight+1,'An outer layout container overflowed: '+(e.id||e.className));
+ }
  check(document.querySelector('.meeting-header .recording-console'),'Live controls were not moved to the title row');
  check(document.querySelector('.selection-toolbar').hidden,'Fixed formatting toolbar returned');
  check(getComputedStyle(document.querySelector('#user-notes')).borderTopWidth==='0px','Framed editor returned');
@@ -58,7 +61,7 @@ try{
  await invoke('set_companion_expanded',{expanded:false});
  await invoke('set_view_settings',{preferences:{...await invoke('get_view_settings'),companion_enabled:false}});await sleep(250);
  check(!(await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Companion hide preference failed');
- await invoke('set_view_settings',{preferences:{...await invoke('get_view_settings'),companion_enabled:true}});await sleep(250);
+ const restore=document.querySelector('.sidebar-bottom [data-action="show-companion"]');check(restore,'Pet restore entry missing from the sidebar');restore.click();await sleep(500);
  check((await invoke('ui_test_windows')).find(w=>w.label==='companion').visible,'Companion cannot be restored');
  checks.push('Desktop pet has a separate transparent surface; controls expand and the visibility preference persists');
  await invoke('ui_test_report',{report:{passed:true,checks}});

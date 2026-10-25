@@ -94,6 +94,7 @@
   flex-direction: column;
   min-height: 0;
   position: relative;
+  overflow: hidden;
 }
 .workbench > .meeting-header {
   height: 44px;
@@ -194,6 +195,7 @@
   min-width: 0;
   min-height: 0;
   border: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -201,7 +203,7 @@
 }
 .workbench #notebook-content {
   height: 100%;
-  padding: 12px 18px 66px;
+  padding: 12px 18px 18px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -447,6 +449,9 @@
 .oma-dock-theme .dv-content-container {
   overflow: hidden;
 }
+.oma-dock-theme .dv-split-view-container .dv-view {
+  overflow: hidden;
+}
 .dock-group-menu {
   height: 28px;
   width: 28px;
@@ -635,4 +640,10 @@
   min-height: 46px;
   font-size: 14px;
   gap: 8px;
+}
+
+.sidebar-bottom .subtle {
+  justify-content: flex-start;
+  text-align: left;
+  white-space: nowrap;
 }

@@ -1,6 +1,6 @@
+import { bindWindowDrag, macDesktop } from "./window-drag";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { initAppearance } from "./preferences-client";
 import {
   getViewSettings,
@@ -125,44 +125,22 @@ async function init() {
   root.querySelector<HTMLElement>(".pet-sprite")!.style.backgroundImage =
     `url("${atlas}")`;
   const pet = root.querySelector<HTMLButtonElement>("#pet")!;
-  let down: { x: number; y: number } | null = null,
-    dragged = false;
-  pet.addEventListener("pointerdown", (e) => {
-    if (e.button === 0) {
-      e.preventDefault();
-      pet.setPointerCapture(e.pointerId);
-      down = { x: e.screenX, y: e.screenY };
-      dragged = false;
-    }
-  });
-  pet.addEventListener("pointermove", (e) => {
-    if (
-      down &&
-      !dragged &&
-      Math.hypot(e.screenX - down.x, e.screenY - down.y) > 5
-    ) {
-      dragged = true;
-      down = null;
-      if (pet.hasPointerCapture(e.pointerId))
-        pet.releasePointerCapture(e.pointerId);
-      getCurrentWindow().startDragging().catch(showError);
-    }
-  });
-  pet.addEventListener("pointerup", () => {
-    down = null;
-  });
+  const wasDragged = bindWindowDrag(pet, showError);
+  if (macDesktop) {
+    const grip = root.querySelector<HTMLElement>("#pet-grip")!;
+    grip.removeAttribute("data-tauri-drag-region");
+    bindWindowDrag(grip, showError);
+  }
   pet.addEventListener("pointerenter", () => {
     hovering = true;
     pose();
   });
   pet.addEventListener("pointerleave", () => {
     hovering = false;
-    down = null;
     pose();
   });
   pet.onclick = () => {
-    if (!dragged) expand(!expanded).catch(showError);
-    dragged = false;
+    if (!wasDragged()) expand(!expanded).catch(showError);
   };
   root.addEventListener("click", async (e) => {
     const action = (e.target as HTMLElement).closest<HTMLElement>(

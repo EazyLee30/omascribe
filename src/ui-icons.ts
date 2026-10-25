@@ -1,6 +1,7 @@
 import {
   createElement,
   Mic,
+  Bot,
   Pause,
   Play,
   Square,
@@ -18,6 +19,7 @@ import {
 } from "lucide";
 const icons = {
   mic: Mic,
+  bot: Bot,
   pause: Pause,
   play: Play,
   stop: Square,
