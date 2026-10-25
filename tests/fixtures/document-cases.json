@@ -127,5 +127,192 @@
     ],
     "max_sections": 2,
     "merged_sources": true
+  },
+  {
+    "name": "zh_empty_greetings",
+    "focus": "**试麦**",
+    "transcript": [
+      "喂，喂，听得到吗？",
+      "一二三，测试麦克风。谢谢，再见。"
+    ],
+    "required": [],
+    "forbidden": [],
+    "expect_empty": true
+  },
+  {
+    "name": "zh_phased_correction",
+    "focus": "**预算** **负责人** **离线转写**",
+    "phases": [
+      {
+        "transcript": [
+          "预算暂按3000元安排，负责人是李明。",
+          "离线转写先覆盖麦克风录音，系统音频还没有做。"
+        ],
+        "expect": {
+          "required": [
+            "3000",
+            "李明"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "离线转写需要保留原始录音，失败后能够重新处理。",
+          "模型下载是可选联网功能，录音内容不会上传。",
+          "更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。"
+        ]
+      }
+    ],
+    "required": [
+      "2000",
+      "王华",
+      "系统音频",
+      "未|还没|暂未"
+    ],
+    "forbidden": [
+      "李明将负责",
+      "预算(?:最终|确定|是|为)3000"
+    ],
+    "max_sections": 3,
+    "merged_sources": true
+  },
+  {
+    "name": "zh_named_speakers",
+    "focus": "**转写** **字幕** **负责人**",
+    "speakers": {
+      "speaker-1": "林悦",
+      "speaker-2": "陈明"
+    },
+    "transcript": [
+      {
+        "text": "实时转写的延迟测试由我负责，结果周四提交。",
+        "speaker": "speaker-1"
+      },
+      {
+        "text": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。",
+        "speaker": "speaker-2"
+      }
+    ],
+    "required": [
+      "林悦",
+      "陈明",
+      "周四",
+      "未|待定"
+    ],
+    "forbidden": [
+      "林悦负责双语字幕",
+      "陈明负责.*延迟测试"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "en_minutes_from_zh",
+    "focus": "**离线转写** **模型**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "这次只做离线转写，模型由用户手动下载。",
+      "录音、转写和纪要不上传服务器。系统音频采集还没有实现。"
+    ],
+    "required": [
+      "offline",
+      "manual|user",
+      "not|pending|unimplemented"
+    ],
+    "forbidden": [
+      "[\\u3400-\\u9fff]"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "zh_minutes_from_en",
+    "focus": "**offline** **release**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "The offline recorder is ready for internal testing. The public release is not approved yet.",
+      "Morgan owns the latency report and will deliver it on Thursday."
+    ],
+    "required": [
+      "离线",
+      "Morgan",
+      "周四|星期四",
+      "未|待"
+    ],
+    "forbidden": [
+      "发布已获批准",
+      "公开发布已经批准"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "zh_long_context_state",
+    "focus": "**离线转写** **发布** **负责人**",
+    "phases": [
+      {
+        "transcript": [
+          "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。",
+          "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。",
+          "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。",
+          "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。",
+          "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。"
+        ]
+      },
+      {
+        "transcript": [
+          "字幕界面需要明确展示原文和翻译，翻译使用本地模型。",
+          "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。",
+          "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+          "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+          "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        ]
+      }
+    ],
+    "required": [
+      "林悦",
+      "周四",
+      "未|尚未",
+      "离线",
+      "原始录音|每段录音",
+      "人工|修改",
+      "噪声|安静",
+      "边界|连续"
+    ],
+    "forbidden": [
+      "公开发布已批准",
+      "公开发布已经批准",
+      "系统音频采集已完成"
+    ],
+    "max_sections": 4
+  },
+  {
+    "name": "zh_human_paragraph_protected",
+    "focus": "**预算** **模型**",
+    "phases": [
+      {
+        "transcript": [
+          "预算还没有确定，先等测试报告。"
+        ],
+        "protect_first": "人工确认：预算仍未确定，先等测试报告。"
+      },
+      {
+        "transcript": [
+          "离线模型下载由陈明负责，下载必须获得用户同意。",
+          "模型下载可以联网，会议录音不会上传。"
+        ]
+      }
+    ],
+    "required": [
+      "人工确认：预算仍未确定",
+      "陈明",
+      "下载"
+    ],
+    "forbidden": [],
+    "max_sections": 3
   }
 ]

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Real ASR regression using the public sherpa sample; never opens the user's workspace."""
 
-import argparse, hashlib, json, os, pathlib, sqlite3, subprocess, tempfile, wave, shutil
-from contextlib import closing
+import argparse, hashlib, json, os, pathlib, sqlite3, subprocess, wave, shutil
+from contextlib import closing, nullcontext
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -14,8 +14,11 @@ parser.add_argument(
 args = parser.parse_args()
 cli = args.cli.resolve()
 data = pathlib.Path.home() / ".local/share/omascribe"
-with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
+artifacts = args.output.resolve().with_suffix(".artifacts")
+artifacts.mkdir(parents=True, exist_ok=False)
+with nullcontext(str(artifacts / "workspace")) as directory:
     root = pathlib.Path(directory)
+    root.mkdir()
     env = dict(
         os.environ,
         OMASCRIBE_DATA_DIR=directory,
@@ -69,7 +72,10 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
     assert second["segments"][:n] == [corrected, *first["segments"][1:]]
     assert len(second["segments"]) > n
     assert second["segments"][n]["seq"] == first["segments"][-1]["seq"] + 1
-    assert second["segments"][n]["start_ms"] == first["meeting"]["duration_ms"]
+    # A take may begin with silence; endpointing can omit that empty passage.
+    # No newly recognized passage may overlap audio from the preceding take.
+    assert second["segments"][n]["start_ms"] >= first["meeting"]["duration_ms"]
+    assert not any(s["start_ms"] < first["meeting"]["duration_ms"] for s in second["segments"][n:])
     assert second["meeting"]["duration_ms"] == first["meeting"]["duration_ms"] * 2
     assert (folder / "files/recording-001.wav").read_bytes() == first_audio
     pcm = b"".join(p.read_bytes() for p in sorted((folder / "audio").glob("*.pcm")))
@@ -85,25 +91,22 @@ with tempfile.TemporaryDirectory(prefix="omascribe-takes-") as directory:
         encoding="utf-8"
     )
     assert "人工修订" in (folder / "files/transcript.md").read_text(encoding="utf-8")
-    assert (
-        (folder / "files/transcript-002.txt")
-        .read_text(encoding="utf-8")
-        .startswith("[00:00:00]")
-    )
+    def relative_stamp(segment, boundary):
+        seconds = (segment["start_ms"] - boundary) // 1000
+        return f"[{seconds // 3600:02}:{seconds // 60 % 60:02}:{seconds % 60:02}]"
+    assert (folder / "files/transcript-002.txt").read_text(encoding="utf-8").startswith(
+        relative_stamp(second["segments"][n], first["meeting"]["duration_ms"]))
     retranscribed = call("retranscribe", mid)
     boundary = first["meeting"]["duration_ms"]
     assert retranscribed["meeting"]["status"] == "ready"
     assert retranscribed["meeting"]["run"] == first["meeting"]["run"] + 1
-    assert any(s["start_ms"] == boundary for s in retranscribed["segments"])
+    assert any(s["start_ms"] >= boundary for s in retranscribed["segments"])
     assert not any(
         s["start_ms"] < boundary < s["end_ms"] for s in retranscribed["segments"]
     )
     assert (folder / "files/recording-001.wav").read_bytes() == first_audio
-    assert (
-        (folder / "files/transcript-002.txt")
-        .read_text(encoding="utf-8")
-        .startswith("[00:00:00]")
-    )
+    first_new = next(s for s in retranscribed["segments"] if s["start_ms"] >= boundary)
+    assert (folder / "files/transcript-002.txt").read_text(encoding="utf-8").startswith(relative_stamp(first_new,boundary))
     result = dict(
         passed=True,
         takes=2,

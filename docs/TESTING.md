@@ -21,7 +21,9 @@ python3 tests/evaluate.py --cli target/debug/omascribe-cli \
   --output /tmp/omascribe-evaluation.json
 ```
 
-The harness uses the production retrieval → writer → validation → storage path with a fresh temporary database. It tests a guessed budget, English responsibility/deadline, a later correction and bilingual scope. It records output, citations, outcome and wall time, and exits nonzero on a failed case. These are narrow regression checks; passing four fixtures does not establish general meeting quality.
+The harness uses production retrieval → writer → validation → storage with an isolated database. Fourteen scenarios cover later corrections across phases, language selection, named speakers, pure mic checks, source closure beyond nine passages, and human-protected paragraphs. Inputs, drafts, validation failures, citations, timing and token usage survive failed cases. Output paths must be fresh. These targeted checks do not establish general meeting quality.
+
+For the unified offline ASR/minutes harness, public corpus preparation, baseline comparisons, hotword compatibility and optional 30-minute stress runs, see [CORE-HARNESS.md](CORE-HARNESS.md).
 
 ## Actual Tauri / WebKit flow
 

@@ -261,7 +261,7 @@ pub fn validate_with_speakers(
             || body.chars().count() > 1200
             || title.chars().count() > 60
             || section.sources.is_empty()
-            || section.sources.len() > 9
+            || section.sources.len() > segments.len()
         {
             bail!("文档段落或出处无效");
         }
@@ -414,6 +414,26 @@ pub fn validate_with_speakers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_long_paragraph_can_cite_all_ten_passages_including_the_last_deadline() {
+        let sources: Vec<_> = (1..=10)
+            .map(|seq| {
+                let mut s = data()[0].clone();
+                s.seq = seq;
+                s.id = format!("s{seq}");
+                s
+            })
+            .collect();
+        let draft = serde_json::json!({"sections":[{"title":"测试安排","body":"张老师周五提供测试结果，预算尚未确定，下周讨论。","sources":(1..=10).collect::<Vec<_>>()}]});
+        assert_eq!(
+            validate(&draft.to_string(), &sources, "m").unwrap()[0]
+                .sources
+                .len(),
+            10
+        );
+        let invalid = draft.to_string().replace("9,10", "9,11");
+        assert!(validate(&invalid, &sources, "m").is_err());
+    }
     #[test]
     fn spoken_clock_notation_and_twenty_four_hour_time_are_equivalent() {
         let mut source = data();

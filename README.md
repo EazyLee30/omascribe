@@ -35,10 +35,10 @@ Built around a 2016 12-inch MacBook running Omarchy, with a dual-core Intel CPU 
 
 - **Start, pause, resume, finish.** Recording has its own file writer. Pauses do not create silence in the saved audio; resuming continues the current take. After **Finish take**, use **Record another take** in the same meeting—even after restarting the app. Earlier audio, corrections and sources stay intact. WAV, MP3, M4A, FLAC, Ogg and other FFmpeg-supported files can also be imported.
 - **Find your files.** **Files** shows each take’s WAV and transcript, plus the complete meeting transcript. Open the folder or reveal an individual file in your file manager. Files update automatically; a WAV becomes available when its take finishes.
-- **Write in Markdown, see a document.** A matching dark editor with headings, lists, tasks, tables, quotes, code, links, undo/redo, a toolbar, source mode, and Chinese input support.
+- **Write in Markdown, see a document.** An integrated editor with headings, lists, tasks, tables, quotes, code, links, undo/redo, source mode and Chinese input support. Use `/` for blocks; select text for formatting.
 - **Type `/` for tools.** Search blocks, insert a timestamp, highlight a keyword or start from a meeting template. Escape keeps the slash; a slash inside normal text or a path stays ordinary text.
 - **Let the minutes develop automatically.** Your keywords guide bilingual lexical retrieval. A local model turns relevant transcript evidence into titled, readable paragraphs. No update button is required.
-- **Choose your layout.** Collapse or expand the meeting list, your notes, AI minutes and transcript independently using each column’s panel icon. Collapsed columns keep a restore control; notes keep saving. The first three columns remember their layout; transcript visibility resets on restart for privacy. Narrow windows scroll horizontally instead of covering another column.
+- **Choose your layout.** Open meetings in tabs. Drag, split, combine, float, maximize or hide panels, save a named layout, or restore the default. Narrow windows use panel tabs; the outer workspace stays fixed.
 - **Place the transcript where you want it.** Right dock, movable/resizable floating window, compact mode, and left/right edge snap. Desktop captions can sit at the top or bottom of a chosen screen, with font, color, opacity, width, line count, alignment, margin and click-through controls.
 - **Keep your authorship.** Your Markdown is never rewritten by AI. Editing a generated paragraph protects it from subsequent generation. Sources and audio timestamps stay attached; revised sources are flagged.
 - **Export the whole meeting.** Your document, current AI minutes, original sources and transcript export to Markdown, optionally alongside WAV. English, 简体中文 and 繁體中文 interfaces are included.
@@ -96,7 +96,7 @@ Setup needs a network connection, roughly 1.6 GB of model downloads, and additio
 ## Use it
 
 1. Create a meeting and choose your microphone in **Settings**.
-2. **Start recording.** Write naturally; use the toolbar, Markdown shortcuts or `/` menu. Bold a topic or a name to guide retrieval.
+2. **Start recording.** Write naturally; use selection formatting, Markdown shortcuts or the `/` menu. Bold a topic or a name to guide retrieval.
 3. The AI document develops automatically on the right. Open **Transcript** for the right dock; use its arrow to open a floating view and **CC** for screen captions. The transcript selector switches the live display between original, bilingual, or one-way on-device translation; the minutes language (auto/Chinese/English) is chosen in **Settings**.
 4. **Pause** when needed, then **Resume**. Click a source timestamp to listen, or edit a paragraph to preserve your wording.
 5. **Finish take** stops this recording. Once its transcript is saved, **Record another take** adds a new recording to the same meeting. **Files** opens the recording and transcript folder. Leave the app open for remaining document batches, then export.

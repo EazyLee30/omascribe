@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "hardware": {
+    "cpu": "Apple M5",
+    "memory_gib": 24,
+    "asr_threads": 1
+  },
+  "scope": "Eight fixed FLEURS test recordings, fourteen fictional minutes scenarios, repeated public audio. Not general meeting accuracy.",
+  "dataset_revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+  "corpus_manifest_sha256": "44dd925468723cc8499b70c534c46ad3b8f7c144c3d3a43b37b9d4cdb31ed2b9",
+  "baseline_cli_sha256": "b1b46af1147f766bd0422533b011c462e290b14aabda4b5dbea3785f229f6987",
+  "tested_cli_sha256": "51130309b5d7a934f20e26a26ec1050893371e5e8d54921f4fe9e01103cb1dfd",
+  "asr": [
+    {
+      "model_language": "zipformer-small/cmn_hans_cn",
+      "before": 0.324468085106383,
+      "after": 0.324468085106383,
+      "reference_units": 188,
+      "clips": 4
+    },
+    {
+      "model_language": "zipformer-small/en_us",
+      "before": 0.8289473684210527,
+      "after": 0.34210526315789475,
+      "reference_units": 76,
+      "clips": 4
+    },
+    {
+      "model_language": "zipformer-bilingual/cmn_hans_cn",
+      "before": 0.2765957446808511,
+      "after": 0.28191489361702127,
+      "reference_units": 188,
+      "clips": 4
+    },
+    {
+      "model_language": "zipformer-bilingual/en_us",
+      "before": 0.7236842105263158,
+      "after": 0.32894736842105265,
+      "reference_units": 76,
+      "clips": 4
+    }
+  ],
+  "asr_cases": 20,
+  "asr_passed": true,
+  "minutes_passed": 42,
+  "minutes_scenarios": 14,
+  "minutes_repetitions": 3,
+  "hotword_compatibility_cases": 5,
+  "hotword_compatibility_passed": true,
+  "multitake_passed": true,
+  "stress": {
+    "passed": true,
+    "errors": [],
+    "duration_minutes": 30,
+    "segments": 141,
+    "asr_rtf": 0.01812512767,
+    "archived_pcm_sha256": "e20befa03ec5634fb30564c841202814630b284b0a6732d226262a9006e95bda",
+    "archive_samples": 28800000,
+    "limitation": "Repeated public sample; accelerated import, not a physical microphone or diverse 30-minute meeting.",
+    "seconds": 34.092
+  },
+  "limitations": [
+    "Read speech only; includes difficult proper names and English parenthetical reference spellings.",
+    "No public multi-speaker DER benchmark yet.",
+    "Long-audio test uses accelerated repetition, not a physical microphone session.",
+    "Pattern and citation checks are not a semantic correctness proof."
+  ]
+}

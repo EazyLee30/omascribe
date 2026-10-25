@@ -197,7 +197,7 @@ def main():
             check=True,
             timeout=600,
         )
-        for case in ["zh_calendar_citations", "en_owner_and_deadline"]:
+        for case in ["zh_calendar_citations", "en_owner_and_deadline", "zh_empty_greetings", "zh_phased_correction", "zh_named_speakers", "zh_long_context_state"]:
             cases = json.loads(
                 (ROOT / "tests/fixtures/document-cases.json").read_text(
                     encoding="utf-8"

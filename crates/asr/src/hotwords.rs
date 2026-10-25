@@ -39,8 +39,22 @@ fn fields(data: &[u8]) -> Result<Vec<(u64, &[u8])>> {
     }
     Ok(result)
 }
-pub fn vocabulary(model: &Path, audio: &Path) -> Result<PathBuf> {
-    let data = std::fs::read(model.join("bpe.model"))?;
+pub fn vocabulary(model: &Path, audio: &Path, shared: Option<&Path>) -> Result<PathBuf> {
+    let tokenizer = if model.join("bpe.model").is_file() {
+        model.join("bpe.model")
+    } else {
+        let shared = shared.context("No local hotword tokenizer")?;
+        // Sharing is safe only for precisely identical acoustic token inventories.
+        let tokens = std::fs::read(model.join("tokens.txt"))?;
+        if tokens.is_empty()
+            || tokens.len() > 1_000_000
+            || tokens != std::fs::read(shared.join("tokens.txt"))?
+        {
+            bail!("Incompatible shared hotword tokenizer");
+        }
+        shared.join("bpe.model")
+    };
+    let data = std::fs::read(tokenizer)?;
     if data.len() > 2_000_000 {
         bail!("Tokenizer model too large");
     }

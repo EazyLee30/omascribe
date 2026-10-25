@@ -659,6 +659,9 @@ impl Engine {
             .arg(next_seq.to_string())
             .arg(boundaries)
             .arg(hotwords)
+            // The quality model has the same token inventory but no bundled tokenizer.
+            // The worker verifies the inventories before reusing this local asset.
+            .arg(self.model_directory("zipformer-small").unwrap_or_default())
             .env("OMASCRIBE_ASR_THREADS", prefs.threads.to_string())
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")

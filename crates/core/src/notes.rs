@@ -240,6 +240,27 @@ fn generate_inner(
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
 ) -> Result<usize> {
+    if context
+        .segments
+        .iter()
+        .all(|s| writer::non_substantive(&s.text))
+    {
+        // Known mic checks do not need a resident LLM, and are not evidence of completed work.
+        std::fs::write(
+            engine.root.join("last-generation.json"),
+            serde_json::to_vec_pretty(&json!({
+                "meeting_id":meeting, "model":prefs.llm_model, "attempt":0,
+                "reason":"non_substantive_only", "draft":"{\"sections\":[]}", "usage":null,
+            }))?,
+        )?;
+        return engine.store.lock().unwrap().commit_document(
+            snapshot,
+            &context.segments,
+            context.cursor,
+            vec![],
+            engine.note_cancel.load(Ordering::SeqCst),
+        );
+    }
     if prefs.resource_mode == "quality" && (snapshot.runtime.recording || snapshot.runtime.paused) {
         bail!("质量模式将在录音结束后整理纪要");
     }
@@ -267,7 +288,9 @@ fn generate_inner(
             .collect::<Vec<_>>()
             .join(" "),
     )?;
-    let (system, content) = loop {
+    let mut trimmed_background = 0;
+    let mut trimmed_passages = 0;
+    let (system, content, mut prompt_tokens) = loop {
         let (system, content) =
             writer::prompt(snapshot, &context, &background, &prefs.minutes_language);
         let tokens: Value = agent
@@ -275,13 +298,12 @@ fn generate_inner(
             .set("Authorization", auth)
             .send_json(json!({"content":format!("{system}\n{content}")}))?
             .into_json()?;
-        if tokens["tokens"]
+        let count = tokens["tokens"]
             .as_array()
             .context("Invalid tokenizer response")?
-            .len()
-            <= prefs.context_size as usize - 1148
-        {
-            break (system, content);
+            .len();
+        if count <= prefs.context_size as usize - 1148 {
+            break (system, content, count);
         }
         // Optional background yields to transcript evidence when context is tight.
         let mut trimmed = false;
@@ -297,6 +319,7 @@ fn generate_inner(
             }
         }
         if trimmed {
+            trimmed_background += 1;
             continue;
         }
         if context.segments.len() <= 1 {
@@ -309,6 +332,7 @@ fn generate_inner(
             .rposition(|s| s.seq <= snapshot.meeting.notes_cursor)
             .unwrap_or(context.segments.len() - 1);
         let removed = context.segments.remove(index);
+        trimmed_passages += 1;
         if removed.seq > snapshot.meeting.notes_cursor {
             context.cursor = context
                 .segments
@@ -324,6 +348,7 @@ fn generate_inner(
         json!({"role":"user","content":content}),
     ];
     let mut verified = None;
+    let mut attempts = Vec::<Value>::new();
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
@@ -332,16 +357,35 @@ fn generate_inner(
             "writer:checking"
         }
         .into();
+        let generation_started = Instant::now();
+        let mut first_token_ms = None;
+        let mut partial_draft = String::new();
         let response=agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
         "messages":messages,
         "temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0,
         "response_format":{"type":"json_schema","json_schema":{"name":"document","strict":true,"schema":writer::schema(context.segments.len())}}
     }));
         let generated = response.map_err(anyhow::Error::from).and_then(|response| {
-            stream::read(BufReader::new(response.into_reader()), |characters| {
+            stream::read_observed(BufReader::new(response.into_reader()), |draft| {
+                partial_draft = draft.to_owned();
+                let characters = draft.chars().count();
+                if characters > 0 {
+                    first_token_ms.get_or_insert(generation_started.elapsed().as_millis() as u64);
+                }
                 engine.status.lock().unwrap().notes_status = format!("writer:writing:{characters}");
             })
         });
+        if generated.is_err() {
+            attempts.push(json!({"attempt":attempt+1,"draft":partial_draft,"failure":"incomplete_local_response",
+                "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms}));
+            std::fs::write(
+                engine.root.join("last-generation.json"),
+                serde_json::to_vec_pretty(&json!({
+                    "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
+                    "attempt":attempt+1,"attempts":attempts,"draft":partial_draft,"committed":false,
+                }))?,
+            )?;
+        }
         if engine.note_cancel.load(Ordering::SeqCst) {
             bail!("已优先处理录音与字幕，纪要稍后自动继续");
         }
@@ -365,18 +409,30 @@ fn generate_inner(
                 error
             }
         })?;
-        std::fs::write(
-            engine.root.join("last-generation.json"),
-            serde_json::to_vec_pretty(
-                &json!({"meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),"resource_mode":prefs.resource_mode,"memory_budget_mib":budget,"draft":text,"usage":usage,"attempt":attempt + 1}),
-            )?,
-        )?;
-        match validation::validate_with_speakers(
+        let validation = validation::validate_with_speakers(
             &text,
             &context.segments,
             meeting,
             &snapshot.meeting.speaker_names,
-        ) {
+        );
+        attempts.push(json!({
+            "attempt":attempt+1, "draft":text, "usage":usage,
+            "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
+            "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
+            "input_tokens":prompt_tokens, "context_size":prefs.context_size,
+            "selected":context.segments.iter().map(|s|json!({"id":s.id,"seq":s.seq,"revision":s.revision})).collect::<Vec<_>>(),
+        }));
+        std::fs::write(
+            engine.root.join("last-generation.json"),
+            serde_json::to_vec_pretty(&json!({
+                "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
+                "resource_mode":prefs.resource_mode,"memory_budget_mib":budget,"draft":text,
+                "usage":usage,"attempt":attempt+1,"attempts":attempts,
+                "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":context.cursor,
+                "trimmed_background":trimmed_background,"trimmed_passages":trimmed_passages,
+            }))?,
+        )?;
+        match validation {
             Ok(sections) => {
                 verified = Some(sections);
                 break;
@@ -384,15 +440,7 @@ fn generate_inner(
             Err(error) if attempt == 0 => {
                 // Rebuild from the pending evidence instead of feeding the failed draft back
                 // as an example: small local models otherwise repeat its invalid attributions.
-                if context
-                    .segments
-                    .iter()
-                    .any(|s| s.seq > snapshot.meeting.notes_cursor)
-                {
-                    context
-                        .segments
-                        .retain(|s| s.seq > snapshot.meeting.notes_cursor);
-                }
+                // Keep historical evidence too: a repair must not forget earlier decisions.
                 let (repair_system, repair_content) =
                     writer::prompt(snapshot, &context, &json!({}), &prefs.minutes_language);
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
@@ -427,12 +475,11 @@ fn generate_inner(
                     .set("Authorization", auth)
                     .send_json(json!({"content":repair_input}))?
                     .into_json()?;
-                if tokens["tokens"]
+                prompt_tokens = tokens["tokens"]
                     .as_array()
                     .context("Invalid tokenizer response")?
-                    .len()
-                    > prefs.context_size as usize - 598
-                {
+                    .len();
+                if prompt_tokens > prefs.context_size as usize - 598 {
                     return Err(error.context("复核超出上下文预算，待处理内容已保留"));
                 }
             }

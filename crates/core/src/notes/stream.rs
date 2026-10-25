@@ -3,7 +3,14 @@ use anyhow::{bail, Context, Result};
 use serde_json::Value;
 use std::io::{BufRead, Read};
 
-pub fn read(mut reader: impl BufRead, mut progress: impl FnMut(usize)) -> Result<(String, Value)> {
+pub fn read(reader: impl BufRead, mut progress: impl FnMut(usize)) -> Result<(String, Value)> {
+    read_observed(reader, |text| progress(text.chars().count()))
+}
+/// Observe drafts even on truncated responses, for local diagnostics only, never a commit.
+pub fn read_observed(
+    mut reader: impl BufRead,
+    mut progress: impl FnMut(&str),
+) -> Result<(String, Value)> {
     let mut text = String::new();
     let mut usage = Value::Null;
     let mut stopped = false;
@@ -39,7 +46,7 @@ pub fn read(mut reader: impl BufRead, mut progress: impl FnMut(usize)) -> Result
             if text.len() > 262_144 {
                 bail!("模型返回的数据过长");
             }
-            progress(text.chars().count());
+            progress(&text);
         }
         if let Some(reason) = event["choices"][0]["finish_reason"].as_str() {
             if reason != "stop" {
@@ -61,6 +68,16 @@ mod tests {
         assert_eq!(counts, vec![2, 4]);
         assert_eq!(usage["completion_tokens"], 4);
         Ok(())
+    }
+    #[test]
+    fn a_failed_stream_exposes_its_partial_draft_without_returning_success() {
+        let mut draft = String::new();
+        let result = read_observed(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n".as_bytes(),
+            |text| draft = text.to_string(),
+        );
+        assert!(result.is_err());
+        assert_eq!(draft, "partial");
     }
     #[test]
     fn truncation_error_and_unbounded_data_cannot_commit() {

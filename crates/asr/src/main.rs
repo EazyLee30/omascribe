@@ -1,5 +1,6 @@
 mod diarization;
 mod hotwords;
+mod level;
 use anyhow::{Context, Result};
 use omascribe_core::{AsrEvent, CHUNK_SAMPLES, SAMPLE_RATE};
 use sherpa_onnx::{OnlineRecognizer, OnlineRecognizerConfig};
@@ -13,6 +14,74 @@ use std::{
 fn emit(event: AsrEvent) {
     println!("{}", serde_json::to_string(&event).unwrap());
     let _ = std::io::stdout().flush();
+}
+/// Optional spelling context must never prevent audio transcription from starting.
+fn create_recognizer(
+    config: &mut OnlineRecognizerConfig,
+    words: &str,
+    model: &Path,
+    audio: &Path,
+    shared: Option<&Path>,
+) -> Result<OnlineRecognizer> {
+    config.decoding_method = Some("greedy_search".into());
+    config.hotwords_buf = None;
+    config.model_config.modeling_unit = None;
+    config.model_config.bpe_vocab = None;
+    let mut fallback = None;
+    if !words.trim().is_empty() && words.len() <= 16000 {
+        match hotwords::vocabulary(model, audio, shared) {
+            Ok(path) => {
+                config.decoding_method = Some("modified_beam_search".into());
+                config.max_active_paths = 4;
+                config.hotwords_score = 1.5;
+                config.hotwords_buf = Some(words.as_bytes().to_vec());
+                config.model_config.modeling_unit = Some("cjkchar+bpe".into());
+                config.model_config.bpe_vocab = Some(path.to_string_lossy().into_owned());
+            }
+            Err(error) => fallback = Some(format!("{error:#}")),
+        }
+    }
+    let mut recognizer = OnlineRecognizer::create(config);
+    if recognizer.is_none() && config.hotwords_buf.is_some() {
+        fallback = Some("Hotword decoder unavailable".into());
+        config.decoding_method = Some("greedy_search".into());
+        config.hotwords_buf = None;
+        config.model_config.modeling_unit = None;
+        config.model_config.bpe_vocab = None;
+        recognizer = OnlineRecognizer::create(config);
+    }
+    // Metadata only: no user vocabulary or transcript content in this diagnostic.
+    let _ = fs::write(
+        audio.join("asr-config.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "decoder": config.decoding_method, "threads": config.model_config.num_threads,
+            "hotword_count": if config.hotwords_buf.is_some() { words.lines().filter(|s| !s.trim().is_empty()).count() } else { 0 },
+            "fallback": fallback,
+        }))?,
+    );
+    recognizer.context("无法加载双语识别模型")
+}
+#[allow(clippy::too_many_arguments)]
+fn reload_hotwords(
+    args: &[String],
+    words: &mut String,
+    config: &mut OnlineRecognizerConfig,
+    recognizer: &mut OnlineRecognizer,
+    stream: &mut sherpa_onnx::OnlineStream,
+    model: &Path,
+    audio: &Path,
+    shared: Option<&Path>,
+) {
+    // Switch at utterance boundaries only; preserve sample positions and passage IDs.
+    if let Some(updated) = args.get(6).and_then(|p| fs::read_to_string(p).ok()) {
+        if updated != *words && updated.len() <= 16000 {
+            if let Ok(next) = create_recognizer(config, &updated, model, audio, shared) {
+                *stream = next.create_stream();
+                *recognizer = next;
+                *words = updated;
+            }
+        }
+    }
 }
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -38,28 +107,14 @@ fn run() -> Result<()> {
     config.model_config.provider = Some("cpu".into());
     let mut hotwords = args
         .get(6)
-        .map(std::fs::read_to_string)
-        .transpose()?
+        .and_then(|p| fs::read_to_string(p).ok())
         .unwrap_or_default();
-    if !hotwords.trim().is_empty() {
-        config.decoding_method = Some("modified_beam_search".into());
-        config.max_active_paths = 4;
-        config.hotwords_buf = Some(hotwords.clone().into_bytes());
-        config.hotwords_score = 1.5;
-        config.model_config.modeling_unit = Some("cjkchar+bpe".into());
-        config.model_config.bpe_vocab = Some(
-            hotwords::vocabulary(model, audio)?
-                .to_string_lossy()
-                .into_owned(),
-        );
-    } else {
-        config.decoding_method = Some("greedy_search".into());
-    }
+    let shared = args.get(7).filter(|s| !s.is_empty()).map(Path::new);
     config.enable_endpoint = true;
     config.rule1_min_trailing_silence = 2.4;
     config.rule2_min_trailing_silence = 0.8;
     config.rule3_min_utterance_length = 12.;
-    let mut recognizer = OnlineRecognizer::create(&config).context("无法加载双语识别模型")?;
+    let mut recognizer = create_recognizer(&mut config, &hotwords, model, audio, shared)?;
     let mut stream = recognizer.create_stream();
     emit(AsrEvent::Ready);
     let initial: u64 = args.get(3).map(|s| s.parse()).transpose()?.unwrap_or(0);
@@ -76,6 +131,7 @@ fn run() -> Result<()> {
     let mut segment_start = initial;
     let mut seq: u32 = args.get(4).map(|s| s.parse()).transpose()?.unwrap_or(1);
     let mut last_text = String::new();
+    let mut level = level::SpeechLevel::default();
     let mut busy = Duration::ZERO;
     let mut last_progress = Instant::now();
     let mut pause_flushed = false;
@@ -113,37 +169,16 @@ fn run() -> Result<()> {
                 seq += 1;
             }
             recognizer.reset(&stream);
-            // A note or glossary can add spelling context during recording. Switch only at
-            // utterance boundaries so already captured samples and passage timing are preserved.
-            if let Some(path) = args.get(6) {
-                if let Ok(updated) = std::fs::read_to_string(path) {
-                    if updated != hotwords && updated.len() <= 16000 {
-                        config.decoding_method = Some(
-                            if updated.trim().is_empty() {
-                                "greedy_search"
-                            } else {
-                                "modified_beam_search"
-                            }
-                            .into(),
-                        );
-                        config.max_active_paths = 4;
-                        config.hotwords_score = 1.5;
-                        config.hotwords_buf = Some(updated.clone().into_bytes());
-                        config.model_config.modeling_unit = Some("cjkchar+bpe".into());
-                        config.model_config.bpe_vocab = Some(
-                            hotwords::vocabulary(model, audio)?
-                                .to_string_lossy()
-                                .into_owned(),
-                        );
-                        if let Some(next) = OnlineRecognizer::create(&config) {
-                            let next_stream = next.create_stream();
-                            stream = next_stream;
-                            recognizer = next;
-                            hotwords = updated;
-                        }
-                    }
-                }
-            }
+            reload_hotwords(
+                &args,
+                &mut hotwords,
+                &mut config,
+                &mut recognizer,
+                &mut stream,
+                model,
+                audio,
+                shared,
+            );
             segment_start = processed;
             last_text.clear();
             emit(AsrEvent::Partial {
@@ -171,12 +206,14 @@ fn run() -> Result<()> {
         f.seek(SeekFrom::Start(offset * 2))?;
         let mut bytes = vec![0u8; count as usize * 2];
         f.read_exact(&mut bytes)?;
-        let samples: Vec<f32> = bytes
+        let mut samples: Vec<f32> = bytes
             .as_chunks::<2>()
             .0
             .iter()
             .map(|p| i16::from_le_bytes([p[0], p[1]]) as f32 / 32768.)
             .collect();
+        // Improve quiet speech only in the recognizer input; archived PCM/WAV stays exact.
+        level.process(&mut samples);
         let timer = Instant::now();
         stream.accept_waveform(SAMPLE_RATE as i32, &samples);
         while recognizer.is_ready(&stream) {
@@ -205,37 +242,16 @@ fn run() -> Result<()> {
                 seq += 1;
             }
             recognizer.reset(&stream);
-            // A note or glossary can add spelling context during recording. Switch only at
-            // utterance boundaries so already captured samples and passage timing are preserved.
-            if let Some(path) = args.get(6) {
-                if let Ok(updated) = std::fs::read_to_string(path) {
-                    if updated != hotwords && updated.len() <= 16000 {
-                        config.decoding_method = Some(
-                            if updated.trim().is_empty() {
-                                "greedy_search"
-                            } else {
-                                "modified_beam_search"
-                            }
-                            .into(),
-                        );
-                        config.max_active_paths = 4;
-                        config.hotwords_score = 1.5;
-                        config.hotwords_buf = Some(updated.clone().into_bytes());
-                        config.model_config.modeling_unit = Some("cjkchar+bpe".into());
-                        config.model_config.bpe_vocab = Some(
-                            hotwords::vocabulary(model, audio)?
-                                .to_string_lossy()
-                                .into_owned(),
-                        );
-                        if let Some(next) = OnlineRecognizer::create(&config) {
-                            let next_stream = next.create_stream();
-                            stream = next_stream;
-                            recognizer = next;
-                            hotwords = updated;
-                        }
-                    }
-                }
-            }
+            reload_hotwords(
+                &args,
+                &mut hotwords,
+                &mut config,
+                &mut recognizer,
+                &mut stream,
+                model,
+                audio,
+                shared,
+            );
             segment_start = processed;
             last_text.clear();
             emit(AsrEvent::Partial {
