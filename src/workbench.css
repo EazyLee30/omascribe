@@ -973,3 +973,30 @@
   max-height: calc(100vh - 16px);
   overflow-y: auto;
 }
+
+/* Keep the document's scroll affordance quiet in either app palette. */
+.editor-scroll,
+.markdown-source,
+.transcript-list,
+.minutes-document {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 38%, transparent) transparent;
+}
+.editor-scroll::-webkit-scrollbar,
+.markdown-source::-webkit-scrollbar,
+.transcript-list::-webkit-scrollbar,
+.minutes-document::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+.editor-scroll::-webkit-scrollbar-thumb,
+.markdown-source::-webkit-scrollbar-thumb,
+.transcript-list::-webkit-scrollbar-thumb,
+.minutes-document::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
+}
+.dockview-theme-light.oma-dock-theme {
+  color-scheme: inherit;
+}

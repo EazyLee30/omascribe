@@ -2,7 +2,13 @@ import type { Editor } from "@tiptap/core";
 import DragHandle from "@tiptap/extension-drag-handle";
 import { Selection } from "@tiptap/pm/state";
 import { closeHistory } from "@tiptap/pm/history";
-import { computePosition, flip, offset, shift } from "@floating-ui/dom";
+import {
+  autoUpdate,
+  computePosition,
+  flip,
+  offset,
+  shift,
+} from "@floating-ui/dom";
 import { uiIcon } from "./ui-icons";
 import { esc, tr } from "./workspace-ui";
 import { confirmDelete } from "./interactions";
@@ -14,6 +20,8 @@ export class BlockControls {
   private position = -1;
   private menuPosition = -1;
   private dragged = false;
+  private stopTracking: (() => void) | undefined;
+  private anchor: HTMLElement | null = null;
   private dispose = new AbortController();
   private originalDoc: Editor["state"]["doc"] | null = null;
   extension;
@@ -101,7 +109,7 @@ export class BlockControls {
       render: () => this.handle,
       computePositionConfig: {
         placement: "left-start",
-        strategy: "fixed",
+        strategy: "absolute",
         middleware: [offset(4)],
       },
       onNodeChange: ({ node, editor }) => {
@@ -110,6 +118,11 @@ export class BlockControls {
           editor.state.doc.forEach((child, pos) => {
             if (child === node) this.position = pos;
           });
+        this.track(
+          this.position >= 0
+            ? (editor.view.nodeDOM(this.position) as HTMLElement)
+            : null,
+        );
       },
       onElementDragStart: () => {
         this.dragged = true;
@@ -121,6 +134,30 @@ export class BlockControls {
         setTimeout(() => (this.dragged = false), 150);
       },
     });
+  }
+  private track(anchor: HTMLElement | null) {
+    if (anchor === this.anchor) return;
+    this.stopTracking?.();
+    this.anchor = anchor;
+    // The handle lives in the document's scroll container, not the viewport.
+    // Floating UI also follows reflow when columns or the window are resized.
+    this.stopTracking = anchor
+      ? autoUpdate(anchor, this.handle, () => {
+          if (this.dragged) return;
+          void computePosition(anchor, this.handle, {
+            strategy: "absolute",
+            placement: "left-start",
+            middleware: [offset(4)],
+          }).then(({ x, y, strategy }) => {
+            if (this.anchor === anchor && anchor.isConnected)
+              Object.assign(this.handle.style, {
+                position: strategy,
+                left: `${x}px`,
+                top: `${y}px`,
+              });
+          });
+        })
+      : undefined;
   }
   private historyBoundary() {
     const editor = this.editor();
@@ -277,6 +314,8 @@ export class BlockControls {
   }
   destroy() {
     this.dispose.abort();
+    this.stopTracking?.();
+    this.anchor = null;
     this.close();
     this.menu.remove();
   }

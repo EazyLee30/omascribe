@@ -1070,7 +1070,7 @@ dialog p {
   border-radius: 5px;
   color: var(--muted);
   box-shadow: 0 5px 20px #0002;
-  color-scheme: light;
+  color-scheme: inherit;
 }
 .editor-toolbar {
   display: flex;
@@ -1536,7 +1536,7 @@ dialog p {
 #user-notes {
   background: var(--panel);
   color: var(--text);
-  color-scheme: dark;
+  color-scheme: inherit;
   border-color: var(--border);
   box-shadow: none;
   border-radius: 5px;

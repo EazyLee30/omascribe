@@ -176,6 +176,50 @@
       "Explicit column hide and layout restore preserve notes; 740×560 stays bounded",
     );
     await invoke("ui_test_resize", { width: 1160, height: 780 });
+    await sleep(300);
+    const savedMarkdown = editor.getMarkdown();
+    editor.commands.setContent(
+      Array.from(
+        { length: 35 },
+        (_, i) =>
+          `Paragraph ${i + 1}. This example checks scrolling and block handle alignment.`,
+      ).join("\n\n"),
+      { contentType: "markdown" },
+    );
+    const paragraph = element.querySelectorAll("p")[12];
+    paragraph.scrollIntoView({ block: "center" });
+    await sleep(150);
+    const box = paragraph.getBoundingClientRect();
+    paragraph.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        clientX: box.x + 20,
+        clientY: box.y + 5,
+      }),
+    );
+    await sleep(150);
+    const handle = document.querySelector(".block-handle"),
+      scroll = document.querySelector(".editor-scroll");
+    const beforeY = handle.getBoundingClientRect().y;
+    scroll.scrollTop += 50;
+    await sleep(150);
+    check(
+      Math.abs(handle.getBoundingClientRect().y - beforeY + 50) < 2,
+      "Block handle stayed fixed while its paragraph scrolled",
+    );
+    check(
+      getComputedStyle(handle).position === "absolute",
+      "Handle is attached to the viewport",
+    );
+    check(
+      getComputedStyle(document.querySelector("#user-notes")).colorScheme ===
+        getComputedStyle(document.documentElement).colorScheme,
+      "Editor forces a mismatched scrollbar theme",
+    );
+    editor.commands.setContent(savedMarkdown, { contentType: "markdown" });
+    checks.push(
+      "Block handle follows document scrolling; editor scrollbar inherits the current appearance",
+    );
     await invoke("ui_test_report", { report: { passed: true, checks } });
   } catch (error) {
     await invoke("ui_test_report", {
