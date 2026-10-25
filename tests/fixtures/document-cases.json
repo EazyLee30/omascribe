@@ -349,12 +349,15 @@
     "required": [
       "PixelLedger",
       "fails|failing|failure",
-      "investigate|investigation"
+      "investigate|investigation",
+      "after (the )?review|following (the )?review|review.{0,30}before.{0,30}investigat"
     ],
     "forbidden": [
       "PIXEL LEDGRE",
-      "has been fixed|is fixed|was fixed"
+      "has been fixed|is fixed|was fixed",
+      "review.{0,60}after.{0,40}investigat|investigat.{0,50}before.{0,20}review"
     ],
+    "max_body_words": 45,
     "required_transcript": [
       "PixelLedger"
     ],

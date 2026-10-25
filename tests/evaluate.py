@@ -25,6 +25,8 @@ def assess(case, snapshot):
         if re.search(expression, transcript): errors.append("Uncorrected transcript: " + expression)
     if len(sections) > case.get("max_sections", len(sections)):
         errors.append("Related material fragmented into too many paragraphs")
+    if case.get("max_body_words") and sum(len(s["text"].split()) for s in sections) > case["max_body_words"]:
+        errors.append("Short evidence expanded into an overlong document")
     if case.get("merged_sources") and not any(len(s["sources"]) > 1 for s in sections):
         errors.append("Related evidence was not synthesized")
     for section in sections:

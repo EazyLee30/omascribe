@@ -3,6 +3,48 @@ use crate::{Segment, Source, Suggestion};
 use anyhow::{bail, Context, Result};
 use serde::Deserialize;
 use std::collections::HashSet;
+
+/// Replacing an unlocked paragraph must not silently discard its still-selected
+/// evidence. This checks citation coverage, not semantic entailment of every word.
+pub fn preserve_replaced_sources(
+    previous: &[Suggestion],
+    selected: &[Segment],
+    next: &[Suggestion],
+) -> Result<()> {
+    let cited: HashSet<_> = next
+        .iter()
+        .flat_map(|s| &s.sources)
+        .map(|s| s.segment_id.as_str())
+        .collect();
+    let mut missing = Vec::new();
+    for section in previous.iter().filter(|s| {
+        s.status == "pending"
+            && !s.sources.is_empty()
+            && s.sources
+                .iter()
+                .all(|q| selected.iter().any(|s| s.id == q.segment_id))
+    }) {
+        for source in &section.sources {
+            if let Some((index, segment)) = selected
+                .iter()
+                .enumerate()
+                .find(|(_, s)| s.id == source.segment_id)
+            {
+                if !segment.text.trim().is_empty()
+                    && !super::writer::non_substantive(&segment.text)
+                    && !cited.contains(segment.id.as_str())
+                    && !missing.contains(&(index + 1))
+                {
+                    missing.push(index + 1);
+                }
+            }
+        }
+    }
+    if !missing.is_empty() {
+        bail!("纪要遗漏历史来源 {missing:?}，本轮未提交");
+    }
+    Ok(())
+}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Draft {
@@ -469,6 +511,27 @@ mod tests {
             speaker: None,
             speaker_manual: false,
         }]
+    }
+    #[test]
+    fn recomposition_cannot_silently_drop_a_previous_topic() {
+        let mut passages = data();
+        let mut second = passages[0].clone();
+        second.id = "s2".into();
+        second.seq = 2;
+        second.text = "系统音频尚未实现。".into();
+        passages.push(second);
+        let full = r#"{"sections":[{"title":"测试安排","body":"张老师周五提供测试结果，预算尚未确定，下周讨论。系统音频尚未实现。","sources":[1,2]}]}"#;
+        let dropped = r#"{"sections":[{"title":"测试安排","body":"张老师周五提供测试结果，预算尚未确定，下周讨论。","sources":[1]}]}"#;
+        let mut previous = validate(full, &passages, "m").unwrap();
+        let next = validate(dropped, &passages, "m").unwrap();
+        assert!(preserve_replaced_sources(&previous, &passages, &next)
+            .unwrap_err()
+            .to_string()
+            .contains("[2]"));
+        assert!(preserve_replaced_sources(&previous, &passages, &previous).is_ok());
+        // A protected paragraph remains in the document; it is not being replaced.
+        previous[0].status = "accepted".into();
+        assert!(preserve_replaced_sources(&previous, &passages, &next).is_ok());
     }
     #[test]
     fn rejects_guessed_amount_invalid_source_and_lost_uncertainty() {

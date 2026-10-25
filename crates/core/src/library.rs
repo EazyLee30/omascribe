@@ -190,9 +190,11 @@ impl Engine {
         let knowledge:Vec<_>=crate::notes::ranked_text(&refs,&query).into_iter().take(3).map(|i| {
             let e=candidates[i];serde_json::json!({"title":e.title,"context":e.content.chars().take(320).collect::<String>()})
         }).collect();
-        Ok(
-            serde_json::json!({"spellings":spellings,"glossary":terms,"writing_preferences":memory,"background_notes":knowledge}),
-        )
+        let mut context = serde_json::json!({"glossary":terms,"writing_preferences":memory,"background_notes":knowledge});
+        if !spellings.is_empty() {
+            context["spellings"] = serde_json::json!(spellings);
+        }
+        Ok(context)
     }
 }
 #[derive(Serialize)]

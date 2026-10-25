@@ -415,12 +415,18 @@ fn generate_inner(
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
             .and_then(|draft| {
-                validation::validate_with_speakers(
+                let sections = validation::validate_with_speakers(
                     draft,
                     &context.segments,
                     meeting,
                     &snapshot.meeting.speaker_names,
-                )
+                )?;
+                validation::preserve_replaced_sources(
+                    &snapshot.suggestions,
+                    &context.segments,
+                    &sections,
+                )?;
+                Ok(sections)
             });
         attempts.push(json!({
             "attempt":attempt+1, "draft":text, "normalized_draft":normalized.ok(), "usage":usage,
@@ -448,10 +454,14 @@ fn generate_inner(
                 // Rebuild from the pending evidence instead of feeding the failed draft back
                 // as an example: small local models otherwise repeat its invalid attributions.
                 // Keep historical evidence too: a repair must not forget earlier decisions.
+                let spelling_context = background
+                    .get("spellings")
+                    .map(|v| json!({"spellings":v}))
+                    .unwrap_or_else(|| json!({}));
                 let (repair_system, repair_content) = writer::prompt(
                     snapshot,
                     &context,
-                    &json!({"spellings":background["spellings"]}),
+                    &spelling_context,
                     &prefs.minutes_language,
                 );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
@@ -461,7 +471,10 @@ fn generate_inner(
                         passage["speaker"] = Value::Null;
                     }
                 }
-                let hint = if error.to_string().contains("未完成") {
+                let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不能只补引用编号。Preserve facts and unresolved items from these missing historical passages, not just citation numbers.");
+                let hint = if error.to_string().contains("历史来源") {
+                    &history_hint
+                } else if error.to_string().contains("未完成") {
                     "必须说明转写中提到的调整尚未完成，完成之后才会验证；引用对应状态片段。"
                 } else if error.to_string().contains("相对日期") {
                     "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，并把该片段编号写进 sources；做不到就删去时间词，只保留有引用支持的内容。"
