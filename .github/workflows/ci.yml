@@ -25,8 +25,9 @@ jobs:
           toolchain: "1.99.0"
           components: rustfmt, clippy
       - name: Linux desktop dependencies
+        timeout-minutes: 10
         run: |
-          for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+          for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors.txt; do
             if [ -f "$source_file" ]; then
               sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
             fi
