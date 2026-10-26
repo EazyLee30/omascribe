@@ -45,6 +45,18 @@ this branch owns Windows acceptance and the reported UI/terminology regressions.
 
 ## Reported regressions
 
+Final local verification after merging Mac commit `9c7c4b4`: Windows desktop and
+static-CRT ASR worker compile; strict clippy passed for all three workspace
+packages (ASR uses its own static-CRT target cache). Core: 94 passed / 4 opt-in
+ignored; ASR: 3 passed; Python: 24 passed. The real
+CPU admission gate passed both English/Chinese fact-and-negation requests. The
+native three-language UI check passed again against the rebuilt app and worker.
+Two seconds of synthetic silence completed without invented segments in both
+legacy and opt-in stream-hotword modes; both loaded all three note terms with
+no fallback. This confirms native model startup and decoder configuration, not
+speech accuracy. The new desktop app lives in ignored `artifacts/windows-app/`
+and uses a separate development workspace; the installed application is untouched.
+
 The language preference must update already-open companion and transcript
 windows, including static controls, ARIA labels and translation options, while
 retaining expanded state. `tests/windows-ui.mjs` checks the real native windows

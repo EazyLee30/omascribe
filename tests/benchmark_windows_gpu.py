@@ -22,6 +22,14 @@ INPUTS = ["The review is on Thursday, not Friday. The budget is 3000 and is not 
           "评审安排在周四，不是周五。预算是 3000，尚未批准。"]
 
 
+def correct_facts(facts):
+    return (isinstance(facts, dict) and set(facts) == set(EXPECTED)
+            and isinstance(facts["day"], str) and facts["day"].casefold() == "thursday"
+            and isinstance(facts["rejected_day"], str) and facts["rejected_day"].casefold() == "friday"
+            and type(facts["budget"]) is int and facts["budget"] == 3000
+            and facts["approved"] is False)
+
+
 def trial(server, model, backend, output, manifest):
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
@@ -67,10 +75,8 @@ def trial(server, model, backend, output, manifest):
                     response_format=dict(type="json_schema", json_schema=dict(name="facts", strict=True, schema=schema))))
                 answer = result["choices"][0]
                 facts = json.loads(answer["message"]["content"])
-                normalized = {**facts, "day": str(facts.get("day", "")).lower(), "rejected_day": str(facts.get("rejected_day", "")).lower()}
-                expected = {**EXPECTED, "day": "thursday", "rejected_day": "friday"}
                 runs.append(dict(ms=round((time.monotonic()-at)*1000), facts=facts, usage=result.get("usage"),
-                                 correct=answer["finish_reason"] == "stop" and normalized == expected))
+                                 correct=answer["finish_reason"] == "stop" and correct_facts(facts)))
             log.flush()
             content = log_path.read_text(encoding="utf-8", errors="replace")
             offloads = [int(n) for n in re.findall(r"offloaded (\d+)/\d+ layers to GPU", content)]
@@ -105,9 +111,14 @@ def main():
             report["trials"].append(trial(server, args.model, backend, args.output, args.vulkan_manifest))
             write_json(args.output, report)
         report["passed"] = all(t["passed"] for t in report["trials"])
+    except Exception as error:
+        report["error"] = str(error)
+        raise
     finally:
         write_json(args.output, report)
     print(json.dumps(report, ensure_ascii=False))
+    if not report["passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

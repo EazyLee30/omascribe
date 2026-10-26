@@ -219,7 +219,7 @@ const en = {
   autoHelp:
     "Automatically composes new transcript and keyword changes. Updates are coalesced to keep recording smooth; edited paragraphs stay yours.",
   termHelp:
-    "Terms guide note retrieval in this version; they do not bias the recognizer.",
+    "Names in notes and enabled glossary entries guide recognition and supported spelling corrections. Raw recognition history and your edits are preserved.",
   about: "Oma from Omarchy. Scribe for the words worth keeping.",
   notesWorking: "Working locally…",
   deleteText: "Clear text",
@@ -441,7 +441,8 @@ const zh: typeof en = {
   recovered: "录音已恢复，可点击「重新转写」继续处理。",
   autoHelp:
     "结合新转写和关键词自动整理，合并频繁变化以保障录音流畅。人工编辑的段落会保留。",
-  termHelp: "此版本的术语用于笔记检索，尚不参与语音识别偏置。",
+  termHelp:
+    "笔记名称和已启用术语可辅助识别，并校正有依据的拼写；原始识别记录和人工修改会保留。",
   about: "Oma 来自 Omarchy，Scribe 记录值得留下的话。",
   notesWorking: "正在本地整理…",
   deleteText: "清空内容",
@@ -661,7 +662,8 @@ const tw: typeof en = {
   recovered: "錄音已復原，可點選「重新轉寫」繼續處理。",
   autoHelp:
     "結合新轉寫和關鍵字自動整理，合併頻繁變更以保障錄音流暢。人工編輯的段落會保留。",
-  termHelp: "此版本的術語用於筆記檢索，尚不參與語音辨識偏置。",
+  termHelp:
+    "筆記名稱和啟用的術語可輔助辨識及有依據的拼寫校正；原始辨識記錄與人工修改會保留。",
   about: "Oma 來自 Omarchy，Scribe 記錄值得留下的話。",
   notesWorking: "正在本機整理…",
   deleteText: "清空內容",
