@@ -388,7 +388,13 @@ fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
     Ok(report)
 }
 impl Engine {
+    pub(crate) fn acceleration_test_running(&self) -> bool {
+        self.acceleration.lock().unwrap().status.state == "testing"
+    }
     pub fn acceleration_status(&self) -> Status {
+        // Serialize restoration with Test & enable, Use CPU and configuration
+        // changes, then recheck state so an older query cannot overwrite them.
+        let _config = self.config_lock.lock().unwrap();
         // A new Engine has no in-memory status. Revalidate the persisted opt-in
         // before displaying it, without waiting for a generation to select it.
         let restore = self.acceleration.lock().unwrap().status.state.is_empty();
@@ -511,6 +517,54 @@ mod tests {
         engine.acceleration.lock().unwrap().status.state = "testing".into();
         assert_eq!(engine.acceleration_status().state, "testing");
         assert!(certificate_path(&engine).exists());
+        Ok(())
+    }
+    #[test]
+    fn status_query_waits_for_newer_test_or_disable_decisions() -> Result<()> {
+        use std::sync::mpsc;
+        for testing in [true, false] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            fs::create_dir_all(root.path().join("accelerators"))?;
+            fs::write(certificate_path(&engine), b"old certificate")?;
+            let config = engine.config_lock.lock().unwrap();
+            let (started_tx, started_rx) = mpsc::channel();
+            let (result_tx, result_rx) = mpsc::channel();
+            let reader = engine.clone();
+            let query = std::thread::spawn(move || {
+                started_tx.send(()).unwrap();
+                result_tx.send(reader.acceleration_status().state).unwrap();
+            });
+            started_rx.recv_timeout(Duration::from_secs(5))?;
+            // The query began with empty status while a configuration action
+            // owns its gate. It must wait, not read/delete the old certificate.
+            assert!(matches!(
+                result_rx.recv_timeout(Duration::from_millis(200)),
+                Err(mpsc::RecvTimeoutError::Timeout)
+            ));
+            assert!(certificate_path(&engine).exists());
+            if testing {
+                engine.acceleration.lock().unwrap().status.state = "testing".into();
+                fs::write(certificate_path(&engine), b"new test certificate")?;
+            } else {
+                fs::remove_file(certificate_path(&engine))?;
+                engine.acceleration.lock().unwrap().status = Status::default();
+            }
+            drop(config);
+            assert_eq!(
+                result_rx.recv_timeout(Duration::from_secs(5))?,
+                if testing { "testing" } else { "" }
+            );
+            query.join().expect("status query panicked");
+            if testing {
+                assert_eq!(
+                    fs::read(certificate_path(&engine))?,
+                    b"new test certificate"
+                );
+            } else {
+                assert!(!certificate_path(&engine).exists());
+            }
+        }
         Ok(())
     }
     #[test]

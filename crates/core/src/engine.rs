@@ -483,7 +483,9 @@ impl Engine {
         if self.status.lock().unwrap().diarization_busy {
             bail!("Cancel speaker analysis before starting another recording");
         }
-        if self.acceleration_status().state == "testing" {
+        // start_capture already owns config_lock; this only checks whether a
+        // calibration needs cancellation, without restoring persisted state.
+        if self.acceleration_test_running() {
             self.cancel_notes();
         }
         let mut active_guard = self.active.lock().unwrap();

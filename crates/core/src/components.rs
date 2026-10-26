@@ -362,10 +362,13 @@ impl Engine {
                 verification: self.acceleration_status(),
             };
         };
+        // Status restoration takes config_lock. Do it before the download-status
+        // lock, matching configuration actions that acquire them in that order.
+        let verification = self.acceleration_status();
         let downloads = self.component_downloads.status.lock().unwrap();
         CatalogStatus {
             state: "ready".into(),
-            verification: self.acceleration_status(),
+            verification,
             components: index
                 .components
                 .iter()
@@ -413,6 +416,7 @@ impl Engine {
         let cache = channel.cache(&self.root);
         fs::create_dir_all(cache.parent().context("Invalid catalog cache")?)?;
         crate::preferences::atomic_json(&cache, &envelope)?;
+        drop(_gate);
         Ok(self.acceleration_components())
     }
     pub fn download_acceleration_component(self: &Arc<Self>, id: &str) -> Result<()> {
