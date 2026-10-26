@@ -5,6 +5,45 @@ an owned CUDA process fault followed by exactly one CPU retry have Windows
 evidence. The recording gate is still **failed**. CPU stays in the base installer;
 CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
 
+## Latest incremental experiment: rejected
+
+Windows `b0ab6cb` merged shared `8cf7a8f`. The fixture EOF conflict was resolved
+by asserting all18 common objects identical and retaining Windows's extra case
+plus the3 shared additions:22 cases. Notes language repair and the Windows
+default.exe evaluator path were retained. Shared docs-only rejection `25b8828`
+was merged after the frozen measurements; no SDK/compiler inputs changed.
+
+The complete22-case real automatic run with **both catch-up and incremental
+flags explicitly enabled failed:18/22**. Four failures remain visible:
+
+- `zh_phased_correction`: phase2 did not settle within120s; validation rejected
+  omission of an explicit state and prior content remained.
+- `zh_long_context_state`: committed prose omitted original recording retention,
+  manual editing, noise and boundary requirements.
+- `en_incremental_separate_topics`: new5000 appeared, while old3000 was still
+  described in the present tense in the same paragraph.
+- `en_incremental_completion`: phase2 did not settle; a persisted job outcome
+  records the unfinished-state guard, followed by interruption at the budget.
+
+Trace proves actual experiment use:22 full and8 delta prompt events, with30 CPU
+worker events. This is a single Windows functional run, not a paired cost study.
+The same binary then passed `zh_phased_correction` with incremental disabled and
+catch-up still enabled; this targeted control does not establish a full22-case
+default-path pass. Core112/5 ignored, Python63, UI-test all-targets clippy, rebuilt
+native three-window language checks and exact-head code CI passed independently.
+
+Exact source/binary/model/case identities, outcomes, task traces and the control:
+[Windows incremental regression](../evaluation/windows-incremental-regression-2026-10-27.json).
+Each automatic phase retains its last draft/repair diagnostic and all metadata
+trace events; earlier job bodies may have been overwritten. Do not infer complete
+raw-draft retention or cost totals from that last diagnostic.
+
+The shared [complete paired result](../evaluation/incremental-article-2026-10-27.json)
+also rejects promotion: legacy20/21, incremental17/21, higher incremental cost,
+and an existing legacy stale-budget problem. Both experimental flags remain off
+by default. No0.3.4/stable publication is approved. Older19/19 evidence below
+retains its historical source and must not be transferred to this new experiment.
+
 ## Source and regressions
 
 Frozen regression checkpoint `301e914` cleanly merges shared PR #1 `116469e`, including opt-in minutes
@@ -129,6 +168,8 @@ DriverAPI12.8 or newer for acceptance, without changing app CUDA12 compatibility
 
 Submit exact source/runtime/toolchain/driver versions, hashes and actual results
 to the unified pipeline. Keep startup backlog, untriggered allocation OOM,
-physical microphone coverage and failed attempts visible. The new scheduler
-regressions passed; finish the recording gate before release approval. Uploading a Windows
+physical microphone coverage and failed attempts visible. The earlier scheduler
+regression passed; the new incremental fact/state gate failed and stays disabled.
+Keep the shared legacy stale-budget finding in the release backlog too. Finish
+the recording and model-quality release gates before approval. Uploading a Windows
 EXE does not activate Settings downloads.
