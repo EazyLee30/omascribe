@@ -71,6 +71,8 @@ pub(crate) struct Fact {
     pub value: String,
     pub state: State,
     pub evidence: Vec<Evidence>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_names: Vec<String>,
 }
 #[derive(Debug, Clone)]
 pub(crate) struct Clause {
@@ -486,6 +488,11 @@ impl Ledger {
                         value: clause.text.clone(),
                         state: State::Withdrawn,
                         evidence: vec![clause.evidence.clone()],
+                        required_names: if patch.kind == Kind::Owner {
+                            vec![patch.value.clone()]
+                        } else {
+                            vec![]
+                        },
                     });
                     // Only the retained literal clause is covered; supporting
                     // context with other information must survive independently.
@@ -535,6 +542,11 @@ impl Ledger {
                 next.next_id = next.next_id.checked_add(1).context("Fact ID exhausted")?;
                 id
             };
+            let required_names = if patch.kind == Kind::Owner {
+                vec![patch.value.clone()]
+            } else {
+                vec![]
+            };
             let fact = Fact {
                 id,
                 version: target.map_or(1, |old| old.version.saturating_add(1)),
@@ -543,6 +555,7 @@ impl Ledger {
                 value: patch.value,
                 state,
                 evidence,
+                required_names,
             };
             for &id in &patch.sources {
                 covered.insert(id);
@@ -568,6 +581,7 @@ impl Ledger {
                 value: clause.text.clone(),
                 state: State::Reported,
                 evidence: vec![clause.evidence.clone()],
+                required_names: vec![],
             });
         }
         ensure!(
@@ -577,8 +591,25 @@ impl Ledger {
         next.cursor = cursor;
         Ok(next)
     }
-    pub fn composition_input(&self) -> Value {
-        json!({"facts":self.facts.iter().map(|f|json!({"id":f.id,"subject":f.subject,"kind":f.kind,"value":f.value,"state":f.state})).collect::<Vec<_>>()})
+    fn current_claim<'a>(fact: &Fact, snapshot: &'a Snapshot) -> Result<&'a str> {
+        // Keep the actual current clause: a bare owner/value can otherwise lose
+        // the action or turn a person's withdrawal into a cancelled proposal.
+        let quotes = fact
+            .evidence
+            .iter()
+            .map(|e| e.quote(snapshot))
+            .collect::<Result<Vec<_>>>()?;
+        quotes
+            .iter()
+            .copied()
+            .find(|quote| quote.contains(&fact.value))
+            .or_else(|| quotes.first().copied())
+            .context("Fact has no current source claim")
+    }
+    pub fn composition_input(&self, snapshot: &Snapshot) -> Result<Value> {
+        let facts=self.facts.iter().map(|f|Ok(json!({"id":f.id,"subject":f.subject,"kind":f.kind,"value":f.value,
+            "state":f.state,"claim":Self::current_claim(f,snapshot)?,"required_names":f.required_names}))).collect::<Result<Vec<_>>>()?;
+        Ok(json!({"facts":facts}))
     }
     /// Produce semantic validation atoms from current fields, then restore actual original
     /// full-segment citations after validation. Superseded amounts are not current facts.
@@ -651,7 +682,23 @@ impl Ledger {
                     State::Withdrawn => "withdrawn 已撤回",
                     State::Question => "question 是否",
                 };
-                atom.text = format!("{} {} {state}", fact.subject, fact.value);
+                let state = if matches!(fact.kind, Kind::Statement | Kind::Status) {
+                    ""
+                } else {
+                    state
+                };
+                atom.text = format!(
+                    "{} {} {} {state}",
+                    fact.subject,
+                    fact.value,
+                    Self::current_claim(fact, snapshot)?
+                );
+                for name in &fact.required_names {
+                    ensure!(
+                        lower_contains(&section.body, name),
+                        "Article omitted a sourced person/team: {name}"
+                    );
+                }
                 atoms.push(atom);
                 sources.push(atoms.len());
                 if fact.kind == Kind::Owner {

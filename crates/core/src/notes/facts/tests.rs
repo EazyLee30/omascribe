@@ -392,3 +392,37 @@ fn withdrawal_of_the_current_owner_without_a_replacement_remains_withdrawn() -> 
     assert_eq!(next.facts[0].value, "李明");
     Ok(())
 }
+
+#[test]
+fn historical_owner_withdrawal_cannot_become_an_unnamed_cancelled_proposal() -> Result<()> {
+    let (_root, _e, s) = fixture(&["负责人是李明。", "更正负责人，王华负责，李明不再负责。"])?;
+    let old = Ledger::default().apply(
+        &s,
+        &clauses(&s, &s.segments[..1]),
+        &json!({"updates":[update(0,"负责人","owner","李明","reported",vec![1])]}).to_string(),
+        1,
+    )?;
+    let next = old.apply(
+        &s,
+        &clauses(&s, &s.segments[1..]),
+        &json!({"updates":[
+        update(1,"负责人","owner","王华","reported",vec![1,2]),
+        update(1,"负责人","owner","李明","withdrawn",vec![1,3])]})
+        .to_string(),
+        2,
+    )?;
+    let all = next.facts.iter().map(|f| f.id).collect::<Vec<_>>();
+    let wrong =
+        json!({"sections":[{"body":"负责人已确认为王华，负责人变更申请已撤回。","facts":all}]})
+            .to_string();
+    assert!(next.document(&s, &wrong, "zh").is_err());
+    let correct = json!({"sections":[{"body":"王华负责，李明不再负责。","facts":all}]}).to_string();
+    assert!(next.document(&s, &correct, "zh").is_ok());
+    let input = next.composition_input(&s)?;
+    assert!(input["facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|f| f["claim"] == "李明不再负责。" && f["required_names"] == json!(["李明"])));
+    Ok(())
+}
