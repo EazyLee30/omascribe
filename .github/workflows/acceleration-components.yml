@@ -61,7 +61,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') && !contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') && github.event_name != 'workflow_dispatch' && '[{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100}]' || '[{"runner":"windows-2022","target":"windows-x86_64","backend":"cuda","timeout":180},{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"cuda","timeout":180},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"vulkan","timeout":100}]') }}
+        # Manual dispatch and the full-build label always keep all four jobs.
+        include: >-
+          ${{ fromJSON(
+            github.event_name != 'workflow_dispatch' &&
+            contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') &&
+            !contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') &&
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100}]' ||
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"cuda","timeout":180},{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"cuda","timeout":180},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"vulkan","timeout":100}]'
+          ) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
     defaults:
@@ -211,7 +219,7 @@ jobs:
           def run(*args): subprocess.run(list(args),check=True)
           existing=subprocess.run(['gh','release','view',version],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
           if existing.returncode == 0: raise SystemExit('Immutable component release already exists; use a new version')
-          run('gh','release','create',version,'--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional GPU components 路 '+version,'--notes','Optional llama.cpp GPU runtimes. Download from OmaScribe settings after hardware detection; local model verification is required before enabling. Base installers do not include these files.')
+          run('gh','release','create',version,'--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional GPU components · '+version,'--notes','Optional llama.cpp GPU runtimes. Download from OmaScribe settings after hardware detection; local model verification is required before enabling. Base installers do not include these files.')
           run('gh','release','upload',version,*[str(p) for p in sorted(root.glob('*.tar.bz2'))],str(root/'index.json'))
           pointer=subprocess.run(['gh','release','view','acceleration-v1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
           if pointer.returncode:
