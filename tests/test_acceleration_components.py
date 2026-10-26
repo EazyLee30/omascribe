@@ -1,11 +1,14 @@
 """Packaging contracts, not GPU performance claims. All payloads are fictional."""
 import importlib.util
+import hashlib
+import io
 import json
 import pathlib
 import tarfile
 import tempfile
 import unittest
 import sys
+import zipfile
 from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -117,6 +120,25 @@ class AccelerationPackagingTests(unittest.TestCase):
             self.assertIn(str(loader.resolve()),env['PATH'].split(components.os.pathsep))
             self.assertNotIn(str(wrong.resolve()),env['PATH'].split(components.os.pathsep))
             self.assertEqual(list(output.iterdir()),[])
+
+    def test_build_host_loader_archive_is_hash_checked_and_only_selects_x64(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder)
+            pe=bytearray(128);pe[:2]=b'MZ';pe[60:64]=(64).to_bytes(4,'little');pe[64:70]=b'PE\0\0\x64\x86'
+            archive=io.BytesIO()
+            with zipfile.ZipFile(archive,'w') as stream:
+                stream.writestr('x64/vulkan-1.dll',pe)
+                pe[68:70]=b'\x4c\x01'
+                stream.writestr('x86/vulkan-1.dll',pe)
+                stream.writestr('../unexpected.txt',b'never extract')
+            data=archive.getvalue()
+            with self.assertRaisesRegex(ValueError,'checksum'):
+                components.unpack_vulkan_probe(data,root/'bad')
+            self.assertFalse((root/'bad').exists())
+            with patch.object(components,'VULKAN_PROBE_SHA256',hashlib.sha256(data).hexdigest()):
+                loader=components.unpack_vulkan_probe(data,root/'probe')
+            self.assertTrue(components.windows_x64_library(loader))
+            self.assertEqual([p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()],['probe/vulkan-1.dll'])
 
     def test_bad_release_target_and_backend_rejected(self):
         for version, target, backend in [("../escape", "linux-x86_64", "vulkan"), ("v0.3.4", "linux-x86_64", "cuda"), ("acceleration-test-1", "macos-arm64", "cuda"), ("acceleration-test-1", "linux-x86_64", "unverified")]:

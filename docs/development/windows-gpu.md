@@ -102,10 +102,27 @@ and bilingual fact/negation gate, requires proven offload, and saves hashes and
 the result in ignored artifacts. Production component signature/activation rules
 are unchanged.
 
-The first targeted static Vulkan CI build compiled successfully, then failed
-`--version` with `0xc0000135` on its GPU-less runner. The build-only probe now
-finds an x64 Vulkan loader in the copy-only SDK; it is not copied to the component.
-Fresh artifact/model validation remains pending.
+The local CUDA build now loads the pinned Qwen3-1.7B model and proves 29/29 layers
+offloaded on the GTX 1650. Both fictional English/Chinese extraction requests
+preserve weekdays, amount and negation. One ordered CPU/CUDA pair at two threads
+took 14,328/5,735 ms including startup. This small cold-start sample does not
+establish general throughput or meeting quality. The production worker's own
+one-thread admission trial also passed (5,565 ms total, sampled child RSS 2,093
+MiB, runtime GPU buffers 1,300.43 MiB). The reported buffers are not physical peak
+VRAM. Exact hashes, configuration and limits are in
+[`windows-gpu-2026-10-26.json`](../evaluation/windows-gpu-2026-10-26.json).
+
+The pinned runtime hides model offload metadata at its default verbosity 3;
+optional GPU workers now request verbosity 4 so the admission test can prove
+offload. Verbosity 5 logs request contents and is not enabled in production.
+
+Two targeted static Vulkan CI builds compiled successfully, then failed
+`--version` with `0xc0000135` on their GPU-less runners. The copy-only development
+SDK did not supply a runtime loader. The build probe now uses the separately
+published, SHA-256 pinned LunarG runtime ZIP in a build-only directory, selects
+only its x64 loader, and adds it to that process's PATH. It never installs a
+system runtime or copies the loader into the downloadable component. Fresh
+artifact/model validation remains pending.
 
 A diagnostic with one local Microsoft Zira synthesized English sentence still
 misrecognized OmaScribe and NVIDIA, both without terms and with the default 1.5
@@ -118,3 +135,4 @@ score promotion is claimed from this synthetic voice.
 - [NVIDIA CUDA 12.8 driver compatibility](https://docs.nvidia.com/cuda/archive/12.8.0/cuda-toolkit-release-notes/index.html)
 - [CMake real/virtual CUDA architecture selection](https://cmake.org/cmake/help/latest/prop_tgt/CUDA_ARCHITECTURES.html)
 - [Khronos Windows driver discovery](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md#driver-discovery-on-windows)
+- [LunarG runtime archive hashes and non-installer description](https://vulkan.lunarg.com/sdk/files.json)
