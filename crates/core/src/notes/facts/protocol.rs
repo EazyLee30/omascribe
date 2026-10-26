@@ -265,6 +265,10 @@ pub(crate) fn extraction_schema(ledger: &super::Ledger, input: &[super::Clause])
     };
     json!({"type":"object","properties":{"updates":{"type":"array","maxItems":32,"items":items}},"required":["updates"],"additionalProperties":false})
 }
-pub(crate) fn compose_schema() -> Value {
-    json!({"type":"object","properties":{"sections":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"object","properties":{"body":{"type":"string"},"facts":{"type":"array","items":{"type":"integer","minimum":1},"minItems":1}},"required":["body","facts"],"additionalProperties":false}}},"required":["sections"],"additionalProperties":false})
+pub(crate) fn compose_schema(ledger: &super::Ledger) -> Value {
+    let ids = ledger.facts.iter().map(|f| f.id).collect::<Vec<_>>();
+    // This probe composes one bounded fact group. Its provenance is known input,
+    // not an extra task for the small model to guess. The independent document
+    // validator and fixture assertions still check content after decoding.
+    json!({"type":"object","properties":{"sections":{"type":"array","minItems":1,"maxItems":1,"items":{"type":"object","properties":{"body":{"type":"string"},"facts":{"type":"array","enum":[ids]}},"required":["body","facts"],"additionalProperties":false}}},"required":["sections"],"additionalProperties":false})
 }
