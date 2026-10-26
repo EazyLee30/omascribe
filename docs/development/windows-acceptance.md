@@ -6,6 +6,21 @@ pipeline remain the release design.
 
 ## 1. Integrate shared source and regress native behavior
 
+Current support checkpoint: `be5e16d` merges shared `e255dc7`, including the
+public ASR fixture preparation/offline reuse change. Python now has 43 passing
+tests. The full 19-case rerun passed, with clean inference sources; core 99 / 5
+opt-in ignored, ASR 3, default-app and UI-test clippy also pass. The reused CLI's
+compile identity remains `164371e` and its core source hash is unchanged; the
+report separately records current suite revision `be5e16d`. This merge does not change the
+production core, frontend, model inputs or GPU component build inputs compared
+with candidate source `164371e`; it does not require another component build.
+
+At `164371e`, shared `ac6cdfa` had already brought the repository layout and Metal
+fallback work. The Windows icon path and HTML/Markdown LF attributes were
+corrected. Rebuilt frontend and Windows application, clean-source 19/19 real-model
+minutes, 99 core tests / 5 opt-in ignored, 42 Python tests and native UI-test
+feature clippy pass. Earlier checkpoints below are retained as history.
+
 Merged PR #1 `8dbdf3b` into Windows commit `5cd3bae`, preserving both Metal and
 Windows harness tests. Production core/frontend source is unchanged from the
 previous Windows application source `911d786`. The newly compiled CLI identifies
@@ -13,23 +28,42 @@ previous Windows application source `911d786`. The newly compiled CLI identifies
 passed. Rust core: 95 passed / 5 opt-in ignored. Python: 42 passed after adding
 the formal-environment tools. Source CI for the merge is green.
 
-Fresh native UI acceptance is still blocked. Automatic approval rejected the
+The earlier native UI attempt was blocked. Automatic approval rejected the
 acceptance-app launch command containing a WebView2 debug port with only
 `blocked by policy`. Existing-window accessibility reads work, but WGC screenshot
 capture returned `FrameArrived timed out`; input geometry is unavailable and
 keyboard results could not be reliably verified. The user confirmed an unlocked,
-visible desktop. Historical native UI passes are retained separately; they do
-not complete the new run. See
+visible desktop. These tool failures were resolved for functional acceptance by
+using the repository's existing native `ui-test` startup hook and fixed DOM
+probes, without a debugging port. Open native main/companion/transcript windows
+passed five language changes and expansion checks; detection did not activate
+GPU inference. The probes are compiled out of production. User-supplied app
+screenshots are normal; automated desktop screenshot capture remains a separate
+tool limitation. See the earlier
 [`step1 evidence`](../evaluation/windows-acceptance-2026-10-27-step1.json).
+Current evidence is in
+[`layout acceptance`](../evaluation/windows-acceptance-2026-10-27-layout.json).
 
 ## 2. Accept the formal native payloads
 
-The installed NVIDIA 522.06 driver cannot be used for formal CUDA 12.8 acceptance.
+The previous NVIDIA 522.06 driver could not be used for formal CUDA 12.8 acceptance.
 NVIDIA's official GTX 1650 notebook / Windows 10 lookup returned 621.01 WHQL.
 The installer is downloaded, its size/SHA-256 recorded, and its NVIDIA
-Authenticode signature verified. It has **not** been executed. Driver installation
-needs administrator elevation/user UAC and may interrupt the display or require
-a restart. See [`driver preparation`](../evaluation/windows-driver-preparation-2026-10-27.json).
+Authenticode signature verified. The user approved launch and handled the
+installation. The installer summary reports a failure while all selected rows
+report installed; its aggregate failure reason has not been established. The
+system driver is now 621.01, device problem code is zero, SetupAPI records the
+display-driver operation as SUCCESS, and CUDA initialization/device enumeration
+succeed. No restart was performed by the agent. See
+[`driver evidence`](../evaluation/windows-driver-preparation-2026-10-27.json).
+
+The Windows Vulkan artifact from full-matrix run `40367160891` has now passed
+normal driver discovery, 29/29 layer offload and both fictional fact/negation
+requests. Its archive and every member are hash-checked, SDK/driver override
+paths excluded, and the system Vulkan loader observed in the child. This is
+runtime-only acceptance, not signed-settings activation. Exact results and limits:
+[`formal Vulkan runtime`](../evaluation/windows-vulkan-formal-2026-10-27.json).
+The two CUDA build jobs are still pending; no CUDA 12.8 result is claimed yet.
 
 Use candidate artifacts from the existing Windows/Linux × CUDA/Vulkan matrix.
 Retain the workflow run, exact source SHA, CUDA 12.8.1 build log/toolchain version,
@@ -101,3 +135,26 @@ case's actual result and limits. Keep blocked, simulated and failed cases visibl
 The unified pipeline requires all four components, checks their exact bytes,
 signs the directory and updates the shared catalog only after release gates.
 Uploading a standalone Windows executable does not satisfy that contract.
+
+## Native functional test without a debugger port
+
+Build the existing `ui-test` feature with a separate application identifier and
+protocol scheme, and use a fresh data/report directory:
+
+```powershell
+$env:TAURI_CONFIG='{"identifier":"io.omarchy.omascribe.nativeqa","plugins":{"deep-link":{"desktop":{"schemes":["omascribe-nativeqa"]}}}}'
+cargo +1.99.0 build -p omascribe --features ui-test --locked
+$env:OMASCRIBE_DATA_DIR='<fresh-acceptance-data-directory>'
+$env:OMASCRIBE_MODELS_DIR='<prepared-model-directory>'
+$env:OMASCRIBE_RUNTIME_DIR='<CPU-runtime-directory>'
+$env:OMASCRIBE_UI_TEST_SCRIPT=(Resolve-Path tests/native-windows-acceptance.js).Path
+$env:OMASCRIBE_UI_TEST_REPORT='<absolute-new-report.json>'
+& target/debug/omascribe.exe
+```
+
+The native app exercises its real frontend/IPC/windows, writes a result and exits.
+The fixture supports physical Escape cancellation. Fixed probes inspect only
+localization/control state and can expand the companion; they do not expose an
+arbitrary script-evaluation endpoint. Reports from the first fixture run retain
+a test-navigation timing failure; the fixture now waits for the settings page
+after a language re-render. Do not distribute the UI-test binary as a release.

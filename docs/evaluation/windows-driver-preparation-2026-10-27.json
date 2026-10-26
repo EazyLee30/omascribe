@@ -6,7 +6,7 @@
   "release_date": "Wed Oct 21, 2026",
   "bytes": 1037190000,
   "sha256": "9624c64705d8c6b0fb034c69faf176f2c85c804c434e478b15e6ca4e00965211",
-  "status": "downloaded-not-executed",
+  "status": "core-driver-active",
   "authenticode": {
     "status": "Valid",
     "message": "Signature verified.",
@@ -14,6 +14,33 @@
     "thumbprint": "B66776FC8E70C58ED98199E8391264C827AAC534"
   },
   "intended_device": "NVIDIA GeForce GTX 1650 notebook / Lenovo 82AV / Windows 10 x64",
-  "installed": false,
-  "approval_state": "awaiting_user_installation_approval_and_UAC"
+  "installed": true,
+  "approval_state": "approved_launch_completed_user_handles_UAC",
+  "user_approved_launch": true,
+  "installer_process_id": 7640,
+  "installation_state": "core_driver_active_installer_overall_failure_unexplained",
+  "last_observed_installed_driver": "621.01",
+  "display_device_status": "OK",
+  "display_device_problem_code": 0,
+  "setupapi_display_driver_exit": "SUCCESS",
+  "runtime_probe": {
+    "cuda_driver_api": 13050,
+    "cuda_api_version": "13.5",
+    "cuInit": 0,
+    "cuDeviceGetCount_result": 0,
+    "cuda_devices": 1,
+    "vulkan_exit": 0,
+    "vulkan_devices": "Available devices:\n  Vulkan0: NVIDIA GeForce GTX 1650 (4149 MiB, 3558 MiB free)",
+    "vulkan_stderr": "",
+    "driver_overrides_cleared": true,
+    "sdk_path_excluded": true
+  },
+  "installer_overall_result": "User screenshot reports failure while all selected component rows report installed; aggregate failure reason not established.",
+  "reboot_observation": {
+    "cbs_pending": false,
+    "windows_update_pending": false,
+    "pending_file_rename_entries": 152,
+    "nvidia_related_pending_entries": 0,
+    "reboot_performed_by_agent": false
+  }
 }
