@@ -123,7 +123,21 @@
       evidence.before = await catalog();
       await models();
       if (["restart", "cpu", "fault"].includes(config.phase)) assert(evidence.before.verification.state === "active", "Restart lost the hardware/model/runtime-bound activation");
-      if (config.phase === "enable") await test();
+      if (config.phase === "enable") {
+        // Isolated lifecycle workspace only: keep previous fictional cases for
+        // evidence, but pause their background work during configuration QA.
+        await idle();
+        const prefs = await invoke("get_preferences");
+        await preferencesWhenIdle({ ...prefs, auto_notes: false, translation_mode: "off" });
+        for (const meeting of await invoke("list_meetings")) {
+          await invoke("update_meeting", { id: meeting.id, title: meeting.title, autoNotes: false });
+        }
+        await idle();
+        await button('[data-component-action="check"]');
+        await until(async () => (await catalog()).state === "ready", 60000);
+        evidence.checks.push("Settings rechecked the normal-key signed public catalog before testing");
+        await test();
+      }
       if (config.phase === "cpu") {
         await button('[data-component-action="disable"]');
         await until(async () => (await catalog()).verification.state !== "active");
