@@ -9,6 +9,16 @@ export interface Appearance {
   font: string;
   font_size: number;
 }
+/** Live Omarchy desktop theme, present only on an Omarchy session. */
+export interface DesktopTheme {
+  name: string;
+  mode: string;
+  accent: string;
+  background: string;
+  foreground: string;
+  muted: string;
+  border: string;
+}
 export interface Preferences {
   appearance: Appearance;
   asr_model: string;
@@ -100,10 +110,34 @@ export const defaultAppearance: Appearance = {
   font_size: 13,
 };
 let current: Preferences | null = null;
+let desktopTheme: DesktopTheme | null = null;
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 export function applyAppearance(a: Appearance) {
   const root = document.documentElement;
   const dark = a.mode === "dark" || (a.mode === "system" && darkQuery.matches);
+  // `omarchy` mirrors the live desktop theme instead of a built-in palette.
+  // Omarchy already guarantees contrast between these tokens, so no separate
+  // light/dark pair is needed for it.
+  if (a.theme === "omarchy" && desktopTheme) {
+    const t = desktopTheme;
+    const values: Record<string, string> = {
+      bg: t.background,
+      sidebar: t.background,
+      panel: t.border,
+      surface: t.border,
+      text: t.foreground,
+      muted: t.muted,
+      border: t.border,
+    };
+    for (const [key, value] of Object.entries(values))
+      root.style.setProperty(`--${key}`, value);
+    root.style.setProperty("--accent", t.accent);
+    root.style.setProperty("--accent-ink", accentInk(t.accent));
+    root.style.setProperty("--green", t.accent);
+    root.style.setProperty("--red", t.accent);
+    applyFontAndMode(a, t.mode !== "light");
+    return;
+  }
   const palettes: Record<string, string[]> = {
     forest: dark
       ? [
@@ -170,19 +204,24 @@ export function applyAppearance(a: Appearance) {
   if (a.background) root.style.setProperty("--bg", a.background);
   if (a.foreground) root.style.setProperty("--text", a.foreground);
   root.style.setProperty("--accent", a.accent);
-  const rgb = a.accent
+  root.style.setProperty("--accent-ink", accentInk(a.accent));
+  root.style.setProperty("--green", dark ? "#b1c69e" : "#40663c");
+  root.style.setProperty("--red", dark ? "#edb0a4" : "#a33329");
+  applyFontAndMode(a, dark);
+}
+function accentInk(accent: string) {
+  const rgb = accent
     .slice(1)
     .match(/../g)!
     .map((v) => parseInt(v, 16) / 255)
     .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  root.style.setProperty(
-    "--accent-ink",
-    rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722 > 0.179
-      ? "#14161a"
-      : "#ffffff",
-  );
-  root.style.setProperty("--green", dark ? "#b1c69e" : "#40663c");
-  root.style.setProperty("--red", dark ? "#edb0a4" : "#a33329");
+  // WCAG relative luminance threshold where dark ink reads better than white.
+  return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722 > 0.179
+    ? "#14161a"
+    : "#ffffff";
+}
+function applyFontAndMode(a: Appearance, dark: boolean) {
+  const root = document.documentElement;
   root.style.setProperty(
     "--app-font",
     a.font === "serif"
@@ -206,6 +245,12 @@ export async function savePreferences(preferences: Preferences) {
 }
 export async function initAppearance() {
   const p = await getPreferences();
+  // The desktop theme is fetched once at startup and then pushed by the native
+  // tick whenever Omarchy applies a different theme.
+  const diagnostics = await invoke<{ desktop_theme?: DesktopTheme | null }>(
+    "diagnostics",
+  ).catch(() => null);
+  desktopTheme = diagnostics?.desktop_theme ?? null;
   applyAppearance(p.appearance);
   darkQuery.addEventListener("change", () => {
     if (current) applyAppearance(current.appearance);
@@ -214,4 +259,12 @@ export async function initAppearance() {
     current = event.payload;
     applyAppearance(current.appearance);
   });
+  await listen<DesktopTheme>("desktop-theme", (event) => {
+    desktopTheme = event.payload;
+    if (current) applyAppearance(current.appearance);
+  });
+}
+/** True when this session can follow the desktop theme. */
+export function hasDesktopTheme() {
+  return desktopTheme !== null;
 }

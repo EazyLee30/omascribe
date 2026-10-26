@@ -49,19 +49,94 @@ pub fn devices() -> Result<Vec<Device>> {
     let mut result = vec![Device {
         id: "auto".into(),
         name: "系统默认麦克风".into(),
+        kind: "microphone".into(),
     }];
-    for node in data.as_array().context("设备列表格式错误")? {
+    let nodes = data.as_array().context("设备列表格式错误")?;
+    for node in nodes {
         let p = &node["info"]["props"];
         if p["media.class"].as_str() == Some("Audio/Source") {
             if let Some(name) = p["node.name"].as_str() {
                 result.push(Device {
                     id: name.into(),
                     name: p["node.description"].as_str().unwrap_or(name).into(),
+                    kind: "microphone".into(),
                 });
             }
         }
     }
+    // Meeting software often plays the other side through the speakers, so a
+    // mic-only recording loses half the conversation. Offer the combined
+    // capture first, then the playback-only monitor of each hardware sink.
+    // Virtual filter sinks (speaker EQ, spatial audio) are duplicates of the
+    // same hardware and are skipped.
+    if let Some(sink) = default_sink() {
+        let description = nodes
+            .iter()
+            .filter_map(|node| node["info"]["props"].as_object())
+            .find(|p| {
+                p.get("media.class").and_then(Value::as_str) == Some("Audio/Sink")
+                    && p.get("node.name").and_then(Value::as_str) == Some(sink.as_str())
+            })
+            .and_then(|p| p.get("node.description").and_then(Value::as_str))
+            .unwrap_or("系统声音")
+            .to_string();
+        result.push(Device {
+            id: "mix".into(),
+            name: format!("麦克风 + {description}"),
+            kind: "mixed".into(),
+        });
+    }
+    for node in nodes {
+        let p = &node["info"]["props"];
+        if p["media.class"].as_str() != Some("Audio/Sink")
+            || p["node.virtual"].as_bool() == Some(true)
+            || p["device.class"].as_str() != Some("sound")
+        {
+            continue;
+        }
+        let Some(name) = p["node.name"].as_str() else {
+            continue;
+        };
+        result.push(Device {
+            id: format!("{name}.monitor"),
+            name: p["node.description"].as_str().unwrap_or(name).into(),
+            kind: "system".into(),
+        });
+    }
     Ok(result)
+}
+
+/// Node name of the server-side default playback device.
+#[cfg(target_os = "linux")]
+fn default_sink() -> Option<String> {
+    let from_pactl = Command::new("pactl")
+        .args(["get-default-sink"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .filter(|s| !s.is_empty());
+    if from_pactl.is_some() {
+        return from_pactl;
+    }
+    // Without libpulse tools, fall back to the first hardware sink in pw-dump.
+    let output = Command::new("pw-dump").output().ok()?;
+    let data: Value = serde_json::from_slice(&output.stdout).ok()?;
+    data.as_array()?
+        .iter()
+        .filter_map(|node| node["info"]["props"].as_object())
+        .find(|p| {
+            p.get("media.class").and_then(Value::as_str) == Some("Audio/Sink")
+                && p.get("node.virtual").and_then(Value::as_bool) != Some(true)
+        })
+        .and_then(|p| p.get("node.name").and_then(Value::as_str))
+        .map(str::to_owned)
+}
+
+/// Monitor source for the default playback device, used for system audio.
+#[cfg(target_os = "linux")]
+fn default_monitor() -> Option<String> {
+    default_sink().map(|sink| format!("{sink}.monitor"))
 }
 
 pub fn spawn_capture(
@@ -83,6 +158,48 @@ pub fn spawn_capture(
     }
     let mut cmd = if let Some(input) = input {
         ffmpeg_input(input, replay_seconds)
+    } else if device == "mix" {
+        // A remote meeting plays the other participants through the speakers
+        // while the local microphone picks up the room. Recording either one
+        // alone loses half the conversation, so mix both with a fixed gain and
+        // no normalization: a silent side must not amplify its own noise floor.
+        #[cfg(target_os = "linux")]
+        {
+            let monitor = default_monitor()
+                .context("找不到系统播放设备的监听源；请确认 PipeWire 正在运行")?;
+            let mut c = child_command("ffmpeg");
+            c.args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-nostdin",
+                // Local capture only: no playlist or container may open a URL.
+                "-protocol_whitelist",
+                "file,pipe",
+                "-f",
+                "pulse",
+                "-i",
+                "default",
+                "-f",
+                "pulse",
+                "-i",
+                &monitor,
+                "-filter_complex",
+                "[0:a]volume=1.0[mic];[1:a]volume=1.0[sys];[mic][sys]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0",
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-f",
+                "s16le",
+                "pipe:1",
+            ]);
+            c
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            bail!("麦克风与系统声音混录目前仅在 Linux（PipeWire）上可用")
+        }
     } else {
         let mut c = child_command("pw-record");
         c.args([
@@ -287,6 +404,42 @@ pub fn export_wav_range(dir: &Path, target: &Path, start: u64, end: u64) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A meeting capture must not silently drop the other side of the call.
+    /// The device list is built from a real `pw-dump` fixture kept in the
+    /// repository so this stays checkable on a machine without audio devices.
+    #[test]
+    fn linux_devices_offer_a_mixed_capture_before_monitors() {
+        let fixture = include_str!("../../../tests/fixtures/pw-dump-minimal.json");
+        let data: Value = serde_json::from_str(fixture).unwrap();
+        let nodes = data.as_array().unwrap();
+        let sinks: Vec<&Value> = nodes
+            .iter()
+            .filter(|node| node["info"]["props"]["media.class"].as_str() == Some("Audio/Sink"))
+            .collect();
+        assert_eq!(
+            sinks.len(),
+            2,
+            "fixture keeps a hardware sink and a virtual one"
+        );
+        let hardware: Vec<&Value> = sinks
+            .iter()
+            .copied()
+            .filter(|node| node["info"]["props"]["node.virtual"].as_bool() != Some(true))
+            .collect();
+        assert_eq!(
+            hardware.len(),
+            1,
+            "virtual filter sinks must not be offered"
+        );
+        let name = hardware[0]["info"]["props"]["node.name"].as_str().unwrap();
+        assert_eq!(name, "alsa_output.test.analog-stereo");
+        // The monitor id the capture path targets is the sink name plus `.monitor`.
+        assert_eq!(
+            format!("{name}.monitor"),
+            "alsa_output.test.analog-stereo.monitor"
+        );
+    }
 
     fn has_ffmpeg() -> bool {
         Command::new("ffmpeg")

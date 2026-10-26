@@ -136,6 +136,9 @@ pub struct Snapshot {
 pub struct Device {
     pub id: String,
     pub name: String,
+    /// `microphone` or `system` (a playback monitor / loopback source).
+    #[serde(default)]
+    pub kind: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
@@ -147,6 +150,9 @@ pub struct Diagnostics {
     pub server_ready: bool,
     pub available_memory_mib: Option<u64>,
     pub accent: String,
+    /// Active desktop theme when the session is an Omarchy one.
+    #[serde(default)]
+    pub desktop_theme: Option<crate::desktheme::DesktopTheme>,
     pub version: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]

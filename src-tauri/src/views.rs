@@ -10,7 +10,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tauri::{Emitter, Manager};
 
@@ -369,16 +369,22 @@ fn place_hyprland_window(prefs: ViewPreferences) {
                             .find(|m| m["focused"].as_bool() == Some(true))
                             .or(monitors.first())
                         {
-                            let scale = monitor["scale"].as_f64().unwrap_or(1.);
-                            let left = monitor["x"].as_i64().unwrap_or(0);
-                            let top = monitor["y"].as_i64().unwrap_or(0);
-                            let width = (monitor["width"].as_f64().unwrap_or(1440.) / scale) as i64;
+                            // Hyprland reports a monitor's `x`/`y` in the same
+                            // logical space as a client's `at`, but `width`/`height`
+                            // in physical pixels. Divide only the size by `scale`;
+                            // dividing the origin too shifted the window by half a
+                            // screen on a fractionally scaled panel.
+                            let scale = monitor["scale"].as_f64().unwrap_or(1.).max(0.1);
+                            let left = monitor["x"].as_f64().unwrap_or(0.);
+                            let top = monitor["y"].as_f64().unwrap_or(0.);
+                            let width = monitor["width"].as_f64().unwrap_or(1440.) / scale;
+                            let margin = 16.;
                             let x = if prefs.snap == "left" {
-                                left + 16
+                                left + margin
                             } else {
-                                left + width - prefs.floating_width as i64 - 16
+                                left + width - prefs.floating_width as f64 - margin
                             };
-                            run(format!("hl.dispatch(hl.dsp.window.move({{x={x},y={},relative=false,window='{target}'}}))",top+60));
+                            run(format!("hl.dispatch(hl.dsp.window.move({{x={x:.0},y={:.0},relative=false,window='{target}'}}))", top + 60.));
                         }
                     }
                 }
@@ -426,9 +432,30 @@ pub async fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> 
 }
 pub fn start(app: &tauri::AppHandle) {
     let handle = app.clone();
+    // Signature of the theme currently mirrored, plus when it was last checked.
+    let theme_watch = Arc::new(Mutex::new((
+        omascribe_core::desktheme::signature(),
+        Instant::now(),
+    )));
     let tick = move || {
         let engine = handle.state::<AppState>();
         let views = handle.state::<ViewState>();
+        // Omarchy rewrites its theme files when a theme is applied. Polling a
+        // cheap stat keeps the workspace in step without a file watcher; the
+        // interval stays coarse because a theme change is rare.
+        {
+            let mut watch = theme_watch.lock().unwrap();
+            if watch.1.elapsed() >= Duration::from_secs(2) {
+                watch.1 = Instant::now();
+                let signature = omascribe_core::desktheme::signature();
+                if signature != watch.0 {
+                    watch.0 = signature;
+                    if let Some(theme) = omascribe_core::desktheme::current() {
+                        let _ = handle.emit("desktop-theme", theme);
+                    }
+                }
+            }
+        }
         let prefs = views.prefs.lock().unwrap().clone();
         if let Err(error) = crate::companion::apply(&handle, prefs.companion_enabled) {
             // A failed optional companion must not interrupt recording or the notebook.

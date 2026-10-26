@@ -11,6 +11,10 @@ pub fn build_identity() -> serde_json::Value {
 }
 pub mod platform;
 
+pub mod desktheme;
+
+pub mod inhibit;
+
 mod capture;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod native_audio;
