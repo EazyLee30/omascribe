@@ -50,6 +50,9 @@ class AccelerationReleaseTests(unittest.TestCase):
         inputs = {path:(ROOT/path).read_bytes() for path in ["models.lock.json", "scripts/acceleration-components.py", "scripts/runtime_inventory.py"]}
         inputs[".github/workflows/acceleration-components.yml"] = workflow
         original = release.native_fingerprint(inputs.__getitem__)
+        lf = workflow.replace(b"\r\n", b"\n")
+        for ending in [lf, lf.replace(b"\n", b"\r\n")]:
+            self.assertEqual(release.native_fingerprint({**inputs, ".github/workflows/acceleration-components.yml":ending}.__getitem__), original)
         for path, change in [("models.lock.json", lambda b:b+b" "),
                              ("scripts/acceleration-components.py", lambda b:b+b"# changed build\n"),
                              (".github/workflows/acceleration-components.yml", lambda b:b.replace(b'cuda: "12.8.1"', b'cuda: "12.9.0"')),
@@ -125,7 +128,7 @@ class AccelerationReleaseTests(unittest.TestCase):
         release.packaging.index(packages, version)
         (packages / "index.payload.sig").write_text("fictional signature; native verifier is mocked only in transaction tests")
         (packages / "updater.pub").write_text(json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["plugins"]["updater"]["pubkey"])
-        (packages / "index.json").write_text(json.dumps(dict(payload=(packages/"index.payload").read_text(), signature=(packages/"index.payload.sig").read_text())))
+        (packages / "index.json").write_text(json.dumps(dict(payload=(packages/"index.payload").read_bytes().decode("utf-8"), signature=(packages/"index.payload.sig").read_text())))
         return packages
 
     def remote(self, packages, wrong_digest=False):

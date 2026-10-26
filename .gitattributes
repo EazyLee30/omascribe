@@ -1,6 +1,7 @@
 # Signature fixtures must keep the exact signed bytes on every checkout platform.
 /tests/fixtures/update-signature/payload -text
 tests/fixtures/component-signature/payload -text
+tests/fixtures/candidate-signature/payload -text
 *.ts text eol=lf
 *.css text eol=lf
 *.mjs text eol=lf

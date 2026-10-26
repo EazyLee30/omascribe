@@ -73,7 +73,7 @@ def native_fingerprint(read):
     native compiler inputs. Both recognized checkout forms bind the checked
     source through either the event's ancestor base or prepare's exact head.
     """
-    workflow = read(".github/workflows/acceleration-components.yml").decode()
+    workflow = read(".github/workflows/acceleration-components.yml").decode().replace("\r\n", "\n")
     build = workflow.split("  build:\n", 1)[1].split("  catalog:\n", 1)[0]
     checkout = build.split("    steps:\n", 1)[1].split("      - uses: actions/setup-python@", 1)[0]
     recognized = ["      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n        with:\n          ref: ${{ needs.prepare.outputs.source_sha }}\n"]
