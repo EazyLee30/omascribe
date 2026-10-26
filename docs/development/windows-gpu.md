@@ -45,10 +45,10 @@ this branch owns Windows acceptance and the reported UI/terminology regressions.
 
 ## Reported regressions
 
-Final local verification after merging Mac commit `9c7c4b4`: Windows desktop and
+Local verification after merging Mac commit `bca8671`: Windows desktop and
 static-CRT ASR worker compile; strict clippy passed for all three workspace
-packages (ASR uses its own static-CRT target cache). Core: 94 passed / 5 opt-in
-ignored; ASR: 3 passed; Python: 29 passed. The real
+packages (ASR uses its own static-CRT target cache). Core: 95 passed / 5 opt-in
+ignored; ASR: 3 passed; Python: 36 passed. The real
 CPU admission gate passed both English/Chinese fact-and-negation requests. The
 native three-language UI check passed again against the rebuilt app and worker.
 Two seconds of synthetic silence completed without invented segments in both
@@ -68,6 +68,15 @@ contain only names supported by recognizable transcript text. A draft that drops
 one of these names must repair before committing. Notes alone do not prove that
 an unintelligible fragment such as “M二” names a particular product. Raw ASR
 history and human edits continue to be preserved.
+
+Ordinary Latin words collected from mixed-language notes remain ASR hints but
+are not mandatory literal names in minutes. Full-corpus testing exposed the
+distinction in `bilingual_scope`: `offline transcription` must be allowed to
+translate. A language-only repair now translates the existing draft against the
+original transcript instead of recomposing it and losing qualifiers. The repaired
+fixture retains offline transcription, Friday, microphone-only scope and deferred
+system audio. Factual repairs still rebuild from evidence, and every translation
+passes the same name, fact and source checks before committing.
 
 ## Reproduce on Windows
 
@@ -111,6 +120,8 @@ one-thread admission trial also passed (5,565 ms total, sampled child RSS 2,093
 MiB, runtime GPU buffers 1,300.43 MiB). The reported buffers are not physical peak
 VRAM. Exact hashes, configuration and limits are in
 [`windows-gpu-2026-10-26.json`](../evaluation/windows-gpu-2026-10-26.json).
+Repeating the one-thread admission on clean source took 9,670 ms, so the initial
+two-thread ordered pair must not be treated as a stable speedup estimate.
 
 The pinned runtime hides model offload metadata at its default verbosity 3;
 optional GPU workers now request verbosity 4 so the admission test can prove
@@ -121,8 +132,13 @@ Two targeted static Vulkan CI builds compiled successfully, then failed
 SDK did not supply a runtime loader. The build probe now uses the separately
 published, SHA-256 pinned LunarG runtime ZIP in a build-only directory, selects
 only its x64 loader, and adds it to that process's PATH. It never installs a
-system runtime or copies the loader into the downloadable component. Fresh
-artifact/model validation remains pending.
+system runtime or copies the loader into the downloadable component. Run
+[`40345201430`](https://github.com/EazyLee30/omascribe/actions/runs/40345201430)
+now passes Windows source checks, static compilation, version verification and
+component packaging; its catalog correctly skips. Download attempts from this
+Windows host failed with TLS/EOF errors, so local model validation of that Vulkan
+artifact remains pending. The build label was removed to avoid redundant SDK
+builds on subsequent source pushes.
 
 A diagnostic with one local Microsoft Zira synthesized English sentence still
 misrecognized OmaScribe and NVIDIA, both without terms and with the default 1.5

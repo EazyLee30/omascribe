@@ -172,6 +172,40 @@
     "One device and one ordered pair, no run-to-run confidence interval.",
     "No full-meeting, warm throughput, ASR accuracy, power or broad compatibility claim.",
     "The 2093 MiB sampled child RSS is a lower bound; 1300.43 MiB is a runtime-reported GPU buffer total, not physical peak VRAM.",
-    "Signed production catalog is not yet published; GPU remains an explicit install/test/enable choice."
-  ]
+    "Signed production catalog is not yet published; GPU remains an explicit install/test/enable choice.",
+    "Repeated one-thread admission took 9670 ms versus 5565 ms initially; do not treat the two-thread ordered pair as a stable speedup estimate."
+  ],
+  "production_worker_admission_clean_source_repeat": {
+    "backend": "cuda",
+    "build": {
+      "profile": "debug",
+      "revision_at_compile": "0dfe8a80bcdee1d729f696fc2e94e0ba88335742",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "dce98792b4bec5c67ac01b12425e2d99f60edd59b32c913d0b54439c4df46d81",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "context": 2048,
+    "error": null,
+    "kind": "explicit_developer_gpu_admission",
+    "limitation": "Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation.",
+    "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "offloaded": true,
+    "passed": true,
+    "runtime_sha256": "48da85362718a3ed75af1197cd964dd27d6b083c753a8a85c6b96b64da7a4031",
+    "schema": 1,
+    "threads": 1,
+    "trial": {
+      "peak_rss_mib": 2093,
+      "requests_ms": [
+        4117,
+        1042
+      ],
+      "runtime_gpu_buffer_mib": 1300.43,
+      "startup_ms": 4511,
+      "total_ms": 9670
+    },
+    "inference_source_tree_dirty": false,
+    "source_verification": "Working tree matches commit 0dfe8a8 after refreshing Git stat metadata for LF-normalized files. Exact compiled source hash retained."
+  }
 }

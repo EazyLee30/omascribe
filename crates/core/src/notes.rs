@@ -328,8 +328,10 @@ fn generate_inner(
                 break;
             }
             Err(error) if attempt == 0 => {
-                // Rebuild from the pending evidence instead of feeding the failed draft back
-                // as an example: small local models otherwise repeat its invalid attributions.
+                // Rebuild from pending evidence for factual failures: small
+                // models otherwise repeat invalid attributions. A language-only
+                // failure instead needs translation without dropping details;
+                // its result still passes every factual check below.
                 // Keep historical evidence too: a repair must not forget earlier decisions.
                 let spelling_context = background
                     .get("spellings")
@@ -343,6 +345,9 @@ fn generate_inner(
                     error.to_string().contains("数字或日期"),
                 );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
+                if error.to_string().contains("输出语言") {
+                    repair["draft_for_translation"] = json!(raw_body);
+                }
                 let attribution = error.to_string().contains("speaker attribution");
                 if attribution {
                     for passage in repair["transcript"].as_array_mut().unwrap() {
@@ -359,9 +364,9 @@ fn generate_inner(
                     "提问和问题反馈也是实质内容。仅整理可理解的原话，保留疑问而不将它写成确认结论；不能因部分片段含混而忽略全部内容。Questions and reported problems are substantive. Keep them as questions, not confirmed conclusions; unclear passages do not invalidate the rest."
                 } else if error.to_string().contains("输出语言") {
                     if writer::chinese(snapshot, &prefs.minutes_language) {
-                        "用中文重写纪要正文，所有英文句子必须译成中文，专有名称保留原文。"
+                        "将draft_for_translation完整译成中文纪要正文，保留每个议题、技术限定词、日期和未完成状态，专有名称保留原文。仍以transcript核对事实，删除没有原话依据的内容。"
                     } else {
-                        "Write the entire minutes body in English. Translate Chinese sentences into English, preserving only proper names in their original spelling."
+                        "Translate draft_for_translation completely into English minutes prose, preserving every topic, technical qualifier, date and unfinished status. Keep proper names in their original spelling. Check against transcript and remove unsupported claims."
                     }
                 } else if error.to_string().contains("因果关系") {
                     "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
