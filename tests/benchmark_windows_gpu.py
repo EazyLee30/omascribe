@@ -30,7 +30,7 @@ def correct_facts(facts):
             and facts["approved"] is False)
 
 
-def trial(server, model, backend, output, manifest):
+def trial(server, model, backend, output, manifest, formal=False):
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
@@ -38,6 +38,12 @@ def trial(server, model, backend, output, manifest):
     address = f"http://127.0.0.1:{port}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     env = dict(os.environ, HF_HUB_OFFLINE="1", OMP_NUM_THREADS="1")
+    removed = []
+    if formal:
+        from windows_runtime_support import acceptance_environment
+        if manifest:
+            raise ValueError("Formal acceptance requires normal driver discovery")
+        env, removed = acceptance_environment(server.parent)
     if manifest:
         env["VK_ICD_FILENAMES"] = str(manifest.resolve())
     command = [str(server.resolve()), "-m", str(model.resolve()), "--host", "127.0.0.1", "--port", str(port),
@@ -67,6 +73,10 @@ def trial(server, model, backend, output, manifest):
                         raise TimeoutError("Local server startup timed out")
                     time.sleep(.1)
             startup_ms = round((time.monotonic() - started) * 1000)
+            modules = []
+            if formal and backend != "cpu":
+                from windows_runtime_support import audit_runtime_modules
+                modules = audit_runtime_modules(child.pid, server.parent, backend)
             runs = []
             schema = {"type": "object", "properties": {"day": {"type": "string"}, "rejected_day": {"type": "string"}, "budget": {"type": "integer"}, "approved": {"type": "boolean"}}, "required": list(EXPECTED), "additionalProperties": False}
             for text in INPUTS:
@@ -82,9 +92,12 @@ def trial(server, model, backend, output, manifest):
             offloads = [int(n) for n in re.findall(r"offloaded (\d+)/\d+ layers to GPU", content)]
             if backend != "cpu" and not any(offloads):
                 raise ValueError("GPU offload was not proven")
+            if formal and backend != "cpu":
+                modules = audit_runtime_modules(child.pid, server.parent, backend)
             return dict(passed=all(r["correct"] for r in runs), backend=backend, server_sha256=sha256(server), startup_ms=startup_ms, runs=runs,
                         total_ms=round((time.monotonic()-started)*1000), offloaded_layers=max(offloads, default=0),
-                        peak_rss_mib=None, gpu_memory_mib=None)
+                        peak_rss_mib=None, gpu_memory_mib=None, dependency_audit=modules,
+                        formal_environment=formal, removed_override_keys=removed)
         finally:
             child.terminate()
             try:
@@ -100,16 +113,31 @@ def main():
         parser.add_argument("--"+name, type=Path, required=True)
     parser.add_argument("--vulkan-manifest", type=Path)
     parser.add_argument("--backend", choices=["cuda", "vulkan"], default="vulkan")
+    parser.add_argument("--formal", action="store_true", help="Windows acceptance: strip SDK paths/driver overrides and audit loaded dependencies")
+    parser.add_argument("--component-manifest", type=Path)
+    parser.add_argument("--component-archive", type=Path)
     args = parser.parse_args()
     if args.output.exists():
         parser.error("Use a fresh output path")
+    if args.formal:
+        if os.name != "nt" or args.vulkan_manifest or not args.component_manifest or not args.component_archive:
+            parser.error("Formal mode requires Windows, a component manifest/archive and normal driver discovery")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = dict(passed=False, environment=environment(args.cli), model_sha256=sha256(args.model),
                   process_driver_override=bool(args.vulkan_manifest), driver_manifest_sha256=sha256(args.vulkan_manifest) if args.vulkan_manifest else None,
                   limitation="Two fictional extraction requests, cold start; no warm throughput, ASR/minutes quality, power or broad compatibility claim. Resource samples unavailable.", trials=[])
     try:
+        if args.formal:
+            from windows_runtime_support import component_identity, cuda_driver_api
+            report["kind"] = "formal_component_runtime_acceptance"
+            report["component"] = component_identity(args.component_manifest, args.component_archive, args.gpu_server, args.backend)
+            report["limitation"] += " Runtime-only: production settings download, activation and persistence require separate end-to-end acceptance."
+            if args.backend == "cuda":
+                report["cuda_driver_api"] = cuda_driver_api()
+                if report["cuda_driver_api"] < 12080:
+                    raise RuntimeError("Formal CUDA 12.8 acceptance requires a driver exposing CUDA 12.8 or newer")
         for backend, server in [("cpu", args.cpu_server), (args.backend, args.gpu_server)]:
-            report["trials"].append(trial(server, args.model, backend, args.output, args.vulkan_manifest))
+            report["trials"].append(trial(server, args.model, backend, args.output, args.vulkan_manifest, args.formal))
             write_json(args.output, report)
         report["passed"] = all(t["passed"] for t in report["trials"])
     except Exception as error:

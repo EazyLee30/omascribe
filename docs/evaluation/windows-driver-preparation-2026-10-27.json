@@ -1,0 +1,19 @@
+{
+  "version": "621.01",
+  "whql": true,
+  "source_url": "https://us.download.nvidia.com/Windows/621.01/621.01-notebook-win10-win11-64bit-international-dch-whql.exe",
+  "details_url": "https://www.nvidia.com/en-us/drivers/details/282413/",
+  "release_date": "Wed Oct 21, 2026",
+  "bytes": 1037190000,
+  "sha256": "9624c64705d8c6b0fb034c69faf176f2c85c804c434e478b15e6ca4e00965211",
+  "status": "downloaded-not-executed",
+  "authenticode": {
+    "status": "Valid",
+    "message": "Signature verified.",
+    "signer": "CN=NVIDIA Corporation, OU=2008B9F, O=NVIDIA Corporation, L=Santa Clara, S=California, C=US",
+    "thumbprint": "B66776FC8E70C58ED98199E8391264C827AAC534"
+  },
+  "intended_device": "NVIDIA GeForce GTX 1650 notebook / Lenovo 82AV / Windows 10 x64",
+  "installed": false,
+  "approval_state": "awaiting_user_installation_approval_and_UAC"
+}
