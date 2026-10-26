@@ -321,7 +321,17 @@ impl Engine {
             .timeout_read(Duration::from_secs(20))
             .build()
             .get(INDEX_URL)
-            .call()?;
+            .call();
+        let response = match response {
+            Err(ureq::Error::Status(404, _)) => {
+                let mut status = self.acceleration_components();
+                if status.state != "ready" {
+                    status.state = "not_published".into();
+                }
+                return Ok(status);
+            }
+            other => other?,
+        };
         let mut bytes = vec![];
         response
             .into_reader()

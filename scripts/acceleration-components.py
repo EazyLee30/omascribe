@@ -223,7 +223,10 @@ def build(backend, output):
              "-DLLAMA_BUILD_UI=OFF", "-DLLAMA_USE_PREBUILT_UI=OFF", "-DLLAMA_BUILD_SERVER=ON",
              "-DGGML_CUDA=" + ("ON" if backend == "cuda" else "OFF"), "-DGGML_VULKAN=" + ("ON" if backend == "vulkan" else "OFF")]
     if backend == "cuda":
-        flags += ["-DCMAKE_CUDA_ARCHITECTURES=75-virtual;80-virtual;86-real;89-real;90-virtual;120a-real", "-DGGML_CUDA_NCCL=OFF"]
+        # Ship native instructions for Turing/Ampere/Hopper as well. PTX-only
+        # builds require a driver new enough for the build SDK's PTX version,
+        # defeating CUDA 12 minor-version compatibility on older GPUs.
+        flags += ["-DCMAKE_CUDA_ARCHITECTURES=75-real;80-real;86-real;89-real;90-real;120a-real", "-DGGML_CUDA_NCCL=OFF"]
     else:
         flags += vulkan_flags(pathlib.Path(os.environ["VULKAN_SDK"]), os.name == "nt")
     if os.name == "nt":

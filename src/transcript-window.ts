@@ -1,7 +1,11 @@
 import { bindWindowDrag, macDesktop } from "./window-drag";
 import { uiIcon } from "./ui-icons";
 import { tr } from "./workspace-ui";
-import { passageHTML, translationSelect } from "./translation-ui";
+import {
+  passageHTML,
+  translationChoices,
+  translationSelect,
+} from "./translation-ui";
 import { getPreferences, savePreferences } from "./preferences-client";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, emit } from "@tauri-apps/api/event";
@@ -13,7 +17,7 @@ import {
   type ViewPreferences,
 } from "./views-client";
 import type { Snapshot } from "./types";
-import { t } from "./i18n";
+import { onLocaleChange, t } from "./i18n";
 import "./style.css";
 import "./workspace.css";
 import "./floating.css";
@@ -142,6 +146,84 @@ async function render() {
     busy = false;
   }
 }
+function localize() {
+  for (const [action, label, icon] of [
+    ["stop", tr("结束", "End", "結束"), "stop"],
+    ["dock", tr("停靠到主窗口", "Dock in main window", "停靠至主視窗"), "dock"],
+    ["search", tr("搜索转写", "Search transcript", "搜尋轉寫"), "search"],
+    [
+      "collapse",
+      tr("收起 / 展开", "Collapse / expand", "收起 / 展開"),
+      "collapse",
+    ],
+    [
+      "settings",
+      tr("字幕与显示设置…", "Caption & display settings…", "字幕及顯示設定…"),
+      "",
+    ],
+    ["return", tr("回到会议", "Back to meeting", "回到會議"), "return"],
+  ] as const)
+    root.querySelector(`[data-action='${action}']`)!.innerHTML =
+      (icon ? uiIcon(icon, 16) : "") + label;
+  for (const [selector, label] of [
+    ["[data-action='record']", t("record")],
+    ["[data-action='captions']", tr("实时字幕", "Live captions", "即時字幕")],
+    [
+      "[data-action='maximize']",
+      tr("最大化 / 还原", "Maximize / restore", "最大化 / 還原"),
+    ],
+    ["[data-action='close']", t("close")],
+    [".float-resize", t("resizeWindow")],
+    [".float-more summary", tr("更多操作", "More actions", "更多操作")],
+  ]) {
+    const element = root.querySelector<HTMLElement>(selector)!;
+    element.title = label;
+    element.setAttribute("aria-label", label);
+  }
+  const search = root.querySelector<HTMLInputElement>("#float-search")!;
+  search.placeholder = t("search");
+  search.setAttribute("aria-label", t("search"));
+  const snap = root.querySelector<HTMLSelectElement>("#float-snap")!;
+  snap.setAttribute("aria-label", t("snapTo"));
+  snap.parentNode!.firstChild!.textContent = tr(
+    "屏幕位置",
+    "Screen position",
+    "螢幕位置",
+  );
+  for (const [value, label] of [
+    ["free", t("freePosition")],
+    ["left", t("screenLeft")],
+    ["right", t("screenRight")],
+  ])
+    snap.querySelector(`option[value='${value}']`)!.textContent = label;
+  const mode = root.querySelector<HTMLSelectElement>(
+    "#float-translation-mode",
+  )!;
+  for (const [value, label] of translationChoices())
+    mode.querySelector(`option[value='${value}']`)!.textContent = label;
+  mode.setAttribute(
+    "aria-label",
+    tr("实时翻译模式", "Live translation mode", "即時翻譯模式"),
+  );
+  mode.title = tr(
+    "本地翻译 · 原始转写保留",
+    "Local translation · Original transcript preserved",
+    "本機翻譯 · 保留原始轉寫",
+  );
+  root.querySelector<HTMLElement>(".float-drag")!.title = tr(
+    "拖动独立浮窗",
+    "Drag this window",
+    "拖曳獨立浮窗",
+  );
+  root.querySelector<HTMLElement>(".float-language")!.title = tr(
+    "本地翻译 · 保留原文",
+    "On-device translation · Original kept",
+    "本機翻譯 · 保留原文",
+  );
+  signature = "";
+  apply(prefs);
+  void render();
+}
 async function init() {
   await initAppearance();
   document.body.classList.add("floating-transcript-app");
@@ -269,6 +351,7 @@ async function init() {
     signature = "";
     render();
   });
+  await onLocaleChange(localize);
   await render();
   setInterval(render, 700);
 }

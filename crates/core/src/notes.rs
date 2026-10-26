@@ -266,6 +266,18 @@ fn generate_inner(
             writer::chinese(snapshot, &prefs.minutes_language),
         )
         .and_then(|()| {
+            terms.validate_writer_names(
+                &context
+                    .segments
+                    .iter()
+                    .filter(|s| !writer::non_substantive(&s.text))
+                    .map(|s| s.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                &terms.normalize(&raw_body),
+            )
+        })
+        .and_then(|()| {
             writer::document(
                 &terms.normalize(&raw_body),
                 &context.segments,
@@ -336,7 +348,10 @@ fn generate_inner(
                     }
                 }
                 let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
-                let hint = if error.to_string().contains("历史来源") {
+                let name_hint = error.to_string();
+                let hint = if name_hint.contains("专有名称") {
+                    &name_hint
+                } else if error.to_string().contains("历史来源") {
                     &history_hint
                 } else if error.to_string().contains("转写仍待整理") {
                     "提问和问题反馈也是实质内容。仅整理可理解的原话，保留疑问而不将它写成确认结论；不能因部分片段含混而忽略全部内容。Questions and reported problems are substantive. Keep them as questions, not confirmed conclusions; unclear passages do not invalidate the rest."

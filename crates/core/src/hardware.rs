@@ -8,6 +8,9 @@ pub struct GpuInventory {
     pub status: String,
     pub devices: Vec<GpuDevice>,
     pub error: Option<String>,
+    /// Maximum CUDA Driver API supported by the installed driver, not the SDK.
+    #[serde(default)]
+    pub cuda_driver_version: Option<i32>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GpuDevice {
@@ -39,6 +42,7 @@ fn unavailable(reason: &str) -> GpuInventory {
         status: "unavailable".into(),
         devices: vec![],
         error: Some(reason.into()),
+        cuda_driver_version: None,
     }
 }
 
@@ -90,6 +94,7 @@ pub fn native_inventory() -> GpuInventory {
             status: "not_required".into(),
             devices: vec![],
             error: None,
+            cuda_driver_version: None,
         }
     }
 }
@@ -168,6 +173,27 @@ fn linux_inventory(pci: &Path) -> GpuInventory {
         status: "detected".into(),
         devices,
         error: None,
+        cuda_driver_version: None,
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn cuda_driver_version() -> Option<i32> {
+    use windows::{
+        core::{s, w},
+        Win32::{Foundation::FreeLibrary, System::LibraryLoader::*},
+    };
+    // Only load the system's driver library in the isolated hardware helper.
+    // No toolkit, driver installation, cuInit, or GPU allocation is required.
+    unsafe {
+        let library = LoadLibraryExW(w!("nvcuda.dll"), None, LOAD_LIBRARY_SEARCH_SYSTEM32).ok()?;
+        let result = GetProcAddress(library, s!("cuDriverGetVersion")).and_then(|entry| {
+            let version: unsafe extern "system" fn(*mut i32) -> i32 = std::mem::transmute(entry);
+            let mut value = 0;
+            (version(&mut value) == 0 && value > 0).then_some(value)
+        });
+        let _ = FreeLibrary(library);
+        result
     }
 }
 
@@ -231,6 +257,7 @@ fn windows_inventory() -> GpuInventory {
         status: "detected".into(),
         devices,
         error: None,
+        cuda_driver_version: cuda_driver_version(),
     }
 }
 

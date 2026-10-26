@@ -1,3 +1,6 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
+
 const en = {
   unavailable: "Unavailable",
   writerLowMemory:
@@ -669,13 +672,41 @@ const tw: typeof en = {
 };
 export type Key = keyof typeof en;
 export type Locale = "en" | "zh-CN" | "zh-TW";
-export let locale: Locale =
-  (localStorage.getItem("omascribe-locale") as Locale) || "en";
-export function t(key: Key): string {
-  return ({ en, "zh-CN": zh, "zh-TW": tw }[locale] || en)[key];
-}
-export function setLocale(value: Locale) {
+const validLocale = (value: unknown): value is Locale =>
+  value === "en" || value === "zh-CN" || value === "zh-TW";
+const storedLocale = localStorage.getItem("omascribe-locale");
+export let locale: Locale = validLocale(storedLocale) ? storedLocale : "en";
+document.documentElement.lang = locale;
+const localeListeners = new Set<() => void>();
+function receiveLocale(value: unknown) {
+  if (!validLocale(value) || value === locale) return;
   locale = value;
   localStorage.setItem("omascribe-locale", value);
   document.documentElement.lang = value;
+  for (const callback of localeListeners) callback();
+}
+// WebView2 windows keep their own module state. Storage and Tauri events cover
+// both browser previews and native windows, including already-open companions.
+window.addEventListener("storage", (event) => {
+  if (event.key === "omascribe-locale") receiveLocale(event.newValue);
+});
+const localeChannel = isTauri()
+  ? listen<Locale>("ui-locale", (event) => receiveLocale(event.payload))
+  : Promise.resolve();
+export async function onLocaleChange(callback: () => void) {
+  await localeChannel;
+  localeListeners.add(callback);
+  callback();
+  return () => localeListeners.delete(callback);
+}
+export function t(key: Key): string {
+  return ({ en, "zh-CN": zh, "zh-TW": tw }[locale] || en)[key];
+}
+export async function setLocale(value: Locale) {
+  if (!validLocale(value)) return;
+  receiveLocale(value);
+  if (isTauri()) {
+    await localeChannel;
+    await emit("ui-locale", value);
+  }
 }

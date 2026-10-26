@@ -312,6 +312,13 @@ fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
     let (index, component, directory) = components::installed_component(&engine.root, id, None)?;
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
     let kind = backend(&component)?;
+    if kind == Backend::Cuda
+        && crate::hardware::detect(&engine.root, &engine.runtime_dir)
+            .cuda_driver_version
+            .is_some_and(|v| v < 12000)
+    {
+        bail!("The installed NVIDIA driver does not support CUDA 12. Update the NVIDIA driver or test the Vulkan component; CPU remains available.");
+    }
     let mut command = crate::platform::child_command(directory.join(&component.entrypoint));
     command
         .arg("--list-devices")

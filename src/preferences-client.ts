@@ -65,6 +65,7 @@ export interface ModelStatus {
 export interface Hardware {
   platform: string;
   gpus: {
+    cuda_driver_version?: number | null;
     schema: number;
     status: string;
     error: string | null;
