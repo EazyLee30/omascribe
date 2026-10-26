@@ -312,3 +312,83 @@ fn subordinate_support_never_crosses_periods_or_source_revisions() -> Result<()>
         .is_err());
     Ok(())
 }
+
+#[test]
+fn replacing_an_owner_then_withdrawing_the_old_name_keeps_the_new_owner() -> Result<()> {
+    let (_root, _e, s) = fixture(&[
+        "负责人是李明，期限是周五。",
+        "更正负责人，王华负责，李明不再负责。",
+    ])?;
+    let first = clauses(&s, &s.segments[..1]);
+    let old = Ledger::default().apply(
+        &s,
+        &first,
+        &json!({"updates":[update(0,"负责人","owner","李明","reported",vec![1])]}).to_string(),
+        1,
+    )?;
+    let fresh = clauses(&s, &s.segments[1..]);
+    let next = old.apply(
+        &s,
+        &fresh,
+        &json!({"updates":[
+        update(1,"负责人","owner","王华","reported",vec![1,2]),
+        update(1,"负责人","owner","李明","withdrawn",vec![1,3])]})
+        .to_string(),
+        2,
+    )?;
+    assert_eq!(next.facts[0].value, "王华");
+    assert_eq!(next.facts[0].state, State::Reported);
+    assert_eq!(next.facts[0].version, 2);
+    assert_eq!(next.facts[1], old.facts[1]);
+    assert!(next.facts.iter().any(|f| f.kind == Kind::Statement
+        && f.state == State::Withdrawn
+        && f.value.contains("李明不再负责")));
+    assert_eq!(old.facts[0].value, "李明");
+    Ok(())
+}
+#[test]
+fn duplicate_same_value_is_idempotent_but_two_conflicting_assignments_are_rejected() -> Result<()> {
+    let (_root, _e, s) = fixture(&["负责人是李明。", "更正负责人，王华负责，陈晨负责。"])?;
+    let old = Ledger::default().apply(
+        &s,
+        &clauses(&s, &s.segments[..1]),
+        &json!({"updates":[update(0,"负责人","owner","李明","reported",vec![1])]}).to_string(),
+        1,
+    )?;
+    let fresh = clauses(&s, &s.segments[1..]);
+    let same = update(1, "负责人", "owner", "王华", "reported", vec![1, 2]);
+    let accepted = old.apply(
+        &s,
+        &fresh,
+        &json!({"updates":[same.clone(),same.clone()]}).to_string(),
+        2,
+    )?;
+    assert_eq!(accepted.facts[0].version, 2);
+    // Extra claims in omitted clauses are retained, even for idempotent proposals.
+    assert!(accepted.facts.iter().any(|f| f.value.contains("陈晨负责")));
+    let other = update(1, "负责人", "owner", "陈晨", "reported", vec![1, 3]);
+    assert!(old
+        .apply(&s, &fresh, &json!({"updates":[same,other]}).to_string(), 2)
+        .is_err());
+    assert_eq!(old.facts[0].value, "李明");
+    Ok(())
+}
+#[test]
+fn withdrawal_of_the_current_owner_without_a_replacement_remains_withdrawn() -> Result<()> {
+    let (_root, _e, s) = fixture(&["负责人是李明。", "更正负责人，李明不再负责。"])?;
+    let old = Ledger::default().apply(
+        &s,
+        &clauses(&s, &s.segments[..1]),
+        &json!({"updates":[update(0,"负责人","owner","李明","reported",vec![1])]}).to_string(),
+        1,
+    )?;
+    let next = old.apply(
+        &s,
+        &clauses(&s, &s.segments[1..]),
+        &json!({"updates":[update(1,"负责人","owner","李明","withdrawn",vec![1,2])]}).to_string(),
+        2,
+    )?;
+    assert_eq!(next.facts[0].state, State::Withdrawn);
+    assert_eq!(next.facts[0].value, "李明");
+    Ok(())
+}
