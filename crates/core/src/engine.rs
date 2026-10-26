@@ -492,7 +492,7 @@ impl Engine {
         }
         let mut m = self.store.lock().unwrap().meeting(id)?;
         if !self.diagnostics().asr_ready || !self.worker_path().exists() {
-            bail!("离线转写模型或运行时尚未准备好，请运行 bin/setup");
+            bail!("离线转写模型或运行时尚未准备好，请运行 scripts/bin/setup");
         }
         if let Some(ref p) = input {
             if !p.is_file() {

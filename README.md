@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="OmaScribe — a local notebook for your conversations" width="100%">
+  <img src="src/assets/banner.svg" alt="OmaScribe — a local notebook for your conversations" width="100%">
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">繁體中文</a>
+  <a href="README.md">English</a> · <a href="docs/i18n/README.zh-CN.md">简体中文</a> · <a href="docs/i18n/README.zh-TW.md">繁體中文</a>
 </p>
 <p align="center">
   <a href="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml"><img src="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -83,15 +83,15 @@ Install a current stable [Rust toolchain](https://www.rust-lang.org/tools/instal
 ```bash
 git clone https://github.com/EazyLee30/omascribe.git
 cd omascribe
-bin/build          # One compile job by default, suitable for an 8 GB machine
-bin/setup          # Download verified models and build pinned llama.cpp and native caption support
-bin/install        # Install to your user account and app launcher
+scripts/bin/build          # One compile job by default, suitable for an 8 GB machine
+scripts/bin/setup          # Download verified models and build pinned llama.cpp and native caption support
+scripts/bin/install        # Install to your user account and app launcher
 ~/.local/bin/omascribe
 ```
 
 Setup needs a network connection, roughly 1.6 GB of model downloads, and additional space for build caches. **After setup, recording, transcription, editing, inference, and export run offline.** No account or API key is required. Models are not stored in Git. Native installers include the verified models; Linux source installs download them during setup.
 
-`OMASCRIBE_BUILD_JOBS=2 bin/build` allows a faster build on a machine with more headroom. Compiling on a fanless MacBook can make it warm and temporarily slow the desktop.
+`OMASCRIBE_BUILD_JOBS=2 scripts/bin/build` allows a faster build on a machine with more headroom. Compiling on a fanless MacBook can make it warm and temporarily slow the desktop.
 
 ## Use it
 
@@ -156,8 +156,8 @@ Current boundaries:
 
 ## Project notes
 
-- [Architecture](docs/ARCHITECTURE.md) · [Models, hashes, and licenses](docs/MODELS.md)
-- [Contributing](CONTRIBUTING.md) · [Privacy and security](SECURITY.md)
+- [Repository map](docs/REPOSITORY.md) · [Architecture](docs/ARCHITECTURE.md) · [Models, hashes, and licenses](docs/MODELS.md)
+- [Contributing](.github/CONTRIBUTING.md) · [Privacy and security](.github/SECURITY.md)
 - Inspired by the user-guided note interaction in [Google Foresight](https://developers.google.com/edge/foresight); this is an independent Rust/Tauri implementation.
 - Built with [Tauri](https://tauri.app/), [Tiptap](https://tiptap.dev/), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [llama.cpp](https://github.com/ggml-org/llama.cpp), and [Qwen](https://huggingface.co/Qwen).
 

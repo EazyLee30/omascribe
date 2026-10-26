@@ -14,7 +14,7 @@ root.chmod(0o700)
 for name in ("omascribe", "omascribe-cli", "omascribe-asr"):
     source = repo / "target/release" / name
     if not source.is_file():
-        raise SystemExit("Run bin/build before bin/install.")
+        raise SystemExit("Run scripts/bin/build before scripts/bin/install.")
     target = runtime / name
     temporary = target.with_suffix(".new")
     shutil.copy2(source, temporary)
@@ -32,7 +32,7 @@ for name in ("omascribe", "omascribe-cli"):
     temporary.replace(target)
 icons = data / "icons/hicolor/scalable/apps"
 icons.mkdir(parents=True, exist_ok=True)
-shutil.copy2(repo / "assets/icon.svg", icons / "omascribe.svg")
+shutil.copy2(repo / "src/assets/icon.svg", icons / "omascribe.svg")
 apps = data / "applications"
 apps.mkdir(parents=True, exist_ok=True)
 # Desktop entry Exec quoting is not shell quoting.
