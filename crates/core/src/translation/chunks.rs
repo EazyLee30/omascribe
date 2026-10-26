@@ -10,6 +10,15 @@ pub(super) const MAX_REQUESTS: usize = 8;
 const MAX_INPUT_BYTES: usize = 640;
 const MAX_OUTPUT_CHARS: usize = 16_000;
 
+#[derive(Debug)]
+pub(super) struct DoesNotFit;
+impl std::fmt::Display for DoesNotFit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Source cannot fit safely within the translation token budget")
+    }
+}
+impl std::error::Error for DoesNotFit {}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Progress {
@@ -32,6 +41,7 @@ impl Progress {
                 p.end > 0
                     && p.end < source.text.len()
                     && source.text.is_char_boundary(p.end)
+                    && !source.text[p.end..].trim().is_empty()
                     && !p.text.trim().is_empty()
                     && p.text.chars().count() <= MAX_OUTPUT_CHARS
             })
@@ -124,7 +134,7 @@ pub(super) fn next(
     let mut end = boundary(remaining, MAX_INPUT_BYTES);
     loop {
         if end == 0 {
-            bail!("Translation instruction exceeds context budget");
+            return Err(DoesNotFit.into());
         }
         let tokens = count(&remaining[..end])?;
         if tokens <= budget {
