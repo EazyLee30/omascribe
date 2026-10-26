@@ -89,3 +89,14 @@ Apple M5, macOS 27.0.1 arm64, Rust 1.99 debug CLI; Qwen3 Q4_K_M, one CPU thread,
 All failed/repaired work is included. The 1.7B arm made 21 attempts with one rejected draft/repair per trial. The 0.6B arm made 26 attempts with eight rejected drafts and four repairs per trial. In `bilingual_scope` and `zh_minutes_from_en`, 0.6B repeatedly emitted English despite the Chinese output request. The validator rejected those drafts and left sources pending; no wrong-language document was accepted. The quality gate therefore keeps the 1.7B default. These results do not establish that 0.6B can replace it or that a cross-model escalation policy works.
 
 Case time includes CLI/workspace work and all requests; model downloads and asset hashing are outside the measured case loop. Each generation command opens a CLI, so this does not measure a continuously warm meeting worker. CPU is a 250-ms sampled lower bound; summed RSS may double-count shared pages. PSS, GPU memory and energy were unavailable. The corpus predates the additional Windows name fixture in PR #2; integrated validation must rerun the current full corpus. Pattern/coverage/citation checks are targeted regressions, not general semantic accuracy, ASR speed or a release/battery benchmark.
+
+## Apple Metal baseline (2026-10-27)
+
+The same 1.7B weights and 18 fictional fixtures ran on Apple M5 / 24 GiB / macOS 27.0.1, using production balanced batching, one thread, 2,048 context and the pinned llama runtime. Both backends passed all cases in both reversed-order trials, including one rejected draft and its repair in each arm. Every actual Metal model command proved 29/29 layers offloaded; shortcut-only mic checks were counted separately. [Bound summary and raw report hashes](evaluation/apple-metal-2026-10-27.json).
+
+| Backend | Usable complete-suite times | Sampled CPU | Peak summed tree RSS |
+| --- | --- | --- | --- |
+| CPU | 244.0 s; separate repeated arm 247.7 s | 230.8 / 232.6 s | 2,528.4 / 2,529.0 MiB |
+| Metal | 32.2 / 32.3 s | 10.2 / 10.3 s | 1,489.4 / 1,487.2 MiB |
+
+The original first CPU arm (261.1 s) overlapped another workspace's 22-second `npm ci`, confirmed by timestamps. It remains in the raw quality record but is excluded from isolated performance comparisons; only that arm was repeated with the same inputs and executable. This does not fully control unrelated desktop activity. These times include CLI work, loading, all cases and repairs, not just decoding. Sampled CPU is not energy, and summed RSS is not unique physical unified-memory usage. Metal working-set/free values are not independent VRAM; PSS/GPU allocations/power were unknown. There is no natural-ASR contention, sustained thermal or M1–M4 result yet. The Windows PR's additional fixture/source changes still require Mac integration validation. No new backend/model default or stable release is admitted by this baseline.

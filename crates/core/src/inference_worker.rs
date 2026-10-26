@@ -27,6 +27,9 @@ struct PoolState {
     batches: usize,
     starts: u64,
     reuses: u64,
+    // One failed scope only: no per-meeting map or persistent hardware ban.
+    metal_failure: Option<String>,
+    metal_failed_requests: u64,
 }
 struct IdleWorker {
     session: LocalSession,
@@ -42,6 +45,19 @@ pub struct WorkerStatus {
     pub reuses: u64,
 }
 impl WorkerPool {
+    fn metal_rejected(&self, key: &str) -> bool {
+        self.0.lock().unwrap().metal_failure.as_deref() == Some(key)
+    }
+    pub(crate) fn metal_failed_requests(&self) -> u64 {
+        self.0.lock().unwrap().metal_failed_requests
+    }
+    fn reject_metal(&self, key: &str, request: bool) {
+        let mut state = self.0.lock().unwrap();
+        state.metal_failure = Some(key.to_owned());
+        if request {
+            state.metal_failed_requests = state.metal_failed_requests.wrapping_add(1);
+        }
+    }
     pub fn status(&self) -> WorkerStatus {
         let state = self.0.lock().unwrap();
         WorkerStatus {
@@ -124,13 +140,17 @@ impl Drop for SessionLease {
         let Some(engine) = self.engine.upgrade() else {
             return;
         };
-        if session.backend.optional_gpu()
-            && !self.usable.get()
+        if !self.usable.get()
             && !engine.note_cancel.load(Ordering::SeqCst)
             && !session.resource_stop.load(Ordering::SeqCst)
+            && !session.timed_out.load(Ordering::SeqCst)
             && !engine.maintenance.load(Ordering::SeqCst)
         {
-            crate::acceleration::reject(&engine, "runtime_request_failed", true);
+            if session.backend.optional_gpu() {
+                crate::acceleration::reject(&engine, "runtime_request_failed", true);
+            } else if session.backend == crate::inference::Backend::Metal {
+                reject_metal(&engine, &self.key, true);
+            }
         }
         let healthy = self.usable.get()
             && session.healthy()
@@ -178,6 +198,7 @@ fn worker_key(
         "model":prefs.llm_model,"path":model,"bytes":metadata.len(),
         "modified":metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_nanos().to_string(),
         "backend":spec.backend.name(),"component":spec.identity,"device":spec.device,"runtime":std::fs::read(spec.directory.join("build-info.json")).ok(),
+        "executable":engine.inference_fingerprints.file(&spec.directory.join(if spec.backend == crate::inference::Backend::Mlx {"runner.py".into()} else {crate::platform::executable("llama-server")})),
         "threads":prefs.threads,"context":prefs.context_size,"mode":prefs.resource_mode,
         "budget":crate::inference::budget_mib(prefs),"meeting":meeting,"run":run,
     });
@@ -196,21 +217,51 @@ pub(crate) fn open_session(
     };
     let spec = crate::inference::launch_spec(engine, prefs)?;
     let key = worker_key(engine, prefs, meeting, run, &spec)?;
-    let result = checkout(engine, key, Duration::from_secs(ttl.into()), || {
+    if spec.backend == crate::inference::Backend::Metal
+        && engine.inference_pool.metal_rejected(&key)
+    {
+        let mut cpu = prefs.clone();
+        cpu.inference_backend = "cpu".into();
+        return open_session(engine, &cpu, meeting, run);
+    }
+    let result = checkout(engine, key.clone(), Duration::from_secs(ttl.into()), || {
         spawn_session_with_spec(engine, prefs, &spec)
     });
-    if result.is_err()
-        && spec.backend.optional_gpu()
-        && !engine.note_cancel.load(Ordering::SeqCst)
+    if result
+        .as_ref()
+        .is_err_and(|error| retryable_start_failure(engine, error))
+        && (spec.backend.optional_gpu() || spec.backend == crate::inference::Backend::Metal)
         && !engine.inference_pool.status().leased
     {
-        crate::acceleration::reject(engine, "runtime_start_failed", false);
+        if spec.backend.optional_gpu() {
+            crate::acceleration::reject(engine, "runtime_start_failed", false);
+        } else {
+            reject_metal(engine, &key, false);
+        }
         engine.inference_pool.invalidate();
         let mut cpu = prefs.clone();
         cpu.inference_backend = "cpu".into();
         return open_session(engine, &cpu, meeting, run);
     }
     result
+}
+fn reject_metal(engine: &Engine, key: &str, request: bool) {
+    engine.inference_pool.reject_metal(key, request);
+    // Metadata only; never persist nested transport errors, prompts or text.
+    let _ = std::fs::write(
+        engine.root.join("last-metal-fallback.json"),
+        serde_json::to_vec(&json!({"schema":1,"scope_sha256":key,"stage":if request {"request"} else {"startup"},"backend":"cpu","at":chrono::Utc::now().to_rfc3339()})).unwrap_or_default(),
+    );
+}
+fn retryable_start_failure(engine: &Engine, error: &anyhow::Error) -> bool {
+    !engine.note_cancel.load(Ordering::SeqCst)
+        && !engine.maintenance.load(Ordering::SeqCst)
+        && !error.chain().any(|error| {
+            let message = error.to_string();
+            message.starts_with("writer:resource-")
+                || message.starts_with("writer:low-memory:")
+                || message == "writer:memory-unavailable"
+        })
 }
 fn checkout(
     engine: &Arc<Engine>,
@@ -444,7 +495,7 @@ pub(crate) fn spawn_session_with_spec(
             .call()
             .is_ok()
         {
-            if backend.optional_gpu() {
+            if backend.optional_gpu() || backend == crate::inference::Backend::Metal {
                 let log = std::fs::read_to_string(engine.root.join("llm-runtime.log"))
                     .unwrap_or_default();
                 if !crate::acceleration::offloaded(&log) {
@@ -602,6 +653,208 @@ mod tests {
         assert_eq!(engine.acceleration_status().state, "cpu_fallback");
         assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
         assert!(!engine.inference_pool.status().leased);
+        Ok(())
+    }
+    #[test]
+    fn metal_failure_is_scoped_reaped_and_does_not_revoke_optional_components() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        std::fs::create_dir_all(root.path().join("accelerators"))?;
+        let certificate = root.path().join("accelerators/active.json");
+        std::fs::write(&certificate, b"unrelated optional-component certificate")?;
+        let mut calls = 0;
+        let result = crate::acceleration::with_cpu_fallback(&engine, || {
+            calls += 1;
+            if calls == 1 {
+                let session = checkout(
+                    &engine,
+                    "metal-scope".into(),
+                    Duration::from_secs(30),
+                    || {
+                        let mut session = fake(&engine)?;
+                        session.backend = crate::inference::Backend::Metal;
+                        Ok(session)
+                    },
+                )?;
+                session.begin_request();
+                drop(session);
+                bail!("fixture interrupted Metal response");
+            }
+            assert!(engine.inference_pool.metal_rejected("metal-scope"));
+            assert!(!engine
+                .inference_pool
+                .metal_rejected("different-model-config-run"));
+            assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+            drop(lease(&engine, "cpu-scope", 0)?);
+            Ok(())
+        });
+        result?;
+        assert_eq!(calls, 2);
+        assert_eq!(engine.inference_pool.metal_failed_requests(), 1);
+        assert_eq!(
+            std::fs::read(certificate)?,
+            b"unrelated optional-component certificate"
+        );
+        assert!(!engine.inference_pool.status().leased);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        Ok(())
+    }
+    #[test]
+    fn cancellation_pressure_timeout_and_valid_response_never_blacklist_metal() -> Result<()> {
+        for condition in [
+            "cancel",
+            "pressure",
+            "timeout",
+            "maintenance",
+            "valid-response",
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let session = checkout(&engine, "metal-scope".into(), Duration::ZERO, || {
+                let mut session = fake(&engine)?;
+                session.backend = crate::inference::Backend::Metal;
+                Ok(session)
+            })?;
+            session.begin_request();
+            match condition {
+                "cancel" => engine.note_cancel.store(true, Ordering::SeqCst),
+                "pressure" => session.resource_stop.store(true, Ordering::SeqCst),
+                "timeout" => session.timed_out.store(true, Ordering::SeqCst),
+                "maintenance" => engine.maintenance.store(true, Ordering::SeqCst),
+                _ => session.complete_request(),
+            }
+            drop(session);
+            assert!(
+                !engine.inference_pool.metal_rejected("metal-scope"),
+                "{condition}"
+            );
+            assert_eq!(
+                engine.inference_pool.metal_failed_requests(),
+                0,
+                "{condition}"
+            );
+            assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        }
+        Ok(())
+    }
+    #[test]
+    fn startup_resource_refusal_never_retries_on_cpu() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        for reason in [
+            "writer:resource-budget:5000:4096",
+            "writer:resource-budget-hit:4096",
+            "writer:resource-pressure",
+            "writer:low-memory:100:1400",
+            "writer:memory-unavailable",
+        ] {
+            let error = anyhow::anyhow!(reason).context("fixture context");
+            assert!(!retryable_start_failure(&engine, &error), "{reason}");
+        }
+        let transport = anyhow::anyhow!("fixture runtime startup failed");
+        assert!(retryable_start_failure(&engine, &transport));
+        engine.note_cancel.store(true, Ordering::SeqCst);
+        assert!(!retryable_start_failure(&engine, &transport));
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        engine.maintenance.store(true, Ordering::SeqCst);
+        assert!(!retryable_start_failure(&engine, &transport));
+        Ok(())
+    }
+    #[test]
+    fn metal_failure_scope_changes_with_runtime_model_configuration_and_take() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = crate::preferences::Preferences::default();
+        let model = crate::models::model(&prefs.llm_model)?;
+        let directory = root.path().join("model-store").join(&model.id);
+        std::fs::create_dir_all(&directory)?;
+        // Sparse metadata fixture, never passed to an inference process.
+        let file = File::create(directory.join(&model.files[0].name))?;
+        file.set_len(model.files[0].bytes)?;
+        let runtime = root.path().join("llama");
+        std::fs::create_dir(&runtime)?;
+        let executable = runtime.join(crate::platform::executable("llama-server"));
+        std::fs::write(&executable, b"first runtime fixture")?;
+        let spec = crate::inference::LaunchSpec {
+            backend: crate::inference::Backend::Metal,
+            directory: runtime,
+            device: None,
+            identity: String::new(),
+        };
+        let first = worker_key(&engine, &prefs, "fixture", 1, &spec)?;
+        engine.inference_pool.reject_metal(&first, false);
+        assert!(engine.inference_pool.metal_rejected(&first));
+        assert_ne!(first, worker_key(&engine, &prefs, "fixture", 2, &spec)?);
+        let mut other = prefs.clone();
+        other.context_size += 512;
+        assert_ne!(first, worker_key(&engine, &other, "fixture", 1, &spec)?);
+        std::fs::write(&executable, b"different runtime fixture")?;
+        assert_ne!(first, worker_key(&engine, &prefs, "fixture", 1, &spec)?);
+        file.set_len(model.files[0].bytes + 1)?;
+        assert!(worker_key(&engine, &prefs, "fixture", 1, &spec).is_err());
+        Ok(())
+    }
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    #[test]
+    #[ignore = "explicit native Metal startup-fault injection with real CPU fallback; requires local public weights/runtime"]
+    fn live_metal_startup_fallback() -> Result<()> {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+        let native = std::env::var("OMASCRIBE_TEST_NATIVE_LLAMA")?;
+        let model_store = std::env::var("OMASCRIBE_TEST_MODEL_STORE")?;
+        let root = tempfile::tempdir()?;
+        symlink(model_store, root.path().join("model-store"))?;
+        let runtime = root.path().join("runtime/llama");
+        std::fs::create_dir_all(&runtime)?;
+        std::fs::write(runtime.join("build-info.json"), br#"{"metal":true}"#)?;
+        let launches = root.path().join("launches");
+        let quoted = |s: &str| format!("'{}'", s.replace('\'', "'\\''"));
+        let script = format!("#!/bin/sh\nprevious=''\nfor argument; do\n if [ \"$previous\" = '--n-gpu-layers' ] && [ \"$argument\" != '0' ]; then\n  printf 'metal\\n' >> {log}\n  exit 70\n fi\n previous=\"$argument\"\ndone\nprintf 'cpu\\n' >> {log}\nexec {native} \"$@\"\n", log=quoted(launches.to_str().unwrap()), native=quoted(&native));
+        let executable = runtime.join("llama-server");
+        std::fs::write(&executable, script)?;
+        std::fs::set_permissions(executable, std::fs::Permissions::from_mode(0o700))?;
+        let mut engine = Engine::open(root.path().into())?;
+        Arc::get_mut(&mut engine).unwrap().runtime_dir = root.path().join("runtime");
+        let prefs = crate::preferences::Preferences {
+            inference_backend: "metal".into(),
+            threads: 1,
+            memory_budget_mib: 4096,
+            ..Default::default()
+        };
+        for run in [1, 1, 2] {
+            let session = open_session(&engine, &prefs, "fictional-fallback", run)?;
+            assert_eq!(session.backend, crate::inference::Backend::Cpu);
+            assert!(session
+                .agent
+                .get(&format!("{}/health", session.base))
+                .set("Authorization", &session.auth)
+                .call()
+                .is_ok());
+            drop(session);
+            assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+            assert!(!engine.inference_pool.status().leased);
+        }
+        assert_eq!(
+            std::fs::read_to_string(launches)?,
+            "metal\ncpu\ncpu\nmetal\ncpu\n"
+        );
+        assert_eq!(engine.inference_pool.metal_failed_requests(), 0);
+        let report: serde_json::Value = serde_json::from_slice(&std::fs::read(
+            root.path().join("last-metal-fallback.json"),
+        )?)?;
+        assert_eq!(report["stage"], "startup");
+        assert_ne!(engine.acceleration_status().state, "cpu_fallback");
+        let low_budget = crate::preferences::Preferences {
+            memory_budget_mib: 1024,
+            ..prefs.clone()
+        };
+        let error = open_session(&engine, &low_budget, "fictional-fallback", 3)
+            .err()
+            .context("budget refusal should fail before launching a worker")?;
+        assert!(error.to_string().starts_with("writer:resource-budget:"));
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("launches"))?,
+            "metal\ncpu\ncpu\nmetal\ncpu\n"
+        );
         Ok(())
     }
     #[test]
