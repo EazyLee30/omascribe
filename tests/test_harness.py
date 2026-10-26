@@ -16,6 +16,39 @@ class HarnessTests(unittest.TestCase):
         for change in [dict(rejected_day="Thursday"), dict(day="Friday"), dict(budget=3001),
                        dict(approved=True), dict(approved=0), dict(budget="3000"), dict(extra="invented")]:
             self.assertFalse(correct_facts({**valid, **change}))
+    def test_apple_comparison_needs_per_command_offload_and_counts_shortcuts_separately(self):
+        from compare_minutes_models import backend_evidence
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            path = root / "fixture/phase-1/batch-1/llm-runtime.log"
+            path.parent.mkdir(parents=True)
+            report = dict(cases=[dict(case="fixture", runs=[dict(phase=1, batch=1, generation=dict(backend="metal"))])])
+            self.assertFalse(backend_evidence(report, root, "metal")["passed"])
+            path.write_text("load_tensors: offloaded 29/29 layers to GPU\n")
+            self.assertTrue(backend_evidence(report, root, "metal")["passed"])
+            self.assertFalse(backend_evidence(report, root, "cpu")["passed"])
+            path.write_text("load_tensors: offloaded 0/29 layers to GPU\n")
+            self.assertFalse(backend_evidence(report, root, "metal")["passed"])
+            report["cases"][0]["runs"][0]["generation"] = dict(backend="cpu")
+            self.assertTrue(backend_evidence(report, root, "cpu")["passed"])
+            report["cases"][0]["runs"][0]["generation"] = dict(reason="non_substantive_only", attempt=0)
+            self.assertFalse(backend_evidence(report, root, "metal")["passed"])
+
+    def test_apple_pair_cannot_silently_fall_back_or_compare_different_weights(self):
+        import copy
+        from compare_minutes_models import PREFERENCES, validate_pair
+        variants = [("qwen3-1.7b", backend) for backend in ["cpu", "metal"]]
+        environment = dict(cli_sha256="same", cli_build={}, core_and_harness_source_sha256="same")
+        results = [dict(model=model, backend=backend, exit_code=0, report=dict(schema=3, fixture_sha256="same", fixture_cases=["fixture"],
+                   cases=[dict(case="fixture", passed=True, runs=[dict(generation=dict(model=model, backend=backend))])],
+                   environment=environment, preferences={**PREFERENCES, "llm_model": model, "inference_backend": backend}, passed=True)) for model, backend in variants]
+        validate_pair(results, ["fixture"], variants=variants)
+        for change in [lambda r: r.update(model="qwen3-0.6b"),
+                       lambda r: r["report"]["cases"][0]["runs"][0]["generation"].update(backend="cpu")]:
+            bad = copy.deepcopy(results)
+            change(bad[1])
+            with self.assertRaises(AssertionError):
+                validate_pair(bad, ["fixture"], variants=variants)
 
     def test_model_comparison_counts_rejected_and_failed_work_and_missing_cost(self):
         from compare_minutes_models import summarize
