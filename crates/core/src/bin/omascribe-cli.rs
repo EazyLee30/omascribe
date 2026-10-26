@@ -1,6 +1,7 @@
 use anyhow::{bail, Context, Result};
 use omascribe_core::{engine::default_root, Engine};
 use std::{
+    io::{BufWriter, Write},
     path::PathBuf,
     thread,
     time::{Duration, Instant},
@@ -35,6 +36,22 @@ fn run() -> Result<()> {
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
+    // Opt-in replay diagnostics use counts/timing only, never speech or model text.
+    // create_new preserves previous evidence instead of overwriting it.
+    let mut replay_telemetry = if command == "replay" && args.len() > 4 {
+        anyhow::ensure!(
+            args.len() == 6 && args[4] == "--telemetry",
+            "Use replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]"
+        );
+        Some(BufWriter::new(
+            std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(arg(5)?)?,
+        ))
+    } else {
+        None
+    };
     let result = match command {
         "translate" => {
             omascribe_core::translation::run(&engine, arg(2)?)?;
@@ -151,6 +168,24 @@ fn run() -> Result<()> {
                     stopped = true;
                 }
                 let s = engine.snapshot(&m.id)?;
+                if let Some(writer) = replay_telemetry.as_mut() {
+                    let status = &s.runtime;
+                    serde_json::to_writer(
+                        &mut *writer,
+                        &serde_json::json!({
+                            "schema":1,"wall_ms":start.elapsed().as_millis() as u64,
+                            "captured_ms":status.elapsed_ms,"processed_ms":status.processed_ms,
+                            "recording":status.recording,"transcribing":status.transcribing,
+                            "asr_rtf":status.asr_rtf,"segments":s.segments.len(),
+                            "translations":s.translations.len(),"notes_cursor":s.meeting.notes_cursor,
+                            "sections":s.suggestions.len(),"notes_busy":status.notes_busy,
+                            "translation_busy":status.translation_busy,"has_error":status.error.is_some(),
+                            "worker":engine.inference_worker_status(),
+                        }),
+                    )?;
+                    writeln!(writer)?;
+                    writer.flush()?;
+                }
                 if command == "replay" && last_report.elapsed() > Duration::from_secs(10) {
                     let status = &s.runtime;
                     eprintln!(

@@ -57,6 +57,19 @@ python3 tests/prepare_asr_fixtures.py --directory artifacts/fixtures/fleurs-2026
 
 ## 结果和失败证据
 
+Apple Silicon 的并行负载验收使用 `tests/benchmark_recording_contention.py`：同一公开中英拼接音频补足静音边界，按真实时间回放；两轮反转顺序，对照仅 ASR 与 ASR＋Metal 双语翻译、自动纪要。运行时须同时包含当前 `omascribe-asr`、`llama/`、`platform/ffmpeg`，模型目录使用已有已校验文件，不下载组件。
+
+```sh
+python3 tests/benchmark_recording_contention.py \
+  --fixtures artifacts/fixtures/fleurs-20261026 \
+  --runtime /absolute/path/to/runtime \
+  --asr-model-dir /absolute/path/to/zipformer-small \
+  --llm-model-dir /absolute/path/to/qwen3-1.7b \
+  --output artifacts/benchmarks/apple-recording-pair.json
+```
+
+CLI 的 `replay AUDIO SECONDS --telemetry NEW_JSONL_PATH` 每 200 ms 保存无正文的时序、积压、任务进度及 worker 计数。验收拒绝不完整录音、PCM 字节变化、ASR 输出变化、超过 2.5 s 的处理积压、超过 1.5 s 的采样空洞，以及后台没有实际翻译/纪要进展的空负载；任务 trace 必须报告 Metal，最后一个 worker 另查真实 offload 日志，CPU 回退不能冒充 Metal 成功。末尾尚未处理的任务如实报告，不在计时外补跑后宣称实时完成。CPU 时间与进程树 RSS 由同一采样器记录，不能据此推断能耗或独立显存。此项是文件回放的资源竞争验收，不能替代真实麦克风、自然会议语义、长会、设备故障和 M1–M4 实机结果。
+
 总入口的 `report.json` 汇总每个子套件。未完成全部场景时不会标记为通过。CI 上传诊断时排除复用的模型目录，保留文本、数据库、测试音频和校验结果。单个场景失败后继续运行其余场景，并以非零状态退出。保留输入、进程输出、错误、每次生成草稿、校验失败原因、引用、模型/CLI 摘要、推理后端、耗时和 token 使用量；输出中途断开时，保留本地草稿但不提交为正式纪要。纪要生成诊断只覆盖最近一次任务，避免在产品数据目录无限追加正文副本。
 
 `*.artifacts/workspace` 是测试专用数据库及音频；排错后可自行删除整个输出目录。不得把实际用户录音添加为公开 CI fixture。示例中的 `artifacts/` 已被 Git 忽略。
