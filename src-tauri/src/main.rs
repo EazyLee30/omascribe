@@ -17,6 +17,8 @@ mod overlay;
 #[path = "overlay_native.rs"]
 mod overlay;
 mod profiles;
+#[cfg(feature = "ui-test")]
+mod ui_test_probe;
 mod updates;
 mod views;
 mod workspace;
@@ -392,7 +394,9 @@ fn main() {
         ui_test_screenshot,
         ui_test_resize,
         ui_test_replay,
-        ui_test_windows
+        ui_test_windows,
+        ui_test_probe::ui_test_window_probe,
+        ui_test_probe::ui_test_window_result
     ];
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -409,12 +413,14 @@ fn main() {
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
-            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay", "ui_test_windows"].contains(&request.message.command()) {
+            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay", "ui_test_windows", "ui_test_window_probe", "ui_test_window_result"].contains(&request.message.command()) {
                 return tester(request);
             }
             regular(request)
         })
         .setup(|app| {
+            #[cfg(feature = "ui-test")]
+            app.manage(ui_test_probe::Probes::default());
             // Single-instance forwarding runs before taking the workspace lock.
             let engine = Engine::open(omascribe_core::engine::default_root())?;
             let view_state = views::Views::new(engine.root.clone());
