@@ -91,6 +91,19 @@ class AccelerationPackagingTests(unittest.TestCase):
             for name in ["libmtmd-unpinned.so", "libarbitrary.so", "mtmd.exe", "libmtmd.so.debug"]:
                 self.assertFalse(components.runtime_member(name), name)
 
+    def test_static_windows_server_copies_actual_cuda_dependencies_without_drivers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); output=root/'runtime'; cuda=root/'cuda'
+            output.mkdir(); (cuda/'bin').mkdir(parents=True)
+            (output/'llama-server.exe').write_bytes(b'fictional executable, never run')
+            for name in ['cudart64_12.dll','cublas64_12.dll','nvcuda.dll']:
+                (cuda/'bin'/name).write_bytes(b'fictional dependency')
+            def deps(path, windows):
+                return ['cudart64_12.dll','cublas64_12.dll','nvcuda.dll'] if path.suffix=='.exe' else []
+            with patch.object(components,'dependencies',deps):
+                components.collect_cuda(output,cuda,True)
+            self.assertEqual({p.name for p in output.iterdir()}, {'llama-server.exe','cudart64_12.dll','cublas64_12.dll'})
+
     def test_bad_release_target_and_backend_rejected(self):
         for version, target, backend in [("../escape", "linux-x86_64", "vulkan"), ("v0.3.4", "linux-x86_64", "cuda"), ("acceleration-test-1", "macos-arm64", "cuda"), ("acceleration-test-1", "linux-x86_64", "unverified")]:
             with self.assertRaises(ValueError):

@@ -164,7 +164,7 @@ def collect_cuda(output, cuda, windows):
     # large Linux libraries under their development symlink/version/SONAME names.
     folders = [cuda / "bin", cuda / "lib64", cuda / "targets/x86_64-linux/lib"]
     candidates = {p.name.lower(): p for folder in folders if folder.is_dir() for p in folder.iterdir() if p.is_file() and CUDA_RUNTIME.fullmatch(p.name)}
-    queue = [p for p in output.iterdir() if p.suffix.lower() == ".dll" or ".so" in p.name]
+    queue = [p for p in output.iterdir() if p.suffix.lower() == ".dll" or ".so" in p.name or windows and p.suffix.lower() == ".exe"]
     visited, count = set(), 0
     while queue:
         path = queue.pop()
@@ -230,7 +230,10 @@ def build(backend, output):
     else:
         flags += vulkan_flags(pathlib.Path(os.environ["VULKAN_SDK"]), os.name == "nt")
     if os.name == "nt":
-        flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+        # The optional Windows download is a self-contained executable. Keep
+        # static-CRT C++ objects inside one module instead of crossing several
+        # server/common/llama DLL boundaries (the shared build crashes on load).
+        flags += ["-DBUILD_SHARED_LIBS=OFF", "-DGGML_BACKEND_DL=OFF", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
     run("cmake", "-S", source, "-B", cmake, *flags)
     run("cmake", "--build", cmake, "--config", "Release", "--target", "llama-server", "--parallel", "2" if backend == "cuda" else "3")
     output = pathlib.Path(output)

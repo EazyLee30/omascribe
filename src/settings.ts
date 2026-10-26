@@ -722,7 +722,10 @@ export async function mountSettings(
     const nextAcceleration = await invoke<ComponentCatalog>(
       "acceleration_components",
     );
-    if (acceleration.state === "not_published" && nextAcceleration.state !== "ready")
+    if (
+      acceleration.state === "not_published" &&
+      nextAcceleration.state !== "ready"
+    )
       nextAcceleration.state = "not_published";
     if (!alive || active !== "models") return;
     const region = root.querySelector("#acceleration-components");

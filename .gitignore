@@ -16,6 +16,7 @@ __pycache__/
 .env.*
 
 /src-tauri/gen/
+/src-tauri/icons/
 
 /build-assets/
 /release-assets/

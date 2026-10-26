@@ -40,6 +40,17 @@ export function accelerationBody(
 ): string {
   if (!["windows", "linux"].includes(h.platform)) return "";
   const devices = h.gpus?.devices || [];
+  // Remote display sessions can expose several DXGI adapters for the same GPU
+  // model. Keep raw identities in the probe/certificate, summarize models here.
+  const deviceModels = devices.filter(
+    (device, index) =>
+      devices.findIndex(
+        (d) =>
+          d.name === device.name &&
+          d.vendor === device.vendor &&
+          d.dedicated_memory_bytes === device.dedicated_memory_bytes,
+      ) === index,
+  );
   const cudaVersion = h.gpus?.cuda_driver_version;
   const cudaOld = cudaVersion != null && cudaVersion < 12000;
   const cudaBlocked = cudaOld || !devices.some((d) => d.vendor === "nvidia");
@@ -87,7 +98,7 @@ export function accelerationBody(
           (cudaOld && vendors.has("nvidia")));
   return `<div class="settings-section-title"><h2>${tr("显卡加速组件", "GPU acceleration", "顯示卡加速元件")}</h2><button class="outline" data-component-action="check">${tr("检查可用组件", "Check components", "檢查可用元件")}</button></div>
   <p class="setting-help">${tr("用于本地翻译与纪要，组件独立下载。通过本机模型测试且更快后，自动模式才会使用显卡。", "For local translation and minutes. Components download separately. Automatic mode uses the GPU only after a successful, faster local model test.", "元件獨立下載，不增加主安裝包體積；依顯示卡推薦，通過本機模型驗證後才啟用。")}</p>
-  <div class="settings-group">${devices.length ? devices.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
+  <div class="settings-group">${deviceModels.length ? deviceModels.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
   ${cudaOld ? `<p class="inline-error">${tr("当前 NVIDIA 驱动仅支持 CUDA", "The installed NVIDIA driver supports CUDA", "目前 NVIDIA 驅動程式僅支援 CUDA")} ${Math.floor(cudaVersion! / 1000)}.${Math.floor((cudaVersion! % 1000) / 10)}。${tr("此 CUDA 组件需要支持 CUDA 12 的驱动。请更新显卡驱动，或尝试 Vulkan；无需安装 CUDA 开发工具包。", "This CUDA component needs a CUDA 12 capable driver. Update the GPU driver or test Vulkan. No CUDA development toolkit is required.", "此 CUDA 元件需要支援 CUDA 12 的驅動程式。請更新顯示卡驅動程式或測試 Vulkan，不需安裝 CUDA 開發工具包。")}</p>` : ""}
   ${catalog.state === "not_published" ? `<p class="setting-help">${tr("GPU 组件尚未发布。显卡检测已完成；签名组件发布后可在这里检查并选择下载，当前继续使用 CPU。", "GPU components have not been published yet. Hardware detection is complete. Check here to choose a signed download when available; CPU remains active.", "GPU 元件尚未發布。硬體已偵測完成；簽章元件發布後可在此檢查及選擇下載，目前繼續使用 CPU。")}</p>` : ""}
   ${
