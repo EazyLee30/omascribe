@@ -27,7 +27,16 @@ fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
         "file,pipe",
     ]);
     if replay_seconds.is_some() {
-        command.args(["-re", "-stream_loop", "-1"]);
+        // FFmpeg's default initial read burst leads the live sample clock by
+        // about half a second. Keep file replay close to wall time so ASR
+        // admission is measured against paced input, like a capture device.
+        command.args([
+            "-re",
+            "-readrate_initial_burst",
+            "0.001",
+            "-stream_loop",
+            "-1",
+        ]);
     }
     command.arg("-i").arg(input);
     if let Some(seconds) = replay_seconds {
@@ -295,6 +304,54 @@ mod tests {
             .stderr(Stdio::null())
             .status()
             .is_ok_and(|s| s.success())
+    }
+
+    #[test]
+    fn paced_replay_preserves_pcm_without_an_initial_read_burst() -> Result<()> {
+        if !has_ffmpeg() {
+            eprintln!("FFmpeg is not installed; paced replay integration check skipped");
+            return Ok(());
+        }
+        let root = tempfile::tempdir()?;
+        let input = root.path().join("one-second.wav");
+        let samples: Vec<i16> = (0..16000)
+            .map(|n| ((n as f32 * 440. * std::f32::consts::TAU / 16000.).sin() * 8000.) as i16)
+            .collect();
+        fs::write(&input, wav_bytes(&samples)?)?;
+        let expected: Vec<u8> = samples
+            .iter()
+            .cycle()
+            .take(48000)
+            .flat_map(|sample| sample.to_le_bytes())
+            .collect();
+        let mut capture = spawn_capture(
+            "auto",
+            Some(&input),
+            Some(3),
+            &root.path().join("replay.log"),
+        )?;
+        let mut reader = capture.stdout.take().unwrap();
+        let mut pcm = Vec::new();
+        let mut buffer = [0u8; 640];
+        let mut first_delivery = None;
+        let mut max_lead = Duration::ZERO;
+        loop {
+            let n = reader.read(&mut buffer)?;
+            if n == 0 {
+                break;
+            }
+            let now = Instant::now();
+            let first = *first_delivery.get_or_insert(now);
+            pcm.extend_from_slice(&buffer[..n]);
+            let supplied = Duration::from_secs_f64(pcm.len() as f64 / 32000.);
+            max_lead = max_lead.max(supplied.saturating_sub(now.duration_since(first)));
+        }
+        assert!(capture.wait()?);
+        assert_eq!(pcm, expected);
+        // Covers one 200ms persistence block plus scheduling/IO jitter, while
+        // rejecting the roughly 500ms initial burst of the default -re path.
+        assert!(max_lead <= Duration::from_millis(250), "{max_lead:?}");
+        Ok(())
     }
 
     #[test]
