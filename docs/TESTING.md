@@ -88,6 +88,18 @@ Preparation is an explicit download; the two evaluation scripts only use local a
 
 See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and limitations.
 
+## Lexical retrieval cost
+
+Build the core test executable once with `cargo test -p omascribe-core --lib --no-run --message-format=json`, then pass its `executable` path to:
+
+```bash
+python3 tests/benchmark_retrieval.py --test-binary /absolute/path/to/core-test-executable --output artifacts/benchmarks/lexical.json
+```
+
+The harness compares the frozen full-vocabulary scorer, query-local counts and an experimental incremental index in separate children, twice in reverse order, at 1,000 and 5,000 fictional passages. Nine calls include appends, an old-source revision and removal. Every mode must match input/ranking digests and preserve the source. Timings include cold and rejected index construction; child CPU/RSS includes fixture generation and validation, excluding compilation. Results identify the compiler/profile and source/binary digests. These lexical checks do not measure ASR, model generation, semantic minutes quality or energy.
+
+Query-local counting retains no corpus vocabulary between calls. `OMASCRIBE_RETRIEVAL_CACHE=1` explicitly enables the separate experimental index: one Engine/meeting/run, at most 8,192 documents and 8 MiB of conservative retained-allocation accounting. This is not a process-RSS bound. Text and revision must both match; removals, run/meeting switches and committed meeting deletion discard derived entries. Over-budget inputs use query-local counting and do not repeatedly attempt indexing until the corpus substantially shrinks or the scope changes. The index remains off by default because the initial comparison found higher cold/total cost and resident memory despite slightly faster warm queries. Restart without the flag to use the normal path.
+
 ## Multiple takes and readable files
 
 After `bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.

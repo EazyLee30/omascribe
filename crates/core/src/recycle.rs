@@ -31,6 +31,9 @@ impl Engine {
         }
         tx.commit()?;
         drop(db);
+        if deleted {
+            self.retrieval_cache.clear_meeting(id);
+        }
         self.invalidate_background()
     }
     pub fn delete_speaker(&self, meeting: &str, id: &str) -> Result<()> {
