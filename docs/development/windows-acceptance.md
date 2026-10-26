@@ -6,7 +6,25 @@ pipeline remain the release design.
 
 ## 1. Integrate shared source and regress native behavior
 
-Current support checkpoint: `be5e16d` merges shared `e255dc7`, including the
+Current application checkpoint: `44c6f21` merges shared `70a2d45`, preserving both
+candidate channel selection and Windows's 404 state handling in a resolved
+`components.rs` conflict. New signature fixtures retain exact bytes; the
+publication fixture and workflow parser now handle Windows line endings without
+weakening signature checks. Clean-source rebuilt CLI and native app: 19/19
+real-model minutes, 100 core / 5 opt-in ignored, 55 Python and UI-test clippy pass.
+The native main/companion/transcript language fixture also passes in candidate
+selector mode. Source/CLI/app hashes and actual results:
+[`candidate integration`](../evaluation/windows-candidate-integration-2026-10-27.json).
+
+Delivery helper `5d0f0b1` additionally requires all four successful original
+native checkout logs, exact source trees and original base ancestry before
+artifact reuse, instead of mutable workflow-run PR head/base values. Python is
+now 57 passing tests. This delivery-only change does not alter the application
+or native compiler/SDK/package inputs. Two completed Vulkan checkouts have been
+observed and match original source `164371e`; both CUDA checkouts are still
+pending. No signing action or publication has been performed.
+
+Earlier support checkpoint: `be5e16d` merges shared `e255dc7`, including the
 public ASR fixture preparation/offline reuse change. Python now has 43 passing
 tests. The full 19-case rerun passed, with clean inference sources; core 99 / 5
 opt-in ignored, ASR 3, default-app and UI-test clippy also pass. The reused CLI's
@@ -41,7 +59,7 @@ GPU inference. The probes are compiled out of production. User-supplied app
 screenshots are normal; automated desktop screenshot capture remains a separate
 tool limitation. See the earlier
 [`step1 evidence`](../evaluation/windows-acceptance-2026-10-27-step1.json).
-Current evidence is in
+That checkpoint's evidence is in
 [`layout acceptance`](../evaluation/windows-acceptance-2026-10-27-layout.json).
 
 ## 2. Accept the formal native payloads
@@ -119,13 +137,17 @@ The current `acceleration-v1` catalog endpoint returns 404. Real download and
 activation are not passed while that prerequisite is missing. Do not add an
 unsigned-directory shortcut or change the production trust root to satisfy QA.
 
-A unified signed candidate can be tested without updating the global pointer:
-provide its signed `index.json` and immutable candidate release/archive URLs,
-then place that envelope in an isolated acceptance workspace's existing
-`acceleration-index.json` cache. The production verifier still checks the normal
-release key, version, runtime revision and asset URLs on every use. A 404 pointer
-refresh retains a valid cached candidate. Candidate creation/staging belongs to
-the shared pipeline owner; Windows must not publish a second installer/channel.
+A unified signed candidate can be tested without updating the global pointer.
+The shared selector now accepts the fixed repository version through
+`OMASCRIBE_ACCELERATION_CANDIDATE_VERSION=acceleration-ci-40367160891` in an
+isolated test workspace. It uses the real Settings fetch/download path and a
+separate version-specific cache, preserving the normal release key, exact
+selected version, runtime revision and archive/member verification. A stable
+cache cannot satisfy a candidate request. Do not seed installation markers.
+Candidate creation/signing uses the shared pipeline's one-shot reuse label only
+after the original complete matrix and current application/Windows gates pass;
+Windows does not publish a second installer/channel. See
+[`candidate staging`](acceleration-candidates.md).
 
 ## 4. Hand off the evidence
 
