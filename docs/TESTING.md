@@ -13,6 +13,8 @@ Rust tests cover sample-exact chunk boundaries, pause/resume append behavior, in
 
 Push checked source changes promptly; installer and optional GPU builds need not finish before a source push. Ordinary pull-request CI retains application checks, Windows core/ASR tests, CPU worker linking and component packaging contracts. The four-platform/backend SDK build matrix runs only with the `build-acceleration-components` PR label or a manual **Optional acceleration components** workflow dispatch. Remove the label after the intended build to avoid rebuilding it on every push. Skipped builds are not validation evidence; record the successful run and complete native-input revision when reusing earlier results. Publishing still requires the full matrix, archive/member verification and passing application CI for the exact publication commit.
 
+For isolated Windows Vulkan development, use the `build-windows-vulkan` PR label. It selects only Windows Vulkan and skips catalog assembly/publication. The full-build label takes precedence when both labels are present; manual dispatch always builds all four targets. Remove the targeted label after the intended run. A successful targeted archive does not satisfy the full publication gates.
+
 ## Real local writing model
 
 After `bin/setup`, build the CLI and run:
@@ -24,6 +26,18 @@ python3 tests/evaluate.py --cli target/debug/omascribe-cli \
 ```
 
 The harness uses production retrieval → writer → validation → storage with an isolated database. Eighteen scenarios cover later corrections across phases, language selection, named speakers, pure mic checks, source closure beyond nine passages, and human-protected paragraphs. Inputs, drafts, validation failures, citations, timing and token usage survive failed cases. Output paths must be fresh. These targeted checks do not establish general meeting quality.
+
+For a paired CPU model comparison, prepare the catalog-pinned 0.6B and 1.7B files in an isolated model store, then run:
+
+```bash
+python3 tests/compare_minutes_models.py --model-store /absolute/path/to/model-store --runtime /absolute/path/to/runtime --output artifacts/benchmarks/minutes-models.json
+```
+
+It verifies every model file's hash/length, fingerprints the local llama runtime, and runs both models sequentially in two reversed-order trials. CPU backend, one thread, 2,048 context, 4,096 MiB ceiling, zero keep-alive, networking off and private libraries off are held constant. `--trials 1` is an initial comparison; `--case NAME` is a diagnostic subset. Neither admits a default model. Each generation command opens a CLI, so this does not benchmark cross-command worker retention. Failed cases and all within-request repair attempts remain in the cost totals; missing token/resource values stay unknown. No cross-model fallback is simulated.
+
+With optional `psutil` installed, harness commands sample their descendants every 250 ms without command lines. Reported CPU is a sampled lower bound, summed RSS may double-count shared pages, and PSS is available only on supporting platforms with sufficient access. Very short children and the final interval can be missed. GPU memory and energy stay unknown. Without the dependency, resource fields are explicitly null. Model downloads and asset hashing occur before the measured case loop; raw case/generation times and whole-arm setup time remain separate.
+
+When `OMASCRIBE_TEST_MODEL_STORE` supplies reusable weights, a fresh harness-created `workspace/model-store` is marked and scheduled for cleanup when that Python process exits. Source weights, text/JSON/SQLite/audio failure evidence and pre-existing model stores are retained. The cleanup marker must match the creating process's owner token; a cleanup result is recorded beside the released directory. Hardlink logical bytes do not equal physical space reclaimed. After a forcibly terminated test, inspect its owned temporary copies and remove them once no worker uses them. Clear completed generated screenshots and transfer caches during task cleanup; keep current-run inputs until validation finishes.
 
 For the unified offline ASR/minutes harness, public corpus preparation, baseline comparisons, hotword compatibility and optional 30-minute stress runs, see [CORE-HARNESS.md](CORE-HARNESS.md).
 

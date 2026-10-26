@@ -57,27 +57,19 @@ jobs:
         run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
   build:
     # Source pushes keep the Windows checks; expensive SDK builds are opt-in.
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan')
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: windows-2022
-            target: windows-x86_64
-            backend: cuda
-            timeout: 180
-          - runner: windows-2022
-            target: windows-x86_64
-            backend: vulkan
-            timeout: 100
-          - runner: ubuntu-22.04
-            target: linux-x86_64
-            backend: cuda
-            timeout: 180
-          - runner: ubuntu-22.04
-            target: linux-x86_64
-            backend: vulkan
-            timeout: 100
+        # Manual dispatch and the full-build label always keep all four jobs.
+        include: >-
+          ${{ fromJSON(
+            github.event_name != 'workflow_dispatch' &&
+            contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') &&
+            !contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') &&
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100}]' ||
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"cuda","timeout":180},{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"cuda","timeout":180},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"vulkan","timeout":100}]'
+          ) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
     defaults:
@@ -152,6 +144,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   catalog:
+    # A targeted developer build cannot assemble or publish a partial catalog.
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components')
     needs: [build, windows-core]
     runs-on: ubuntu-24.04
     timeout-minutes: 20

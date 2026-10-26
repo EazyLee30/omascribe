@@ -76,7 +76,8 @@ def evaluate(args):
     if args.case:
         cases = [c for c in cases if c["name"] == args.case]
         if not cases: raise ValueError("Unknown fixture")
-    report = dict(schema=2, passed=False, environment=environment(cli),
+    report = dict(schema=3, passed=False, environment=environment(cli),
+        preferences=base_preferences, fixture_cases=[c["name"] for c in cases],
         fixture_sha256=sha256(REPO / "tests/fixtures/document-cases.json"), cases=[])
     command([cli, "diagnose"], env, artifacts / "diagnose")
     for case in cases:
@@ -96,14 +97,18 @@ def evaluate(args):
                     generation = folder / f"phase-{number}" / f"batch-{batch+1}"
                     diagnostic_names = ["last-generation.json", "last-writer-resource.json", "llm-runtime.log"]
                     for name in diagnostic_names: (root / name).unlink(missing_ok=True)
+                    snapshot = None
                     try:
                         snapshot = command([cli, "generate", mid], env, generation)
                     finally:
                         for name in diagnostic_names:
                             if (root / name).exists(): shutil.copy2(root / name, generation / name)
-                    runs.append(dict(phase=number, batch=batch+1, status=snapshot["runtime"]["notes_status"],
-                        coverage=snapshot["meeting"]["notes_cursor"], generation=read_json(generation / "last-generation.json"),
-                        process=read_json(generation / "process.json")))
+                        runs.append(dict(phase=number, batch=batch+1,
+                            status=snapshot["runtime"]["notes_status"] if snapshot else "process-failed",
+                            coverage=snapshot["meeting"]["notes_cursor"] if snapshot else None,
+                            generation=read_json(generation / "last-generation.json"),
+                            process=read_json(generation / "process.json"),
+                            writer_resource=read_json(generation / "last-writer-resource.json")))
                     next_cursor = snapshot["meeting"]["notes_cursor"]
                     if next_cursor >= seq or next_cursor <= cursor: break
                     cursor = next_cursor

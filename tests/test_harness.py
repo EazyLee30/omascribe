@@ -9,6 +9,102 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_model_comparison_counts_rejected_and_failed_work_and_missing_cost(self):
+        from compare_minutes_models import summarize
+        valid = dict(attempt=2, elapsed_ms=2000, usage=dict(prompt_tokens=20, completion_tokens=4))
+        rejected = dict(attempt=1, elapsed_ms=1000, validation_error="fixture", usage=dict(prompt_tokens=10, completion_tokens=3))
+        partial = dict(attempt=1, elapsed_ms=500, failure="incomplete_local_response")
+        report = dict(cases=[dict(passed=True, seconds=4., runs=[dict(generation=dict(attempts=[rejected, valid]),
+                      process=dict(seconds=3.5, resources=dict(cpu_seconds_sampled=2., peak_tree_rss_mib=100.)))]),
+                      dict(passed=False, seconds=1., runs=[dict(generation=dict(attempts=[partial]),
+                      process=dict(seconds=.8, resources={}))])])
+        result = summarize(report)
+        self.assertEqual(result["attempts"], 3)
+        self.assertEqual(result["repairs"], 1)
+        self.assertEqual(result["rejected_attempts"], 2)
+        self.assertEqual(result["attempt_seconds"], 3.5)
+        self.assertEqual(result["case_seconds"], 5.)
+        self.assertEqual(result["process_seconds"], 4.3)
+        self.assertIsNone(result["sampled_cpu_seconds"])
+        self.assertEqual(result["sampled_cpu_known_seconds"], 2.)
+        self.assertEqual(result["commands_missing_cpu"], 1)
+        self.assertIsNone(result["input_tokens"])
+        self.assertEqual(result["passed_cases"], 1)
+
+    def test_model_comparison_refuses_partial_cases_and_different_settings(self):
+        import copy
+        from compare_minutes_models import MODELS, PREFERENCES, validate_pair
+        environment = dict(cli_sha256="same", cli_build=dict(source_sha256="same"), core_and_harness_source_sha256="same")
+        results = [dict(model=model, exit_code=0, report=dict(schema=3, fixture_sha256="same", fixture_cases=["fixture"],
+                   cases=[dict(case="fixture", passed=True)], environment=environment,
+                   preferences={**PREFERENCES, "llm_model": model}, passed=True)) for model in MODELS]
+        validate_pair(results, ["fixture"])
+        for change in [lambda r: r["report"]["cases"].clear(),
+                       lambda r: r["report"]["preferences"].update(threads=4),
+                       lambda r: r["report"]["environment"].update(cli_sha256="other"),
+                       lambda r: r.update(exit_code=3)]:
+            bad = copy.deepcopy(results)
+            # Keep each report's environment independent even in this fixture.
+            bad[1]["report"]["environment"] = copy.deepcopy(environment)
+            change(bad[1])
+            with self.assertRaises(AssertionError):
+                validate_pair(bad, ["fixture"])
+
+    def test_process_tree_resources_are_sampled_or_explicitly_unknown(self):
+        import process_resources
+        from harness_support import command
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            child = "import time; payload=bytearray(12*1024*1024); time.sleep(.8)"
+            program = "import subprocess,sys; subprocess.run([sys.executable,'-c'," + repr(child) + "]); print('{}')"
+            result = command([sys.executable, "-c", program], None, root / "live", timeout=5)
+            self.assertEqual(result, {})
+            report = json.loads((root / "live/process.json").read_text())["resources"]
+            self.assertTrue(report["sampler_stopped"])
+            self.assertIsNone(report["gpu_memory_mib"])
+            if process_resources._psutil is not None:
+                self.assertGreater(report["samples"], 0)
+                self.assertGreaterEqual(report["processes_seen"], 2)
+                self.assertGreater(report["peak_tree_rss_mib"], 0)
+                self.assertGreaterEqual(report["cpu_seconds_sampled"], 0)
+            with patch.object(process_resources, "_psutil", None):
+                unknown = process_resources.ProcessTreeSampler(0).start().finish()
+                self.assertEqual(unknown["samples"], 0)
+                for key in ["cpu_seconds_sampled", "peak_tree_rss_mib", "peak_tree_pss_mib"]:
+                    self.assertIsNone(unknown[key])
+
+    def test_minutes_failure_keeps_its_attempt_and_resource_cost(self):
+        from types import SimpleNamespace
+        from harness_support import read_json, write_json
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            cli = root / "fictional-cli"
+            cli.touch()
+            artifacts = root / "artifacts"
+            case = dict(name="fictional", focus="budget", transcript=["Budget pending"])
+            def invoke(argv, env, directory, timeout=650):
+                if argv[1] == "generate":
+                    directory.mkdir(parents=True)
+                    write_json(directory / "process.json", dict(code=3, seconds=2., failure=None,
+                               resources=dict(cpu_seconds_sampled=.5, peak_tree_rss_mib=20.)))
+                    write_json(artifacts / "workspace/last-generation.json", dict(attempts=[dict(elapsed_ms=1000, validation_error="fixture rejection")]))
+                    raise RuntimeError("fictional process failure")
+                return dict(suggestions=[], segments=[], meeting=dict(notes_cursor=0), runtime=dict(notes_status="failed"))
+            def read(path):
+                return [case] if pathlib.Path(path).name == "document-cases.json" else read_json(path)
+            args = SimpleNamespace(cli=cli, output=root / "report.json", artifacts=artifacts, preferences=None, case=None)
+            with patch.object(evaluate, "command", invoke), patch.object(evaluate, "environment", return_value={}), \
+                 patch.object(evaluate, "read_json", read), patch.object(evaluate, "seed"), patch.object(evaluate, "append", return_value=1), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertFalse(evaluate.evaluate(args))
+            result = read_json(args.output)["cases"][0]
+            self.assertFalse(result["passed"])
+            self.assertEqual(len(result["runs"]), 1)
+            run = result["runs"][0]
+            self.assertEqual(run["status"], "process-failed")
+            self.assertEqual(run["generation"]["attempts"][0]["elapsed_ms"], 1000)
+            self.assertEqual(run["process"]["resources"]["cpu_seconds_sampled"], .5)
+
     def test_lexical_benchmark_refuses_changed_inputs_rankings_or_builds(self):
         import copy
         from benchmark_retrieval import MODES, validate_trial
@@ -73,6 +169,41 @@ asr = importlib.util.module_from_spec(spec_asr)
 spec_asr.loader.exec_module(asr)
 
 class AsrMetricTests(unittest.TestCase):
+    def test_missing_speech_cannot_disappear_from_quality_or_cost_totals(self):
+        scored = dict(edits=1,reference_units=10,substitutions=1,deletions=0,insertions=0,
+                      wall_seconds=2.,audio_seconds=10.,rtf=.1,
+                      process=dict(resources=dict(cpu_seconds_sampled=.5,peak_tree_rss_mib=50.)))
+        failed = dict(wall_seconds=3.,errors=["worker failed"],process=dict(resources={}))
+        summary=asr.aggregate_cases([scored,failed])
+        self.assertEqual(summary['clips'],2)
+        self.assertEqual(summary['scored_clips'],1)
+        self.assertIsNone(summary['error_rate'])
+        self.assertIsNone(summary['error_rate_interval_95'])
+        self.assertEqual(summary['wall_seconds'],5.)
+        self.assertIsNone(summary['audio_seconds'])
+        self.assertIsNone(summary['process_tree_cpu_seconds_sampled'])
+        self.assertEqual(summary['process_tree_cpu_known_seconds'],.5)
+        self.assertEqual(summary['missing_cpu_clips'],1)
+        self.assertEqual(summary['peak_process_tree_rss_mib'],50.)
+        self.assertTrue(asr.regression({'missing/model':{'error_rate':.1}}, {}, .02))
+        self.assertTrue(asr.regression({'m/zh':{'error_rate':.1}}, {'m/zh':{'error_rate':None}}, .02))
+
+    def test_asr_assets_are_pinned_and_worker_identity_is_part_of_evidence(self):
+        from harness_support import sha256
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); model=root/'model-store/fixture';model.mkdir(parents=True)
+            weights=model/'encoder.onnx';weights.write_bytes(b'fictional-weight')
+            worker=root/('omascribe-asr.exe' if sys.platform=='win32' else 'omascribe-asr');worker.write_bytes(b'fixture-worker')
+            spec=dict(id='fixture',kind='asr',bundled=False,files=[dict(name=weights.name,bytes=weights.stat().st_size,sha256=sha256(weights))])
+            with patch.object(asr,'read_json',return_value={'models':[spec]}):
+                first=asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)})
+                self.assertEqual(first['worker']['sha256'],sha256(worker))
+                worker.write_bytes(b'changed-worker')
+                self.assertNotEqual(first,asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)}))
+                weights.write_bytes(b'tamper')
+                with self.assertRaisesRegex(ValueError,'pinned catalog'):
+                    asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)})
+
     def test_offline_scorer_reports_mer_and_refuses_incompatible_baseline(self):
         from harness_support import sha256
         with tempfile.TemporaryDirectory() as folder:
@@ -89,11 +220,14 @@ class AsrMetricTests(unittest.TestCase):
             def run(output,baseline=None):
                 args=['evaluate_asr','--fixtures',str(corpus),'--output',str(output),'--models','fictional']
                 if baseline:args+=['--baseline',str(baseline)]
-                with patch('sys.argv',args), patch.object(asr,'command',side_effect=response), patch.object(asr,'environment',return_value={'kind':'fictional-scorer-unit'}), patch.object(asr,'isolated_env',return_value={}), contextlib.redirect_stdout(io.StringIO()):
+                with patch('sys.argv',args), patch.object(asr,'command',side_effect=response), patch.object(asr,'environment',return_value={'kind':'fictional-scorer-unit'}), patch.object(asr,'isolated_env',return_value={}), patch.object(asr,'asset_identity',return_value={'kind':'fictional-scorer-unit'}), contextlib.redirect_stdout(io.StringIO()):
                     with self.assertRaises(SystemExit) as exit_state:asr.main()
                 return exit_state.exception.code,json.loads(output.read_text())
             code,report=run(root/'first.json')
             self.assertEqual(code,0);self.assertTrue(report['passed'])
+            self.assertFalse((corpus/'silence.wav').exists())
+            self.assertFalse((corpus/'quiet-noise.wav').exists())
+            self.assertEqual(report['cases'][0]['audio_sha256'],sha256(audio))
             self.assertEqual(report['cases'][0]['metric'],'MER')
             self.assertEqual(report['aggregates']['fictional/mixed']['error_rate'],0)
             self.assertIsNone(report['aggregates']['fictional/mixed']['gpu_memory_mib'])
