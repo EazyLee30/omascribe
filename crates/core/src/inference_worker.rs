@@ -194,13 +194,26 @@ fn worker_key(
     use sha2::{Digest, Sha256};
     let model = engine.model_file(&prefs.llm_model)?;
     let metadata = model.metadata()?;
+    // Appending a recording creates a take without changing the transcription run.
+    // Read only its indexed number; do not deserialize a meeting's audio history.
+    let take = engine
+        .store
+        .lock()
+        .unwrap()
+        .conn
+        .query_row(
+            "SELECT MAX(number) FROM recording_takes WHERE meeting_id=?1",
+            [meeting],
+            |row| row.get::<_, Option<u32>>(0),
+        )?
+        .unwrap_or_default();
     let key = json!({
         "model":prefs.llm_model,"path":model,"bytes":metadata.len(),
         "modified":metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_nanos().to_string(),
         "backend":spec.backend.name(),"component":spec.identity,"device":spec.device,"runtime":std::fs::read(spec.directory.join("build-info.json")).ok(),
         "executable":engine.inference_fingerprints.file(&spec.directory.join(if spec.backend == crate::inference::Backend::Mlx {"runner.py".into()} else {crate::platform::executable("llama-server")})),
         "threads":prefs.threads,"context":prefs.context_size,"mode":prefs.resource_mode,
-        "budget":crate::inference::budget_mib(prefs),"meeting":meeting,"run":run,
+        "budget":crate::inference::budget_mib(prefs),"meeting":meeting,"run":run,"take":take,
     });
     Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(&key)?)))
 }
@@ -781,18 +794,59 @@ mod tests {
             device: None,
             identity: String::new(),
         };
-        let first = worker_key(&engine, &prefs, "fixture", 1, &spec)?;
+        let meeting = engine.create_meeting("Fictional Metal lifecycle")?;
+        save_fixture_take(&engine, &meeting.id, 1)?;
+        let first = worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?;
         engine.inference_pool.reject_metal(&first, false);
         assert!(engine.inference_pool.metal_rejected(&first));
-        assert_ne!(first, worker_key(&engine, &prefs, "fixture", 2, &spec)?);
+        save_fixture_take(&engine, &meeting.id, 1)?;
+        assert_eq!(
+            first,
+            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+        );
+        save_fixture_take(&engine, &meeting.id, 2)?;
+        assert_eq!(
+            engine.store.lock().unwrap().meeting(&meeting.id)?.run,
+            meeting.run
+        );
+        assert_ne!(
+            first,
+            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+        );
+        let first = worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?;
+        assert_ne!(
+            first,
+            worker_key(&engine, &prefs, &meeting.id, meeting.run + 1, &spec)?
+        );
         let mut other = prefs.clone();
         other.context_size += 512;
-        assert_ne!(first, worker_key(&engine, &other, "fixture", 1, &spec)?);
+        assert_ne!(
+            first,
+            worker_key(&engine, &other, &meeting.id, meeting.run, &spec)?
+        );
         std::fs::write(&executable, b"different runtime fixture")?;
-        assert_ne!(first, worker_key(&engine, &prefs, "fixture", 1, &spec)?);
+        assert_ne!(
+            first,
+            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+        );
         file.set_len(model.files[0].bytes + 1)?;
-        assert!(worker_key(&engine, &prefs, "fixture", 1, &spec).is_err());
+        assert!(worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec).is_err());
         Ok(())
+    }
+    fn save_fixture_take(engine: &Engine, meeting: &str, number: u32) -> Result<()> {
+        engine
+            .store
+            .lock()
+            .unwrap()
+            .save_take(&crate::RecordingTake {
+                id: format!("{meeting}:take:{number}"),
+                meeting_id: meeting.into(),
+                number,
+                started_at: "2026-10-27T00:00:00Z".into(),
+                start_sample: u64::from(number - 1) * 16000,
+                end_sample: Some(u64::from(number) * 16000),
+                status: "complete".into(),
+            })
     }
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     #[test]
@@ -820,8 +874,10 @@ mod tests {
             memory_budget_mib: 4096,
             ..Default::default()
         };
-        for run in [1, 1, 2] {
-            let session = open_session(&engine, &prefs, "fictional-fallback", run)?;
+        let meeting = engine.create_meeting("Fictional fallback")?;
+        for take in [1, 1, 2] {
+            save_fixture_take(&engine, &meeting.id, take)?;
+            let session = open_session(&engine, &prefs, &meeting.id, meeting.run)?;
             assert_eq!(session.backend, crate::inference::Backend::Cpu);
             assert!(session
                 .agent
@@ -847,7 +903,7 @@ mod tests {
             memory_budget_mib: 1024,
             ..prefs.clone()
         };
-        let error = open_session(&engine, &low_budget, "fictional-fallback", 3)
+        let error = open_session(&engine, &low_budget, &meeting.id, meeting.run)
             .err()
             .context("budget refusal should fail before launching a worker")?;
         assert!(error.to_string().starts_with("writer:resource-budget:"));

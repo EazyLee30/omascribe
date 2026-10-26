@@ -138,8 +138,11 @@ impl Engine {
     }
     pub fn start_scheduler(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
+        // Experimental until paired real-model/capture checks establish the tradeoff.
+        let catchup = std::env::var("OMASCRIBE_MINUTES_CATCHUP").as_deref() == Ok("1");
         thread::spawn(move || {
             let mut attempted = std::collections::HashMap::<String, Instant>::new();
+            let mut minute_schedule = crate::minutes_schedule::Schedule::default();
             let mut in_flight: Option<String> = None;
             let mut translation_attempts = std::collections::HashMap::<String, Instant>::new();
             let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
@@ -150,9 +153,17 @@ impl Engine {
                     continue;
                 }
                 if let Some(id) = in_flight.take() {
-                    attempted.insert(id, Instant::now());
+                    attempted.insert(id.clone(), Instant::now());
+                    if catchup {
+                        if let Ok(snapshot) = engine.snapshot(&id) {
+                            minute_schedule.finished(&snapshot.meeting, Instant::now());
+                        }
+                    }
                 }
                 let status = engine.status.lock().unwrap().clone();
+                let capture_active = status.recording || status.paused || status.transcribing;
+                let quality =
+                    catchup && engine.preferences.lock().unwrap().resource_mode == "quality";
                 if status.diarization_busy {
                     continue;
                 }
@@ -178,10 +189,22 @@ impl Engine {
                         }
                     }
                 }
+                if catchup {
+                    minute_schedule.retain(&ids);
+                }
                 for id in ids {
                     let Ok(snapshot) = engine.snapshot(&id) else {
                         continue;
                     };
+                    let pending_minutes = notes::needs_update(&snapshot);
+                    if catchup {
+                        let own_active =
+                            capture_active && status.meeting_id.as_deref() == Some(&id);
+                        minute_schedule.observe(&snapshot.meeting, own_active);
+                        if !own_active && (!snapshot.meeting.auto_notes || !pending_minutes) {
+                            minute_schedule.forget(&id);
+                        }
+                    }
                     let translation_due = (status.meeting_id.as_deref() == Some(&id)
                         || engine.notes_target.lock().unwrap().as_deref() == Some(&id))
                         && crate::translation::pending(&snapshot)
@@ -199,14 +222,19 @@ impl Engine {
                                 )
                         });
                     let minutes_due = snapshot.meeting.auto_notes
-                        && notes::needs_update(&snapshot)
-                        && attempted.get(&id).is_none_or(|t| {
-                            t.elapsed()
-                                > Duration::from_secs(
-                                    45 * 2u64
-                                        .pow(engine.note_failures.load(Ordering::SeqCst).min(3)),
-                                )
-                        })
+                        && pending_minutes
+                        && if catchup {
+                            minute_schedule.due(&id, capture_active, quality, Instant::now())
+                        } else {
+                            attempted.get(&id).is_none_or(|t| {
+                                t.elapsed()
+                                    > Duration::from_secs(
+                                        45 * 2u64.pow(
+                                            engine.note_failures.load(Ordering::SeqCst).min(3),
+                                        ),
+                                    )
+                            })
+                        }
                         && !snapshot
                             .notes
                             .iter()
@@ -222,6 +250,10 @@ impl Engine {
                         {
                             if minutes_due {
                                 attempted.insert(id.clone(), Instant::now());
+                                if catchup {
+                                    minute_schedule.started(&snapshot.meeting, Instant::now());
+                                    in_flight = Some(id.clone());
+                                }
                             }
                             break;
                         }
@@ -249,29 +281,18 @@ impl Engine {
                             }
                         }
                     }
-                    if !snapshot.meeting.auto_notes || !notes::needs_update(&snapshot) {
-                        continue;
-                    }
-                    // Coalesce bursts, retry failed jobs without advancing their coverage, and never
-                    // require an explicit UI action. A finished recording gets the next free slot.
-                    if attempted.get(&id).is_some_and(|t| {
-                        t.elapsed()
-                            < Duration::from_secs(
-                                45 * 2u64.pow(engine.note_failures.load(Ordering::SeqCst).min(3)),
-                            )
-                    }) {
-                        continue;
-                    }
-                    let editing = snapshot
-                        .notes
-                        .iter()
-                        .filter_map(|n| chrono::DateTime::parse_from_rfc3339(&n.updated_at).ok())
-                        .any(|t| chrono::Utc::now().signed_duration_since(t).num_seconds() < 5);
-                    if editing {
+                    if !minutes_due {
                         continue;
                     }
                     attempted.insert(id.clone(), Instant::now());
-                    if engine.generate_notes(&id).is_ok() {
+                    let launched = engine.generate_notes(&id).is_ok();
+                    if catchup {
+                        minute_schedule.started(&snapshot.meeting, Instant::now());
+                        if !launched {
+                            minute_schedule.finished(&snapshot.meeting, Instant::now());
+                        }
+                    }
+                    if launched {
                         in_flight = Some(id);
                     }
                     break;

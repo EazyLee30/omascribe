@@ -16,6 +16,8 @@ class RecordingContentionTests(unittest.TestCase):
         result = telemetry_summary(rows, 2, True)
         self.assertEqual(result["lag_max_ms"], 100)
         self.assertEqual(result["live_worker_samples"], 2)
+        settled = rows + [dict(rows[-1], wall_ms=3100)]
+        self.assertEqual(telemetry_summary(settled, 2, True)["capture_wall_overhead_ms"], 100)
         for change in [lambda r: r[-1].update(processed_ms=1900),
                        lambda r: r[-1].update(recording=True),
                        lambda r: r[2].update(has_error=True),
@@ -43,6 +45,10 @@ class RecordingContentionTests(unittest.TestCase):
         for change in [dict(passed=False), dict(pcm_sha256="other"), dict(audio_samples=None), dict(hypothesis_units=["different"])]:
             self.assertTrue(paired_errors([baseline, dict(loaded, **change)]))
         self.assertTrue(paired_errors([baseline]))
+        arms = ["legacy-concurrent", "catchup-concurrent"]
+        pair = [dict(baseline, arm=name) for name in arms]
+        self.assertEqual(paired_errors(pair, arms), [])
+        self.assertTrue(paired_errors(pair))
 
 
 if __name__ == "__main__": unittest.main()

@@ -95,3 +95,9 @@ python3 tests/replay_terminology.py \
 ```
 
 先把用户提供的名称写入隔离会议，再运行真实识别、自动校正和本地纪要。检查标准名称的大小写、错误名称残留、修订归档、全部转写覆盖和引用一致性。`--expected` / `--forbidden` 可重复指定；`--forbidden-minutes` 只检查纪要，适合禁止照抄原始杂音或补造议题，再人工核对成文。名称与引用通过不等于每一句含义都已验证。这里的记录可能包含私人内容，只留在本机；不作为默认 CI 语料，也不得上传。
+
+## 自动纪要和录音结束后的补齐
+
+`--minutes-catchup` 在相同 Metal 模型、音频和 60 秒补齐预算下，对照原调度与实验调度，两轮反转顺序。它在同一进程采样区间内计算录音及结束后全部工作，分别保存结束瞬间与补齐后的覆盖、等待时间、任务 trace、引用和资源成本。不会把等待间隔缩短解释成模型计算变快。用前面的回放命令加上该选项与新的输出路径即可。
+
+CLI `replay-settle AUDIO SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]` 返回补齐结果及 snapshot；`settle MEETING_ID SECONDS` 验证已启用自动纪要的隔离会议。两者仅接受 1–600 秒显式预算。`OMASCRIBE_MINUTES_CATCHUP=1 python3 tests/evaluate.py --auto-schedule --preferences FILE --output NEW.json` 用真实后台调度跑同一十八项事实、引用及人工段落保护场景。实验默认关闭；结果未通过不更换样本或放宽质量门槛。每一阶段保留所有 metadata-only task trace；不能用只含最后一次生成的诊断文件推断整个自动补齐过程的 token 或重试成本。
