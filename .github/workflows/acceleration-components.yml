@@ -5,8 +5,10 @@ on:
     paths:
       - .github/workflows/acceleration-components.yml
       - scripts/acceleration-components.py
+      - scripts/acceleration-release.py
       - scripts/runtime_inventory.py
       - tests/test_acceleration_components.py
+      - tests/test_acceleration_release.py
       - tests/test_release_metadata.py
       - crates/core/**
       - crates/asr/**
@@ -20,30 +22,56 @@ on:
         required: true
         default: acceleration-5aeac37-1
       publish:
-        description: Sign and publish optional downloads after the build gates
+        description: Sign and publish an immutable candidate after all build gates
+        type: boolean
+        default: false
+      promote:
+        description: Also update acceleration-v1 (explicit final device acceptance required)
         type: boolean
         default: false
 permissions:
   contents: read
 concurrency:
-  group: acceleration-${{ github.event.pull_request.number || inputs.version }}
+  # Quick source checks must not queue behind a two-hour optional SDK build.
+  group: acceleration-${{ github.event.pull_request.number || inputs.version }}-${{ github.event_name == 'workflow_dispatch' && 'full' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') && 'full' || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') && 'windows-vulkan' || 'core' }}
   cancel-in-progress: false
 env:
   PYTHONUTF8: "1"
-  COMPONENT_VERSION: ${{ inputs.version || format('acceleration-ci-{0}', github.run_id) }}
+  REQUESTED_VERSION: ${{ inputs.version }}
+  SIGN_REQUESTED: ${{ inputs.publish }}
+  PROMOTE_REQUESTED: ${{ inputs.promote }}
 jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.context.outputs.source_sha }}
+      version: ${{ steps.context.outputs.version }}
+      sign: ${{ steps.context.outputs.sign }}
+      promote: ${{ steps.context.outputs.promote }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - id: context
+        name: Bind exact source and candidate-only publication authority
+        run: python3 scripts/acceleration-release.py context
   windows-core:
+    needs: prepare
     runs-on: windows-2022
     timeout-minutes: 25
     env:
       CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Check component packaging without compiling GPU runtimes
-        run: python -m unittest discover -s tests -p 'test_acceleration_components.py'
+        run: python -m unittest discover -s tests -p 'test_acceleration_*.py'
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.99.0"
@@ -56,8 +84,11 @@ jobs:
       - name: Inventory probe without opening a user workspace
         run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
   build:
+    needs: prepare
+    env:
+      COMPONENT_VERSION: ${{ needs.prepare.outputs.version }}
     # Source pushes keep the Windows checks; expensive SDK builds are opt-in.
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan')
+    if: github.event_name == 'workflow_dispatch' || (!startsWith(github.event.label.name, 'sign-acceleration-run-') && (contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan')))
     strategy:
       fail-fast: false
       matrix:
@@ -77,12 +108,14 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Validate requested release name and packaging contracts
         run: |
-          python -m unittest discover -s tests -p 'test_acceleration_components.py'
+          python -m unittest discover -s tests -p 'test_acceleration_*.py'
           python -c 'import os,re; assert re.fullmatch(r"acceleration-[A-Za-z0-9][A-Za-z0-9_.-]{0,85}", os.environ["COMPONENT_VERSION"]), "Invalid release version"'
       - name: Pinned CMake for Blackwell architecture suffixes
         run: python -m pip install cmake==3.31.10
@@ -146,24 +179,23 @@ jobs:
   catalog:
     # A targeted developer build cannot assemble or publish a partial catalog.
     if: github.event_name == 'workflow_dispatch' || !contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components')
-    needs: [build, windows-core]
+    needs: [prepare, build, windows-core]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write
       actions: read
+    env:
+      COMPONENT_VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
       - name: Require green core/application CI before signing
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import json,os,subprocess
-          runs=json.loads(subprocess.check_output(['gh','api','repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/ci.yml/runs?head_sha='+os.environ['GITHUB_SHA']]))['workflow_runs']
-          if not runs or runs[0]['status']!='completed' or runs[0]['conclusion']!='success': raise SystemExit('Application CI for this exact commit must pass before signing components')
-          PY
+        run: python3 scripts/acceleration-release.py check-ci
       - uses: actions/download-artifact@v4
         with:
           pattern: accelerator-*
@@ -172,57 +204,46 @@ jobs:
       - name: Require every platform/backend and recheck all member hashes
         run: python3 scripts/acceleration-components.py index --directory release-assets/accelerators --version "$COMPONENT_VERSION"
       - uses: actions/setup-node@v4
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
         with:
           node-version: "22"
           cache: npm
       - run: npm ci --ignore-scripts
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
       - name: Sign exact catalog bytes with the app release key
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: npx tauri signer sign --app-version "$COMPONENT_VERSION" release-assets/accelerators/index.payload
       - name: Wrap signed payload without reserializing it
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
         run: |
           python3 - <<'PY'
           import json,pathlib
           root=pathlib.Path('release-assets/accelerators')
-          payload=(root/'index.payload').read_text(encoding='utf-8')
+          payload=(root/'index.payload').read_bytes().decode('utf-8')
           signature=(root/'index.payload.sig').read_text(encoding='utf-8').strip()
           (root/'index.json').write_text(json.dumps(dict(payload=payload,signature=signature)),encoding='utf-8')
           config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())
           (root/'updater.pub').write_text(config['plugins']['updater']['pubkey'],encoding='utf-8')
           PY
       - uses: dtolnay/rust-toolchain@stable
-        if: inputs.publish
+        if: needs.prepare.outputs.sign == 'true'
         with:
           toolchain: "1.99.0"
       - name: Verify catalog signature and bound version using the app verifier
-        if: inputs.publish
-        run: cargo run -p omascribe-core --locked --bin omascribe-cli -- verify-update release-assets/accelerators/index.payload release-assets/accelerators/index.payload.sig release-assets/accelerators/updater.pub "$COMPONENT_VERSION"
+        if: needs.prepare.outputs.sign == 'true'
+        run: |
+          cargo build -p omascribe-core --locked --bin omascribe-cli
+          target/debug/omascribe-cli verify-update release-assets/accelerators/index.payload release-assets/accelerators/index.payload.sig release-assets/accelerators/updater.pub "$COMPONENT_VERSION"
       - uses: actions/upload-artifact@v4
         with:
           name: acceleration-catalog
           path: release-assets/accelerators/index.*
           if-no-files-found: error
-      - name: Publish immutable component archives, then update signed catalog pointer
-        if: inputs.publish
+      - name: Publish complete verified candidate; stable pointer requires separate manual promotion
+        if: needs.prepare.outputs.sign == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import os,pathlib,subprocess
-          root=pathlib.Path('release-assets/accelerators'); version=os.environ['COMPONENT_VERSION']
-          def run(*args): subprocess.run(list(args),check=True)
-          existing=subprocess.run(['gh','release','view',version],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-          if existing.returncode == 0: raise SystemExit('Immutable component release already exists; use a new version')
-          run('gh','release','create',version,'--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional GPU components · '+version,'--notes','Optional llama.cpp GPU runtimes. Download from OmaScribe settings after hardware detection; local model verification is required before enabling. Base installers do not include these files.')
-          run('gh','release','upload',version,*[str(p) for p in sorted(root.glob('*.tar.bz2'))],str(root/'index.json'))
-          pointer=subprocess.run(['gh','release','view','acceleration-v1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-          if pointer.returncode:
-              run('gh','release','create','acceleration-v1','--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional acceleration catalog','--notes','Signed catalog consumed by OmaScribe. Installers are available from the stable application release.')
-          run('gh','release','upload','acceleration-v1',str(root/'index.json'),'--clobber')
-          PY
+        run: python3 scripts/acceleration-release.py publish

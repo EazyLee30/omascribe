@@ -193,6 +193,8 @@ fn uncertain(s: &str) -> bool {
         "undecided",
         "pending",
         "unconfirmed",
+        "not approved",
+        "unapproved",
         "not yet",
         "deferred",
         "not final",
@@ -507,6 +509,23 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn english_approval_negation_is_preserved_and_synonyms_are_accepted() {
+        let mut source = data()[0].clone();
+        for wording in ["not approved", "unapproved"] {
+            source.text = format!("The budget of 3000 is {wording}.");
+            for body in [
+                "The budget of 3000 is not approved.",
+                "The budget of 3000 remains unapproved.",
+            ] {
+                let draft =
+                    serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]});
+                assert!(validate(&draft.to_string(), std::slice::from_ref(&source), "m").is_ok());
+            }
+            let wrong = serde_json::json!({"sections":[{"title":"Budget","body":"The budget of 3000 is approved.","sources":[1]}]});
+            assert!(validate(&wrong.to_string(), std::slice::from_ref(&source), "m").is_err());
+        }
+    }
     #[test]
     fn translation_lengths_are_separate_from_minutes_but_fact_guards_remain() {
         let mut source = data()[0].clone();

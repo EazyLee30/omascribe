@@ -2,7 +2,7 @@
 """Real local minutes regression: phased evidence, exact citations, retained failure artifacts.
 Fictional inputs only. Pattern checks catch targeted regressions, not all semantic errors.
 """
-import argparse, datetime, json, pathlib, re, shutil, sqlite3, time, uuid
+import argparse, datetime, json, os, pathlib, re, shutil, sqlite3, time, uuid
 from contextlib import closing
 from harness_support import suite_passed, REPO, command, environment, isolated_env, read_json, sha256, write_json
 
@@ -38,10 +38,10 @@ def assess(case, snapshot):
     return errors
 
 
-def seed(root, case, mid):
+def seed(root, case, mid, automatic=False):
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     meeting = dict(id=mid, title=case["name"], created_at=now, status="ready", duration_ms=0,
-        run=1, notes_cursor=0, auto_notes=False, notes_fingerprint="", speaker_names=case.get("speakers", {}))
+        run=1, notes_cursor=0, auto_notes=automatic, notes_fingerprint="", speaker_names=case.get("speakers", {}))
     with closing(sqlite3.connect(root / "meetings.sqlite3")) as db, db:
         db.execute("INSERT INTO meetings VALUES(?,?)", (mid, json.dumps(meeting)))
         note = dict(id=str(uuid.uuid4()), meeting_id=mid, kind="document", content=case["focus"], anchor_ms=0, updated_at=now)
@@ -79,6 +79,10 @@ def evaluate(args):
     report = dict(schema=3, passed=False, environment=environment(cli),
         preferences=base_preferences, fixture_cases=[c["name"] for c in cases],
         fixture_sha256=sha256(REPO / "tests/fixtures/document-cases.json"), cases=[])
+    automatic = getattr(args, "auto_schedule", False)
+    report["execution"] = "automatic-scheduler" if automatic else "explicit-generation"
+    report["catchup_enabled"] = os.environ.get("OMASCRIBE_MINUTES_CATCHUP") == "1"
+    report["incremental_enabled"] = os.environ.get("OMASCRIBE_INCREMENTAL_MINUTES") == "1"
     command([cli, "diagnose"], env, artifacts / "diagnose")
     for case in cases:
         folder = artifacts / case["name"]
@@ -88,18 +92,19 @@ def evaluate(args):
         snapshot = None
         protected = []
         try:
-            seed(root, case, mid)
+            seed(root, case, mid, automatic)
             phases = case.get("phases", [dict(transcript=case.get("transcript", []))])
             for number, phase in enumerate(phases, 1):
                 seq = append(root, mid, phase["transcript"], seq)
                 cursor = -1
                 for batch in range(seq+1):
                     generation = folder / f"phase-{number}" / f"batch-{batch+1}"
-                    diagnostic_names = ["last-generation.json", "last-writer-resource.json", "last-metal-fallback.json", "llm-runtime.log"]
+                    diagnostic_names = ["last-generation.json", "last-writer-resource.json", "last-metal-fallback.json", "llm-runtime.log", "inference-trace.jsonl", "inference-trace.previous.jsonl"]
                     for name in diagnostic_names: (root / name).unlink(missing_ok=True)
                     snapshot = None
                     try:
-                        snapshot = command([cli, "generate", mid], env, generation)
+                        argv = [cli, "settle", mid, 120] if automatic else [cli, "generate", mid]
+                        snapshot = command(argv, env, generation)
                     finally:
                         for name in diagnostic_names:
                             if (root / name).exists(): shutil.copy2(root / name, generation / name)
@@ -108,7 +113,10 @@ def evaluate(args):
                             coverage=snapshot["meeting"]["notes_cursor"] if snapshot else None,
                             generation=read_json(generation / "last-generation.json"),
                             process=read_json(generation / "process.json"),
-                            writer_resource=read_json(generation / "last-writer-resource.json")))
+                            writer_resource=read_json(generation / "last-writer-resource.json"),
+                            generation_diagnostic_last_only=automatic,
+                            task_trace=[json.loads(line) for name in ["inference-trace.previous.jsonl", "inference-trace.jsonl"]
+                                        if (generation/name).exists() for line in (generation/name).read_text().splitlines()]))
                     next_cursor = snapshot["meeting"]["notes_cursor"]
                     if next_cursor >= seq or next_cursor <= cursor: break
                     cursor = next_cursor
@@ -129,6 +137,11 @@ def evaluate(args):
             errors.append(f"{type(error).__name__}: {error}")
             try: snapshot = command([cli, "snapshot", mid], env, folder / "failure-snapshot", timeout=30)
             except Exception: pass
+        finally:
+            if automatic:
+                # A failed case must not consume another case's background work budget.
+                with closing(sqlite3.connect(root / "meetings.sqlite3")) as db, db:
+                    db.execute("UPDATE meetings SET json=json_set(json,'$.auto_notes',json('false')) WHERE id=?", (mid,))
         result = dict(case=case["name"], passed=not errors, errors=errors,
             seconds=round(time.monotonic()-started,3), runs=runs,
             document=snapshot["suggestions"] if snapshot else [],
@@ -148,6 +161,7 @@ def main():
     p.add_argument("--artifacts", type=pathlib.Path)
     p.add_argument("--case")
     p.add_argument("--preferences", type=pathlib.Path)
+    p.add_argument("--auto-schedule", action="store_true", help="Run the same factual/human-edit corpus through the real background scheduler")
     raise SystemExit(0 if evaluate(p.parse_args()) else 1)
 
 if __name__ == "__main__": main()
