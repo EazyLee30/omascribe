@@ -13,6 +13,8 @@ Rust tests cover sample-exact chunk boundaries, pause/resume append behavior, in
 
 Push checked source changes promptly; installer and optional GPU builds need not finish before a source push. Ordinary pull-request CI retains application checks, Windows core/ASR tests, CPU worker linking and component packaging contracts. The four-platform/backend SDK build matrix runs only with the `build-acceleration-components` PR label or a manual **Optional acceleration components** workflow dispatch. Remove the label after the intended build to avoid rebuilding it on every push. Skipped builds are not validation evidence; record the successful run and complete native-input revision when reusing earlier results. Publishing still requires the full matrix, archive/member verification and passing application CI for the exact publication commit.
 
+For isolated Windows Vulkan development, use the `build-windows-vulkan` PR label. It selects only Windows Vulkan and skips catalog assembly/publication. The full-build label takes precedence when both labels are present; manual dispatch always builds all four targets. Remove the targeted label after the intended run. A successful targeted archive does not satisfy the full publication gates.
+
 ## Real local writing model
 
 After `bin/setup`, build the CLI and run:
