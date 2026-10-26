@@ -26,9 +26,9 @@ used as trigger evidence. Original historical inputs can be read at their fixed
 commit if a merge ref disappears. These delivery-only changes do not alter
 application core/frontend/model or native SDK/package inputs from `44c6f21`, so
 its 19-case/native/core results remain bound to the same application bytes.
-Two completed Vulkan checkout trees have also been independently observed to
-match original source `164371e`; both CUDA checkouts are still pending. No
-signing action or publication has been performed.
+Two completed Vulkan checkout trees and the now-completed Linux CUDA checkout
+have also been independently observed to match original source `164371e`.
+Windows CUDA is still pending. No signing action or publication has been performed.
 
 Earlier support checkpoint: `be5e16d` merges shared `e255dc7`, including the
 public ASR fixture preparation/offline reuse change. Python now has 43 passing
@@ -87,7 +87,14 @@ requests. Its archive and every member are hash-checked, SDK/driver override
 paths excluded, and the system Vulkan loader observed in the child. This is
 runtime-only acceptance, not signed-settings activation. Exact results and limits:
 [`formal Vulkan runtime`](../evaluation/windows-vulkan-formal-2026-10-27.json).
-The two CUDA build jobs are still pending; no CUDA 12.8 result is claimed yet.
+Linux CUDA has now completed build/package/upload, and both Linux archives have
+been downloaded and checked against their outer ZIP digest, archive digest and
+every member. Its original checkout agrees with the two Vulkan checkouts. These
+are Linux artifact-integrity checks on Windows, not Linux GPU execution. Exact
+three-component inventory and source proofs:
+[`available candidate artifacts`](../evaluation/acceleration-candidate-integrity-2026-10-27.json).
+Windows CUDA is still building; there is no Windows CUDA 12.8 runtime result or
+complete four-way catalog yet. No signing/publishing action has been taken.
 
 Use candidate artifacts from the existing Windows/Linux × CUDA/Vulkan matrix.
 Retain the workflow run, exact source SHA, CUDA 12.8.1 build log/toolchain version,

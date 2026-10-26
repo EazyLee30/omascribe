@@ -1,0 +1,480 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "available_acceleration_candidate_artifact_integrity",
+  "version": "acceleration-ci-40367160891",
+  "run_id": 40367160891,
+  "run_url": "https://github.com/EazyLee30/omascribe/actions/runs/40367160891",
+  "source_commit": "164371e285a499e9261afa5239d1d563a1aadb57",
+  "runtime_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+  "integrity_passed_for_available_components": true,
+  "complete_matrix": false,
+  "available_components": 3,
+  "components": [
+    {
+      "backend": "cuda",
+      "platform": "linux-x86_64",
+      "artifact_id": 12677064894,
+      "outer_zip_sha256": "69f8c72063dfd21004cc504de9ef8ab455b197ca36522b7a62742a930c658507",
+      "manifest_sha256": "9447a5de32549b5a99d84c24db84d3be0cedb17fe62744c39f9d7ba0afe2a427",
+      "archive": {
+        "bytes": 684634977,
+        "name": "OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "sha256": "5088b6636bf57eb30d11e9edda6442eca3554b894dff55a1042890e0d42bda81",
+        "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      "files_verified": 25,
+      "component_manifest": {
+        "archive": {
+          "bytes": 684634977,
+          "name": "OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "5088b6636bf57eb30d11e9edda6442eca3554b894dff55a1042890e0d42bda81",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "cuda",
+        "entrypoint": "llama-server",
+        "files": [
+          {
+            "bytes": 103460,
+            "name": "CUDA-EULA.html",
+            "sha256": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+            "url": ""
+          },
+          {
+            "bytes": 125,
+            "name": "build-info.json",
+            "sha256": "0c79b0aef3cfd4ccfcffce3f5de7109dfd9ece579da8d073d00162b06f2f4f5c",
+            "url": ""
+          },
+          {
+            "bytes": 116388640,
+            "name": "libcublas.so.12",
+            "sha256": "18a5df540d156e9aff0363776fefab7884b614f122847b51c3eb1da772048e5c",
+            "url": ""
+          },
+          {
+            "bytes": 751775824,
+            "name": "libcublasLt.so.12",
+            "sha256": "974927b9af78cadc0412ea3ab296da791af02c2dd0de5a35b5f0fbb8dc5d0a4d",
+            "url": ""
+          },
+          {
+            "bytes": 746032,
+            "name": "libcudart.so.12",
+            "sha256": "4e87b4df088d3def940ebdb04172bc8b37ea840da433b8f66d7b640a8a02bec9",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so",
+            "sha256": "a02880d59f7e1ae80c5991b44e954536343808f4313352e73a1506d284bd71f0",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so.0",
+            "sha256": "a02880d59f7e1ae80c5991b44e954536343808f4313352e73a1506d284bd71f0",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so.0.27.0",
+            "sha256": "a02880d59f7e1ae80c5991b44e954536343808f4313352e73a1506d284bd71f0",
+            "url": ""
+          },
+          {
+            "bytes": 1420808,
+            "name": "libggml-cpu.so",
+            "sha256": "ac347f44417a583fa062e3504086a20afd8ea769683757b4fe8aef3ae7bc7f65",
+            "url": ""
+          },
+          {
+            "bytes": 132437632,
+            "name": "libggml-cuda.so",
+            "sha256": "027332499634410878a7f84437f78a793d8b68a54ab34c914370d2a358947f47",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so",
+            "sha256": "7ac6e41c57b3717fdd210ea728ba58b5432b953ff545dfc43184162bb00dc5ac",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so.0",
+            "sha256": "7ac6e41c57b3717fdd210ea728ba58b5432b953ff545dfc43184162bb00dc5ac",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so.0.27.0",
+            "sha256": "7ac6e41c57b3717fdd210ea728ba58b5432b953ff545dfc43184162bb00dc5ac",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so",
+            "sha256": "4db852535393ef5c633f190574c47130a82537b6adf7861e7a326e19242e2331",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so.0",
+            "sha256": "4db852535393ef5c633f190574c47130a82537b6adf7861e7a326e19242e2331",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so.0.7.0",
+            "sha256": "4db852535393ef5c633f190574c47130a82537b6adf7861e7a326e19242e2331",
+            "url": ""
+          },
+          {
+            "bytes": 4260472,
+            "name": "libllama-server-impl.so",
+            "sha256": "5c8032f6d378065dd01f7aed919a4d87739d748fb30b62fcce19ca880d6bbf15",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so",
+            "sha256": "916ab6eb055eecdd336967ce74e3b2d4d75e0f0ee67a3ac72343abe566e6cd07",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so.0",
+            "sha256": "916ab6eb055eecdd336967ce74e3b2d4d75e0f0ee67a3ac72343abe566e6cd07",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so.0.7.0",
+            "sha256": "916ab6eb055eecdd336967ce74e3b2d4d75e0f0ee67a3ac72343abe566e6cd07",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so",
+            "sha256": "5a61a2bc0fa591e8a85604c58f05cdcd042a5cbc1ab17571b5d8c19e2b46a990",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so.0",
+            "sha256": "5a61a2bc0fa591e8a85604c58f05cdcd042a5cbc1ab17571b5d8c19e2b46a990",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so.0.7.0",
+            "sha256": "5a61a2bc0fa591e8a85604c58f05cdcd042a5cbc1ab17571b5d8c19e2b46a990",
+            "url": ""
+          },
+          {
+            "bytes": 17864,
+            "name": "llama-server",
+            "sha256": "846553aa8816452b5d4371ae15c15e39f73254f80309ad5bc62787ae04023c44",
+            "url": ""
+          },
+          {
+            "bytes": 1078,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+            "url": ""
+          }
+        ],
+        "id": "cuda-linux-x86_64",
+        "license": "MIT + NVIDIA CUDA EULA",
+        "name": "CUDA · linux-x86_64",
+        "target": "linux-x86_64"
+      },
+      "build_info": {
+        "backend": "cuda",
+        "format": 1,
+        "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+        "target": "linux-x86_64"
+      },
+      "passed": true,
+      "scope": "Artifact integrity only; no Linux execution or GPU admission on this Windows machine.",
+      "runtime_acceptance": "not_executed_on_windows_host",
+      "source_checkout": {
+        "job_id": 121727976955,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+        "parents": [
+          "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+          "164371e285a499e9261afa5239d1d563a1aadb57"
+        ],
+        "log_bytes": 103201,
+        "log_sha256": "5e5f797c5b07e6db15a422e36c123da70c6bfca5a0095f254fffe8dc06ea8c1b",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "platform": "linux-x86_64",
+      "artifact_id": 12670059821,
+      "outer_zip_sha256": "0ae745fe882a91979ec0a9d5e5a7cd6672bd3c563c89f9430b974330ed0c66fe",
+      "manifest_sha256": "c5c956b6d9ee6a498d6c0bdfd42c65c0c7f1d63ab21fd5a1bb61eb8257cbfd03",
+      "archive": {
+        "bytes": 24334991,
+        "name": "OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "sha256": "0d1c2ccbe429262a506117ef28ea0ac92cc8f9d47b5f04187e9d57ccb13b1c6b",
+        "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      "files_verified": 21,
+      "component_manifest": {
+        "archive": {
+          "bytes": 24334991,
+          "name": "OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "0d1c2ccbe429262a506117ef28ea0ac92cc8f9d47b5f04187e9d57ccb13b1c6b",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "vulkan",
+        "entrypoint": "llama-server",
+        "files": [
+          {
+            "bytes": 127,
+            "name": "build-info.json",
+            "sha256": "45fbd118458f667a02dafad0edf3910ab12c920542839ce04c4c0466c76c4321",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so",
+            "sha256": "2b2fea7e5a84b025dc89a14447889cc9ffdc089d0101d265bda3294f91b7bb4a",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so.0",
+            "sha256": "2b2fea7e5a84b025dc89a14447889cc9ffdc089d0101d265bda3294f91b7bb4a",
+            "url": ""
+          },
+          {
+            "bytes": 926064,
+            "name": "libggml-base.so.0.27.0",
+            "sha256": "2b2fea7e5a84b025dc89a14447889cc9ffdc089d0101d265bda3294f91b7bb4a",
+            "url": ""
+          },
+          {
+            "bytes": 1420808,
+            "name": "libggml-cpu.so",
+            "sha256": "be612cc787aad8278bf72bd676fbc22426c7961a9747a7e7b34267b59d444853",
+            "url": ""
+          },
+          {
+            "bytes": 42242600,
+            "name": "libggml-vulkan.so",
+            "sha256": "bf9d030b9c8d22e903faa7c17e9afde7dc7480221ac08a70cd492bb956e807f8",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so",
+            "sha256": "f0cdbb272369b5c643c604369754d1460f79c14e96210c3442f48c0b53b9f32f",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so.0",
+            "sha256": "f0cdbb272369b5c643c604369754d1460f79c14e96210c3442f48c0b53b9f32f",
+            "url": ""
+          },
+          {
+            "bytes": 51040,
+            "name": "libggml.so.0.27.0",
+            "sha256": "f0cdbb272369b5c643c604369754d1460f79c14e96210c3442f48c0b53b9f32f",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so",
+            "sha256": "80ff9aa85daf3cdd49e914c40feb1f2ca7f521154d84f7be095c833e76977fa8",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so.0",
+            "sha256": "80ff9aa85daf3cdd49e914c40feb1f2ca7f521154d84f7be095c833e76977fa8",
+            "url": ""
+          },
+          {
+            "bytes": 6443040,
+            "name": "libllama-common.so.0.7.0",
+            "sha256": "80ff9aa85daf3cdd49e914c40feb1f2ca7f521154d84f7be095c833e76977fa8",
+            "url": ""
+          },
+          {
+            "bytes": 4260472,
+            "name": "libllama-server-impl.so",
+            "sha256": "08bd4715edddb062963492f65e3ff5fb2102f83a4e5c23a08e8e5b4fef4fc0a3",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so",
+            "sha256": "cd25c66b556848fd4b690bcc1c1c6c86321d038b1d0ebc47147f1b18490f6b2b",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so.0",
+            "sha256": "cd25c66b556848fd4b690bcc1c1c6c86321d038b1d0ebc47147f1b18490f6b2b",
+            "url": ""
+          },
+          {
+            "bytes": 5151040,
+            "name": "libllama.so.0.7.0",
+            "sha256": "cd25c66b556848fd4b690bcc1c1c6c86321d038b1d0ebc47147f1b18490f6b2b",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so",
+            "sha256": "60efd49c329a4674161119226ee982bedd1e1ca3ae0186850a10e634a74befe0",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so.0",
+            "sha256": "60efd49c329a4674161119226ee982bedd1e1ca3ae0186850a10e634a74befe0",
+            "url": ""
+          },
+          {
+            "bytes": 1992256,
+            "name": "libmtmd.so.0.7.0",
+            "sha256": "60efd49c329a4674161119226ee982bedd1e1ca3ae0186850a10e634a74befe0",
+            "url": ""
+          },
+          {
+            "bytes": 17864,
+            "name": "llama-server",
+            "sha256": "43ba5dc584c536b98d2feb4b877afe098c0e4e8f4031bbed2f3465e85297dd33",
+            "url": ""
+          },
+          {
+            "bytes": 1078,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+            "url": ""
+          }
+        ],
+        "id": "vulkan-linux-x86_64",
+        "license": "MIT",
+        "name": "VULKAN · linux-x86_64",
+        "target": "linux-x86_64"
+      },
+      "build_info": {
+        "backend": "vulkan",
+        "format": 1,
+        "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+        "target": "linux-x86_64"
+      },
+      "passed": true,
+      "scope": "Artifact integrity only; no Linux execution or GPU admission on this Windows machine.",
+      "runtime_acceptance": "not_executed_on_windows_host",
+      "source_checkout": {
+        "job_id": 121727976886,
+        "log_sha256": "1d21af471e7bb3d61bc7265a0dfca50436e2ec827333db2e7b1e0b21ae42e7ea",
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+        "parents": [
+          "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+          "164371e285a499e9261afa5239d1d563a1aadb57"
+        ]
+      }
+    },
+    {
+      "backend": "vulkan",
+      "platform": "windows-x86_64",
+      "artifact_id": 12671164339,
+      "outer_zip_sha256": "c209cb2f48f4665c9b54b8ea10f417f393f2d36460d547043c137cfb44a9b40a",
+      "manifest_sha256": "193092c5efa1046918c36c72267f3063687d8c9dc39b3e04280f739d78aa85c9",
+      "archive": {
+        "bytes": 12674455,
+        "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+        "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      "files_verified": 3,
+      "component_manifest": {
+        "archive": {
+          "bytes": 12674455,
+          "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "vulkan",
+        "entrypoint": "llama-server.exe",
+        "files": [
+          {
+            "bytes": 135,
+            "name": "build-info.json",
+            "sha256": "17aa4d876351d816f54f267bd80eec36dbe089816cdddeaa674617e01f67efda",
+            "url": ""
+          },
+          {
+            "bytes": 51814400,
+            "name": "llama-server.exe",
+            "sha256": "2b98f4400eeb8e7fef01027d59ac72fc282aebecc98b6d0f26190910568c59c1",
+            "url": ""
+          },
+          {
+            "bytes": 1099,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+            "url": ""
+          }
+        ],
+        "id": "vulkan-windows-x86_64",
+        "license": "MIT",
+        "name": "VULKAN · windows-x86_64",
+        "target": "windows-x86_64"
+      },
+      "passed": true,
+      "scope": "Integrity plus formal runtime-only acceptance with normal system driver discovery.",
+      "runtime_acceptance": "passed; 29 layers and two bilingual fact/negation requests",
+      "runtime_report": "windows-vulkan-formal-2026-10-27.json",
+      "source_checkout": {
+        "job_id": 121727976970,
+        "log_sha256": "ac9e06d1ffacc23e4c199915b5152dceb065424066d9e9aa30452140fca32e6d",
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+        "parents": [
+          "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+          "164371e285a499e9261afa5239d1d563a1aadb57"
+        ]
+      }
+    }
+  ],
+  "linux_cuda_toolchain": {
+    "workflow_sdk": "12.8.1",
+    "cuda_compiler": "NVIDIA 12.8.93",
+    "host_cxx": "GNU 11.4.0",
+    "architectures": [
+      "75-real",
+      "80-real",
+      "86-real",
+      "89-real",
+      "90-real",
+      "120a-real"
+    ]
+  },
+  "pending": [
+    "Windows CUDA build, archive/member checks and original checkout proof",
+    "Complete original four-way workflow/catalog success",
+    "Signed immutable candidate and real Settings lifecycle acceptance"
+  ],
+  "signed": false,
+  "published": false,
+  "stable_catalog_promoted": false,
+  "limits": [
+    "Linux components verified as archives on a Windows host; no Linux GPU execution or admission claim.",
+    "Windows Vulkan is runtime-only; actual signed Settings download/install/test-enable/restart/fallback remains pending.",
+    "No partial index.payload or install marker assembled."
+  ]
+}
