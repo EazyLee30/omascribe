@@ -1,0 +1,1444 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "Apple M5 paced ASR/Metal coexistence",
+  "host": {
+    "chip": "Apple M5",
+    "memory_gib": 24
+  },
+  "reports": [
+    {
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "4edafb0478c271766cdad5f15d67ac70c9cd56b7",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "e89708dfb852f236f3131ca6c3cadfa3b6d2dd7cd0f503b2866b14e978f42ca9",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "eb97641be2ef4f650614a9e6b8e8ee1916bfdb6c84fe2cf3c0b48944e0a34bb5",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "11da810de364bbfb30a5cc0f573fca317e07102d9cdb734b3cadfdbd751c280b",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "9f80089406a3e6532d2163a1637074a1329ea2c4",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "passed": false,
+      "errors": [
+        "Trial 1: ASR output changed under concurrent workload"
+      ],
+      "raw_report": "artifacts/benchmarks/apple-recording-9f80089.json",
+      "raw_sha256": "0b978d781c22bf2d1c692d95fcdf1f99702d9b141780e5683e1591e024816c99",
+      "fixture": {
+        "seconds": 78,
+        "manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69",
+        "input_wav_sha256": "ff4f1c89f5bccc9d971201cb3efa77ece75c1959dac4a10e13cd5516937080f0",
+        "expected_pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965"
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "errors": [
+            "ASR output changed under concurrent workload"
+          ],
+          "arms": [
+            {
+              "arm": "asr-only",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 378,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 212,
+                "lag_p50_ms": 192.0,
+                "lag_p95_ms": 348.0,
+                "lag_max_ms": 1472,
+                "capture_wall_overhead_ms": -133,
+                "asr_compute_rtf": 0.05474229433333333,
+                "live_translations": 0,
+                "live_notes_cursor": 0,
+                "live_worker_samples": 0,
+                "worker_starts": 0,
+                "worker_reuses": 0
+              },
+              "telemetry_sha256": "36f2cc2770e5f675d48447b5afbee995322698c8361da2f2f519ea9dc0baa546",
+              "asr_score": {
+                "substitutions": 14,
+                "deletions": 58,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.28627450980392155
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 0,
+                "notes_cursor": 0,
+                "sections": 0,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [],
+                "log_sha256": null,
+                "fallback": false,
+                "worker_events": [],
+                "trace_sha256": null
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27160992,
+                  "sha256": "c6307547e802e015ec52bef3e1f41633e4c04b4722df77f29f6d986418c0a07a"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 288,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 5.747900351999999,
+                "peak_tree_rss_mib": 212.15625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            {
+              "arm": "metal-concurrent",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 375,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 216,
+                "lag_p50_ms": 192.0,
+                "lag_p95_ms": 320.0,
+                "lag_max_ms": 896,
+                "capture_wall_overhead_ms": -329,
+                "asr_compute_rtf": 0.05048759243589744,
+                "live_translations": 6,
+                "live_notes_cursor": 4,
+                "live_worker_samples": 41,
+                "worker_starts": 7,
+                "worker_reuses": 1
+              },
+              "telemetry_sha256": "cd66f43e58e37b1f096d0d9f5a995ab2ad2a62ba5ec0526e41788146b4431c72",
+              "asr_score": {
+                "substitutions": 13,
+                "deletions": 57,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.2784313725490196
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 6,
+                "notes_cursor": 4,
+                "sections": 1,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [
+                  [
+                    29,
+                    29
+                  ]
+                ],
+                "log_sha256": "d4f61ad4001bb52bc5f89855b3ac0b6ce97f87ebeb72bdf840d9f74fc1f8ebb7",
+                "fallback": false,
+                "worker_events": [
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 630
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": true,
+                    "startup_ms": 0
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 416
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 410
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 419
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 421
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 423
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 419
+                  }
+                ],
+                "trace_sha256": "6e25f205b842e39799ec3c4ded76bca78c1d33dfc7ca7fc7ce310817872052ee"
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27160992,
+                  "sha256": "c6307547e802e015ec52bef3e1f41633e4c04b4722df77f29f6d986418c0a07a"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 287,
+                "processes_seen": 10,
+                "cpu_seconds_sampled": 9.439102888,
+                "peak_tree_rss_mib": 1678.25,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            }
+          ]
+        },
+        {
+          "trial": 2,
+          "errors": [],
+          "arms": [
+            {
+              "arm": "metal-concurrent",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 376,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 213,
+                "lag_p50_ms": 192.0,
+                "lag_p95_ms": 320.0,
+                "lag_max_ms": 896,
+                "capture_wall_overhead_ms": -148,
+                "asr_compute_rtf": 0.051723771794871795,
+                "live_translations": 6,
+                "live_notes_cursor": 4,
+                "live_worker_samples": 42,
+                "worker_starts": 7,
+                "worker_reuses": 1
+              },
+              "telemetry_sha256": "bf8d4e6b46931ae78cb532db37134090595339b3f5801d99f8baafc2e362bcd8",
+              "asr_score": {
+                "substitutions": 13,
+                "deletions": 57,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.2784313725490196
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 6,
+                "notes_cursor": 4,
+                "sections": 1,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [
+                  [
+                    29,
+                    29
+                  ]
+                ],
+                "log_sha256": "a52b63b973a7e57df71cc3ae19fcdac71cd628400e4e2e1e25495442e2ddccff",
+                "fallback": false,
+                "worker_events": [
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 407
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": true,
+                    "startup_ms": 0
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 419
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 421
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 405
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 404
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 414
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 421
+                  }
+                ],
+                "trace_sha256": "43c2f74bbf36d7ca4d309b8095c12721058fcc30a784d0247e5511d853a16208"
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27160992,
+                  "sha256": "c6307547e802e015ec52bef3e1f41633e4c04b4722df77f29f6d986418c0a07a"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 289,
+                "processes_seen": 10,
+                "cpu_seconds_sampled": 9.555950032,
+                "peak_tree_rss_mib": 1679.546875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            {
+              "arm": "asr-only",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 378,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 213,
+                "lag_p50_ms": 192.0,
+                "lag_p95_ms": 320.0,
+                "lag_max_ms": 896,
+                "capture_wall_overhead_ms": -116,
+                "asr_compute_rtf": 0.055391963615384614,
+                "live_translations": 0,
+                "live_notes_cursor": 0,
+                "live_worker_samples": 0,
+                "worker_starts": 0,
+                "worker_reuses": 0
+              },
+              "telemetry_sha256": "07d02359adb434bc3920f2772492b259b4cc1e3f52820b897db08aa3b7b3d6bc",
+              "asr_score": {
+                "substitutions": 13,
+                "deletions": 57,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.2784313725490196
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 0,
+                "notes_cursor": 0,
+                "sections": 0,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [],
+                "log_sha256": null,
+                "fallback": false,
+                "worker_events": [],
+                "trace_sha256": null
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27160992,
+                  "sha256": "c6307547e802e015ec52bef3e1f41633e4c04b4722df77f29f6d986418c0a07a"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 288,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 5.7345147039999995,
+                "peak_tree_rss_mib": 212.296875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "4edafb0478c271766cdad5f15d67ac70c9cd56b7",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "e89708dfb852f236f3131ca6c3cadfa3b6d2dd7cd0f503b2866b14e978f42ca9",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "874625afd5bd9fe351ddd077aa384883bcae02e0d23600bcb708944f40f57789",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "11da810de364bbfb30a5cc0f573fca317e07102d9cdb734b3cadfdbd751c280b",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "0a7ef9a911361c17a726c385f09a7d60e41a788b",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "passed": true,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/apple-recording-0a7ef9a.json",
+      "raw_sha256": "52f1598ece44132c9060d3de21386498f40f586c60c94ab71ce571c16bcb5a07",
+      "fixture": {
+        "seconds": 78,
+        "manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69",
+        "input_wav_sha256": "ff4f1c89f5bccc9d971201cb3efa77ece75c1959dac4a10e13cd5516937080f0",
+        "expected_pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965"
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "errors": [],
+          "arms": [
+            {
+              "arm": "asr-only",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 378,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 212,
+                "lag_p50_ms": 232.0,
+                "lag_p95_ms": 428.8000000000002,
+                "lag_max_ms": 1472,
+                "capture_wall_overhead_ms": -82,
+                "asr_compute_rtf": 0.05338839723076923,
+                "live_translations": 0,
+                "live_notes_cursor": 0,
+                "live_worker_samples": 0,
+                "worker_starts": 0,
+                "worker_reuses": 0
+              },
+              "telemetry_sha256": "26cd0760cd22909d5152999484db7eeda9f5637cfae9a88e3cb35a7ff7246ef4",
+              "asr_score": {
+                "substitutions": 16,
+                "deletions": 60,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.30196078431372547
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 0,
+                "notes_cursor": 0,
+                "sections": 0,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [],
+                "log_sha256": null,
+                "fallback": false,
+                "worker_events": [],
+                "trace_sha256": null
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27161168,
+                  "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 288,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 5.440172904,
+                "peak_tree_rss_mib": 212.21875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            {
+              "arm": "metal-concurrent",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 376,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 213,
+                "lag_p50_ms": 232.0,
+                "lag_p95_ms": 424.0,
+                "lag_max_ms": 896,
+                "capture_wall_overhead_ms": -254,
+                "asr_compute_rtf": 0.05153447653846154,
+                "live_translations": 6,
+                "live_notes_cursor": 4,
+                "live_worker_samples": 35,
+                "worker_starts": 7,
+                "worker_reuses": 1
+              },
+              "telemetry_sha256": "ce94628f39bc2b4a00daefe1bb0add05b07a664ea9e295186db06295c237743d",
+              "asr_score": {
+                "substitutions": 16,
+                "deletions": 60,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.30196078431372547
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 6,
+                "notes_cursor": 4,
+                "sections": 1,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [
+                  [
+                    29,
+                    29
+                  ]
+                ],
+                "log_sha256": "bbc317d85c3aa408f53df4654d5ffd9d8527787b6c12a907363092bb200a4f4f",
+                "fallback": false,
+                "worker_events": [
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 422
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": true,
+                    "startup_ms": 0
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 416
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 421
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 408
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 422
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 414
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 417
+                  }
+                ],
+                "trace_sha256": "c2f35e9e1bc6ab4bf60cada07c17ea50006e500b88e0623d11dc07ce878a7d2b"
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27161168,
+                  "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 288,
+                "processes_seen": 10,
+                "cpu_seconds_sampled": 9.120286768,
+                "peak_tree_rss_mib": 1680.484375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            }
+          ]
+        },
+        {
+          "trial": 2,
+          "errors": [],
+          "arms": [
+            {
+              "arm": "metal-concurrent",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 377,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 216,
+                "lag_p50_ms": 232.0,
+                "lag_p95_ms": 424.0,
+                "lag_max_ms": 896,
+                "capture_wall_overhead_ms": -233,
+                "asr_compute_rtf": 0.043131402243589745,
+                "live_translations": 6,
+                "live_notes_cursor": 4,
+                "live_worker_samples": 38,
+                "worker_starts": 7,
+                "worker_reuses": 1
+              },
+              "telemetry_sha256": "b3b9d5d000ea4836d0cba750936b1a91a415483f0113878b7cc76de238dff759",
+              "asr_score": {
+                "substitutions": 16,
+                "deletions": 60,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.30196078431372547
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 6,
+                "notes_cursor": 4,
+                "sections": 1,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [
+                  [
+                    29,
+                    29
+                  ]
+                ],
+                "log_sha256": "66a423ab9eb03c2496b9103ea8d302d8da6a09b14aee9447e15c91b82809c834",
+                "fallback": false,
+                "worker_events": [
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 408
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": true,
+                    "startup_ms": 0
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 405
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 822
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 411
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 616
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 414
+                  },
+                  {
+                    "backend": "metal",
+                    "budget_mib": 4096,
+                    "reused": false,
+                    "startup_ms": 420
+                  }
+                ],
+                "trace_sha256": "af97cd741d3bdd95cabcb5ff88d863ca50a0337fca173282e06e41b50ef9985d"
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27161168,
+                  "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 291,
+                "processes_seen": 10,
+                "cpu_seconds_sampled": 8.131753328,
+                "peak_tree_rss_mib": 1681.0625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            {
+              "arm": "asr-only",
+              "passed": true,
+              "errors": [],
+              "telemetry": {
+                "samples": 378,
+                "interval_ms": 200,
+                "largest_sample_gap_ms": 212,
+                "lag_p50_ms": 232.0,
+                "lag_p95_ms": 428.8000000000002,
+                "lag_max_ms": 832,
+                "capture_wall_overhead_ms": -107,
+                "asr_compute_rtf": 0.04944790970512821,
+                "live_translations": 0,
+                "live_notes_cursor": 0,
+                "live_worker_samples": 0,
+                "worker_starts": 0,
+                "worker_reuses": 0
+              },
+              "telemetry_sha256": "5941fc928733c4aa0aa9ce1663a027e307d1ccfb4ee68d080fdc24b7102f7dbc",
+              "asr_score": {
+                "substitutions": 16,
+                "deletions": 60,
+                "insertions": 1,
+                "reference_units": 255,
+                "metric": "MER",
+                "error_rate": 0.30196078431372547
+              },
+              "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+              "audio_samples": 1248000,
+              "at_stop": {
+                "segments": 6,
+                "translations": 0,
+                "notes_cursor": 0,
+                "sections": 0,
+                "notes_busy": false,
+                "translation_busy": false
+              },
+              "metal_evidence": {
+                "last_worker_layers": [],
+                "log_sha256": null,
+                "fallback": false,
+                "worker_events": [],
+                "trace_sha256": null
+              },
+              "asr_assets": {
+                "model": "zipformer-small",
+                "files": [
+                  {
+                    "name": "encoder-epoch-99-avg-1.int8.onnx",
+                    "bytes": 42980793,
+                    "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+                  },
+                  {
+                    "name": "decoder-epoch-99-avg-1.onnx",
+                    "bytes": 13877276,
+                    "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+                  },
+                  {
+                    "name": "joiner-epoch-99-avg-1.int8.onnx",
+                    "bytes": 3228485,
+                    "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+                  },
+                  {
+                    "name": "tokens.txt",
+                    "bytes": 56317,
+                    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+                  },
+                  {
+                    "name": "bpe.model",
+                    "bytes": 244836,
+                    "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+                  }
+                ],
+                "worker": {
+                  "name": "omascribe-asr",
+                  "bytes": 27161168,
+                  "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+                },
+                "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+              },
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 291,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 5.045743408,
+                "peak_tree_rss_mib": 209.5625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "conclusion": "The first untuned paired run failed exact-ASR reproducibility despite equal PCM and low lag. Fixed input blocks pass both reversed-order pairs; all four post-change arms have identical PCM and normalized ASR units. Each loaded arm translates six segments live and advances minutes through segment four of six. The last two segments remain pending at stop; no after-timing catch-up is claimed.",
+  "limitations": [
+    "Paced ffmpeg Engine replay, not physical microphone or a natural/long meeting.",
+    "Small synthetic language switch from pinned public read-speech; MER around 30% remains a smoke baseline, not good product accuracy. No name/speaker quality claim.",
+    "Fixed blocks trade extra buffering for deterministic leveling/decoding: post-change live p95 lag 424–429ms versus old 320–348ms. Single-machine descriptive observations, not a controlled optimization speedup.",
+    "Raw telemetry starts after start_capture; negative final capture-wall overhead reflects that origin and capture packetization, not a faster-than-real-time recording or clock/drop guarantee.",
+    "Metal worker events and final-worker offload logs bind real GPU use; no energy/GPU physical-allocation/PSS figures were measured. Sampled process-tree RSS can double-count shared pages.",
+    "M1–M4, real device reset/OOM, microphone capture, long meetings and semantic translation/minutes quality still need acceptance."
+  ],
+  "public_asr_regression": {
+    "raw_report": "artifacts/benchmarks/asr-stable-blocks-0a7ef9a.json",
+    "raw_sha256": "e016e2a734432329ff4057ee7b6641c070153a172af70c2b2972b0416bca2856",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "4edafb0478c271766cdad5f15d67ac70c9cd56b7",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "e89708dfb852f236f3131ca6c3cadfa3b6d2dd7cd0f503b2866b14e978f42ca9",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "874625afd5bd9fe351ddd077aa384883bcae02e0d23600bcb708944f40f57789",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "11da810de364bbfb30a5cc0f573fca317e07102d9cdb734b3cadfdbd751c280b",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "0a7ef9a911361c17a726c385f09a7d60e41a788b",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "passed": true,
+    "errors": [],
+    "cases": 24,
+    "all_hypotheses_equal_to_prior_baseline": true,
+    "assets": {
+      "zipformer-small": {
+        "model": "zipformer-small",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 42980793,
+            "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13877276,
+            "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228485,
+            "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          },
+          {
+            "name": "bpe.model",
+            "bytes": 244836,
+            "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161168,
+          "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      },
+      "zipformer-bilingual": {
+        "model": "zipformer-bilingual",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 181895032,
+            "sha256": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13876452,
+            "sha256": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228404,
+            "sha256": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161168,
+          "sha256": "34291b831705e9f768630a56600385428df7f4a94d138ee46f046a8e3fba42f2"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      }
+    },
+    "aggregates": {
+      "zipformer-small/cmn_hans_cn": {
+        "edits": 61,
+        "reference_units": 188,
+        "error_rate": 0.324468085106383,
+        "clips": 4,
+        "scored_clips": 4,
+        "audio_seconds": 51.3,
+        "known_audio_seconds": 51.3,
+        "missing_audio_clips": 0,
+        "wall_seconds": 2.594,
+        "substitutions": 18,
+        "deletions": 42,
+        "insertions": 1,
+        "error_rate_interval_95": [
+          0.15789473684210525,
+          0.45664739884393063
+        ],
+        "wall_p50": 0.69,
+        "wall_p95": 0.69685,
+        "rtf_p50": 0.01550897909322711,
+        "rtf_p95": 0.015887390101976068,
+        "peak_process_tree_rss_mib": 190.28125,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 2.3275969840000004,
+        "process_tree_cpu_known_seconds": 2.3275969840000004,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 4,
+        "gpu_memory_mib": null
+      },
+      "zipformer-small/en_us": {
+        "edits": 26,
+        "reference_units": 76,
+        "error_rate": 0.34210526315789475,
+        "clips": 4,
+        "scored_clips": 4,
+        "audio_seconds": 36.6,
+        "known_audio_seconds": 36.6,
+        "missing_audio_clips": 0,
+        "wall_seconds": 2.126,
+        "substitutions": 21,
+        "deletions": 2,
+        "insertions": 3,
+        "error_rate_interval_95": [
+          0.1346153846153846,
+          0.581646273637374
+        ],
+        "wall_p50": 0.48850000000000005,
+        "wall_p95": 0.6681999999999999,
+        "rtf_p50": 0.01566009304749605,
+        "rtf_p95": 0.016146334801892277,
+        "peak_process_tree_rss_mib": 188.359375,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 1.7487725639999998,
+        "process_tree_cpu_known_seconds": 1.7487725639999998,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 4,
+        "gpu_memory_mib": null
+      },
+      "zipformer-small/mixed": {
+        "edits": 50,
+        "reference_units": 167,
+        "error_rate": 0.2994011976047904,
+        "clips": 2,
+        "scored_clips": 2,
+        "audio_seconds": 64.44,
+        "known_audio_seconds": 64.44,
+        "missing_audio_clips": 0,
+        "wall_seconds": 2.039,
+        "substitutions": 25,
+        "deletions": 24,
+        "insertions": 1,
+        "error_rate_interval_95": [
+          0.2823529411764706,
+          0.3170731707317073
+        ],
+        "wall_p50": 1.0195,
+        "wall_p95": 1.10545,
+        "rtf_p50": 0.01579237087460903,
+        "rtf_p95": 0.01579431147728304,
+        "peak_process_tree_rss_mib": 190.328125,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 2.61137597,
+        "process_tree_cpu_known_seconds": 2.61137597,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 2,
+        "gpu_memory_mib": null
+      },
+      "zipformer-bilingual/cmn_hans_cn": {
+        "edits": 53,
+        "reference_units": 188,
+        "error_rate": 0.28191489361702127,
+        "clips": 4,
+        "scored_clips": 4,
+        "audio_seconds": 51.3,
+        "known_audio_seconds": 51.3,
+        "missing_audio_clips": 0,
+        "wall_seconds": 4.0120000000000005,
+        "substitutions": 15,
+        "deletions": 37,
+        "insertions": 1,
+        "error_rate_interval_95": [
+          0.15789473684210525,
+          0.3930635838150289
+        ],
+        "wall_p50": 1.0115,
+        "wall_p95": 1.1078,
+        "rtf_p50": 0.03642453179874036,
+        "rtf_p95": 0.03671312992367371,
+        "peak_process_tree_rss_mib": 407.671875,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 3.929234597,
+        "process_tree_cpu_known_seconds": 3.929234597,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 4,
+        "gpu_memory_mib": null
+      },
+      "zipformer-bilingual/en_us": {
+        "edits": 25,
+        "reference_units": 76,
+        "error_rate": 0.32894736842105265,
+        "clips": 4,
+        "scored_clips": 4,
+        "audio_seconds": 36.6,
+        "known_audio_seconds": 36.6,
+        "missing_audio_clips": 0,
+        "wall_seconds": 3.42,
+        "substitutions": 12,
+        "deletions": 11,
+        "insertions": 2,
+        "error_rate_interval_95": [
+          0.21212121212121213,
+          0.43103448275862066
+        ],
+        "wall_p50": 0.8915,
+        "wall_p95": 0.9316500000000001,
+        "rtf_p50": 0.03709049170394427,
+        "rtf_p95": 0.03819600821977525,
+        "peak_process_tree_rss_mib": 407.328125,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 3.09504309,
+        "process_tree_cpu_known_seconds": 3.09504309,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 4,
+        "gpu_memory_mib": null
+      },
+      "zipformer-bilingual/mixed": {
+        "edits": 51,
+        "reference_units": 167,
+        "error_rate": 0.30538922155688625,
+        "clips": 2,
+        "scored_clips": 2,
+        "audio_seconds": 64.44,
+        "known_audio_seconds": 64.44,
+        "missing_audio_clips": 0,
+        "wall_seconds": 3.2279999999999998,
+        "substitutions": 13,
+        "deletions": 38,
+        "insertions": 0,
+        "error_rate_interval_95": [
+          0.23170731707317074,
+          0.3764705882352941
+        ],
+        "wall_p50": 1.6139999999999999,
+        "wall_p95": 1.8983999999999999,
+        "rtf_p50": 0.03650851200615568,
+        "rtf_p95": 0.036520729706458636,
+        "peak_process_tree_rss_mib": 408.0625,
+        "peak_process_tree_pss_mib": null,
+        "process_tree_cpu_seconds_sampled": 4.1871904440000005,
+        "process_tree_cpu_known_seconds": 4.1871904440000005,
+        "missing_cpu_clips": 0,
+        "missing_rss_clips": 0,
+        "missing_pss_clips": 2,
+        "gpu_memory_mib": null
+      }
+    }
+  },
+  "cleanup": {
+    "borrowed_stores": [
+      {
+        "path": "artifacts/benchmarks/apple-recording-9f80089.artifacts/2-asr-only/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-9f80089.artifacts/1-metal-concurrent/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-9f80089.artifacts/1-asr-only/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-9f80089.artifacts/2-metal-concurrent/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-0a7ef9a.artifacts/2-asr-only/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-0a7ef9a.artifacts/1-metal-concurrent/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-0a7ef9a.artifacts/1-asr-only/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/apple-recording-0a7ef9a.artifacts/2-metal-concurrent/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/asr-stable-blocks-0a7ef9a.artifacts/zipformer-small/workspace/model-copy-cleanup.json",
+        "released": true
+      },
+      {
+        "path": "artifacts/benchmarks/asr-stable-blocks-0a7ef9a.artifacts/zipformer-bilingual/workspace/model-copy-cleanup.json",
+        "released": true
+      }
+    ],
+    "remaining_owned_processes": [],
+    "retained": "Selected public audio, raw successful/failed evidence and original installed model stores; no physical disk-space claim for released hardlinks."
+  }
+}
