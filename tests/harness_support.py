@@ -1,5 +1,6 @@
 """Shared isolation and failure capture for real local inference tests (stdlib only)."""
 import hashlib, json, os, pathlib, platform, shutil, signal, subprocess, tempfile, time
+from process_resources import ProcessTreeSampler
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
@@ -38,6 +39,7 @@ def command(argv, env, directory, timeout=650):
     options = {"start_new_session": True} if os.name != "nt" else {}
     with (directory / "stdout.txt").open("w", encoding="utf-8") as out, (directory / "stderr.txt").open("w", encoding="utf-8") as err:
         process = subprocess.Popen([str(a) for a in argv], env=env, stdout=out, stderr=err, **options)
+        sampler = ProcessTreeSampler(process.pid).start()
         failure = None
         try: code = process.wait(timeout=timeout)
         except BaseException as error:
@@ -47,8 +49,10 @@ def command(argv, env, directory, timeout=650):
                 except ProcessLookupError: pass
             process.wait()
             code, failure = process.returncode, type(error).__name__
+        finally:
+            resources = sampler.finish()
     write_json(directory / "process.json", dict(command=[str(a) for a in argv], code=code,
-        seconds=round(time.monotonic()-started,3), failure=failure))
+        seconds=round(time.monotonic()-started,3), failure=failure, resources=resources))
     if failure or code: raise RuntimeError(f"{failure or 'Exit ' + str(code)}; see {directory}")
     return json.loads((directory / "stdout.txt").read_text(encoding="utf-8"))
 
