@@ -28,7 +28,12 @@ application core/frontend/model or native SDK/package inputs from `44c6f21`, so
 its 19-case/native/core results remain bound to the same application bytes.
 Two completed Vulkan checkout trees and the now-completed Linux CUDA checkout
 have also been independently observed to match original source `164371e`.
-Windows CUDA is still pending. No signing action or publication has been performed.
+Windows CUDA and the original full catalog have now completed successfully.
+The current shared delivery diagnostic reader is merged through `1f553c2`;
+60 Python tests pass locally. First cloud signing attempt `40387149779` failed
+before downloading/signing/publishing because its original checkout log reader
+could not recognize the response. The same all-four reuse preflight passes
+locally. Signature/source gates have not been bypassed.
 
 Earlier support checkpoint: `be5e16d` merges shared `e255dc7`, including the
 public ASR fixture preparation/offline reuse change. Python now has 43 passing
@@ -93,8 +98,15 @@ every member. Its original checkout agrees with the two Vulkan checkouts. These
 are Linux artifact-integrity checks on Windows, not Linux GPU execution. Exact
 three-component inventory and source proofs:
 [`available candidate artifacts`](../evaluation/acceleration-candidate-integrity-2026-10-27.json).
-Windows CUDA is still building; there is no Windows CUDA 12.8 runtime result or
-complete four-way catalog yet. No signing/publishing action has been taken.
+Windows CUDA has now passed its seven-file integrity check and formal runtime
+trial on NVIDIA 621.01: 29 layers offloaded, both bilingual facts/negations
+correct, CUDA redistributables loaded from the component and nvcuda from the
+system driver. SDK paths and overrides were excluded. Two fixed requests took
+3688 ms including fresh-process startup, versus CPU 9594 ms; OS caches were
+not controlled and this is not a broad meeting-performance claim. Exact proof:
+[`formal CUDA runtime`](../evaluation/windows-cuda-formal-2026-10-27.json).
+All four archives (56 members) and the unsigned original catalog now match;
+normal-key signed publication and actual Settings acceptance remain pending.
 
 Use candidate artifacts from the existing Windows/Linux × CUDA/Vulkan matrix.
 Retain the workflow run, exact source SHA, CUDA 12.8.1 build log/toolchain version,
@@ -149,6 +161,22 @@ Pending the preceding gates and a signed candidate catalog:
 The current `acceleration-v1` catalog endpoint returns 404. Real download and
 activation are not passed while that prerequisite is missing. Do not add an
 unsigned-directory shortcut or change the production trust root to satisfy QA.
+
+The isolated native fixture `tests/native-windows-gpu.js` is prepared for real
+Settings download/test, restart, Use CPU, memory-admission and owned-worker-fault
+phases. It uses the existing `ui-test` hook, a signed candidate and fictional
+transcript seed; actual backend/child cleanup must also be audited by its runner.
+It has only passed a syntax check so far and is not end-to-end evidence yet.
+
+Windows also exercised two 92-second ASR-only/CPU-concurrent synthetic pairs,
+before and after shared ASR fixed-200ms decoding. Both concurrent arms showed
+live translation/minutes, complete matching PCM and exact citations. Both pairs
+remain **failed** under the existing 2500 ms gate: ASR-only startup peaks were
+3264/3136 ms; after 10 seconds maximum lag was 384/456 ms. The new worker's two
+ASR text-unit outputs match. No threshold was relaxed and these CPU observations
+do not establish GPU coexistence or physical microphone acceptance. Worker
+hashes, static-CRT build/tests and setup limitations are retained in
+[`Windows replay diagnostics`](../evaluation/windows-recording-contention-2026-10-27.json).
 
 A unified signed candidate can be tested without updating the global pointer.
 The shared selector now accepts the fixed repository version through

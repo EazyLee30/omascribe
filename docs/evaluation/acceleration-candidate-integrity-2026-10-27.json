@@ -8,8 +8,8 @@
   "source_commit": "164371e285a499e9261afa5239d1d563a1aadb57",
   "runtime_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
   "integrity_passed_for_available_components": true,
-  "complete_matrix": false,
-  "available_components": 3,
+  "complete_matrix": true,
+  "available_components": 4,
   "components": [
     {
       "backend": "cuda",
@@ -187,7 +187,7 @@
         ],
         "id": "cuda-linux-x86_64",
         "license": "MIT + NVIDIA CUDA EULA",
-        "name": "CUDA · linux-x86_64",
+        "name": "CUDA \u00b7 linux-x86_64",
         "target": "linux-x86_64"
       },
       "build_info": {
@@ -365,7 +365,7 @@
         ],
         "id": "vulkan-linux-x86_64",
         "license": "MIT",
-        "name": "VULKAN · linux-x86_64",
+        "name": "VULKAN \u00b7 linux-x86_64",
         "target": "linux-x86_64"
       },
       "build_info": {
@@ -432,7 +432,7 @@
         ],
         "id": "vulkan-windows-x86_64",
         "license": "MIT",
-        "name": "VULKAN · windows-x86_64",
+        "name": "VULKAN \u00b7 windows-x86_64",
         "target": "windows-x86_64"
       },
       "passed": true,
@@ -448,6 +448,89 @@
           "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
           "164371e285a499e9261afa5239d1d563a1aadb57"
         ]
+      }
+    },
+    {
+      "backend": "cuda",
+      "platform": "windows-x86_64",
+      "artifact_id": 12679264764,
+      "outer_zip_sha256": "6fef374bfdd8da2c385ecd099061cd3ff76b429e23b787584c1af45cafabedf3",
+      "manifest_sha256": "6e4c3243b09c9c208637efc3ac291462fc0595b704759f00f8622b11aaa9d880",
+      "archive": {
+        "bytes": 657339453,
+        "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+        "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      "files_verified": 7,
+      "component_manifest": {
+        "archive": {
+          "bytes": 657339453,
+          "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "cuda",
+        "entrypoint": "llama-server.exe",
+        "files": [
+          {
+            "bytes": 133,
+            "name": "build-info.json",
+            "sha256": "8c484fb1bc4652a09f2a78f26462a3eff62adec86e5c70451081f670a3289d4e",
+            "url": ""
+          },
+          {
+            "bytes": 113716224,
+            "name": "cublas64_12.dll",
+            "sha256": "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+            "url": ""
+          },
+          {
+            "bytes": 674667520,
+            "name": "cublasLt64_12.dll",
+            "sha256": "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+            "url": ""
+          },
+          {
+            "bytes": 103460,
+            "name": "CUDA-EULA.html",
+            "sha256": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+            "url": ""
+          },
+          {
+            "bytes": 573952,
+            "name": "cudart64_12.dll",
+            "sha256": "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+            "url": ""
+          },
+          {
+            "bytes": 132499456,
+            "name": "llama-server.exe",
+            "sha256": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+            "url": ""
+          },
+          {
+            "bytes": 1099,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+            "url": ""
+          }
+        ],
+        "id": "cuda-windows-x86_64",
+        "license": "MIT + NVIDIA CUDA EULA",
+        "name": "CUDA \u00b7 windows-x86_64",
+        "target": "windows-x86_64"
+      },
+      "passed": true,
+      "scope": "Integrity and formal runtime-only acceptance on NVIDIA621.01, SDK paths excluded.",
+      "runtime_acceptance": "passed; 29 layers and two bilingual fact/negation requests",
+      "runtime_report": "windows-cuda-formal-2026-10-27.json",
+      "source_checkout": {
+        "job_id": 121727977047,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+        "log_bytes": 2756945,
+        "log_sha256": "b9941045ec6124c42cc7149da8d53fdcd15be57be57272b3bd53d4b24244a4eb"
       }
     }
   ],
@@ -465,16 +548,39 @@
     ]
   },
   "pending": [
-    "Windows CUDA build, archive/member checks and original checkout proof",
-    "Complete original four-way workflow/catalog success",
-    "Signed immutable candidate and real Settings lifecycle acceptance"
+    "Shared cloud checkout-log reader fix; initial sign run40387149779 failed before downloading/signing/publishing",
+    "Normal release-key signed candidate and actual Settings lifecycle acceptance"
   ],
   "signed": false,
   "published": false,
   "stable_catalog_promoted": false,
   "limits": [
     "Linux components verified as archives on a Windows host; no Linux GPU execution or admission claim.",
-    "Windows Vulkan is runtime-only; actual signed Settings download/install/test-enable/restart/fallback remains pending.",
-    "No partial index.payload or install marker assembled."
-  ]
+    "No partial index.payload or install marker assembled.",
+    "Both Windows runtime trials passed; actual signed Settings lifecycle remains separate and pending."
+  ],
+  "original_workflow_conclusion": "success",
+  "local_reuse_preflight": {
+    "artifact_ids": {
+      "acceleration-catalog": 12680054161,
+      "accelerator-linux-x86_64-cuda": 12677064894,
+      "accelerator-linux-x86_64-vulkan": 12670059821,
+      "accelerator-windows-x86_64-cuda": 12679264764,
+      "accelerator-windows-x86_64-vulkan": 12671164339
+    },
+    "build_run_id": "40367160891",
+    "build_source_sha": "164371e285a499e9261afa5239d1d563a1aadb57",
+    "checkout_source_sha": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+    "native_input_sha256": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852",
+    "publishing_source_sha": "908c7766e8adcf538d0cc993f189ead8518281d0",
+    "schema": 1,
+    "version": "acceleration-ci-40367160891"
+  },
+  "unsigned_catalog": {
+    "artifact_id": 12680054161,
+    "outer_zip_sha256": "9dda74bd90b1c1e0951626c2055d537b022c73f95215b5766e38a45e67f1ccc4",
+    "payload_bytes": 13578,
+    "payload_sha256": "f0f6261191b3f5cc3f720adbc83060ad11fa399eba060db472c52faaaed648d7",
+    "all_four_local_manifests_match_exact_bytes": true
+  }
 }
