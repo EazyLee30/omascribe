@@ -1,10 +1,13 @@
 """Release policy/transactions with fictional packages; no signing or remote writes."""
 import importlib.util
+import gzip
+import io
 import itertools
 import json
 import pathlib
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -100,6 +103,15 @@ class AccelerationReleaseTests(unittest.TestCase):
             log=f'2026-10-26T17:00:00Z [command]{executable} log -1 --format=%H\n2026-10-26T17:00:00Z '+"a"*40+'\n'
             self.assertEqual(release.checkout_sha(log.encode()),"a"*40)
         with self.assertRaises(ValueError):release.checkout_sha(b'no checkout source\n')
+
+    def test_log_failure_diagnostics_do_not_expose_download_urls_or_contents(self):
+        diagnostic=release.log_read_diagnostic(b"",b'gh: request failed (HTTP 403) signed-url?secret=private',1)
+        self.assertEqual(diagnostic,dict(bytes=0,kind="empty",exit_code=1,http_status=403))
+        self.assertNotIn("secret",str(diagnostic))
+        zipped=io.BytesIO()
+        with zipfile.ZipFile(zipped,"w") as archive: archive.writestr("log.txt","private")
+        for data,kind in [(zipped.getvalue(),"zip"),(gzip.compress(b"private"),"gzip"),(b'{"private":true}',"json"),(b'private log text',"text")]:
+            self.assertEqual(release.log_read_diagnostic(data,b"",-15)["kind"],kind)
 
     def test_reused_catalog_payload_must_match_the_original_before_signing(self):
         with tempfile.TemporaryDirectory() as temp:
