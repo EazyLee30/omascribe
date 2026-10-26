@@ -21,7 +21,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
     if command == "help" {
-        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let arg = |i| args.get(i).context("缺少命令参数");
@@ -36,18 +36,30 @@ fn run() -> Result<()> {
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
+    let replay = matches!(command, "replay" | "replay-settle");
+    let settle_seconds = if command == "replay-settle" {
+        let seconds = arg(4)?.parse::<u64>()?;
+        anyhow::ensure!(
+            (1..=600).contains(&seconds),
+            "Use a 1–600 second settle budget"
+        );
+        seconds
+    } else {
+        0
+    };
+    let telemetry_arg = if command == "replay-settle" { 5 } else { 4 };
     // Opt-in replay diagnostics use counts/timing only, never speech or model text.
     // create_new preserves previous evidence instead of overwriting it.
-    let mut replay_telemetry = if command == "replay" && args.len() > 4 {
+    let mut replay_telemetry = if replay && args.len() > telemetry_arg {
         anyhow::ensure!(
-            args.len() == 6 && args[4] == "--telemetry",
-            "Use replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]"
+            args.len() == telemetry_arg + 2 && args[telemetry_arg] == "--telemetry",
+            "Use replay[-settle] AUDIO_PATH SECONDS [SETTLE_SECONDS] [--telemetry NEW_JSONL_PATH]"
         );
         Some(BufWriter::new(
             std::fs::OpenOptions::new()
                 .write(true)
                 .create_new(true)
-                .open(arg(5)?)?,
+                .open(arg(telemetry_arg + 1)?)?,
         ))
     } else {
         None
@@ -129,11 +141,11 @@ fn run() -> Result<()> {
         "list" => serde_json::to_value(engine.meetings()?)?,
         "files" => serde_json::to_value(engine.meeting_files(arg(2)?)?)?,
         "snapshot" => serde_json::to_value(engine.snapshot(arg(2)?)?)?,
-        "import" | "record" | "replay" | "append" => {
+        "import" | "record" | "replay" | "replay-settle" | "append" => {
             let m = if command == "append" {
                 engine.snapshot(arg(2)?)?.meeting
             } else {
-                engine.create_meeting(if command == "replay" {
+                engine.create_meeting(if replay {
                     "Public sample · paced replay"
                 } else {
                     args.get(3)
@@ -153,7 +165,7 @@ fn run() -> Result<()> {
             } else {
                 None
             };
-            if command == "replay" {
+            if replay {
                 engine.replay_audio(&m.id, PathBuf::from(arg(2)?), arg(3)?.parse()?)?;
                 engine.start_scheduler();
             } else {
@@ -162,6 +174,7 @@ fn run() -> Result<()> {
             let start = Instant::now();
             let mut stopped = false;
             let mut last_report = Instant::now();
+            let mut capture_finished = None;
             loop {
                 if duration.is_some_and(|d| start.elapsed().as_secs() >= d) && !stopped {
                     engine.stop_recording()?;
@@ -186,7 +199,7 @@ fn run() -> Result<()> {
                     writeln!(writer)?;
                     writer.flush()?;
                 }
-                if command == "replay" && last_report.elapsed() > Duration::from_secs(10) {
+                if replay && last_report.elapsed() > Duration::from_secs(10) {
                     let status = &s.runtime;
                     eprintln!(
                         "{}",
@@ -195,7 +208,15 @@ fn run() -> Result<()> {
                     last_report = Instant::now();
                 }
                 if !s.runtime.recording && !s.runtime.transcribing {
-                    break;
+                    let finished = *capture_finished.get_or_insert_with(Instant::now);
+                    let pending = s.meeting.auto_notes && omascribe_core::notes::needs_update(&s)
+                        || omascribe_core::translation::pending(&s);
+                    if settle_seconds == 0
+                        || !pending && !engine.note_busy.load(std::sync::atomic::Ordering::SeqCst)
+                        || finished.elapsed() >= Duration::from_secs(settle_seconds)
+                    {
+                        break;
+                    }
                 }
                 if start.elapsed() > Duration::from_secs(14_500) {
                     engine.shutdown();
@@ -203,7 +224,20 @@ fn run() -> Result<()> {
                 }
                 thread::sleep(Duration::from_millis(200));
             }
-            serde_json::to_value(engine.snapshot(&m.id)?)?
+            let snapshot = engine.snapshot(&m.id)?;
+            if settle_seconds > 0 {
+                let pending = snapshot.meeting.auto_notes
+                    && omascribe_core::notes::needs_update(&snapshot)
+                    || omascribe_core::translation::pending(&snapshot);
+                serde_json::json!({"settle":{
+                    "budget_seconds":settle_seconds,
+                    "completed":!pending && !engine.note_busy.load(std::sync::atomic::Ordering::SeqCst),
+                    "wait_ms":capture_finished.map(|at|at.elapsed().as_millis() as u64),
+                    "wall_ms":start.elapsed().as_millis() as u64,
+                },"snapshot":snapshot})
+            } else {
+                serde_json::to_value(snapshot)?
+            }
         }
         "retranscribe" => {
             let id = arg(2)?;
@@ -231,6 +265,34 @@ fn run() -> Result<()> {
                 thread::sleep(Duration::from_millis(200));
             }
             serde_json::to_value(engine.snapshot(arg(2)?)?)?
+        }
+        "settle" => {
+            let id = arg(2)?;
+            let seconds = arg(3)?.parse::<u64>()?;
+            anyhow::ensure!(
+                (1..=600).contains(&seconds),
+                "Use a 1–600 second settle budget"
+            );
+            anyhow::ensure!(
+                engine.snapshot(id)?.meeting.auto_notes,
+                "Enable automatic minutes before settling"
+            );
+            engine.focus_meeting(id)?;
+            engine.start_scheduler();
+            let started = Instant::now();
+            loop {
+                let snapshot = engine.snapshot(id)?;
+                let pending = omascribe_core::notes::needs_update(&snapshot)
+                    || omascribe_core::translation::pending(&snapshot);
+                if !pending && !engine.note_busy.load(std::sync::atomic::Ordering::SeqCst) {
+                    break serde_json::to_value(snapshot)?;
+                }
+                if started.elapsed() >= Duration::from_secs(seconds) {
+                    engine.shutdown();
+                    bail!("Scheduled work did not settle within the explicit budget; prior content is retained");
+                }
+                thread::sleep(Duration::from_millis(200));
+            }
         }
         "export" => {
             serde_json::json!({"path":engine.export(arg(2)?,args.iter().any(|a|a=="--audio"))?})

@@ -22,6 +22,7 @@ pub mod inference;
 mod inference_cache;
 pub mod inference_trace;
 mod inference_worker;
+mod minutes_schedule;
 mod probe;
 pub use inference_worker::WorkerStatus;
 pub mod library;

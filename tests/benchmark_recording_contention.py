@@ -44,9 +44,10 @@ def telemetry_summary(rows, seconds, loaded):
     if max(gaps) > 1500:
         raise ValueError("Telemetry gap hides potential ASR stalls")
     lags = [r["captured_ms"]-r["processed_ms"] for r in active]
+    stopped = next(r for r in rows if not r["recording"] and not r["transcribing"])
     summary = dict(samples=len(rows), interval_ms=200, largest_sample_gap_ms=max(gaps),
         lag_p50_ms=percentile(lags, .5), lag_p95_ms=percentile(lags, .95), lag_max_ms=max(lags),
-        capture_wall_overhead_ms=last["wall_ms"]-last["captured_ms"],
+        capture_wall_overhead_ms=stopped["wall_ms"]-stopped["captured_ms"],
         asr_compute_rtf=last["asr_rtf"],
         live_translations=max(r["translations"] for r in active),
         live_notes_cursor=max(r["notes_cursor"] for r in active),
@@ -59,12 +60,13 @@ def telemetry_summary(rows, seconds, loaded):
     return summary
 
 
-def paired_errors(results):
+def paired_errors(results, arms=None):
     errors = []
     by_arm = {r["arm"]: r for r in results}
-    if set(by_arm) != {"asr-only", "metal-concurrent"} or len(results) != 2:
+    arms = arms or ["asr-only", "metal-concurrent"]
+    if set(by_arm) != set(arms) or len(results) != 2:
         return ["Missing paired arm"]
-    old, new = by_arm["asr-only"], by_arm["metal-concurrent"]
+    old, new = (by_arm[name] for name in arms)
     if not old["passed"] or not new["passed"]:
         errors.append("A paired arm failed; retain its cost and diagnostics")
     for key in ["pcm_sha256", "audio_samples"]:
@@ -106,6 +108,8 @@ def main():
     parser.add_argument("--llm-model-dir", type=pathlib.Path, required=True)
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--repeats", type=int, choices=[3, 6], default=3)
+    parser.add_argument("--minutes-catchup", action="store_true",
+                        help="Compare legacy/catch-up minute scheduling, both with Metal and a 60s post-capture budget")
     args = parser.parse_args()
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         parser.error("This comparison requires native Apple Silicon Metal")
@@ -119,9 +123,10 @@ def main():
     native = runtime_inventory(runtime)
     if not native:
         parser.error("Missing local llama runtime")
-    report = dict(schema=1, kind="apple-paced-recording-contention", environment=environment(cli),
+    arms = ["legacy-concurrent", "catchup-concurrent"] if args.minutes_catchup else ["asr-only", "metal-concurrent"]
+    report = dict(schema=1, kind="apple-paced-minutes-catchup" if args.minutes_catchup else "apple-paced-recording-contention", environment=environment(cli),
         fixture=source, runtime_files=native, trials=[], errors=[], passed=False,
-        limitation="Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. End-of-recording pending tasks are reported, not silently drained. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.")
+        limitation="Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. Catch-up mode includes the same explicit post-capture settlement budget and costs in both arms; normal mode reports pending work at stop. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.")
     catalog = read_json(REPO/"model-catalog.json")["models"]
     with tempfile.TemporaryDirectory(prefix="omascribe-contention-models-") as temp:
         store = pathlib.Path(temp)
@@ -139,14 +144,16 @@ def main():
         previous_store = os.environ.get("OMASCRIBE_TEST_MODEL_STORE")
         os.environ["OMASCRIBE_TEST_MODEL_STORE"] = str(store)
         try:
-            for trial, order in enumerate([[False, True], [True, False]], 1):
+            for trial, order in enumerate([[0, 1], [1, 0]], 1):
                 results = []
-                for loaded in order:
-                    arm = "metal-concurrent" if loaded else "asr-only"
+                for variant in order:
+                    arm = arms[variant]
+                    loaded = args.minutes_catchup or variant == 1
                     folder = artifacts/f"{trial}-{arm}"
                     root = folder/"workspace"
                     env = isolated_env(root)
-                    env.update(OMASCRIBE_RUNTIME_DIR=str(runtime), OMASCRIBE_MODELS_DIR=str(folder/"no-bundled-models"), OMASCRIBE_ASR_STREAM_HOTWORDS="0", OMASCRIBE_RETRIEVAL_CACHE="0")
+                    env.update(OMASCRIBE_RUNTIME_DIR=str(runtime), OMASCRIBE_MODELS_DIR=str(folder/"no-bundled-models"), OMASCRIBE_ASR_STREAM_HOTWORDS="0", OMASCRIBE_RETRIEVAL_CACHE="0",
+                               OMASCRIBE_MINUTES_CATCHUP="1" if args.minutes_catchup and variant == 1 else "0")
                     for key in ["LLAMA_ARG_LOG_VERBOSITY", "OMASCRIBE_ACCELERATION_CANDIDATE_VERSION"]:
                         env.pop(key, None)
                     prefs = dict(asr_model="zipformer-small", llm_model="qwen3-1.7b", threads=1,
@@ -158,7 +165,10 @@ def main():
                     print(f"Trial {trial} {arm}: {source['seconds']} s paced recording", flush=True)
                     try:
                         result["asr_assets"] = asset_identity(cli, root, "zipformer-small", env)
-                        snapshot = command([cli, "replay", audio, source["seconds"], "--telemetry", folder/"telemetry.jsonl"], env, folder/"process", timeout=source["seconds"]+90)
+                        argv = [cli, "replay-settle" if args.minutes_catchup else "replay", audio, source["seconds"]]
+                        if args.minutes_catchup: argv.append(60)
+                        response = command([*argv, "--telemetry", folder/"telemetry.jsonl"], env, folder/"process", timeout=source["seconds"]+150)
+                        snapshot = response["snapshot"] if args.minutes_catchup else response
                         rows = [json.loads(line) for line in (folder/"telemetry.jsonl").read_text().splitlines()]
                         result["telemetry"] = telemetry_summary(rows, source["seconds"], loaded)
                         result["telemetry_sha256"] = sha256(folder/"telemetry.jsonl")
@@ -178,7 +188,13 @@ def main():
                             for cited in section["sources"]:
                                 if not any(s["id"] == cited["segment_id"] and s["revision"] == cited["revision"] and s["text"] == cited["quote"] for s in snapshot["segments"]):
                                     raise ValueError("Minutes cite invalid transcript evidence")
-                        result["at_stop"] = dict(segments=len(snapshot["segments"]), translations=len(snapshot["translations"]), notes_cursor=snapshot["meeting"]["notes_cursor"], sections=len(snapshot["suggestions"]), notes_busy=snapshot["runtime"]["notes_busy"], translation_busy=snapshot["runtime"]["translation_busy"])
+                        stopped = next(row for row in rows if not row["recording"] and not row["transcribing"])
+                        result["at_stop"] = {key:stopped[key] for key in ["segments", "translations", "notes_cursor", "sections", "notes_busy", "translation_busy"]}
+                        if args.minutes_catchup:
+                            result["settle"] = response["settle"]
+                            result["at_settled"] = dict(segments=len(snapshot["segments"]), translations=len(snapshot["translations"]), notes_cursor=snapshot["meeting"]["notes_cursor"], sections=len(snapshot["suggestions"]))
+                            if not response["settle"]["completed"] or snapshot["meeting"]["notes_cursor"] < max(s["seq"] for s in snapshot["segments"]):
+                                raise ValueError("Post-capture minutes/translation did not fully settle within the same budget")
                         log = root/"llm-runtime.log"
                         layers = [list(map(int, pair)) for pair in re.findall(r"offloaded (\d+)/(\d+) layers to GPU", log.read_text(errors="replace") if log.exists() else "")]
                         result["metal_evidence"] = dict(last_worker_layers=layers, log_sha256=sha256(log) if log.exists() else None, fallback=(root/"last-metal-fallback.json").exists())
@@ -197,7 +213,7 @@ def main():
                     results.append(result)
                     write_json(output, {**report, "in_progress":dict(trial=trial, results=results)})
                     print(arm, "PASS" if result["passed"] else result["errors"], flush=True)
-                errors = paired_errors(results)
+                errors = paired_errors(results, arms)
                 report["trials"].append(dict(trial=trial, results=results, errors=errors))
                 report["errors"].extend(f"Trial {trial}: {e}" for e in errors)
                 write_json(output, report)
