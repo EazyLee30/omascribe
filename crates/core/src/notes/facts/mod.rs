@@ -385,7 +385,6 @@ impl Ledger {
             let target = if target_id == 0 {
                 None
             } else {
-                ensure!(seen.insert(target_id), "Two updates target the same fact");
                 Some(
                     self.facts
                         .iter()
@@ -449,6 +448,58 @@ impl Ledger {
                     cue(patch.state, &patch.value),
                     "Status value itself contradicts the proposed state"
                 );
+            }
+            if target_id != 0 && seen.contains(&target_id) {
+                let current = next
+                    .facts
+                    .iter()
+                    .find(|f| f.id == target_id)
+                    .context("Missing current fact")?;
+                if current.subject == patch.subject
+                    && current.kind == patch.kind
+                    && current.value == patch.value
+                    && current.state == patch.state
+                {
+                    // Repeated identical proposals cannot bump a version, claim
+                    // extra evidence, or consume uncaptured source clauses.
+                    continue;
+                }
+                if patch.state == State::Withdrawn
+                    && matches!(patch.kind, Kind::Owner | Kind::Amount | Kind::Deadline)
+                    && target.is_some_and(|old| old.value == patch.value)
+                    && current.value != patch.value
+                {
+                    // A withdrawal names the old slot value. It cannot revoke a
+                    // different value assigned earlier in this candidate. Keep
+                    // the literal historical withdrawal as its own sourced claim.
+                    let clause = cited
+                        .iter()
+                        .find(|c| c.text.contains(&patch.value) && cue(State::Withdrawn, &c.text))
+                        .context("Withdrawal does not name its historical value")?;
+                    let id = next.next_id;
+                    next.next_id = next.next_id.checked_add(1).context("Fact ID exhausted")?;
+                    next.facts.push(Fact {
+                        id,
+                        version: 1,
+                        subject: patch.subject,
+                        kind: Kind::Statement,
+                        value: clause.text.clone(),
+                        state: State::Withdrawn,
+                        evidence: vec![clause.evidence.clone()],
+                    });
+                    // Only the retained literal clause is covered; supporting
+                    // context with other information must survive independently.
+                    for (index, input) in input.iter().enumerate() {
+                        if input.evidence == clause.evidence {
+                            covered.insert(index + 1);
+                        }
+                    }
+                    continue;
+                }
+                anyhow::bail!("Conflicting updates target the same current fact");
+            }
+            if target_id != 0 {
+                seen.insert(target_id);
             }
             let mut evidence: Vec<_> = cited.iter().map(|c| c.evidence.clone()).collect();
             let explicit_state = if patch.state == State::Reported
@@ -621,9 +672,15 @@ impl Ledger {
             }
             paragraphs.push(json!({"title":if super::writer::chinese(snapshot,language){"会议纪要"}else{"Meeting minutes"},"body":section.body,"sources":sources}));
         }
+        let missing: Vec<_> = self
+            .facts
+            .iter()
+            .filter(|f| !covered.contains(&f.id))
+            .map(|f| f.id)
+            .collect();
         ensure!(
-            covered.len() == self.facts.len(),
-            "Article omitted active fact records"
+            missing.is_empty(),
+            "Article omitted active fact IDs: {missing:?}"
         );
         let content = json!({"sections":paragraphs}).to_string();
         let body = paragraphs
