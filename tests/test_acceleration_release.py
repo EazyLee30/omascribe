@@ -65,20 +65,20 @@ class AccelerationReleaseTests(unittest.TestCase):
 
     def test_reuse_refuses_unfinished_partial_expired_or_changed_native_inputs(self):
         names = {f"accelerator-{target}-{backend}" for target in release.packaging.TARGETS for backend in release.packaging.BACKENDS}|{"acceleration-catalog"}
-        for failure in [None,"unfinished","partial","expired","native","base"]:
+        for failure in [None,"unfinished","partial","expired","native","source"]:
             with tempfile.TemporaryDirectory() as temp:
                 directory = pathlib.Path(temp)
                 run = dict(status="completed",conclusion="success",path=".github/workflows/acceleration-components.yml",
                            head_repository=dict(full_name=release.REPOSITORY),head_sha="b"*40,
-                           pull_requests=[dict(head=dict(sha="b"*40),base=dict(sha="c"*40))])
+                           pull_requests=[dict(head=dict(sha="d"*40),base=dict(sha="e"*40))])  # Mutable latest PR values.
                 artifacts = [dict(name=name,id=n,expired=False) for n,name in enumerate(sorted(names),1)]
                 if failure == "unfinished":run["status"] = "in_progress"
                 if failure == "partial":artifacts.pop()
                 if failure == "expired":artifacts[0]["expired"] = True
-                if failure == "base":run["pull_requests"] = []
                 def output(argv, **kwargs):
                     return json.dumps(dict(artifacts=artifacts) if "artifacts?" in argv[-1] else run)
                 with patch.object(release.subprocess,"check_output",side_effect=output), patch.object(release.subprocess,"run"), \
+                     patch.object(release,"original_checkouts",side_effect=ValueError("missing original source") if failure=="source" else None,return_value={"four checked jobs":"proof"}), \
                      patch.object(release,"native_fingerprint",side_effect=["old","new" if failure=="native" else "old"]):
                     selected=dict(reuse_run_id="123",source_sha="a"*40,version="acceleration-ci-123")
                     if failure:
@@ -88,7 +88,47 @@ class AccelerationReleaseTests(unittest.TestCase):
                         evidence=json.loads((directory/"candidate-build-evidence.json").read_text())
                         self.assertEqual(evidence["build_source_sha"],"b"*40)
                         self.assertEqual(len(evidence["artifact_ids"]),5)
+                        self.assertEqual(evidence["original_checkouts"],{"four checked jobs":"proof"})
                 self.assertEqual((directory/"candidate-build-evidence.json").exists(), failure is None)
+
+    def checkout_log(self, sha, windows=False):
+        git = '"C:\\Program Files\\Git\\bin\\git.exe"' if windows else '/usr/bin/git'
+        return ("##[group]Run actions/checkout@v4\n[command]"+git+" log -1 --format=%H\n"+sha+
+                "\n##[group]Run actions/setup-python@v5\n"+"f"*40+"\n").encode()
+
+    def test_checkout_log_is_scoped_and_rejects_missing_or_ambiguous_source(self):
+        for windows in [False,True]:
+            raw=self.checkout_log("a"*40,windows)
+            self.assertEqual(release.checkout_from_log(raw),"a"*40)
+            self.assertEqual(release.checkout_from_log(raw.replace(b"\n",b"\r\n")),"a"*40)
+        for raw in [b"a"*40,self.checkout_log("not a commit"),
+                    self.checkout_log("a"*40).replace(b"##[group]Run actions/setup-python@v5",b"[command]/usr/bin/git log -1 --format=%H\n"+b"b"*40+b"\n##[group]Run actions/setup-python@v5")]:
+            with self.assertRaises(ValueError):release.checkout_from_log(raw)
+
+    def test_all_four_original_checkouts_bind_tree_and_original_base(self):
+        names=["build (windows-2022, windows-x86_64, cuda, 180)","build (windows-2022, windows-x86_64, vulkan, 100)",
+               "build (ubuntu-22.04, linux-x86_64, cuda, 180)","build (ubuntu-22.04, linux-x86_64, vulkan, 100)"]
+        for failure in [None,"missing_job","failed_job","wrong_tree","wrong_parent","ancestry","missing_log"]:
+            with self.subTest(failure=failure):
+                jobs=[dict(name=name,id=n,status="completed",conclusion="success") for n,name in enumerate(names,1)]
+                if failure=="missing_job":jobs.pop()
+                if failure=="failed_job":jobs[-1]["conclusion"]="failure"
+                def api(path):
+                    if path.startswith("actions/"):return dict(jobs=jobs)
+                    sha=path.rsplit("/",1)[1]
+                    return dict(sha=sha,tree=dict(sha=("e" if failure=="wrong_tree" and sha=="b"*40 else "d")*40),
+                                parents=[dict(sha=("e" if failure=="wrong_parent" else "a")*40),dict(sha="c"*40)])
+                def log(job):return b"unavailable" if failure=="missing_log" else self.checkout_log(("a" if job==1 else "b")*40,job<3)
+                with patch.object(release.subprocess,"run",side_effect=release.subprocess.CalledProcessError(1,["git"]) if failure=="ancestry" else None) as ancestry:
+                    if failure:
+                        with self.assertRaises(ValueError):release.original_checkouts("123","a"*40,api,log)
+                    else:
+                        proof=release.original_checkouts("123","a"*40,api,log)
+                        self.assertEqual(set(proof),set(names))
+                        self.assertEqual(ancestry.call_count,3)
+                        self.assertIsNone(proof[names[0]]["original_base_sha"])
+                        self.assertEqual(proof[names[1]]["original_base_sha"],"c"*40)
+                        self.assertEqual(len(proof[names[1]]["log_sha256"]),64)
 
     def test_reused_catalog_payload_must_match_the_original_before_signing(self):
         with tempfile.TemporaryDirectory() as temp:

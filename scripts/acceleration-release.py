@@ -102,6 +102,62 @@ def require_windows_core(sha):
     raise ValueError("Current source needs successful Windows-core checks before candidate signing")
 
 
+def checkout_from_log(raw):
+    """Read only checkout's fixed git command, before the following setup step."""
+    lines = [re.sub(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z ", "", line)
+             for line in raw.decode("utf-8-sig").splitlines()]
+    start, end = "##[group]Run actions/checkout@v4", "##[group]Run actions/setup-python@v5"
+    if lines.count(start) != 1 or lines.count(end) != 1 or lines.index(end) <= lines.index(start):
+        raise ValueError("Missing or ambiguous original checkout log")
+    block = lines[lines.index(start):lines.index(end)]
+    commits = [block[n+1] for n, line in enumerate(block[:-1])
+               if re.fullmatch(r'\[command\](?:"[^"\r\n]+git\.exe"|/usr/bin/git) log -1 --format=%H', line)]
+    if len(commits) != 1 or not re.fullmatch(r"[0-9a-f]{40}", commits[0]):
+        raise ValueError("Missing or ambiguous original checkout commit")
+    return commits[0]
+
+
+def original_checkouts(run_id, sha, api, read_log=None):
+    """Run PR metadata is mutable. Bind all four actual checkouts to its fixed head."""
+    expected = {f"build ({runner}, {target}, {backend}, {timeout})"
+                for runner, target in [("windows-2022", "windows-x86_64"), ("ubuntu-22.04", "linux-x86_64")]
+                for backend, timeout in [("cuda", 180), ("vulkan", 100)]}
+    jobs = [job for job in api(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
+            if job["name"].startswith("build (")]
+    if len(jobs) != 4 or {job["name"] for job in jobs} != expected:
+        raise ValueError("Original four-way build job evidence is missing or ambiguous")
+    source = api("git/commits/"+sha)
+    tree = source["tree"]["sha"]
+    if source["sha"] != sha or not re.fullmatch(r"[0-9a-f]{40}", tree):
+        raise ValueError("Invalid original source tree")
+    if read_log is None:
+        read_log = lambda job: subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job}/logs"])
+    evidence = {}
+    for job in jobs:
+        if job["status"] != "completed" or job["conclusion"] != "success" or not isinstance(job["id"], int) or job["id"] <= 0:
+            raise ValueError("Original native build job has not succeeded")
+        raw = read_log(job["id"])
+        checkout = checkout_from_log(raw)
+        commit = api("git/commits/"+checkout)
+        if commit["sha"] != checkout or commit["tree"]["sha"] != tree:
+            raise ValueError("Original native checkout differs from the run source tree")
+        base = None
+        if checkout != sha:
+            parents = [parent["sha"] for parent in commit["parents"]]
+            if len(parents) != 2 or parents.count(sha) != 1:
+                raise ValueError("Original checkout is not the source or its unchanged PR merge")
+            base = next(parent for parent in parents if parent != sha)
+            if not re.fullmatch(r"[0-9a-f]{40}", base):
+                raise ValueError("Invalid original merge base")
+            try:
+                subprocess.run(["git", "merge-base", "--is-ancestor", base, sha], check=True)
+            except subprocess.CalledProcessError as error:
+                raise ValueError("Original merge base is not an ancestor of the source") from error
+        evidence[job["name"]] = dict(job_id=job["id"], checkout_sha=checkout, tree_sha=tree,
+                                   original_base_sha=base, log_sha256=hashlib.sha256(raw).hexdigest())
+    return evidence
+
+
 def check_reuse(selected, directory):
     def api(path):
         return json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/{path}"], text=True))
@@ -114,10 +170,7 @@ def check_reuse(selected, directory):
     sha = run["head_sha"]
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Invalid original source")
-    matching_prs = [pr for pr in run["pull_requests"] if pr["head"]["sha"] == sha]
-    if len(matching_prs) != 1:
-        raise ValueError("Original PR source/base evidence is missing")
-    subprocess.run(["git", "merge-base", "--is-ancestor", matching_prs[0]["base"]["sha"], sha], check=True)
+    checkouts = original_checkouts(run_id, sha, api)
     def at(commit):
         return native_fingerprint(lambda path: subprocess.check_output(["git", "show", f"{commit}:{path}"]))
     fingerprint = at(sha)
@@ -131,7 +184,8 @@ def check_reuse(selected, directory):
     directory.mkdir(parents=True, exist_ok=True)
     packaging.write_json(directory / "candidate-build-evidence.json", dict(schema=1,
         publishing_source_sha=selected["source_sha"], build_source_sha=sha, native_input_sha256=fingerprint,
-        build_run_id=run_id, artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
+        build_run_id=run_id, original_checkouts=checkouts,
+        artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
 
 
 def require_green_ci(sha):
