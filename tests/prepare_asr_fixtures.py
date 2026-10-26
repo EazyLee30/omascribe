@@ -2,7 +2,7 @@
 """Explicit network preparation only; evaluation itself never downloads anything.
 FLEURS, Google, CC BY 4.0: https://huggingface.co/datasets/google/fleurs
 """
-import argparse, csv, hashlib, io, json, pathlib, subprocess, tarfile, urllib.request, wave
+import argparse, csv, hashlib, io, json, pathlib, re, subprocess, tarfile, urllib.request, wave
 from pinned_download import download
 
 REVISION = "70bb2e84b976b7e960aa89f1c648e09c59f894dd"
@@ -15,6 +15,33 @@ ARCHIVES = {
 def digest(path):
     with path.open("rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
+
+
+def verify_existing(root, expected_sha256):
+    """Reuse a previously recorded corpus, even after its large downloads are cleaned.
+
+    The caller pins the prior manifest digest: self-consistent edited references
+    or replacement WAVs must not silently become the same baseline.
+    """
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
+        raise ValueError("Expected a recorded SHA-256 for the prepared manifest")
+    path = root / "manifest.json"
+    if digest(path) != expected_sha256:
+        raise ValueError("Prepared manifest checksum mismatch")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("dataset") != "google/fleurs" or manifest.get("revision") != REVISION or manifest.get("license") != "CC-BY-4.0":
+        raise ValueError("Prepared corpus is not the pinned public FLEURS revision")
+    cases = manifest.get("cases", [])
+    if not cases or len({c["name"] for c in cases}) != len(cases):
+        raise ValueError("Missing or duplicate prepared cases")
+    for case in cases:
+        name = case["file"]
+        if pathlib.Path(name).name != name or "\\" in name or name in [".", ".."]:
+            raise ValueError("Prepared fixture path must be a basename")
+        if digest(root / name) != case["sha256"]:
+            raise ValueError("Prepared audio checksum mismatch")
+    print(f"Verified {len(cases)} prepared clips offline; manifest SHA-256 {expected_sha256}", flush=True)
+    return manifest
 
 
 def add_mixed(root, manifest):
@@ -102,15 +129,19 @@ def prepare(root, with_mixed=False):
         cases=cases)
     (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     if with_mixed: manifest = add_mixed(root, manifest)
-    print(f"Prepared {len(manifest['cases'])} clips at {root}", flush=True)
+    print(f"Prepared {len(manifest['cases'])} clips at {root}; manifest SHA-256 {digest(root / 'manifest.json')}", flush=True)
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--directory", type=pathlib.Path, required=True)
     mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--verify-existing", metavar="MANIFEST_SHA256", help="Verify a recorded prepared corpus offline, without retaining/re-downloading the 815 MB archives")
     mode.add_argument("--with-mixed", action="store_true", help="Also construct language-switching clips")
     mode.add_argument("--mixed-only", action="store_true", help="Offline: add mixed clips to an existing pinned corpus")
     args = p.parse_args()
+    if args.verify_existing:
+        verify_existing(args.directory, args.verify_existing)
+        raise SystemExit(0)
     root = args.directory.resolve()
     if args.mixed_only:
         add_mixed(root, json.loads((root / "manifest.json").read_text(encoding="utf-8")))
