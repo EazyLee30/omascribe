@@ -1,3 +1,4 @@
+mod blocks;
 mod decoder;
 mod diarization;
 mod hotwords;
@@ -151,11 +152,18 @@ fn run() -> Result<()> {
             continue;
         }
         pause_flushed = false;
-        let count = available.min(3200).min(
-            boundaries
-                .front()
-                .map_or(u64::MAX, |end| end.saturating_sub(processed)),
-        );
+        // File reads can arrive in different packet sizes under Metal/CPU load.
+        // Wait for a stable 200ms block so leveling and decode calls see the
+        // same samples. Explicit pause/take/end boundaries still drain tails.
+        let Some(count) = blocks::read_count(
+            processed,
+            available,
+            boundaries.front().copied(),
+            audio.join("capture.done").exists() || audio.join("capture.paused").exists(),
+        ) else {
+            std::thread::sleep(Duration::from_millis(40));
+            continue;
+        };
         let mut f = File::open(p)?;
         f.seek(SeekFrom::Start(offset * 2))?;
         let mut bytes = vec![0u8; count as usize * 2];
