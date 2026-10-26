@@ -11,6 +11,8 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 
 Rust tests cover sample-exact chunk boundaries, pause/resume append behavior, interrupted-recording recovery, the single-writer lock, Chinese/English retrieval, pending-prefix coverage, evidence rejection and atomic document updates. The Python tests ensure the model harness fails on missing required facts, unsupported claims and forged citations.
 
+Push checked source changes promptly; installer and optional GPU builds need not finish before a source push. Ordinary pull-request CI retains application checks, Windows core/ASR tests, CPU worker linking and component packaging contracts. The four-platform/backend SDK build matrix runs only with the `build-acceleration-components` PR label or a manual **Optional acceleration components** workflow dispatch. Remove the label after the intended build to avoid rebuilding it on every push. Skipped builds are not validation evidence; record the successful run and complete native-input revision when reusing earlier results. Publishing still requires the full matrix, archive/member verification and passing application CI for the exact publication commit.
+
 ## Real local writing model
 
 After `bin/setup`, build the CLI and run:

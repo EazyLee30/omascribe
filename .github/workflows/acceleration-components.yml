@@ -1,10 +1,18 @@
 name: Optional acceleration components
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     paths:
       - .github/workflows/acceleration-components.yml
       - scripts/acceleration-components.py
       - scripts/runtime_inventory.py
+      - tests/test_acceleration_components.py
+      - tests/test_release_metadata.py
+      - crates/core/**
+      - crates/asr/**
+      - Cargo.toml
+      - Cargo.lock
+      - models.lock.json
   workflow_dispatch:
     inputs:
       version:
@@ -31,6 +39,11 @@ jobs:
       CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check component packaging without compiling GPU runtimes
+        run: python -m unittest discover -s tests -p 'test_acceleration_components.py'
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.99.0"
@@ -43,6 +56,8 @@ jobs:
       - name: Inventory probe without opening a user workspace
         run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
   build:
+    # Source pushes keep the Windows checks; expensive SDK builds are opt-in.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components')
     strategy:
       fail-fast: false
       matrix:
