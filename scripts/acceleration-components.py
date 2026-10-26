@@ -185,6 +185,21 @@ def collect_cuda(output, cuda, windows):
         raise ValueError("CUDA backend has no detected runtime dependencies")
 
 
+def vulkan_flags(sdk, windows):
+    """Recent SDKs put loader libraries below a component-specific directory."""
+    headers = [sdk / "Include", sdk / "include"]
+    include = next((p for p in headers if (p / "vulkan/vulkan.h").is_file()), None)
+    libraries = [sdk / "Lib/vulkan-1.lib", sdk / "Lib/VulkanLoader/lib/vulkan-1.lib"] if windows else [sdk / "lib/libvulkan.so", sdk / "lib/VulkanLoader/lib/libvulkan.so", sdk / "lib/VulkanLoader/lib/libvulkan.so.1"]
+    library = next((p for p in libraries if p.is_file()), None)
+    if include is None or library is None:
+        raise ValueError(f"Incomplete Vulkan SDK: headers={include is not None}, loader={library is not None}")
+    flags = [f"-DVulkan_INCLUDE_DIR={include}", f"-DVulkan_LIBRARY={library}", f"-DCMAKE_PREFIX_PATH={sdk}"]
+    configs = list(sdk.rglob("SPIRV-HeadersConfig.cmake"))
+    if configs:
+        flags.append(f"-DSPIRV-Headers_DIR={configs[0].parent}")
+    return flags
+
+
 def build(backend, output):
     """Native CI builds only. SDK/compiler/driver files never enter the output."""
     if platform.machine().lower() not in {"x86_64", "amd64"} or platform.system() not in {"Windows", "Linux"} or backend not in BACKENDS:
@@ -208,6 +223,8 @@ def build(backend, output):
              "-DGGML_CUDA=" + ("ON" if backend == "cuda" else "OFF"), "-DGGML_VULKAN=" + ("ON" if backend == "vulkan" else "OFF")]
     if backend == "cuda":
         flags += ["-DCMAKE_CUDA_ARCHITECTURES=75-virtual;80-virtual;86-real;89-real;90-virtual;120a-real", "-DGGML_CUDA_NCCL=OFF"]
+    else:
+        flags += vulkan_flags(pathlib.Path(os.environ["VULKAN_SDK"]), os.name == "nt")
     if os.name == "nt":
         flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
     run("cmake", "-S", source, "-B", cmake, *flags)

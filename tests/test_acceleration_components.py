@@ -88,3 +88,16 @@ class AccelerationPackagingTests(unittest.TestCase):
         for name in ["native/runtime/libggml-cuda.so", "runtime/cublas64_12.dll", "libcudart.so.12", "runtime/ggml-vulkan.dll", "runtime/librocblas.so", "native/accelerators/index.json", "runtime/libsycl.so.8"]:
             with self.assertRaises(ValueError):
                 assert_base_names([name])
+
+    def test_vulkan_sdk_uses_explicit_nested_loader_and_headers(self):
+        with tempfile.TemporaryDirectory() as root:
+            sdk = pathlib.Path(root)
+            for relative in ["include/vulkan/vulkan.h", "lib/VulkanLoader/lib/libvulkan.so.1", "share/cmake/SPIRV-Headers/SPIRV-HeadersConfig.cmake"]:
+                path = sdk / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"fixture")
+            flags = components.vulkan_flags(sdk, False)
+            self.assertIn(f"-DVulkan_LIBRARY={sdk / 'lib/VulkanLoader/lib/libvulkan.so.1'}", flags)
+            self.assertIn(f"-DSPIRV-Headers_DIR={sdk / 'share/cmake/SPIRV-Headers'}", flags)
+            with self.assertRaises(ValueError):
+                components.vulkan_flags(sdk, True)

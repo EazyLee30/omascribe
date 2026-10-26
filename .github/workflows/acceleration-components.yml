@@ -103,6 +103,20 @@ jobs:
         with:
           version: "1.4.363.0"
           cache: true
+      - name: Complete Windows SDK using the supported copy-only installer
+        if: matrix.backend == 'vulkan' && runner.os == 'Windows'
+        run: |
+          python - <<'PY'
+          import os,pathlib,subprocess
+          sdk=pathlib.Path(os.environ['VULKAN_SDK'])
+          if not (sdk/'Include/vulkan/vulkan.h').is_file():
+              sdk=sdk.with_name('VULKAN_SDK_FULL')
+              installer=pathlib.Path('vulkan_sdk.exe').resolve()
+              subprocess.run([str(installer),'--root',str(sdk),'--accept-licenses','--default-answer','--confirm-command','install','copy_only=1'],check=True,timeout=300)
+              with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as out: out.write('VULKAN_SDK='+str(sdk)+'\n')
+              with open(os.environ['GITHUB_PATH'],'a',encoding='utf-8') as out: out.write(str(sdk/'Bin')+'\n')
+          assert (sdk/'Include/vulkan/vulkan.h').is_file(), 'Vulkan development headers missing'
+          PY
       - name: Build the pinned optional runtime
         run: python scripts/acceleration-components.py build --backend '${{ matrix.backend }}' --output build-assets/component-runtime
       - name: Package and hash the separate download
