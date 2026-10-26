@@ -52,6 +52,7 @@ pub struct Engine {
     pub note_cancel: AtomicBool,
     pub llm_pid: AtomicU32,
     pub(crate) inference_pool: crate::inference_worker::WorkerPool,
+    pub(crate) inference_fingerprints: crate::inference_cache::Fingerprints,
     pub(crate) acceleration: Mutex<crate::acceleration::State>,
     notes_target: Mutex<Option<String>>,
     _lock: File,
@@ -125,6 +126,7 @@ impl Engine {
             note_cancel: AtomicBool::new(false),
             llm_pid: AtomicU32::new(0),
             inference_pool: Default::default(),
+            inference_fingerprints: Default::default(),
             acceleration: Default::default(),
             notes_target: Mutex::new(None),
             _lock: lock,
@@ -328,7 +330,7 @@ impl Engine {
             m.duration_ms = m.duration_ms.max(runtime.elapsed_ms);
         }
         Ok(Snapshot {
-            translations: crate::translation::cached(&db, &m, &prefs)?,
+            translations: crate::translation::cached(self, &db, &m, &prefs)?,
             translation_mode: prefs.translation_mode,
             segments: db.segments(&m)?,
             notes: db.notes(id)?,

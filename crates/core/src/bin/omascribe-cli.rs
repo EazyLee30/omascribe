@@ -8,6 +8,10 @@ use std::{
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let command = args.get(1).map(|s| s.as_str()).unwrap_or("help");
+    if command == "build-info" {
+        println!("{}", omascribe_core::build_identity());
+        return Ok(());
+    }
     if command == "--hardware-probe" {
         println!(
             "{}",

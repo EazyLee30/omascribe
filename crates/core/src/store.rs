@@ -9,6 +9,7 @@ pub struct Store {
 impl Store {
     pub fn open(path: &Path) -> Result<Self> {
         let conn = Connection::open(path)?;
+        let previous_version: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;
             CREATE TABLE IF NOT EXISTS meetings(id TEXT PRIMARY KEY, json TEXT NOT NULL);
@@ -24,7 +25,24 @@ impl Store {
             CREATE TABLE IF NOT EXISTS translations(segment_id TEXT NOT NULL,revision INTEGER NOT NULL,target TEXT NOT NULL,model TEXT NOT NULL,json TEXT NOT NULL, PRIMARY KEY(segment_id,revision,target,model));
             CREATE TABLE IF NOT EXISTS deleted_meetings(id TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
-            PRAGMA user_version=5;")?;
+            CREATE TABLE IF NOT EXISTS term_checks(segment_id TEXT PRIMARY KEY,run INTEGER NOT NULL,revision INTEGER NOT NULL,terms_key TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS cache_dependencies(meeting_id TEXT NOT NULL,kind TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(meeting_id,kind));
+            CREATE TABLE IF NOT EXISTS term_queue(segment_id TEXT PRIMARY KEY,meeting_id TEXT NOT NULL,run INTEGER NOT NULL,seq INTEGER NOT NULL,revision INTEGER NOT NULL);
+            CREATE INDEX IF NOT EXISTS term_queue_scope ON term_queue(meeting_id,run,seq,segment_id);
+            CREATE TRIGGER IF NOT EXISTS term_source_insert AFTER INSERT ON segments BEGIN
+              INSERT INTO term_queue VALUES(NEW.id,NEW.meeting_id,NEW.run,NEW.seq,COALESCE(json_extract(NEW.json,'$.revision'),1)) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision;
+            END;
+            CREATE TRIGGER IF NOT EXISTS term_source_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id OR OLD.seq!=NEW.seq BEGIN
+              INSERT INTO term_queue VALUES(NEW.id,NEW.meeting_id,NEW.run,NEW.seq,COALESCE(json_extract(NEW.json,'$.revision'),1)) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision;
+            END;
+            CREATE TRIGGER IF NOT EXISTS term_source_delete AFTER DELETE ON segments BEGIN
+              DELETE FROM term_queue WHERE segment_id=OLD.id;
+              DELETE FROM term_checks WHERE segment_id=OLD.id;
+            END;
+            PRAGMA user_version=6;")?;
+        if previous_version < 6 {
+            conn.execute("INSERT OR IGNORE INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s JOIN meetings m ON m.id=s.meeting_id WHERE s.run=json_extract(m.json,'$.run')", [])?;
+        }
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
         Ok(Self { conn })
     }
@@ -65,6 +83,51 @@ impl Store {
             "SELECT json FROM segments WHERE meeting_id=?1 AND run=?2 ORDER BY seq",
             &[&m.id, &m.run],
         )
+    }
+    /// Revisit changed evidence only. LIMIT bounds temporary Rust allocations for long meetings.
+    pub(crate) fn terminology_candidates(&self, m: &Meeting) -> Result<Vec<Segment>> {
+        self.json_query("SELECT s.json FROM term_queue q JOIN segments s ON s.id=q.segment_id WHERE q.meeting_id=?1 AND q.run=?2 ORDER BY q.seq,q.segment_id LIMIT 128", &[&m.id, &m.run])
+    }
+    pub(crate) fn schedule_terminology(&self, m: &Meeting, key: &str) -> Result<()> {
+        if self.cache_dependency(&m.id, "terms")? != key {
+            self.conn.execute("INSERT INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s LEFT JOIN term_checks c ON c.segment_id=s.id WHERE s.meeting_id=?1 AND s.run=?2 AND (c.segment_id IS NULL OR c.run!=s.run OR c.revision!=json_extract(s.json,'$.revision') OR c.terms_key!=?3) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision",params![m.id,m.run,key])?;
+        }
+        Ok(())
+    }
+    pub(crate) fn mark_terminology_batch(&mut self, segments: &[Segment], key: &str) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        {
+            let mut mark = tx.prepare("INSERT INTO term_checks VALUES(?1,?2,?3,?4) ON CONFLICT(segment_id) DO UPDATE SET run=excluded.run,revision=excluded.revision,terms_key=excluded.terms_key")?;
+            let mut dequeue = tx
+                .prepare("DELETE FROM term_queue WHERE segment_id=?1 AND run=?2 AND revision=?3")?;
+            for segment in segments {
+                mark.execute(params![segment.id, segment.run, segment.revision, key])?;
+                dequeue.execute(params![segment.id, segment.run, segment.revision])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+    pub(crate) fn cache_dependency(&self, meeting: &str, kind: &str) -> Result<String> {
+        use rusqlite::OptionalExtension;
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT value FROM cache_dependencies WHERE meeting_id=?1 AND kind=?2",
+                params![meeting, kind],
+                |r| r.get(0),
+            )
+            .optional()?
+            .unwrap_or_default())
+    }
+    pub(crate) fn set_cache_dependency(
+        &self,
+        meeting: &str,
+        kind: &str,
+        value: &str,
+    ) -> Result<()> {
+        self.conn.execute("INSERT INTO cache_dependencies VALUES(?1,?2,?3) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=excluded.value WHERE value!=excluded.value",params![meeting,kind,value])?;
+        Ok(())
     }
     pub fn recent_segments(&self, meeting: &Meeting, limit: u32) -> Result<Vec<Segment>> {
         let limit = limit.clamp(1, 20);
@@ -326,6 +389,47 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn terminology_queue_migrates_legacy_data_and_preserves_newer_work() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Legacy migration")?;
+        let mut source = Segment {
+            id: "legacy-source".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "Original evidence".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        drop(engine);
+        let path = root.path().join("meetings.sqlite3");
+        {
+            let conn = Connection::open(&path)?;
+            conn.execute_batch("DROP TRIGGER term_source_insert; DROP TRIGGER term_source_update; DROP TRIGGER term_source_delete; DROP TABLE term_queue; DROP TABLE term_checks; DROP TABLE cache_dependencies; PRAGMA user_version=5;")?;
+        }
+        let mut db = Store::open(&path)?;
+        assert_eq!(db.terminology_candidates(&meeting)?.len(), 1);
+        let old = source.clone();
+        source.text = "Newer evidence".into();
+        source.revision = 2;
+        db.save_segment(&source)?;
+        db.mark_terminology_batch(&[old], "terms-fixture")?;
+        // An acknowledgement for rev 1 cannot remove queued rev 2.
+        assert_eq!(db.terminology_candidates(&meeting)?[0].revision, 2);
+        assert_eq!(db.segments(&meeting)?[0].text, "Newer evidence");
+        db.mark_terminology_batch(&[source], "terms-fixture")?;
+        assert!(db.terminology_candidates(&meeting)?.is_empty());
+        drop(db);
+        let reopened = Store::open(&path)?;
+        assert!(reopened.terminology_candidates(&meeting)?.is_empty());
+        Ok(())
+    }
     #[test]
     fn corrections_preserve_history_and_mark_accepted_notes_stale() -> Result<()> {
         let tmp = tempfile::tempdir()?;

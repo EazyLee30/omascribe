@@ -101,10 +101,12 @@ impl Engine {
                     || e.kind == "memory" && prefs.use_memory
                     || e.kind == "note" && e.knowledge && prefs.use_knowledge)
         };
-        let was_context = self
+        let previous = self
             .library_entries()?
-            .iter()
-            .any(|e| e.id == entry.id && relevant(e));
+            .into_iter()
+            .find(|e| e.id == entry.id);
+        let was_context = previous.as_ref().is_some_and(&relevant);
+        let was_term = previous.as_ref().is_some_and(|e| e.kind == "term");
         if !["note", "term", "memory"].contains(&entry.kind.as_str())
             || entry.title.chars().count() > 160
             || entry.content.chars().count() > 200_000
@@ -148,14 +150,19 @@ impl Engine {
         }
         entry.updated_at = chrono::Utc::now().to_rfc3339();
         self.store.lock().unwrap().conn.execute("INSERT INTO library_entries(id,json,updated_at) VALUES(?1,?2,?3) ON CONFLICT(id) DO UPDATE SET json=excluded.json,updated_at=excluded.updated_at",rusqlite::params![entry.id,serde_json::to_string(&entry)?,entry.updated_at])?;
+        // Linked note visibility changes only after the library row is persisted.
+        if let Some(ref meeting) = entry.meeting_id {
+            self.correct_terminology(meeting)?;
+            self.refresh_live_hotwords()?;
+        }
         if was_context || relevant(&entry) {
             self.invalidate_background()?;
-            if entry.kind == "term" && entry.enabled && !entry.deleted {
+            if entry.kind == "term" || was_term {
                 for meeting in self.meetings()? {
                     self.correct_terminology(&meeting.id)?;
                 }
             }
-            if entry.kind == "term" {
+            if entry.kind == "term" || was_term {
                 self.refresh_live_hotwords()?;
             }
         }

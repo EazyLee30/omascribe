@@ -12,6 +12,16 @@ pub struct Terms {
     approximate: Vec<String>,
 }
 impl Terms {
+    pub fn fingerprint(&self) -> String {
+        use sha2::{Digest, Sha256};
+        format!(
+            "{:x}",
+            Sha256::digest(
+                serde_json::to_vec(&("terms-v2", &self.names, &self.approximate))
+                    .expect("term signature")
+            )
+        )
+    }
     pub fn new(notes: &[UserNote], entries: &[Entry]) -> Self {
         let mut names = BTreeMap::new();
         let mut conflicts = HashSet::new();
@@ -314,40 +324,55 @@ impl Engine {
         let mut db = self.store.lock().unwrap();
         let mut m = db.meeting(meeting)?;
         let mut changed = 0;
-        for s in db.segments(&m)? {
-            let origin: Option<String> = db.conn.query_row(
+        let terms_key = terms.fingerprint();
+        db.schedule_terminology(&m, &terms_key)?;
+        loop {
+            let candidates = db.terminology_candidates(&m)?;
+            if candidates.is_empty() {
+                break;
+            }
+            let mut checked = Vec::with_capacity(candidates.len());
+            for mut s in candidates {
+                let origin: Option<String> = db.conn.query_row(
                 "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
                 [&s.id], |r| r.get(0),
             ).optional()?;
-            if origin.as_deref() == Some("human") {
-                continue;
+                if origin.as_deref() == Some("human") {
+                    checked.push(s);
+                    continue;
+                }
+                let original: Option<String> = db
+                    .conn
+                    .query_row(
+                        "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
+                        [&s.id],
+                        |r| r.get(0),
+                    )
+                    .optional()?;
+                let original: crate::Segment = original
+                    .map(|s| serde_json::from_str(&s))
+                    .transpose()?
+                    .unwrap_or_else(|| s.clone());
+                // Legacy revisions lack provenance. Keep unknown edits; speaker-only changes and
+                // old exact-alias corrections can safely migrate. New edits carry explicit origin.
+                if origin.is_none()
+                    && s.text != original.text
+                    && terms.normalize_exact(&original.text) != s.text
+                {
+                    checked.push(s);
+                    continue;
+                }
+                let text = terms.normalize(&original.text);
+                if text != s.text {
+                    db.edit_segment_text(&s.id, &text, s.revision, "terminology")?;
+                    s.revision += 1;
+                    changed += 1;
+                }
+                checked.push(s);
             }
-            let original: Option<String> = db
-                .conn
-                .query_row(
-                    "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
-                    [&s.id],
-                    |r| r.get(0),
-                )
-                .optional()?;
-            let original: crate::Segment = original
-                .map(|s| serde_json::from_str(&s))
-                .transpose()?
-                .unwrap_or_else(|| s.clone());
-            // Legacy revisions lack provenance. Keep unknown edits; speaker-only changes and
-            // old exact-alias corrections can safely migrate. New edits carry explicit origin.
-            if origin.is_none()
-                && s.text != original.text
-                && terms.normalize_exact(&original.text) != s.text
-            {
-                continue;
-            }
-            let text = terms.normalize(&original.text);
-            if text != s.text {
-                db.edit_segment_text(&s.id, &text, s.revision, "terminology")?;
-                changed += 1;
-            }
+            db.mark_terminology_batch(&checked, &terms_key)?;
         }
+        db.set_cache_dependency(meeting, "terms", &terms_key)?;
         if changed > 0 {
             m.notes_fingerprint.clear();
             db.save_meeting(&m)?;
@@ -370,6 +395,186 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn unchanged_terminology_only_rechecks_new_or_revised_passages() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Incremental terminology")?;
+        for seq in 1..=300 {
+            engine.store.lock().unwrap().save_segment(&crate::Segment {
+                id: format!("source-{seq}"),
+                meeting_id: meeting.id.clone(),
+                run: 1,
+                seq,
+                start_ms: u64::from(seq) * 1000,
+                end_ms: u64::from(seq + 1) * 1000,
+                text: "预算尚未确定。".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })?;
+        }
+        assert_eq!(
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .terminology_candidates(&meeting)?
+                .len(),
+            128
+        );
+        engine.correct_terminology(&meeting.id)?;
+        assert!(engine
+            .store
+            .lock()
+            .unwrap()
+            .terminology_candidates(&meeting)?
+            .is_empty());
+        // Late insertion before the previous maximum seq must not be skipped by a cursor.
+        let source = crate::Segment {
+            id: "late-source".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 0,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "尚未批准。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        assert_eq!(
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .terminology_candidates(&meeting)?
+                .len(),
+            1
+        );
+        engine.correct_terminology(&meeting.id)?;
+        engine
+            .store
+            .lock()
+            .unwrap()
+            .edit_segment("late-source", "人工文字", 1)?;
+        assert_eq!(
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .terminology_candidates(&meeting)?
+                .len(),
+            1
+        );
+        engine.correct_terminology(&meeting.id)?;
+        assert!(engine
+            .store
+            .lock()
+            .unwrap()
+            .terminology_candidates(&meeting)?
+            .is_empty());
+        assert_eq!(engine.snapshot(&meeting.id)?.segments[0].text, "人工文字");
+        drop(engine);
+        let reopened = Engine::open(root.path().into())?;
+        assert!(reopened
+            .store
+            .lock()
+            .unwrap()
+            .terminology_candidates(&meeting)?
+            .is_empty());
+        Ok(())
+    }
+    #[test]
+    fn disabling_a_term_reverts_only_automatic_corrections() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Term disable")?;
+        for seq in 1..=2 {
+            engine.store.lock().unwrap().save_segment(&crate::Segment {
+                id: format!("source-{seq}"),
+                meeting_id: meeting.id.clone(),
+                run: 1,
+                seq,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "Project zargle is pending".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })?;
+        }
+        let mut entry = engine.save_library_entry(crate::library::Entry {
+            kind: "term".into(),
+            title: "Zargle".into(),
+            aliases: "zargle".into(),
+            ..Default::default()
+        })?;
+        let source = engine.snapshot(&meeting.id)?.segments[0].clone();
+        assert_eq!(source.text, "Project Zargle is pending");
+        engine.edit_segment(&source.id, "Human wording: Zargle", source.revision)?;
+        let before = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&meeting.id, "terms")?;
+        entry.enabled = false;
+        engine.save_library_entry(entry)?;
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(snapshot.segments[0].text, "Human wording: Zargle");
+        assert_eq!(snapshot.segments[1].text, "Project zargle is pending");
+        assert_ne!(
+            before,
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .cache_dependency(&meeting.id, "terms")?
+        );
+        Ok(())
+    }
+    #[test]
+    fn hiding_and_restoring_linked_notes_updates_spelling_context() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Linked spelling")?;
+        engine.store.lock().unwrap().save_segment(&crate::Segment {
+            id: "linked-source".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "测试 OMA SCRIBE".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })?;
+        let note = engine.save_note(&meeting.id, None, "测试omascribe", "document", 0)?;
+        assert_eq!(
+            engine.snapshot(&meeting.id)?.segments[0].text,
+            "测试 OmaScribe"
+        );
+        let mut entry = engine
+            .library_entries()?
+            .into_iter()
+            .find(|e| e.id == note.id)
+            .unwrap();
+        entry.deleted = true;
+        engine.save_library_entry(entry.clone())?;
+        assert_eq!(
+            engine.snapshot(&meeting.id)?.segments[0].text,
+            "测试 OMA SCRIBE"
+        );
+        entry.deleted = false;
+        engine.save_library_entry(entry)?;
+        assert_eq!(
+            engine.snapshot(&meeting.id)?.segments[0].text,
+            "测试 OmaScribe"
+        );
+        Ok(())
+    }
     fn note(content: &str) -> UserNote {
         UserNote {
             id: "n".into(),

@@ -180,6 +180,7 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
         let mut state = engine.acceleration.lock().unwrap();
         state.status.state = "test_required".into();
         state.status.reason = Some("configuration_or_driver_changed".into());
+        let _ = fs::remove_file(certificate_path(engine));
     }
     result.ok()
 }
