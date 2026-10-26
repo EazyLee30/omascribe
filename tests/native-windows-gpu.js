@@ -69,7 +69,7 @@
       const policy = await invoke("get_network_policy");
       await invoke("set_network_policy", { policy: { ...policy, allow_model_downloads: true } });
       const prefs = await invoke("get_preferences");
-      await invoke("set_preferences", { preferences: { ...prefs, inference_backend: "auto", threads: 2, context_size: 2048, memory_budget_mib: 4096, auto_notes: true, translation_mode: "bilingual", minutes_language: "zh", llm_keep_alive_seconds: 0 } });
+      await invoke("set_preferences", { preferences: { ...prefs, asr_model: "zipformer-small", llm_model: "qwen3-1.7b", inference_backend: "auto", threads: 2, context_size: 2048, memory_budget_mib: 4096, auto_notes: true, translation_mode: "bilingual", minutes_language: "zh", llm_keep_alive_seconds: 0 } });
       await models();
       await button('[data-component-action="check"]');
       await until(async () => (await catalog()).state === "ready", 60000);
@@ -102,7 +102,7 @@
         await button(`[data-component-action="test"][data-id="${componentId}"]`);
         await until(async () => (await catalog()).verification.state === "test_failed", 60000);
         evidence.memory = (await catalog()).verification;
-        assert(/memory|显存|GPU/i.test(evidence.memory.reason || ""), "Failure did not identify GPU memory admission");
+        assert(/enough free memory|insufficient.*memory|显存.*不足/i.test(evidence.memory.reason || ""), "Failure did not identify GPU memory admission");
         await invoke("set_preferences", { preferences: prefs });
         assert((await catalog()).verification.state !== "active", "Memory refusal retained activation");
         evidence.checks.push("Real device memory admission refused the larger context; this is not a driver allocation-OOM injection");

@@ -548,11 +548,11 @@
     ]
   },
   "pending": [
-    "Shared cloud checkout-log reader fix; initial sign run40387149779 failed before downloading/signing/publishing",
-    "Normal release-key signed candidate and actual Settings lifecycle acceptance"
+    "Actual Settings lifecycle, restart, CPU switching and owned-worker/memory fallback",
+    "GPU recording/generation coexistence and retained startup latency finding"
   ],
-  "signed": false,
-  "published": false,
+  "signed": true,
+  "published": true,
   "stable_catalog_promoted": false,
   "limits": [
     "Linux components verified as archives on a Windows host; no Linux GPU execution or admission claim.",
@@ -582,5 +582,126 @@
     "payload_bytes": 13578,
     "payload_sha256": "f0f6261191b3f5cc3f720adbc83060ad11fa399eba060db472c52faaaed648d7",
     "all_four_local_manifests_match_exact_bytes": true
+  },
+  "publication_scope": "Immutable prerelease validation candidate only; stable pointer not promoted",
+  "signed_candidate": {
+    "release_id": 424699585,
+    "version": "acceleration-ci-40367160891",
+    "draft": false,
+    "prerelease": true,
+    "signing_run": 40390695525,
+    "signing_source": "337791eddff02c117f2f0697b12a19e63556fdb6",
+    "signed_index_sha256": "ded06ac13b2ab175cf01eefa6692657cbcf5e4558dc3a4778d3698dc088e5057",
+    "payload_sha256": "f0f6261191b3f5cc3f720adbc83060ad11fa399eba060db472c52faaaed648d7",
+    "normal_app_verifier": {
+      "verified": true,
+      "version": "acceleration-ci-40367160891"
+    },
+    "assets": [
+      {
+        "name": "candidate-provenance.json",
+        "size": 3414,
+        "digest": "sha256:6b0862540409ce77a7e47db126f2ae491f1be7b3e4de998e8a7fe61932bffd8b",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/candidate-provenance.json"
+      },
+      {
+        "name": "index.json",
+        "size": 15445,
+        "digest": "sha256:ded06ac13b2ab175cf01eefa6692657cbcf5e4558dc3a4778d3698dc088e5057",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/index.json"
+      },
+      {
+        "name": "OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "size": 684634977,
+        "digest": "sha256:5088b6636bf57eb30d11e9edda6442eca3554b894dff55a1042890e0d42bda81",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      {
+        "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "size": 657339453,
+        "digest": "sha256:1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      {
+        "name": "OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "size": 24334991,
+        "digest": "sha256:0d1c2ccbe429262a506117ef28ea0ac92cc8f9d47b5f04187e9d57ccb13b1c6b",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2"
+      },
+      {
+        "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+        "size": 12674455,
+        "digest": "sha256:0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+        "browser_download_url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+      }
+    ]
+  },
+  "official_run_archive_proof": {
+    "source_commit": "337791eddff02c117f2f0697b12a19e63556fdb6",
+    "run_id": 40367160891,
+    "method": "official run-log archive, directly exercised rather than unit fixture",
+    "run_log_archive_sha256": "4eb22993b0b38d5f7d62b759a0597ccbc47013b14203773d23370aa34902a7ac",
+    "proofs": [
+      {
+        "job_id": 121727976886,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "checkout_log_sha256": "1d21af471e7bb3d61bc7265a0dfca50436e2ec827333db2e7b1e0b21ae42e7ea",
+        "logs": [
+          {
+            "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+            "prefix_sha256": "1d21af471e7bb3d61bc7265a0dfca50436e2ec827333db2e7b1e0b21ae42e7ea",
+            "prefix_bytes": 112046
+          }
+        ]
+      },
+      {
+        "job_id": 121727976955,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "checkout_log_sha256": "5e5f797c5b07e6db15a422e36c123da70c6bfca5a0095f254fffe8dc06ea8c1b",
+        "logs": [
+          {
+            "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+            "prefix_sha256": "5e5f797c5b07e6db15a422e36c123da70c6bfca5a0095f254fffe8dc06ea8c1b",
+            "prefix_bytes": 103201
+          }
+        ]
+      },
+      {
+        "job_id": 121727976970,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "checkout_log_sha256": "6cac15eb73866268cabe74611ef9ebf3986bcb41adbcb81ec2a9c3242fa43e15",
+        "logs": [
+          {
+            "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+            "prefix_sha256": "6cac15eb73866268cabe74611ef9ebf3986bcb41adbcb81ec2a9c3242fa43e15",
+            "prefix_bytes": 131072
+          }
+        ]
+      },
+      {
+        "job_id": 121727977047,
+        "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+        "checkout_log_sha256": "cf93d535c3692fd801d924ddc74140ff35c8659a5b300bfcc54cd7777c2b628b",
+        "logs": [
+          {
+            "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+            "prefix_sha256": "cf93d535c3692fd801d924ddc74140ff35c8659a5b300bfcc54cd7777c2b628b",
+            "prefix_bytes": 131072
+          },
+          {
+            "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+            "prefix_sha256": "9787cd5dd7ce13bc57e6f496b12cb31de45beeadcb9a2ff3fea9b19cb4b79684",
+            "prefix_bytes": 6419
+          }
+        ]
+      }
+    ],
+    "passed": true
+  },
+  "prior_failed_signing_attempt": {
+    "run_id": 40387149779,
+    "phase": "Original job log reader",
+    "signed": false,
+    "published": false
   }
 }

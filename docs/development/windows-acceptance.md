@@ -30,10 +30,19 @@ Two completed Vulkan checkout trees and the now-completed Linux CUDA checkout
 have also been independently observed to match original source `164371e`.
 Windows CUDA and the original full catalog have now completed successfully.
 The current shared delivery diagnostic reader is merged through `1f553c2`;
-60 Python tests pass locally. First cloud signing attempt `40387149779` failed
+62 Python tests pass locally. First cloud signing attempt `40387149779` failed
 before downloading/signing/publishing because its original checkout log reader
 could not recognize the response. The same all-four reuse preflight passes
 locally. Signature/source gates have not been bypassed.
+
+The official run-log archive fallback from shared `0294f03` is now merged and
+verified against all four real job logs. Unified signing run `40390695525` has
+since succeeded and published the immutable **prerelease candidate**
+`acceleration-ci-40367160891`; its tag still names build source `164371e`.
+The downloaded public index matches the original payload byte for byte and
+passes the application's normal embedded-key/version verifier. Stable
+`acceleration-v1` was not promoted. Candidate publication is not a Settings or
+recording acceptance result.
 
 Earlier support checkpoint: `be5e16d` merges shared `e255dc7`, including the
 public ASR fixture preparation/offline reuse change. Python now has 43 passing
@@ -158,9 +167,11 @@ Pending the preceding gates and a signed candidate catalog:
 | Worker failure | Kill only the owned inference child; verify certificate invalidation, one CPU retry, preserved source/citations and no retry loop |
 | Recording plus generation | Record ASR backlog and continuity, generation/fallback status, cancellation and child cleanup; label synthetic PCM injection separately from physical microphone capture |
 
-The current `acceleration-v1` catalog endpoint returns 404. Real download and
-activation are not passed while that prerequisite is missing. Do not add an
-unsigned-directory shortcut or change the production trust root to satisfy QA.
+The stable `acceleration-v1` catalog is unpublished. The isolated signed
+candidate selector now supplies the real download prerequisite without changing
+that stable pointer. Actual Settings download/activation results are still
+pending execution. Do not add an unsigned-directory shortcut or change the
+production trust root to satisfy QA.
 
 The isolated native fixture `tests/native-windows-gpu.js` is prepared for real
 Settings download/test, restart, Use CPU, memory-admission and owned-worker-fault
