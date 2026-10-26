@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "date": "2026-10-27",
   "kind": "windows_signed_cuda_settings_lifecycle",
   "passed": false,
@@ -8,6 +8,7 @@
   "gpu": "NVIDIA GeForce GTX 1650 / 4GiB",
   "driver": "621.01",
   "source_status_fix": "39486eaac27874210e5f56755b3cd3c7eb146af6",
+  "source_configuration_guard": "32bb449fab1ea54eba20570516c427fee57cdf98",
   "native_stages": [
     {
       "phase": "cpu",
@@ -87,6 +88,62 @@
             "runtime_gpu_buffer_mib": 1287.93,
             "startup_ms": 1751,
             "total_ms": 3382
+          }
+        },
+        "state": "active"
+      },
+      "after_verification": {
+        "component_id": null,
+        "reason": null,
+        "report": null,
+        "state": ""
+      }
+    },
+    {
+      "phase": "cpu",
+      "passed": true,
+      "checks": [
+        "Settings Use CPU cleared activation; runner audits worker cleanup and next backend"
+      ],
+      "name": "cpu-03",
+      "raw_sha256": "326fd571e3b70279ccb67a766e88a61b4106ae26ca9d7cf4f75d6079c58435bc",
+      "identity_sha256": "7d7af1491447fa87b7b8f795d31ced7beaeee970d297d35b39a42b145d1019bd",
+      "app_sha256": "c441dfa4cf5dc6f8998bbdd92d16a9635f538171bb95aab1e68f25677301c43c",
+      "fixture_sha256": "ee65cb6e35b95a068ab50fa45d504809acc579ece469a4496510444049c3f1a2",
+      "source_at_execution": "248f5636ec2f194963614bb55c8d71f62b225664",
+      "path_restricted": true,
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "process_exit": 0,
+      "module_audits": [],
+      "remaining_owned_children": [],
+      "trace_events": [],
+      "before_verification": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4467,
+              4720
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2139,
+            "total_ms": 11326
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1450,
+            "requests_ms": [
+              794,
+              814
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 1940,
+            "total_ms": 3549
           }
         },
         "state": "active"
@@ -354,6 +411,203 @@
             "runtime_gpu_buffer_mib": 1287.93,
             "startup_ms": 1946,
             "total_ms": 3632
+          }
+        },
+        "state": "active"
+      }
+    },
+    {
+      "phase": "enable",
+      "passed": true,
+      "checks": [
+        "Settings rechecked the normal-key signed public catalog before testing",
+        "Normal local CPU/GPU fact, offload and speed gate enabled the signed component"
+      ],
+      "enabled": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4467,
+              4720
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2139,
+            "total_ms": 11326
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1450,
+            "requests_ms": [
+              794,
+              814
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 1940,
+            "total_ms": 3549
+          }
+        },
+        "state": "active"
+      },
+      "name": "enable-02",
+      "raw_sha256": "0d4d3b4308c321da22246af07e1f56a927b4633cbf14a650eba6a08710a96ac4",
+      "identity_sha256": "15676f1328ebd3acea76754c9441bdd2fe2634fa316c18124953220941c36b45",
+      "app_sha256": "c441dfa4cf5dc6f8998bbdd92d16a9635f538171bb95aab1e68f25677301c43c",
+      "fixture_sha256": "ee65cb6e35b95a068ab50fa45d504809acc579ece469a4496510444049c3f1a2",
+      "source_at_execution": "248f5636ec2f194963614bb55c8d71f62b225664",
+      "path_restricted": true,
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "process_exit": 0,
+      "module_audits": [
+        {
+          "pid": 25992,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 17624,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        }
+      ],
+      "remaining_owned_children": [],
+      "trace_events": [
+        {
+          "at": "2026-10-26T21:06:49.663288700+00:00",
+          "elapsed_ms": 0,
+          "job": "7d913f22-8050-4c89-a7da-3f9facfe54d5",
+          "metrics": {},
+          "phase": "started",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:06:49.671328900+00:00",
+          "elapsed_ms": 8,
+          "job": "7d913f22-8050-4c89-a7da-3f9facfe54d5",
+          "metrics": {
+            "cursor": 13,
+            "selected": 13
+          },
+          "phase": "retrieval",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:06:52.268457700+00:00",
+          "elapsed_ms": 2605,
+          "job": "7d913f22-8050-4c89-a7da-3f9facfe54d5",
+          "metrics": {
+            "backend": "cpu",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 2595
+          },
+          "phase": "worker",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:07:15.832760300+00:00",
+          "elapsed_ms": 26169,
+          "job": "7d913f22-8050-4c89-a7da-3f9facfe54d5",
+          "metrics": {
+            "attempt": 1,
+            "completed": true,
+            "first_token_ms": 11560,
+            "request_ms": 23557,
+            "usage": {
+              "cached_tokens": 0,
+              "decode_ms": 11997.456,
+              "input_tokens": 522,
+              "output_tokens": 125,
+              "prefill_ms": 11556.066
+            }
+          },
+          "phase": "generation",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:07:15.976027600+00:00",
+          "elapsed_ms": 26312,
+          "job": "7d913f22-8050-4c89-a7da-3f9facfe54d5",
+          "metrics": {
+            "committed": true,
+            "items": 1
+          },
+          "phase": "finished",
+          "schema": 1,
+          "task": "minutes"
+        }
+      ],
+      "before_verification": {
+        "component_id": null,
+        "reason": null,
+        "report": null,
+        "state": ""
+      },
+      "after_verification": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4467,
+              4720
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2139,
+            "total_ms": 11326
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1450,
+            "requests_ms": [
+              794,
+              814
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 1940,
+            "total_ms": 3549
           }
         },
         "state": "active"
@@ -1724,6 +1978,200 @@
         },
         "state": "active"
       }
+    },
+    {
+      "phase": "restart",
+      "passed": true,
+      "checks": [
+        "Generation covered immutable fictional transcript with exact citations; runner separately audits effective backend"
+      ],
+      "generation": {
+        "cursor": 3,
+        "meeting": "532680a8-3bee-44cc-a703-d4227193c011",
+        "runtime": {
+          "asr_rtf": 0,
+          "diarization_busy": false,
+          "diarization_meeting_id": null,
+          "diarization_status": "",
+          "elapsed_ms": 0,
+          "error": null,
+          "level": 0,
+          "meeting_id": null,
+          "notes_busy": false,
+          "notes_elapsed_ms": 1850,
+          "notes_status": "文档已同步 · 1 个章节",
+          "partial": "",
+          "paused": false,
+          "processed_ms": 0,
+          "recording": false,
+          "transcribing": false,
+          "translation_busy": false,
+          "translation_status": ""
+        },
+        "sections": 1
+      },
+      "name": "restart-04",
+      "raw_sha256": "e58bb51b3e578867cc595603cc31ed040047e46fb00148d6cd763e4e9ac7b094",
+      "identity_sha256": "4480a2c7926806456c876312f586fdba43f18880dbab847c12d01be1dfb5a533",
+      "app_sha256": "c441dfa4cf5dc6f8998bbdd92d16a9635f538171bb95aab1e68f25677301c43c",
+      "fixture_sha256": "ee65cb6e35b95a068ab50fa45d504809acc579ece469a4496510444049c3f1a2",
+      "source_at_execution": "248f5636ec2f194963614bb55c8d71f62b225664",
+      "path_restricted": true,
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "process_exit": 0,
+      "module_audits": [
+        {
+          "pid": 18168,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        }
+      ],
+      "remaining_owned_children": [],
+      "trace_events": [
+        {
+          "at": "2026-10-26T21:08:41.974093700+00:00",
+          "elapsed_ms": 0,
+          "job": "397e69c4-9f05-43b1-a0bf-54b5cbf4dad2",
+          "metrics": {},
+          "phase": "started",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:08:41.982204600+00:00",
+          "elapsed_ms": 8,
+          "job": "397e69c4-9f05-43b1-a0bf-54b5cbf4dad2",
+          "metrics": {
+            "cursor": 3,
+            "selected": 3
+          },
+          "phase": "retrieval",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:08:49.614391900+00:00",
+          "elapsed_ms": 7640,
+          "job": "397e69c4-9f05-43b1-a0bf-54b5cbf4dad2",
+          "metrics": {
+            "backend": "cuda",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 1746
+          },
+          "phase": "worker",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:08:51.585515400+00:00",
+          "elapsed_ms": 9611,
+          "job": "397e69c4-9f05-43b1-a0bf-54b5cbf4dad2",
+          "metrics": {
+            "attempt": 1,
+            "completed": true,
+            "first_token_ms": 939,
+            "request_ms": 1958,
+            "usage": {
+              "cached_tokens": 0,
+              "decode_ms": 1019.029,
+              "input_tokens": 289,
+              "output_tokens": 72,
+              "prefill_ms": 936.087
+            }
+          },
+          "phase": "generation",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:08:51.721261500+00:00",
+          "elapsed_ms": 9747,
+          "job": "397e69c4-9f05-43b1-a0bf-54b5cbf4dad2",
+          "metrics": {
+            "committed": true,
+            "items": 1
+          },
+          "phase": "finished",
+          "schema": 1,
+          "task": "minutes"
+        }
+      ],
+      "before_verification": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4467,
+              4720
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2139,
+            "total_ms": 11326
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1450,
+            "requests_ms": [
+              794,
+              814
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 1940,
+            "total_ms": 3549
+          }
+        },
+        "state": "active"
+      },
+      "after_verification": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4467,
+              4720
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2139,
+            "total_ms": 11326
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1450,
+            "requests_ms": [
+              794,
+              814
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 1940,
+            "total_ms": 3549
+          }
+        },
+        "state": "active"
+      }
     }
   ],
   "cli_stages": [
@@ -1864,6 +2312,341 @@
       "raw_sha256": "cbfb0ea9d743aa406ee73225193ac4024b54c67d021a5727a208de9b6798d7e9",
       "cli_command": "generate",
       "exit_code": 0
+    },
+    {
+      "mode": "cpu",
+      "passed": true,
+      "errors": [],
+      "source": "248f5636ec2f194963614bb55c8d71f62b225664",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "8dc7e8ec2b80b0497ae8bdff2cbcadb7bd44f129",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "9e39e24cb010ca352e3307bc3b8d373cdf4ed79edff129bb3ff5569b44a851ea",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "8d0db862b7e41be924469f24428487a11d2d70873a52ed9df07e5e8d2c465d72",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "8eee42796df2e71d74b6b64e6d80ccda1b7f3a0b8c59accfb8ffd72d6607eab8",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "248f5636ec2f194963614bb55c8d71f62b225664",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "worker_backends": [
+        "cpu"
+      ],
+      "killed_owned_gpu_pid": null,
+      "module_audits": [],
+      "remaining_owned_children": [],
+      "trace_events": [
+        {
+          "at": "2026-10-26T21:10:14.821793100+00:00",
+          "elapsed_ms": 0,
+          "job": "a472f421-d52e-47e8-b525-48e1ad47a88c",
+          "metrics": {},
+          "phase": "started",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:10:15.206937500+00:00",
+          "elapsed_ms": 385,
+          "job": "a472f421-d52e-47e8-b525-48e1ad47a88c",
+          "metrics": {
+            "cursor": 3,
+            "selected": 3
+          },
+          "phase": "retrieval",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:10:17.988174400+00:00",
+          "elapsed_ms": 3166,
+          "job": "a472f421-d52e-47e8-b525-48e1ad47a88c",
+          "metrics": {
+            "backend": "cpu",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 2344
+          },
+          "phase": "worker",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:10:31.459647100+00:00",
+          "elapsed_ms": 16637,
+          "job": "a472f421-d52e-47e8-b525-48e1ad47a88c",
+          "metrics": {
+            "attempt": 1,
+            "completed": true,
+            "first_token_ms": 6504,
+            "request_ms": 13459,
+            "usage": {
+              "cached_tokens": 0,
+              "decode_ms": 6955.254,
+              "input_tokens": 289,
+              "output_tokens": 73,
+              "prefill_ms": 6500.204
+            }
+          },
+          "phase": "generation",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T21:10:31.602284300+00:00",
+          "elapsed_ms": 16780,
+          "job": "a472f421-d52e-47e8-b525-48e1ad47a88c",
+          "metrics": {
+            "committed": true,
+            "items": 1
+          },
+          "phase": "finished",
+          "schema": 1,
+          "task": "minutes"
+        }
+      ],
+      "snapshot_at_stop": {
+        "cursor": 3,
+        "sections": 1,
+        "segments": 3,
+        "translations": 0,
+        "runtime": {
+          "asr_rtf": 0.0,
+          "diarization_busy": false,
+          "diarization_meeting_id": null,
+          "diarization_status": "",
+          "elapsed_ms": 0,
+          "error": null,
+          "level": 0.0,
+          "meeting_id": null,
+          "notes_busy": false,
+          "notes_elapsed_ms": 13111,
+          "notes_status": "文档已同步 · 1 个章节",
+          "partial": "",
+          "paused": false,
+          "processed_ms": 0,
+          "recording": false,
+          "transcribing": false,
+          "translation_busy": false,
+          "translation_status": ""
+        }
+      },
+      "name": "cli-cpu-02",
+      "raw_sha256": "9d1fb8db8a0e3b423854f643338be76f452ce49a241dd5b7fa8bf86b9f82302d",
+      "cli_command": "generate",
+      "exit_code": 0
+    },
+    {
+      "mode": "fault",
+      "passed": true,
+      "errors": [],
+      "source": "b607903422f98fbaf40c68e35e56648b8a1dfda3",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "1b4e3af275fae1c8fb18087ecc6135e60a423b0f",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "54c782d1caca605a1de5156d3a2a1378de2c9e79a17dc30f2284131cb65a6f01",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "fd7a420dfaca6d63af54ad8f013252dc95a8e51fa26be1190c0b6f829b980202",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "5369cf755c23646fb89717476659bbf4aeba0b2c2a91d842d8cb143e9527c2d6",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "b607903422f98fbaf40c68e35e56648b8a1dfda3",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "worker_backends": [
+        "cuda",
+        "cpu"
+      ],
+      "killed_owned_gpu_pid": 6576,
+      "module_audits": [
+        {
+          "pid": 6576,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        }
+      ],
+      "remaining_owned_children": [],
+      "trace_events": [
+        {
+          "at": "2026-10-26T20:50:48.289274600+00:00",
+          "elapsed_ms": 0,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {},
+          "phase": "started",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:50:48.740275100+00:00",
+          "elapsed_ms": 451,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "cursor": 3,
+            "selected": 3
+          },
+          "phase": "retrieval",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:50:57.908243900+00:00",
+          "elapsed_ms": 9618,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "backend": "cuda",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 1945
+          },
+          "phase": "worker",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:50:58.429950100+00:00",
+          "elapsed_ms": 10140,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "attempt": 1,
+            "completed": false,
+            "first_token_ms": null,
+            "request_ms": 509,
+            "usage": {
+              "cached_tokens": null,
+              "decode_ms": null,
+              "input_tokens": null,
+              "output_tokens": null,
+              "prefill_ms": null
+            }
+          },
+          "phase": "generation",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:51:01.247616500+00:00",
+          "elapsed_ms": 12958,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "backend": "cpu",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 2144
+          },
+          "phase": "worker",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:51:16.054766200+00:00",
+          "elapsed_ms": 27765,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "attempt": 1,
+            "completed": true,
+            "first_token_ms": 7884,
+            "request_ms": 14794,
+            "usage": {
+              "cached_tokens": 0,
+              "decode_ms": 6910.025,
+              "input_tokens": 289,
+              "output_tokens": 73,
+              "prefill_ms": 7881.337
+            }
+          },
+          "phase": "generation",
+          "schema": 1,
+          "task": "minutes"
+        },
+        {
+          "at": "2026-10-26T20:51:16.213835500+00:00",
+          "elapsed_ms": 27924,
+          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
+          "metrics": {
+            "committed": true,
+            "items": 1
+          },
+          "phase": "finished",
+          "schema": 1,
+          "task": "minutes"
+        }
+      ],
+      "snapshot_at_stop": {
+        "cursor": 3,
+        "sections": 1,
+        "segments": 3,
+        "translations": 0,
+        "runtime": {
+          "asr_rtf": 0.0,
+          "diarization_busy": false,
+          "diarization_meeting_id": null,
+          "diarization_status": "",
+          "elapsed_ms": 0,
+          "error": null,
+          "level": 0.0,
+          "meeting_id": null,
+          "notes_busy": false,
+          "notes_elapsed_ms": 14465,
+          "notes_status": "文档已同步 · 1 个章节",
+          "partial": "",
+          "paused": false,
+          "processed_ms": 0,
+          "recording": false,
+          "transcribing": false,
+          "translation_busy": false,
+          "translation_status": ""
+        }
+      },
+      "name": "cli-fault-01",
+      "raw_sha256": "3075a940dd8b3e647bc6d3aa2ee3b6c43326fde8d24d0da84605850d878206c6",
+      "cli_command": "generate",
+      "exit_code": 0,
+      "fault_method": "Held-handle TerminateProcess exit97, after real minutes CUDA readiness; only direct child with private component path and exact known server hash. No scheduler/device-list probe in this CLI command."
     },
     {
       "mode": "replay",
@@ -3590,203 +4373,6 @@
         "capture_wall_overhead_ms": -144
       },
       "pcm_matches_fixture": true
-    },
-    {
-      "mode": "fault",
-      "passed": true,
-      "errors": [],
-      "source": "b607903422f98fbaf40c68e35e56648b8a1dfda3",
-      "environment": {
-        "cli_build": {
-          "profile": "debug",
-          "revision_at_compile": "1b4e3af275fae1c8fb18087ecc6135e60a423b0f",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "schema": 1,
-          "source_sha256": "54c782d1caca605a1de5156d3a2a1378de2c9e79a17dc30f2284131cb65a6f01",
-          "target": "x86_64-pc-windows-msvc"
-        },
-        "core_and_harness_source_sha256": "fd7a420dfaca6d63af54ad8f013252dc95a8e51fa26be1190c0b6f829b980202",
-        "inference_source_tree_dirty": false,
-        "platform": "Windows-10-10.0.19045-SP0",
-        "machine": "AMD64",
-        "python": "3.12.14",
-        "cli_sha256": "5369cf755c23646fb89717476659bbf4aeba0b2c2a91d842d8cb143e9527c2d6",
-        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
-        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
-        "suite_revision": "b607903422f98fbaf40c68e35e56648b8a1dfda3",
-        "corpus": "public or fictional only",
-        "network_during_evaluation": "disabled optional services; inference uses local processes"
-      },
-      "removed_overrides": [
-        "CUDA_PATH",
-        "CUDA_PATH_V11_5"
-      ],
-      "path_restricted": true,
-      "worker_backends": [
-        "cuda",
-        "cpu"
-      ],
-      "killed_owned_gpu_pid": 6576,
-      "module_audits": [
-        {
-          "pid": 6576,
-          "modules": [
-            {
-              "name": "cublas64_12.dll",
-              "source": "component"
-            },
-            {
-              "name": "cublaslt64_12.dll",
-              "source": "component"
-            },
-            {
-              "name": "cudart64_12.dll",
-              "source": "component"
-            },
-            {
-              "name": "nvcuda.dll",
-              "source": "system_driver"
-            }
-          ]
-        }
-      ],
-      "remaining_owned_children": [],
-      "trace_events": [
-        {
-          "at": "2026-10-26T20:50:48.289274600+00:00",
-          "elapsed_ms": 0,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {},
-          "phase": "started",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:50:48.740275100+00:00",
-          "elapsed_ms": 451,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "cursor": 3,
-            "selected": 3
-          },
-          "phase": "retrieval",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:50:57.908243900+00:00",
-          "elapsed_ms": 9618,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "backend": "cuda",
-            "budget_mib": 4096,
-            "reused": false,
-            "startup_ms": 1945
-          },
-          "phase": "worker",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:50:58.429950100+00:00",
-          "elapsed_ms": 10140,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "attempt": 1,
-            "completed": false,
-            "first_token_ms": null,
-            "request_ms": 509,
-            "usage": {
-              "cached_tokens": null,
-              "decode_ms": null,
-              "input_tokens": null,
-              "output_tokens": null,
-              "prefill_ms": null
-            }
-          },
-          "phase": "generation",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:51:01.247616500+00:00",
-          "elapsed_ms": 12958,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "backend": "cpu",
-            "budget_mib": 4096,
-            "reused": false,
-            "startup_ms": 2144
-          },
-          "phase": "worker",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:51:16.054766200+00:00",
-          "elapsed_ms": 27765,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "attempt": 1,
-            "completed": true,
-            "first_token_ms": 7884,
-            "request_ms": 14794,
-            "usage": {
-              "cached_tokens": 0,
-              "decode_ms": 6910.025,
-              "input_tokens": 289,
-              "output_tokens": 73,
-              "prefill_ms": 7881.337
-            }
-          },
-          "phase": "generation",
-          "schema": 1,
-          "task": "minutes"
-        },
-        {
-          "at": "2026-10-26T20:51:16.213835500+00:00",
-          "elapsed_ms": 27924,
-          "job": "60d38d3c-588c-479b-8008-d593ab1d5ab5",
-          "metrics": {
-            "committed": true,
-            "items": 1
-          },
-          "phase": "finished",
-          "schema": 1,
-          "task": "minutes"
-        }
-      ],
-      "snapshot_at_stop": {
-        "cursor": 3,
-        "sections": 1,
-        "segments": 3,
-        "translations": 0,
-        "runtime": {
-          "asr_rtf": 0.0,
-          "diarization_busy": false,
-          "diarization_meeting_id": null,
-          "diarization_status": "",
-          "elapsed_ms": 0,
-          "error": null,
-          "level": 0.0,
-          "meeting_id": null,
-          "notes_busy": false,
-          "notes_elapsed_ms": 14465,
-          "notes_status": "文档已同步 · 1 个章节",
-          "partial": "",
-          "paused": false,
-          "processed_ms": 0,
-          "recording": false,
-          "transcribing": false,
-          "translation_busy": false,
-          "translation_status": ""
-        }
-      },
-      "name": "cli-fault-01",
-      "raw_sha256": "3075a940dd8b3e647bc6d3aa2ee3b6c43326fde8d24d0da84605850d878206c6",
-      "cli_command": "generate",
-      "exit_code": 0,
-      "fault_method": "Held-handle TerminateProcess exit97, after real minutes CUDA readiness; only direct child with private component path and exact known server hash. No scheduler/device-list probe in this CLI command."
     }
   ],
   "memory_pressure_attempt": {
@@ -3809,6 +4395,98 @@
     },
     "context_destroyed": true
   },
+  "short_capture_lock_order": {
+    "schema": 1,
+    "passed": true,
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "8dc7e8ec2b80b0497ae8bdff2cbcadb7bd44f129",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "9e39e24cb010ca352e3307bc3b8d373cdf4ed79edff129bb3ff5569b44a851ea",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "8d0db862b7e41be924469f24428487a11d2d70873a52ed9df07e5e8d2c465d72",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "8eee42796df2e71d74b6b64e6d80ccda1b7f3a0b8c59accfb8ffd72d6607eab8",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "248f5636ec2f194963614bb55c8d71f62b225664",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "kind": "short_real_capture_start_lock_order_smoke",
+    "method": "Two-second fictional paced replay through actual start_capture, ASR and PCM writer; no microphone or model generation",
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_restricted": true,
+    "seconds": 2,
+    "expected_pcm_sha256": "3530fb16a118f635e1735057f084a2bf5ae040f555b569b3d5cfd49572f6e826",
+    "errors": [],
+    "pcm_sha256": "3530fb16a118f635e1735057f084a2bf5ae040f555b569b3d5cfd49572f6e826",
+    "samples": 32000,
+    "final_runtime": {
+      "recording": false,
+      "transcribing": false,
+      "elapsed_ms": 2000,
+      "processed_ms": 2000,
+      "error": null
+    },
+    "telemetry_sha256": "939bd97759f69cb7d84aa6d3d58e8140e4c2fb29d2f191883cdd41035f3bcb07",
+    "process": {
+      "command": [
+        "D:\\omascribe\\target\\debug\\omascribe-cli.exe",
+        "replay",
+        "D:\\omascribe\\artifacts\\windows-cpu-contention-release-20261027\\paced-synthetic-loop.wav",
+        "2",
+        "--telemetry",
+        "D:\\omascribe\\artifacts\\windows-capture-lock-smoke\\telemetry.jsonl"
+      ],
+      "code": 0,
+      "seconds": 2.281,
+      "failure": null,
+      "resources": {
+        "schema": 1,
+        "method": "unavailable: psutil not installed",
+        "psutil_version": null,
+        "interval_seconds": 0.25,
+        "samples": 0,
+        "processes_seen": 0,
+        "cpu_seconds_sampled": null,
+        "peak_tree_rss_mib": null,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "sample_errors": 0,
+        "sampler_stopped": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      }
+    }
+  },
+  "current_checks": {
+    "core_passed": 106,
+    "core_opt_in_ignored": 5,
+    "python_passed": 62,
+    "default_app_and_ui_test_all_targets_clippy": "passed",
+    "guarded_native_stages": [
+      "enable-02",
+      "restart-04",
+      "cpu-03"
+    ],
+    "automatic19": "windows-shared116-regression-2026-10-27.json"
+  },
+  "default_cli_path_smoke": {
+    "passed": true,
+    "raw_sha256": "df66e2e47008d57db0fabc9181908e06ae536e55e1658a103af8f6c5a7acf52b",
+    "case": "zh_empty_greetings",
+    "explicit_cli_argument": false
+  },
   "public_candidate": {
     "url": "https://github.com/EazyLee30/omascribe/releases/tag/acceleration-ci-40367160891",
     "normal_embedded_key": true,
@@ -3824,14 +4502,15 @@
     "memory-01 used an unsupported context; memory-02 hit genuine configuration-busy protection; memory-03/04 did not exhaust memory admission. These are not passed negative tests.",
     "memory-05 rejects supported Qwen3-4B/8192 estimated4992MiB against real4GiB device before loading. 4B weights were absent and not downloaded, so this proves admission only.",
     "Owned CUDA fault caused one CUDA attempt then one CPU attempt, removed certificate, completed unchanged fictional source with exact citations and left no owned model child.",
-    "92s CUDA replay retained exact PCM and live translation/minutes, but max startup lag2880ms exceeds existing2500ms gate; overall failed. Tail was not drained on this older checkpoint."
+    "92s CUDA replay retained exact PCM and live translation/minutes, but max startup lag2880ms exceeds existing2500ms gate; overall failed. Tail was not drained on this older checkpoint.",
+    "After configuration guard32bb449: rebuilt native signed-catalog check and Test&enable passed; cold idle restart manually generated actual CUDA minutes with unchanged source/exact citations, then Use CPU passed. A two-second real start_capture/ASR/PCM smoke proves the already-held configuration gate does not reenter and hang."
   ],
   "limits": [
     "Native UI-test binaries are functional QA artifacts, not distributable installers or visual screenshot proof.",
     "Host has an existing CUDA11.5 development toolkit; SDK paths and overrides were excluded, not physically uninstalled.",
     "All transcripts/audio are fictional synthetic inputs; no physical microphone or natural meeting acceptance.",
     "Driver allocation OOM was not triggered. Bounded pressure allocation was released; it did not cause target admission refusal.",
-    "Shared scheduler116469e merged only after these frozen39486ea application measurements. Its new automatic19/native regressions are separate evidence.",
+    "Initial replay/fault evidence is frozen39486ea. The later guarded native stages and short capture use a rebuilt application after32bb449; each actual source/binary identity is retained. Shared scheduler automatic19 is separately frozen301e914.",
     "No stable catalog promotion or standalone Windows release."
   ]
 }

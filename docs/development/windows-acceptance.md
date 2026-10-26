@@ -7,7 +7,7 @@ CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
 
 ## Source and regressions
 
-Windows `301e914` cleanly merges shared PR #1 `116469e`, including opt-in minutes
+Frozen regression checkpoint `301e914` cleanly merges shared PR #1 `116469e`, including opt-in minutes
 catch-up and persisted-take Metal retry scope. Independent Windows fix `39486ea`
 restores GPU status before the first inference job: the certificate survived
 restart, but an empty in-memory status concealed it until inference selected the
@@ -17,10 +17,22 @@ validation. The native query performs blocking validation off the UI thread.
 At `301e914`: core105 passed /5 opt-in ignored, Python62 passed, UI-test all-targets
 clippy passed. Rebuilt native main/companion/transcript windows pass five
 English/simplified/traditional language changes, preserve expansion and show
-hardware without activation. The automatic-scheduler19-case real-model run is
-being collected separately. Earlier clean-source explicit-generation19/19 is
+hardware without activation. The complete automatic-scheduler19-case real-model
+run passed with catch-up explicitly enabled; this does not change its production
+default. Exact source/binary/model hashes, all19 cases and native-window results:
+[shared116 regression](../evaluation/windows-shared116-regression-2026-10-27.json).
+Earlier clean-source explicit-generation19/19 is
 retained in [candidate integration](../evaluation/windows-candidate-integration-2026-10-27.json);
-it does not establish the new scheduling path's result.
+retained separately from that new scheduling-path result.
+
+Subsequent `32bb449` serializes first status restoration with configuration
+decisions and rechecks state inside the gate. A controlled interleaving regression
+covers newer testing/disable decisions. Recording startup reads only testing
+state while already holding the gate; catalog queries avoid reverse lock order
+and release the cache-write gate before returning status. Core106/5 ignored and
+both default/UI-test all-targets clippy pass. Rebuilt native signed-catalog check,
+test-enable, cold restart with actual CUDA minutes, Use CPU and short capture
+lock-order smoke pass. Shared docs-only `54daf12` is also merged.
 
 Functional native QA uses the existing `ui-test` startup hook and fixed DOM
 probes. User screenshots are normal; an earlier WGC automation timeout is a
@@ -63,8 +75,10 @@ Exact versions/hashes: [four-way candidate](../evaluation/acceleration-candidate
 
 ## Actual Settings and failure lifecycle
 
-These measurements froze application `39486ea` before the shared scheduler merge.
-App/CLI hashes, metadata traces, module audits and failed attempts are retained
+The initial lifecycle measurements froze application `39486ea` before the shared
+scheduler merge; later enable-02/restart-04/cpu-03 and short capture exercise the
+configuration-guard build after `32bb449`. Each stage keeps its actual app/source
+identity. App/CLI hashes, metadata traces, module audits and failed attempts are retained
 in [signed lifecycle evidence](../evaluation/windows-signed-lifecycle-2026-10-27.json).
 The native fixture is `tests/native-windows-gpu.js`.
 
@@ -115,6 +129,6 @@ DriverAPI12.8 or newer for acceptance, without changing app CUDA12 compatibility
 
 Submit exact source/runtime/toolchain/driver versions, hashes and actual results
 to the unified pipeline. Keep startup backlog, untriggered allocation OOM,
-physical microphone coverage and failed attempts visible. Finish new scheduler
-regressions and the recording gate before release approval. Uploading a Windows
+physical microphone coverage and failed attempts visible. The new scheduler
+regressions passed; finish the recording gate before release approval. Uploading a Windows
 EXE does not activate Settings downloads.
