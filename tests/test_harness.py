@@ -9,6 +9,102 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_model_comparison_counts_rejected_and_failed_work_and_missing_cost(self):
+        from compare_minutes_models import summarize
+        valid = dict(attempt=2, elapsed_ms=2000, usage=dict(prompt_tokens=20, completion_tokens=4))
+        rejected = dict(attempt=1, elapsed_ms=1000, validation_error="fixture", usage=dict(prompt_tokens=10, completion_tokens=3))
+        partial = dict(attempt=1, elapsed_ms=500, failure="incomplete_local_response")
+        report = dict(cases=[dict(passed=True, seconds=4., runs=[dict(generation=dict(attempts=[rejected, valid]),
+                      process=dict(seconds=3.5, resources=dict(cpu_seconds_sampled=2., peak_tree_rss_mib=100.)))]),
+                      dict(passed=False, seconds=1., runs=[dict(generation=dict(attempts=[partial]),
+                      process=dict(seconds=.8, resources={}))])])
+        result = summarize(report)
+        self.assertEqual(result["attempts"], 3)
+        self.assertEqual(result["repairs"], 1)
+        self.assertEqual(result["rejected_attempts"], 2)
+        self.assertEqual(result["attempt_seconds"], 3.5)
+        self.assertEqual(result["case_seconds"], 5.)
+        self.assertEqual(result["process_seconds"], 4.3)
+        self.assertIsNone(result["sampled_cpu_seconds"])
+        self.assertEqual(result["sampled_cpu_known_seconds"], 2.)
+        self.assertEqual(result["commands_missing_cpu"], 1)
+        self.assertIsNone(result["input_tokens"])
+        self.assertEqual(result["passed_cases"], 1)
+
+    def test_model_comparison_refuses_partial_cases_and_different_settings(self):
+        import copy
+        from compare_minutes_models import MODELS, PREFERENCES, validate_pair
+        environment = dict(cli_sha256="same", cli_build=dict(source_sha256="same"), core_and_harness_source_sha256="same")
+        results = [dict(model=model, exit_code=0, report=dict(schema=3, fixture_sha256="same", fixture_cases=["fixture"],
+                   cases=[dict(case="fixture", passed=True)], environment=environment,
+                   preferences={**PREFERENCES, "llm_model": model}, passed=True)) for model in MODELS]
+        validate_pair(results, ["fixture"])
+        for change in [lambda r: r["report"]["cases"].clear(),
+                       lambda r: r["report"]["preferences"].update(threads=4),
+                       lambda r: r["report"]["environment"].update(cli_sha256="other"),
+                       lambda r: r.update(exit_code=3)]:
+            bad = copy.deepcopy(results)
+            # Keep each report's environment independent even in this fixture.
+            bad[1]["report"]["environment"] = copy.deepcopy(environment)
+            change(bad[1])
+            with self.assertRaises(AssertionError):
+                validate_pair(bad, ["fixture"])
+
+    def test_process_tree_resources_are_sampled_or_explicitly_unknown(self):
+        import process_resources
+        from harness_support import command
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            child = "import time; payload=bytearray(12*1024*1024); time.sleep(.8)"
+            program = "import subprocess,sys; subprocess.run([sys.executable,'-c'," + repr(child) + "]); print('{}')"
+            result = command([sys.executable, "-c", program], None, root / "live", timeout=5)
+            self.assertEqual(result, {})
+            report = json.loads((root / "live/process.json").read_text())["resources"]
+            self.assertTrue(report["sampler_stopped"])
+            self.assertIsNone(report["gpu_memory_mib"])
+            if process_resources._psutil is not None:
+                self.assertGreater(report["samples"], 0)
+                self.assertGreaterEqual(report["processes_seen"], 2)
+                self.assertGreater(report["peak_tree_rss_mib"], 0)
+                self.assertGreaterEqual(report["cpu_seconds_sampled"], 0)
+            with patch.object(process_resources, "_psutil", None):
+                unknown = process_resources.ProcessTreeSampler(0).start().finish()
+                self.assertEqual(unknown["samples"], 0)
+                for key in ["cpu_seconds_sampled", "peak_tree_rss_mib", "peak_tree_pss_mib"]:
+                    self.assertIsNone(unknown[key])
+
+    def test_minutes_failure_keeps_its_attempt_and_resource_cost(self):
+        from types import SimpleNamespace
+        from harness_support import read_json, write_json
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            cli = root / "fictional-cli"
+            cli.touch()
+            artifacts = root / "artifacts"
+            case = dict(name="fictional", focus="budget", transcript=["Budget pending"])
+            def invoke(argv, env, directory, timeout=650):
+                if argv[1] == "generate":
+                    directory.mkdir(parents=True)
+                    write_json(directory / "process.json", dict(code=3, seconds=2., failure=None,
+                               resources=dict(cpu_seconds_sampled=.5, peak_tree_rss_mib=20.)))
+                    write_json(artifacts / "workspace/last-generation.json", dict(attempts=[dict(elapsed_ms=1000, validation_error="fixture rejection")]))
+                    raise RuntimeError("fictional process failure")
+                return dict(suggestions=[], segments=[], meeting=dict(notes_cursor=0), runtime=dict(notes_status="failed"))
+            def read(path):
+                return [case] if pathlib.Path(path).name == "document-cases.json" else read_json(path)
+            args = SimpleNamespace(cli=cli, output=root / "report.json", artifacts=artifacts, preferences=None, case=None)
+            with patch.object(evaluate, "command", invoke), patch.object(evaluate, "environment", return_value={}), \
+                 patch.object(evaluate, "read_json", read), patch.object(evaluate, "seed"), patch.object(evaluate, "append", return_value=1), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertFalse(evaluate.evaluate(args))
+            result = read_json(args.output)["cases"][0]
+            self.assertFalse(result["passed"])
+            self.assertEqual(len(result["runs"]), 1)
+            run = result["runs"][0]
+            self.assertEqual(run["status"], "process-failed")
+            self.assertEqual(run["generation"]["attempts"][0]["elapsed_ms"], 1000)
+            self.assertEqual(run["process"]["resources"]["cpu_seconds_sampled"], .5)
+
     def test_lexical_benchmark_refuses_changed_inputs_rankings_or_builds(self):
         import copy
         from benchmark_retrieval import MODES, validate_trial
