@@ -169,6 +169,41 @@ asr = importlib.util.module_from_spec(spec_asr)
 spec_asr.loader.exec_module(asr)
 
 class AsrMetricTests(unittest.TestCase):
+    def test_missing_speech_cannot_disappear_from_quality_or_cost_totals(self):
+        scored = dict(edits=1,reference_units=10,substitutions=1,deletions=0,insertions=0,
+                      wall_seconds=2.,audio_seconds=10.,rtf=.1,
+                      process=dict(resources=dict(cpu_seconds_sampled=.5,peak_tree_rss_mib=50.)))
+        failed = dict(wall_seconds=3.,errors=["worker failed"],process=dict(resources={}))
+        summary=asr.aggregate_cases([scored,failed])
+        self.assertEqual(summary['clips'],2)
+        self.assertEqual(summary['scored_clips'],1)
+        self.assertIsNone(summary['error_rate'])
+        self.assertIsNone(summary['error_rate_interval_95'])
+        self.assertEqual(summary['wall_seconds'],5.)
+        self.assertIsNone(summary['audio_seconds'])
+        self.assertIsNone(summary['process_tree_cpu_seconds_sampled'])
+        self.assertEqual(summary['process_tree_cpu_known_seconds'],.5)
+        self.assertEqual(summary['missing_cpu_clips'],1)
+        self.assertEqual(summary['peak_process_tree_rss_mib'],50.)
+        self.assertTrue(asr.regression({'missing/model':{'error_rate':.1}}, {}, .02))
+        self.assertTrue(asr.regression({'m/zh':{'error_rate':.1}}, {'m/zh':{'error_rate':None}}, .02))
+
+    def test_asr_assets_are_pinned_and_worker_identity_is_part_of_evidence(self):
+        from harness_support import sha256
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); model=root/'model-store/fixture';model.mkdir(parents=True)
+            weights=model/'encoder.onnx';weights.write_bytes(b'fictional-weight')
+            worker=root/('omascribe-asr.exe' if sys.platform=='win32' else 'omascribe-asr');worker.write_bytes(b'fixture-worker')
+            spec=dict(id='fixture',kind='asr',bundled=False,files=[dict(name=weights.name,bytes=weights.stat().st_size,sha256=sha256(weights))])
+            with patch.object(asr,'read_json',return_value={'models':[spec]}):
+                first=asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)})
+                self.assertEqual(first['worker']['sha256'],sha256(worker))
+                worker.write_bytes(b'changed-worker')
+                self.assertNotEqual(first,asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)}))
+                weights.write_bytes(b'tamper')
+                with self.assertRaisesRegex(ValueError,'pinned catalog'):
+                    asr.asset_identity(root/'cli',root,'fixture',{'OMASCRIBE_RUNTIME_DIR':str(root)})
+
     def test_offline_scorer_reports_mer_and_refuses_incompatible_baseline(self):
         from harness_support import sha256
         with tempfile.TemporaryDirectory() as folder:
@@ -185,11 +220,14 @@ class AsrMetricTests(unittest.TestCase):
             def run(output,baseline=None):
                 args=['evaluate_asr','--fixtures',str(corpus),'--output',str(output),'--models','fictional']
                 if baseline:args+=['--baseline',str(baseline)]
-                with patch('sys.argv',args), patch.object(asr,'command',side_effect=response), patch.object(asr,'environment',return_value={'kind':'fictional-scorer-unit'}), patch.object(asr,'isolated_env',return_value={}), contextlib.redirect_stdout(io.StringIO()):
+                with patch('sys.argv',args), patch.object(asr,'command',side_effect=response), patch.object(asr,'environment',return_value={'kind':'fictional-scorer-unit'}), patch.object(asr,'isolated_env',return_value={}), patch.object(asr,'asset_identity',return_value={'kind':'fictional-scorer-unit'}), contextlib.redirect_stdout(io.StringIO()):
                     with self.assertRaises(SystemExit) as exit_state:asr.main()
                 return exit_state.exception.code,json.loads(output.read_text())
             code,report=run(root/'first.json')
             self.assertEqual(code,0);self.assertTrue(report['passed'])
+            self.assertFalse((corpus/'silence.wav').exists())
+            self.assertFalse((corpus/'quiet-noise.wav').exists())
+            self.assertEqual(report['cases'][0]['audio_sha256'],sha256(audio))
             self.assertEqual(report['cases'][0]['metric'],'MER')
             self.assertEqual(report['aggregates']['fictional/mixed']['error_rate'],0)
             self.assertIsNone(report['aggregates']['fictional/mixed']['gpu_memory_mib'])
