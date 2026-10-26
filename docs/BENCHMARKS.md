@@ -76,3 +76,16 @@ The real Tauri/WebKit flow passed 11 checks, including two separate finished rec
 The Rust suite includes 12 tests: SSE completion/truncation/error handling, source/uncertainty validation, transactional cancellation, legacy recording recovery, sample-exact append and WAV export across chunk boundaries. The two Python harness unit tests also pass.
 
 A separate public-speech regression imported the same sherpa example into two takes, restarting the app between them. All 321,700 samples (20.106 seconds) were retained; the first WAV and a saved transcript correction were unchanged. New segment IDs and timestamps continued monotonically. A full retranscription also respected the take boundary and left both WAVs unchanged. This verifies data integrity, not recognition accuracy. [Machine-readable result](validation/multitake-v0.1.1.json).
+
+## CPU writing-model comparison (2026-10-26)
+
+Apple M5, macOS 27.0.1 arm64, Rust 1.99 debug CLI; Qwen3 Q4_K_M, one CPU thread, 2,048 context and 4,096 MiB process ceiling. Both models ran the same 18 fictional minutes cases twice, reversing model order. Inputs include phased corrections, exact citations, owner/deadline/negation checks, output language and protected human paragraphs. Every model/CLI/runtime digest was verified, including revalidation after the comparison. [Machine-readable summary](evaluation/minutes-models-2026-10-26.json) binds the complete local raw report by SHA-256.
+
+| Model | Passed cases per trial | All-case time per trial | Sampled CPU per trial | Peak summed tree RSS |
+| --- | --- | --- | --- | --- |
+| 1.7B | 18 / 18, both trials | 243.9 / 245.8 s | 230.3 / 232.8 s | 2,526.8 / 2,526.5 MiB |
+| 0.6B | 16 / 18, both trials | 118.0 / 118.8 s | 106.1 / 108.0 s | 1,173.3 / 1,173.4 MiB |
+
+All failed/repaired work is included. The 1.7B arm made 21 attempts with one rejected draft/repair per trial. The 0.6B arm made 26 attempts with eight rejected drafts and four repairs per trial. In `bilingual_scope` and `zh_minutes_from_en`, 0.6B repeatedly emitted English despite the Chinese output request. The validator rejected those drafts and left sources pending; no wrong-language document was accepted. The quality gate therefore keeps the 1.7B default. These results do not establish that 0.6B can replace it or that a cross-model escalation policy works.
+
+Case time includes CLI/workspace work and all requests; model downloads and asset hashing are outside the measured case loop. Each generation command opens a CLI, so this does not measure a continuously warm meeting worker. CPU is a 250-ms sampled lower bound; summed RSS may double-count shared pages. PSS, GPU memory and energy were unavailable. The corpus predates the additional Windows name fixture in PR #2; integrated validation must rerun the current full corpus. Pattern/coverage/citation checks are targeted regressions, not general semantic accuracy, ASR speed or a release/battery benchmark.
