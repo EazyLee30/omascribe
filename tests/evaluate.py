@@ -95,7 +95,7 @@ def evaluate(args):
                 cursor = -1
                 for batch in range(seq+1):
                     generation = folder / f"phase-{number}" / f"batch-{batch+1}"
-                    diagnostic_names = ["last-generation.json", "last-writer-resource.json", "llm-runtime.log"]
+                    diagnostic_names = ["last-generation.json", "last-writer-resource.json", "last-metal-fallback.json", "llm-runtime.log"]
                     for name in diagnostic_names: (root / name).unlink(missing_ok=True)
                     snapshot = None
                     try:
