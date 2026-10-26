@@ -5,3 +5,5 @@ tests/fixtures/component-signature/payload -text
 *.css text eol=lf
 *.mjs text eol=lf
 *.rs text eol=lf
+*.html text eol=lf
+*.md text eol=lf

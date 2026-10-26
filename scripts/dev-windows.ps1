@@ -17,7 +17,7 @@ try {
     if ($LASTEXITCODE) { throw 'Frontend dependency installation failed.' }
     & npm.cmd run build
     if ($LASTEXITCODE) { throw 'Frontend build failed.' }
-    & npx.cmd tauri icon assets/icon.svg
+    & npx.cmd tauri icon src/assets/icon.svg
     if ($LASTEXITCODE) { throw 'Native icon preparation failed.' }
     # Separate single-instance identity and disposable data, even with a normal
     # OmaScribe installation running. Assets are reused read-only when present.
