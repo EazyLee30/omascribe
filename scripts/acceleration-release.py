@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exact-source candidate publication; no key material, SDKs or app installers here."""
 import argparse
+import base64
 import hashlib
 import importlib.util
 import json
@@ -8,6 +9,7 @@ import os
 import pathlib
 import re
 import subprocess
+import threading
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPOSITORY = "EazyLee30/omascribe"
@@ -70,8 +72,9 @@ def native_fingerprint(read):
     """Compiled inputs, runner matrix and exact SDK/build/package commands.
 
     Delivery orchestration and newly added acceptance tests are outside the
-    native compiler inputs. Both recognized checkout forms bind the checked
-    source through either the event's ancestor base or prepare's exact head.
+    native compiler inputs. Original job checkout commits are verified from
+    immutable logs; prepared checkouts bind the new exact source. Only workflow
+    parsing normalizes CRLF; stored compiler inputs and signed bytes stay exact.
     """
     workflow = read(".github/workflows/acceleration-components.yml").decode().replace("\r\n", "\n")
     build = workflow.split("  build:\n", 1)[1].split("  catalog:\n", 1)[0]
@@ -102,60 +105,57 @@ def require_windows_core(sha):
     raise ValueError("Current source needs successful Windows-core checks before candidate signing")
 
 
-def checkout_from_log(raw):
-    """Read only checkout's fixed git command, before the following setup step."""
-    lines = [re.sub(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z ", "", line)
-             for line in raw.decode("utf-8-sig").splitlines()]
-    start, end = "##[group]Run actions/checkout@v4", "##[group]Run actions/setup-python@v5"
-    if lines.count(start) != 1 or lines.count(end) != 1 or lines.index(end) <= lines.index(start):
-        raise ValueError("Missing or ambiguous original checkout log")
-    block = lines[lines.index(start):lines.index(end)]
-    commits = [block[n+1] for n, line in enumerate(block[:-1])
-               if re.fullmatch(r'\[command\](?:"[^"\r\n]+git\.exe"|/usr/bin/git) log -1 --format=%H', line)]
-    if len(commits) != 1 or not re.fullmatch(r"[0-9a-f]{40}", commits[0]):
-        raise ValueError("Missing or ambiguous original checkout commit")
-    return commits[0]
+def checkout_sha(prefix):
+    lines = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", prefix.decode("utf-8", errors="replace")).splitlines()
+    for line, following in zip(lines, lines[1:]):
+        if re.search(r'\bgit(?:\.exe)?"?\s+log -1 --format=%H(?:\s|$)', line):
+            match = re.search(r"(?:^|\s)([0-9a-f]{40})\s*$", following)
+            if match:
+                return match[1]
+    raise ValueError("Original job has no recognized exact checkout source")
 
 
-def original_checkouts(run_id, sha, api, read_log=None):
-    """Run PR metadata is mutable. Bind all four actual checkouts to its fixed head."""
-    expected = {f"build ({runner}, {target}, {backend}, {timeout})"
-                for runner, target in [("windows-2022", "windows-x86_64"), ("ubuntu-22.04", "linux-x86_64")]
-                for backend, timeout in [("cuda", 180), ("vulkan", 100)]}
-    jobs = [job for job in api(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
-            if job["name"].startswith("build (")]
-    if len(jobs) != 4 or {job["name"] for job in jobs} != expected:
-        raise ValueError("Original four-way build job evidence is missing or ambiguous")
-    source = api("git/commits/"+sha)
-    tree = source["tree"]["sha"]
-    if source["sha"] != sha or not re.fullmatch(r"[0-9a-f]{40}", tree):
-        raise ValueError("Invalid original source tree")
-    if read_log is None:
-        read_log = lambda job: subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job}/logs"])
-    evidence = {}
-    for job in jobs:
-        if job["status"] != "completed" or job["conclusion"] != "success" or not isinstance(job["id"], int) or job["id"] <= 0:
-            raise ValueError("Original native build job has not succeeded")
-        raw = read_log(job["id"])
-        checkout = checkout_from_log(raw)
-        commit = api("git/commits/"+checkout)
-        if commit["sha"] != checkout or commit["tree"]["sha"] != tree:
-            raise ValueError("Original native checkout differs from the run source tree")
-        base = None
-        if checkout != sha:
-            parents = [parent["sha"] for parent in commit["parents"]]
-            if len(parents) != 2 or parents.count(sha) != 1:
-                raise ValueError("Original checkout is not the source or its unchanged PR merge")
-            base = next(parent for parent in parents if parent != sha)
-            if not re.fullmatch(r"[0-9a-f]{40}", base):
-                raise ValueError("Invalid original merge base")
-            try:
-                subprocess.run(["git", "merge-base", "--is-ancestor", base, sha], check=True)
-            except subprocess.CalledProcessError as error:
-                raise ValueError("Original merge base is not an ancestor of the source") from error
-        evidence[job["name"]] = dict(job_id=job["id"], checkout_sha=checkout, tree_sha=tree,
-                                   original_base_sha=base, log_sha256=hashlib.sha256(raw).hexdigest())
-    return evidence
+def checkout_sha_for_job(job_id):
+    # Only read the bounded checkout prefix, not megabytes of CUDA compilation.
+    # Terminating this local read never cancels the remote Actions job.
+    process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job_id}/logs"],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    expired = threading.Event()
+    def stop():
+        expired.set()
+        try:
+            process.kill()
+        except OSError:
+            pass
+    timer = threading.Timer(30, stop)
+    timer.start()
+    try:
+        prefix = process.stdout.read(128 * 1024)
+    finally:
+        process.stdout.close()
+        if process.poll() is None:
+            process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        timer.cancel()
+    if expired.is_set():
+        raise ValueError("Original checkout log read timed out")
+    return checkout_sha(prefix)
+
+
+def native_file_at(commit, path):
+    exists = subprocess.run(["git", "cat-file", "-e", commit+"^{commit}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if exists.returncode == 0:
+        return subprocess.check_output(["git", "show", f"{commit}:{path}"])
+    # Historical PR merge refs can disappear after newer pushes. Read the
+    # immutable logged commit, never today's refs/pull/N/merge or PR base/head.
+    value = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/contents/{path}?ref={commit}"], text=True))
+    if value.get("encoding") != "base64" or value.get("size", 0) > 1024*1024:
+        raise ValueError("Unsupported historical native input")
+    return base64.b64decode(value["content"])
 
 
 def check_reuse(selected, directory):
@@ -170,11 +170,18 @@ def check_reuse(selected, directory):
     sha = run["head_sha"]
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Invalid original source")
-    checkouts = original_checkouts(run_id, sha, api)
+    jobs = api(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
+    builds = [job for job in jobs if job["name"].startswith("build (")]
+    if len(builds) != 4 or any(job["conclusion"] != "success" for job in builds):
+        raise ValueError("All four original native jobs must pass")
+    checkouts = {checkout_sha_for_job(job["id"]) for job in builds}
+    if len(checkouts) != 1:
+        raise ValueError("Original native jobs checked out different sources")
+    checkout = checkouts.pop()
     def at(commit):
-        return native_fingerprint(lambda path: subprocess.check_output(["git", "show", f"{commit}:{path}"]))
+        return native_fingerprint(lambda path: native_file_at(commit, path))
     fingerprint = at(sha)
-    if at(selected["source_sha"]) != fingerprint:
+    if at(checkout) != fingerprint or at(selected["source_sha"]) != fingerprint:
         raise ValueError("Native compiler/SDK/package inputs changed; cannot reuse old binaries")
     artifacts = api(f"actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
     required = {f"accelerator-{target}-{backend}" for target in packaging.TARGETS for backend in packaging.BACKENDS} | {"acceleration-catalog"}
@@ -183,9 +190,8 @@ def check_reuse(selected, directory):
         raise ValueError("Complete non-expired four-way artifacts and catalog are required")
     directory.mkdir(parents=True, exist_ok=True)
     packaging.write_json(directory / "candidate-build-evidence.json", dict(schema=1,
-        publishing_source_sha=selected["source_sha"], build_source_sha=sha, native_input_sha256=fingerprint,
-        build_run_id=run_id, original_checkouts=checkouts,
-        artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
+        publishing_source_sha=selected["source_sha"], build_source_sha=sha, checkout_source_sha=checkout, native_input_sha256=fingerprint,
+        build_run_id=run_id, artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
 
 
 def require_green_ci(sha):
