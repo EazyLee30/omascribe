@@ -498,7 +498,35 @@ mod tests {
         let output = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../artifacts/benchmarks/acceleration-cpu-gate.json");
         fs::create_dir_all(output.parent().unwrap())?;
-        fs::write(output, serde_json::to_vec_pretty(&report)?)?;
+        fn file_sha(path: &Path) -> Result<String> {
+            let mut input = fs::File::open(path)?;
+            let mut hasher = Sha256::new();
+            let mut buffer = [0u8; 128 * 1024];
+            loop {
+                let n = input.read(&mut buffer)?;
+                if n == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..n]);
+            }
+            Ok(format!("{:x}", hasher.finalize()))
+        }
+        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let git_sha = std::process::Command::new("git")
+            .current_dir(&repo)
+            .args(["rev-parse", "HEAD"])
+            .output()?;
+        let dirty = !std::process::Command::new("git")
+            .current_dir(&repo)
+            .args(["diff", "--quiet", "HEAD", "--", "crates/core"])
+            .status()?
+            .success();
+        let evidence = json!({"schema":1,"kind":"cpu_local_admission","git_sha":String::from_utf8_lossy(&git_sha.stdout).trim(),"core_tracked_changes":dirty,
+            "inference_sources_sha256":hash(&(include_str!("acceleration.rs"),include_str!("inference.rs"),include_str!("inference_worker.rs"),include_str!("components.rs"),include_str!("hardware.rs")))?,
+            "runtime":{"sha256":file_sha(&spec.directory.join(crate::platform::executable("llama-server")))?,"build_info":serde_json::from_slice::<Value>(&fs::read(spec.directory.join("build-info.json"))?)?},
+            "model":{"id":prefs.llm_model,"sha256":file_sha(&engine.model_file(&prefs.llm_model)?)?,"threads":prefs.threads,"context":prefs.context_size,"resource_mode":prefs.resource_mode,"budget_mib":crate::inference::budget_mib(&prefs)},
+            "corpus":"two fixed synthetic English/Chinese fact and negation requests in acceleration::trial", "result":report});
+        fs::write(output, serde_json::to_vec_pretty(&evidence)?)?;
         Ok(())
     }
 }
