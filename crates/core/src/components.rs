@@ -22,6 +22,64 @@ const INDEX_URL: &str =
 const MAX_INDEX: u64 = 512 * 1024;
 const MAX_UNPACKED: u64 = 4 * 1024 * 1024 * 1024;
 
+#[derive(Debug)]
+enum CatalogChannel {
+    Stable,
+    Candidate(String),
+}
+impl CatalogChannel {
+    fn parse(candidate: Option<&str>) -> Result<Self> {
+        match candidate {
+            None => Ok(Self::Stable),
+            Some(version)
+                if ((version.starts_with("acceleration-candidate-")
+                    && version.len() > "acceleration-candidate-".len())
+                    || version.strip_prefix("acceleration-ci-").is_some_and(|run| {
+                        !run.is_empty() && run.bytes().all(|b| b.is_ascii_digit())
+                    }))
+                    && version.len() <= 64
+                    && basename(version) =>
+            {
+                Ok(Self::Candidate(version.into()))
+            }
+            _ => bail!("Invalid acceleration candidate version"),
+        }
+    }
+    fn selected() -> Result<Self> {
+        match std::env::var("OMASCRIBE_ACCELERATION_CANDIDATE_VERSION") {
+            Ok(version) => Self::parse(Some(&version)),
+            Err(std::env::VarError::NotPresent) => Self::parse(None),
+            Err(_) => bail!("Invalid acceleration candidate version"),
+        }
+    }
+    fn url(&self) -> String {
+        match self {
+            Self::Stable => INDEX_URL.into(),
+            Self::Candidate(version) => format!(
+                "https://github.com/EazyLee30/omascribe/releases/download/{version}/index.json"
+            ),
+        }
+    }
+    fn cache(&self, root: &Path) -> PathBuf {
+        match self {
+            Self::Stable => root.join("acceleration-index.json"),
+            Self::Candidate(version) => root
+                .join("acceleration-candidates")
+                .join(version)
+                .join("index.json"),
+        }
+    }
+    fn verify(&self, envelope: &SignedIndex, key: &str) -> Result<Index> {
+        let index = verify_index_with_key(envelope, key)?;
+        if let Self::Candidate(version) = self {
+            if &index.version != version {
+                bail!("Acceleration candidate version mismatch");
+            }
+        }
+        Ok(index)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SignedIndex {
@@ -182,9 +240,16 @@ fn verify_index_with_key(envelope: &SignedIndex, key: &str) -> Result<Index> {
     Ok(index)
 }
 pub fn cached_index(root: &Path) -> Result<(SignedIndex, Index)> {
-    let bytes = read_limited(&root.join("acceleration-index.json"), MAX_INDEX * 2)?;
+    cached_index_for(root, &CatalogChannel::selected()?, &public_key())
+}
+fn cached_index_for(
+    root: &Path,
+    channel: &CatalogChannel,
+    key: &str,
+) -> Result<(SignedIndex, Index)> {
+    let bytes = read_limited(&channel.cache(root), MAX_INDEX * 2)?;
     let envelope: SignedIndex = serde_json::from_slice(&bytes)?;
-    let index = verify_index_with_key(&envelope, &public_key())?;
+    let index = channel.verify(&envelope, key)?;
     Ok((envelope, index))
 }
 fn read_limited(path: &Path, max: u64) -> Result<Vec<u8>> {
@@ -316,11 +381,12 @@ impl Engine {
     /// Explicit user action. Fetches only the signed catalog, never uploads inventory or content.
     pub fn check_acceleration_components(&self) -> Result<CatalogStatus> {
         self.require_model_network()?;
+        let channel = CatalogChannel::selected()?;
         let response = ureq::AgentBuilder::new()
             .timeout_connect(Duration::from_secs(10))
             .timeout_read(Duration::from_secs(20))
             .build()
-            .get(INDEX_URL)
+            .get(&channel.url())
             .call();
         let response = match response {
             Err(ureq::Error::Status(404, _)) => {
@@ -341,10 +407,12 @@ impl Engine {
             bail!("Component catalog too large");
         }
         let envelope: SignedIndex = serde_json::from_slice(&bytes)?;
-        verify_index_with_key(&envelope, &public_key())?;
+        channel.verify(&envelope, &public_key())?;
         let _gate = self.config_lock.lock().unwrap();
         self.require_model_network()?;
-        crate::preferences::atomic_json(&self.root.join("acceleration-index.json"), &envelope)?;
+        let cache = channel.cache(&self.root);
+        fs::create_dir_all(cache.parent().context("Invalid catalog cache")?)?;
+        crate::preferences::atomic_json(&cache, &envelope)?;
         Ok(self.acceleration_components())
     }
     pub fn download_acceleration_component(self: &Arc<Self>, id: &str) -> Result<()> {
@@ -676,6 +744,83 @@ mod tests {
         assert!(validate_index(&index).is_err());
         index.runtime_revision = pinned_revision();
         validate_index(&index)?;
+        Ok(())
+    }
+    #[test]
+    fn candidate_catalog_is_fixed_origin_version_bound_and_separate_from_stable() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let stable = CatalogChannel::parse(None)?;
+        let candidate = CatalogChannel::parse(Some("acceleration-candidate-123"))?;
+        assert!(CatalogChannel::parse(Some("acceleration-ci-40367160891")).is_ok());
+        assert!(CatalogChannel::parse(Some("acceleration-ci-not-a-run")).is_err());
+        assert_eq!(stable.url(), INDEX_URL);
+        assert_eq!(candidate.url(), "https://github.com/EazyLee30/omascribe/releases/download/acceleration-candidate-123/index.json");
+        assert_ne!(stable.cache(root.path()), candidate.cache(root.path()));
+        for value in [
+            "",
+            "acceleration-v1",
+            "acceleration-fixture-1",
+            "acceleration-candidate-",
+            "../escape",
+            "https://example.com/index.json",
+            "acceleration-candidate-../escape",
+            "acceleration-candidate-test?redirect=1",
+        ] {
+            assert!(CatalogChannel::parse(Some(value)).is_err(), "{value}");
+        }
+        let fixture =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/component-signature");
+        let key = fs::read_to_string(fixture.join("public.key"))?;
+        let envelope = SignedIndex {
+            payload: fs::read_to_string(fixture.join("payload"))?,
+            signature: fs::read_to_string(fixture.join("payload.sig"))?,
+        };
+        crate::preferences::atomic_json(&stable.cache(root.path()), &envelope)?;
+        assert!(cached_index_for(root.path(), &stable, &key).is_ok());
+        assert!(
+            cached_index_for(root.path(), &candidate, &key).is_err(),
+            "Never reuse the stable cache for candidate acceptance"
+        );
+        fs::create_dir_all(candidate.cache(root.path()).parent().unwrap())?;
+        crate::preferences::atomic_json(&candidate.cache(root.path()), &envelope)?;
+        assert!(
+            candidate
+                .verify(&envelope, &key)
+                .unwrap_err()
+                .to_string()
+                .contains("version mismatch"),
+            "A genuine signature for another release is insufficient"
+        );
+        assert!(cached_index_for(root.path(), &candidate, &key).is_err());
+        assert!(cached_index_for(root.path(), &stable, &key).is_ok());
+        let fixture =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/candidate-signature");
+        let candidate_key = fs::read_to_string(fixture.join("public.key"))?;
+        let mut candidate_envelope = SignedIndex {
+            payload: fs::read_to_string(fixture.join("payload"))?,
+            signature: fs::read_to_string(fixture.join("payload.sig"))?,
+        };
+        let fixture_channel = CatalogChannel::parse(Some("acceleration-candidate-fixture-1"))?;
+        fs::create_dir_all(fixture_channel.cache(root.path()).parent().unwrap())?;
+        crate::preferences::atomic_json(&fixture_channel.cache(root.path()), &candidate_envelope)?;
+        assert!(cached_index_for(root.path(), &fixture_channel, &candidate_key).is_ok());
+        assert!(
+            cached_index_for(root.path(), &fixture_channel, &public_key()).is_err(),
+            "Test key must never be trusted by the application"
+        );
+        candidate_envelope.payload = candidate_envelope.payload.replace("fixture-1", "fixture-2");
+        assert!(fixture_channel
+            .verify(&candidate_envelope, &candidate_key)
+            .is_err());
+        let mut index = Index {
+            schema: 1,
+            version: "acceleration-candidate-123".into(),
+            runtime_revision: pinned_revision(),
+            components: vec![],
+        };
+        validate_index(&index)?;
+        index.runtime_revision = "untrusted runtime".into();
+        assert!(validate_index(&index).is_err());
         Ok(())
     }
 }
