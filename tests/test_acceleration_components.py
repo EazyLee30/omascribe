@@ -104,6 +104,20 @@ class AccelerationPackagingTests(unittest.TestCase):
                 components.collect_cuda(output,cuda,True)
             self.assertEqual({p.name for p in output.iterdir()}, {'llama-server.exe','cudart64_12.dll','cublas64_12.dll'})
 
+    def test_windows_version_probe_finds_copy_only_sdk_loader_without_packaging_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); sdk=root/'sdk'; output=root/'runtime'
+            loader=sdk/'Lib/VulkanLoader/bin';loader.mkdir(parents=True);output.mkdir()
+            pe=bytearray(128);pe[:2]=b'MZ';pe[60:64]=(64).to_bytes(4,'little');pe[64:70]=b'PE\0\0\x64\x86'
+            (loader/'vulkan-1.dll').write_bytes(pe)  # PE header fixture, never execute.
+            wrong=sdk/'Bin32';wrong.mkdir();pe[68:70]=b'\x4c\x01'
+            (wrong/'vulkan-1.dll').write_bytes(pe)
+            with patch.dict(components.os.environ,dict(VULKAN_SDK=str(sdk))):
+                env=components.runtime_environment(output,'vulkan',True)
+            self.assertIn(str(loader.resolve()),env['PATH'].split(components.os.pathsep))
+            self.assertNotIn(str(wrong.resolve()),env['PATH'].split(components.os.pathsep))
+            self.assertEqual(list(output.iterdir()),[])
+
     def test_bad_release_target_and_backend_rejected(self):
         for version, target, backend in [("../escape", "linux-x86_64", "vulkan"), ("v0.3.4", "linux-x86_64", "cuda"), ("acceleration-test-1", "macos-arm64", "cuda"), ("acceleration-test-1", "linux-x86_64", "unverified")]:
             with self.assertRaises(ValueError):

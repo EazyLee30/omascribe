@@ -506,6 +506,63 @@ mod tests {
         Ok(())
     }
     #[test]
+    #[ignore = "explicit developer GPU trial; never installs or activates a component"]
+    fn live_developer_gpu_model_gate() -> Result<()> {
+        let directory = std::path::PathBuf::from(std::env::var("OMASCRIBE_TEST_GPU_RUNTIME")?)
+            .canonicalize()?;
+        let kind = match std::env::var("OMASCRIBE_TEST_GPU_BACKEND").as_deref() {
+            Ok("vulkan") => Backend::Vulkan,
+            Ok("cuda") | Err(_) => Backend::Cuda,
+            _ => bail!("Use cuda or vulkan for the explicit developer trial"),
+        };
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = engine.preferences.lock().unwrap().clone();
+        let spec = LaunchSpec {
+            backend: kind,
+            directory: directory.clone(),
+            device: Some(
+                if kind == Backend::Cuda {
+                    "CUDA0"
+                } else {
+                    "Vulkan0"
+                }
+                .into(),
+            ),
+            identity: "explicit-developer-trial".into(),
+        };
+        let tested = trial(&engine, &prefs, &spec);
+        let log = fs::read_to_string(engine.root.join("llm-runtime.log")).unwrap_or_default();
+        let output = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../artifacts/benchmarks");
+        fs::create_dir_all(&output)?;
+        fn sha(path: &Path) -> Result<String> {
+            let mut stream = fs::File::open(path)?;
+            let mut digest = Sha256::new();
+            let mut bytes = [0u8; 128 * 1024];
+            loop {
+                let size = stream.read(&mut bytes)?;
+                if size == 0 {
+                    break;
+                }
+                digest.update(&bytes[..size]);
+            }
+            Ok(format!("{:x}", digest.finalize()))
+        }
+        let report = json!({"schema":1,"kind":"explicit_developer_gpu_admission","passed":tested.is_ok() && offloaded(&log),
+            "build":crate::build_identity(),"backend":kind.name(),"runtime_sha256":sha(&directory.join(crate::platform::executable("llama-server")))?,
+            "model_sha256":sha(&engine.model_file(&prefs.llm_model)?)?,"threads":prefs.threads,"context":prefs.context_size,
+            "trial":tested.as_ref().ok(),"error":tested.as_ref().err().map(|e|format!("{e:#}")),"offloaded":offloaded(&log),
+            "limitation":"Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation."});
+        fs::write(
+            output.join("developer-gpu-gate.json"),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        fs::write(output.join("developer-gpu-runtime.log"), log)?;
+        tested?;
+        anyhow::ensure!(report["offloaded"] == true, "GPU offload was not proven");
+        Ok(())
+    }
+    #[test]
     #[ignore = "explicit real local CPU model test; no GPU performance claim"]
     fn live_cpu_model_gate() -> Result<()> {
         let root = tempfile::tempdir()?;

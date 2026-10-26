@@ -153,6 +153,28 @@ def copy_flat(source, destination):
     shutil.copy2(source, destination, follow_symlinks=True)
 
 
+def windows_x64_library(path):
+    with path.open('rb') as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:2] != b'MZ':
+            return False
+        stream.seek(int.from_bytes(header[60:64], 'little'))
+        return stream.read(6) == b'PE\0\0\x64\x86'
+
+
+def runtime_environment(output, backend, windows):
+    env = dict(os.environ, LD_LIBRARY_PATH=str(output.resolve()), PATH=str(output.resolve()) + os.pathsep + os.environ["PATH"])
+    if windows and backend == "vulkan":
+        # A copy-only SDK on a GPU-less CI runner does not install the system
+        # loader. Static Vulkan executables need it even for --version. Use the
+        # SDK's loader for this build-host probe; never add it to the component.
+        sdk = pathlib.Path(os.environ["VULKAN_SDK"])
+        loader_dirs = sorted({str(p.parent.resolve()) for p in sdk.rglob("vulkan-1.dll") if p.is_file() and windows_x64_library(p)})
+        if loader_dirs:
+            env["PATH"] = os.pathsep.join(loader_dirs) + os.pathsep + env["PATH"]
+    return env
+
+
 def dependencies(path, windows):
     command = ["dumpbin", "/dependents", str(path)] if windows else ["readelf", "-d", str(path)]
     text = subprocess.check_output(command, text=True, errors="replace", timeout=30)
@@ -234,6 +256,10 @@ def build(backend, output):
         # static-CRT C++ objects inside one module instead of crossing several
         # server/common/llama DLL boundaries (the shared build crashes on load).
         flags += ["-DBUILD_SHARED_LIBS=OFF", "-DGGML_BACKEND_DL=OFF", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+        if backend == "cuda":
+            # VMM links nvcuda.dll directly. The build runner has no NVIDIA
+            # driver; use runtime allocation instead of importing that driver.
+            flags += ["-DGGML_CUDA_NO_VMM=ON"]
     run("cmake", "-S", source, "-B", cmake, *flags)
     run("cmake", "--build", cmake, "--config", "Release", "--target", "llama-server", "--parallel", "2" if backend == "cuda" else "3")
     output = pathlib.Path(output)
@@ -259,7 +285,7 @@ def build(backend, output):
         for path in output.iterdir():
             if path.name == entrypoint or ".so" in path.name:
                 run("patchelf", "--set-rpath", "$ORIGIN", path)
-    env = dict(os.environ, LD_LIBRARY_PATH=str(output.resolve()), PATH=str(output.resolve()) + os.pathsep + os.environ["PATH"])
+    env = runtime_environment(output, backend, os.name == "nt")
     version = subprocess.check_output([str((output / entrypoint).resolve()), "--version"], stderr=subprocess.STDOUT, env=env, timeout=30, text=True)
     if actual[:7] not in version:
         raise ValueError("Built executable revision mismatch")

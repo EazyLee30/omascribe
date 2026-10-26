@@ -47,8 +47,8 @@ this branch owns Windows acceptance and the reported UI/terminology regressions.
 
 Final local verification after merging Mac commit `9c7c4b4`: Windows desktop and
 static-CRT ASR worker compile; strict clippy passed for all three workspace
-packages (ASR uses its own static-CRT target cache). Core: 94 passed / 4 opt-in
-ignored; ASR: 3 passed; Python: 24 passed. The real
+packages (ASR uses its own static-CRT target cache). Core: 94 passed / 5 opt-in
+ignored; ASR: 3 passed; Python: 29 passed. The real
 CPU admission gate passed both English/Chinese fact-and-negation requests. The
 native three-language UI check passed again against the rebuilt app and worker.
 Two seconds of synthetic silence completed without invented segments in both
@@ -78,13 +78,40 @@ It reuses installed `OmaScribe/native` models/runtime read-only; `-Assets` selec
 another prepared asset folder. `-SkipAsr` reuses an installed worker for UI work.
 The script does not install a GPU toolkit or enable a component.
 
-The proposed `build-windows-vulkan` label compiles only the Windows Vulkan
-component. Its workflow patch is posted in PR #2 for the Mac side to apply:
-the Windows OAuth credential lacks the GitHub `workflow` scope. The targeted
-path cannot assemble or publish a partial catalog. The existing
+The `build-windows-vulkan` label compiles only the Windows Vulkan component.
+Mac commit `12e9441` supplied the shared workflow. The Windows account's workflow
+permission was subsequently restored and the branches were merged using the Mac
+version. This targeted path cannot assemble or publish a partial catalog. The existing
 `build-acceleration-components` label and manual release dispatch retain the full
 matrix and every signing gate. Remove the targeted label after the trial to keep
 ordinary pushes on source checks.
+
+`scripts/build-windows-gpu.ps1 -Backend cuda -CudaToolkit D:\CUDA
+-CudaArchitectures 75-real -LegacyCudaHost` reproduces the current local GTX 1650
+experiment using the installed CUDA 11.5.119 and MSVC 19.44. It builds the pinned
+source statically with FlashAttention off and records a developer-only manifest.
+The explicit legacy-host switch permits an SDK/compiler pairing outside NVIDIA's
+supported host matrix; this is not a formal SDK/component compatibility claim.
+No component is installed or activated. A matching Vulkan SDK can be selected
+with `-Backend vulkan -VulkanSdk <folder>`.
+
+The ignored `live_developer_gpu_model_gate` test accepts
+`OMASCRIBE_TEST_GPU_RUNTIME=<runtime bin folder>` and
+`OMASCRIBE_TEST_GPU_BACKEND=cuda|vulkan`. It runs the production worker's resource
+and bilingual fact/negation gate, requires proven offload, and saves hashes and
+the result in ignored artifacts. Production component signature/activation rules
+are unchanged.
+
+The first targeted static Vulkan CI build compiled successfully, then failed
+`--version` with `0xc0000135` on its GPU-less runner. The build-only probe now
+finds an x64 Vulkan loader in the copy-only SDK; it is not copied to the component.
+Fresh artifact/model validation remains pending.
+
+A diagnostic with one local Microsoft Zira synthesized English sentence still
+misrecognized OmaScribe and NVIDIA, both without terms and with the default 1.5
+hotword score. Uppercasing vocabulary did not resolve it. This narrow failure
+is retained in ignored `artifacts/asr-tts/`; no general speech-accuracy or default
+score promotion is claimed from this synthetic voice.
 
 ## References
 

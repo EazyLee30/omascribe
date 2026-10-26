@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explicit developer CPU/Vulkan model trial; never installs or activates a component.
+"""Explicit developer CPU/GPU model trial; never installs or activates a component.
 
 Only fictional text is submitted to authenticated loopback servers. A driver
 manifest override is process-local and recorded; it is not a system repair.
@@ -42,7 +42,7 @@ def trial(server, model, backend, output, manifest):
         env["VK_ICD_FILENAMES"] = str(manifest.resolve())
     command = [str(server.resolve()), "-m", str(model.resolve()), "--host", "127.0.0.1", "--port", str(port),
                "--api-key", token, "--ctx-size", "2048", "--threads", "2", "--threads-batch", "2", "--parallel", "1",
-               "--n-gpu-layers", "99" if backend == "vulkan" else "0", "--device", "Vulkan0" if backend == "vulkan" else "none",
+               "--n-gpu-layers", "0" if backend == "cpu" else "99", "--device", {"cpu":"none", "vulkan":"Vulkan0", "cuda":"CUDA0"}[backend],
                "--fit", "off", "--batch-size", "128", "--ubatch-size", "128", "--reasoning", "off", "--cache-ram", "0", "--no-webui", "--no-warmup", "--offline", "--log-verbosity", "5"]
     log_path = output.with_suffix(f".{backend}.log")
     started = time.monotonic()
@@ -80,7 +80,7 @@ def trial(server, model, backend, output, manifest):
             log.flush()
             content = log_path.read_text(encoding="utf-8", errors="replace")
             offloads = [int(n) for n in re.findall(r"offloaded (\d+)/\d+ layers to GPU", content)]
-            if backend == "vulkan" and not any(offloads):
+            if backend != "cpu" and not any(offloads):
                 raise ValueError("GPU offload was not proven")
             return dict(passed=all(r["correct"] for r in runs), backend=backend, server_sha256=sha256(server), startup_ms=startup_ms, runs=runs,
                         total_ms=round((time.monotonic()-started)*1000), offloaded_layers=max(offloads, default=0),
@@ -99,6 +99,7 @@ def main():
     for name in ["cpu-server", "gpu-server", "model", "cli", "output"]:
         parser.add_argument("--"+name, type=Path, required=True)
     parser.add_argument("--vulkan-manifest", type=Path)
+    parser.add_argument("--backend", choices=["cuda", "vulkan"], default="vulkan")
     args = parser.parse_args()
     if args.output.exists():
         parser.error("Use a fresh output path")
@@ -107,7 +108,7 @@ def main():
                   process_driver_override=bool(args.vulkan_manifest), driver_manifest_sha256=sha256(args.vulkan_manifest) if args.vulkan_manifest else None,
                   limitation="Two fictional extraction requests, cold start; no warm throughput, ASR/minutes quality, power or broad compatibility claim. Resource samples unavailable.", trials=[])
     try:
-        for backend, server in [("cpu", args.cpu_server), ("vulkan", args.gpu_server)]:
+        for backend, server in [("cpu", args.cpu_server), (args.backend, args.gpu_server)]:
             report["trials"].append(trial(server, args.model, backend, args.output, args.vulkan_manifest))
             write_json(args.output, report)
         report["passed"] = all(t["passed"] for t in report["trials"])
