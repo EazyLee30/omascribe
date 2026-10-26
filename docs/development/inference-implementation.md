@@ -21,7 +21,7 @@ Reference: `docs/research/audio-efficiency-2026-10-26/PLAN.zh-CN.md` and `REPORT
 | G1 local hardware and runtime detection | In progress | Isolated native DXGI / Linux PCI probe, multi-vendor Linux fixtures; native Windows/Linux execution pending |
 | G1 optional acceleration component delivery | In progress | Signed/hash-checked manifests, isolated atomic downloads, all four CUDA/Vulkan CI packages and unsigned catalog passed; signed catalog publication and hardware execution pending |
 | G1 per-task backend verification and CPU fallback | In progress | Local CPU/GPU fact/negation/offload/timing gate and one CPU retry implemented; real CPU gate passed; GPU/driver/OOM scenarios pending |
-| G2 HIP, ONNX GPU, Apple comparisons | Pending | Exact compatibility matrix and real-device evidence; unverified paths remain experimental |
+| G2 HIP, ONNX GPU, Apple comparisons | In progress | M5 Metal 29/29-layer execution proved on a fictional fact case; same-weight CPU/Metal full-corpus comparison prepared. Older M-series, fallback/pressure and HIP/ONNX gates remain open |
 | Updater separation and delta experiment | Pending | Model/component reuse, interrupted update/signature/rollback/full-package fallback |
 
 ## Completion rule
