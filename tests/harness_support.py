@@ -1,5 +1,5 @@
 """Shared isolation and failure capture for real local inference tests (stdlib only)."""
-import hashlib, json, os, pathlib, platform, shutil, signal, subprocess, time
+import hashlib, json, os, pathlib, platform, shutil, signal, subprocess, tempfile, time
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
@@ -60,7 +60,20 @@ def source_digest():
     return digest.hexdigest()
 
 def environment(cli):
-    return dict(core_and_harness_source_sha256=source_digest(), platform=platform.platform(), machine=platform.machine(), python=platform.python_version(),
+    # Old comparison binaries may not support build-info and open Engine before failing.
+    # Keep even that metadata request away from the user's workspace.
+    build = None
+    with tempfile.TemporaryDirectory(prefix="omascribe-build-info-") as folder:
+        write_json(pathlib.Path(folder)/"network-policy.json", dict(allow_model_downloads=False, allow_online_recommendations=False))
+        try:
+            result = subprocess.run([str(cli), "build-info"], env=dict(os.environ, OMASCRIBE_DATA_DIR=folder),
+                                    capture_output=True, text=True, encoding="utf-8", timeout=10)
+            if result.returncode == 0:
+                value=json.loads(result.stdout)
+                if isinstance(value,dict) and value.get("schema")==1 and len(value.get("source_sha256",""))==64: build=value
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            pass
+    return dict(cli_build=build, core_and_harness_source_sha256=source_digest(), platform=platform.platform(), machine=platform.machine(), python=platform.python_version(),
         cli_sha256=sha256(cli), model_catalog_sha256=sha256(REPO / "model-catalog.json"),
         suite_revision=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         # Avoid environment dumps: they can contain tokens or unrelated private paths.

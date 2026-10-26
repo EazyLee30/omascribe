@@ -2,8 +2,12 @@
 import importlib.util
 import json
 import pathlib
+import os
+import re
+import subprocess
 import tarfile
 import tempfile
+import textwrap
 import unittest
 import sys
 from unittest.mock import patch
@@ -17,6 +21,32 @@ spec.loader.exec_module(components)
 
 
 class AccelerationPackagingTests(unittest.TestCase):
+    def test_native_build_selection_uses_push_range_and_fails_closed(self):
+        workflow=(ROOT / '.github/workflows/acceleration-components.yml').read_text()
+        script=textwrap.dedent(re.search(r"python3 - <<'PY'\n(.*?)\n          PY",workflow,re.S).group(1))
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder)
+            def git(*args):
+                return subprocess.check_output(['git','-C',str(root),*args],text=True,stderr=subprocess.DEVNULL).strip()
+            git('init')
+            for key,value in [('user.name','Fixture'),('user.email','fixture@example.invalid'),('commit.gpgsign','false'),('core.hooksPath',str(root/'no-hooks'))]:git('config',key,value)
+            git('remote','add','origin',str(root))
+            (root/'models.lock.json').write_text('fixture initial')
+            git('add','.');git('commit','-m','initial');initial=git('rev-parse','HEAD')
+            (root/'tests').mkdir();(root/'tests/evaluate_asr.py').write_text('fixture scorer')
+            git('add','.');git('commit','-m','scorer');scorer=git('rev-parse','HEAD')
+            (root/'models.lock.json').write_text('fixture runtime change')
+            git('add','.');git('commit','-m','runtime');runtime=git('rev-parse','HEAD')
+            def check(before,head,event='pull_request',action='synchronize'):
+                output=root/'output.txt';output.write_text('')
+                env=dict(os.environ,COMPONENT_EVENT=event,COMPONENT_ACTION=action,COMPONENT_BEFORE=before,COMPONENT_HEAD=head,GITHUB_OUTPUT=str(output))
+                subprocess.run([sys.executable,'-c',script],cwd=root,env=env,check=True,capture_output=True,text=True)
+                return output.read_text().strip()
+            self.assertEqual(check(initial,scorer),'runtime=false')
+            self.assertEqual(check(scorer,runtime),'runtime=true')
+            self.assertEqual(check('',runtime),'runtime=true')
+            self.assertEqual(check(initial,scorer,'workflow_dispatch',''),'runtime=true')
+
     def runtime(self, folder, backend="vulkan", target="linux-x86_64"):
         folder.mkdir()
         (folder / ("llama-server.exe" if target.startswith("windows") else "llama-server")).write_bytes(b"fictional fixture, never execute")

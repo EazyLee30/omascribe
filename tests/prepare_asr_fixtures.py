@@ -2,7 +2,7 @@
 """Explicit network preparation only; evaluation itself never downloads anything.
 FLEURS, Google, CC BY 4.0: https://huggingface.co/datasets/google/fleurs
 """
-import argparse, csv, hashlib, io, json, pathlib, subprocess, tarfile, urllib.request
+import argparse, csv, hashlib, io, json, pathlib, subprocess, tarfile, urllib.request, wave
 
 REVISION = "70bb2e84b976b7e960aa89f1c648e09c59f894dd"
 BASE = f"https://huggingface.co/datasets/google/fleurs/resolve/{REVISION}/data"
@@ -15,7 +15,51 @@ def digest(path):
     with path.open("rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
 
-def prepare(root):
+
+def add_mixed(root, manifest):
+    """Splice verified public clips; this is not natural code-switching or speaker gold."""
+    if manifest.get("dataset") != "google/fleurs" or manifest.get("revision") != REVISION or manifest.get("license") != "CC-BY-4.0":
+        raise ValueError("Mixed fixtures require the pinned public FLEURS manifest")
+    base = [c for c in manifest["cases"] if c["language"] != "mixed"]
+    zh = sorted((c for c in base if c["language"] == "cmn_hans_cn"), key=lambda c:c["name"])
+    en = sorted((c for c in base if c["language"] == "en_us"), key=lambda c:c["name"])
+    if min(len(zh), len(en)) < 3: raise ValueError("Need three clips of each language")
+    cases = []
+    for index, selected in enumerate([(zh[0], en[0], zh[1]), (en[1], zh[2], en[2])], 1):
+        name = f"fleurs_mixed_zh_en_{index:02}"
+        output = root / (name + ".wav")
+        part = output.with_suffix(".wav.part")
+        pieces, cursor = [], 0
+        try:
+            with wave.open(str(part), "wb") as out:
+                out.setparams((1,2,16000,0,"NONE","not compressed"))
+                for number, case in enumerate(selected):
+                    if pathlib.Path(case["file"]).name != case["file"] or "\\" in case["file"]:
+                        raise ValueError("Fixture path must be a basename")
+                    path = root / case["file"]
+                    if digest(path) != case["sha256"]: raise ValueError("Mixed source checksum mismatch")
+                    with wave.open(str(path), "rb") as audio:
+                        if (audio.getnchannels(), audio.getsampwidth(), audio.getframerate(), audio.getcomptype()) != (1,2,16000,"NONE"):
+                            raise ValueError("Expected 16 kHz mono PCM fixture")
+                        count = audio.getnframes()
+                        if not 0 < count <= 16000*300: raise ValueError("Unexpected fixture duration")
+                        pieces.append(dict(case=case["name"], file=case["file"], sha256=case["sha256"], start_sample=cursor, end_sample=cursor+count))
+                        while block := audio.readframes(16000): out.writeframes(block)
+                        cursor += count
+                    if number + 1 < len(selected):
+                        out.writeframes(b"\0" * (4000*2)); cursor += 4000
+            part.replace(output)
+        finally:
+            part.unlink(missing_ok=True)
+        cases.append(dict(name=name, language="mixed", file=output.name,
+                          reference=" ".join(c["reference"] for c in selected), sha256=digest(output),
+                          kind="constructed-language-switches", gap_ms=250, pieces=pieces,
+                          limitation="Spliced held-out utterances, not natural code-switching or diarization labels"))
+    manifest = dict(manifest, schema=2, cases=sorted(base+cases,key=lambda c:c["name"]))
+    (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    return manifest
+
+def prepare(root, with_mixed=False):
     root.mkdir(parents=True, exist_ok=True)
     cases = []
     for lang, (size, sha) in ARCHIVES.items():
@@ -62,9 +106,18 @@ def prepare(root):
         selection="First four distinct sentence IDs in each official test.tsv; one recording per sentence.",
         cases=cases)
     (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
-    print(f"Prepared {len(cases)} clips at {root}", flush=True)
+    if with_mixed: manifest = add_mixed(root, manifest)
+    print(f"Prepared {len(manifest['cases'])} clips at {root}", flush=True)
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--directory", type=pathlib.Path, required=True)
-    prepare(p.parse_args().directory.resolve())
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--with-mixed", action="store_true", help="Also construct language-switching clips")
+    mode.add_argument("--mixed-only", action="store_true", help="Offline: add mixed clips to an existing pinned corpus")
+    args = p.parse_args()
+    root = args.directory.resolve()
+    if args.mixed_only:
+        add_mixed(root, json.loads((root / "manifest.json").read_text(encoding="utf-8")))
+    else:
+        prepare(root, args.with_mixed)

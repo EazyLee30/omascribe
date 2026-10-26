@@ -3,21 +3,80 @@
 import argparse, array, collections, json, math, pathlib, random, re, time, unicodedata, wave
 from harness_support import REPO, command, environment, isolated_env, read_json, sha256, write_json
 
+SCORER = "asr-v2-cer-wer-mer"
+
+
+def mixed_units(text):
+    tokens, word = [], []
+    def flush():
+        if word:
+            tokens.append("".join(word)); word.clear()
+    def han(c):
+        return '\u3400' <= c <= '\u9fff' or unicodedata.name(c, "").startswith("CJK UNIFIED IDEOGRAPH-")
+    for index, c in enumerate(text):
+        if han(c):
+            flush(); tokens.append(c)
+        elif c.isalnum():
+            word.append(c)
+        elif c == "'" and word and index+1 < len(text) and text[index+1].isalnum() and not han(text[index+1]):
+            word.append(c)
+        else:
+            flush()
+    flush()
+    return tokens
+
 
 def units(text, language):
     text = unicodedata.normalize("NFKC", text).lower()
+    if language == "mixed":
+        return mixed_units(text)
     if language.startswith("cmn"): return [c for c in text if c.isalnum()]
     return re.findall(r"[^\W_]+(?:'[^\W_]+)*", text, re.UNICODE)
 
 
 def edit_distance(reference, hypothesis):
-    row = list(range(len(hypothesis)+1))
+    return sum(error_counts(reference, hypothesis).values())
+
+
+def error_counts(reference, hypothesis):
+    """Minimum edit alignment, stable substitution/deletion/insertion tie ordering."""
+    if len(reference)*len(hypothesis) > 4_000_000:
+        raise ValueError("Scoring budget exceeded; use a bounded long-audio alignment harness")
+    row = [(0, 0, i) for i in range(len(hypothesis)+1)]
     for i, a in enumerate(reference, 1):
-        nxt = [i]
+        nxt = [(0, i, 0)]
         for j, b in enumerate(hypothesis, 1):
-            nxt.append(min(nxt[-1]+1, row[j]+1, row[j-1]+(a != b)))
+            if a == b:
+                nxt.append(row[j-1])
+            else:
+                s, d, ins = row[j-1]
+                substitute = (s+1, d, ins)
+                s, d, ins = row[j]
+                delete = (s, d+1, ins)
+                s, d, ins = nxt[-1]
+                insert = (s, d, ins+1)
+                nxt.append(min([substitute, delete, insert], key=sum))
         row = nxt
-    return row[-1]
+    return dict(zip(["substitutions", "deletions", "insertions"], row[-1]))
+
+
+def percentile(values, fraction):
+    values = sorted(v for v in values if v is not None and math.isfinite(v))
+    if not values: return None
+    point = (len(values)-1) * fraction
+    low, high = math.floor(point), math.ceil(point)
+    return values[low] + (values[high]-values[low]) * (point-low)
+
+
+def error_interval(cases, samples=1000):
+    """Deterministic clip bootstrap; descriptive only for small smoke corpora."""
+    if not cases: return None
+    rng, rates = random.Random(1729), []
+    for _ in range(samples):
+        selected = rng.choices(cases, k=len(cases))
+        denominator = sum(c["reference_units"] for c in selected)
+        if denominator: rates.append(sum(c["edits"] for c in selected) / denominator)
+    return [percentile(rates,.025), percentile(rates,.975)] if rates else None
 
 
 def regression(previous, current, allowance):
@@ -46,8 +105,9 @@ def main():
     if not manifest or not manifest.get("cases"): p.error("Run prepare_asr_fixtures.py explicitly before offline evaluation")
     output, artifacts = args.output.resolve(), args.output.resolve().with_suffix(".artifacts")
     if artifacts.exists(): p.error("Use a fresh output path to preserve old artifacts")
-    report = dict(schema=1, environment=environment(cli), fixture_manifest_sha256=sha256(corpus / "manifest.json"),
-        normalization="NFKC lowercase; Mandarin alphanumeric characters without spaces/punctuation; English words with apostrophes; hyphens split.",
+    report = dict(schema=2, scorer=SCORER, environment=environment(cli), fixture_manifest_sha256=sha256(corpus / "manifest.json"),
+        normalization="NFKC lowercase; Mandarin alphanumeric characters (CER); English words/apostrophes (WER); mixed Han characters plus Unicode words/numbers/apostrophes (MER); hyphens split.",
+        interval_method="1000 clip-bootstrap samples, seed 1729; descriptive for a small smoke set, not a product accuracy claim",
         cases=[], aggregates={}, errors=[], passed=False)
     with wave.open(str(corpus / "silence.wav"), "wb") as wav:
         wav.setparams((1,2,16000,0,"NONE","not compressed")); wav.writeframes(b"\0"*(16000*2*10))
@@ -66,7 +126,7 @@ def main():
             dict(name="synthetic_quiet_noise", language="none", file="quiet-noise.wav", reference="")]:
             folder = artifacts / model / case["name"]
             write_json(folder / "input.json", case)
-            result = dict(case=case["name"], model=model, language=case["language"], errors=[])
+            result = dict(case=case["name"], model=model, language=case["language"], fixture_kind=case.get("kind","public-speech"), errors=[])
             try:
                 audio = corpus / case["file"]
                 if case.get("sha256") and sha256(audio) != case["sha256"]: raise ValueError("Fixture hash mismatch")
@@ -88,7 +148,10 @@ def main():
                     if hypothesis.strip(): result["errors"].append("Silence hallucination")
                 else:
                     ref, hyp = units(case["reference"],case["language"]), units(hypothesis,case["language"])
-                    result.update(edits=edit_distance(ref,hyp), reference_units=len(ref))
+                    if not ref: raise ValueError("Speech reference has no scoring units")
+                    counts = error_counts(ref,hyp)
+                    result.update(**counts, edits=sum(counts.values()), reference_units=len(ref),
+                        metric="MER" if case["language"] == "mixed" else "CER" if case["language"].startswith("cmn") else "WER")
                     result["error_rate"] = result["edits"]/max(1,len(ref))
                     if not hypothesis.strip(): result["errors"].append("Empty transcription of speech")
             except Exception as error: result["errors"].append(f"{type(error).__name__}: {error}")
@@ -102,11 +165,18 @@ def main():
     for key, cases in groups.items():
         edits, count = sum(c["edits"] for c in cases), sum(c["reference_units"] for c in cases)
         report["aggregates"][key] = dict(edits=edits, reference_units=count, error_rate=edits/count,
-            audio_seconds=sum(c["audio_seconds"] for c in cases), wall_seconds=sum(c["wall_seconds"] for c in cases), clips=len(cases))
+            audio_seconds=sum(c["audio_seconds"] for c in cases), wall_seconds=sum(c["wall_seconds"] for c in cases), clips=len(cases),
+            substitutions=sum(c["substitutions"] for c in cases), deletions=sum(c["deletions"] for c in cases), insertions=sum(c["insertions"] for c in cases),
+            error_rate_interval_95=error_interval(cases),
+            wall_p50=percentile([c["wall_seconds"] for c in cases],.5), wall_p95=percentile([c["wall_seconds"] for c in cases],.95),
+            rtf_p50=percentile([c.get("rtf") for c in cases],.5), rtf_p95=percentile([c.get("rtf") for c in cases],.95),
+            peak_process_tree_rss_mib=None, process_tree_cpu_seconds=None, gpu_memory_mib=None)
         if edits/count > args.max_error_rate: report["errors"].append(f"{key}: exceeded fixed quality ceiling")
     if args.baseline:
         previous = read_json(args.baseline)
-        if previous["fixture_manifest_sha256"] != report["fixture_manifest_sha256"]:
+        if previous.get("scorer") != SCORER:
+            report["errors"].append("Baseline scorer differs; rerun the old binary with this scorer before comparison")
+        elif previous["fixture_manifest_sha256"] != report["fixture_manifest_sha256"]:
             report["errors"].append("Baseline corpus differs; comparison refused")
         else: report["errors"].extend(regression(previous["aggregates"],report["aggregates"],args.allow_regression))
     report["passed"] = all(c["passed"] for c in report["cases"]) and not report["errors"]

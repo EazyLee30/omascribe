@@ -5,6 +5,11 @@ on:
       - .github/workflows/acceleration-components.yml
       - scripts/acceleration-components.py
       - scripts/runtime_inventory.py
+      - models.lock.json
+      - crates/core/**
+      - Cargo.lock
+      - Cargo.toml
+      - tests/test_acceleration_components.py
   workflow_dispatch:
     inputs:
       version:
@@ -24,6 +29,37 @@ env:
   PYTHONUTF8: "1"
   COMPONENT_VERSION: ${{ inputs.version || format('acceleration-ci-{0}', github.run_id) }}
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      runtime: ${{ steps.detect.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - id: detect
+        name: Rebuild native GPU binaries only when their inputs change
+        env:
+          COMPONENT_EVENT: ${{ github.event_name }}
+          COMPONENT_ACTION: ${{ github.event.action }}
+          COMPONENT_BEFORE: ${{ github.event.before }}
+          COMPONENT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - <<'PY'
+          import os,re,subprocess
+          changed=True
+          before,head=os.environ['COMPONENT_BEFORE'],os.environ['COMPONENT_HEAD']
+          if os.environ['COMPONENT_EVENT']=='pull_request' and os.environ['COMPONENT_ACTION']=='synchronize' and re.fullmatch(r'[a-f0-9]{40}',before) and re.fullmatch(r'[a-f0-9]{40}',head):
+              fetched=subprocess.run(['git','fetch','--no-tags','--depth=1','origin',before],capture_output=True)
+              if fetched.returncode==0:
+                  paths=subprocess.check_output(['git','diff','--name-only',before,head],text=True).splitlines()
+                  inputs={'.github/workflows/acceleration-components.yml','scripts/acceleration-components.py','scripts/runtime_inventory.py','models.lock.json','tests/test_acceleration_components.py'}
+                  changed=bool(inputs.intersection(paths))
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as out:out.write('runtime='+str(changed).lower()+'\n')
+          print('Optional native build required:',changed)
+          PY
   windows-core:
     runs-on: windows-2022
     timeout-minutes: 25
@@ -41,6 +77,8 @@ jobs:
       - name: Inventory probe without opening a user workspace
         run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
   build:
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true'
     strategy:
       fail-fast: false
       matrix:
