@@ -1,4 +1,5 @@
-import importlib.util, json, pathlib, tempfile, unittest
+import importlib.util, json, pathlib, tempfile, unittest, sys
+sys.path.insert(0, str(pathlib.Path(__file__).parents[1] / 'scripts'))
 
 spec = importlib.util.spec_from_file_location('manifest', pathlib.Path(__file__).parents[1] / 'scripts/update-manifest.py')
 module = importlib.util.module_from_spec(spec)

@@ -8,6 +8,13 @@ use std::{
 fn run() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let command = args.get(1).map(|s| s.as_str()).unwrap_or("help");
+    if command == "--hardware-probe" {
+        println!(
+            "{}",
+            serde_json::to_string(&omascribe_core::hardware::native_inventory())?
+        );
+        return Ok(());
+    }
     if command == "help" {
         println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
@@ -28,6 +35,19 @@ fn run() -> Result<()> {
         "translate" => {
             omascribe_core::translation::run(&engine, arg(2)?)?;
             serde_json::to_value(engine.snapshot(arg(2)?)?)?
+        }
+        "inference-status" => serde_json::to_value(engine.inference_worker_status())?,
+        "acceleration-components" => serde_json::to_value(engine.acceleration_components())?,
+        "verify-acceleration" => {
+            engine.verify_acceleration(arg(2)?)?;
+            while engine.note_busy.load(std::sync::atomic::Ordering::SeqCst) {
+                thread::sleep(Duration::from_millis(200));
+            }
+            serde_json::to_value(engine.acceleration_status())?
+        }
+        "disable-acceleration" => {
+            engine.disable_acceleration()?;
+            serde_json::json!({"disabled":true})
         }
         "preserve-models" => {
             engine.preserve_bundled_models()?;

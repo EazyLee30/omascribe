@@ -1,0 +1,199 @@
+name: Optional acceleration components
+on:
+  pull_request:
+    paths:
+      - .github/workflows/acceleration-components.yml
+      - scripts/acceleration-components.py
+      - scripts/runtime_inventory.py
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Immutable component version (acceleration-REVISION-N)
+        required: true
+        default: acceleration-5aeac37-1
+      publish:
+        description: Sign and publish optional downloads after the build gates
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: acceleration-${{ github.event.pull_request.number || inputs.version }}
+  cancel-in-progress: false
+env:
+  PYTHONUTF8: "1"
+  COMPONENT_VERSION: ${{ inputs.version || format('acceleration-ci-{0}', github.run_id) }}
+jobs:
+  windows-core:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.99.0"
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p omascribe-core --locked
+      - run: cargo clippy -p omascribe-core --all-targets --locked -- -D warnings
+      - name: Inventory probe without opening a user workspace
+        run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2022
+            target: windows-x86_64
+            backend: cuda
+          - runner: windows-2022
+            target: windows-x86_64
+            backend: vulkan
+          - runner: ubuntu-22.04
+            target: linux-x86_64
+            backend: cuda
+          - runner: ubuntu-22.04
+            target: linux-x86_64
+            backend: vulkan
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 100
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate requested release name and packaging contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_acceleration_components.py'
+          python -c 'import os,re; assert re.fullmatch(r"acceleration-[A-Za-z0-9][A-Za-z0-9_.-]{0,85}", os.environ["COMPONENT_VERSION"]), "Invalid release version"'
+      - name: Pinned CMake for Blackwell architecture suffixes
+        run: python -m pip install cmake==3.31.8
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+      - name: Linux build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build patchelf binutils
+      - name: CUDA SDK on Windows (build runner only)
+        if: runner.os == 'Windows' && matrix.backend == 'cuda'
+        uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+          log-file-suffix: ${{ matrix.target }}
+      - name: CUDA SDK on Linux (build runner only)
+        if: runner.os == 'Linux' && matrix.backend == 'cuda'
+        uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "cudart-dev", "driver-dev", "cccl"]'
+          non-cuda-sub-packages: '["libcublas", "libcublas-dev"]'
+          log-file-suffix: ${{ matrix.target }}
+      - name: Vulkan SDK (build runner only)
+        if: matrix.backend == 'vulkan'
+        uses: humbletim/install-vulkan-sdk@30ba978f977e81b72d091fc8888feb1fb26f9aff
+        with:
+          version: "1.4.363.0"
+          cache: true
+      - name: Build the pinned optional runtime
+        run: python scripts/acceleration-components.py build --backend '${{ matrix.backend }}' --output build-assets/component-runtime
+      - name: Package and hash the separate download
+        run: python scripts/acceleration-components.py package --backend '${{ matrix.backend }}' --target '${{ matrix.target }}' --runtime build-assets/component-runtime --version "$COMPONENT_VERSION" --output release-assets/accelerators
+      - name: Base installer directory must remain untouched
+        run: python -c 'from pathlib import Path; assert not Path("build-assets/native").exists(), "Optional SDK contaminated the base installer"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accelerator-${{ matrix.target }}-${{ matrix.backend }}
+          path: release-assets/accelerators/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+  catalog:
+    needs: [build, windows-core]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require green core/application CI before signing
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,subprocess
+          runs=json.loads(subprocess.check_output(['gh','api','repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/ci.yml/runs?head_sha='+os.environ['GITHUB_SHA']]))['workflow_runs']
+          if not runs or runs[0]['status']!='completed' or runs[0]['conclusion']!='success': raise SystemExit('Application CI for this exact commit must pass before signing components')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: accelerator-*
+          merge-multiple: true
+          path: release-assets/accelerators
+      - name: Require every platform/backend and recheck all member hashes
+        run: python3 scripts/acceleration-components.py index --directory release-assets/accelerators --version "$COMPONENT_VERSION"
+      - uses: actions/setup-node@v4
+        if: inputs.publish
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+        if: inputs.publish
+      - name: Sign exact catalog bytes with the app release key
+        if: inputs.publish
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: npx tauri signer sign --app-version "$COMPONENT_VERSION" release-assets/accelerators/index.payload
+      - name: Wrap signed payload without reserializing it
+        if: inputs.publish
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('release-assets/accelerators')
+          payload=(root/'index.payload').read_text(encoding='utf-8')
+          signature=(root/'index.payload.sig').read_text(encoding='utf-8').strip()
+          (root/'index.json').write_text(json.dumps(dict(payload=payload,signature=signature)),encoding='utf-8')
+          config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())
+          (root/'updater.pub').write_text(config['plugins']['updater']['pubkey'],encoding='utf-8')
+          PY
+      - uses: dtolnay/rust-toolchain@stable
+        if: inputs.publish
+        with:
+          toolchain: "1.99.0"
+      - name: Verify catalog signature and bound version using the app verifier
+        if: inputs.publish
+        run: cargo run -p omascribe-core --locked --bin omascribe-cli -- verify-update release-assets/accelerators/index.payload release-assets/accelerators/index.payload.sig release-assets/accelerators/updater.pub "$COMPONENT_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acceleration-catalog
+          path: release-assets/accelerators/index.*
+          if-no-files-found: error
+      - name: Publish immutable component archives, then update signed catalog pointer
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os,pathlib,subprocess
+          root=pathlib.Path('release-assets/accelerators'); version=os.environ['COMPONENT_VERSION']
+          def run(*args): subprocess.run(list(args),check=True)
+          existing=subprocess.run(['gh','release','view',version],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          if existing.returncode == 0: raise SystemExit('Immutable component release already exists; use a new version')
+          run('gh','release','create',version,'--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional GPU components · '+version,'--notes','Optional llama.cpp GPU runtimes. Download from OmaScribe settings after hardware detection; local model verification is required before enabling. Base installers do not include these files.')
+          run('gh','release','upload',version,*[str(p) for p in sorted(root.glob('*.tar.bz2'))],str(root/'index.json'))
+          pointer=subprocess.run(['gh','release','view','acceleration-v1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          if pointer.returncode:
+              run('gh','release','create','acceleration-v1','--target',os.environ['GITHUB_SHA'],'--prerelease','--latest=false','--title','Optional acceleration catalog','--notes','Signed catalog consumed by OmaScribe. Installers are available from the stable application release.')
+          run('gh','release','upload','acceleration-v1',str(root/'index.json'),'--clobber')
+          PY

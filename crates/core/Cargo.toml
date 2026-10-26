@@ -28,5 +28,8 @@ minisign-verify = "0.3"
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 cpal = "=0.16.0"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "=0.61.3", features = ["Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common"] }
+
 [dev-dependencies]
 tempfile = "3"

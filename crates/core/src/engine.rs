@@ -36,6 +36,7 @@ pub struct Engine {
     pub preferences: Mutex<crate::preferences::Preferences>,
     pub context_revision: AtomicU64,
     pub downloads: crate::models::Downloads,
+    pub component_downloads: crate::models::Downloads,
     pub config_lock: Mutex<()>,
     pub diarization_pid: AtomicU32,
     pub diarization_cancelled: Mutex<std::collections::HashSet<String>>,
@@ -50,11 +51,14 @@ pub struct Engine {
     pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
     pub llm_pid: AtomicU32,
+    pub(crate) inference_pool: crate::inference_worker::WorkerPool,
+    pub(crate) acceleration: Mutex<crate::acceleration::State>,
     notes_target: Mutex<Option<String>>,
     _lock: File,
 }
 impl Drop for Engine {
     fn drop(&mut self) {
+        self.inference_pool.invalidate();
         let _ = fs2::FileExt::unlock(&self._lock);
     }
 }
@@ -104,6 +108,7 @@ impl Engine {
             preferences: Mutex::new(preferences),
             context_revision: AtomicU64::new(0),
             downloads: crate::models::Downloads::default(),
+            component_downloads: crate::models::Downloads::default(),
             config_lock: Mutex::new(()),
             diarization_pid: AtomicU32::new(0),
             diarization_cancelled: Mutex::new(Default::default()),
@@ -119,6 +124,8 @@ impl Engine {
             files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
             llm_pid: AtomicU32::new(0),
+            inference_pool: Default::default(),
+            acceleration: Default::default(),
             notes_target: Mutex::new(None),
             _lock: lock,
         });
@@ -189,13 +196,29 @@ impl Engine {
                         });
                     let minutes_due = snapshot.meeting.auto_notes
                         && notes::needs_update(&snapshot)
-                        && attempted
-                            .get(&id)
-                            .is_none_or(|t| t.elapsed() > Duration::from_secs(45));
-                    if translation_due && (!minutes_due || !translation_attempts.contains_key(&id))
-                    {
+                        && attempted.get(&id).is_none_or(|t| {
+                            t.elapsed()
+                                > Duration::from_secs(
+                                    45 * 2u64
+                                        .pow(engine.note_failures.load(Ordering::SeqCst).min(3)),
+                                )
+                        })
+                        && !snapshot
+                            .notes
+                            .iter()
+                            .filter_map(|n| {
+                                chrono::DateTime::parse_from_rfc3339(&n.updated_at).ok()
+                            })
+                            .any(|t| chrono::Utc::now().signed_duration_since(t).num_seconds() < 5);
+                    if translation_due {
                         translation_attempts.insert(id.clone(), Instant::now());
-                        if engine.translate_pending(&id).unwrap_or(false) {
+                        if engine
+                            .translate_with_minutes(&id, minutes_due)
+                            .unwrap_or(false)
+                        {
+                            if minutes_due {
+                                attempted.insert(id.clone(), Instant::now());
+                            }
                             break;
                         }
                     }
@@ -434,6 +457,9 @@ impl Engine {
         self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {
             bail!("Cancel speaker analysis before starting another recording");
+        }
+        if self.acceleration_status().state == "testing" {
+            self.cancel_notes();
         }
         let mut active_guard = self.active.lock().unwrap();
         if active_guard.as_ref().is_some_and(|a| {
@@ -934,24 +960,30 @@ impl Engine {
         let id = id.to_string();
         thread::spawn(move || {
             let result = notes::generate(&engine, &id);
-            engine.llm_pid.store(0, Ordering::SeqCst);
+            engine.finish_minutes(result);
             engine.note_busy.store(false, Ordering::SeqCst);
-            let mut s = engine.status.lock().unwrap();
-            s.notes_busy = false;
-            if result.is_ok() {
-                engine.note_failures.store(0, Ordering::SeqCst);
-            } else {
-                engine.note_failures.fetch_add(1, Ordering::SeqCst);
-            }
-            s.notes_status = match result {
-                Ok(n) => format!("文档已同步 · {n} 个章节"),
-                Err(e) => format!("{e:#}"),
-            };
         });
         Ok(())
     }
+    pub(crate) fn finish_minutes(&self, result: Result<usize>) {
+        if result.is_ok() {
+            self.note_failures.store(0, Ordering::SeqCst);
+        } else {
+            self.note_failures.fetch_add(1, Ordering::SeqCst);
+        }
+        let mut status = self.status.lock().unwrap();
+        status.notes_busy = false;
+        status.notes_status = match result {
+            Ok(n) => format!("文档已同步 · {n} 个章节"),
+            Err(e) => format!("{e:#}"),
+        };
+    }
+    pub fn inference_worker_status(&self) -> crate::WorkerStatus {
+        self.inference_pool.status()
+    }
     pub fn cancel_notes(&self) {
         self.note_cancel.store(true, Ordering::SeqCst);
+        self.inference_pool.invalidate();
         let pid = self.llm_pid.load(Ordering::SeqCst);
         if pid > 0 {
             platform::stop_process(pid, false);

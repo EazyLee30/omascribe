@@ -12,7 +12,14 @@ mod capture;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod native_audio;
 
+pub mod acceleration;
+pub mod components;
+pub mod hardware;
 pub mod inference;
+pub mod inference_trace;
+mod inference_worker;
+mod probe;
+pub use inference_worker::WorkerStatus;
 pub mod library;
 pub mod models;
 pub mod network;

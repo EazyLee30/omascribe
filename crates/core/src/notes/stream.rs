@@ -3,6 +3,7 @@ use anyhow::{bail, Context, Result};
 use serde_json::Value;
 use std::io::{BufRead, Read};
 
+#[cfg(test)]
 pub fn read(reader: impl BufRead, mut progress: impl FnMut(usize)) -> Result<(String, Value)> {
     read_observed(reader, |text| progress(text.chars().count()))
 }
@@ -40,6 +41,12 @@ pub fn read_observed(
         }
         if !event["usage"].is_null() {
             usage = event["usage"].clone();
+        }
+        if event["timings"].is_object() {
+            if !usage.is_object() {
+                usage = serde_json::json!({});
+            }
+            usage["timings"] = event["timings"].clone();
         }
         if let Some(part) = event["choices"][0]["delta"]["content"].as_str() {
             text.push_str(part);

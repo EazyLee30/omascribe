@@ -60,6 +60,13 @@ pub fn pending(snapshot: &crate::Snapshot) -> bool {
 }
 impl Engine {
     pub fn translate_pending(self: &Arc<Self>, meeting: &str) -> Result<bool> {
+        self.translate_with_minutes(meeting, false)
+    }
+    pub(crate) fn translate_with_minutes(
+        self: &Arc<Self>,
+        meeting: &str,
+        minutes: bool,
+    ) -> Result<bool> {
         let _gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         let snapshot = self.snapshot(meeting)?;
@@ -78,8 +85,10 @@ impl Engine {
         let engine = self.clone();
         let id = meeting.to_owned();
         std::thread::spawn(move || {
+            let _batch = engine.inference_pool.batch();
             let result = run(&engine, &id);
-            engine.llm_pid.store(0, Ordering::SeqCst);
+            let continue_minutes =
+                minutes && result.is_ok() && !engine.note_cancel.load(Ordering::SeqCst);
             {
                 let mut status = engine.status.lock().unwrap();
                 status.translation_busy = false;
@@ -88,29 +97,44 @@ impl Engine {
                     Err(e) => format!("translation:deferred:{e:#}"),
                 };
             }
+            if continue_minutes {
+                engine.status.lock().unwrap().notes_busy = true;
+                let minutes_result = notes::generate(&engine, &id);
+                engine.finish_minutes(minutes_result);
+            }
             engine.note_busy.store(false, Ordering::SeqCst);
         });
         Ok(true)
     }
 }
 pub fn run(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
+    let mut trace = crate::inference_trace::TaskTrace::start(
+        &engine.root,
+        "translation",
+        &uuid::Uuid::new_v4().to_string(),
+    );
+    let result =
+        crate::acceleration::with_cpu_fallback(engine, || run_inner(engine, meeting, &trace));
+    trace.finish(result.is_ok(), result.as_ref().ok().copied());
+    result
+}
+fn run_inner(
+    engine: &Arc<Engine>,
+    meeting: &str,
+    trace: &crate::inference_trace::TaskTrace,
+) -> Result<usize> {
     let prefs = engine.preferences.lock().unwrap().clone();
     let snapshot = engine.snapshot(meeting)?;
-    let passages: Vec<_> = snapshot
-        .segments
-        .iter()
-        .rev()
-        .filter(|s| {
-            target_language(&prefs.translation_mode, &s.text).is_some()
-                && !snapshot.translations.contains_key(&s.id)
-        })
-        .take(4)
-        .cloned()
-        .collect();
+    let passages = select_pending(&snapshot);
     if passages.is_empty() {
         return Ok(0);
     }
-    let session = notes::open_session(engine, &prefs)?;
+    let session = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
+    trace.event(
+        "worker",
+        json!({"reused":session.reused,"startup_ms":session.startup_ms,
+        "backend":session.backend.name(),"budget_mib":session.budget}),
+    );
     let started = Instant::now();
     let mut count = 0;
     for passage in passages {
@@ -140,11 +164,31 @@ pub fn run(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
         {
             bail!("Passage exceeds translation context budget");
         }
+        let request_started = Instant::now();
+        let mut first_token_ms = None;
+        session.begin_request();
         let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
-            "messages":[{"role":"system","content":system},{"role":"user","content":passage.text}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":512,"stream":true,
+            "messages":[{"role":"system","content":system},{"role":"user","content":passage.text}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":512,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
             "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":{"type":"object","properties":{"translation":{"type":"string"}},"required":["translation"],"additionalProperties":false}}}
         }))?;
-        let (raw, _) = notes::stream::read(BufReader::new(response.into_reader()), |_| {})?;
+        let response =
+            notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
+                if !text.is_empty() {
+                    first_token_ms.get_or_insert(request_started.elapsed().as_millis() as u64);
+                }
+            });
+        trace.generation(
+            count + 1,
+            request_started.elapsed().as_millis() as u64,
+            first_token_ms,
+            &response
+                .as_ref()
+                .map(|(_, usage)| usage.clone())
+                .unwrap_or(Value::Null),
+            response.is_ok(),
+        );
+        let (raw, _) = response?;
+        session.complete_request();
         if engine.note_cancel.load(Ordering::SeqCst)
             || session.resource_stop.load(Ordering::SeqCst)
             || session.timed_out.load(Ordering::SeqCst)
@@ -204,9 +248,60 @@ pub fn run(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     }
     Ok(count)
 }
+
+/// Reserve half of each batch for the oldest work; new captions cannot starve it.
+fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
+    let pending: Vec<_> = snapshot
+        .segments
+        .iter()
+        .filter(|s| {
+            target_language(&snapshot.translation_mode, &s.text).is_some()
+                && !snapshot.translations.contains_key(&s.id)
+        })
+        .collect();
+    let mut selected: Vec<_> = pending.iter().take(2).copied().collect();
+    for passage in pending.iter().rev() {
+        if selected.len() == 4 {
+            break;
+        }
+        if !selected.iter().any(|s| s.id == passage.id) {
+            selected.push(passage);
+        }
+    }
+    // Oldest work executes first, so the recording time budget cannot postpone it forever.
+    selected.sort_by_key(|s| s.seq);
+    selected.into_iter().cloned().collect()
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn caption_batches_include_oldest_work_even_as_new_text_arrives() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let m = engine.create_meeting("queue fixture")?;
+        for seq in 1..=12 {
+            engine.store.lock().unwrap().save_segment(&crate::Segment {
+                id: format!("segment-{seq}"),
+                meeting_id: m.id.clone(),
+                run: 1,
+                seq,
+                start_ms: u64::from(seq) * 1000,
+                end_ms: u64::from(seq + 1) * 1000,
+                text: "尚未确定".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })?;
+        }
+        let selected = select_pending(&engine.snapshot(&m.id)?);
+        assert_eq!(
+            selected.iter().map(|s| s.seq).collect::<Vec<_>>(),
+            vec![1, 2, 11, 12]
+        );
+        Ok(())
+    }
     #[test]
     fn modes_are_explicit_and_source_revisions_invalidate_translations() -> Result<()> {
         assert_eq!(target_language("off", "你好"), None);

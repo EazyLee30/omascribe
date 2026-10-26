@@ -74,7 +74,7 @@ pub struct Download {
 #[derive(Default)]
 pub struct Downloads {
     pub status: Mutex<HashMap<String, Download>>,
-    cancel: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    pub(crate) cancel: Mutex<HashMap<String, Arc<AtomicBool>>>,
 }
 #[derive(Serialize)]
 pub struct ModelStatus {
@@ -109,6 +109,9 @@ impl Engine {
     }
     pub fn cancel_all_downloads(&self) {
         for cancel in self.downloads.cancel.lock().unwrap().values() {
+            cancel.store(true, Ordering::SeqCst);
+        }
+        for cancel in self.component_downloads.cancel.lock().unwrap().values() {
             cancel.store(true, Ordering::SeqCst);
         }
     }
@@ -241,8 +244,19 @@ impl Engine {
             || current.inference_backend != prefs.inference_backend
             || current.resource_mode != prefs.resource_mode
             || current.memory_budget_mib != prefs.memory_budget_mib
+            || current.llm_keep_alive_seconds != prefs.llm_keep_alive_seconds
         {
             self.configuration_idle()?;
+            self.inference_pool.invalidate();
+            if current.llm_model != prefs.llm_model
+                || current.threads != prefs.threads
+                || current.context_size != prefs.context_size
+                || current.inference_backend != prefs.inference_backend
+                || current.resource_mode != prefs.resource_mode
+                || current.memory_budget_mib != prefs.memory_budget_mib
+            {
+                crate::acceleration::reject(self, "configuration_changed", false);
+            }
         }
         let context_changed = current.use_memory != prefs.use_memory
             || current.use_knowledge != prefs.use_knowledge
@@ -518,6 +532,8 @@ fn install(engine: &Engine, spec: &Model, stage: &Path, cancel: &AtomicBool) -> 
 }
 #[derive(Serialize)]
 pub struct Hardware {
+    pub platform: String,
+    pub gpus: crate::hardware::GpuInventory,
     pub os: String,
     pub arch: String,
     pub cpu: String,
@@ -550,6 +566,11 @@ pub fn hardware(root: &Path) -> Hardware {
     };
     let prefs = preset(tier);
     Hardware {
+        platform: std::env::consts::OS.into(),
+        gpus: crate::hardware::detect(
+            root,
+            &crate::platform::asset_dir(root, "runtime", "OMASCRIBE_RUNTIME_DIR"),
+        ),
         os: sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.into()),
         arch: std::env::consts::ARCH.into(),
         cpu: sys

@@ -1,8 +1,11 @@
 //! Local inference policy. A resource budget is an admission/monitoring policy, not an OS quota.
 use crate::{models, preferences::Preferences, Engine};
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -10,6 +13,8 @@ pub enum Backend {
     Cpu,
     Metal,
     Mlx,
+    Cuda,
+    Vulkan,
 }
 impl Backend {
     pub fn name(self) -> &'static str {
@@ -17,8 +22,38 @@ impl Backend {
             Self::Cpu => "cpu",
             Self::Metal => "metal",
             Self::Mlx => "mlx",
+            Self::Cuda => "cuda",
+            Self::Vulkan => "vulkan",
         }
     }
+    pub fn optional_gpu(self) -> bool {
+        matches!(self, Self::Cuda | Self::Vulkan)
+    }
+}
+#[derive(Debug, Clone)]
+pub(crate) struct LaunchSpec {
+    pub backend: Backend,
+    pub directory: PathBuf,
+    pub device: Option<String>,
+    pub identity: String,
+}
+pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<LaunchSpec> {
+    if prefs.inference_backend == "auto" {
+        if let Some(spec) = crate::acceleration::selected(engine, prefs) {
+            return Ok(spec);
+        }
+    }
+    let backend = resolve(prefs, &engine.runtime_dir)?;
+    Ok(LaunchSpec {
+        backend,
+        directory: engine.runtime_dir.join(if backend == Backend::Mlx {
+            "mlx"
+        } else {
+            "llama"
+        }),
+        device: None,
+        identity: String::new(),
+    })
 }
 pub fn apple_silicon() -> bool {
     cfg!(all(target_os = "macos", target_arch = "aarch64"))
@@ -115,7 +150,17 @@ pub fn server_command(
     port: u16,
     token: &str,
 ) -> Result<(Command, Backend)> {
-    let backend = resolve(prefs, &engine.runtime_dir)?;
+    let spec = launch_spec(engine, prefs)?;
+    server_command_with_spec(engine, prefs, port, token, &spec)
+}
+pub(crate) fn server_command_with_spec(
+    engine: &Engine,
+    prefs: &Preferences,
+    port: u16,
+    token: &str,
+    spec: &LaunchSpec,
+) -> Result<(Command, Backend)> {
+    let backend = spec.backend;
     let budget = budget_mib(prefs);
     let mut command = if backend == Backend::Mlx {
         let mut c = crate::platform::child_command(engine.runtime_dir.join("mlx/venv/bin/python3"));
@@ -134,11 +179,12 @@ pub fn server_command(
             .env("OMASCRIBE_RUNTIME_TOKEN", token);
         c
     } else {
+        let directory = spec
+            .directory
+            .canonicalize()
+            .context("Local runtime directory unavailable")?;
         let mut c = crate::platform::child_command(
-            engine
-                .runtime_dir
-                .join("llama")
-                .join(crate::platform::executable("llama-server")),
+            directory.join(crate::platform::executable("llama-server")),
         );
         let threads = if prefs.resource_mode == "eco" {
             prefs.threads.min(2)
@@ -153,7 +199,7 @@ pub fn server_command(
             _ => ("128", "128"),
         };
         c.arg("-m")
-            .arg(engine.model_file(&prefs.llm_model)?)
+            .arg(engine.model_file(&prefs.llm_model)?.canonicalize()?)
             .args([
                 "--host",
                 "127.0.0.1",
@@ -170,7 +216,11 @@ pub fn server_command(
                 "--parallel",
                 "1",
                 "--n-gpu-layers",
-                if backend == Backend::Metal { "99" } else { "0" },
+                if backend == Backend::Metal || backend.optional_gpu() {
+                    "99"
+                } else {
+                    "0"
+                },
                 "--batch-size",
                 batch,
                 "--ubatch-size",
@@ -187,9 +237,13 @@ pub fn server_command(
                 "--no-warmup",
                 "--offline",
             ])
-            .env("LD_LIBRARY_PATH", engine.runtime_dir.join("llama"));
+            .env("LD_LIBRARY_PATH", &directory)
+            .env_remove("GGML_BACKEND_PATH")
+            .current_dir(&directory);
         if backend == Backend::Cpu {
             c.args(["--device", "none"]);
+        } else if let Some(device) = &spec.device {
+            c.args(["--device", device]);
         }
         c
     };

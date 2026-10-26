@@ -263,7 +263,7 @@ pub fn ranked_text(all: &[&str], query: &[String]) -> Vec<usize> {
     scores.sort_by(|a, b| b.1.total_cmp(&a.1).then(b.0.cmp(&a.0)));
     scores.into_iter().map(|(i, _)| i).collect()
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Context {
     pub segments: Vec<Segment>,
     pub cursor: u32,

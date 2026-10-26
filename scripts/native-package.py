@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+from runtime_inventory import assert_base_runtime
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))
@@ -74,7 +75,7 @@ def prepare(target):
     )
     run("git", "-C", llama, "checkout", "--detach", "FETCH_HEAD")
     runtime_stamp = RUNTIME / "llama/build-info.json"
-    expected = {"revision": LOCK["llama_cpp"]["revision"], "metal": metal, "format": 1}
+    expected = {"revision": LOCK["llama_cpp"]["revision"], "metal": metal, "optional_gpu_backends": [], "format": 2}
     if not ((RUNTIME / "llama" / ("llama-server" + SUFFIX)).is_file()
             and runtime_stamp.is_file() and json.loads(runtime_stamp.read_text()) == expected):
         build = llama / "build-native"
@@ -89,6 +90,9 @@ def prepare(target):
             "-DGGML_BLAS=OFF",
             "-DGGML_OPENMP=OFF",
             "-DGGML_CUDA=OFF",
+            "-DGGML_HIP=OFF",
+            "-DGGML_VULKAN=OFF",
+            "-DGGML_SYCL=OFF",
             "-DLLAMA_OPENSSL=OFF",
             "-DLLAMA_CURL=OFF",
             "-DLLAMA_BUILD_TESTS=OFF",
@@ -125,6 +129,7 @@ def prepare(target):
         (RUNTIME / "llama").mkdir(exist_ok=True)
         shutil.copy2(server, RUNTIME / "llama" / server.name)
         runtime_stamp.write_text(json.dumps(expected, indent=2) + "\n")
+    assert_base_runtime(RUNTIME)
     run(
         "cargo",
         "build",
@@ -142,6 +147,7 @@ def prepare(target):
             ROOT / "target" / target / "release" / (name + SUFFIX),
             RUNTIME / (name + SUFFIX),
         )
+    assert_base_runtime(ASSETS)
     if not WINDOWS:
         for binary in [
             RUNTIME / "omascribe-cli",

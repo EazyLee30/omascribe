@@ -18,6 +18,7 @@ export interface Preferences {
   inference_backend: "auto" | "cpu" | "metal" | "mlx";
   resource_mode: "eco" | "balanced" | "quality";
   memory_budget_mib: number;
+  llm_keep_alive_seconds: number;
   auto_notes: boolean;
   translation_mode: "off" | "bilingual" | "zh-en" | "en-zh";
   minutes_language: "auto" | "zh" | "en";
@@ -62,6 +63,20 @@ export interface ModelStatus {
   } | null;
 }
 export interface Hardware {
+  platform: string;
+  gpus: {
+    schema: number;
+    status: string;
+    error: string | null;
+    devices: {
+      local_id: string;
+      name: string;
+      vendor: string;
+      dedicated_memory_bytes: number | null;
+      budget_bytes: number | null;
+      budget_source: string | null;
+    }[];
+  };
   os: string;
   arch: string;
   cpu: string;

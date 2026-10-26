@@ -3,6 +3,7 @@ mod retrieval;
 pub(crate) mod stream;
 mod validation;
 mod writer;
+pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
 pub use retrieval::{
@@ -10,195 +11,18 @@ pub use retrieval::{
 };
 use serde_json::{json, Value};
 use std::{
-    fs::File,
     io::BufReader,
-    net::TcpListener,
-    process::{Child, Stdio},
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    thread,
-    time::{Duration, Instant},
+    sync::{atomic::Ordering, Arc},
+    time::Instant,
 };
 use uuid::Uuid;
 pub use validation::validate;
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
-fn check_memory(available: Option<u64>, required: u64) -> Result<()> {
-    match available {
-        Some(mib) if mib < required => {
-            bail!("writer:low-memory:{mib}:{required}")
-        }
-        None => bail!("writer:memory-unavailable"),
-        _ => Ok(()),
-    }
-}
-
-struct Server(Child, Arc<AtomicBool>);
-impl Drop for Server {
-    fn drop(&mut self) {
-        self.1.store(true, Ordering::SeqCst);
-        let _ = self.0.kill();
-        let _ = self.0.wait();
-    }
-}
-
-pub(crate) struct LocalSession {
-    pub agent: ureq::Agent,
-    pub base: String,
-    pub auth: String,
-    pub budget: u64,
-    pub backend: crate::inference::Backend,
-    pub resource_stop: Arc<AtomicBool>,
-    pub budget_stop: Arc<AtomicBool>,
-    pub timed_out: Arc<AtomicBool>,
-    _server: Server,
-}
-pub(crate) fn open_session(
-    engine: &Arc<Engine>,
-    prefs: &crate::preferences::Preferences,
-) -> Result<LocalSession> {
-    let budget = crate::inference::budget_mib(prefs);
-    let estimate = crate::models::model(&prefs.llm_model)?.memory_mib
-        + u64::from(prefs.context_size.saturating_sub(2048)) / 4;
-    if estimate > budget {
-        bail!("writer:resource-budget:{estimate}:{budget}");
-    }
-    // Loading under heavy swap pressure repeatedly makes the whole desktop unresponsive.
-    check_memory(
-        crate::platform::available_memory_mib(),
-        crate::models::model(&prefs.llm_model)?.memory_mib
-            + u64::from(prefs.context_size.saturating_sub(2048)) / 4,
-    )?;
-    let listener = TcpListener::bind("127.0.0.1:0")?;
-    let port = listener.local_addr()?.port();
-    drop(listener);
-    let token = Uuid::new_v4().to_string();
-    let (mut command, backend) = crate::inference::server_command(engine, prefs, port, &token)?;
-    let resource_path = engine.root.join("last-writer-resource.json");
-    std::fs::write(
-        &resource_path,
-        serde_json::to_vec(
-            &json!({"backend": backend.name(), "budget_mib": budget, "available_before_mib": crate::platform::available_memory_mib()}),
-        )?,
-    )?;
-    let log = File::create(engine.root.join("llm-runtime.log"))?;
-    let child = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(log)
-        .spawn()
-        .context("无法启动本地笔记模型")?;
-    let done = Arc::new(AtomicBool::new(false));
-    let mut server = Server(child, done.clone());
-    let pid = server.0.id();
-    engine.llm_pid.store(pid, Ordering::SeqCst);
-    let weak = Arc::downgrade(engine);
-    let deadline = Instant::now();
-    let timed_out = Arc::new(AtomicBool::new(false));
-    let timeout_flag = timed_out.clone();
-    let resource_stop = Arc::new(AtomicBool::new(false));
-    let resource_flag = resource_stop.clone();
-    let budget_stop = Arc::new(AtomicBool::new(false));
-    let budget_flag = budget_stop.clone();
-    thread::spawn(move || {
-        let mut lag_count = 0;
-        let mut memory = sysinfo::System::new();
-        let process = sysinfo::Pid::from_u32(pid);
-        while !done.load(Ordering::SeqCst) {
-            thread::sleep(Duration::from_millis(500));
-            if done.load(Ordering::SeqCst) {
-                break;
-            }
-            memory.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[process]), true);
-            let rss_mib = memory.process(process).map(|p| p.memory() / 1024 / 1024);
-            let available_mib = crate::platform::available_memory_mib();
-            let over_budget = rss_mib.is_some_and(|m| m > budget);
-            let pressure = available_mib.is_some_and(|m| m < 512);
-            if over_budget || pressure {
-                let _ = std::fs::write(&resource_path, serde_json::to_vec(&json!({"backend":backend.name(), "reason":if over_budget {"process_budget"} else {"system_pressure"}, "budget_mib":budget,"rss_mib":rss_mib,"available_mib":available_mib})).unwrap_or_default());
-                budget_flag.store(over_budget, Ordering::SeqCst);
-                resource_flag.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
-                break;
-            }
-            let Some(engine) = weak.upgrade() else { break };
-            let s = {
-                let mut s = engine.status.lock().unwrap();
-                s.notes_elapsed_ms = deadline.elapsed().as_millis() as u64;
-                s.clone()
-            };
-            if deadline.elapsed() > Duration::from_secs(600) {
-                timeout_flag.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
-                break;
-            }
-            if s.recording && s.elapsed_ms.saturating_sub(s.processed_ms) > 4000 {
-                lag_count += 1;
-            } else {
-                lag_count = 0;
-            }
-            if engine.note_cancel.load(Ordering::SeqCst) || lag_count >= 6 {
-                engine.note_cancel.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
-                break;
-            }
-        }
-    });
-    // This HTTP client only talks to an authenticated loopback process; proxies are disabled.
-    let agent = ureq::AgentBuilder::new()
-        .try_proxy_from_env(false)
-        .redirects(0)
-        .timeout_connect(Duration::from_secs(3))
-        .timeout_write(Duration::from_secs(15))
-        // This is an idle-read limit, not a limit on the total streamed response.
-        .timeout_read(Duration::from_secs(300))
-        .build();
-    let base = format!("http://127.0.0.1:{port}");
-    let auth = format!("Bearer {token}");
-    let start = Instant::now();
-    loop {
-        if resource_stop.load(Ordering::SeqCst) {
-            if budget_stop.load(Ordering::SeqCst) {
-                bail!("writer:resource-budget-hit:{budget}");
-            }
-            bail!("writer:resource-pressure");
-        }
-        if server.0.try_wait()?.is_some() {
-            bail!("笔记模型已停止；原文保留，可以稍后重试");
-        }
-        if agent
-            .get(&format!("{base}/health"))
-            .set("Authorization", &auth)
-            .timeout(Duration::from_secs(1))
-            .call()
-            .is_ok()
-        {
-            break;
-        }
-        if start.elapsed() > Duration::from_secs(120) {
-            bail!("笔记模型启动超时");
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
-
-    Ok(LocalSession {
-        agent,
-        base,
-        auth,
-        budget,
-        backend,
-        resource_stop,
-        budget_stop,
-        timed_out,
-        _server: server,
-    })
-}
-
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     let started = Instant::now();
     let job = Uuid::new_v4().to_string();
+    let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let snapshot = engine.snapshot(meeting)?;
     if !needs_update(&snapshot) {
         bail!("纪要已与当前关键词和转写同步");
@@ -219,9 +43,15 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
         bail!("笔记模型尚未安装，请运行 bin/setup");
     }
     let context = retrieval::retrieve(&snapshot);
+    trace.event(
+        "retrieval",
+        json!({"selected":context.segments.len(),"cursor":context.cursor}),
+    );
     let prefs = engine.preferences.lock().unwrap().clone();
     engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
-    let result = generate_inner(engine, meeting, &snapshot, context, &prefs);
+    let result = crate::acceleration::with_cpu_fallback(engine, || {
+        generate_inner(engine, meeting, &snapshot, context.clone(), &prefs, &trace)
+    });
     let outcome = match &result {
         Ok(n) => json!({"status":"committed","sections":n}),
         Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
@@ -231,6 +61,7 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
         &outcome,
         started.elapsed().as_millis() as u64,
     )?;
+    trace.finish(result.is_ok(), result.as_ref().ok().copied());
     result
 }
 fn generate_inner(
@@ -239,6 +70,7 @@ fn generate_inner(
     snapshot: &crate::Snapshot,
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
+    trace: &crate::inference_trace::TaskTrace,
 ) -> Result<usize> {
     if context
         .segments
@@ -266,8 +98,13 @@ fn generate_inner(
     }
     engine.status.lock().unwrap().notes_status = "writer:loading".into();
     engine.status.lock().unwrap().notes_elapsed_ms = 0;
-    let session = open_session(engine, prefs)?;
-    let LocalSession {
+    let session = open_session(engine, prefs, meeting, snapshot.meeting.run)?;
+    trace.event(
+        "worker",
+        json!({"reused":session.reused,"startup_ms":session.startup_ms,
+        "backend":session.backend.name(),"budget_mib":session.budget}),
+    );
+    let crate::inference_worker::LocalSession {
         agent,
         base,
         auth,
@@ -277,7 +114,7 @@ fn generate_inner(
         budget_stop,
         timed_out,
         ..
-    } = &session;
+    } = &*session;
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let mut background = engine.writer_context(
         &snapshot.notes,
@@ -361,9 +198,10 @@ fn generate_inner(
         let generation_started = Instant::now();
         let mut first_token_ms = None;
         let mut partial_draft = String::new();
+        session.begin_request();
         let response = agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
-            "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":attempt > 0
+            "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
         }));
         let generated = response.map_err(anyhow::Error::from).and_then(|response| {
             stream::read_observed(BufReader::new(response.into_reader()), |draft| {
@@ -375,6 +213,19 @@ fn generate_inner(
                 engine.status.lock().unwrap().notes_status = format!("writer:writing:{characters}");
             })
         });
+        trace.generation(
+            attempt + 1,
+            generation_started.elapsed().as_millis() as u64,
+            first_token_ms,
+            &generated
+                .as_ref()
+                .map(|(_, usage)| usage.clone())
+                .unwrap_or(Value::Null),
+            generated.is_ok(),
+        );
+        if generated.is_ok() {
+            session.complete_request();
+        }
         if generated.is_err() {
             attempts.push(json!({"attempt":attempt+1,"draft":partial_draft,"failure":"incomplete_local_response",
                 "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms}));
@@ -544,24 +395,4 @@ fn generate_inner(
         sections,
         engine.note_cancel.load(Ordering::SeqCst),
     )
-}
-
-#[cfg(test)]
-mod memory_tests {
-    use super::*;
-
-    #[test]
-    fn writer_requires_measured_headroom() {
-        assert!(check_memory(Some(4236), 1400).is_ok());
-        assert!(check_memory(Some(1400), 1400).is_ok());
-        assert_eq!(
-            check_memory(Some(1399), 1400).unwrap_err().to_string(),
-            "writer:low-memory:1399:1400"
-        );
-        assert!(check_memory(Some(0), 1400).is_err());
-        assert_eq!(
-            check_memory(None, 1400).unwrap_err().to_string(),
-            "writer:memory-unavailable"
-        );
-    }
 }
