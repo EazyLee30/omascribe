@@ -105,7 +105,7 @@ impl Engine {
             .library_entries()?
             .into_iter()
             .find(|e| e.id == entry.id);
-        let was_context = previous.as_ref().is_some_and(&relevant);
+        let was_context = previous.as_ref().is_some_and(relevant);
         let was_term = previous.as_ref().is_some_and(|e| e.kind == "term");
         if !["note", "term", "memory"].contains(&entry.kind.as_str())
             || entry.title.chars().count() > 160

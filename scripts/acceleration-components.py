@@ -44,7 +44,8 @@ def version_ok(version):
 
 
 def runtime_member(name):
-    return name in {"llama-server", "llama-server.exe", "build-info.json", "llama.cpp-LICENSE.txt", "CUDA-EULA.html"} or CUDA_RUNTIME.fullmatch(name) or re.fullmatch(r"(?:lib)?(?:llama|ggml)[A-Za-z0-9_.-]*\.(?:dll|so(?:\.[0-9]+)*)", name)
+    # The pinned server-context links mtmd even for text-only inference.
+    return name in {"llama-server", "llama-server.exe", "build-info.json", "llama.cpp-LICENSE.txt", "CUDA-EULA.html"} or CUDA_RUNTIME.fullmatch(name) or re.fullmatch(r"(?:(?:lib)?(?:llama|ggml)[A-Za-z0-9_.-]*|(?:lib)?mtmd)\.(?:dll|so(?:\.[0-9]+)*)", name)
 
 
 def asset(path, url=""):

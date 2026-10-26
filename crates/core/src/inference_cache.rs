@@ -107,10 +107,10 @@ pub(crate) fn environment(
     } else {
         None
     };
-    let input = json!({"schema":"translation-cache-v2","model":model.id,"assets":assets,
+    let input = json!({"schema":"translation-cache-v3-chunked","model":model.id,"assets":assets,
         "runtime":engine.inference_fingerprints.file(&runtime),"component":component,
         "template":crate::translation::SYSTEM_TEMPLATE,"output_schema":crate::translation::OUTPUT_SCHEMA,
-        "generation":{"seed":42,"temperature":0,"max_tokens":512,"thinking":false},
+        "generation":{"seed":42,"temperature":0,"max_tokens":crate::translation::chunks::OUTPUT_TOKENS,"thinking":false,"input_budget":crate::translation::chunks::INPUT_TOKENS},
         "configuration":{"context":prefs.context_size,"threads":prefs.threads,"backend":prefs.inference_backend,"mode":prefs.resource_mode,"memory_budget":prefs.memory_budget_mib},
         "permissions":{"knowledge":prefs.use_knowledge,"memory":prefs.use_memory},
         "scope":{"meeting":meeting.id,"run":meeting.run,"terms":db.cache_dependency(&meeting.id,"terms")?,"speakers":meeting.speaker_names}});

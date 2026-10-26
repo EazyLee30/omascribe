@@ -78,6 +78,19 @@ class AccelerationPackagingTests(unittest.TestCase):
                 components.collect_cuda(output, cuda, False)
             self.assertEqual({p.name for p in output.iterdir()}, {"libggml-cuda.so", "libcudart.so.12", "libcublas.so.12", "libcublasLt.so.12"})
 
+    def test_pinned_server_shared_dependencies_are_allowed_but_not_arbitrary_libraries(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = pathlib.Path(root)
+            runtime = self.runtime(root / "runtime")
+            required = {"libmtmd.so", "libmtmd.so.0", "libllama-common.so", "libllama-server-impl.so"}
+            for name in required:
+                (runtime / name).write_bytes(b"fictional server dependency")
+            metadata = components.package(runtime, "vulkan", "linux-x86_64", "acceleration-test-1", root / "out")
+            self.assertTrue(required.issubset({f["name"] for f in metadata["files"]}))
+            self.assertTrue(components.runtime_member("mtmd.dll"))
+            for name in ["libmtmd-unpinned.so", "libarbitrary.so", "mtmd.exe", "libmtmd.so.debug"]:
+                self.assertFalse(components.runtime_member(name), name)
+
     def test_bad_release_target_and_backend_rejected(self):
         for version, target, backend in [("../escape", "linux-x86_64", "vulkan"), ("v0.3.4", "linux-x86_64", "cuda"), ("acceleration-test-1", "macos-arm64", "cuda"), ("acceleration-test-1", "linux-x86_64", "unverified")]:
             with self.assertRaises(ValueError):

@@ -23,6 +23,13 @@ impl Store {
             CREATE TABLE IF NOT EXISTS inference_jobs(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, started_at TEXT NOT NULL, input TEXT NOT NULL, outcome TEXT, elapsed_ms INTEGER);
             CREATE TABLE IF NOT EXISTS recording_takes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, number INTEGER NOT NULL, json TEXT NOT NULL, UNIQUE(meeting_id,number));
             CREATE TABLE IF NOT EXISTS translations(segment_id TEXT NOT NULL,revision INTEGER NOT NULL,target TEXT NOT NULL,model TEXT NOT NULL,json TEXT NOT NULL, PRIMARY KEY(segment_id,revision,target,model));
+            CREATE TABLE IF NOT EXISTS translation_parts(segment_id TEXT PRIMARY KEY,cache_key TEXT NOT NULL,json TEXT NOT NULL);
+            CREATE TRIGGER IF NOT EXISTS translation_parts_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id BEGIN
+              DELETE FROM translation_parts WHERE segment_id=OLD.id;
+            END;
+            CREATE TRIGGER IF NOT EXISTS translation_parts_delete AFTER DELETE ON segments BEGIN
+              DELETE FROM translation_parts WHERE segment_id=OLD.id;
+            END;
             CREATE TABLE IF NOT EXISTS deleted_meetings(id TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS term_checks(segment_id TEXT PRIMARY KEY,run INTEGER NOT NULL,revision INTEGER NOT NULL,terms_key TEXT NOT NULL);
@@ -39,7 +46,7 @@ impl Store {
               DELETE FROM term_queue WHERE segment_id=OLD.id;
               DELETE FROM term_checks WHERE segment_id=OLD.id;
             END;
-            PRAGMA user_version=6;")?;
+            PRAGMA user_version=7;")?;
         if previous_version < 6 {
             conn.execute("INSERT OR IGNORE INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s JOIN meetings m ON m.id=s.meeting_id WHERE s.run=json_extract(m.json,'$.run')", [])?;
         }

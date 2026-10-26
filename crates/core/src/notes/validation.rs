@@ -279,6 +279,30 @@ pub fn validate_with_speakers(
     meeting: &str,
     names: &std::collections::BTreeMap<String, String>,
 ) -> Result<Vec<Suggestion>> {
+    validate_document(content, segments, meeting, names, 1200, true)
+}
+pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
+    let content =
+        serde_json::json!({"sections":[{"title":"Translation","body":text,"sources":[1]}]})
+            .to_string();
+    validate_document(
+        &content,
+        std::slice::from_ref(source),
+        meeting,
+        &Default::default(),
+        16_000,
+        false,
+    )?;
+    Ok(())
+}
+fn validate_document(
+    content: &str,
+    segments: &[Segment],
+    meeting: &str,
+    names: &std::collections::BTreeMap<String, String>,
+    max_body_chars: usize,
+    require_prose: bool,
+) -> Result<Vec<Suggestion>> {
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
     if draft.sections.is_empty()
@@ -323,17 +347,18 @@ pub fn validate_with_speakers(
         let title = section.title.trim();
         if body.is_empty()
             || title.is_empty()
-            || body.chars().count() > 1200
+            || body.chars().count() > max_body_chars
             || title.chars().count() > 60
             || section.sources.is_empty()
             || section.sources.len() > segments.len()
         {
             bail!("文档段落或出处无效");
         }
-        if body
-            .lines()
-            .any(|l| l.trim_start().starts_with(['#', '*', '-', '•']))
-            || title.contains(['\n', '#', '*'])
+        if require_prose
+            && (body
+                .lines()
+                .any(|l| l.trim_start().starts_with(['#', '*', '-', '•']))
+                || title.contains(['\n', '#', '*']))
         {
             bail!("模型没有返回段落形式的文档");
         }
@@ -482,6 +507,20 @@ pub fn validate_with_speakers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn translation_lengths_are_separate_from_minutes_but_fact_guards_remain() {
+        let mut source = data()[0].clone();
+        source.text =
+            "The budget 3000 is not decided. Morgan will send the report on Thursday. ".repeat(80);
+        let translation = "预算3000尚未确定。Morgan将在周四发送报告。".repeat(80);
+        assert!(translation.chars().count() > 1200);
+        assert!(validate_translation(&translation, &source, "m").is_ok());
+        assert!(validate_translation(&translation.replace("3000", "4000"), &source, "m").is_err());
+        assert!(validate_translation(&translation.replace("周四", "周一"), &source, "m").is_err());
+        let draft =
+            serde_json::json!({"sections":[{"title":"Budget","body":translation,"sources":[1]}]});
+        assert!(validate(&draft.to_string(), std::slice::from_ref(&source), "m").is_err());
+    }
     #[test]
     fn a_long_paragraph_can_cite_all_ten_passages_including_the_last_deadline() {
         let sources: Vec<_> = (1..=10)

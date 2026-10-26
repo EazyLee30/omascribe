@@ -1,10 +1,11 @@
 //! Optional on-device translation. Source passages are immutable; revisions invalidate cached text.
+pub(crate) mod chunks;
 use crate::{notes, preferences::Preferences, store::Store, Engine, Meeting};
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     io::BufReader,
     sync::{atomic::Ordering, Arc},
     time::{Duration, Instant},
@@ -151,10 +152,16 @@ fn run_inner(
 ) -> Result<usize> {
     let prefs = engine.preferences.lock().unwrap().clone();
     let snapshot = engine.snapshot(meeting)?;
-    let passages = select_pending(&snapshot);
+    let mut passages = select_pending(&snapshot);
     if passages.is_empty() {
         return Ok(0);
     }
+    let last = engine
+        .store
+        .lock()
+        .unwrap()
+        .cache_dependency(meeting, "translation-turn")?;
+    rotate_after(&mut passages, &last);
     let session = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
     let environment = crate::inference_cache::environment(
         engine,
@@ -169,38 +176,67 @@ fn run_inner(
     );
     let started = Instant::now();
     let mut count = 0;
+    let mut requests = 0;
+    let mut deferred = 0;
+    let mut queue = VecDeque::new();
     for passage in passages {
+        let target = target_language(&prefs.translation_mode, &passage.text).unwrap();
+        let key = crate::inference_cache::translation_key(&environment, &passage, target);
+        let progress = chunks::Progress::load(&engine.store.lock().unwrap(), &passage, &key)?;
+        queue.push_back((passage, target, key, progress));
+    }
+    // Each selected passage gets one turn before a long passage gets its next chunk.
+    while let Some((passage, target, key, mut progress)) = queue.pop_front() {
+        if requests >= chunks::MAX_REQUESTS
+            || requests > 0
+                && snapshot.runtime.recording
+                && started.elapsed() > Duration::from_secs(8)
+        {
+            break;
+        }
         if engine.note_cancel.load(Ordering::SeqCst)
             || engine.preferences.lock().unwrap().translation_mode != prefs.translation_mode
         {
             break;
         }
-        let target = target_language(&prefs.translation_mode, &passage.text).unwrap();
         let language = if target == "zh" {
             "简体中文"
         } else {
             "English"
         };
         let system = SYSTEM_TEMPLATE.replace("{language}", language);
-        let tokens: Value = session
-            .agent
-            .post(&format!("{}/tokenize", session.base))
-            .set("Authorization", &session.auth)
-            .send_json(json!({"content":format!("{system}\n{}",passage.text)}))?
-            .into_json()?;
-        if tokens["tokens"]
-            .as_array()
-            .context("Invalid tokenizer response")?
-            .len()
-            > prefs.context_size as usize - 700
-        {
-            bail!("Passage exceeds translation context budget");
-        }
+        // Advance even if tokenization fails or this source cannot fit safely.
+        engine.store.lock().unwrap().set_cache_dependency(
+            meeting,
+            "translation-turn",
+            &passage.id,
+        )?;
+        let input_budget = chunks::INPUT_TOKENS.min(
+            (prefs.context_size as usize).saturating_sub(chunks::OUTPUT_TOKENS as usize + 256),
+        );
+        let chunk = chunks::next(&passage.text, progress.end, input_budget, |input| {
+            session.begin_request();
+            let tokens: Value = session
+                .agent
+                .post(&format!("{}/tokenize", session.base))
+                .set("Authorization", &session.auth)
+                .send_json(json!({"content":format!("{system}\n{input}")}))?
+                .into_json()?;
+            let count = tokens["tokens"]
+                .as_array()
+                .context("Invalid tokenizer response")?
+                .len();
+            session.complete_request();
+            Ok(count)
+        })?
+        .context("No translatable source remains")?;
+        let input = &passage.text[chunk.start..chunk.end];
+        trace.event("chunk", json!({"source_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
         session.begin_request();
         let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
-            "messages":[{"role":"system","content":system},{"role":"user","content":passage.text}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":512,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
+            "messages":[{"role":"system","content":system},{"role":"user","content":input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
             "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":serde_json::from_str::<Value>(OUTPUT_SCHEMA)?}}
         }))?;
         let response =
@@ -209,8 +245,9 @@ fn run_inner(
                     first_token_ms.get_or_insert(request_started.elapsed().as_millis() as u64);
                 }
             });
+        requests += 1;
         trace.generation(
-            count + 1,
+            requests,
             request_started.elapsed().as_millis() as u64,
             first_token_ms,
             &response
@@ -227,35 +264,47 @@ fn run_inner(
         {
             bail!("Translation paused to protect recording and system resources");
         }
-        let value: Value = serde_json::from_str(&raw)?;
-        let text = value["translation"]
-            .as_str()
-            .context("Missing translation")?
-            .trim();
-        if text.is_empty() || text.chars().count() > 4000 {
-            bail!("Invalid translation length");
+        // A malformed or unsupported answer for one passage must not starve the others.
+        let validated = (|| -> Result<()> {
+            let value: Value = serde_json::from_str(&raw).context("invalid_json")?;
+            let text = value["translation"]
+                .as_str()
+                .context("missing_translation")?
+                .trim();
+            if text.is_empty() || text.chars().count() > 4000 {
+                bail!("invalid_translation_length");
+            }
+            let mut evidence = passage.clone();
+            evidence.text = input.to_owned();
+            validate_text(text, &evidence, meeting).context("chunk_evidence_mismatch")?;
+            progress
+                .append(&passage.text, chunk.end, text, target)
+                .context("progress_limit")?;
+            if progress.end == passage.text.len() {
+                validate_text(&progress.text, &passage, meeting)
+                    .context("passage_evidence_mismatch")?;
+            }
+            Ok(())
+        })();
+        if let Err(error) = validated {
+            trace.event("validation_failed", json!({"reason":error.to_string()}));
+            // Explicit local harness opt-in. Normal traces never contain speech or output.
+            if std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1") {
+                let _ = crate::preferences::atomic_json(
+                    &engine.root.join("translation-diagnostic.json"),
+                    &json!({"input":input,"raw":raw,"error":format!("{error:#}")}),
+                );
+            }
+            deferred += 1;
+            continue;
         }
-        // Apply the same unsupported-number/date guard used by the document writer.
-        notes::validate(
-            &json!({"sections":[{"title":"Translation", "body":text,"sources":[1]}]}).to_string(),
-            std::slice::from_ref(&passage),
-            meeting,
-        )?;
-        let t = Translation {
-            segment_id: passage.id.clone(),
-            revision: passage.revision,
-            target: target.into(),
-            model: prefs.llm_model.clone(),
-            text: text.into(),
-            cache_key: crate::inference_cache::translation_key(&environment, &passage, target),
-        };
         let current_prefs = engine.preferences.lock().unwrap();
         if current_prefs.translation_mode != prefs.translation_mode
             || current_prefs.llm_model != prefs.llm_model
         {
             break;
         }
-        let db = engine.store.lock().unwrap();
+        let mut db = engine.store.lock().unwrap();
         let current_meeting = db.meeting(meeting)?;
         if current_meeting.run != snapshot.meeting.run
             || crate::inference_cache::environment(engine, &db, &current_meeting, &current_prefs)?
@@ -271,26 +320,65 @@ fn run_inner(
         let current: crate::Segment = serde_json::from_str(&current)?;
         if current.revision == passage.revision
             && current.run == snapshot.meeting.run
-            && crate::inference_cache::translation_key(&environment, &current, target)
-                == t.cache_key
+            && crate::inference_cache::translation_key(&environment, &current, target) == key
         {
-            db.conn.execute(
-                "INSERT OR REPLACE INTO translations VALUES(?1,?2,?3,?4,?5)",
-                rusqlite::params![
-                    t.segment_id,
-                    t.revision,
-                    t.target,
-                    t.model,
-                    serde_json::to_string(&t)?
-                ],
-            )?;
-            count += 1;
+            let tx = db.conn.transaction()?;
+            if progress.end == passage.text.len() {
+                let t = Translation {
+                    segment_id: passage.id.clone(),
+                    revision: passage.revision,
+                    target: target.into(),
+                    model: prefs.llm_model.clone(),
+                    text: progress.text,
+                    cache_key: key,
+                };
+                tx.execute(
+                    "INSERT OR REPLACE INTO translations VALUES(?1,?2,?3,?4,?5)",
+                    rusqlite::params![
+                        t.segment_id,
+                        t.revision,
+                        t.target,
+                        t.model,
+                        serde_json::to_string(&t)?
+                    ],
+                )?;
+                tx.execute(
+                    "DELETE FROM translation_parts WHERE segment_id=?1",
+                    [&passage.id],
+                )?;
+                count += 1;
+            } else {
+                tx.execute(
+                    "INSERT OR REPLACE INTO translation_parts VALUES(?1,?2,?3)",
+                    rusqlite::params![passage.id, key, serde_json::to_string(&progress)?],
+                )?;
+                queue.push_back((passage, target, key, progress));
+            }
+            tx.commit()?;
         }
-        if snapshot.runtime.recording && started.elapsed() > Duration::from_secs(8) {
+        if requests >= chunks::MAX_REQUESTS
+            || snapshot.runtime.recording && started.elapsed() > Duration::from_secs(8)
+        {
             break;
         }
     }
+    trace.event("batch", json!({"requests":requests,"committed":count,"deferred":deferred,"remaining_selected":queue.len()}));
+    if deferred > 0 {
+        bail!("Some passages require translation retry; other valid results were saved");
+    }
     Ok(count)
+}
+
+fn validate_text(text: &str, passage: &crate::Segment, meeting: &str) -> Result<()> {
+    // Unsupported numbers/dates cannot enter either private chunks or visible translations.
+    notes::validate_translation(text, passage, meeting)
+}
+
+fn rotate_after(passages: &mut [crate::Segment], last: &str) {
+    if let Some(index) = passages.iter().position(|p| p.id == last) {
+        let len = passages.len();
+        passages.rotate_left((index + 1) % len);
+    }
 }
 
 /// Reserve half of each batch for the oldest work; new captions cannot starve it.
@@ -344,6 +432,15 @@ mod tests {
             selected.iter().map(|s| s.seq).collect::<Vec<_>>(),
             vec![1, 2, 11, 12]
         );
+        // When the time budget permits only one generation per batch, progress still
+        // rotates across old/new work instead of restarting at the first long passage.
+        let mut next = selected.clone();
+        for seq in [1, 2, 11, 12, 1] {
+            assert_eq!(next[0].seq, seq);
+            let id = next[0].id.clone();
+            next = selected.clone();
+            rotate_after(&mut next, &id);
+        }
         Ok(())
     }
     #[test]

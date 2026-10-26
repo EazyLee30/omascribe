@@ -22,6 +22,7 @@ impl Engine {
         if deleted {
             tx.execute("INSERT OR IGNORE INTO deleted_meetings VALUES(?1)", [id])?;
             tx.execute("DELETE FROM translations WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
+            tx.execute("DELETE FROM translation_parts WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
             tx.execute("DELETE FROM term_checks WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
             tx.execute("DELETE FROM term_queue WHERE meeting_id=?1", [id])?;
             tx.execute("DELETE FROM cache_dependencies WHERE meeting_id=?1", [id])?;
@@ -125,6 +126,10 @@ mod tests {
                 "INSERT INTO translations VALUES(?1,1,'zh','fixture','{}')",
                 [&source.id],
             )?;
+            db.conn.execute(
+                "INSERT INTO translation_parts VALUES(?1,'fixture','{}')",
+                [&source.id],
+            )?;
             db.set_cache_dependency(&m.id, "terms", "fixture")?;
             // Any failure must roll back both the deletion marker and the cache purge.
             db.conn.execute_batch("CREATE TRIGGER reject_purge BEFORE DELETE ON translations BEGIN SELECT RAISE(ABORT,'simulated failure'); END;")?;
@@ -144,6 +149,7 @@ mod tests {
             let db = e.store.lock().unwrap();
             for table in [
                 "translations",
+                "translation_parts",
                 "term_checks",
                 "term_queue",
                 "cache_dependencies",
