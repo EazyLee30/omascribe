@@ -82,6 +82,7 @@ def evaluate(args):
     automatic = getattr(args, "auto_schedule", False)
     report["execution"] = "automatic-scheduler" if automatic else "explicit-generation"
     report["catchup_enabled"] = os.environ.get("OMASCRIBE_MINUTES_CATCHUP") == "1"
+    report["incremental_enabled"] = os.environ.get("OMASCRIBE_INCREMENTAL_MINUTES") == "1"
     command([cli, "diagnose"], env, artifacts / "diagnose")
     for case in cases:
         folder = artifacts / case["name"]

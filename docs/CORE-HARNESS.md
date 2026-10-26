@@ -74,7 +74,7 @@ CLI 的 `replay AUDIO SECONDS --telemetry NEW_JSONL_PATH` 每 200 ms 保存无�
 
 `*.artifacts/workspace` 是测试专用数据库及音频；排错后可自行删除整个输出目录。不得把实际用户录音添加为公开 CI fixture。示例中的 `artifacts/` 已被 Git 忽略。
 
-跨平台安装包烟测执行同一份完整的本地纪要场景清单（目前十八个），覆盖中文日期、英文期限、试麦过滤、多轮更正、说话人、长上下文、名称贯通、双向输出语言、人工段落保护和含混转写不得补造议题。轻量 CI 执行评分器测试、Rust 校验及流式中断/原文保护测试；公开语料全套需要显式准备后运行。
+跨平台安装包烟测执行同一份完整的本地纪要场景清单（目前二十一个），覆盖中文日期、英文期限、试麦过滤、多轮更正、说话人、长上下文、名称贯通、双向输出语言、人工段落保护和含混转写不得补造议题。轻量 CI 执行评分器测试、Rust 校验及流式中断/原文保护测试；公开语料全套需要显式准备后运行。
 
 本轮固定样本的前后对照及限制见 [core-0.3.3.json](evaluation/core-0.3.3.json)。
 
@@ -103,3 +103,9 @@ python3 tests/replay_terminology.py \
 CLI `replay-settle AUDIO SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]` 返回补齐结果及 snapshot；`settle MEETING_ID SECONDS` 验证已启用自动纪要的隔离会议。两者仅接受 1–600 秒显式预算。`OMASCRIBE_MINUTES_CATCHUP=1 python3 tests/evaluate.py --auto-schedule --preferences FILE --output NEW.json` 用真实后台调度跑同一十八项事实、引用及人工段落保护场景。实验默认关闭；结果未通过不更换样本或放宽质量门槛。每一阶段保留所有 metadata-only task trace；不能用只含最后一次生成的诊断文件推断整个自动补齐过程的 token 或重试成本。
 
 M5 上 `116469e` 两轮逆序回放与十八项自动纪要均已通过，具体身份、全成本、原始结果摘要及未测范围见 [补齐验收](evaluation/apple-minutes-catchup-2026-10-27.json)。3.1 秒与 29.3 秒对比为相同工作完成后的调度等待差异，不表示模型运算或耗电同比改善。
+
+## 增量正文对照
+
+`tests/compare_incremental_minutes.py --model-dir 已安装的qwen3-1.7b目录 --runtime 原生runtime目录 --backend metal --output 新结果.json` 两轮反转顺序，比较相同模型、完整场景及所有重试成本。CPU设备可选 `--backend cpu`。模型必须已安装且与catalog摘要一致；不下载。`OMASCRIBE_INCREMENTAL_MINUTES=1` 是实验开关，默认关闭。当前21项场景保留旧18项，新增独立议题保留、撤回/金额变更、真实完成及试麦不重写。新的语料摘要与旧18项历史记录分开，不改写旧结果。
+
+每次输入仍使用当前原始来源做数字、否定、人名和引用校验；已生成的旧正文是带版本的增量状态，不是新的原话，也不替代语义核对。没有事实/状态结构化提取器或长会压缩的完成声明。少读历史但更多token、重试、时间，或任一事实失败，均不能作为启用理由。
