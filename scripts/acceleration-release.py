@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exact-source candidate publication; no key material, SDKs or app installers here."""
 import argparse
+import base64
 import hashlib
 import importlib.util
 import json
@@ -8,6 +9,7 @@ import os
 import pathlib
 import re
 import subprocess
+import threading
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPOSITORY = "EazyLee30/omascribe"
@@ -70,10 +72,11 @@ def native_fingerprint(read):
     """Compiled inputs, runner matrix and exact SDK/build/package commands.
 
     Delivery orchestration and newly added acceptance tests are outside the
-    native compiler inputs. Both recognized checkout forms bind the checked
-    source through either the event's ancestor base or prepare's exact head.
+    native compiler inputs. Original job checkout commits are verified from
+    immutable logs; prepared checkouts bind the new exact source. Only workflow
+    parsing normalizes CRLF; stored compiler inputs and signed bytes stay exact.
     """
-    workflow = read(".github/workflows/acceleration-components.yml").decode()
+    workflow = read(".github/workflows/acceleration-components.yml").decode().replace("\r\n", "\n")
     build = workflow.split("  build:\n", 1)[1].split("  catalog:\n", 1)[0]
     checkout = build.split("    steps:\n", 1)[1].split("      - uses: actions/setup-python@", 1)[0]
     recognized = ["      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n        with:\n          ref: ${{ needs.prepare.outputs.source_sha }}\n"]
@@ -102,6 +105,59 @@ def require_windows_core(sha):
     raise ValueError("Current source needs successful Windows-core checks before candidate signing")
 
 
+def checkout_sha(prefix):
+    lines = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", prefix.decode("utf-8", errors="replace")).splitlines()
+    for line, following in zip(lines, lines[1:]):
+        if re.search(r'\bgit(?:\.exe)?"?\s+log -1 --format=%H(?:\s|$)', line):
+            match = re.search(r"(?:^|\s)([0-9a-f]{40})\s*$", following)
+            if match:
+                return match[1]
+    raise ValueError("Original job has no recognized exact checkout source")
+
+
+def checkout_sha_for_job(job_id):
+    # Only read the bounded checkout prefix, not megabytes of CUDA compilation.
+    # Terminating this local read never cancels the remote Actions job.
+    process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job_id}/logs"],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    expired = threading.Event()
+    def stop():
+        expired.set()
+        try:
+            process.kill()
+        except OSError:
+            pass
+    timer = threading.Timer(30, stop)
+    timer.start()
+    try:
+        prefix = process.stdout.read(128 * 1024)
+    finally:
+        process.stdout.close()
+        if process.poll() is None:
+            process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        timer.cancel()
+    if expired.is_set():
+        raise ValueError("Original checkout log read timed out")
+    return checkout_sha(prefix)
+
+
+def native_file_at(commit, path):
+    exists = subprocess.run(["git", "cat-file", "-e", commit+"^{commit}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if exists.returncode == 0:
+        return subprocess.check_output(["git", "show", f"{commit}:{path}"])
+    # Historical PR merge refs can disappear after newer pushes. Read the
+    # immutable logged commit, never today's refs/pull/N/merge or PR base/head.
+    value = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/contents/{path}?ref={commit}"], text=True))
+    if value.get("encoding") != "base64" or value.get("size", 0) > 1024*1024:
+        raise ValueError("Unsupported historical native input")
+    return base64.b64decode(value["content"])
+
+
 def check_reuse(selected, directory):
     def api(path):
         return json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/{path}"], text=True))
@@ -114,14 +170,18 @@ def check_reuse(selected, directory):
     sha = run["head_sha"]
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Invalid original source")
-    matching_prs = [pr for pr in run["pull_requests"] if pr["head"]["sha"] == sha]
-    if len(matching_prs) != 1:
-        raise ValueError("Original PR source/base evidence is missing")
-    subprocess.run(["git", "merge-base", "--is-ancestor", matching_prs[0]["base"]["sha"], sha], check=True)
+    jobs = api(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
+    builds = [job for job in jobs if job["name"].startswith("build (")]
+    if len(builds) != 4 or any(job["conclusion"] != "success" for job in builds):
+        raise ValueError("All four original native jobs must pass")
+    checkouts = {checkout_sha_for_job(job["id"]) for job in builds}
+    if len(checkouts) != 1:
+        raise ValueError("Original native jobs checked out different sources")
+    checkout = checkouts.pop()
     def at(commit):
-        return native_fingerprint(lambda path: subprocess.check_output(["git", "show", f"{commit}:{path}"]))
+        return native_fingerprint(lambda path: native_file_at(commit, path))
     fingerprint = at(sha)
-    if at(selected["source_sha"]) != fingerprint:
+    if at(checkout) != fingerprint or at(selected["source_sha"]) != fingerprint:
         raise ValueError("Native compiler/SDK/package inputs changed; cannot reuse old binaries")
     artifacts = api(f"actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
     required = {f"accelerator-{target}-{backend}" for target in packaging.TARGETS for backend in packaging.BACKENDS} | {"acceleration-catalog"}
@@ -130,7 +190,7 @@ def check_reuse(selected, directory):
         raise ValueError("Complete non-expired four-way artifacts and catalog are required")
     directory.mkdir(parents=True, exist_ok=True)
     packaging.write_json(directory / "candidate-build-evidence.json", dict(schema=1,
-        publishing_source_sha=selected["source_sha"], build_source_sha=sha, native_input_sha256=fingerprint,
+        publishing_source_sha=selected["source_sha"], build_source_sha=sha, checkout_source_sha=checkout, native_input_sha256=fingerprint,
         build_run_id=run_id, artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
 
 

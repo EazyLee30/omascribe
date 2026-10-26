@@ -50,6 +50,9 @@ class AccelerationReleaseTests(unittest.TestCase):
         inputs = {path:(ROOT/path).read_bytes() for path in ["models.lock.json", "scripts/acceleration-components.py", "scripts/runtime_inventory.py"]}
         inputs[".github/workflows/acceleration-components.yml"] = workflow
         original = release.native_fingerprint(inputs.__getitem__)
+        lf = workflow.replace(b"\r\n", b"\n")
+        for ending in [lf, lf.replace(b"\n", b"\r\n")]:
+            self.assertEqual(release.native_fingerprint({**inputs, ".github/workflows/acceleration-components.yml":ending}.__getitem__), original)
         for path, change in [("models.lock.json", lambda b:b+b" "),
                              ("scripts/acceleration-components.py", lambda b:b+b"# changed build\n"),
                              (".github/workflows/acceleration-components.yml", lambda b:b.replace(b'cuda: "12.8.1"', b'cuda: "12.9.0"')),
@@ -62,21 +65,25 @@ class AccelerationReleaseTests(unittest.TestCase):
 
     def test_reuse_refuses_unfinished_partial_expired_or_changed_native_inputs(self):
         names = {f"accelerator-{target}-{backend}" for target in release.packaging.TARGETS for backend in release.packaging.BACKENDS}|{"acceleration-catalog"}
-        for failure in [None,"unfinished","partial","expired","native","base"]:
+        for failure in [None,"unfinished","partial","expired","native","checkout"]:
             with tempfile.TemporaryDirectory() as temp:
                 directory = pathlib.Path(temp)
                 run = dict(status="completed",conclusion="success",path=".github/workflows/acceleration-components.yml",
                            head_repository=dict(full_name=release.REPOSITORY),head_sha="b"*40,
-                           pull_requests=[dict(head=dict(sha="b"*40),base=dict(sha="c"*40))])
+                           pull_requests=[dict(head=dict(sha="f"*40),base=dict(sha="e"*40))])  # This API field follows today's PR, not the old run.
                 artifacts = [dict(name=name,id=n,expired=False) for n,name in enumerate(sorted(names),1)]
+                jobs=[dict(name=f"build (fixture-{i})",id=i,conclusion="success") for i in range(4)]
                 if failure == "unfinished":run["status"] = "in_progress"
                 if failure == "partial":artifacts.pop()
                 if failure == "expired":artifacts[0]["expired"] = True
-                if failure == "base":run["pull_requests"] = []
+                if failure == "checkout":jobs.pop()
                 def output(argv, **kwargs):
-                    return json.dumps(dict(artifacts=artifacts) if "artifacts?" in argv[-1] else run)
+                    if "artifacts?" in argv[-1]:return json.dumps(dict(artifacts=artifacts))
+                    if "jobs?" in argv[-1]:return json.dumps(dict(jobs=jobs))
+                    return json.dumps(run)
                 with patch.object(release.subprocess,"check_output",side_effect=output), patch.object(release.subprocess,"run"), \
-                     patch.object(release,"native_fingerprint",side_effect=["old","new" if failure=="native" else "old"]):
+                     patch.object(release,"checkout_sha_for_job",return_value="c"*40), \
+                     patch.object(release,"native_fingerprint",side_effect=["old","new" if failure=="native" else "old","old"]):
                     selected=dict(reuse_run_id="123",source_sha="a"*40,version="acceleration-ci-123")
                     if failure:
                         with self.assertRaises(ValueError):release.check_reuse(selected,directory)
@@ -84,8 +91,15 @@ class AccelerationReleaseTests(unittest.TestCase):
                         release.check_reuse(selected,directory)
                         evidence=json.loads((directory/"candidate-build-evidence.json").read_text())
                         self.assertEqual(evidence["build_source_sha"],"b"*40)
+                        self.assertEqual(evidence["checkout_source_sha"],"c"*40)
                         self.assertEqual(len(evidence["artifact_ids"]),5)
                 self.assertEqual((directory/"candidate-build-evidence.json").exists(), failure is None)
+
+    def test_checkout_log_uses_the_actual_original_commit_on_both_platforms(self):
+        for executable in ['/usr/bin/git','"C:\\Program Files\\Git\\cmd\\git.exe"']:
+            log=f'2026-10-26T17:00:00Z [command]{executable} log -1 --format=%H\n2026-10-26T17:00:00Z '+"a"*40+'\n'
+            self.assertEqual(release.checkout_sha(log.encode()),"a"*40)
+        with self.assertRaises(ValueError):release.checkout_sha(b'no checkout source\n')
 
     def test_reused_catalog_payload_must_match_the_original_before_signing(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -125,7 +139,7 @@ class AccelerationReleaseTests(unittest.TestCase):
         release.packaging.index(packages, version)
         (packages / "index.payload.sig").write_text("fictional signature; native verifier is mocked only in transaction tests")
         (packages / "updater.pub").write_text(json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["plugins"]["updater"]["pubkey"])
-        (packages / "index.json").write_text(json.dumps(dict(payload=(packages/"index.payload").read_text(), signature=(packages/"index.payload.sig").read_text())))
+        (packages / "index.json").write_text(json.dumps(dict(payload=(packages/"index.payload").read_bytes().decode("utf-8"), signature=(packages/"index.payload.sig").read_text())))
         return packages
 
     def remote(self, packages, wrong_digest=False):

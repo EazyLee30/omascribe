@@ -222,7 +222,7 @@ jobs:
           python3 - <<'PY'
           import json,pathlib
           root=pathlib.Path('release-assets/accelerators')
-          payload=(root/'index.payload').read_text(encoding='utf-8')
+          payload=(root/'index.payload').read_bytes().decode('utf-8')
           signature=(root/'index.payload.sig').read_text(encoding='utf-8').strip()
           (root/'index.json').write_text(json.dumps(dict(payload=payload,signature=signature)),encoding='utf-8')
           config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())

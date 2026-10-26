@@ -73,7 +73,7 @@ jobs:
           python3 - <<'PY'
           import json,pathlib
           root=pathlib.Path('release-assets/accelerators')
-          (root/'index.json').write_text(json.dumps(dict(payload=(root/'index.payload').read_text(),signature=(root/'index.payload.sig').read_text().strip())),encoding='utf-8')
+          (root/'index.json').write_text(json.dumps(dict(payload=(root/'index.payload').read_bytes().decode('utf-8'),signature=(root/'index.payload.sig').read_text().strip())),encoding='utf-8')
           config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())
           (root/'updater.pub').write_text(config['plugins']['updater']['pubkey'],encoding='utf-8')
           PY
