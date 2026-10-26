@@ -22,7 +22,7 @@ impl LayerApi {
                 libloading::Library::new(runtime.join("platform/libgtk-layer-shell.so.0"))
                     .or_else(|_| libloading::Library::new("libgtk-layer-shell.so.0"))
                     .map_err(|_| {
-                        "Desktop captions need gtk-layer-shell. Run bin/setup --overlay-only."
+                        "Desktop captions need gtk-layer-shell. Run scripts/bin/setup --overlay-only."
                             .to_string()
                     })?;
             let supported: unsafe extern "C" fn() -> i32 = *library

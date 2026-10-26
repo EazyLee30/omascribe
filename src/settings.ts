@@ -231,7 +231,7 @@ export async function mountSettings(
     )}</div>
     <div class="settings-section-title"><h2>${tr("本地模型", "Local models", "本機模型")}</h2><button class="outline" data-settings="download-selected">${tr("下载所选组合", "Download selected pair", "下載所選組合")}</button></div>
     <p class="setting-help">${tr("下载会连接模型托管站点，只获取文件，不发送录音或笔记。下载完成后断网也可使用。", "Downloads contact model hosts to fetch files; recordings and notes are never sent. Installed models work offline.", "下載會連接模型託管站點取得檔案，不傳送錄音或筆記；完成後可離線使用。")} <button class="text-button" data-section="privacy">${tr("查看联网权限", "Network permissions", "檢視連網權限")}</button></p>
-    ${!diagnostics.worker_ready || !diagnostics.server_ready ? `<p class="inline-error">${tr("本地推理程序尚未就绪，请使用完整安装包或开发环境的 bin/setup。模型下载不安装运行程序。", "Local runtimes are missing. Use a full installer or bin/setup in development. Model downloads do not install runtime programs.", "本機推理程式尚未就緒，請使用完整安裝包或 bin/setup。")}</p>` : ""}
+    ${!diagnostics.worker_ready || !diagnostics.server_ready ? `<p class="inline-error">${tr("本地推理程序尚未就绪，请使用完整安装包或开发环境的 scripts/bin/setup。模型下载不安装运行程序。", "Local runtimes are missing. Use a full installer or scripts/bin/setup in development. Model downloads do not install runtime programs.", "本機推理程式尚未就緒，請使用完整安裝包或 scripts/bin/setup。")}</p>` : ""}
     <div id="model-list">${modelCards()}</div><p class="setting-help">${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => esc(m.model.name)).join(" + ")}</p>`;
   }
   async function render() {

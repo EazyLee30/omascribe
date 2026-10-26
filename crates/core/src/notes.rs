@@ -43,7 +43,7 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
         bail!("字幕正在追赶，稍后自动整理");
     }
     if !engine.diagnostics().llm_ready {
-        bail!("笔记模型尚未安装，请运行 bin/setup");
+        bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
     }
     let context = retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache));
     trace.event(

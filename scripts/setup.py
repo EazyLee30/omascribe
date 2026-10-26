@@ -223,7 +223,7 @@ def overlay():
     shutil.copy2(
         build / "src/libgtk-layer-shell.so.0", target / "libgtk-layer-shell.so.0"
     )
-    for license in (REPO / "licenses").glob("gtk-layer-shell-*.txt"):
+    for license in (REPO / "packaging/licenses").glob("gtk-layer-shell-*.txt"):
         shutil.copy2(license, target / license.name)
     stamp.write_text(json.dumps(spec, indent=2) + "\n")
     print("Native Wayland captions ready:", target)

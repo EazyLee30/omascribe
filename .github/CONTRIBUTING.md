@@ -2,9 +2,9 @@
 
 OmaScribe starts with a small problem: keep recording, let a person write, and make the transcript useful without a cloud service.
 
-1. Build with `bin/build` and install model assets with `bin/setup`.
+1. Build with `scripts/bin/build` and install model assets with `scripts/bin/setup`.
 2. Use `OMASCRIBE_DATA_DIR=/tmp/omascribe-dev` for development. Set `OMASCRIBE_MODELS_DIR` and `OMASCRIBE_RUNTIME_DIR` to your installed asset directories to avoid duplicate downloads.
-3. Run `bin/test` and `cargo clippy --workspace --all-targets -- -D warnings` before opening a PR.
+3. Run `scripts/bin/test` and `cargo clippy --workspace --all-targets -- -D warnings` before opening a PR.
 4. Describe the behavior that changes and the validation performed. Include a screenshot for visible changes.
 
 Preserve these boundaries:
