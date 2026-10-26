@@ -389,6 +389,13 @@ fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
 }
 impl Engine {
     pub fn acceleration_status(&self) -> Status {
+        // A new Engine has no in-memory status. Revalidate the persisted opt-in
+        // before displaying it, without waiting for a generation to select it.
+        let restore = self.acceleration.lock().unwrap().status.state.is_empty();
+        if restore {
+            let prefs = self.preferences.lock().unwrap().clone();
+            let _ = selected(self, &prefs);
+        }
         self.acceleration.lock().unwrap().status.clone()
     }
     pub fn verify_acceleration(self: &Arc<Self>, id: &str) -> Result<()> {
@@ -456,6 +463,56 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    fn status_revalidates_a_persisted_opt_in_before_the_first_job() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(root.path().join("accelerators"))?;
+        // A persisted file is insufficient: the usual selector must reject an
+        // unverified report even when no generation has run in this Engine.
+        let trial = Trial {
+            startup_ms: 0,
+            requests_ms: vec![1, 1],
+            total_ms: 2,
+            peak_rss_mib: None,
+            runtime_gpu_buffer_mib: None,
+        };
+        crate::preferences::atomic_json(
+            &certificate_path(&engine),
+            &Certificate {
+                schema: 1,
+                component_id: "fixture".into(),
+                version: "acceleration-fixture".into(),
+                device: "CUDA0".into(),
+                binding: "unverified".into(),
+                report: Report {
+                    cpu: trial.clone(),
+                    gpu: trial,
+                    faster: false,
+                },
+            },
+        )?;
+        let status = engine.acceleration_status();
+        assert_eq!(status.state, "test_required");
+        assert_eq!(
+            status.reason.as_deref(),
+            Some("configuration_or_driver_changed")
+        );
+        assert!(!certificate_path(&engine).exists());
+        Ok(())
+    }
+    #[test]
+    fn status_does_not_replace_an_in_progress_test_with_a_persisted_file() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(root.path().join("accelerators"))?;
+        fs::write(certificate_path(&engine), b"not a certificate")?;
+        engine.acceleration.lock().unwrap().status.state = "testing".into();
+        assert_eq!(engine.acceleration_status().state, "testing");
+        assert!(certificate_path(&engine).exists());
+        Ok(())
+    }
     #[test]
     fn device_selection_requires_real_backend_free_memory_and_offload() -> Result<()> {
         let listing = "Available devices:\n CUDA0: GTX (4096 MiB, 3500 MiB free)\n CUDA1: Another (8192 MiB, 7000 MiB free)\n Vulkan0: AMD (8192 MiB, 6000 MiB free)\n";
