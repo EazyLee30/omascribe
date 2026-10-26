@@ -326,6 +326,7 @@ impl Ledger {
         let mut next = self.clone();
         let mut seen = HashSet::new();
         let mut covered = HashSet::new();
+        let admits = protocol::admission(self, input);
         for patch in proposed.updates {
             ensure!(
                 !patch.subject.trim().is_empty()
@@ -368,6 +369,10 @@ impl Ledger {
                     continue;
                 }
             }
+            ensure!(
+                admits(&patch),
+                "Fact source, literal value, state and field target are not a supported combination"
+            );
             let target_id = if patch.id == "new" {
                 0
             } else {
