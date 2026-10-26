@@ -3,6 +3,7 @@
 FLEURS, Google, CC BY 4.0: https://huggingface.co/datasets/google/fleurs
 """
 import argparse, csv, hashlib, io, json, pathlib, subprocess, tarfile, urllib.request, wave
+from pinned_download import download
 
 REVISION = "70bb2e84b976b7e960aa89f1c648e09c59f894dd"
 BASE = f"https://huggingface.co/datasets/google/fleurs/resolve/{REVISION}/data"
@@ -65,14 +66,8 @@ def prepare(root, with_mixed=False):
     for lang, (size, sha) in ARCHIVES.items():
         archive = root / f"{lang}-test.tar.gz"
         if not archive.exists() or archive.stat().st_size != size or digest(archive) != sha:
-            part = archive.with_suffix(".part")
             print(f"Downloading pinned public {lang} test audio ({size // 1000000} MB)", flush=True)
-            with urllib.request.urlopen(f"{BASE}/{lang}/audio/test.tar.gz", timeout=90) as response, part.open("wb") as output:
-                while data := response.read(1024 * 1024): output.write(data)
-            if part.stat().st_size != size or digest(part) != sha:
-                part.unlink(missing_ok=True)
-                raise ValueError("Public archive checksum mismatch")
-            part.replace(archive)
+            download(f"{BASE}/{lang}/audio/test.tar.gz", archive, size, sha)
         metadata = urllib.request.urlopen(f"{BASE}/{lang}/test.tsv", timeout=30).read()
         (root / f"{lang}-test.tsv").write_bytes(metadata)
         # First four distinct sentence IDs in the official test ordering, no cherry-picking.

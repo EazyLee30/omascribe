@@ -37,6 +37,8 @@ It verifies every model file's hash/length, fingerprints the local llama runtime
 
 With optional `psutil` installed, harness commands sample their descendants every 250 ms without command lines. Reported CPU is a sampled lower bound, summed RSS may double-count shared pages, and PSS is available only on supporting platforms with sufficient access. Very short children and the final interval can be missed. GPU memory and energy stay unknown. Without the dependency, resource fields are explicitly null. Model downloads and asset hashing occur before the measured case loop; raw case/generation times and whole-arm setup time remain separate.
 
+When `OMASCRIBE_TEST_MODEL_STORE` supplies reusable weights, a fresh harness-created `workspace/model-store` is marked and scheduled for cleanup when that Python process exits. Source weights, text/JSON/SQLite/audio failure evidence and pre-existing model stores are retained. The cleanup marker must match the creating process's owner token; a cleanup result is recorded beside the released directory. Hardlink logical bytes do not equal physical space reclaimed. After a forcibly terminated test, inspect its owned temporary copies and remove them once no worker uses them. Clear completed generated screenshots and transfer caches during task cleanup; keep current-run inputs until validation finishes.
+
 For the unified offline ASR/minutes harness, public corpus preparation, baseline comparisons, hotword compatibility and optional 30-minute stress runs, see [CORE-HARNESS.md](CORE-HARNESS.md).
 
 ## Actual Tauri / WebKit flow
