@@ -440,6 +440,8 @@ fn main() {
                 eprintln!("Configuration link registration unavailable: {error}. Configuration files can still be imported in Settings.");
             }
             views::start(app.handle());
+            #[cfg(target_os = "linux")]
+            companion::start_anchor_sync(app.handle());
             #[cfg(feature = "ui-test")]
             if let Ok(path) = std::env::var("OMASCRIBE_UI_TEST_SCRIPT") {
                 let script = std::fs::read_to_string(path)?;
