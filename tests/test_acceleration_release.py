@@ -103,6 +103,57 @@ class AccelerationReleaseTests(unittest.TestCase):
             log=f'2026-10-26T17:00:00Z [command]{executable} log -1 --format=%H\n2026-10-26T17:00:00Z '+"a"*40+'\n'
             self.assertEqual(release.checkout_sha(log.encode()),"a"*40)
         with self.assertRaises(ValueError):release.checkout_sha(b'no checkout source\n')
+        with self.assertRaises(ValueError):release.checkout_sha((log+log.replace("a"*40,"b"*40)).encode())
+
+    def test_run_log_archive_requires_every_exact_job_checkout_without_extraction(self):
+        jobs=[dict(id=i,name=f"build (fixture-{i})") for i in range(4)]
+        def archive(missing=False,duplicate=False,conflict=False,step_disagrees=False):
+            buffer=io.BytesIO()
+            with zipfile.ZipFile(buffer,"w") as logs:
+                for job in jobs:
+                    if missing and job["id"]==3: continue
+                    text='[command]/usr/bin/git log -1 --format=%H\n'+"a"*40+"\n"
+                    if conflict: text+='[command]/usr/bin/git log -1 --format=%H\n'+"b"*40+"\n"
+                    logs.writestr(str(job["id"])+"_"+job["name"]+".txt",text)
+                    if job["id"] % 2:
+                        logs.writestr(job["name"]+"/2_Run actions_checkout@v4.txt",text.replace("a"*40,"b"*40) if step_disagrees else text)
+                    if duplicate and job["id"]==0:
+                        logs.writestr("99_"+job["name"]+".txt",text)
+                # Unrelated and traversal entries are never extracted or mistaken for a job.
+                logs.writestr("../2_Run actions_checkout@v4.txt","untrusted")
+                logs.writestr("other-job/2_Run actions_checkout@v4.txt","untrusted")
+            return buffer.getvalue()
+        proofs=release.archive_checkout_sources(archive(),jobs)
+        self.assertEqual([p["job_id"] for p in proofs],list(range(4)))
+        self.assertEqual({p["checkout"] for p in proofs},{"a"*40})
+        self.assertTrue(all(len(p["checkout_log_sha256"])==64 for p in proofs))
+        for options in [dict(missing=True),dict(duplicate=True),dict(conflict=True),dict(step_disagrees=True)]:
+            with self.assertRaises(ValueError):release.archive_checkout_sources(archive(**options),jobs)
+        with self.assertRaises(ValueError):
+            release.archive_checkout_sources(archive(),[dict(id=0,name="build (../untrusted)")])
+
+    def test_archive_fallback_keeps_four_source_proofs_and_rejects_disagreement(self):
+        jobs=[dict(id=i,name=f"build (fixture-{i})",conclusion="success") for i in range(4)]
+        names={f"accelerator-{target}-{backend}" for target in release.packaging.TARGETS for backend in release.packaging.BACKENDS}|{"acceleration-catalog"}
+        def api(argv,**kwargs):
+            if "artifacts?" in argv[-1]: return json.dumps(dict(artifacts=[dict(name=n,id=i,expired=False) for i,n in enumerate(sorted(names))]))
+            if "jobs?" in argv[-1]: return json.dumps(dict(jobs=jobs))
+            return json.dumps(dict(status="completed",conclusion="success",path=".github/workflows/acceleration-components.yml",head_repository=dict(full_name=release.REPOSITORY),head_sha="b"*40))
+        for disagreement in [False,True]:
+            proofs=[dict(job_id=i,checkout=("d" if disagreement and i==0 else "c")*40,checkout_log_sha256="f"*64) for i in range(4)]
+            with tempfile.TemporaryDirectory() as temp, patch.object(release.subprocess,"check_output",side_effect=api), \
+                 patch.object(release,"checkout_sha_for_job",side_effect=["c"*40,ValueError("reader unavailable")]), \
+                 patch.object(release,"run_log_checkout_sources",return_value=(proofs,"e"*64)), \
+                 patch.object(release,"native_fingerprint",return_value="unchanged"):
+                directory=pathlib.Path(temp)
+                selected=dict(reuse_run_id="123",source_sha="a"*40,version="acceleration-ci-123")
+                if disagreement:
+                    with self.assertRaisesRegex(ValueError,"disagree"): release.check_reuse(selected,directory)
+                else:
+                    release.check_reuse(selected,directory)
+                    evidence=json.loads((directory/"candidate-build-evidence.json").read_text())
+                    self.assertEqual(evidence["checkout_method"],"run_log_archive_checkout_steps")
+                    self.assertEqual(evidence["job_checkout_proofs"],proofs)
 
     def test_log_failure_diagnostics_do_not_expose_download_urls_or_contents(self):
         diagnostic=release.log_read_diagnostic(b"",b'gh: request failed (HTTP 403) signed-url?secret=private',1)
