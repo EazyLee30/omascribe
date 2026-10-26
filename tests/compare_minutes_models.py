@@ -81,7 +81,7 @@ def validate_pair(results, expected_cases, reference_environment=None, variants=
                 generation = run.get("generation")
                 if generation:
                     assert generation.get("model") == result["model"]
-                    if not (generation.get("reason") == "non_substantive_only" and generation.get("attempt") == 0):
+                    if not (generation.get("reason") in ["non_substantive_only", "retained_verified_article"] and generation.get("attempt") == 0):
                         assert generation.get("backend", "cpu") == backend
 
 
@@ -96,7 +96,7 @@ def backend_evidence(report, artifacts, backend):
     for case in report["cases"]:
         for run in case["runs"]:
             generation = run.get("generation") or {}
-            if generation.get("reason") == "non_substantive_only" and generation.get("attempt") == 0:
+            if generation.get("reason") in ["non_substantive_only", "retained_verified_article"] and generation.get("attempt") == 0:
                 continue
             path = artifacts / case["case"] / f'phase-{run["phase"]}' / f'batch-{run["batch"]}' / "llm-runtime.log"
             log = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""

@@ -433,5 +433,196 @@
     "forbidden_transcript": [
       "OMA SCRIBE"
     ]
+  },
+  {
+    "name": "en_incremental_separate_topics",
+    "focus": "**budget** **accessibility** **Riley**",
+    "phases": [
+      {
+        "transcript": [
+          "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "3000",
+            "Thursday",
+            "not|pending|unapproved"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "3000",
+            "Thursday",
+            "Riley",
+            "Tuesday",
+            "not|pending|unapproved"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "5000",
+            "Thursday",
+            "Riley",
+            "Tuesday",
+            "not|pending|unapproved"
+          ],
+          "forbidden": [
+            "amount.{0,20}3000",
+            "3000.{0,20}budget remains"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Mic check. Hello. Thank you."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "5000",
+            "Riley",
+            "Tuesday"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "Morgan",
+      "5000",
+      "Thursday",
+      "Riley",
+      "Tuesday",
+      "not|pending|unapproved"
+    ],
+    "forbidden": [
+      "accessibility test is complete",
+      "budget is approved"
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "zh_incremental_withdrawal",
+    "focus": "**展览** **预算** **刘老师**",
+    "phases": [
+      {
+        "transcript": [
+          "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "周五",
+            "3000",
+            "未|没有|待"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "5000",
+            "撤回|取消|不再",
+            "未|没有|待"
+          ],
+          "forbidden": [
+            "将于周五开放",
+            "周五开放已确定"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "陈老师",
+            "5000",
+            "下周三",
+            "未|待"
+          ],
+          "forbidden": [
+            "页面已经完成",
+            "周五开放已确定"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "刘老师",
+      "陈老师",
+      "5000",
+      "下周三",
+      "未|待"
+    ],
+    "forbidden": [
+      "页面已经完成",
+      "将于周五开放"
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_incremental_completion",
+    "focus": "**upload** **Morgan**",
+    "phases": [
+      {
+        "transcript": [
+          "The upload verification is not completed. Morgan will run it on Thursday."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "Thursday",
+            "not completed|not finished|pending"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "Thursday",
+            "completed|finished"
+          ],
+          "forbidden": [
+            "still pending",
+            "remains incomplete",
+            "not yet completed"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "Morgan",
+      "Thursday",
+      "completed|finished"
+    ],
+    "forbidden": [
+      "still pending",
+      "remains incomplete",
+      "not yet completed"
+    ],
+    "max_sections": 2
   }
 ]

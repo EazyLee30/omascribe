@@ -267,8 +267,19 @@ impl Store {
         before: &Snapshot,
         selected: &[Segment],
         cursor: u32,
+        sections: Vec<Suggestion>,
+        cancelled: bool,
+    ) -> Result<usize> {
+        self.commit_document_with_state(before, selected, cursor, sections, cancelled, None)
+    }
+    pub(crate) fn commit_document_with_state(
+        &mut self,
+        before: &Snapshot,
+        selected: &[Segment],
+        cursor: u32,
         mut sections: Vec<Suggestion>,
         cancelled: bool,
+        state_environment: Option<&str>,
     ) -> Result<usize> {
         if cancelled {
             bail!("任务已取消，待处理内容已保留");
@@ -286,6 +297,18 @@ impl Store {
             bail!("原文或关键词已更新，稍后自动重新整理");
         }
         let existing = self.suggestions(&current.id)?;
+        if state_environment.is_some()
+            && (current.notes_fingerprint != before.meeting.notes_fingerprint
+                || crate::notes::incremental::document_hash(&existing)
+                    != crate::notes::incremental::document_hash(&before.suggestions)
+                || crate::notes::incremental::source_hash(&now, before.meeting.notes_cursor)
+                    != crate::notes::incremental::source_hash(
+                        &before.segments,
+                        before.meeting.notes_cursor,
+                    ))
+        {
+            bail!("旧纪要或历史原话已更新，本轮增量结果未提交");
+        }
         // Recompose only unlocked paragraphs whose entire evidence is in this request.
         // IDs are assigned here, never by the language model. Archive the old document below.
         let replaceable: Vec<&Suggestion> = existing
@@ -379,6 +402,26 @@ impl Store {
             "UPDATE meetings SET json=?2 WHERE id=?1",
             params![current.id, serde_json::to_string(&current)?],
         )?;
+        let state = if let Some(environment) = state_environment {
+            let document = {
+                let mut q = tx.prepare("SELECT json FROM suggestions WHERE meeting_id=?1")?;
+                let rows = q.query_map([&current.id], |r| r.get::<_, String>(0))?;
+                rows.map(|row| Ok(serde_json::from_str::<Suggestion>(&row?)?))
+                    .collect::<Result<Vec<_>>>()?
+            };
+            crate::notes::incremental::seal(environment, &current, &now, &notes, &document)
+        } else {
+            None
+        };
+        if let Some(state) = state {
+            tx.execute("INSERT INTO cache_dependencies VALUES(?1,?2,?3) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=excluded.value",
+                params![current.id,crate::notes::incremental::KEY,serde_json::to_string(&state)?])?;
+        } else {
+            tx.execute(
+                "DELETE FROM cache_dependencies WHERE meeting_id=?1 AND kind=?2",
+                params![current.id, crate::notes::incremental::KEY],
+            )?;
+        }
         tx.commit()?;
         Ok(count)
     }

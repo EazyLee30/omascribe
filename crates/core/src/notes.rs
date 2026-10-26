@@ -1,4 +1,5 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+pub(crate) mod incremental;
 mod lexical;
 mod retrieval;
 pub(crate) mod stream;
@@ -45,15 +46,42 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     if !engine.diagnostics().llm_ready {
         bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
     }
-    let context = retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache));
+    let prefs = engine.preferences.lock().unwrap().clone();
+    let state_environment = if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1")
+    {
+        Some(incremental::scope(engine, &snapshot, &prefs)?)
+    } else {
+        None
+    };
+    let delta = if let Some(environment) = &state_environment {
+        let saved = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(meeting, incremental::KEY)?;
+        incremental::prepare(&snapshot, environment, &saved)
+    } else {
+        None
+    };
+    let context = delta
+        .as_ref()
+        .map(|d| d.context.clone())
+        .unwrap_or_else(|| retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache)));
     trace.event(
         "retrieval",
         json!({"selected":context.segments.len(),"cursor":context.cursor}),
     );
-    let prefs = engine.preferences.lock().unwrap().clone();
     engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
     let result = crate::acceleration::with_cpu_fallback(engine, || {
-        generate_inner(engine, meeting, &snapshot, context.clone(), &prefs, &trace)
+        generate_inner(
+            engine,
+            meeting,
+            &snapshot,
+            context.clone(),
+            &prefs,
+            &trace,
+            (delta.clone(), state_environment.as_deref()),
+        )
     });
     let outcome = match &result {
         Ok(n) => json!({"status":"committed","sections":n}),
@@ -74,7 +102,38 @@ fn generate_inner(
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
     trace: &crate::inference_trace::TaskTrace,
+    article: (Option<incremental::Delta>, Option<&str>),
 ) -> Result<usize> {
+    let (mut delta, state_environment) = article;
+    trace.event(
+        "article_state",
+        json!({"mode":if delta.is_some(){"delta"}else{"full"},"enabled":state_environment.is_some(),
+        "selected":context.segments.len(),"fresh":delta.as_ref().map(|d|d.fresh().count())}),
+    );
+    if delta
+        .as_ref()
+        .is_some_and(|d| d.fresh().all(|s| writer::non_substantive(&s.text)))
+    {
+        std::fs::write(
+            engine.root.join("last-generation.json"),
+            serde_json::to_vec_pretty(&json!({
+                "meeting_id":meeting,"model":prefs.llm_model,"attempt":0,"reason":"retained_verified_article",
+                "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":context.cursor,"usage":null
+            }))?,
+        )?;
+        trace.event(
+            "article_state",
+            json!({"mode":"retain_verified_article","reason":"new_mic_checks_only"}),
+        );
+        return engine.store.lock().unwrap().commit_document_with_state(
+            snapshot,
+            &context.segments,
+            context.cursor,
+            vec![],
+            engine.note_cancel.load(Ordering::SeqCst),
+            state_environment,
+        );
+    }
     if context
         .segments
         .iter()
@@ -88,12 +147,13 @@ fn generate_inner(
                 "reason":"non_substantive_only", "draft":"{\"sections\":[]}", "usage":null,
             }))?,
         )?;
-        return engine.store.lock().unwrap().commit_document(
+        return engine.store.lock().unwrap().commit_document_with_state(
             snapshot,
             &context.segments,
             context.cursor,
             vec![],
             engine.note_cancel.load(Ordering::SeqCst),
+            state_environment,
         );
     }
     if prefs.resource_mode == "quality" && (snapshot.runtime.recording || snapshot.runtime.paused) {
@@ -131,8 +191,10 @@ fn generate_inner(
     let mut trimmed_background = 0;
     let mut trimmed_passages = 0;
     let (system, content, mut prompt_tokens) = loop {
-        let (system, content) =
-            writer::prompt(snapshot, &context, &background, &prefs.minutes_language);
+        let (system, content) = delta.as_ref().map_or_else(
+            || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
+            |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
+        );
         let tokens: Value = agent
             .post(&format!("{base}/tokenize"))
             .set("Authorization", auth)
@@ -144,6 +206,14 @@ fn generate_inner(
             .len();
         if count <= prefs.context_size as usize - 1148 {
             break (system, content, count);
+        }
+        if delta.take().is_some() {
+            trace.event(
+                "article_state",
+                json!({"mode":"full_fallback","reason":"input_budget"}),
+            );
+            context = retrieval::retrieve(snapshot, Some(&engine.retrieval_cache));
+            continue;
         }
         // Optional background yields to transcript evidence when context is tight.
         let mut trimmed = false;
@@ -183,6 +253,10 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
+    trace.event(
+        "article_prompt",
+        json!({"mode":if delta.is_some(){"delta"}else{"full"},"input_tokens":prompt_tokens}),
+    );
     let mut messages = vec![
         json!({"role":"system","content":system}),
         json!({"role":"user","content":content}),
@@ -337,12 +411,18 @@ fn generate_inner(
                     .get("spellings")
                     .map(|v| json!({"spellings":v}))
                     .unwrap_or_else(|| json!({}));
-                let (repair_system, repair_content) = writer::prompt_mode(
-                    snapshot,
-                    &context,
-                    &spelling_context,
-                    &prefs.minutes_language,
-                    error.to_string().contains("数字或日期"),
+                let narrow = error.to_string().contains("数字或日期");
+                let (repair_system, repair_content) = delta.as_ref().map_or_else(
+                    || {
+                        writer::prompt_mode(
+                            snapshot,
+                            &context,
+                            &spelling_context,
+                            &prefs.minutes_language,
+                            narrow,
+                        )
+                    },
+                    |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
                 );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
                 if error.to_string().contains("输出语言") {
@@ -411,11 +491,12 @@ fn generate_inner(
     if context_revision != engine.context_revision.load(Ordering::SeqCst) {
         bail!("辅助背景已更新，将使用新配置重新整理");
     }
-    db.commit_document(
+    db.commit_document_with_state(
         snapshot,
         &context.segments,
         context.cursor,
         sections,
         engine.note_cancel.load(Ordering::SeqCst),
+        state_environment,
     )
 }
