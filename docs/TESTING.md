@@ -5,7 +5,7 @@ Use fictional text or licensed public speech. Do not commit microphone audio, pe
 ## Deterministic checks
 
 ```bash
-bin/test
+scripts/bin/test
 cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 
@@ -17,7 +17,7 @@ For isolated Windows Vulkan development, use the `build-windows-vulkan` PR label
 
 ## Real local writing model
 
-After `bin/setup`, build the CLI and run:
+After `scripts/bin/setup`, build the CLI and run:
 
 ```bash
 cargo build -p omascribe-core
@@ -118,7 +118,7 @@ Query-local counting retains no corpus vocabulary between calls. `OMASCRIBE_RETR
 
 ## Multiple takes and readable files
 
-After `bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
+After `scripts/bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
 
 SSE unit cases cover Unicode chunks, usage events, normal completion, premature EOF, token-limit termination, error events and oversized data. `tests/evaluate.py` uses the real server and validates the complete streamed generation/validation/commit path.
 
