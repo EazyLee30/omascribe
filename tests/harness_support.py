@@ -1,5 +1,5 @@
 """Shared isolation and failure capture for real local inference tests (stdlib only)."""
-import hashlib, json, os, pathlib, platform, shutil, signal, subprocess, tempfile, time
+import atexit, hashlib, json, os, pathlib, platform, shutil, signal, subprocess, tempfile, time, uuid
 from process_resources import ProcessTreeSampler
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -19,6 +19,19 @@ def read_json(path):
 def sha256(path):
     with pathlib.Path(path).open("rb") as f: return hashlib.file_digest(f, "sha256").hexdigest()
 
+def release_borrowed_models(target, owner):
+    """Only remove a model directory freshly created and marked by this harness."""
+    marker = target / ".omascribe-harness-borrow.json"
+    try:
+        if target.is_symlink() or read_json(marker) != dict(schema=1, owner=owner):
+            return
+        logical_bytes = sum(p.stat().st_size for p in target.rglob("*") if p.is_file())
+        shutil.rmtree(target)
+        write_json(target.parent / "model-copy-cleanup.json", dict(released=True, logical_bytes=logical_bytes,
+            note="Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."))
+    except (OSError, ValueError) as error:
+        write_json(target.parent / "model-copy-cleanup.json", dict(released=False, error=type(error).__name__))
+
 def isolated_env(root):
     root.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, OMASCRIBE_DATA_DIR=str(root),
@@ -28,7 +41,15 @@ def isolated_env(root):
         def reuse(source, target):
             try: return os.link(source, target)
             except OSError: return shutil.copy2(source, target)
-        shutil.copytree(env["OMASCRIBE_TEST_MODEL_STORE"], root / "model-store", copy_function=reuse, dirs_exist_ok=True)
+        target = root / "model-store"
+        fresh = not target.exists()
+        if fresh:
+            target.mkdir()
+            owner = uuid.uuid4().hex
+            write_json(target / ".omascribe-harness-borrow.json", dict(schema=1, owner=owner))
+            atexit.register(release_borrowed_models, target, owner)
+            shutil.copytree(env["OMASCRIBE_TEST_MODEL_STORE"], target, copy_function=reuse, dirs_exist_ok=True)
+            write_json(target / ".omascribe-harness-borrow.json", dict(schema=1, owner=owner))
     # These switches only govern optional external services. Core inference remains loopback.
     write_json(root / "network-policy.json", dict(allow_model_downloads=False, allow_online_recommendations=False))
     return env
