@@ -36,8 +36,10 @@ jobs:
           toolchain: "1.99.0"
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p omascribe-core --locked
-      - run: cargo clippy -p omascribe-core --all-targets --locked -- -D warnings
+      - run: cargo test -p omascribe-core -p omascribe-asr --locked
+      - name: Link the CPU ASR worker against the pinned Windows SDK
+        run: cargo build -p omascribe-asr --locked
+      - run: cargo clippy -p omascribe-core -p omascribe-asr --all-targets --locked -- -D warnings
       - name: Inventory probe without opening a user workspace
         run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
   build:
