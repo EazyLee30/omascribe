@@ -5,7 +5,33 @@ an owned CUDA process fault followed by exactly one CPU retry have Windows
 evidence. The recording gate is still **failed**. CPU stays in the base installer;
 CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
 
-## Latest incremental experiment: rejected
+## Latest source integration and approval-negation check
+
+Application `3286081` merges shared `2461aeb` (including `c0293a2`). The facts
+protocol is exposed only under `cfg(test)` and is not connected to the product
+generator. Its native-model probe remains ignored. The runtime change recognizes
+the explicit English uncertainty cues `not approved` and `unapproved`.
+
+Core122 passed /6 ignored, Python63, core-test/native UI-test all-targets clippy,
+rebuilt native three-window language checks and exact-head code CI pass. Two
+real1.7B CPU examples on the production legacy path preserve3000 and approval
+negation with both experimental switches off.
+
+**Full-summary quality is still false.** Manual review of the `not approved`
+example found unsupported assertions that the meeting concluded, no further
+action was taken, no other topics were discussed and no original data changed.
+The source states only that the budget of3000 is not approved, with a Budget note.
+The narrow regex check passing does not validate those extra assertions. There
+was no pre-change control for this sample, so this observation does not attribute
+the boilerplate to `c0293a2`.
+
+Exact output, source/binary/native identities and scope:
+[approval-negation evidence](../evaluation/windows-approval-negation-2026-10-27.json).
+No product fact ledger, full22-case pass, GPU retest or release approval is
+inferred from these targeted checks. Earlier results below retain their source
+identities and the experiments remain default-off.
+
+## Frozen incremental experiment: rejected
 
 Windows `b0ab6cb` merged shared `8cf7a8f`. The fixture EOF conflict was resolved
 by asserting all18 common objects identical and retaining Windows's extra case
