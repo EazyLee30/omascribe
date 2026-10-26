@@ -9,6 +9,25 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_lexical_benchmark_refuses_changed_inputs_rankings_or_builds(self):
+        import copy
+        from benchmark_retrieval import MODES, validate_trial
+        results = [dict(mode=mode, schema=1, kind="lexical-only", initial_documents=1000,
+                        source_unchanged=True, rank_ms=[1.] * 9, inputs_sha256="a" * 64,
+                        rankings_sha256="b" * 64, build=dict(source_sha256="c" * 64),
+                        accounted_retained_bytes=0, budget_bytes=8*1024**2,
+                        retained_documents=0, indexed_documents_built=0) for mode in MODES]
+        validate_trial(results, 1000)
+        for key, value in [("inputs_sha256", "d"*64), ("rankings_sha256", "d"*64),
+                           ("build", dict(source_sha256="d"*64)), ("source_unchanged", False),
+                           ("rank_ms", [float("nan")] * 9), ("accounted_retained_bytes", 9*1024**2)]:
+            bad = copy.deepcopy(results)
+            bad[1][key] = value
+            with self.assertRaises(AssertionError, msg=key):
+                validate_trial(bad, 1000)
+        with self.assertRaises(AssertionError):
+            validate_trial(results[:-1], 1000)
+
     def test_worker_resource_probe_captures_failures_and_reaps_timeouts(self):
         from benchmark_hotword_lifecycle import invoke
         with tempfile.TemporaryDirectory() as folder:

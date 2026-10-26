@@ -1,6 +1,6 @@
 //! Bounded lexical RAG: short Chinese terms, bilingual BM25, chronology, and source closure.
+pub use super::lexical::ranked_text;
 use crate::{Segment, Snapshot, UserNote};
-use std::collections::{HashMap, HashSet};
 /// Once a Markdown document exists, legacy cards are retained as backup, not duplicated as context.
 pub fn document_notes(notes: &[UserNote]) -> Vec<&UserNote> {
     if let Some(document) = notes.iter().find(|n| n.kind == "document") {
@@ -195,31 +195,6 @@ pub fn needs_update(snapshot: &Snapshot) -> bool {
             ) != snapshot.meeting.notes_fingerprint)
 }
 
-fn tokens(text: &str) -> Vec<String> {
-    let mut result = Vec::new();
-    let mut latin = String::new();
-    let mut previous = None;
-    for c in text.to_lowercase().chars().chain(std::iter::once(' ')) {
-        if ('\u{3400}'..='\u{9fff}').contains(&c) {
-            if !latin.is_empty() {
-                result.push(std::mem::take(&mut latin));
-            }
-            result.push(c.to_string());
-            if let Some(p) = previous {
-                result.push(format!("{p}{c}"));
-            }
-            previous = Some(c);
-        } else {
-            previous = None;
-            if c.is_ascii_alphanumeric() {
-                latin.push(c);
-            } else if !latin.is_empty() {
-                result.push(std::mem::take(&mut latin));
-            }
-        }
-    }
-    result
-}
 /// A transient per-meeting index avoids a resident embedding model on an 8 GB device.
 pub fn ranked(all: &[Segment], query: &[String]) -> Vec<usize> {
     ranked_text(
@@ -227,49 +202,13 @@ pub fn ranked(all: &[Segment], query: &[String]) -> Vec<usize> {
         query,
     )
 }
-pub fn ranked_text(all: &[&str], query: &[String]) -> Vec<usize> {
-    let documents: Vec<Vec<String>> = all.iter().map(|s| tokens(s)).collect();
-    let terms: HashSet<String> = query.iter().flat_map(|q| tokens(q)).collect();
-    let average =
-        documents.iter().map(Vec::len).sum::<usize>() as f64 / documents.len().max(1) as f64;
-    let mut df = HashMap::<&str, usize>::new();
-    for document in &documents {
-        for word in document.iter().collect::<HashSet<_>>() {
-            *df.entry(word.as_str()).or_default() += 1;
-        }
-    }
-    let mut scores: Vec<(usize, f64)> = documents
-        .iter()
-        .enumerate()
-        .map(|(i, document)| {
-            let mut score = 0.;
-            for term in &terms {
-                let frequency = document.iter().filter(|t| *t == term).count() as f64;
-                let hits = *df.get(term.as_str()).unwrap_or(&0) as f64;
-                let idf = (1. + (documents.len() as f64 - hits + 0.5) / (hits + 0.5)).ln();
-                score += idf * frequency * 2.2
-                    / (frequency + 1.2 * (0.25 + 0.75 * document.len() as f64 / average.max(1.)));
-            }
-            let lower = all[i].to_lowercase();
-            score += query
-                .iter()
-                .filter(|q| lower.contains(&q.to_lowercase()))
-                .count() as f64
-                * 3.;
-            (i, score)
-        })
-        .filter(|(_, score)| *score > 0.)
-        .collect();
-    scores.sort_by(|a, b| b.1.total_cmp(&a.1).then(b.0.cmp(&a.0)));
-    scores.into_iter().map(|(i, _)| i).collect()
-}
 #[derive(Debug, Clone)]
 pub struct Context {
     pub segments: Vec<Segment>,
     pub cursor: u32,
     pub keywords: Vec<String>,
 }
-pub fn retrieve(snapshot: &Snapshot) -> Context {
+pub fn retrieve(snapshot: &Snapshot, cache: Option<&super::lexical::Cache>) -> Context {
     let all = &snapshot.segments;
     let mut selected = Vec::new();
     let mut chars = 0;
@@ -285,7 +224,11 @@ pub fn retrieve(snapshot: &Snapshot) -> Context {
     let keywords = focus_terms(&snapshot.notes);
     let mut query = keywords.clone();
     query.extend(selected.iter().map(|s| s.text.clone()));
-    for index in ranked(all, &query).into_iter().take(12) {
+    let ranked = cache.map_or_else(
+        || ranked(all, &query),
+        |cache| cache.ranked(&snapshot.meeting.id, snapshot.meeting.run, all, &query),
+    );
+    for index in ranked.into_iter().take(12) {
         let s = &all[index];
         if selected.iter().any(|old| old.id == s.id) || s.seq > cursor {
             continue;
@@ -409,7 +352,7 @@ mod tests {
             s.meeting_id = m.id.clone();
             engine.store.lock().unwrap().save_segment(&s).unwrap();
         }
-        let context = retrieve(&engine.snapshot(&m.id).unwrap());
+        let context = retrieve(&engine.snapshot(&m.id).unwrap(), None);
         assert!(context.cursor < 20);
         assert_eq!(context.segments.first().unwrap().seq, 1);
         assert_eq!(context.segments.last().unwrap().seq, context.cursor);

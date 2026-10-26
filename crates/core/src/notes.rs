@@ -1,4 +1,5 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+mod lexical;
 mod retrieval;
 pub(crate) mod stream;
 mod validation;
@@ -6,6 +7,7 @@ mod writer;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
+pub(crate) use lexical::Cache as RetrievalCache;
 pub use retrieval::{
     document_notes, extract_focus, fingerprint, focus_terms, needs_update, ranked_text,
 };
@@ -43,7 +45,7 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     if !engine.diagnostics().llm_ready {
         bail!("笔记模型尚未安装，请运行 bin/setup");
     }
-    let context = retrieval::retrieve(&snapshot);
+    let context = retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache));
     trace.event(
         "retrieval",
         json!({"selected":context.segments.len(),"cursor":context.cursor}),
