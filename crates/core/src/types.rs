@@ -160,6 +160,11 @@ pub enum AsrEvent {
     Partial {
         text: String,
     },
+    /// An utterance was flushed/reset; contains no provisional transcript content.
+    Boundary {
+        processed_ms: u64,
+        cause: String,
+    },
     Segment {
         seq: u32,
         start_ms: u64,

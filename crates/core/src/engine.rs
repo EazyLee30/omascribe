@@ -727,6 +727,11 @@ impl Engine {
                         s.processed_ms = processed_ms;
                         s.asr_rtf = rtf;
                     }
+                    AsrEvent::Boundary { processed_ms, .. } => {
+                        let mut status = engine.status.lock().unwrap();
+                        status.processed_ms = processed_ms;
+                        status.partial.clear();
+                    }
                     AsrEvent::Segment {
                         seq,
                         start_ms,

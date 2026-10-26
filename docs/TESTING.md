@@ -74,6 +74,16 @@ omascribe-cli replay /path/to/public-sample.wav 3600
 
 Replay paces the input and loops it through the real capture/ASR/scheduler path. Run `tests/monitor.py PID /tmp/resources.jsonl` to sample process-tree PSS, available system memory and thermal zones without collecting command lines. A repeated clip establishes stability of that input path, not Chinese CER, English WER, speaker handling or meeting comprehension. Use independent human references for accuracy evaluation; never treat ASR output as its own ground truth.
 
+For the experimental per-stream hotword lifecycle, build the current ASR worker and use a disposable output:
+
+```bash
+python3 tests/prepare_hotword_fixtures.py --directory artifacts/fixtures/sherpa-public
+python3 tests/benchmark_hotword_lifecycle.py --model /path/to/zipformer-small --output artifacts/benchmarks/hotwords.json
+python3 tests/evaluate_hotword_updates.py --model /path/to/zipformer-small --fixtures artifacts/fixtures/sherpa-public --output artifacts/benchmarks/hotwords-boundaries.json
+```
+
+Preparation is an explicit download; the two evaluation scripts only use local assets. They select both legacy and experimental modes themselves. `--shared` can supply a compatible tokenizer directory when the selected model lacks one. Fresh result paths preserve earlier evidence. The lifecycle report measures initialization/reconfiguration and child resources, not speech accuracy. The boundary regression checks real public-audio transcript equivalence, finalization and sample-exact pause/resume, plus silence/noise. It does not replace independent CER/WER/MER, visible latency or name anti-case evaluation. The application keeps the old path unless `OMASCRIBE_ASR_STREAM_HOTWORDS=1` is explicitly set.
+
 See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and limitations.
 
 ## Multiple takes and readable files

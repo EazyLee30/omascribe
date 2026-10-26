@@ -73,8 +73,10 @@ def environment(cli):
                 if isinstance(value,dict) and value.get("schema")==1 and len(value.get("source_sha256",""))==64: build=value
         except (OSError, subprocess.TimeoutExpired, ValueError):
             pass
-    return dict(cli_build=build, core_and_harness_source_sha256=source_digest(), platform=platform.platform(), machine=platform.machine(), python=platform.python_version(),
+    changed=subprocess.check_output(['git','status','--porcelain','--untracked-files=all','--','crates','tests','Cargo.toml','Cargo.lock','model-catalog.json','models.lock.json'],cwd=REPO,text=True).strip()
+    return dict(cli_build=build, core_and_harness_source_sha256=source_digest(), inference_source_tree_dirty=bool(changed), platform=platform.platform(), machine=platform.machine(), python=platform.python_version(),
         cli_sha256=sha256(cli), model_catalog_sha256=sha256(REPO / "model-catalog.json"),
+        models_lock_sha256=sha256(REPO / "models.lock.json"),
         suite_revision=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
         # Avoid environment dumps: they can contain tokens or unrelated private paths.
         corpus="public or fictional only", network_during_evaluation="disabled optional services; inference uses local processes")

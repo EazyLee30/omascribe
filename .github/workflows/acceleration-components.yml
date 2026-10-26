@@ -48,17 +48,21 @@ jobs:
           - runner: windows-2022
             target: windows-x86_64
             backend: cuda
+            timeout: 180
           - runner: windows-2022
             target: windows-x86_64
             backend: vulkan
+            timeout: 100
           - runner: ubuntu-22.04
             target: linux-x86_64
             backend: cuda
+            timeout: 180
           - runner: ubuntu-22.04
             target: linux-x86_64
             backend: vulkan
+            timeout: 100
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 100
+    timeout-minutes: ${{ matrix.timeout }}
     defaults:
       run:
         shell: bash

@@ -1,4 +1,4 @@
-import contextlib, importlib.util, io, itertools, json, pathlib, tempfile, unittest, wave
+import contextlib, importlib.util, io, itertools, json, pathlib, sys, tempfile, unittest, wave
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location(
@@ -9,6 +9,21 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_worker_resource_probe_captures_failures_and_reaps_timeouts(self):
+        from benchmark_hotword_lifecycle import invoke
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder)
+            result=invoke([sys.executable,'-c','print("{}")'],None,root/'success')
+            self.assertGreater(result['wall_ms'],0)
+            if hasattr(__import__('os'),'wait4'):
+                self.assertIsNotNone(result['worker_cpu_seconds'])
+                self.assertGreaterEqual(result['worker_cpu_seconds'],0)
+                self.assertGreater(result['worker_peak_rss_mib'],0)
+            with self.assertRaisesRegex(RuntimeError,'exited 3'):
+                invoke([sys.executable,'-c','raise SystemExit(3)'],None,root/'failed')
+            with self.assertRaises(TimeoutError):
+                invoke([sys.executable,'-c','import time;time.sleep(10)'],None,root/'timeout',timeout=.02)
+
     def test_false_success_and_forged_citation_are_detected(self):
         case = dict(required=["pending"], forbidden=["3000"])
         snapshot = dict(
