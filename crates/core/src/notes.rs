@@ -1,4 +1,6 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+#[cfg(test)]
+pub(crate) mod facts;
 pub(crate) mod incremental;
 mod lexical;
 mod retrieval;
