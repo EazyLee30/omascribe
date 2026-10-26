@@ -15,7 +15,7 @@ use std::{
 #[derive(Default)]
 pub(crate) struct Fingerprints(Mutex<HashMap<PathBuf, (u64, SystemTime, String)>>);
 impl Fingerprints {
-    fn file(&self, path: &Path) -> Option<String> {
+    pub(crate) fn file(&self, path: &Path) -> Option<String> {
         let metadata = fs::metadata(path).ok()?;
         if !metadata.is_file() {
             return None;

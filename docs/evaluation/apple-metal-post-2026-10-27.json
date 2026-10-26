@@ -1,0 +1,281 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "Post-fallback and post-layout Metal functional regression",
+  "reports": [
+    {
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c5c11c6d4143fc45e279224aa15b586388d12173",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "20f9a425a9f02f1bb33541e9c527989fe576796cb3430d29524749b1faa01437",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "4c8d2b08154240ba1ff4758a59b3f98aadb14cab68fe3688b79b0d4bbf795754",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "75de85e59966fa241fac7133e52f4daca3502607bcc001f7b3b37edf812a228c",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "536a8423dfa6e106ca0e210e2473c127eb29962d",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "fixture_sha256": "058fd8dece47adfac54e906291c4122695a7eefa5445b074628fd685023e4afa",
+      "cases": [
+        {
+          "case": "zh_budget_guess",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_owner_and_deadline",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_correction",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "bilingual_scope",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_calendar_citations",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_connected_minutes",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_product_spelling",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_empty_greetings",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_phased_correction",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_named_speakers",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_minutes_from_zh",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_minutes_from_en",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_long_context_state",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_note_name_spelling",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_generic_note_name",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_name_context_is_not_evidence",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_noisy_name_no_added_topics",
+          "passed": true,
+          "errors": []
+        }
+      ],
+      "actual_model_commands": 20,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ],
+      "quality_passed": true,
+      "raw": [
+        {
+          "path": "artifacts/benchmarks/metal-post-536a842/evaluation.json",
+          "sha256": "44ae616b4001d80c5f8f42b196065597f57d8b34f301452103659389a6f44812"
+        },
+        {
+          "path": "artifacts/benchmarks/metal-post-536a842/summary.json",
+          "sha256": "2a3b628875d6d5420ca982ba46cc7e4411bc3084c48f6803eba44d89924a1a01"
+        }
+      ]
+    },
+    {
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "6f8d5f522df4fbc2fb716e63f023d0939effb887",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "58628fee92166c18aba99d650cc6da4be52abf9cc0ff4860c8829d8c1811f86b",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "cef91e023cfccd8fc8853c16dfa5ade87657228280cd8237572ec4db575f0bcb",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "00e3c6e7b28d83b7e7cfa0e22788fb5bc839629974433d9e4c4de5c1a970d64c",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "6f8d5f522df4fbc2fb716e63f023d0939effb887",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "fixture_sha256": "058fd8dece47adfac54e906291c4122695a7eefa5445b074628fd685023e4afa",
+      "cases": [
+        {
+          "case": "zh_budget_guess",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_owner_and_deadline",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_correction",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "bilingual_scope",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_calendar_citations",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_connected_minutes",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_product_spelling",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_empty_greetings",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_phased_correction",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_named_speakers",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_minutes_from_zh",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_minutes_from_en",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_long_context_state",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_note_name_spelling",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "en_generic_note_name",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_name_context_is_not_evidence",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "case": "zh_noisy_name_no_added_topics",
+          "passed": true,
+          "errors": []
+        }
+      ],
+      "actual_model_commands": 20,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ],
+      "quality_passed": true,
+      "raw": [
+        {
+          "path": "artifacts/benchmarks/metal-post-layout/evaluation.json",
+          "sha256": "b2fff58c0e85ebf5c9fe1f2b15e970837fe017bd26c0dd89634faffb6bc1ffcf"
+        },
+        {
+          "path": "artifacts/benchmarks/metal-post-layout/summary.json",
+          "sha256": "73e8eb7d6ce8d9b58b5edd0d755d7da93c9e25e6cc7f8dd4e7127eb2f357b500"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Fictional 18-case quality checks, before Windows 19-case/name/language integration.",
+    "No log-verbosity environment override; production Metal command obtains offload evidence.",
+    "Download and other desktop work can overlap these functional runs. No new speed/resource claim.",
+    "Native startup fault injection uses a controlled process exit and a real CPU runtime; not physical device reset or OOM."
+  ]
+}

@@ -14,7 +14,7 @@ import { translationChoices, translationSelect } from "./translation-ui";
 import { getPreferences, savePreferences } from "./preferences-client";
 import type { Snapshot } from "./types";
 const atlas = new URL(
-  "../assets/companion/notebook-mecha-atlas-v1.png",
+  "./assets/companion/notebook-mecha-atlas-v1.png",
   import.meta.url,
 ).href;
 import "./companion.css";

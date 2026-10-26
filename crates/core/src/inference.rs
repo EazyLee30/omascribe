@@ -240,6 +240,11 @@ pub(crate) fn server_command_with_spec(
             .env("LD_LIBRARY_PATH", &directory)
             .env_remove("GGML_BACKEND_PATH")
             .current_dir(&directory);
+        if backend == Backend::Metal {
+            // The pinned runtime exposes actual model-layer offload at level 4.
+            // Level 5 includes request contents and is not needed for admission.
+            c.args(["--log-verbosity", "4"]);
+        }
         if backend == Backend::Cpu {
             c.args(["--device", "none"]);
         } else if let Some(device) = &spec.device {

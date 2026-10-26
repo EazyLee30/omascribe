@@ -1,8 +1,8 @@
-<p align="center"><img src="assets/banner.svg" alt="OmaScribe — 为对话留下一本文档" width="100%"></p>
-<p align="center"><a href="README.md">English</a> · <b>简体中文</b> · <a href="README.zh-TW.md">繁體中文</a></p>
+<p align="center"><img src="../../src/assets/banner.svg" alt="OmaScribe — 为对话留下一本文档" width="100%"></p>
+<p align="center"><a href="../../README.md">English</a> · <b>简体中文</b> · <a href="README.zh-TW.md">繁體中文</a></p>
 <p align="center">
 <a href="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml"><img src="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-d8b76e?style=flat-square" alt="MIT"></a>
+<a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT-d8b76e?style=flat-square" alt="MIT"></a>
 <img src="https://img.shields.io/badge/desktop-Linux%20%C2%B7%20macOS%20%C2%B7%20Windows-91a87d?style=flat-square" alt="Linux, macOS and Windows">
 <img src="https://img.shields.io/badge/runtime-offline-647950?style=flat-square" alt="离线运行">
 <img src="https://img.shields.io/badge/Rust-Tauri_2-b6c1a8?style=flat-square&logo=rust&logoColor=white" alt="Rust + Tauri 2">
@@ -14,7 +14,7 @@
 
 围绕一台运行 Omarchy 的 2016 年 12 英寸 MacBook 开发：双核 Intel、8GB 内存。名字来自 **Oma**rchy 与 **Scribe**。
 
-<p align="center"><img src="docs/screenshots/workspace-zh-CN.png" alt="左侧 Markdown 文档与右侧自动会议纪要" width="100%"><br><sub>实际应用渲染；图中会议内容为虚构测试样本。</sub></p>
+<p align="center"><img src="../screenshots/workspace-zh-CN.png" alt="左侧 Markdown 文档与右侧自动会议纪要" width="100%"><br><sub>实际应用渲染；图中会议内容为虚构测试样本。</sub></p>
 
 ## 一边听，一边写
 
@@ -42,7 +42,7 @@
 
 [**GitHub Releases →**](https://github.com/EazyLee30/omascribe/releases) · [构建状态](https://github.com/EazyLee30/omascribe/actions/workflows/native-release.yml)
 
-Apple Silicon 选 `macOS-AppleSilicon.dmg`，Intel Mac 选 `macOS-Intel.dmg`，Windows 选 `Windows-x64.exe`。安装包包含离线模型和推理运行时；Windows 另包含离线 WebView2 安装器。WAV 可直接导入，其他压缩格式需要 PATH 中有 FFmpeg。macOS 使用临时签名、未公证；Windows 尚无发行者签名。查看[安装与测试指南](docs/NATIVE_TESTING.md)。五种安装包全部通过流水线检查后才发布。
+Apple Silicon 选 `macOS-AppleSilicon.dmg`，Intel Mac 选 `macOS-Intel.dmg`，Windows 选 `Windows-x64.exe`。安装包包含离线模型和推理运行时；Windows 另包含离线 WebView2 安装器。WAV 可直接导入，其他压缩格式需要 PATH 中有 FFmpeg。macOS 使用临时签名、未公证；Windows 尚无发行者签名。查看[安装与测试指南](../NATIVE_TESTING.md)。五种安装包全部通过流水线检查后才发布。
 
 macOS 快捷键使用 **⌘** 替代 **Ctrl**。数据位于 `~/Library/Application Support/OmaScribe`；Windows 位于 `%LOCALAPPDATA%\io.omarchy.omascribe`。
 
@@ -62,9 +62,9 @@ sudo pacman -S --needed base-devel git cmake pkgconf nodejs npm python \
 ```bash
 git clone https://github.com/EazyLee30/omascribe.git
 cd omascribe
-bin/build       # 默认单任务编译
-bin/setup       # 下载校验过的模型，构建本地推理与字幕运行库
-bin/install     # 安装到当前用户及应用启动器
+scripts/bin/build       # 默认单任务编译
+scripts/bin/setup       # 下载校验过的模型，构建本地推理与字幕运行库
+scripts/bin/install     # 安装到当前用户及应用启动器
 ~/.local/bin/omascribe
 ```
 
@@ -107,10 +107,10 @@ Linux 默认数据位于 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`�
 - 会议期间请保持电脑唤醒；睡眠、驱动切换后的恢复尚未充分验证。
 - 没有云同步或跨会议搜索；签名更新默认关闭，需手动开启。
 
-[实测报告](docs/BENCHMARKS.md) · [测试与回归 harness](docs/TESTING.md) · [架构](docs/ARCHITECTURE.md) · [模型与许可证](docs/MODELS.md) · [贡献](CONTRIBUTING.md) · [隐私](SECURITY.md)
+[实测报告](../BENCHMARKS.md) · [测试与回归 harness](../TESTING.md) · [架构](../ARCHITECTURE.md) · [模型与许可证](../MODELS.md) · [贡献](../../.github/CONTRIBUTING.md) · [隐私](../../.github/SECURITY.md)
 
-交互灵感来自 [Google Foresight](https://developers.google.com/edge/foresight)，这是独立的 Rust/Tauri 实现。感谢 Tauri、Tiptap、sherpa-onnx、llama.cpp、Qwen 和 gtk-layer-shell。代码及原创图形采用 [MIT](LICENSE)；第三方模型与依赖保留各自许可证。
+交互灵感来自 [Google Foresight](https://developers.google.com/edge/foresight)，这是独立的 Rust/Tauri 实现。感谢 Tauri、Tiptap、sherpa-onnx、llama.cpp、Qwen 和 gtk-layer-shell。代码及原创图形采用 [MIT](../../LICENSE)；第三方模型与依赖保留各自许可证。
 
 ## 本地工作区
 
-侧栏已包含会议、笔记、知识库、专有名词表与记忆。设置提供系统/浅色/深色外观、主题与字体、硬件检测和模型搭配、下载与删除模型、JSON 配置导出/导入，以及存储统计。可选择区分说话人、改名和修正片段归属，纪要与导出会使用姓名。知识库和记忆默认关闭，配置分享不包含个人内容。详见[本地工作区说明](docs/LOCAL_WORKSPACE.md)。
+侧栏已包含会议、笔记、知识库、专有名词表与记忆。设置提供系统/浅色/深色外观、主题与字体、硬件检测和模型搭配、下载与删除模型、JSON 配置导出/导入，以及存储统计。可选择区分说话人、改名和修正片段归属，纪要与导出会使用姓名。知识库和记忆默认关闭，配置分享不包含个人内容。详见[本地工作区说明](../LOCAL_WORKSPACE.md)。

@@ -193,16 +193,18 @@ pub(crate) fn reject(engine: &Engine, reason: &str, request_failure: bool) {
         state.failed_requests = state.failed_requests.wrapping_add(1);
     }
 }
-/// A failed GPU transport invalidates that component before one idempotent CPU retry.
+/// Retry once after the lease rejects a GPU transport, preserving resource/cancel stops.
 pub(crate) fn with_cpu_fallback<T>(
     engine: &Engine,
     mut operation: impl FnMut() -> Result<T>,
 ) -> Result<T> {
     let before = engine.acceleration.lock().unwrap().failed_requests;
+    let metal_before = engine.inference_pool.metal_failed_requests();
     let result = operation();
     if result.is_err()
         && !engine.note_cancel.load(Ordering::SeqCst)
-        && engine.acceleration.lock().unwrap().failed_requests != before
+        && (engine.acceleration.lock().unwrap().failed_requests != before
+            || engine.inference_pool.metal_failed_requests() != metal_before)
     {
         engine.inference_pool.invalidate();
         return operation();

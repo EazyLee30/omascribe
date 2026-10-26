@@ -96,7 +96,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - name: Generate platform icons
-        run: npx tauri icon assets/icon.svg
+        run: npx tauri icon src/assets/icon.svg
       - uses: actions/cache/restore@v4
         id: sherpa-cache
         with:
