@@ -346,8 +346,11 @@ fn place_hyprland_window(prefs: ViewPreferences) {
                     .args(["eval", &code])
                     .output();
             };
+            // Same two compositor defaults as the desktop pet: an active border
+            // draws a frame around this undecorated floating panel and a drop
+            // shadow darkens the desktop behind it.
             run(format!(
-                "hl.dispatch(hl.dsp.window.float({{action='set',window='{target}'}}))"
+                "hl.dispatch(hl.dsp.window.set_prop({{window='{target}',prop='border_size',value=0}})); hl.dispatch(hl.dsp.window.set_prop({{window='{target}',prop='no_shadow',value=1}})); hl.dispatch(hl.dsp.window.float({{action='set',window='{target}'}}))"
             ));
             std::thread::sleep(Duration::from_millis(120));
             let height = if prefs.compact {
