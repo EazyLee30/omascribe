@@ -11,6 +11,27 @@ import harness_support
 
 
 class PublicDownloadTests(unittest.TestCase):
+    def test_prepared_corpus_reuse_requires_prior_manifest_and_audio_hashes_without_network(self):
+        import json
+        import prepare_asr_fixtures as fixtures
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            (root / "speech.wav").write_bytes(b"fictional audio bytes")
+            manifest = dict(dataset="google/fleurs", revision=fixtures.REVISION, license="CC-BY-4.0",
+                            cases=[dict(name="fixture", file="speech.wav", sha256=fixtures.digest(root/"speech.wav"), reference="fictional gold")])
+            path = root / "manifest.json"
+            path.write_text(json.dumps(manifest))
+            expected = fixtures.digest(path)
+            with patch.object(fixtures.urllib.request, "urlopen", side_effect=AssertionError("Offline only")):
+                self.assertEqual(fixtures.verify_existing(root, expected), manifest)
+                (root / "speech.wav").write_bytes(b"tampered")
+                with self.assertRaisesRegex(ValueError, "audio checksum"):
+                    fixtures.verify_existing(root, expected)
+                manifest["cases"][0]["reference"] = "edited references cannot reuse the old baseline"
+                path.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, "manifest checksum"):
+                    fixtures.verify_existing(root, expected)
+
     def test_short_response_resumes_at_actual_byte_offset(self):
         payload = b"abcdefgh"
         requests = []
