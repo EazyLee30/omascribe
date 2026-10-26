@@ -16,13 +16,19 @@ The native main/companion/transcript language fixture also passes in candidate
 selector mode. Source/CLI/app hashes and actual results:
 [`candidate integration`](../evaluation/windows-candidate-integration-2026-10-27.json).
 
-Delivery helper `5d0f0b1` additionally requires all four successful original
-native checkout logs, exact source trees and original base ancestry before
-artifact reuse, instead of mutable workflow-run PR head/base values. Python is
-now 57 passing tests. This delivery-only change does not alter the application
-or native compiler/SDK/package inputs. Two completed Vulkan checkouts have been
-observed and match original source `164371e`; both CUDA checkouts are still
-pending. No signing action or publication has been performed.
+Shared sync `54e4be4` merges `4edafb0` and keeps the shared bounded-log signing
+helper as the canonical implementation. It replaces the parallel Windows helper
+`5d0f0b1`; that earlier checkpoint's 57 tests remain historical evidence. Current
+Python has 56 passing tests. All four successful original native checkouts must
+agree, and actual checkout/original head/current publishing source must have
+matching native-input fingerprints; mutable run PR head/base values are not
+used as trigger evidence. Original historical inputs can be read at their fixed
+commit if a merge ref disappears. These delivery-only changes do not alter
+application core/frontend/model or native SDK/package inputs from `44c6f21`, so
+its 19-case/native/core results remain bound to the same application bytes.
+Two completed Vulkan checkout trees have also been independently observed to
+match original source `164371e`; both CUDA checkouts are still pending. No
+signing action or publication has been performed.
 
 Earlier support checkpoint: `be5e16d` merges shared `e255dc7`, including the
 public ASR fixture preparation/offline reuse change. Python now has 43 passing

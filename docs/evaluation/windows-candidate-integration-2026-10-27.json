@@ -359,11 +359,6 @@
       ]
     }
   },
-  "provenance_helper": {
-    "revision": "5d0f0b1bbb89db66699543ced9cc0de50da11276",
-    "python_tests": 57,
-    "scope": "Delivery-only helper/tests; no native compiler/SDK/package or application core change after source_fix. Four original successful native checkout records required before reuse."
-  },
   "prior_attempts": [
     {
       "report": "artifacts/benchmarks/windows-acceptance-20261027-candidate-selector-minutes.json",
@@ -380,5 +375,26 @@
     "No private audio or microphone capture in native UI fixture.",
     "Only two completed Vulkan checkout proofs currently observed; not proof of the pending CUDA checkouts.",
     "No tag, signing label, stable catalog promotion or standalone installer publication in this checkpoint."
-  ]
+  ],
+  "prior_windows_provenance_helper": {
+    "revision": "5d0f0b1bbb89db66699543ced9cc0de50da11276",
+    "python_tests": 57,
+    "scope": "Delivery-only helper/tests; no native compiler/SDK/package or application core change after source_fix. Four original successful native checkout records required before reuse."
+  },
+  "current_shared_sync": {
+    "source_commit": "54e4be4a1d48bbd41da15c900fa064e5616f61de",
+    "shared_head": "4edafb0478c271766cdad5f15d67ac70c9cd56b7",
+    "bounded_reader_checks": {
+      "121727976970": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+      "121727976886": "523f87535ed60017a2be73fd4fe34109ed9223f6"
+    },
+    "native_fingerprints": {
+      "164371e": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852",
+      "HEAD": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852"
+    },
+    "python_tests": 56,
+    "pending": "Two CUDA builds/checkouts, full catalog and signed candidate lifecycle",
+    "application_sources_unchanged_from": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+    "implementation": "Canonical shared bounded-log/immutable-input checker; replaces separate Windows helper 5d0f0b1."
+  }
 }
