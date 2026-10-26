@@ -12,8 +12,10 @@
 //! reference and logind re-checks. `PR_SET_PDEATHSIG` additionally ends the child
 //! when OmaScribe exits without unwinding.
 
+#[cfg(target_os = "linux")]
+use std::process::{Command, Stdio};
 use std::{
-    process::{Child, Command, Stdio},
+    process::Child,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,

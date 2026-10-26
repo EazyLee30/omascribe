@@ -29,8 +29,14 @@ fn home() -> PathBuf {
     PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
 }
 
+/// Directory holding the files Omarchy copies in for the active theme.
 pub fn theme_dir() -> PathBuf {
     home().join(".local/state/omarchy/current/theme")
+}
+
+/// `~/.local/state/omarchy/current`, which owns the name and generation files.
+fn current_dir() -> PathBuf {
+    home().join(".local/state/omarchy/current")
 }
 
 /// Cheap identity for change detection: theme name plus the modification
@@ -54,12 +60,15 @@ fn stamp(path: &Path) -> Option<(u64, u128)> {
 
 pub fn signature() -> Signature {
     let dir = theme_dir();
+    // Omarchy keeps `theme.name` and `theme.generation` next to, not inside,
+    // the directory that holds the copied theme files.
+    let current = current_dir();
     Signature {
-        name: std::fs::read_to_string(dir.join("theme.name"))
+        name: std::fs::read_to_string(current.join("theme.name"))
             .ok()
             .map(|s| s.trim().to_string()),
         colors: stamp(&dir.join("colors.toml")),
-        generation: stamp(&dir.join("theme.generation")),
+        generation: stamp(&current.join("theme.generation")),
     }
 }
 
@@ -114,7 +123,7 @@ pub fn current() -> Option<DesktopTheme> {
     let text = std::fs::read_to_string(dir.join("colors.toml")).ok()?;
     let colors = parse_colors(&text);
     let get = |key: &str| colors.get(key).cloned();
-    let name = std::fs::read_to_string(dir.join("theme.name"))
+    let name = std::fs::read_to_string(current_dir().join("theme.name"))
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -175,5 +184,29 @@ foreground = "#a9b1d6"
     fn signature_changes_shape_is_stable() {
         // Two probes of an unchanged desktop must compare equal.
         assert_eq!(signature(), signature());
+    }
+
+    #[test]
+    fn theme_name_lives_beside_the_theme_directory() {
+        // Omarchy writes `theme.name`/`theme.generation` into
+        // `current/`, while the copied theme files live in `current/theme/`.
+        // Resolving the name from inside `theme/` silently fell back to the
+        // generic "omarchy" label on a real desktop.
+        let root = tempfile::tempdir().unwrap();
+        let current = root.path().join("current");
+        let theme = current.join("theme");
+        std::fs::create_dir_all(&theme).unwrap();
+        std::fs::write(current.join("theme.name"), "theme-tokyo-liftoff\n").unwrap();
+        std::fs::write(current.join("theme.generation"), "14636-1\n").unwrap();
+        std::fs::write(theme.join("colors.toml"), SAMPLE).unwrap();
+
+        let name = std::fs::read_to_string(current.join("theme.name"))
+            .unwrap()
+            .trim()
+            .to_string();
+        assert_eq!(name, "theme-tokyo-liftoff");
+        assert!(current.join("theme.generation").is_file());
+        assert!(!theme.join("theme.name").exists());
+        assert!(theme.join("colors.toml").is_file());
     }
 }

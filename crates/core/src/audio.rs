@@ -46,21 +46,16 @@ pub fn devices() -> Result<Vec<Device>> {
         bail!("PipeWire 未运行");
     }
     let data: Value = serde_json::from_slice(&output.stdout)?;
-    let mut result = vec![Device {
-        id: "auto".into(),
-        name: "系统默认麦克风".into(),
-        kind: "microphone".into(),
-    }];
+    let mut result = vec![Device::microphone("auto", "系统默认麦克风")];
     let nodes = data.as_array().context("设备列表格式错误")?;
     for node in nodes {
         let p = &node["info"]["props"];
         if p["media.class"].as_str() == Some("Audio/Source") {
             if let Some(name) = p["node.name"].as_str() {
-                result.push(Device {
-                    id: name.into(),
-                    name: p["node.description"].as_str().unwrap_or(name).into(),
-                    kind: "microphone".into(),
-                });
+                result.push(Device::microphone(
+                    name,
+                    p["node.description"].as_str().unwrap_or(name),
+                ));
             }
         }
     }
@@ -78,13 +73,8 @@ pub fn devices() -> Result<Vec<Device>> {
                     && p.get("node.name").and_then(Value::as_str) == Some(sink.as_str())
             })
             .and_then(|p| p.get("node.description").and_then(Value::as_str))
-            .unwrap_or("系统声音")
-            .to_string();
-        result.push(Device {
-            id: "mix".into(),
-            name: format!("麦克风 + {description}"),
-            kind: "mixed".into(),
-        });
+            .unwrap_or("系统声音");
+        result.push(Device::mixed("mix", format!("麦克风 + {description}")));
     }
     for node in nodes {
         let p = &node["info"]["props"];
@@ -97,11 +87,10 @@ pub fn devices() -> Result<Vec<Device>> {
         let Some(name) = p["node.name"].as_str() else {
             continue;
         };
-        result.push(Device {
-            id: format!("{name}.monitor"),
-            name: p["node.description"].as_str().unwrap_or(name).into(),
-            kind: "system".into(),
-        });
+        result.push(Device::system(
+            format!("{name}.monitor"),
+            p["node.description"].as_str().unwrap_or(name),
+        ));
     }
     Ok(result)
 }
@@ -133,10 +122,31 @@ fn default_sink() -> Option<String> {
         .map(str::to_owned)
 }
 
-/// Monitor source for the default playback device, used for system audio.
+/// Whether a PipeWire node name is currently published by the server.
 #[cfg(target_os = "linux")]
-fn default_monitor() -> Option<String> {
-    default_sink().map(|sink| format!("{sink}.monitor"))
+fn node_exists(name: &str) -> bool {
+    let Ok(output) = Command::new("pw-dump").output() else {
+        return false;
+    };
+    let Ok(data) = serde_json::from_slice::<Value>(&output.stdout) else {
+        return false;
+    };
+    data.as_array().is_some_and(|nodes| {
+        nodes
+            .iter()
+            .any(|node| node["info"]["props"]["node.name"].as_str() == Some(name))
+    })
+}
+
+/// Input devices this ffmpeg build can open. `pipewire` is the modern alias and
+/// counts as PulseAudio support because it speaks the same protocol.
+#[cfg(target_os = "linux")]
+fn ffmpeg_input_devices() -> String {
+    Command::new("ffmpeg")
+        .args(["-hide_banner", "-devices"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_lowercase())
+        .unwrap_or_default()
 }
 
 pub fn spawn_capture(
@@ -165,8 +175,21 @@ pub fn spawn_capture(
         // no normalization: a silent side must not amplify its own noise floor.
         #[cfg(target_os = "linux")]
         {
-            let monitor = default_monitor()
-                .context("找不到系统播放设备的监听源；请确认 PipeWire 正在运行")?;
+            // The monitor source is created on demand and does not appear in
+            // `pw-dump`, so the precondition to check is its owning sink.
+            let sink = default_sink().context("找不到系统播放设备；请确认 PipeWire 正在运行")?;
+            // Fail here with an actionable message instead of a take that
+            // silently records nothing when the sink vanished or ffmpeg was
+            // built without the PulseAudio input device.
+            anyhow::ensure!(
+                node_exists(&sink),
+                "默认播放设备 {sink} 不存在；请确认 PipeWire 与音频服务正常"
+            );
+            anyhow::ensure!(
+                ffmpeg_input_devices().contains("pulse"),
+                "ffmpeg 未编译 PulseAudio 输入支持，无法混录系统声音"
+            );
+            let monitor = format!("{sink}.monitor");
             let mut c = child_command("ffmpeg");
             c.args([
                 "-hide_banner",

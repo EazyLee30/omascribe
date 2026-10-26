@@ -136,9 +136,37 @@ pub struct Snapshot {
 pub struct Device {
     pub id: String,
     pub name: String,
-    /// `microphone` or `system` (a playback monitor / loopback source).
+    /// `microphone`, `mixed` (mic + system audio) or `system` (a playback
+    /// monitor / loopback source). Older records deserialize as empty.
     #[serde(default)]
     pub kind: String,
+}
+
+impl Device {
+    /// An input that captures the room through a microphone.
+    pub fn microphone(id: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            kind: "microphone".into(),
+        }
+    }
+    /// A single input that already mixes microphone and system audio.
+    pub fn mixed(id: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            kind: "mixed".into(),
+        }
+    }
+    /// A playback monitor, i.e. what applications are sending to a speaker.
+    pub fn system(id: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            kind: "system".into(),
+        }
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
