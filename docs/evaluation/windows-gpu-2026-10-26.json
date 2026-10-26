@@ -207,5 +207,53 @@
     },
     "inference_source_tree_dirty": false,
     "source_verification": "Working tree matches commit 0dfe8a8 after refreshing Git stat metadata for LF-normalized files. Exact compiled source hash retained."
+  },
+  "static_vulkan_component_trial": {
+    "workflow_run": 40345201430,
+    "artifact_id": 12662360520,
+    "archive_sha256": "7a4c86607325b605b5cab8aba2ac872f8b54a24279b91c9f8b62ad9d3683c459",
+    "all_archive_member_hashes_verified": true,
+    "archive_members": 3,
+    "default_system_loader_device_listing": [],
+    "process_driver_override": true,
+    "driver_manifest_sha256": "94b92283f5e2d464a8dce885091cb9a451f01137250226767b7f99727b0d5bc0",
+    "offloaded_layers": 29,
+    "production_worker_admission": {
+      "backend": "vulkan",
+      "build": {
+        "profile": "debug",
+        "revision_at_compile": "911d7866001691ff101c09f8a4b7d80f92898095",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "2ed5dbd52456013393cd5489758b99e9b3d6d160f488f7110d01e2a47b5c518b",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "context": 2048,
+      "error": null,
+      "kind": "explicit_developer_gpu_admission",
+      "limitation": "Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation.",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "offloaded": true,
+      "passed": true,
+      "runtime_sha256": "d0ace20f378a993728fb8e5aeb2ebba89cca055ce70d4d03fdb108c21eee0d08",
+      "schema": 1,
+      "threads": 1,
+      "trial": {
+        "peak_rss_mib": 1480,
+        "requests_ms": [
+          3485,
+          867
+        ],
+        "runtime_gpu_buffer_mib": 1287.93,
+        "startup_ms": 8962,
+        "total_ms": 13315
+      }
+    },
+    "limits": [
+      "The process-local VK_ICD_FILENAMES override is developer-only. No system/registry changes or production component activation.",
+      "Default driver discovery still returns no Vulkan device on this machine; this is conditional runtime correctness evidence, not out-of-box compatibility.",
+      "This confirms that the static candidate loads the same model without the old shared-runtime 0xc0000409 failure. It does not prove that all Windows machines are repaired.",
+      "Sampled child RSS is a lower bound; runtime GPU buffers are not physical peak VRAM. This cold admission trial is not a CPU/GPU speed comparison."
+    ]
   }
 }

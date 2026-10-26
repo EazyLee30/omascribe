@@ -77,6 +77,11 @@ original transcript instead of recomposing it and losing qualifiers. The repaire
 fixture retains offline transcription, Friday, microphone-only scope and deferred
 system audio. Factual repairs still rebuild from evidence, and every translation
 passes the same name, fact and source checks before committing.
+The final clean-source Qwen3-1.7B Windows run passed all 19 fixtures, including
+language repairs, note-only names, long context, corrections and human-paragraph
+protection. The functional run and exact input/build hashes are recorded in
+[`windows-minutes-2026-10-26.json`](../evaluation/windows-minutes-2026-10-26.json).
+It overlapped UI checks/compilation and is not a performance benchmark.
 
 ## Reproduce on Windows
 
@@ -135,10 +140,18 @@ only its x64 loader, and adds it to that process's PATH. It never installs a
 system runtime or copies the loader into the downloadable component. Run
 [`40345201430`](https://github.com/EazyLee30/omascribe/actions/runs/40345201430)
 now passes Windows source checks, static compilation, version verification and
-component packaging; its catalog correctly skips. Download attempts from this
-Windows host failed with TLS/EOF errors, so local model validation of that Vulkan
-artifact remains pending. The build label was removed to avoid redundant SDK
-builds on subsequent source pushes.
+component packaging; its catalog correctly skips. Direct CLI downloads hit
+TLS/EOF errors; the GitHub connector subsequently retrieved the artifact. Its
+archive and all three members passed checksum verification. The static candidate
+now loads Qwen3-1.7B, offloads 29/29 layers and passes the production worker's
+English/Chinese fact/negation trial without the old `0xc0000409` failure. This
+trial uses the explicitly recorded process-local NVIDIA ICD manifest override:
+the system's default loader still lists no devices. No system driver or registry
+was changed, and this does not establish default-environment compatibility.
+The trial took 13,315 ms including startup, with sampled child RSS 1,480 MiB and
+runtime GPU buffers 1,287.93 MiB; these are not a throughput comparison or peak
+physical VRAM. The build label was removed to avoid redundant SDK builds on
+subsequent source pushes. Signed production activation remains a separate gate.
 
 A diagnostic with one local Microsoft Zira synthesized English sentence still
 misrecognized OmaScribe and NVIDIA, both without terms and with the default 1.5
