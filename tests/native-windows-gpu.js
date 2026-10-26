@@ -47,7 +47,9 @@
     const target = Math.max(...before.segments.map((s) => s.seq));
     assert(target > 0, "Missing fictional transcript");
     if (config.phase === "fault") await invoke("ui_test_report", { report: { ...evidence, stage: "fault-ready", passed: null } });
-    await invoke("generate_notes", { id: config.meeting });
+    if (!before.runtime.notes_busy && before.meeting.notes_cursor < target) {
+      await invoke("generate_notes", { id: config.meeting });
+    }
     let snapshot;
     await until(async () => {
       snapshot = await invoke("snapshot", { id: config.meeting });
