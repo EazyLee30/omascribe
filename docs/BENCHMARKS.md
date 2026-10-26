@@ -100,3 +100,14 @@ The same 1.7B weights and 18 fictional fixtures ran on Apple M5 / 24 GiB / macOS
 | Metal | 32.2 / 32.3 s | 10.2 / 10.3 s | 1,489.4 / 1,487.2 MiB |
 
 The original first CPU arm (261.1 s) overlapped another workspace's 22-second `npm ci`, confirmed by timestamps. It remains in the raw quality record but is excluded from isolated performance comparisons; only that arm was repeated with the same inputs and executable. This does not fully control unrelated desktop activity. These times include CLI work, loading, all cases and repairs, not just decoding. Sampled CPU is not energy, and summed RSS is not unique physical unified-memory usage. Metal working-set/free values are not independent VRAM; PSS/GPU allocations/power were unknown. There is no natural-ASR contention, sustained thermal or M1–M4 result yet. The Windows PR's additional fixture/source changes still require Mac integration validation. No new backend/model default or stable release is admitted by this baseline.
+
+## Pinned public ASR baseline (2026-10-27)
+
+The current CPU worker ran both catalog-pinned Zipformers on eight held-out FLEURS read utterances, two reproducibly spliced language-switch clips, silence and quiet synthetic noise. All 24 cases completed with valid timelines; silence/noise emitted no words. [Machine-readable result](evaluation/asr-public-2026-10-27.json) and [exact public manifest](evaluation/fleurs-manifest-2026-10-27.json) retain source/model/worker hashes, edit breakdowns and small-sample bootstrap intervals. Google FLEURS is CC BY 4.0; attribution and source archive revision are in the manifest.
+
+| Model | Mandarin CER (4 clips) | English WER (4 clips) | Constructed-switch MER (2 clips) |
+| --- | --- | --- | --- |
+| Zipformer small | 32.45% | 34.21% | 29.94% |
+| Zipformer bilingual | 28.19% | 32.89% | 30.54% |
+
+This establishes a reproducible baseline, not a quality improvement. Individual clips have substantially higher error rates; the fixed 45% aggregate smoke ceiling only detects severe regressions. The larger model was not uniformly better on the switching clips and is not promoted. Read speech and splices do not establish natural mixed-language meetings, proper-name recall or speaker accuracy. This single ordered run's sampled resources/RTF are descriptive, not a controlled comparative performance or visible-caption latency experiment. No private recording was used. After successful validation, the 815 MB source download archives and borrowed model copies were released while the selected WAVs, references and diagnostics remained available.
