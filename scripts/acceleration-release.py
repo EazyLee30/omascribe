@@ -9,6 +9,7 @@ import os
 import pathlib
 import re
 import subprocess
+import tempfile
 import threading
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -118,8 +119,11 @@ def checkout_sha(prefix):
 def checkout_sha_for_job(job_id):
     # Only read the bounded checkout prefix, not megabytes of CUDA compilation.
     # Terminating this local read never cancels the remote Actions job.
+    # Keep only a bounded classification on failure. Never print job contents,
+    # signed download URLs, headers or arbitrary CLI stderr into another job.
+    errors = tempfile.TemporaryFile()
     process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job_id}/logs"],
-                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                               stdout=subprocess.PIPE, stderr=errors)
     expired = threading.Event()
     def stop():
         expired.set()
@@ -141,9 +145,24 @@ def checkout_sha_for_job(job_id):
             process.kill()
             process.wait()
         timer.cancel()
+        errors.seek(0)
+        error_prefix = errors.read(4096)
+        errors.close()
     if expired.is_set():
-        raise ValueError("Original checkout log read timed out")
-    return checkout_sha(prefix)
+        raise ValueError(f"Original checkout log read timed out for job {job_id}")
+    try:
+        return checkout_sha(prefix)
+    except ValueError as error:
+        raise ValueError(f"Original checkout source missing for job {job_id}: "
+                         f"{log_read_diagnostic(prefix, error_prefix, process.returncode)}") from error
+
+
+def log_read_diagnostic(prefix, errors, code):
+    kind = "zip" if prefix.startswith(b"PK\x03\x04") else "gzip" if prefix.startswith(b"\x1f\x8b") else "json" if prefix.lstrip().startswith(b"{") else "text" if prefix else "empty"
+    # GitHub CLI error formats include `(HTTP 403)`; emit the number only.
+    status = re.search(rb"HTTP ([1-5][0-9]{2})", errors)
+    return dict(bytes=len(prefix), kind=kind, exit_code=code,
+                http_status=int(status[1]) if status else None)
 
 
 def native_file_at(commit, path):
