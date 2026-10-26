@@ -246,3 +246,69 @@ fn a_positive_clause_cannot_relabel_another_negative_status_value() -> Result<()
     assert!(Ledger::default().apply(&s, &input, &mixed, 1).is_err());
     Ok(())
 }
+
+#[test]
+fn clause_choices_cannot_borrow_another_subjects_value_state_or_old_identity() -> Result<()> {
+    let (_root,_e,s)=fixture(&[
+        "Morgan will run upload verification on Thursday.",
+        "Morgan confirms upload verification is completed. There are no remaining tasks. Budget is 5000. Upload remains unapproved."
+    ])?;
+    let old=Ledger::default().apply(&s,&clauses(&s,&s.segments[..1]),&json!({"updates":[update(0,"Morgan","statement","Morgan will run upload verification on Thursday","planned",vec![1])]}).to_string(),1)?;
+    let fresh = clauses(&s, &s.segments[1..]);
+    for patch in [
+        // Morgan occurs in the utterance but not in this independent clause.
+        update(
+            1,
+            "Morgan",
+            "statement",
+            "There are no remaining tasks",
+            "reported",
+            vec![2],
+        ),
+        // A true negative from a separate subject cannot qualify this amount.
+        update(0, "Budget", "amount", "5000", "uncertain", vec![3, 4]),
+        // A whole-clause value cannot cite a different independent clause.
+        update(
+            0,
+            "Morgan",
+            "statement",
+            "There are no remaining tasks",
+            "reported",
+            vec![1, 2],
+        ),
+    ] {
+        assert!(old
+            .apply(&s, &fresh, &json!({"updates":[patch]}).to_string(), 2)
+            .is_err());
+        assert!(old.facts[0].value.contains("Thursday"));
+    }
+    let next=old.apply(&s,&fresh,&json!({"updates":[update(1,"Morgan","statement","Morgan confirms upload verification is completed","completed",vec![1])]}).to_string(),2)?;
+    assert_eq!(next.facts[0].state, State::Completed);
+    assert_eq!(old.facts[0].state, State::Planned);
+    Ok(())
+}
+#[test]
+fn subordinate_support_never_crosses_periods_or_source_revisions() -> Result<()> {
+    for (source, allowed) in [
+        ("Budget is 3000, not approved.", true),
+        ("Budget is 3000. Not approved.", false),
+    ] {
+        let (_root, _e, s) = fixture(&[source])?;
+        let proposal =
+            json!({"updates":[update(0,"Budget","amount","3000","uncertain",vec![1,2])]})
+                .to_string();
+        assert_eq!(
+            Ledger::default()
+                .apply(&s, &clauses(&s, &s.segments), &proposal, 1)
+                .is_ok(),
+            allowed
+        );
+    }
+    let (_root, _e, s) = fixture(&["Budget is 3000,", "not approved."])?;
+    let proposal =
+        json!({"updates":[update(0,"Budget","amount","3000","uncertain",vec![1,2])]}).to_string();
+    assert!(Ledger::default()
+        .apply(&s, &clauses(&s, &s.segments), &proposal, 2)
+        .is_err());
+    Ok(())
+}
