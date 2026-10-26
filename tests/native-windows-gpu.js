@@ -19,7 +19,7 @@
     throw Error("GPU acceptance state timed out");
   };
   const button = async (selector) => {
-    await until(() => document.querySelector(selector));
+    await until(() => document.querySelector(selector) && !document.querySelector(selector).disabled, 180000);
     const element = document.querySelector(selector);
     assert(!element.disabled, "Required settings action is disabled: " + selector);
     element.click();
@@ -31,7 +31,27 @@
   };
   const catalog = () => invoke("acceleration_components");
   const componentId = "cuda-windows-x86_64";
+  const idle = async () => {
+    const meetings = await invoke("list_meetings");
+    if (!meetings.length) return;
+    await until(async () => {
+      const state = (await invoke("snapshot", { id: meetings[0].id })).runtime;
+      return !state.notes_busy && !state.translation_busy && !state.recording && !state.transcribing;
+    }, 180000);
+  };
+  const preferencesWhenIdle = async (preferences) => {
+    await until(async () => {
+      try {
+        await invoke("set_preferences", { preferences });
+        return true;
+      } catch (error) {
+        if (!/Finish recording, transcription and writing before changing models/i.test(String(error))) throw error;
+        return false;
+      }
+    }, 180000);
+  };
   const test = async () => {
+    await idle();
     await button(`[data-component-action="test"][data-id="${componentId}"]`);
     await until(async () => {
       const state = (await catalog()).verification;
@@ -111,15 +131,23 @@
       }
       if (config.phase === "memory") {
         const prefs = await invoke("get_preferences");
-        await invoke("set_preferences", { preferences: { ...prefs, context_size: 16384 } });
-        await until(() => document.querySelector(`[data-component-action="test"][data-id="${componentId}"]`));
-        await button(`[data-component-action="test"][data-id="${componentId}"]`);
-        await until(async () => (await catalog()).verification.state === "test_failed", 60000);
-        evidence.memory = (await catalog()).verification;
-        assert(/enough free memory|insufficient.*memory|显存.*不足/i.test(evidence.memory.reason || ""), "Failure did not identify GPU memory admission");
-        await invoke("set_preferences", { preferences: prefs });
+        try {
+          evidence.memory_configuration = { llm_model: "qwen3-4b", context_size: 8192, required_mib: 4992, weights_loaded: false };
+          await preferencesWhenIdle({ ...prefs, llm_model: "qwen3-4b", context_size: 8192, auto_notes: false, translation_mode: "off" });
+          await idle();
+          await button(`[data-component-action="test"][data-id="${componentId}"]`);
+          await until(async () => {
+            const state = (await catalog()).verification.state;
+            if (["active", "cpu_preferred"].includes(state)) throw Error("Memory fixture did not exhaust admission headroom");
+            return state === "test_failed";
+          }, 60000);
+          evidence.memory = (await catalog()).verification;
+          assert(/enough free memory|insufficient.*memory|显存.*不足/i.test(evidence.memory.reason || ""), "Failure did not identify GPU memory admission");
+        } finally {
+          await preferencesWhenIdle(prefs);
+        }
         assert((await catalog()).verification.state !== "active", "Memory refusal retained activation");
-        evidence.checks.push("Real device memory admission refused the larger context; this is not a driver allocation-OOM injection");
+        evidence.checks.push("Real device memory admission refused the supported 4B/8192 configuration before model loading; weights were not downloaded and this is not a driver allocation-OOM injection");
       }
       if (config.meeting) await generate();
     }
