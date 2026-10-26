@@ -4,6 +4,7 @@ import argparse
 import base64
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import pathlib
@@ -11,6 +12,7 @@ import re
 import subprocess
 import tempfile
 import threading
+import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPOSITORY = "EazyLee30/omascribe"
@@ -108,12 +110,15 @@ def require_windows_core(sha):
 
 def checkout_sha(prefix):
     lines = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", prefix.decode("utf-8", errors="replace")).splitlines()
+    commits = set()
     for line, following in zip(lines, lines[1:]):
         if re.search(r'\bgit(?:\.exe)?"?\s+log -1 --format=%H(?:\s|$)', line):
             match = re.search(r"(?:^|\s)([0-9a-f]{40})\s*$", following)
             if match:
-                return match[1]
-    raise ValueError("Original job has no recognized exact checkout source")
+                commits.add(match[1])
+    if len(commits) != 1:
+        raise ValueError("Original job has no unique recognized exact checkout source")
+    return commits.pop()
 
 
 def checkout_sha_for_job(job_id):
@@ -165,6 +170,73 @@ def log_read_diagnostic(prefix, errors, code):
                 http_status=int(status[1]) if status else None)
 
 
+def archive_checkout_sources(blob, jobs):
+    """Read each exact job's checkout step, without extracting arbitrary paths."""
+    if len(blob) > 32 * 1024 * 1024:
+        raise ValueError("Original run log archive exceeds the download budget")
+    with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+        entries = archive.infolist()
+        if len(entries) > 4096 or sum(i.file_size for i in entries) > 256 * 1024 * 1024:
+            raise ValueError("Original run log inventory exceeds the budget")
+        if len({job["id"] for job in jobs}) != len(jobs) or len({job["name"] for job in jobs}) != len(jobs):
+            raise ValueError("Original native job identities are ambiguous")
+        proofs = []
+        for job in jobs:
+            name = job["name"]
+            if not re.fullmatch(r"build \([A-Za-z0-9 ,_.()-]{1,180}\)", name):
+                raise ValueError("Unsupported original native job name")
+            directory = name + "/"
+            steps = [i for i in entries if i.filename.startswith(directory)
+                     and re.fullmatch(r"[0-9]+_Run actions_checkout@v[0-9]+\.txt", i.filename[len(directory):])]
+            # GitHub can retain the complete flat job log without step files
+            # for older finished jobs. Match its exact API-reported job name.
+            flat = [i for i in entries if re.fullmatch(r"[0-9]+_"+re.escape(name)+r"\.txt", i.filename)]
+            if len(steps) > 1 or len(flat) > 1 or not steps and not flat:
+                raise ValueError("Original run needs a unique native job/checkout log")
+            evidence = []
+            for entry in [*flat, *steps]:
+                with archive.open(entry) as stream:
+                    prefix = stream.read(128 * 1024)
+                evidence.append(dict(checkout=checkout_sha(prefix),
+                                     prefix_sha256=hashlib.sha256(prefix).hexdigest(),
+                                     prefix_bytes=len(prefix)))
+            if len({row["checkout"] for row in evidence}) != 1:
+                raise ValueError("Original job and checkout-step logs disagree")
+            proofs.append(dict(job_id=job["id"], checkout=evidence[0]["checkout"],
+                               checkout_log_sha256=evidence[0]["prefix_sha256"], logs=evidence))
+        return proofs
+
+
+def run_log_checkout_sources(run_id, jobs):
+    # The documented run-log archive is an independent authenticated API path.
+    # It proves the same four job checkouts; no current moving PR ref is used.
+    with tempfile.TemporaryFile() as errors:
+        process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/runs/{run_id}/logs"],
+                                   stdout=subprocess.PIPE, stderr=errors)
+        def stop():
+            try:
+                process.kill()
+            except OSError:
+                pass
+        timer = threading.Timer(45, stop)
+        timer.start()
+        try:
+            blob = process.stdout.read(32 * 1024 * 1024 + 1)
+            if len(blob) > 32 * 1024 * 1024:
+                raise ValueError("Original run logs exceed the download budget")
+            code = process.wait(timeout=5)
+            if code:
+                errors.seek(0)
+                raise ValueError(f"Original run-log API failed: {log_read_diagnostic(blob, errors.read(4096), code)}")
+        finally:
+            process.stdout.close()
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+            timer.cancel()
+    return archive_checkout_sources(blob, jobs), hashlib.sha256(blob).hexdigest()
+
+
 def native_file_at(commit, path):
     exists = subprocess.run(["git", "cat-file", "-e", commit+"^{commit}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if exists.returncode == 0:
@@ -193,7 +265,21 @@ def check_reuse(selected, directory):
     builds = [job for job in jobs if job["name"].startswith("build (")]
     if len(builds) != 4 or any(job["conclusion"] != "success" for job in builds):
         raise ValueError("All four original native jobs must pass")
-    checkouts = {checkout_sha_for_job(job["id"]) for job in builds}
+    proofs = []
+    archive_hash = None
+    method = "per_job_log_prefix"
+    try:
+        for job in builds:
+            proofs.append(dict(job_id=job["id"], checkout=checkout_sha_for_job(job["id"])))
+    except ValueError as error:
+        print(f"Per-job checkout reader unavailable: {error}", flush=True)
+        archived, archive_hash = run_log_checkout_sources(run_id, builds)
+        for proof in proofs:
+            if not any(row["job_id"] == proof["job_id"] and row["checkout"] == proof["checkout"] for row in archived):
+                raise ValueError("Per-job and run-log checkout proofs disagree")
+        proofs = archived
+        method = "run_log_archive_checkout_steps"
+    checkouts = {proof["checkout"] for proof in proofs}
     if len(checkouts) != 1:
         raise ValueError("Original native jobs checked out different sources")
     checkout = checkouts.pop()
@@ -210,6 +296,7 @@ def check_reuse(selected, directory):
     directory.mkdir(parents=True, exist_ok=True)
     packaging.write_json(directory / "candidate-build-evidence.json", dict(schema=1,
         publishing_source_sha=selected["source_sha"], build_source_sha=sha, checkout_source_sha=checkout, native_input_sha256=fingerprint,
+        checkout_method=method, job_checkout_proofs=proofs, run_log_archive_sha256=archive_hash,
         build_run_id=run_id, artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
 
 
