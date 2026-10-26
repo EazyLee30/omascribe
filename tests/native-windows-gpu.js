@@ -47,13 +47,25 @@
     const target = Math.max(...before.segments.map((s) => s.seq));
     assert(target > 0, "Missing fictional transcript");
     if (config.phase === "fault") await invoke("ui_test_report", { report: { ...evidence, stage: "fault-ready", passed: null } });
-    if (!before.runtime.notes_busy && before.meeting.notes_cursor < target) {
-      await invoke("generate_notes", { id: config.meeting });
-    }
     let snapshot;
+    let requestedCursor = -1;
+    let requests = 0;
     await until(async () => {
       snapshot = await invoke("snapshot", { id: config.meeting });
-      return !snapshot.runtime.notes_busy && snapshot.meeting.notes_cursor >= target;
+      const idle = !snapshot.runtime.notes_busy && !snapshot.runtime.translation_busy;
+      if (idle && snapshot.meeting.notes_cursor >= target) return true;
+      if (idle && snapshot.meeting.notes_cursor < target && snapshot.meeting.notes_cursor !== requestedCursor && requests < 4) {
+        try {
+          await invoke("generate_notes", { id: config.meeting });
+          requestedCursor = snapshot.meeting.notes_cursor;
+          requests++;
+        } catch (error) {
+          // The automatic scheduler can acquire its shared translation/notes
+          // lease between snapshot and invoke. Join that work instead.
+          if (!/已有笔记正在生成|already.*generation|Wait for.*inference/i.test(String(error))) throw error;
+        }
+      }
+      return false;
     }, 180000);
     assert(snapshot.suggestions.length, "No generated document");
     assert(JSON.stringify(snapshot.segments) === JSON.stringify(before.segments), "Generation changed the fictional source");
