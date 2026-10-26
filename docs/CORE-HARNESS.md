@@ -101,3 +101,5 @@ python3 tests/replay_terminology.py \
 `--minutes-catchup` 在相同 Metal 模型、音频和 60 秒补齐预算下，对照原调度与实验调度，两轮反转顺序。它在同一进程采样区间内计算录音及结束后全部工作，分别保存结束瞬间与补齐后的覆盖、等待时间、任务 trace、引用和资源成本。不会把等待间隔缩短解释成模型计算变快。用前面的回放命令加上该选项与新的输出路径即可。
 
 CLI `replay-settle AUDIO SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]` 返回补齐结果及 snapshot；`settle MEETING_ID SECONDS` 验证已启用自动纪要的隔离会议。两者仅接受 1–600 秒显式预算。`OMASCRIBE_MINUTES_CATCHUP=1 python3 tests/evaluate.py --auto-schedule --preferences FILE --output NEW.json` 用真实后台调度跑同一十八项事实、引用及人工段落保护场景。实验默认关闭；结果未通过不更换样本或放宽质量门槛。每一阶段保留所有 metadata-only task trace；不能用只含最后一次生成的诊断文件推断整个自动补齐过程的 token 或重试成本。
+
+M5 上 `116469e` 两轮逆序回放与十八项自动纪要均已通过，具体身份、全成本、原始结果摘要及未测范围见 [补齐验收](evaluation/apple-minutes-catchup-2026-10-27.json)。3.1 秒与 29.3 秒对比为相同工作完成后的调度等待差异，不表示模型运算或耗电同比改善。
