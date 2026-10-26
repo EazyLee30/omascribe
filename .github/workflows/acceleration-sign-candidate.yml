@@ -1,0 +1,96 @@
+name: Sign existing acceleration candidate
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: acceleration-sign-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+env:
+  PYTHONUTF8: "1"
+  REUSE_CANDIDATE: "true"
+jobs:
+  sign-existing:
+    if: startsWith(github.event.label.name, 'sign-acceleration-run-') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check publication/packaging contracts without compiling SDKs
+        run: python3 -m unittest discover -s tests -p 'test_acceleration_*.py'
+      - id: context
+        name: Bind one-shot label, source and immutable original version
+        run: python3 scripts/acceleration-release.py reuse-context
+      - name: Require full successful source build, input fingerprint and current application/Windows checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/acceleration-release.py check-reuse
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.context.outputs.reuse_run_id }}
+          repository: ${{ github.repository }}
+          pattern: accelerator-*
+          merge-multiple: true
+          path: release-assets/accelerators
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.context.outputs.reuse_run_id }}
+          repository: ${{ github.repository }}
+          name: acceleration-catalog
+          path: release-assets/original-catalog
+      - name: Recheck every member and require the original exact catalog payload
+        env:
+          COMPONENT_VERSION: ${{ steps.context.outputs.version }}
+        run: |
+          python3 scripts/acceleration-components.py index --directory release-assets/accelerators --version "$COMPONENT_VERSION"
+          cp release-assets/original-catalog/index.payload release-assets/accelerators/original-index.payload
+          python3 scripts/acceleration-release.py compare-reuse
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Sign exact candidate bytes with the application release key
+        env:
+          COMPONENT_VERSION: ${{ steps.context.outputs.version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: npx tauri signer sign --app-version "$COMPONENT_VERSION" release-assets/accelerators/index.payload
+      - name: Wrap signature and embedded public key
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('release-assets/accelerators')
+          (root/'index.json').write_text(json.dumps(dict(payload=(root/'index.payload').read_text(),signature=(root/'index.payload.sig').read_text().strip())),encoding='utf-8')
+          config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())
+          (root/'updater.pub').write_text(config['plugins']['updater']['pubkey'],encoding='utf-8')
+          PY
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.99.0"
+      - uses: Swatinem/rust-cache@v2
+      - name: Build only the application verifier, never native GPU SDKs
+        run: cargo build -p omascribe-core --locked --bin omascribe-cli
+      - name: Verify signature, draft/upload/hash-check and publish immutable candidate only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/acceleration-release.py publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-acceleration-candidate
+          path: |
+            release-assets/accelerators/index.*
+            release-assets/accelerators/candidate-*.json
+          if-no-files-found: error
