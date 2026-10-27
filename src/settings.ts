@@ -3,6 +3,7 @@ import { translationChoices } from "./translation-ui";
 import { confirmDelete } from "./interactions";
 import { mountUpdates } from "./updates";
 import { accelerationBody, type ComponentCatalog } from "./acceleration-ui";
+import { mountMicrophoneTest } from "./microphone-test";
 import { invoke } from "@tauri-apps/api/core";
 import { t, locale, type Locale } from "./i18n";
 import type { Diagnostic } from "./types";
@@ -66,6 +67,7 @@ export async function mountSettings(
     }
   };
   let updateCleanup: (() => void) | undefined;
+  let microphoneTest: ReturnType<typeof mountMicrophoneTest> | undefined;
   let network = await readNetwork();
   const diagnostics = await invoke<Diagnostic>("diagnostics");
   root.classList.add("workspace-page");
@@ -236,6 +238,8 @@ export async function mountSettings(
     <div id="model-list">${modelCards()}</div><p class="setting-help">${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => esc(m.model.name)).join(" + ")}</p>`;
   }
   async function render() {
+    await microphoneTest?.close();
+    microphoneTest = undefined;
     updateCleanup?.();
     updateCleanup = undefined;
     const section = active;
@@ -308,8 +312,9 @@ export async function mountSettings(
         );
       if (!alive || section !== active) return;
       const views = await getViewSettings();
-      const option = (d: { id: string; name: string }) =>
-        `<option value="${esc(d.id)}">${esc(d.id === "auto" ? t("defaultDevice") : d.name)}</option>`;
+      if (!alive || section !== active) return;
+      const option = (d: { id: string; name: string; kind?: string }) =>
+        `<option value="${esc(d.id)}" data-kind="${esc(d.kind || "microphone")}">${esc(d.id === "auto" ? t("defaultDevice") + (d.name === "System default microphone" ? "" : " · " + d.name) : d.name)}</option>`;
       const mixed = devices.filter((d) => d.kind === "mixed");
       const system = devices.filter((d) => d.kind === "system");
       const microphones = devices.filter(
@@ -341,6 +346,11 @@ export async function mountSettings(
         locale;
       (root.querySelector("#settings-device") as HTMLSelectElement).value =
         localStorage.getItem("omascribe-device") || "auto";
+      const deviceSelect =
+        root.querySelector<HTMLSelectElement>("#settings-device")!;
+      const preview = document.createElement("div");
+      deviceSelect.closest(".settings-group")!.after(preview);
+      microphoneTest = mountMicrophoneTest(preview, deviceSelect);
     } else if (section === "transcription") {
       content.innerHTML = `${header(tr("转写与纪要", "Transcription & minutes", "轉寫與紀要"), tr("新会议和音频导入的默认行为。已有会议可单独调整。", "Defaults for new meetings and imported audio. Existing meetings have their own controls.", "新會議及音訊匯入的預設行為，現有會議可個別調整。"))}<div class="settings-group">${row(
         tr("实时转写与字幕", "Live transcript & captions", "即時轉寫及字幕"),
@@ -794,6 +804,8 @@ export async function mountSettings(
       await queue;
     },
     async close() {
+      await microphoneTest?.close();
+      microphoneTest = undefined;
       updateCleanup?.();
       alive = false;
       clearInterval(timer);

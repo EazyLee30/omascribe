@@ -74,11 +74,13 @@ pub struct Engine {
     pub(crate) inference_fingerprints: crate::inference_cache::Fingerprints,
     pub(crate) retrieval_cache: crate::notes::RetrievalCache,
     pub(crate) acceleration: Mutex<crate::acceleration::State>,
+    microphone_monitor: crate::microphone::MicrophoneMonitor,
     notes_target: Mutex<Option<String>>,
     _lock: File,
 }
 impl Drop for Engine {
     fn drop(&mut self) {
+        self.microphone_monitor.stop();
         self.inference_pool.invalidate();
         let _ = fs2::FileExt::unlock(&self._lock);
     }
@@ -149,6 +151,7 @@ impl Engine {
             inference_fingerprints: Default::default(),
             retrieval_cache: Default::default(),
             acceleration: Default::default(),
+            microphone_monitor: Default::default(),
             notes_target: Mutex::new(None),
             _lock: lock,
         });
@@ -483,6 +486,32 @@ impl Engine {
     ) -> Result<()> {
         self.start_capture(id, device, input, None)
     }
+    pub fn microphone_level(&self) -> crate::microphone::InputLevel {
+        self.microphone_monitor.status()
+    }
+    pub fn start_microphone_preview(
+        &self,
+        device: String,
+    ) -> Result<crate::microphone::InputLevel> {
+        let _config = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        let status = self.status.lock().unwrap().clone();
+        if status.recording || status.paused || status.transcribing {
+            bail!("Finish recording and transcription before testing the microphone");
+        }
+        if !audio::devices()?
+            .iter()
+            .any(|input| input.id == device && input.kind == "microphone")
+        {
+            bail!("Select an available microphone input before testing");
+        }
+        self.microphone_monitor
+            .start(device, &self.root.join("microphone-preview.log"))
+    }
+    pub fn stop_microphone_preview(&self) -> crate::microphone::InputLevel {
+        self.microphone_monitor.stop();
+        self.microphone_monitor.status()
+    }
     /// Paced file replay exercises the same writer, ASR, scheduler and persistence as a meeting.
     pub fn replay_audio(self: &Arc<Self>, id: &str, input: PathBuf, seconds: u64) -> Result<()> {
         if seconds == 0 || seconds > 14_400 {
@@ -498,6 +527,7 @@ impl Engine {
         replay_seconds: Option<u64>,
     ) -> Result<()> {
         let _config = self.config_lock.lock().unwrap();
+        self.microphone_monitor.stop();
         self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {
             bail!("Cancel speaker analysis before starting another recording");
@@ -1177,6 +1207,7 @@ impl Engine {
         }
     }
     pub fn shutdown(&self) {
+        self.microphone_monitor.stop();
         self.cancel_all_downloads();
         let _ = self.stop_recording();
         self.cancel_notes();

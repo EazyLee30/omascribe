@@ -227,6 +227,50 @@ input[type="checkbox"][role="switch"]:checked::after {
   padding: 19px 0;
   min-height: 74px;
 }
+.microphone-test {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 22px;
+  background: var(--panel);
+}
+.microphone-test-heading,
+.microphone-test-level {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.microphone-test-heading h2 {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+.microphone-test-heading p,
+.microphone-test-level,
+.microphone-test .setting-help {
+  font-size: 12px;
+  color: var(--muted);
+}
+.microphone-test-heading p {
+  overflow-wrap: anywhere;
+}
+.microphone-waveform {
+  display: block;
+  width: 100%;
+  height: 64px;
+  margin: 14px 0 8px;
+  color: var(--accent);
+}
+.microphone-waveform path {
+  fill: currentColor;
+  fill-opacity: 0.3;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.microphone-test .setting-help {
+  line-height: 1.7;
+  margin: 12px 0 0;
+}
 .settings-row + .settings-row {
   border-top: 1px solid var(--border);
 }
