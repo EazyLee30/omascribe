@@ -6,7 +6,7 @@
 
 0.3.5 优先解决生产转写与纪要的预算更正、否定/撤回状态、无依据补写、字幕翻译收尾，以及三端实际阻塞安装、启动、录音、停止或升级的问题。差分更新、完整说话人重构、新模型与新后端独立推进。
 
-**候选 6：`9bfbfc088a8fcaa471ccee31057a8f99fe4fde66`**，固定分支 `codex/release-0.3.5-candidate-6`。本轮已合入 #7 完整型号提示/边界、#8 模型选择摘要刷新，以及中文责任句的姓名校验和相应缓存失效。合并后 core177/7忽略、型号集成7、ASR5、desktop4、含 native ui-test 的全 workspace/all-targets 严格 Clippy 通过；同提交 Windows/Linux 源码 CI 通过。**Mac 同一干净编译来源完整33项自动双语回归33/33通过**，逐篇复核正文及引用，44轮保存日志均实际 Metal offload；[来源、原始哈希、全部正文与资源](../evaluation/apple-candidate6-caption-finalization-2026-10-28.json)。**尚未放行或打包**；当前同源录音回放检查在运行，自然录音质量、三端原生与安装升级仍需独立验收。
+**候选 6：`9bfbfc088a8fcaa471ccee31057a8f99fe4fde66`**，固定分支 `codex/release-0.3.5-candidate-6`。本轮已合入 #7 完整型号提示/边界、#8 模型选择摘要刷新，以及中文责任句的姓名校验和相应缓存失效。合并后 core177/7忽略、型号集成7、ASR5、desktop4、含 native ui-test 的全 workspace/all-targets 严格 Clippy 通过；同提交 Windows/Linux 源码 CI 通过。**Mac 同一干净编译来源完整33项自动双语回归33/33通过**，逐篇复核正文及引用，44轮保存日志均实际 Metal offload；[来源、原始哈希、全部正文与资源](../evaluation/apple-candidate6-caption-finalization-2026-10-28.json)。另完成同源四次78秒回放和两模型24项公开ASR回归。**尚未放行或打包**；自然录音质量、三端原生与安装升级仍需独立验收。
 
 候选 5 `6498696ca75ad60d20e06b52e20cc7f084e707a0` 的固定分支和原结果不改写：Mac 完整32项自动双语链路32/32通过，43轮实际 Metal offload，另有四次公开 PCM 的实际 Engine 回放并发/收尾检查。这些是旧候选证据，不算候选6完整通过。
 
@@ -29,12 +29,14 @@
 | I1 | 三端同源集成 | 主线程集成；三端原生验证 | Windows #2/#5/#6/#7/#8 与 Linux #3 已合入候选6 `9bfbfc0`。本端源码与完整33项通过；三端下一轮固定此 SHA，不追文档 head。已运行的旧候选检查完成后保留来源，不中断重启或拼接为新候选结果。 |
 | P1 | Windows 实际输入、识别与冷 ASR | Windows；共享修复由主线程负责 | #6 的 `3d68f7c` 已经 `0615a720` 合入。原92秒PCM单次实测峰值2432ms、16/16转写/翻译和纪要、停录后39.918秒；原2500ms门仅余68ms，缓存未控制，不作通用冷启动保证。#7 作者另在候选4基线私有Realtek片段测得Small专名0/4、可选质量档1/4，完整热词未改善；旧失败保留，不能以合成型号或字幕拼写冒充真实识别已修复。候选6的Windows同源验收仍待完成。 |
 | L1 | Linux / Omarchy 平台流程 | Linux | `c415a88` 交付已合入；只补原生启动、PipeWire/麦克风与系统音频、预览进程退出、停止、Hyprland 和升级的实际阻塞。现有证据绑定原来源；缺实机项明确未测。 |
-| M1 | Mac Metal、录音并发与资源 | 主线程/Mac | 候选6同源回放检查正在运行，原生窗口验收因Mac锁屏待解锁。候选5四次78秒PCM回放的归档PCM/ASR一致；两个Metal臂p95均392ms，停录后2917/2913ms到6/6字幕、纪要游标及一篇正文。历史实时输出MER27.84%与候选5的30.20%差异未归因；同一归档PCM旧/新debug/新release三worker直解完全相同，不宣称新解码器退化或质量提升。自然麦克风、原生和安装仍未验收。 |
+| M1 | Mac Metal、录音并发与资源 | 主线程/Mac | 候选6同源四次78秒PCM回放通过，四臂PCM/ASR一致且与候选5同输出；两个Metal臂p95均392ms，最大456ms，停录后2907/2924ms到6/6字幕、纪要游标及一篇正文。新鲜同源worker的两模型24项公开ASR也通过，全部识别单位与原基线一致。原生窗口因Mac锁屏待解锁，自然麦克风和安装仍未验收；历史实时MER差异继续保留，不宣称整体识别质量已提升。 |
 | D1 | 安装、升级、模型保留和可选 GPU 组件 | 三端验收；主线程统一打包 | 四个已签 CUDA/Vulkan 组件和已有模型继续复用，组件不进基础安装包，stable catalog 未晋级。质量检查收敛后统一构建 `publish=false` 候选包，验证安装升级、数据/模型保留、组件推荐/安装和 CPU 回退。 |
 
 Windows #6 的 [原始报告](https://github.com/EazyLee30/omascribe/blob/7df6df554e9eef776924f8aa914cd840d2760744/docs/evaluation/windows-asr-cold-start-2026-10-27.json) 与 [仅修正文案的报告](https://github.com/EazyLee30/omascribe/blob/ef98d760e9b774193f0c52422c2832dbdec31800/docs/evaluation/windows-asr-cold-start-2026-10-27.json) 均保留；2752ms/3648ms 旧失败及真实语音名称错误不删除。
 
 Mac [候选 5 回放与直接解码对照](../evaluation/apple-candidate5-recording-2026-10-28.json) 保留同一 CLI/ASR/模型身份、四臂计时、MER、CPU/RSS、原始报告哈希与三个 worker 身份。ASR-only 首臂最大延迟 2176ms、另三臂 456ms；缓存未控制，不把顺序差异解读为并发加速。CPU 是采样下界，RSS 可能重复计算共享页，未测能耗或显存；回放不代替物理麦克风。
+
+Mac [候选6回放证据](../evaluation/apple-candidate6-recording-2026-10-28.json) 和 [候选6公开ASR回归](../evaluation/apple-candidate6-asr-public-2026-10-28.json) 绑定同一CLI、核心/harness、模型和新ASR worker，原2500ms/90秒及ASR差错回归门不变。Metal并发采样树RSS约1724/1726.5MiB，未测独立显存或能耗；公开ASR各模型/语种差错率约28–34%，24/24通过的是有限回归门和静音负例。旧实时MER27.84%与新稳定回放30.20%的差异仍未归因，原始失败和三个worker直解控制均保留。
 
 ## 交付节奏与分工
 
