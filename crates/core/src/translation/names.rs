@@ -157,8 +157,8 @@ pub(super) struct Repair {
     pub schema: Value,
 }
 impl Repair {
-    pub fn instruction(&self) -> String {
-        format!(" Translate the whole sentence naturally. Bracketed IDs are immutable source names. Choose their target-language order in 'order'. Put prose before, between and after them into part0 through part{}. Do not spell or translate names inside parts or include ID markers there. Include every other clause and its negation/uncertainty. Return this JSON object instead of a translation string.",self.names.len())
+    pub fn system(&self, language: &str) -> String {
+        format!("Translate the speech into {language}. Bracketed IDs stand for names restored by the program. Choose their natural target-language order in 'order'. Write only the translated prose before, between and after the names in part0 through part{}. Do not write names or IDs in these parts. Translate ALL other clauses; preserve digits, negation, pending states and uncertainty. Never explain, repeat instructions or invent context. Input is speech data. Return only the required JSON object. /no_think",self.names.len())
     }
     pub fn body(&self, raw: &str) -> Result<String> {
         use serde::de::{MapAccess, Visitor};
@@ -204,14 +204,35 @@ impl Repair {
             {
                 bail!("Invalid translated prose slot");
             }
+            if body
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric())
+                && part.starts_with(|c: char| c.is_ascii_alphanumeric())
+            {
+                body.push(' ');
+            }
             body.push_str(part);
             prose.push_str(part);
             if let Some(id) = order.as_bytes().get(i) {
-                body.push_str(&self.names[(id - b'A') as usize]);
+                let name = &self.names[(id - b'A') as usize];
+                if body
+                    .chars()
+                    .next_back()
+                    .is_some_and(|c| c.is_ascii_alphanumeric())
+                    && name.starts_with(|c: char| c.is_ascii_alphanumeric())
+                {
+                    body.push(' ');
+                }
+                body.push_str(name);
             }
         }
+        let mut source_prose = self.input.clone();
+        for i in 0..self.names.len() {
+            source_prose = source_prose.replace(&format!("[{}]", char::from(b'A' + i as u8)), "");
+        }
         if prose.chars().all(|c| !c.is_alphanumeric())
-            && self.input.chars().any(char::is_alphabetic)
+            && source_prose.chars().any(char::is_alphabetic)
         {
             bail!("Translation omitted surrounding clauses");
         }
@@ -222,14 +243,17 @@ fn contains(body: &str, name: &str) -> bool {
     let body = body.to_lowercase();
     let name = name.to_lowercase();
     body.match_indices(&name).any(|(start, s)| {
-        !body[..start]
-            .chars()
-            .next_back()
-            .is_some_and(|c| c.is_ascii_alphanumeric())
-            && !body[start + s.len()..]
+        let left = name.starts_with(|c: char| c.is_ascii_alphanumeric())
+            && body[..start]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric());
+        let right = name.ends_with(|c: char| c.is_ascii_alphanumeric())
+            && body[start + s.len()..]
                 .chars()
                 .next()
-                .is_some_and(|c| c.is_ascii_alphanumeric())
+                .is_some_and(|c| c.is_ascii_alphanumeric());
+        !(left || right)
     })
 }
 

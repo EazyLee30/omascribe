@@ -243,10 +243,9 @@ fn run_inner(
             |input| {
                 let names = names::Names::new(&terms, input);
                 let plan = repair.and_then(|_| names.repair(input));
-                let system = format!(
-                    "{system}{}",
-                    plan.as_ref()
-                        .map_or_else(|| names.hint(), |p| p.instruction())
+                let system = plan.as_ref().map_or_else(
+                    || format!("{system}{}", names.hint()),
+                    |p| p.system(language),
                 );
                 let input = plan.as_ref().map_or(input, |p| p.input.as_str());
                 session.begin_request();
@@ -282,10 +281,9 @@ fn run_inner(
         let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
         let names = names::Names::new(&terms, &input);
         let name_repair = repair.and_then(|_| names.repair(&input));
-        system.push_str(
-            &name_repair
-                .as_ref()
-                .map_or_else(|| names.hint(), |p| p.instruction()),
+        system = name_repair.as_ref().map_or_else(
+            || format!("{system}{}", names.hint()),
+            |p| p.system(language),
         );
         let request_input = name_repair
             .as_ref()
