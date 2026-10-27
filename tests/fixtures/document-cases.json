@@ -31,6 +31,21 @@
     "forbidden": [
       "Friday",
       "launch date is approved"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "莫根",
+          "周五|星期五"
+        ]
+      }
     ]
   },
   {
@@ -144,7 +159,19 @@
     ],
     "required": [],
     "forbidden": [],
-    "expect_empty": true
+    "expect_empty": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "123|one.{0,8}two.{0,8}three"
+        ],
+        "forbidden": [
+          "321|124|3000|yuan|dollar"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_phased_correction",
@@ -259,7 +286,31 @@
       "beta"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "离线",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "公测|公測|beta"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "莫根"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_long_context_state",
@@ -419,7 +470,27 @@
     "forbidden_transcript": [
       "PIXEL LEDGRE"
     ],
-    "max_sections": 2
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 4,
+        "target": "zh",
+        "required": [
+          "和|以及|而且|并|及"
+        ]
+      },
+      {
+        "seq": 5,
+        "target": "en",
+        "required": [
+          "PixelLedger",
+          "seem|may|might|appears|possibly"
+        ],
+        "forbidden": [
+          "PIXEL LEDGRE"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_windows_gpu_keyword_lines",
@@ -521,7 +592,45 @@
       "accessibility test is complete",
       "budget is approved"
     ],
-    "max_sections": 2
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "3000",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "莫根|元|美元"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周二|星期二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "莱利"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "5000",
+          "Morgan",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "元|美元"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_incremental_withdrawal",

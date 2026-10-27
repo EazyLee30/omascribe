@@ -138,6 +138,12 @@ impl Names {
                 .collect();
             let mut orders = Vec::new();
             permutations("prose".into(), &ids, &mut orders);
+            // A single leading subject already has a natural position in
+            // both caption languages. Do not let the model omit that ID and
+            // satisfy it much later in an explanation of the instructions.
+            if self.0.len() == 1 && input.trim_start().starts_with("[A]") {
+                orders = vec![r#""[A]" prose"#.into()];
+            }
             // JSON-schema pattern conversion operates on encoded string
             // characters. A bare negated class can consume its closing quote
             // before the required ID, leaving sampling unable to finish.

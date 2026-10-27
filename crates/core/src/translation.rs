@@ -343,6 +343,18 @@ fn run_inner(
                 );
             }
         }
+        if response
+            .as_ref()
+            .is_err_and(|e| e.is::<notes::stream::OutputLimit>())
+        {
+            // The server completed its output budget; this is content failure,
+            // not a broken GPU transport. Yield this passage without committing
+            // a draft or re-running the whole batch on CPU.
+            session.complete_request();
+            trace.event("validation_failed", json!({"reason":"output_budget"}));
+            deferred += 1;
+            continue;
+        }
         let (raw, _) = response?;
         session.complete_request();
         if engine.note_cancel.load(Ordering::SeqCst)
@@ -490,7 +502,7 @@ fn repair_hint(error: &anyhow::Error) -> &'static str {
     if reason.contains("名称") {
         " Copy the supplied source spellings exactly in the translation. Do not transliterate them, shorten them or substitute a guessed person, university or product. 名称名单逐字保留，不音译、不猜其他学校、人物或产品；其余句子正常翻译。"
     } else if reason.contains("输出语言") {
-        " Translate every grammatical clause into the requested target language; do not copy the original English sentence. Preserve only the supplied name spellings as literals. 必须完整翻译为要求的目标语言，只保留指定名称的原始拼写。"
+        " Translate every clause into the requested target language; do not copy the original English. Standalone function words and unfinished fragments also need short translations, without completing or explaining them. Preserve only the supplied name spellings as literals. 单独的词也须翻译，不补全句子；只保留指定名称的原始拼写。"
     } else if reason.contains("币种") {
         " The previous answer added an unsupported currency. Translate the ORIGINAL input again, preserving its stated currency. If none is specified, keep the amount unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文注明币种就保留，未注明则不要添加元或美元。"
     } else if reason.contains("数字或日期") {

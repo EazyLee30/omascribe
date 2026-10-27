@@ -320,7 +320,11 @@ fn generate_inner(
                 .unwrap_or(Value::Null),
             generated.is_ok(),
         );
-        if generated.is_ok() {
+        if generated.is_ok()
+            || generated
+                .as_ref()
+                .is_err_and(|e| e.is::<stream::OutputLimit>())
+        {
             session.complete_request();
         }
         if generated.is_err() {
