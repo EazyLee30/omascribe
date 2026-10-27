@@ -1,0 +1,62 @@
+{
+  "source_revision": "54d6e38125d24f002c4749667459a259b48604db",
+  "local_date": "2026-10-28",
+  "cli_sha256": "3ccff86f31e68b4f3fffbb2e4cfb0f0a12da5b203151950e836e1dab2a448dce",
+  "fixture_git_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+  "fixture_checkout_sha256": "aa06d69ba8309c590da8a6379f457b0f68d2d91b3812eb80aa03940850111d7d",
+  "fixture_cases": 35,
+  "fixture_phases": 46,
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_sources_identical": true,
+  "cases": [
+    {
+      "case": "en_owner_and_deadline",
+      "passed": false,
+      "pattern_passed": false,
+      "all_workers_cuda": true,
+      "full_gpu_offload_observed": true,
+      "worker_events": 5,
+      "evaluation_sha256": "e98f911b8276cdb0f4fef29c2b6e41d125e9aca3d4fc6830f6b8cba2ed2efd43",
+      "issue": "settle did not complete within 120 seconds; prior content retained"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": false,
+      "pattern_passed": false,
+      "all_workers_cuda": true,
+      "full_gpu_offload_observed": true,
+      "worker_events": 6,
+      "evaluation_sha256": "3be1e922ae4fd9c6c7ba7b73ac32dbb4f66adfc6b831178776a38df95599c3ee",
+      "issue": "settle did not complete within 120 seconds; prior content retained"
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": false,
+      "pattern_passed": false,
+      "all_workers_cuda": true,
+      "full_gpu_offload_observed": true,
+      "worker_events": 2,
+      "evaluation_sha256": "23b785fb2d5deec47afb014af00785108c359efbd0f7308e4804534772770dce",
+      "issue": "Translation 1 missing: Morgan"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cuda": true,
+      "full_gpu_offload_observed": true,
+      "worker_events": 2,
+      "evaluation_sha256": "2e2dc125a71bf3066fbfb11f5ca8e3d9050c21249ab67b87c19af3778f2402c9",
+      "issue": null
+    }
+  ],
+  "automatic_passed": false,
+  "source_binary_catalog_unchanged": true,
+  "cpu_cases": "not run, per shared coordination",
+  "limitations": [
+    "Four selected fictional seeded-text cases, not full 35-case regression.",
+    "Pattern success is not semantic or citation review.",
+    "Old ASR worker was not invoked and is not a same-build release artifact.",
+    "Signed CUDA component was copied and reverified; download/install and release acceptance were not tested."
+  ]
+}
