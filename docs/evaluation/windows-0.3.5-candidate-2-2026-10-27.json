@@ -1,0 +1,2180 @@
+{
+  "schema": 1,
+  "kind": "windows_0.3.5_candidate2_acceptance",
+  "date": "2026-10-27",
+  "version": "0.3.5",
+  "candidate_sha": "5d8e8d0581c1a9edda666432a14830b909d46563",
+  "passed": false,
+  "release_eligible": false,
+  "identity": {
+    "schema": 1,
+    "candidate_sha": "5d8e8d0581c1a9edda666432a14830b909d46563",
+    "version": "0.3.5",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "707614862d2045e780e60b4885d39ec34471be9f8d40bc925405a2abbc90391a",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "0000a39ae6b1cb73b39ff9b6bd3b03795ec1b94885295a909d2a65bdfad06c8e",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "52ec9664f581179343c9080ad94312370e0c096c9d7aa07acb34675784fa7c8f",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "5d8e8d0581c1a9edda666432a14830b909d46563",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture_sha256": "5ceda7597d2a48ed6208f349aa684fe4d863073c51ac1e4c48fee4d503c2ad54",
+    "cases": [
+      "zh_budget_guess",
+      "en_owner_and_deadline",
+      "zh_correction",
+      "bilingual_scope",
+      "zh_calendar_citations",
+      "zh_connected_minutes",
+      "zh_product_spelling",
+      "zh_empty_greetings",
+      "zh_phased_correction",
+      "zh_named_speakers",
+      "en_minutes_from_zh",
+      "zh_minutes_from_en",
+      "zh_long_context_state",
+      "zh_human_paragraph_protected",
+      "zh_note_name_spelling",
+      "en_generic_note_name",
+      "zh_name_context_is_not_evidence",
+      "zh_noisy_name_no_added_topics",
+      "zh_windows_gpu_keyword_lines",
+      "en_incremental_separate_topics",
+      "zh_incremental_withdrawal",
+      "en_incremental_completion",
+      "en_sparse_unapproved",
+      "en_sparse_unapproved_passive",
+      "en_explicit_meeting_closure",
+      "en_budget_invoice_same_amount",
+      "en_completion_independent_pending",
+      "zh_incremental_completion"
+    ],
+    "phase_count": 39,
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "cpu",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "off",
+      "minutes_language": "auto",
+      "diarization": false,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "gguf_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_scope": "CLI snapshot, Windows system directories and Git cmd directory for source provenance; no CUDA SDK paths.",
+    "method": "Full28 production automatic scheduler with120s per-phase settlement; fictional seeded transcripts, CPU baseline, experiments0. No ASR or microphone in this corpus. Manual semantic review required separately."
+  },
+  "source_binary_catalog_unchanged_at_completion": true,
+  "runtime": {
+    "schema": 1,
+    "candidate_sha": "5d8e8d0581c1a9edda666432a14830b909d46563",
+    "asr_version": "0.3.5",
+    "asr_sha256": "9ffbee32284e3b7fdd3e89896d665b898220a047102494061e54c55db20124db",
+    "asr_source": "crates/asr and linked core from frozen5d8e8d0; Release Rust1.99, static Windows CRT",
+    "sherpa_onnx_sdk": "reused pinned1.13.8 static CPU libraries; no SDK rebuild",
+    "cpu_llama_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+    "llama_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "release_build_log_sha256": "744908d2795c092896bab5afee8fb336fda5df08df60e5a35a2e5476ea650701",
+    "cli_sha256": "52ec9664f581179343c9080ad94312370e0c096c9d7aa07acb34675784fa7c8f",
+    "correction": "Initial private fixture omitted required hardware-probe CLI; download01 had catalog ready but never entered download. Added same-candidate helper, without product or signed-component changes.",
+    "hardware_probe": {
+      "status": "detected",
+      "nvidia_devices": 3,
+      "cuda_driver_version": 13050
+    },
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ]
+  },
+  "hardware": {
+    "nvidia_smi": "NVIDIA GeForce GTX 1650, 621.01, 4096 MiB",
+    "cuda_driver_api": 13050,
+    "scope": "Actual installed Windows driver/system Vulkan loader, no developer driver configuration."
+  },
+  "corpus": {
+    "cases": 28,
+    "phases": 39,
+    "pattern_passed": 28,
+    "manual_phase_snapshots_reviewed": 39,
+    "full_manual_acceptance": "pending shared classification; do not claim complete quality acceptance",
+    "worker_events": 38,
+    "all_cpu": true,
+    "profile": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "cpu",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "off",
+      "minutes_language": "auto",
+      "diarization": false,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "incremental_enabled": false,
+    "catchup_enabled": false,
+    "per_phase_settle_budget_seconds": 120,
+    "results": [
+      {
+        "case": "zh_budget_guess",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "en_owner_and_deadline",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "zh_correction",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "bilingual_scope",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_calendar_citations",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_connected_minutes",
+        "pattern_passed": true,
+        "coverage": 5,
+        "errors": []
+      },
+      {
+        "case": "zh_product_spelling",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_empty_greetings",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_phased_correction",
+        "pattern_passed": true,
+        "coverage": 5,
+        "errors": []
+      },
+      {
+        "case": "zh_named_speakers",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_minutes_from_en",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "zh_long_context_state",
+        "pattern_passed": true,
+        "coverage": 10,
+        "errors": []
+      },
+      {
+        "case": "zh_human_paragraph_protected",
+        "pattern_passed": true,
+        "coverage": 3,
+        "errors": []
+      },
+      {
+        "case": "zh_note_name_spelling",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "en_generic_note_name",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "zh_name_context_is_not_evidence",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "pattern_passed": true,
+        "coverage": 5,
+        "errors": []
+      },
+      {
+        "case": "zh_windows_gpu_keyword_lines",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "pattern_passed": true,
+        "coverage": 4,
+        "errors": []
+      },
+      {
+        "case": "zh_incremental_withdrawal",
+        "pattern_passed": true,
+        "coverage": 3,
+        "errors": []
+      },
+      {
+        "case": "en_incremental_completion",
+        "pattern_passed": true,
+        "coverage": 2,
+        "errors": []
+      },
+      {
+        "case": "en_sparse_unapproved",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "en_sparse_unapproved_passive",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "en_explicit_meeting_closure",
+        "pattern_passed": true,
+        "coverage": 1,
+        "errors": []
+      },
+      {
+        "case": "en_budget_invoice_same_amount",
+        "pattern_passed": true,
+        "coverage": 3,
+        "errors": []
+      },
+      {
+        "case": "en_completion_independent_pending",
+        "pattern_passed": true,
+        "coverage": 3,
+        "errors": []
+      },
+      {
+        "case": "zh_incremental_completion",
+        "pattern_passed": true,
+        "coverage": 3,
+        "errors": []
+      }
+    ],
+    "manual_observations": [
+      {
+        "case": "zh_minutes_from_en",
+        "classification": "shared_disposition_pending",
+        "finding": "Public release becomes public-beta release (公测发布), an unstated stage qualifier; original owner/date/negation preserved. Shared severity/disposition pending.",
+        "actual_source": [
+          "The offline recorder is ready for internal testing. The public release is not approved yet.",
+          "Morgan owns the latency report and will deliver it on Thursday."
+        ],
+        "entire_output": [
+          "离线记录器已准备好进行内部测试。公测发布尚未批准。Morgan拥有延迟报告，并将在周四交付。"
+        ],
+        "raw_stdout_sha256": "f10bd836b48e0520049d937aeec281e1baf1bcf10372741bba22e679912ba536"
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "classification": "shared_disposition_pending",
+        "finding": "Known/noisy microphone-check fragments remain in minutes, including a travel-like fragment translated from TRIP. Main product concern and uncertainty retained. Selection/usability concern distinct from definite unsupported-fact failure; shared disposition pending.",
+        "actual_source": [
+          "CHECKING CHECKING",
+          "嗯 TRY MY OWN ALMOST TRIP NOW",
+          "嗯",
+          "AND",
+          "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。"
+        ],
+        "entire_output": [
+          "检查检查，嗯，试试我的，几乎要出发了，嗯，和，这个 PixelLedger 的人员分配好像有问题，转写还需要核对。"
+        ],
+        "raw_stdout_sha256": "65b7376a05d083e39d40b9a089cf6645f1bc6233c590693106f737de646fa8a5"
+      }
+    ],
+    "candidate1_four_findings": "All four corrected in candidate2 run: English facts/Friday retained, feedback not reversed, no invented meeting ordinal, original Morgan spelling preserved."
+  },
+  "code_checks": {
+    "core": "148 passed;6 opt-in ignored; actual FFmpeg PCM/timing test ran",
+    "asr": "5 passed; current application worker Release build against reused pinned static libraries",
+    "strict_clippy": "core and native ui-test all targets -D warnings passed",
+    "native_build": "ui-test QA identity passed; not production installer",
+    "frontend": "Inputs unchanged from candidate1; reused that verified TypeScript/Vite dist",
+    "remote_exact_head": {
+      "linux": 40456187938,
+      "website": 40456187952,
+      "optional": 40456187940,
+      "conclusion": "Linux/Website/prepare/Windows-core success; SDK build/catalog skipped"
+    }
+  },
+  "native_smoke": {
+    "identity": {
+      "app_sha256": "a40294c0ce8ae4d70636042a5c857b90ce9625badba94acd1f7ec1a7e5ed4109",
+      "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+      "tree": "b6687c2ad6dea742581a5723f6d4e851bfb347a7",
+      "fixture_sha256": "bcc5caa83748207ccfd80f731b3d6eaaebee7a7a8acba5e067e17e40d3fd316d",
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "exit_code": 0,
+      "scope": "Frozen0.3.5 candidate2 native startup/locale/device smoke, source5d8e8d0. Derived from tracked native-windows-acceptance.js with version/input/theme assertions. No installer, microphone, ASR or model inference."
+    },
+    "checks": [
+      "Open native companion/transcript follow five language changes and preserve expansion",
+      "Windows microphone options and default selection survive five language changes; no Linux-only capture kind/theme appears",
+      "Native hardware reaches settings while activation still requires component verification"
+    ],
+    "report_sha256": "f90d7b18e782b892f2f62ef8eec334ff31539adb368608340b201d2d7276a338",
+    "scope": "Five locale transitions across main/companion/transcript, device persistence and Windows-only advertised options, hardware detection without activation. Functional probes; WGC screenshot capture returned FrameArrived timed out, so no visual screenshot QA claim."
+  },
+  "signed_component_lifecycle": {
+    "catalog_version": "acceleration-ci-40367160891",
+    "normal_embedded_release_key": true,
+    "sdk_rebuilt": false,
+    "main_cpu_runtime_retained": true,
+    "gui_stages": [
+      {
+        "name": "download-01",
+        "passed": false,
+        "error": "Error: GPU acceptance state timed out",
+        "checks": [],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "7a6b075a1112bd62a5f1658a31b0d373ea62b4ae95c9b3f8d855b576181a7ebd",
+        "identity_sha256": "2a534d86d6b1d0a86ccc3f7c22afa9e276a655bb73c738df18ed5cb6da806ad9",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [],
+        "classification": "Private runtime setup omitted same-candidate hardware probe CLI; no download/GPU execution. Corrected helper only; original failure retained.",
+        "archive": {
+          "bytes": 657339453,
+          "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "download_state": null,
+        "installed": false
+      },
+      {
+        "name": "download-02",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings fetched normal-key signed catalog, downloaded and installed immutable CUDA archive without automatic activation",
+          "Normal local CPU/GPU fact, offload and speed gate enabled the signed component"
+        ],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "5cd79dd45108c75bdf643f1fbb5f3bcfbfc124644854ec1fe27ab11b2062b506",
+        "identity_sha256": "3b1151a33f54ccd722219034bc1f7efd1d63e70936b5063d7fcdf30d48950a45",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 20116,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 11328,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "local_verification": {
+          "component_id": "cuda-windows-x86_64",
+          "reason": null,
+          "report": {
+            "cpu": {
+              "peak_rss_mib": 2010,
+              "requests_ms": [
+                4491,
+                5623
+              ],
+              "runtime_gpu_buffer_mib": null,
+              "startup_ms": 4275,
+              "total_ms": 14390
+            },
+            "faster": true,
+            "gpu": {
+              "peak_rss_mib": 1444,
+              "requests_ms": [
+                847,
+                842
+              ],
+              "runtime_gpu_buffer_mib": 1287.93,
+              "startup_ms": 1947,
+              "total_ms": 3637
+            }
+          },
+          "state": "active"
+        },
+        "archive": {
+          "bytes": 657339453,
+          "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "download_state": {
+          "downloaded": 657339453,
+          "error": null,
+          "state": "installed",
+          "total": 657339453
+        },
+        "installed": true
+      },
+      {
+        "name": "restart-01",
+        "passed": true,
+        "error": null,
+        "checks": [],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "a23b54575f6658bd7c1cfdee14e7a94983a0437a48b17f319b57330919bcbde3",
+        "identity_sha256": "45aff0ad05ad9c445f7e1a84ddec3cabf68475bd47af0fddf6b939fa591219b4",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": []
+      },
+      {
+        "name": "cpu-01",
+        "passed": false,
+        "error": "Error: GPU acceptance state timed out",
+        "checks": [],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "e041bb94b0d50f10ba02a4c366dacfb6b9978e33401c86ad1b76a0ddb8179db9",
+        "identity_sha256": "c999a34acabc6d68a2de0923587e2cb9ab3aaf03c365ebaf610360c8c8c26562",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 16088,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "classification": "Initial switch timed out while prior auto-notes work was starting. Explicit idle/background-pause retry cpu-02 passed; original failure and repeated notes-language rejection retained."
+      },
+      {
+        "name": "cpu-02",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings Use CPU cleared activation; runner audits worker cleanup and next backend"
+        ],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "8f5baa51c4ad8505914fb1590dcd2122f33c60573a60c06b3d2530f371c86a85",
+        "identity_sha256": "4d9b7b5b8e708ca56924e777fc47aaf8f3ce3c270e7cba4c9c69e4f77c72d4d1",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 13468,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "memory-01",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Real device memory admission refused the supported 4B/8192 configuration before model loading; weights were not downloaded and this is not a driver allocation-OOM injection"
+        ],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "abf8dae708c93d78c12a26af2e6c0db82cf1d4f520a2c7d5ec42edd1f551668f",
+        "identity_sha256": "a3c6d095e32c0253dec8f03035c01a2885a25fb33a0b36dc4876dbef872b7911",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 16532,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "memory_admission": {
+          "component_id": "cuda-windows-x86_64",
+          "reason": "No compatible GPU with enough free memory; CPU remains available",
+          "report": null,
+          "state": "test_failed"
+        }
+      },
+      {
+        "name": "enable-01",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings rechecked the normal-key signed public catalog before testing",
+          "Normal local CPU/GPU fact, offload and speed gate enabled the signed component"
+        ],
+        "exit_code": 0,
+        "backend": "cuda",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "319dd848fb6326c456dbf253efcbc0b23ca0f3a4dd74fc3c0c1d30adaa6d3e40",
+        "identity_sha256": "7fd2aef6784c5434430f65185b50faed00874f2615d69b9b7d8b6d9ff32198eb",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 5520,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 16508,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "local_verification": {
+          "component_id": "cuda-windows-x86_64",
+          "reason": null,
+          "report": {
+            "cpu": {
+              "peak_rss_mib": 2009,
+              "requests_ms": [
+                4806,
+                4927
+              ],
+              "runtime_gpu_buffer_mib": null,
+              "startup_ms": 2139,
+              "total_ms": 11874
+            },
+            "faster": true,
+            "gpu": {
+              "peak_rss_mib": 1439,
+              "requests_ms": [
+                1087,
+                870
+              ],
+              "runtime_gpu_buffer_mib": 1287.93,
+              "startup_ms": 2147,
+              "total_ms": 4105
+            }
+          },
+          "state": "active"
+        }
+      },
+      {
+        "name": "vulkan-download-01",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings fetched normal-key signed catalog, downloaded and installed immutable Vulkan archive without automatic activation",
+          "Normal local CPU/GPU fact, offload and speed gate enabled the signed component"
+        ],
+        "exit_code": 0,
+        "backend": "vulkan",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "25ab8b90cfa90b239a551c61b1829cbcb1c49434e72be1f393a1be091709b925",
+        "identity_sha256": "9fb545b727a07c0d3999efc490139e212367a60313ce91572e9e6bba43395839",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 6828,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 27128,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "local_verification": {
+          "component_id": "vulkan-windows-x86_64",
+          "reason": null,
+          "report": {
+            "cpu": {
+              "peak_rss_mib": 1998,
+              "requests_ms": [
+                4848,
+                4929
+              ],
+              "runtime_gpu_buffer_mib": null,
+              "startup_ms": 2966,
+              "total_ms": 12745
+            },
+            "faster": true,
+            "gpu": {
+              "peak_rss_mib": 1431,
+              "requests_ms": [
+                649,
+                679
+              ],
+              "runtime_gpu_buffer_mib": 1287.93,
+              "startup_ms": 2146,
+              "total_ms": 3474
+            }
+          },
+          "state": "active"
+        },
+        "archive": {
+          "bytes": 12674455,
+          "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "download_state": {
+          "downloaded": 12674455,
+          "error": null,
+          "state": "installed",
+          "total": 12674455
+        },
+        "installed": true
+      },
+      {
+        "name": "vulkan-restart-01",
+        "passed": true,
+        "error": null,
+        "checks": [],
+        "exit_code": 0,
+        "backend": "vulkan",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "92db5af39ee7b6396f40f37b20c1bcde2fb3f41c1985b5ade548e4d0ccebf925",
+        "identity_sha256": "96f7baf12fc48ac949a7b21b3bdfbb46141d3a60e9f2bde5e150a72750477f0a",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": []
+      },
+      {
+        "name": "vulkan-enable-01",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings rechecked the normal-key signed public catalog before testing",
+          "Normal local CPU/GPU fact, offload and speed gate enabled the signed component"
+        ],
+        "exit_code": 0,
+        "backend": "vulkan",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "a52c3b75d111209c9965704c2e6c07ae0a1db706de257bd94a74e066ddeeee59",
+        "identity_sha256": "0b0ae5f6f960068d34e823dbbdb3e2b945d7f42b975c4fe5dd9d020957397ba4",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": [
+          {
+            "pid": 8964,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 2744,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "local_verification": {
+          "component_id": "vulkan-windows-x86_64",
+          "reason": null,
+          "report": {
+            "cpu": {
+              "peak_rss_mib": 1998,
+              "requests_ms": [
+                5122,
+                5110
+              ],
+              "runtime_gpu_buffer_mib": null,
+              "startup_ms": 2141,
+              "total_ms": 12374
+            },
+            "faster": true,
+            "gpu": {
+              "peak_rss_mib": 1430,
+              "requests_ms": [
+                636,
+                674
+              ],
+              "runtime_gpu_buffer_mib": 1287.93,
+              "startup_ms": 2149,
+              "total_ms": 3460
+            }
+          },
+          "state": "active"
+        }
+      },
+      {
+        "name": "vulkan-cpu-01",
+        "passed": true,
+        "error": null,
+        "checks": [
+          "Settings Use CPU cleared activation; runner audits worker cleanup and next backend"
+        ],
+        "exit_code": 0,
+        "backend": "vulkan",
+        "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+        "report_sha256": "d00ca6baa67f7b7f0bd27a1efb940c274b62b44fec1a6478271b54b560bebea0",
+        "identity_sha256": "69c87030284ca28290375ed60768b602c3a14a9142babc9eec46ed2c4aca9700",
+        "path_restricted": true,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "remaining_owned_children": [],
+        "module_audits": []
+      }
+    ],
+    "cli_stages": [
+      {
+        "mode": "cpu",
+        "passed": false,
+        "errors": [
+          "AssertionError: Missing generated coverage"
+        ],
+        "backend": null,
+        "language_control": null,
+        "simple_lifecycle_control": null,
+        "worker_backends": [
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": null,
+        "active_certificate_exists": null,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [],
+        "name": "cli-cpu-01",
+        "report_sha256": "d5e445bf9eb3782a35563751aaf9a9b5ad2dc54cf1382a6f5ac95d41601d60cb",
+        "final_cursor": 0,
+        "segments": 3,
+        "sections": 0,
+        "runtime_notes_status": "纪要输出语言与选择不符，原话仍待整理",
+        "raw_stdout_sha256": "7b928c49f3164a8a4b661ad8a2794210a2054938ee24e16f43e74047d9e3faff"
+      },
+      {
+        "mode": "cpu",
+        "passed": false,
+        "errors": [
+          "AssertionError: Missing generated coverage"
+        ],
+        "backend": null,
+        "language_control": "en",
+        "simple_lifecycle_control": null,
+        "worker_backends": [
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": null,
+        "active_certificate_exists": null,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [],
+        "name": "cli-cpu-02",
+        "report_sha256": "d9d81cbadf055bfdb5f381ad9dda41fe0498a72a72fb983fa47c61d8f78aea0c",
+        "final_cursor": 0,
+        "segments": 3,
+        "sections": 0,
+        "runtime_notes_status": "文档可能遗漏待确认状态，本轮未提交",
+        "raw_stdout_sha256": "908bbe3937176fde342255128081fa6ca6230a38343eea9f3a6d4966f655f78b"
+      },
+      {
+        "mode": "cpu",
+        "passed": true,
+        "errors": [],
+        "backend": null,
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 8898,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": null,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [],
+        "name": "cli-cpu-03",
+        "report_sha256": "5c862896e7accc028b7cede992952cf70cc8bddeaf5730dca1e48f415b983525",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "9703adf27cb5138aff53e1f96e312749ddae694802933d90a332a42aa96c1feb"
+      },
+      {
+        "mode": "cpu",
+        "passed": true,
+        "errors": [],
+        "backend": "vulkan",
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 7775,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": false,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [],
+        "name": "cli-cpu-04",
+        "report_sha256": "99315d2136364f33a33ca0c1d4f66f793cb158b21e1766e828ebdc18734f9323",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "e56bbc965ee1390374bede171e985bc9f22a8d7e050e74d27bcec3e193d82faf"
+      },
+      {
+        "mode": "fault",
+        "passed": true,
+        "errors": [],
+        "backend": null,
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "cuda",
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": 10692,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 7653,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": null,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [
+          {
+            "pid": 10692,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-fault-01",
+        "report_sha256": "ce84573a286286b2da512634846b493b53276e364d593a23b5158d1ba012cf64",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "5c2a0a605c74700550e9343544c9973887c9d6b1e34ebf23cd5b439673d77ee2"
+      },
+      {
+        "mode": "fault",
+        "passed": true,
+        "errors": [],
+        "backend": "vulkan",
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "vulkan",
+          "cpu"
+        ],
+        "killed_owned_gpu_pid": 20376,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 7957,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": false,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [
+          {
+            "pid": 20376,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-fault-02",
+        "report_sha256": "a261b299c3e83b46598642babf212941d09befca42bf011500835618f562c075",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "3251b1044abcc5fe6e3e50c31ec1b77f8b670421ed59393c2e829927f13615b1"
+      },
+      {
+        "mode": "load",
+        "passed": true,
+        "errors": [],
+        "backend": "cuda",
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "cuda"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 1073,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": true,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": false,
+        "module_audits": [
+          {
+            "pid": 15528,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-load-01",
+        "report_sha256": "706f7efc28653d0ccd109d7301fb3d305c8a1eba33080a506033b9bb578fb8ac",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "2c330383e44e4c62ac1f6a4b558f5c9b67965cd40103944546225ffb467e24a9"
+      },
+      {
+        "mode": "load",
+        "passed": true,
+        "errors": [],
+        "backend": "vulkan",
+        "language_control": "en",
+        "simple_lifecycle_control": true,
+        "worker_backends": [
+          "vulkan"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 0,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 946,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": true,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": false,
+        "module_audits": [
+          {
+            "pid": 14412,
+            "modules": [
+              {
+                "name": "vulkan-1.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-load-02",
+        "report_sha256": "8c88f5d5ef3b62b366d702d35dc8142eaa908873de033f7df79d541dcdea720c",
+        "final_cursor": 3,
+        "segments": 3,
+        "sections": 1,
+        "runtime_notes_status": "文档已同步 · 1 个章节",
+        "raw_stdout_sha256": "3e601222df27c93810f470b8a457a73a58d1fb12f8142c5448560b5c1379afd2"
+      },
+      {
+        "mode": "settle",
+        "passed": false,
+        "errors": [
+          "ValueError: ASR exceeded the scheduler's 2500 ms admission budget"
+        ],
+        "backend": null,
+        "language_control": null,
+        "simple_lifecycle_control": null,
+        "worker_backends": [
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda",
+          "cuda"
+        ],
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": {
+          "cursor": 0,
+          "sections": 0,
+          "segments": 16,
+          "translations": 16,
+          "runtime": {
+            "asr_rtf": 0.03642819239130435,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 92000,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": "85504858-ad24-4a54-b9a9-de6b2eea32fa",
+            "notes_busy": false,
+            "notes_elapsed_ms": 6248,
+            "notes_status": "纪要输出语言与选择不符，原话仍待整理",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 92000,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        },
+        "active_certificate_exists": null,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [
+          {
+            "pid": 25472,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 21444,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 22832,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 8780,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 9176,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 2924,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 19380,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 11564,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 15888,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 27084,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 19756,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 17240,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 25256,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 19796,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 27036,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 10116,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-settle-01",
+        "report_sha256": "e396c603892667086955add26ae2abce909d4252c789b5aa5797edb5f554d972"
+      },
+      {
+        "mode": "verify",
+        "passed": true,
+        "errors": [],
+        "backend": null,
+        "language_control": null,
+        "simple_lifecycle_control": false,
+        "worker_backends": null,
+        "killed_owned_gpu_pid": null,
+        "snapshot_final": null,
+        "active_certificate_exists": true,
+        "remaining_owned_children": [],
+        "cpu_fallback_observed": null,
+        "module_audits": [
+          {
+            "pid": 6764,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          },
+          {
+            "pid": 9188,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "name": "cli-verify-01",
+        "report_sha256": "a12d413c2bcdc2429ee8a4ecde1b3006d0c323e556355f2a3524a280f6b08c29"
+      }
+    ],
+    "signed_component_files": {
+      "cuda": {
+        "archive": {
+          "bytes": 657339453,
+          "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "cuda",
+        "entrypoint": "llama-server.exe",
+        "files": [
+          {
+            "bytes": 133,
+            "name": "build-info.json",
+            "sha256": "8c484fb1bc4652a09f2a78f26462a3eff62adec86e5c70451081f670a3289d4e",
+            "url": ""
+          },
+          {
+            "bytes": 113716224,
+            "name": "cublas64_12.dll",
+            "sha256": "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+            "url": ""
+          },
+          {
+            "bytes": 674667520,
+            "name": "cublasLt64_12.dll",
+            "sha256": "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+            "url": ""
+          },
+          {
+            "bytes": 103460,
+            "name": "CUDA-EULA.html",
+            "sha256": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+            "url": ""
+          },
+          {
+            "bytes": 573952,
+            "name": "cudart64_12.dll",
+            "sha256": "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+            "url": ""
+          },
+          {
+            "bytes": 132499456,
+            "name": "llama-server.exe",
+            "sha256": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+            "url": ""
+          },
+          {
+            "bytes": 1099,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+            "url": ""
+          }
+        ],
+        "id": "cuda-windows-x86_64",
+        "license": "MIT + NVIDIA CUDA EULA",
+        "name": "CUDA · windows-x86_64",
+        "target": "windows-x86_64"
+      },
+      "vulkan": {
+        "archive": {
+          "bytes": 12674455,
+          "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+          "sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+          "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+        },
+        "backend": "vulkan",
+        "entrypoint": "llama-server.exe",
+        "files": [
+          {
+            "bytes": 135,
+            "name": "build-info.json",
+            "sha256": "17aa4d876351d816f54f267bd80eec36dbe089816cdddeaa674617e01f67efda",
+            "url": ""
+          },
+          {
+            "bytes": 51814400,
+            "name": "llama-server.exe",
+            "sha256": "2b98f4400eeb8e7fef01027d59ac72fc282aebecc98b6d0f26190910568c59c1",
+            "url": ""
+          },
+          {
+            "bytes": 1099,
+            "name": "llama.cpp-LICENSE.txt",
+            "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+            "url": ""
+          }
+        ],
+        "id": "vulkan-windows-x86_64",
+        "license": "MIT",
+        "name": "VULKAN · windows-x86_64",
+        "target": "windows-x86_64"
+      }
+    },
+    "scope": "Actual normal Settings signed downloads/test-enable/restart/CPU and actual per-backend generation/fault-on-ready-owned-worker -> one CPU retry. Simple three-fact English lifecycle controls do not replace original failed complex-language/status fixtures. No activation/installation markers seeded/copied.",
+    "vulkan_discovery": "Normal system loader and NVIDIA ICD; no Vulkan SDK PATH, ICD override or developer driver configuration."
+  },
+  "p1_automatic_recording": {
+    "passed": false,
+    "method": "92s synthetic fictional Zira paced replay; fixed90s automatic post-stop budget; no manual Translate/Generate; both experimental flags0",
+    "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+    "asr_config": {
+      "decoder": "greedy_search",
+      "default_hotword_buffer_present": false,
+      "fallback": null,
+      "hotword_count": 0,
+      "hotword_update_mode": "recognizer",
+      "initial_load_ms": 1888,
+      "last_update_ms": 0,
+      "model_load_attempts": 1,
+      "stream_updates": 0,
+      "threads": 2
+    },
+    "telemetry": {
+      "samples": 896,
+      "largest_sample_gap_ms": 454,
+      "lag_p50_ms": 232.0,
+      "lag_p95_ms": 432.0,
+      "lag_max_ms": 3072,
+      "live_minutes_cursor": 0,
+      "live_translations": 15,
+      "live_worker_samples": 209
+    },
+    "settle": {
+      "budget_seconds": 90,
+      "completed": false,
+      "wait_ms": 90191,
+      "wall_ms": 181625
+    },
+    "snapshot_final": {
+      "cursor": 0,
+      "sections": 0,
+      "segments": 16,
+      "translations": 16,
+      "runtime": {
+        "asr_rtf": 0.03642819239130435,
+        "diarization_busy": false,
+        "diarization_meeting_id": null,
+        "diarization_status": "",
+        "elapsed_ms": 92000,
+        "error": null,
+        "level": 0.0,
+        "meeting_id": "85504858-ad24-4a54-b9a9-de6b2eea32fa",
+        "notes_busy": false,
+        "notes_elapsed_ms": 6248,
+        "notes_status": "纪要输出语言与选择不符，原话仍待整理",
+        "partial": "",
+        "paused": false,
+        "processed_ms": 92000,
+        "recording": false,
+        "transcribing": false,
+        "translation_busy": false,
+        "translation_status": ""
+      }
+    },
+    "assertion_failures": [
+      "Sampled ASR lag exceeds unchanged 2500ms gate",
+      "No live minutes progress",
+      "Automatic notes incomplete after fixed 90s post-stop budget; cursor0/16 and sections0; runtime notes language validation rejection"
+    ],
+    "selected_source": [
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+      "LICE WILL CHECK THE ENVY A CARD",
+      "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+      "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+    ],
+    "last_job_attempts": [
+      {
+        "attempt": 1,
+        "body_draft": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+        "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+        "selected": [
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:1",
+            "revision": 1,
+            "seq": 1
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:2",
+            "revision": 1,
+            "seq": 2
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:3",
+            "revision": 1,
+            "seq": 3
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:4",
+            "revision": 1,
+            "seq": 4
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:5",
+            "revision": 1,
+            "seq": 5
+          }
+        ],
+        "elapsed_ms": 3137
+      },
+      {
+        "attempt": 2,
+        "body_draft": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+        "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+        "selected": [
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:1",
+            "revision": 1,
+            "seq": 1
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:2",
+            "revision": 1,
+            "seq": 2
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:3",
+            "revision": 1,
+            "seq": 3
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:4",
+            "revision": 1,
+            "seq": 4
+          },
+          {
+            "id": "85504858-ad24-4a54-b9a9-de6b2eea32fa:1:5",
+            "revision": 1,
+            "seq": 5
+          }
+        ],
+        "elapsed_ms": 3295
+      }
+    ],
+    "original_report_sha256": "e396c603892667086955add26ae2abce909d4252c789b5aa5797edb5f554d972",
+    "diagnosis_sha256": "3c5100ec39ad260fd3c448fa3554c9c1b3b5a470baa454007dbeef09ac19edcc",
+    "telemetry_sha256": "a87d978664e5d60d7e707c93f831458ba475d1470bda9f7392a805ecbec591ac",
+    "distinction": "Functional no-output failure: final minutes0/16, not merely long product latency. Independent ASR peak3072ms exceeds unchanged2500ms gate. First gate exception preserved; diagnosis retains later failure without threshold relaxation. Earlier82.681s old-source pass cannot close this gate."
+  },
+  "cpu_status_control_failure": {
+    "passed": false,
+    "method": "Independent English-output control after CPU switch; original English->Chinese copy/language failure also retained as cli-cpu-01",
+    "source": [
+      "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+      "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+      "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+    ],
+    "attempts": [
+      {
+        "attempt": 1,
+        "body_draft": "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will check the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads and require a local test before enabling.",
+        "validation_error": "文档可能遗漏待确认状态，本轮未提交"
+      },
+      {
+        "attempt": 2,
+        "body_draft": "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will check the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads and require a local test before enabling.",
+        "validation_error": "文档可能遗漏待确认状态，本轮未提交"
+      }
+    ],
+    "raw_generation_sha256": "29a693a4ce49923e6eaeec4abf5d8320b87126a4a399d2b8d26f919cbe5534b4",
+    "distinction": "Output includes has not been officially approved yet is rejected as missing pending state. Shared Q2/P1 production owner notified; no validator relaxation or source patch."
+  },
+  "physical_capture": {
+    "schema": 1,
+    "passed": true,
+    "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+    "app_sha256": "a40294c0ce8ae4d70636042a5c857b90ce9625badba94acd1f7ec1a7e5ed4109",
+    "asr_worker_sha256": "9ffbee32284e3b7fdd3e89896d665b898220a047102494061e54c55db20124db",
+    "script_sha256": "3518255cff4a05c151e6626abde7dbd4250fc386e0c371c36e16b86607538903",
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "errors": [],
+    "limitation": "Native UI/default microphone capture and ASR drain only. No prescribed utterance or spoken accuracy/GPU-concurrency/installer claim. Raw audio/transcript remain private locally and are excluded from this report.",
+    "native_ui": {
+      "device": "auto",
+      "elapsed_ms": 10080,
+      "meeting": "071e95f7-030a-497c-bb2f-3b81523e3303",
+      "method": "Actual default Windows microphone, native UI New/Record/Stop buttons; no file input, playback or prescribed speech. Counts only.",
+      "passed": true,
+      "processed_ms": 10080,
+      "record_ui_visible": true,
+      "stopped_ui_visible": true,
+      "transcript_segments": 0,
+      "visible_clock": "00:00:09"
+    },
+    "samples": 161280,
+    "duration_ms": 10080.0,
+    "processed_ms": 10080,
+    "signal_nonzero": true,
+    "peak_sample": 10760,
+    "asr_config": {
+      "decoder": "greedy_search",
+      "default_hotword_buffer_present": false,
+      "fallback": null,
+      "hotword_count": 0,
+      "hotword_update_mode": "recognizer",
+      "initial_load_ms": 1751,
+      "last_update_ms": 0,
+      "model_load_attempts": 1,
+      "stream_updates": 0,
+      "threads": 1
+    }
+  },
+  "bounded_pressure": {
+    "schema": 1,
+    "source": "5d8e8d0581c1a9edda666432a14830b909d46563",
+    "completed": true,
+    "fallback_exercised": false,
+    "method": "One bounded owned CUDA Driver API allocation capped2300MiB and at least1024MiB measured free for desktop; touch/synchronize then normal signed CUDA local generation; release in finally. No SDK or global driver policy changes.",
+    "errors": [],
+    "before": {
+      "free_mib": 3296,
+      "total_mib": 4095
+    },
+    "reserved_mib": 2196,
+    "during": {
+      "free_mib": 1100,
+      "total_mib": 4095
+    },
+    "stage_exit_code": 0,
+    "stage_report": "cli-load-01.json",
+    "worker_backends": [
+      "cuda"
+    ],
+    "allocation_freed": true,
+    "after_free": {
+      "free_mib": 3296,
+      "total_mib": 4095
+    },
+    "context_destroyed": true
+  },
+  "incomplete": {
+    "prescribed_speech_accuracy": "No prescribed utterance; microphone run yielded0 finalized segments. Signal/capture/drain only, no ASR accuracy claim.",
+    "physical_mic_with_gpu_generation": "Not run; synthetic concurrency functional failure retained separately.",
+    "allocation_oom": "Not triggered:2196MiB allocated/touched,1100MiB free; normal CUDA generation still completes; allocation/context released,3296MiB free restored. Capacity refusal and process fault do not prove allocation-OOM fallback.",
+    "production_installer_upgrade_data": "No exact-candidate native-release run/artifact; latest5 runs checked all older sources. Unified owner packages only after checks. User installed app/data untouched.",
+    "shared_manual_disposition": "Two corpus wording/noise findings await shared release-bar classification; no complete semantic pass."
+  },
+  "limitations": [
+    "Host has old CUDA11.5 development toolkit physically installed; child PATH/env strips SDK and module audits use component/system paths. Not a physically SDK-free machine claim.",
+    "Development CLI/native ui-test application, current-source Release ASR worker, actual signed optional production components. Not validation of an assembled signed production0.3.5 installer.",
+    "One Windows GTX1650/profile run with uncontrolled OS cache/thermal/frequency state; local speed gates do not prove broad performance.",
+    "Actual microphone raw audio/text remain private and excluded from committed evidence. All included source text is fictional seeded/synthetic.",
+    "No SDK build/re-sign/catalog or stable promotion, no duplicate native installer dispatch. Frozen candidate remains unchanged and not accepted."
+  ],
+  "raw_evidence_sha256": {
+    "identity": "8a0be4b4865c4d572e7305413187cebbdd71cf803705061df50d1484b3cef38c",
+    "evaluation": "198381a24e55f2a5ca722fb7fe0a65d4ef2b85d1f4a8a522959cfc688966c918",
+    "completion": "4d4f91d56a49965941ff9ed3b8e4bb3b13848f89a880fb1b1c36765944c6461d",
+    "native_report": "f90d7b18e782b892f2f62ef8eec334ff31539adb368608340b201d2d7276a338",
+    "physical_report": "212ae2c9bd1c20156eac662c6757cdf488ddaab6d631a51b229a5bfcb344173c"
+  }
+}
