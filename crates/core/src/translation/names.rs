@@ -262,8 +262,8 @@ impl Repair {
     pub fn anchor_predicate(&mut self, actor: &str, predicate: &str) -> bool {
         self.anchor(actor, predicate, Some("报告"), false)
     }
-    pub fn anchor_assignment(&mut self, actor: &str) -> bool {
-        self.anchor(actor, " is responsible for ", None, true)
+    pub fn anchor_assignment(&mut self, actor: &str, predicate: &str) -> bool {
+        self.anchor(actor, predicate, None, true)
     }
     fn anchor(
         &mut self,

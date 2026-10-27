@@ -17,7 +17,7 @@ class HarnessTests(unittest.TestCase):
         def assess(text):
             snapshot=dict(segments=[source],suggestions=[dict(status='pending',text=text,sources=[citation])],runtime=dict(notes_status=''),translations={'s':dict(revision=1,target='en',text=text)})
             return evaluate.assess(case,snapshot,True)
-        for clause in ['currently no user consent has been obtained','user consent has not yet been obtained','user consent is still pending']:
+        for clause in ['currently no user consent has been obtained','user consent has not yet been obtained','user consent is still pending','the user has not given consent']:
             self.assertEqual(assess('Model download will be handled by 陈明, but '+clause+'.'),[])
         self.assertTrue(assess('Model download will be handled by 陈明, and user consent has been obtained.'))
     def test_caption_assertions_catch_wrong_names_language_and_revision_independently_of_minutes(self):

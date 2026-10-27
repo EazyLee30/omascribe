@@ -23,6 +23,29 @@ pub(crate) struct Assignment {
     task: String,
     end: usize,
 }
+impl Assignment {
+    pub(crate) fn english_predicate(&self) -> &'static str {
+        if self.task.contains("构建") {
+            " is responsible for build "
+        } else {
+            " is responsible for "
+        }
+    }
+}
+pub(crate) fn repair_prefix(source: &str) -> Option<&'static str> {
+    if !assignments(source).is_empty() {
+        return None;
+    }
+    let frames = frames(source);
+    let first = frames.first()?;
+    if first.task.contains("构建检查") {
+        Some("Build checks ")
+    } else if first.task.contains("构建任务") {
+        Some("The build task ")
+    } else {
+        None
+    }
+}
 fn frames(source: &str) -> Vec<Assignment> {
     static FRAME: OnceLock<Regex> = OnceLock::new();
     let frame = FRAME.get_or_init(|| Regex::new(concat!(

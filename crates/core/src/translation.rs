@@ -24,7 +24,13 @@ fn source_boundary(source: &str, chinese: bool) -> Option<usize> {
 }
 
 fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::Repair> {
-    let mut plan = if let Some(prefix) = notes::qualifier_prefix(input, target == "zh") {
+    let prefix = notes::qualifier_prefix(input, target == "zh").or_else(|| {
+        (target == "en")
+            .then(|| crate::task_roles::repair_prefix(input))
+            .flatten()
+            .map(str::to_owned)
+    });
+    let mut plan = if let Some(prefix) = prefix {
         names.repair_prefixed(input, &prefix)?
     } else {
         names.repair(input)?
@@ -40,7 +46,7 @@ fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::R
         }
     } else {
         for assignment in crate::task_roles::assignments(input) {
-            plan.anchor_assignment(&assignment.actor);
+            plan.anchor_assignment(&assignment.actor, assignment.english_predicate());
         }
     }
     Some(plan)
@@ -129,7 +135,12 @@ impl SourceRepair {
             }
         })
         .collect();
-        let prefix = notes::qualifier_prefix(input, chinese);
+        let prefix = notes::qualifier_prefix(input, chinese).or_else(|| {
+            (!chinese)
+                .then(|| crate::task_roles::repair_prefix(input))
+                .flatten()
+                .map(str::to_owned)
+        });
         let assignments = if chinese {
             Vec::new()
         } else {
@@ -147,7 +158,10 @@ impl SourceRepair {
         {
             return None;
         }
-        if !assignments.iter().all(|a| plan.anchor_assignment(&a.actor)) {
+        if !assignments
+            .iter()
+            .all(|a| plan.anchor_assignment(&a.actor, a.english_predicate()))
+        {
             return None;
         }
         let hint = anchors

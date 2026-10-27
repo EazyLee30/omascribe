@@ -1577,7 +1577,7 @@
       "陈明",
       "download",
       "will|going to",
-      "not yet|not.*obtained|no user consent has been obtained|pending"
+      "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
     ],
     "forbidden": [
       "陈明 is responsible for"
@@ -1590,7 +1590,7 @@
           "陈明",
           "download",
           "will|going to",
-          "not yet|not.*obtained|no user consent has been obtained|pending"
+          "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
         ],
         "forbidden": [
           "陈明 is responsible for"
