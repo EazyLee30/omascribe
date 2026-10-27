@@ -24,6 +24,9 @@ fn recognizer_config(model: &Path) -> OnlineRecognizerConfig {
     config.model_config.transducer.decoder = path("decoder-epoch-99-avg-1.onnx");
     config.model_config.transducer.joiner = path("joiner-epoch-99-avg-1.int8.onnx");
     config.model_config.tokens = path("tokens.txt");
+    // Both pinned bilingual models are Zipformer. Avoid Sherpa loading the encoder
+    // once just to detect its family before constructing the actual recognizer.
+    config.model_config.model_type = Some("zipformer".into());
     config.model_config.num_threads = std::env::var("OMASCRIBE_ASR_THREADS")
         .ok()
         .and_then(|v| v.parse::<i32>().ok())
