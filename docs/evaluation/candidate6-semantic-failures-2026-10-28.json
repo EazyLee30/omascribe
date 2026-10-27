@@ -155,7 +155,15 @@
       "character/word error rates confused and extra sentence error rate added",
       "responsibility direction reversed"
     ],
-    "status": "Author-confirmed reports; exact output snapshots requested, not independently replayed on this Mac"
+    "status": "Author-confirmed reports; exact output snapshots requested, not independently replayed on this Mac",
+    "automatic_run_completed": true,
+    "review_summary": {
+      "passed": 11,
+      "confirmed_issues": 13,
+      "uncertain_or_disputed": 9,
+      "source": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6449771538"
+    }
   },
-  "next": "Capture exact failed captions/articles and add source-action/role/scope negatives before a bounded shared production repair. Do not rerun or relabel already completed source checks as semantic passes."
+  "next": "Capture exact failed captions/articles and add source-action/role/scope negatives before a bounded shared production repair. Do not rerun or relabel already completed source checks as semantic passes.",
+  "review_actors": "Assistant inspection and cross-review of saved fictional outputs; not an independent human study."
 }
