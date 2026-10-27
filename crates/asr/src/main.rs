@@ -24,6 +24,9 @@ fn recognizer_config(model: &Path) -> OnlineRecognizerConfig {
     config.model_config.transducer.decoder = path("decoder-epoch-99-avg-1.onnx");
     config.model_config.transducer.joiner = path("joiner-epoch-99-avg-1.int8.onnx");
     config.model_config.tokens = path("tokens.txt");
+    // Both pinned bilingual models are Zipformer. Avoid Sherpa loading the encoder
+    // once just to detect its family before constructing the actual recognizer.
+    config.model_config.model_type = Some("zipformer".into());
     config.model_config.num_threads = std::env::var("OMASCRIBE_ASR_THREADS")
         .ok()
         .and_then(|v| v.parse::<i32>().ok())
@@ -216,7 +219,12 @@ fn run() -> Result<()> {
                 cause: "endpoint".into(),
             });
         }
-        if last_progress.elapsed() > Duration::from_millis(300) {
+        // Acknowledge the first decoded block and catch-up work immediately.
+        // The scheduler must not mistake already decoded PCM for ASR backlog.
+        if processed.saturating_sub(initial) == count
+            || available > count
+            || last_progress.elapsed() > Duration::from_millis(300)
+        {
             emit(AsrEvent::Progress {
                 processed_ms: processed * 1000 / SAMPLE_RATE,
                 rtf: busy.as_secs_f64()

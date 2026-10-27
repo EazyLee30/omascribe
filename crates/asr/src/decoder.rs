@@ -227,6 +227,7 @@ impl Decoder {
     }
     pub fn diagnostics(&self) -> Value {
         json!({"decoder":self.config.decoding_method,"threads":self.config.model_config.num_threads,
+            "model_type":self.config.model_config.model_type,
             "hotword_count":if enabled(&self.config) { self.words.lines().count() } else {0},"fallback":self.fallback,
             "hotword_update_mode":self.mode.name(),"model_load_attempts":self.model_load_attempts,
             "stream_updates":self.stream_updates,"initial_load_ms":self.initial_load_ms,"last_update_ms":self.update_ms,
