@@ -160,12 +160,14 @@ impl Engine {
     }
     pub fn start_scheduler(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
-        // Experimental until paired real-model/capture checks establish the tradeoff.
+        // Live catch-up remains experimental. After ASR stops, successful batches
+        // drain pending work without reapplying the live 45s coalescing interval.
         let catchup = std::env::var("OMASCRIBE_MINUTES_CATCHUP").as_deref() == Ok("1");
+        let stop_drain = std::env::var("OMASCRIBE_POST_CAPTURE_DRAIN").as_deref() != Ok("0");
         thread::spawn(move || {
             let mut attempted = std::collections::HashMap::<String, Instant>::new();
             let mut minute_schedule = crate::minutes_schedule::Schedule::default();
-            let mut in_flight: Option<String> = None;
+            let mut in_flight: Option<(String, bool)> = None;
             let mut translation_attempts = std::collections::HashMap::<String, Instant>::new();
             let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
             loop {
@@ -174,12 +176,12 @@ impl Engine {
                 if engine.note_busy.load(Ordering::SeqCst) {
                     continue;
                 }
-                if let Some(id) = in_flight.take() {
-                    attempted.insert(id.clone(), Instant::now());
-                    if catchup {
-                        if let Ok(snapshot) = engine.snapshot(&id) {
-                            minute_schedule.finished(&snapshot.meeting, Instant::now());
-                        }
+                if let Some((id, update_live_clock)) = in_flight.take() {
+                    if update_live_clock {
+                        attempted.insert(id.clone(), Instant::now());
+                    }
+                    if let Ok(snapshot) = engine.snapshot(&id) {
+                        minute_schedule.finished(&snapshot.meeting, Instant::now());
                     }
                 }
                 let status = engine.status.lock().unwrap().clone();
@@ -211,21 +213,16 @@ impl Engine {
                         }
                     }
                 }
-                if catchup {
-                    minute_schedule.retain(&ids);
-                }
+                minute_schedule.retain(&ids);
                 for id in ids {
                     let Ok(snapshot) = engine.snapshot(&id) else {
                         continue;
                     };
                     let pending_minutes = notes::needs_update(&snapshot);
-                    if catchup {
-                        let own_active =
-                            capture_active && status.meeting_id.as_deref() == Some(&id);
-                        minute_schedule.observe(&snapshot.meeting, own_active);
-                        if !own_active && (!snapshot.meeting.auto_notes || !pending_minutes) {
-                            minute_schedule.forget(&id);
-                        }
+                    let own_active = capture_active && status.meeting_id.as_deref() == Some(&id);
+                    minute_schedule.observe(&snapshot.meeting, own_active);
+                    if !own_active && (!snapshot.meeting.auto_notes || !pending_minutes) {
+                        minute_schedule.forget(&id);
                     }
                     let translation_due = (status.meeting_id.as_deref() == Some(&id)
                         || engine.notes_target.lock().unwrap().as_deref() == Some(&id))
@@ -245,7 +242,7 @@ impl Engine {
                         });
                     let minutes_due = snapshot.meeting.auto_notes
                         && pending_minutes
-                        && if catchup {
+                        && if catchup || stop_drain && !capture_active {
                             minute_schedule.due(&id, capture_active, quality, Instant::now())
                         } else {
                             attempted.get(&id).is_none_or(|t| {
@@ -272,10 +269,10 @@ impl Engine {
                         {
                             if minutes_due {
                                 attempted.insert(id.clone(), Instant::now());
-                                if catchup {
-                                    minute_schedule.started(&snapshot.meeting, Instant::now());
-                                    in_flight = Some(id.clone());
-                                }
+                                minute_schedule.started(&snapshot.meeting, Instant::now());
+                                // Default live translation chains historically
+                                // coalesce from launch, plain minutes from finish.
+                                in_flight = Some((id.clone(), catchup));
                             }
                             break;
                         }
@@ -308,14 +305,12 @@ impl Engine {
                     }
                     attempted.insert(id.clone(), Instant::now());
                     let launched = engine.generate_notes(&id).is_ok();
-                    if catchup {
-                        minute_schedule.started(&snapshot.meeting, Instant::now());
-                        if !launched {
-                            minute_schedule.finished(&snapshot.meeting, Instant::now());
-                        }
+                    minute_schedule.started(&snapshot.meeting, Instant::now());
+                    if !launched {
+                        minute_schedule.finished(&snapshot.meeting, Instant::now());
                     }
                     if launched {
-                        in_flight = Some(id);
+                        in_flight = Some((id, true));
                     }
                     break;
                 }

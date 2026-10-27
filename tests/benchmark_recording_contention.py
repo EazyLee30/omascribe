@@ -122,14 +122,17 @@ def main():
     parser.add_argument("--llm-model-dir", type=pathlib.Path, required=True)
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--repeats", type=int, choices=[3, 6], default=3)
-    parser.add_argument("--minutes-catchup", action="store_true",
+    comparison = parser.add_mutually_exclusive_group()
+    comparison.add_argument("--minutes-catchup", action="store_true",
                         help="Compare legacy/catch-up minute scheduling, both with Metal and a 60s post-capture budget")
+    comparison.add_argument("--post-capture-drain", action="store_true",
+                        help="Compare legacy post-stop cooldown with production drain, both using normal live scheduling")
     parser.add_argument("--settle-seconds", type=int, default=0,
                         help="Wait 1–600 seconds for normal automatic work after capture; does not enable catch-up")
     args = parser.parse_args()
     if not 0 <= args.settle_seconds <= 600 or args.minutes_catchup and args.settle_seconds:
         parser.error("Use 0–600 settle seconds; catch-up comparison has its own fixed 60s budget")
-    settle_seconds = 60 if args.minutes_catchup else args.settle_seconds
+    settle_seconds = 60 if args.minutes_catchup else (args.settle_seconds or (90 if args.post_capture_drain else 0))
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         parser.error("This comparison requires native Apple Silicon Metal")
     output, cli, runtime = args.output.resolve(), args.cli.resolve(), args.runtime.resolve()
@@ -142,8 +145,9 @@ def main():
     native = runtime_inventory(runtime)
     if not native:
         parser.error("Missing local llama runtime")
-    arms = ["legacy-concurrent", "catchup-concurrent"] if args.minutes_catchup else ["asr-only", "metal-concurrent"]
-    report = dict(schema=1, kind="apple-paced-minutes-catchup" if args.minutes_catchup else "apple-paced-recording-contention", environment=environment(cli),
+    arms = (["legacy-stop-cooldown", "post-capture-drain"] if args.post_capture_drain else
+            ["legacy-concurrent", "catchup-concurrent"] if args.minutes_catchup else ["asr-only", "metal-concurrent"])
+    report = dict(schema=1, kind="apple-paced-post-capture-drain" if args.post_capture_drain else "apple-paced-minutes-catchup" if args.minutes_catchup else "apple-paced-recording-contention", environment=environment(cli),
         post_capture_budget_seconds=settle_seconds,
         fixture=source, runtime_files=native, trials=[], errors=[], passed=False,
         limitation="Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. The requested post-capture settlement budget and all incurred costs are applied equally to both arms; with no budget, pending work is reported at stop. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.")
@@ -168,12 +172,13 @@ def main():
                 results = []
                 for variant in order:
                     arm = arms[variant]
-                    loaded = args.minutes_catchup or variant == 1
+                    loaded = args.minutes_catchup or args.post_capture_drain or variant == 1
                     folder = artifacts/f"{trial}-{arm}"
                     root = folder/"workspace"
                     env = isolated_env(root)
                     env.update(OMASCRIBE_RUNTIME_DIR=str(runtime), OMASCRIBE_MODELS_DIR=str(folder/"no-bundled-models"), OMASCRIBE_ASR_STREAM_HOTWORDS="0", OMASCRIBE_RETRIEVAL_CACHE="0",
-                               OMASCRIBE_INCREMENTAL_MINUTES="0", OMASCRIBE_MINUTES_CATCHUP="1" if args.minutes_catchup and variant == 1 else "0")
+                               OMASCRIBE_INCREMENTAL_MINUTES="0", OMASCRIBE_MINUTES_CATCHUP="1" if args.minutes_catchup and variant == 1 else "0",
+                               OMASCRIBE_POST_CAPTURE_DRAIN="0" if args.minutes_catchup or args.post_capture_drain and variant == 0 else "1")
                     for key in ["LLAMA_ARG_LOG_VERBOSITY", "OMASCRIBE_ACCELERATION_CANDIDATE_VERSION"]:
                         env.pop(key, None)
                     prefs = dict(asr_model="zipformer-small", llm_model="qwen3-1.7b", threads=1,
@@ -181,7 +186,8 @@ def main():
                         resource_mode="balanced", auto_notes=loaded, translation_mode="bilingual" if loaded else "off",
                         minutes_language="zh", diarization=False, llm_keep_alive_seconds=0)
                     write_json(root/"preferences.json", prefs)
-                    result = dict(trial=trial, arm=arm, preferences=prefs, errors=[], passed=False)
+                    result = dict(trial=trial, arm=arm, preferences=prefs,
+                                  scheduler=dict(live_catchup=env["OMASCRIBE_MINUTES_CATCHUP"], post_capture_drain=env["OMASCRIBE_POST_CAPTURE_DRAIN"]), errors=[], passed=False)
                     print(f"Trial {trial} {arm}: {source['seconds']} s paced recording", flush=True)
                     try:
                         result["asr_assets"] = asset_identity(cli, root, "zipformer-small", env)
