@@ -119,10 +119,54 @@ impl Names {
         for (i, name) in self.0.iter().enumerate() {
             input = input.replace(name, &format!("[{}]", char::from(b'A' + i as u8)));
         }
+        let mut schema: Value =
+            serde_json::from_str(crate::translation::OUTPUT_SCHEMA).expect("schema");
+        if self.0.len() <= 4 {
+            fn permutations(prefix: String, rest: &str, output: &mut Vec<String>) {
+                if rest.is_empty() {
+                    output.push(prefix);
+                    return;
+                }
+                for (i, c) in rest.char_indices() {
+                    permutations(
+                        format!("{prefix}\\[{c}\\][^\\[\\]]*"),
+                        &format!("{}{}", &rest[..i], &rest[i + 1..]),
+                        output,
+                    );
+                }
+            }
+            let ids: String = (0..self.0.len())
+                .map(|i| char::from(b'A' + i as u8))
+                .collect();
+            let mut orders = Vec::new();
+            permutations(String::new(), &ids, &mut orders);
+            schema["properties"]["translation"]["pattern"] =
+                format!("^[^\\[\\]]*({})$", orders.join("|")).into();
+        }
+        let roles: Vec<_> = self
+            .0
+            .iter()
+            .enumerate()
+            .filter_map(|(i, name)| {
+                let role = if name.ends_with(['学', '院'])
+                    && (name.ends_with("大学") || name.ends_with("学院"))
+                {
+                    "institution"
+                } else if source.contains(&format!("{name}教授"))
+                    || source.contains(&format!("{name}博士"))
+                {
+                    "person"
+                } else {
+                    return None;
+                };
+                Some(format!("[{}]:{role}", char::from(b'A' + i as u8)))
+            })
+            .collect();
         Some(Repair {
             names: self.0.clone(),
             input,
-            schema: serde_json::from_str(crate::translation::OUTPUT_SCHEMA).expect("schema"),
+            schema,
+            roles: roles.join(", "),
         })
     }
 }
@@ -130,10 +174,11 @@ pub(super) struct Repair {
     names: Vec<String>,
     pub input: String,
     pub schema: Value,
+    roles: String,
 }
 impl Repair {
     pub fn system(&self, language: &str) -> String {
-        format!("Translate the entire speech into {language}. Keep each bracketed name ID exactly once, in its natural target-language position. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think")
+        format!("Translate the entire speech into {language}. Keep each bracketed name ID exactly once, in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
     }
     pub fn body(&self, raw: &str) -> Result<String> {
         use serde::Deserialize;
@@ -193,6 +238,17 @@ mod tests {
         let repair = names
             .repair("当迪大学的 PAMELA FURGO森教授说这似乎有风险。")
             .unwrap();
+        let pattern = Regex::new(
+            repair.schema["properties"]["translation"]["pattern"]
+                .as_str()
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(pattern.is_match("Professor [A] of [B] says this may be risky."));
+        assert!(pattern.is_match("[B]'s professor [A] says this may be risky."));
+        assert!(!pattern.is_match("Professor [A] says this may be risky."));
+        assert!(!pattern.is_match("[A] [B] [A]"));
+        assert!(!pattern.is_match("[A] [B] [C]"));
         let raw = r#"{"translation":"Professor [A] of [B] says this may be risky."}"#;
         let value: Value = serde_json::from_str(&repair.body(raw).unwrap()).unwrap();
         assert_eq!(

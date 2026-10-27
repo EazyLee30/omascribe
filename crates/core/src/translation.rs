@@ -292,7 +292,7 @@ fn run_inner(
             || serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema"),
             |p| p.schema.clone(),
         );
-        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some()}));
+        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.is_some()}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
         session.begin_request();
