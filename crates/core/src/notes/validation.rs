@@ -361,7 +361,7 @@ pub(super) fn uncertain(s: &str) -> bool {
     .iter()
     .any(|q| s.contains(q))
         || NEGATIVE_STATE.get_or_init(|| regex::Regex::new(
-            r"\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}(?:approved|decided|confirmed|finalized)\b"
+            r"\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}(?:approved|decided|determined|confirmed|finalized)\b"
         ).unwrap()).is_match(&s)
 }
 
@@ -773,6 +773,7 @@ mod tests {
         for body in [
             "Mr. Zhang will provide the test results on Friday. The budget remains undetermined and will be reviewed next week.",
             "The budget is undetermined; we will revisit it next week.",
+            "The budget was not determined yet; it will be reviewed next week.",
             "预算仍未确定，下周继续讨论。",
         ] {
             assert!(validate_translation(body, &source, "m").is_ok(), "{body}");
