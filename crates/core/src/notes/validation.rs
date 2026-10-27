@@ -503,7 +503,7 @@ pub fn validate_with_speakers(
 }
 pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
     static UNAPPROVED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|通过)").unwrap());
+    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过").unwrap());
     if unapproved.is_match(&polarity_text(&source.text))
         && !unapproved.is_match(&polarity_text(text))
     {
@@ -781,6 +781,8 @@ mod tests {
         assert!(validate_translation("尚未批准，ALICE将检查UN VIDEO CARD。", &source, "m").is_ok());
         source.text = "It has now been approved. Alice will check the model.".into();
         assert!(validate_translation("已获批准，Alice将检查模型。", &source, "m").is_ok());
+        source.text = "测试尚未通过。".into();
+        assert!(validate_translation("The test has not passed yet.", &source, "m").is_ok());
     }
     #[test]
     fn budget_review_is_not_a_promised_decision_even_with_a_pending_adjective() {
