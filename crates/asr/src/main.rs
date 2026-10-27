@@ -219,7 +219,12 @@ fn run() -> Result<()> {
                 cause: "endpoint".into(),
             });
         }
-        if last_progress.elapsed() > Duration::from_millis(300) {
+        // Acknowledge the first decoded block and catch-up work immediately.
+        // The scheduler must not mistake already decoded PCM for ASR backlog.
+        if processed.saturating_sub(initial) == count
+            || available > count
+            || last_progress.elapsed() > Duration::from_millis(300)
+        {
             emit(AsrEvent::Progress {
                 processed_ms: processed * 1000 / SAMPLE_RATE,
                 rtf: busy.as_secs_f64()
