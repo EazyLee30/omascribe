@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "scope": "Exploratory isolated CPU comparison. Contains aggregate detection results; no audio, transcripts, transcript hashes, input hashes, filesystem paths, or meeting facts.",
+  "model": {
+    "repository": "https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10/tree/c6726c1147387ad2a11148b33973135d92a55e6c",
+    "revision": "c6726c1147387ad2a11148b33973135d92a55e6c",
+    "upstream_model_card": "https://huggingface.co/stdo/PengChengStarling",
+    "declared_upstream_license": "Apache-2.0",
+    "conversion_evidence": "https://github.com/k2-fsa/sherpa-onnx/pull/1835/files",
+    "converted_repository_license_notice": "No explicit license declaration in converted model card; verify redistribution terms before product release.",
+    "files": [
+      {
+        "name": "encoder-epoch-75-avg-11-chunk-16-left-128.int8.onnx",
+        "bytes": 296583597,
+        "sha256": "f9001ed7a9e46d0294438c1a30cd7c72d1cc4bdd4e7880edbcda36f67081e32e"
+      },
+      {
+        "name": "decoder-epoch-75-avg-11-chunk-16-left-128.onnx",
+        "bytes": 33837085,
+        "sha256": "7ebc63f34b21c8efb4a41a5a2eee7fe1448829ce0230ecc5369e67fc14d90d48"
+      },
+      {
+        "name": "joiner-epoch-75-avg-11-chunk-16-left-128.int8.onnx",
+        "bytes": 8257421,
+        "sha256": "db88e3172323551abaa99b91b18fb422a27ea4a834fd0db10389f9478816f917"
+      },
+      {
+        "name": "bpe.model",
+        "bytes": 476049,
+        "sha256": "027731f33cff7266f2878c6fb7e478cf4af983962e311bb565112792794c13cd"
+      },
+      {
+        "name": "tokens.txt",
+        "bytes": 195244,
+        "sha256": "784f24950f6bcce1b0021035632dd60fd4617ecd8ca0581ab57d7b39d77ba5ab"
+      }
+    ]
+  },
+  "worker": {
+    "source_revision": "81301639608ad559e365d016670cc86eb368b52c",
+    "binary_sha256": "46f4297e5f3369a0b58434a3b884fe66424eede0eb613eaa34245a69afeecac2",
+    "changed_source_sha256": "6e96889ca4729b15a3f3832bcecbbf75592466022eb4bbcf81a401e974e9052d",
+    "source_changes": "Set model type to zipformer2 and set three model file names; otherwise use source revision ASR worker. Separate experimental binary, not a product release."
+  },
+  "configuration": {
+    "engine": "sherpa-onnx 1.13.8, Online Zipformer2 transducer",
+    "provider": "CPU",
+    "threads": 2,
+    "sample_rate_hz": 16000,
+    "endpoint_enabled": true,
+    "endpoint_rule1_trailing_silence_seconds": 2.4,
+    "endpoint_rule2_trailing_silence_seconds": 0.8,
+    "endpoint_rule3_min_utterance_seconds": 12,
+    "hotword_decoding": "modified_beam_search",
+    "hotword_score": 1.5,
+    "max_active_paths": 4,
+    "hotword_modeling_unit": "cjkchar+bpe",
+    "tokenizer": "candidate model own bpe.model and tokens.txt",
+    "hotword_update_mode": "recognizer",
+    "hotwords": "OmaScribe, Alice, NVIDIA, Windows, and full GTX 1650 Chinese/English spoken-digit variants",
+    "without_hotwords_decoding": "greedy_search",
+    "language_id": "No language ID initialization; official Sherpa integration does not support replacing SOS with a language ID."
+  },
+  "single_private_recording": {
+    "candidate_without_hotwords": {
+      "name_detected": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false
+      },
+      "segments": 3,
+      "decoder": {
+        "decoder": "greedy_search",
+        "default_hotword_buffer_present": false,
+        "fallback": null,
+        "hotword_count": 0,
+        "hotword_update_mode": "recognizer",
+        "model_type": "zipformer2",
+        "threads": 2
+      }
+    },
+    "candidate_with_hotwords": {
+      "name_detected": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false
+      },
+      "segments": 8,
+      "decoder": {
+        "decoder": "modified_beam_search",
+        "default_hotword_buffer_present": true,
+        "fallback": null,
+        "hotword_count": 6,
+        "hotword_update_mode": "recognizer",
+        "model_type": "zipformer2",
+        "threads": 2
+      },
+      "hotword_oov_warning": false
+    },
+    "previous_small_with_hotwords": {
+      "name_detected": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false
+      }
+    },
+    "previous_quality_with_hotwords": {
+      "name_detected": {
+        "omascribe": false,
+        "alice": true,
+        "nvidia": false,
+        "gtx1650": false
+      }
+    },
+    "comparison_limit": "Candidate is raw standalone worker output; earlier 8130163 results passed through product terminology normalization. These are different paths and not a controlled end-to-end model comparison."
+  },
+  "synthetic_controls": {
+    "silence_with_hotwords": {
+      "segments": 9,
+      "decoder": {
+        "decoder": "modified_beam_search",
+        "default_hotword_buffer_present": true,
+        "fallback": null,
+        "hotword_count": 6,
+        "hotword_update_mode": "recognizer",
+        "model_type": "zipformer2",
+        "threads": 2
+      }
+    },
+    "silence_without_hotwords": {
+      "segments": 0,
+      "decoder": {
+        "decoder": "greedy_search",
+        "default_hotword_buffer_present": false,
+        "fallback": null,
+        "hotword_count": 0,
+        "hotword_update_mode": "recognizer",
+        "model_type": "zipformer2",
+        "threads": 2
+      }
+    },
+    "different_model_1660_with_1650_hotwords": {
+      "full_1650_ascii_detected": false,
+      "full_1660_ascii_detected": false,
+      "full_1650_spoken_chinese_detected": false,
+      "full_1660_spoken_chinese_detected": false,
+      "decoder": {
+        "decoder": "modified_beam_search",
+        "default_hotword_buffer_present": true,
+        "fallback": null,
+        "hotword_count": 6,
+        "hotword_update_mode": "recognizer",
+        "model_type": "zipformer2",
+        "threads": 2
+      },
+      "scope": "One synthetic spoken-model example; no model-wide false-positive or retention claim."
+    }
+  },
+  "limitations": [
+    "One private recording; read prompt was not independently verified as verbatim reference. Four names are detection indicators, not measured recall or WER.",
+    "With/without hotwords also changes decoding method (beam/greedy), so their effects and the cause of silence outputs are not isolated.",
+    "Static CPU experiment, no GPU inference, performance benchmark, broad safety or release-readiness claim.",
+    "Mixed Mandarin/English performance and language-tag behavior are not established. Synthetic controls are narrow.",
+    "The upstream model card declares Apache-2.0; conversion and distribution terms require confirmation before release."
+  ]
+}
