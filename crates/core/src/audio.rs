@@ -433,6 +433,8 @@ mod tests {
     /// repository so this stays checkable on a machine without audio devices.
     #[test]
     fn linux_devices_offer_a_mixed_capture_before_monitors() {
+        use serde_json::Value;
+
         let fixture = include_str!("../../../tests/fixtures/pw-dump-minimal.json");
         let data: Value = serde_json::from_str(fixture).unwrap();
         let nodes = data.as_array().unwrap();
