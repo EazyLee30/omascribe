@@ -77,6 +77,20 @@ def paired_errors(results, arms=None):
     return errors
 
 
+def settlement_summary(response, loaded, budget):
+    """Check actual default-scheduler completion independently of catch-up mode."""
+    snapshot, settle = response["snapshot"], response["settle"]
+    if settle.get("budget_seconds") != budget or settle.get("completed") is not True:
+        raise ValueError("Post-capture work did not complete within the requested budget")
+    if type(settle.get("wait_ms")) is not int or not 0 <= settle["wait_ms"] <= budget*1000+1500:
+        raise ValueError("Missing or inconsistent post-capture settlement clock")
+    latest = max((s["seq"] for s in snapshot["segments"]), default=0)
+    if loaded and (not latest or snapshot["meeting"]["notes_cursor"] < latest or not snapshot["suggestions"]):
+        raise ValueError("Post-capture minutes did not cover the complete transcript")
+    return dict(segments=len(snapshot["segments"]), translations=len(snapshot["translations"]),
+                notes_cursor=snapshot["meeting"]["notes_cursor"], sections=len(snapshot["suggestions"]))
+
+
 def fixture(corpus, output, repeats):
     manifest = read_json(corpus / "manifest.json")
     case = next(c for c in manifest["cases"] if c["name"] == "fleurs_mixed_zh_en_02")
@@ -110,7 +124,12 @@ def main():
     parser.add_argument("--repeats", type=int, choices=[3, 6], default=3)
     parser.add_argument("--minutes-catchup", action="store_true",
                         help="Compare legacy/catch-up minute scheduling, both with Metal and a 60s post-capture budget")
+    parser.add_argument("--settle-seconds", type=int, default=0,
+                        help="Wait 1–600 seconds for normal automatic work after capture; does not enable catch-up")
     args = parser.parse_args()
+    if not 0 <= args.settle_seconds <= 600 or args.minutes_catchup and args.settle_seconds:
+        parser.error("Use 0–600 settle seconds; catch-up comparison has its own fixed 60s budget")
+    settle_seconds = 60 if args.minutes_catchup else args.settle_seconds
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         parser.error("This comparison requires native Apple Silicon Metal")
     output, cli, runtime = args.output.resolve(), args.cli.resolve(), args.runtime.resolve()
@@ -125,8 +144,9 @@ def main():
         parser.error("Missing local llama runtime")
     arms = ["legacy-concurrent", "catchup-concurrent"] if args.minutes_catchup else ["asr-only", "metal-concurrent"]
     report = dict(schema=1, kind="apple-paced-minutes-catchup" if args.minutes_catchup else "apple-paced-recording-contention", environment=environment(cli),
+        post_capture_budget_seconds=settle_seconds,
         fixture=source, runtime_files=native, trials=[], errors=[], passed=False,
-        limitation="Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. Catch-up mode includes the same explicit post-capture settlement budget and costs in both arms; normal mode reports pending work at stop. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.")
+        limitation="Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. The requested post-capture settlement budget and all incurred costs are applied equally to both arms; with no budget, pending work is reported at stop. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.")
     catalog = read_json(REPO/"model-catalog.json")["models"]
     with tempfile.TemporaryDirectory(prefix="omascribe-contention-models-") as temp:
         store = pathlib.Path(temp)
@@ -153,7 +173,7 @@ def main():
                     root = folder/"workspace"
                     env = isolated_env(root)
                     env.update(OMASCRIBE_RUNTIME_DIR=str(runtime), OMASCRIBE_MODELS_DIR=str(folder/"no-bundled-models"), OMASCRIBE_ASR_STREAM_HOTWORDS="0", OMASCRIBE_RETRIEVAL_CACHE="0",
-                               OMASCRIBE_MINUTES_CATCHUP="1" if args.minutes_catchup and variant == 1 else "0")
+                               OMASCRIBE_INCREMENTAL_MINUTES="0", OMASCRIBE_MINUTES_CATCHUP="1" if args.minutes_catchup and variant == 1 else "0")
                     for key in ["LLAMA_ARG_LOG_VERBOSITY", "OMASCRIBE_ACCELERATION_CANDIDATE_VERSION"]:
                         env.pop(key, None)
                     prefs = dict(asr_model="zipformer-small", llm_model="qwen3-1.7b", threads=1,
@@ -165,10 +185,10 @@ def main():
                     print(f"Trial {trial} {arm}: {source['seconds']} s paced recording", flush=True)
                     try:
                         result["asr_assets"] = asset_identity(cli, root, "zipformer-small", env)
-                        argv = [cli, "replay-settle" if args.minutes_catchup else "replay", audio, source["seconds"]]
-                        if args.minutes_catchup: argv.append(60)
-                        response = command([*argv, "--telemetry", folder/"telemetry.jsonl"], env, folder/"process", timeout=source["seconds"]+150)
-                        snapshot = response["snapshot"] if args.minutes_catchup else response
+                        argv = [cli, "replay-settle" if settle_seconds else "replay", audio, source["seconds"]]
+                        if settle_seconds: argv.append(settle_seconds)
+                        response = command([*argv, "--telemetry", folder/"telemetry.jsonl"], env, folder/"process", timeout=source["seconds"]+max(150, settle_seconds+30))
+                        snapshot = response["snapshot"] if settle_seconds else response
                         rows = [json.loads(line) for line in (folder/"telemetry.jsonl").read_text().splitlines()]
                         result["telemetry"] = telemetry_summary(rows, source["seconds"], loaded)
                         result["telemetry_sha256"] = sha256(folder/"telemetry.jsonl")
@@ -190,11 +210,9 @@ def main():
                                     raise ValueError("Minutes cite invalid transcript evidence")
                         stopped = next(row for row in rows if not row["recording"] and not row["transcribing"])
                         result["at_stop"] = {key:stopped[key] for key in ["segments", "translations", "notes_cursor", "sections", "notes_busy", "translation_busy"]}
-                        if args.minutes_catchup:
+                        if settle_seconds:
                             result["settle"] = response["settle"]
-                            result["at_settled"] = dict(segments=len(snapshot["segments"]), translations=len(snapshot["translations"]), notes_cursor=snapshot["meeting"]["notes_cursor"], sections=len(snapshot["suggestions"]))
-                            if not response["settle"]["completed"] or snapshot["meeting"]["notes_cursor"] < max(s["seq"] for s in snapshot["segments"]):
-                                raise ValueError("Post-capture minutes/translation did not fully settle within the same budget")
+                            result["at_settled"] = settlement_summary(response, loaded, settle_seconds)
                         log = root/"llm-runtime.log"
                         layers = [list(map(int, pair)) for pair in re.findall(r"offloaded (\d+)/(\d+) layers to GPU", log.read_text(errors="replace") if log.exists() else "")]
                         result["metal_evidence"] = dict(last_worker_layers=layers, log_sha256=sha256(log) if log.exists() else None, fallback=(root/"last-metal-fallback.json").exists())

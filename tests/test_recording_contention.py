@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from benchmark_recording_contention import paired_errors, telemetry_summary
+from benchmark_recording_contention import paired_errors, telemetry_summary, settlement_summary
 
 
 class RecordingContentionTests(unittest.TestCase):
@@ -49,6 +49,23 @@ class RecordingContentionTests(unittest.TestCase):
         pair = [dict(baseline, arm=name) for name in arms]
         self.assertEqual(paired_errors(pair, arms), [])
         self.assertTrue(paired_errors(pair))
+
+    def test_default_scheduler_settlement_requires_actual_completion_and_full_coverage(self):
+        response = dict(settle=dict(budget_seconds=90, completed=True, wait_ms=1000),
+            snapshot=dict(segments=[dict(seq=1), dict(seq=2)], translations={"1": {}, "2": {}},
+                          meeting=dict(notes_cursor=2), suggestions=[{}]))
+        self.assertEqual(settlement_summary(response, True, 90)["notes_cursor"], 2)
+        for change in [lambda r: r["settle"].update(completed=False),
+                       lambda r: r["settle"].update(budget_seconds=60),
+                       lambda r: r["settle"].update(wait_ms=92000),
+                       lambda r: r["snapshot"]["meeting"].update(notes_cursor=1),
+                       lambda r: r["snapshot"].update(suggestions=[])]:
+            bad = copy.deepcopy(response); change(bad)
+            with self.assertRaises(ValueError): settlement_summary(bad, True, 90)
+        asr_only = copy.deepcopy(response)
+        asr_only["snapshot"].update(translations={}, suggestions=[])
+        asr_only["snapshot"]["meeting"]["notes_cursor"] = 0
+        settlement_summary(asr_only, False, 90)
 
 
 if __name__ == "__main__": unittest.main()
