@@ -2,10 +2,52 @@
 
 Updated 2026-10-27. Actual Settings download, test-enable, restart, Use CPU and
 an owned CUDA process fault followed by exactly one CPU retry have Windows
-evidence. The recording gate is still **failed**. CPU stays in the base installer;
+evidence. Corrected paced-file replay now passes the original backlog gate;
+automatic post-stop completion and release quality remain unaccepted. CPU stays in the base installer;
 CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
 
-## Latest source integration and approval-negation check
+## Replay pacing correction and current CUDA evidence
+
+Frozen application `83d3287`, shared base `9fb00e5`, changes only paced-file
+replay in `audio.rs`: `-re -readrate_initial_burst 0.001` prevents FFmpeg's initial
+read burst from advancing the supplied audio clock. Physical microphone capture,
+ordinary file import, ASR thread policy and the2500ms admission gate are unchanged.
+See [FFmpeg's input pacing options](https://www.ffmpeg.org/ffmpeg-all.html#Advanced-options).
+QA requires FFmpeg with `readrate_initial_burst`; this run uses private FFmpeg9.0.2,
+without installing it globally or adding it to the app package.
+
+The PCM/timing integration test actually ran with that FFmpeg: core129 passed,
+6 opt-in ignored, and core all-targets clippy passed. Exact-head Linux40423110492
+and Optional40423110503 passed; prepare/Windows-core succeeded, SDK build/catalog
+were skipped. Six empty-audio Release ASR processes showed approximately1.33–1.43s
+median readiness across1/2/4 threads. Preverification warmed model pages; this
+diagnostic supports no production thread-policy or broad speed claim.
+
+Two reversed-order15s ASR-only pairs preserve all PCM bytes and identical ASR
+units. Old CLI3286081 leads wall time by494/521ms with peak backlogs2880/2112ms;
+new CLI83d3287 leads by19/18ms with1792ms backlog in both arms. Both new arms pass
+the unchanged2500ms gate. OS caches, frequency and thermal state were uncontrolled.
+
+The normal signed-candidate CPU/GPU test enabled CUDA again. A single92s fictional
+Zira replay with live translation/minutes preserves the exact expected PCM,
+observes14 CUDA worker events and passes the original backlog gate at1984ms
+(p95:448ms; p50:232ms). CUDA DLLs come from the installed component and nvcuda
+from Windows, with SDK PATH/overrides excluded. This is operational acceptance
+of the synthetic replay, not a paired old/new cost study or microphone test.
+
+At stop, minutes cover8/16 segments and translations15/16. Explicit Translate
+finishes16/16. One explicit Generate commits through13/16, failing the harness's
+single-call full-cursor assertion; a second bounded Generate reaches16/16 with
+unchanged source and exact citations. Keep that first failure. This is **not**
+unattended post-stop completion or semantic summary acceptance. The original
+failed92s CUDA/CPU measurements below retain their source identities and are not
+retroactively passed. No release approval, new SDK build or stable catalog change.
+
+Exact CLI/ASR/FFmpeg/model hashes, all four short arms, initial diagnostics,
+normal activation, complete CUDA module audits, metadata traces and both
+completion attempts: [replay pacing evidence](../evaluation/windows-replay-pacing-2026-10-27.json).
+
+## Approval-negation checkpoint
 
 Application `3286081` merges shared `2461aeb` (including `c0293a2`). The facts
 protocol is exposed only under `cfg(test)` and is not connected to the product
@@ -197,5 +239,5 @@ to the unified pipeline. Keep startup backlog, untriggered allocation OOM,
 physical microphone coverage and failed attempts visible. The earlier scheduler
 regression passed; the new incremental fact/state gate failed and stays disabled.
 Keep the shared legacy stale-budget finding in the release backlog too. Finish
-the recording and model-quality release gates before approval. Uploading a Windows
+automatic post-stop completion, physical capture and model-quality gates before approval. Uploading a Windows
 EXE does not activate Settings downloads.

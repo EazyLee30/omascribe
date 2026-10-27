@@ -1,0 +1,3553 @@
+{
+  "schema": 1,
+  "kind": "windows_replay_pacing_and_signed_cuda_contention",
+  "date": "2026-10-27",
+  "operational_replay_passed": true,
+  "release_eligible": false,
+  "source_commit": "83d328728df962ea3ded18a6e71ec80535663140",
+  "shared_base": "9fb00e575448094ff553579f1bed13b08d352c99",
+  "change": "Only paced-file replay sets -readrate_initial_burst0.001 alongside -re; physical capture, ordinary imports, ASR policy and 2500ms admission budget unchanged.",
+  "code_checks": {
+    "core_passed": 129,
+    "core_opt_in_ignored": 6,
+    "clippy_all_targets": "passed -D warnings",
+    "behavior_test": "paced_replay_preserves_pcm_without_an_initial_read_burst; private FFmpeg on PATH, test ran, PCM preserved",
+    "exact_head_linux_run": 40423110492,
+    "exact_head_optional_run": 40423110503,
+    "linux": "success",
+    "prepare": "success",
+    "windows_core": "success",
+    "sdk_build": "skipped",
+    "catalog": "skipped"
+  },
+  "asr_ready_diagnostic": {
+    "schema": 1,
+    "kind": "windows_empty_audio_asr_process_ready_profile",
+    "passed": true,
+    "source_at_execution": "3df2185eecfc784aec171cd63abb472d855ae993",
+    "worker_sha256": "de1e7662c812bd6bf00500960976ec52c12521a47b7b025344b1e5c79aa6817b",
+    "worker_build": {
+      "name": "omascribe-asr.exe",
+      "bytes": 21916672,
+      "sha256": "de1e7662c812bd6bf00500960976ec52c12521a47b7b025344b1e5c79aa6817b"
+    },
+    "assets_preverified": [
+      {
+        "model": "zipformer-small",
+        "relative_dir": "zipformer",
+        "name": "encoder-epoch-99-avg-1.int8.onnx",
+        "bytes": 42980793,
+        "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+      },
+      {
+        "model": "zipformer-small",
+        "relative_dir": "zipformer",
+        "name": "decoder-epoch-99-avg-1.onnx",
+        "bytes": 13877276,
+        "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+      },
+      {
+        "model": "zipformer-small",
+        "relative_dir": "zipformer",
+        "name": "joiner-epoch-99-avg-1.int8.onnx",
+        "bytes": 3228485,
+        "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+      },
+      {
+        "model": "zipformer-small",
+        "relative_dir": "zipformer",
+        "name": "tokens.txt",
+        "bytes": 56317,
+        "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+      },
+      {
+        "model": "zipformer-small",
+        "relative_dir": "zipformer",
+        "name": "bpe.model",
+        "bytes": 244836,
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+      }
+    ],
+    "method": "Six fresh Release/static-CRT worker processes; thread orders1,2,4 then4,2,1. Empty supplied PCM, capture.done0, empty hotwords and normal shared vocabulary argument. Parent timestamps Ready; worker supplies initial_load_ms.",
+    "limits": [
+      "Initialization diagnostic only, not recording/accuracy/admission acceptance or a production policy change.",
+      "File verification warmed model pages; OS caches/frequency/thermal state were not controlled. No statistical speedup claim.",
+      "No supplied audio or microphone. Worker still performs its normal EOS silence flush; Done RTF for zero duration is not meaningful."
+    ],
+    "assets_and_worker_unchanged": true,
+    "summary": [
+      {
+        "threads": 1,
+        "median_ready_ms": 1420.346,
+        "median_internal_load_ms": 1383.5,
+        "median_other_ready_ms": 36.846
+      },
+      {
+        "threads": 2,
+        "median_ready_ms": 1425.7975000000001,
+        "median_internal_load_ms": 1393.5,
+        "median_other_ready_ms": 32.2975
+      },
+      {
+        "threads": 4,
+        "median_ready_ms": 1329.897,
+        "median_internal_load_ms": 1298.0,
+        "median_other_ready_ms": 31.897
+      }
+    ],
+    "results": [
+      {
+        "trial": 1,
+        "threads": 1,
+        "ready_ms": 1446.51,
+        "process_exit_ms": 1475.406,
+        "non_decoder_ready_overhead_ms": 43.51,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1403,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 1
+        },
+        "events": [
+          {
+            "at_ms": 1446.51,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1447.314,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 7.0992
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      },
+      {
+        "trial": 1,
+        "threads": 2,
+        "ready_ms": 1444.542,
+        "process_exit_ms": 1472.953,
+        "non_decoder_ready_overhead_ms": 30.542,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1414,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "events": [
+          {
+            "at_ms": 1444.542,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1445.244,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 7.6432
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      },
+      {
+        "trial": 1,
+        "threads": 4,
+        "ready_ms": 1350.36,
+        "process_exit_ms": 1378.545,
+        "non_decoder_ready_overhead_ms": 31.36,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1319,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 4
+        },
+        "events": [
+          {
+            "at_ms": 1350.36,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1351.063,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 7.6704
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      },
+      {
+        "trial": 2,
+        "threads": 4,
+        "ready_ms": 1309.434,
+        "process_exit_ms": 1342.496,
+        "non_decoder_ready_overhead_ms": 32.434,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1277,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 4
+        },
+        "events": [
+          {
+            "at_ms": 1309.434,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1310.731,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 7.68
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      },
+      {
+        "trial": 2,
+        "threads": 2,
+        "ready_ms": 1407.053,
+        "process_exit_ms": 1434.946,
+        "non_decoder_ready_overhead_ms": 34.053,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1373,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "events": [
+          {
+            "at_ms": 1407.053,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1407.869,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 8.3936
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      },
+      {
+        "trial": 2,
+        "threads": 1,
+        "ready_ms": 1394.182,
+        "process_exit_ms": 1422.95,
+        "non_decoder_ready_overhead_ms": 30.182,
+        "decoder": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1364,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 1
+        },
+        "events": [
+          {
+            "at_ms": 1394.182,
+            "data": {
+              "event": "ready"
+            }
+          },
+          {
+            "at_ms": 1394.745,
+            "data": {
+              "event": "done",
+              "processed_ms": 0,
+              "rtf": 5.4416
+            }
+          }
+        ],
+        "exit_code": 0,
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true
+      }
+    ]
+  },
+  "ffmpeg_diagnostic": {
+    "schema": 1,
+    "kind": "standalone_ffmpeg_initial_pacing_diagnostic",
+    "passed": true,
+    "ffmpeg_sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+    "wav_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+    "seconds": 4,
+    "expected_pcm_sha256": "e60e72a188a629fdd109754c4c0d0daf76f0deb3a34a104a88838c7a5c168843",
+    "limits": [
+      "No ASR/model/microphone/concurrency or new admission result. Only supplied-file delivery timing and exact PCM.",
+      "Two reversed-order trials, uncontrolled OS cache/CPU frequency. First-read clock and process clock both reported."
+    ],
+    "summary": [
+      {
+        "mode": "default",
+        "median_lead_process_ms": 511.7745,
+        "median_lead_delivery_ms": 565.3240000000001
+      },
+      {
+        "mode": "small_burst",
+        "median_lead_process_ms": 18.8275,
+        "median_lead_delivery_ms": 65.748
+      }
+    ],
+    "results": [
+      {
+        "trial": 1,
+        "mode": "default",
+        "process_exit_ms": 3669.804,
+        "samples": 64000,
+        "pcm_sha256": "e60e72a188a629fdd109754c4c0d0daf76f0deb3a34a104a88838c7a5c168843",
+        "max_lead_process_ms": 502.404,
+        "max_lead_delivery_ms": 564.956,
+        "first_read_ms": 62.551
+      },
+      {
+        "trial": 1,
+        "mode": "small_burst",
+        "process_exit_ms": 4147.127,
+        "samples": 64000,
+        "pcm_sha256": "e60e72a188a629fdd109754c4c0d0daf76f0deb3a34a104a88838c7a5c168843",
+        "max_lead_process_ms": 16.822,
+        "max_lead_delivery_ms": 65.102,
+        "first_read_ms": 48.28
+      },
+      {
+        "trial": 2,
+        "mode": "small_burst",
+        "process_exit_ms": 4156.774,
+        "samples": 64000,
+        "pcm_sha256": "e60e72a188a629fdd109754c4c0d0daf76f0deb3a34a104a88838c7a5c168843",
+        "max_lead_process_ms": 20.833,
+        "max_lead_delivery_ms": 66.394,
+        "first_read_ms": 45.56
+      },
+      {
+        "trial": 2,
+        "mode": "default",
+        "process_exit_ms": 3645.936,
+        "samples": 64000,
+        "pcm_sha256": "e60e72a188a629fdd109754c4c0d0daf76f0deb3a34a104a88838c7a5c168843",
+        "max_lead_process_ms": 521.145,
+        "max_lead_delivery_ms": 565.692,
+        "first_read_ms": 44.547
+      }
+    ]
+  },
+  "asr_only_paired_replay": {
+    "schema": 1,
+    "kind": "windows_asr_only_replay_pacing_comparison",
+    "passed": true,
+    "environments": {
+      "baseline": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "328608113a070214f335b20aa39e461b755140bd",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "8517e176443263b2cd44c20677f825de3ff2d62653a383c71472965f94bdf240",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "9d03250612d69d7ae5beda960e60a7e3b72534121ed2781a7afd90afa2c66958",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "paced": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "83d328728df962ea3ded18a6e71ec80535663140",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "6c1111515e90deddccaac07e0fea5b3ea797bd883836ae801279d66d7b677871",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "8ebbcfad42ea54be528dec93535f5aa2c682978e431ac7101bcb29cfcf6cd66c",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      }
+    },
+    "seconds": 15,
+    "fixture": {
+      "method": "First15s of existing fictional Zira PCM, no microphone/model generation",
+      "wav_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+      "expected_pcm_sha256": "158dcab4aec7d8695c7fcea462ea34e71466bd7b6351fb39fb3c52aa461c5aeb"
+    },
+    "results": [
+      {
+        "trial": 1,
+        "mode": "baseline",
+        "execution_passed": true,
+        "admission_passed": false,
+        "errors": [],
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "pcm_sha256": "158dcab4aec7d8695c7fcea462ea34e71466bd7b6351fb39fb3c52aa461c5aeb",
+        "audio_samples": 240000,
+        "hypothesis_units": [
+          "this",
+          "is",
+          "a",
+          "fictional",
+          "test",
+          "meeting",
+          "the",
+          "project",
+          "is",
+          "illmis",
+          "cribe",
+          "we",
+          "will",
+          "test",
+          "the",
+          "windows",
+          "version",
+          "on",
+          "thursday",
+          "the",
+          "budget",
+          "is",
+          "three",
+          "thousand",
+          "dollars",
+          "in",
+          "it",
+          "has",
+          "not",
+          "been",
+          "approved",
+          "a",
+          "lice",
+          "will",
+          "check",
+          "the",
+          "envy",
+          "a",
+          "card",
+          "friday"
+        ],
+        "lag_max_ms": 2880,
+        "live_clock_lead_ms": 494,
+        "asr_config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 2101,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "telemetry_sha256": "e37c7415eb8331161c523bc440f2116d2e5c5840df1a3f95bd20f756713791d8",
+        "at_stop": {
+          "elapsed_ms": 15000,
+          "processed_ms": 15000,
+          "notes_busy": false,
+          "translation_busy": false,
+          "recording": false,
+          "transcribing": false
+        },
+        "admission_error": "ASR exceeded the scheduler's 2500 ms admission budget"
+      },
+      {
+        "trial": 1,
+        "mode": "paced",
+        "execution_passed": true,
+        "admission_passed": true,
+        "errors": [],
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "pcm_sha256": "158dcab4aec7d8695c7fcea462ea34e71466bd7b6351fb39fb3c52aa461c5aeb",
+        "audio_samples": 240000,
+        "hypothesis_units": [
+          "this",
+          "is",
+          "a",
+          "fictional",
+          "test",
+          "meeting",
+          "the",
+          "project",
+          "is",
+          "illmis",
+          "cribe",
+          "we",
+          "will",
+          "test",
+          "the",
+          "windows",
+          "version",
+          "on",
+          "thursday",
+          "the",
+          "budget",
+          "is",
+          "three",
+          "thousand",
+          "dollars",
+          "in",
+          "it",
+          "has",
+          "not",
+          "been",
+          "approved",
+          "a",
+          "lice",
+          "will",
+          "check",
+          "the",
+          "envy",
+          "a",
+          "card",
+          "friday"
+        ],
+        "lag_max_ms": 1792,
+        "live_clock_lead_ms": 19,
+        "asr_config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1339,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "telemetry_sha256": "eeca85ecf2155da986b210b54b129ffd6973c5ecf58836dbe282242b1a67a523",
+        "at_stop": {
+          "elapsed_ms": 15000,
+          "processed_ms": 15000,
+          "notes_busy": false,
+          "translation_busy": false,
+          "recording": false,
+          "transcribing": false
+        },
+        "telemetry": {
+          "samples": 77,
+          "interval_ms": 200,
+          "largest_sample_gap_ms": 202,
+          "lag_p50_ms": 248.0,
+          "lag_p95_ms": 1036.7999999999993,
+          "lag_max_ms": 1792,
+          "capture_wall_overhead_ms": 267,
+          "asr_compute_rtf": 0.0328296,
+          "live_translations": 0,
+          "live_notes_cursor": 0,
+          "live_worker_samples": 0,
+          "worker_starts": 0,
+          "worker_reuses": 0
+        }
+      },
+      {
+        "trial": 2,
+        "mode": "paced",
+        "execution_passed": true,
+        "admission_passed": true,
+        "errors": [],
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "pcm_sha256": "158dcab4aec7d8695c7fcea462ea34e71466bd7b6351fb39fb3c52aa461c5aeb",
+        "audio_samples": 240000,
+        "hypothesis_units": [
+          "this",
+          "is",
+          "a",
+          "fictional",
+          "test",
+          "meeting",
+          "the",
+          "project",
+          "is",
+          "illmis",
+          "cribe",
+          "we",
+          "will",
+          "test",
+          "the",
+          "windows",
+          "version",
+          "on",
+          "thursday",
+          "the",
+          "budget",
+          "is",
+          "three",
+          "thousand",
+          "dollars",
+          "in",
+          "it",
+          "has",
+          "not",
+          "been",
+          "approved",
+          "a",
+          "lice",
+          "will",
+          "check",
+          "the",
+          "envy",
+          "a",
+          "card",
+          "friday"
+        ],
+        "lag_max_ms": 1792,
+        "live_clock_lead_ms": 18,
+        "asr_config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1331,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "telemetry_sha256": "533fb143363455461ef6f6ee1782c3142a992eb5074359e317a4e6a1b87111e1",
+        "at_stop": {
+          "elapsed_ms": 15000,
+          "processed_ms": 15000,
+          "notes_busy": false,
+          "translation_busy": false,
+          "recording": false,
+          "transcribing": false
+        },
+        "telemetry": {
+          "samples": 77,
+          "interval_ms": 200,
+          "largest_sample_gap_ms": 202,
+          "lag_p50_ms": 248.0,
+          "lag_p95_ms": 1036.7999999999993,
+          "lag_max_ms": 1792,
+          "capture_wall_overhead_ms": 268,
+          "asr_compute_rtf": 0.03159248666666667,
+          "live_translations": 0,
+          "live_notes_cursor": 0,
+          "live_worker_samples": 0,
+          "worker_starts": 0,
+          "worker_reuses": 0
+        }
+      },
+      {
+        "trial": 2,
+        "mode": "baseline",
+        "execution_passed": true,
+        "admission_passed": true,
+        "errors": [],
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "pcm_sha256": "158dcab4aec7d8695c7fcea462ea34e71466bd7b6351fb39fb3c52aa461c5aeb",
+        "audio_samples": 240000,
+        "hypothesis_units": [
+          "this",
+          "is",
+          "a",
+          "fictional",
+          "test",
+          "meeting",
+          "the",
+          "project",
+          "is",
+          "illmis",
+          "cribe",
+          "we",
+          "will",
+          "test",
+          "the",
+          "windows",
+          "version",
+          "on",
+          "thursday",
+          "the",
+          "budget",
+          "is",
+          "three",
+          "thousand",
+          "dollars",
+          "in",
+          "it",
+          "has",
+          "not",
+          "been",
+          "approved",
+          "a",
+          "lice",
+          "will",
+          "check",
+          "the",
+          "envy",
+          "a",
+          "card",
+          "friday"
+        ],
+        "lag_max_ms": 2112,
+        "live_clock_lead_ms": 521,
+        "asr_config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1258,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "telemetry_sha256": "1d867962d6cfe2db25c9118418e06129dde36c5049ff7c28d0858d5491d60acb",
+        "at_stop": {
+          "elapsed_ms": 15000,
+          "processed_ms": 15000,
+          "notes_busy": false,
+          "translation_busy": false,
+          "recording": false,
+          "transcribing": false
+        },
+        "telemetry": {
+          "samples": 75,
+          "interval_ms": 200,
+          "largest_sample_gap_ms": 233,
+          "lag_p50_ms": 296.0,
+          "lag_p95_ms": 1366.4000000000005,
+          "lag_max_ms": 2112,
+          "capture_wall_overhead_ms": -87,
+          "asr_compute_rtf": 0.03225012,
+          "live_translations": 0,
+          "live_notes_cursor": 0,
+          "live_worker_samples": 0,
+          "worker_starts": 0,
+          "worker_reuses": 0
+        }
+      }
+    ],
+    "limits": [
+      "Two reversed-order fresh-process pairs; OS caches/frequency/thermal state uncontrolled. Baseline CLI compile3286081 versus new pacing build; intervening production generator is unchanged aside from replay pacing.",
+      "ASR-only diagnostic, not CUDA contention, natural speech accuracy, physical microphone or broad performance proof. Old failed92s results remain source-bound."
+    ],
+    "all_pcm_and_asr_units_equal": true,
+    "code_and_binaries_unchanged": true
+  },
+  "signed_cuda_normal_verification": {
+    "schema": 1,
+    "mode": "verify",
+    "passed": true,
+    "source": "83d328728df962ea3ded18a6e71ec80535663140",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "83d328728df962ea3ded18a6e71ec80535663140",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "6c1111515e90deddccaac07e0fea5b3ea797bd883836ae801279d66d7b677871",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "8ebbcfad42ea54be528dec93535f5aa2c682978e431ac7101bcb29cfcf6cd66c",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_restricted": true,
+    "preferences": {
+      "appearance": {
+        "mode": "system",
+        "theme": "neutral",
+        "accent": "#d83b36",
+        "background": "",
+        "foreground": "",
+        "font": "system",
+        "font_size": 13
+      },
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "auto",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": false,
+      "translation_mode": "off",
+      "minutes_language": "zh",
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "trace_events": [],
+    "observed_owned_children": {
+      "17960": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "8976": "D:\\omascribe\\artifacts\\windows-runtime-release-asr-20261027\\llama\\llama-server.exe",
+      "22300": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+    },
+    "module_audits": [
+      {
+        "pid": 17960,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 22300,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      }
+    ],
+    "killed_owned_gpu_pid": null,
+    "errors": [],
+    "meeting": null,
+    "exit_code": 0,
+    "status": {
+      "component_id": "cuda-windows-x86_64",
+      "reason": null,
+      "report": {
+        "cpu": {
+          "peak_rss_mib": 1997,
+          "requests_ms": [
+            4036,
+            4645
+          ],
+          "runtime_gpu_buffer_mib": null,
+          "startup_ms": 1926,
+          "total_ms": 10609
+        },
+        "faster": true,
+        "gpu": {
+          "peak_rss_mib": 1439,
+          "requests_ms": [
+            776,
+            787
+          ],
+          "runtime_gpu_buffer_mib": 1287.93,
+          "startup_ms": 1737,
+          "total_ms": 3302
+        }
+      },
+      "state": "active"
+    },
+    "active_certificate_exists": true,
+    "remaining_owned_children": []
+  },
+  "signed_cuda_replay": {
+    "schema": 1,
+    "mode": "replay",
+    "passed": true,
+    "source": "83d328728df962ea3ded18a6e71ec80535663140",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "83d328728df962ea3ded18a6e71ec80535663140",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "6c1111515e90deddccaac07e0fea5b3ea797bd883836ae801279d66d7b677871",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "8ebbcfad42ea54be528dec93535f5aa2c682978e431ac7101bcb29cfcf6cd66c",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_restricted": true,
+    "preferences": {
+      "appearance": {
+        "mode": "system",
+        "theme": "neutral",
+        "accent": "#d83b36",
+        "background": "",
+        "foreground": "",
+        "font": "system",
+        "font_size": 13
+      },
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "auto",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "minutes_language": "zh",
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "trace_events": [
+      {
+        "at": "2026-10-27T00:02:18.591572600+00:00",
+        "elapsed_ms": 0,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:26.836230+00:00",
+        "elapsed_ms": 8244,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1962
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:26.838284300+00:00",
+        "elapsed_ms": 8246,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {
+          "input_tokens": 106,
+          "resumed": false,
+          "source_bytes": 172
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:27.721618+00:00",
+        "elapsed_ms": 9130,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 414,
+          "request_ms": 882,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 467.856,
+            "input_tokens": 122,
+            "output_tokens": 36,
+            "prefill_ms": 408.424
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:27.730494800+00:00",
+        "elapsed_ms": 9138,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:27.734649100+00:00",
+        "elapsed_ms": 9143,
+        "job": "f8599fd4-4146-4701-aa22-9d3c9c06e6c2",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:27.735186800+00:00",
+        "elapsed_ms": 0,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:28.139975400+00:00",
+        "elapsed_ms": 404,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "cursor": 3,
+          "selected": 3
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:28.140745100+00:00",
+        "elapsed_ms": 405,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 3
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:28.149908200+00:00",
+        "elapsed_ms": 414,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": true,
+          "startup_ms": 3
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:28.153291500+00:00",
+        "elapsed_ms": 418,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "input_tokens": 254,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:30.171700600+00:00",
+        "elapsed_ms": 2436,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 799,
+          "request_ms": 2016,
+          "usage": {
+            "cached_tokens": 3,
+            "decode_ms": 1217.404,
+            "input_tokens": 271,
+            "output_tokens": 85,
+            "prefill_ms": 795.907
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:31.686065900+00:00",
+        "elapsed_ms": 3950,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 743,
+          "request_ms": 1509,
+          "usage": {
+            "cached_tokens": 153,
+            "decode_ms": 765.839,
+            "input_tokens": 407,
+            "output_tokens": 57,
+            "prefill_ms": 740.305
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:31.696846600+00:00",
+        "elapsed_ms": 3961,
+        "job": "b2a8c08d-1f41-4b7f-966f-9eb6ae0ec62c",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:02:32.598677200+00:00",
+        "elapsed_ms": 0,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:34.962780900+00:00",
+        "elapsed_ms": 2364,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2356
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:34.964889400+00:00",
+        "elapsed_ms": 2366,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 31
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:35.526693200+00:00",
+        "elapsed_ms": 2928,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 360,
+          "request_ms": 560,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 200.451,
+            "input_tokens": 82,
+            "output_tokens": 15,
+            "prefill_ms": 355.037
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:35.535435700+00:00",
+        "elapsed_ms": 2936,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "input_tokens": 77,
+          "resumed": false,
+          "source_bytes": 82
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:35.939841900+00:00",
+        "elapsed_ms": 3341,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 111,
+          "request_ms": 403,
+          "usage": {
+            "cached_tokens": 64,
+            "decode_ms": 294.181,
+            "input_tokens": 93,
+            "output_tokens": 23,
+            "prefill_ms": 105.254
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:35.947710800+00:00",
+        "elapsed_ms": 3349,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:35.952021400+00:00",
+        "elapsed_ms": 3353,
+        "job": "ea783e8e-db4b-4de5-9d9d-dcee4b53726c",
+        "metrics": {
+          "committed": true,
+          "items": 2
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:38.605006500+00:00",
+        "elapsed_ms": 0,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:40.861536500+00:00",
+        "elapsed_ms": 2256,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2249
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:40.863227400+00:00",
+        "elapsed_ms": 2258,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {
+          "input_tokens": 97,
+          "resumed": false,
+          "source_bytes": 143
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:41.746910500+00:00",
+        "elapsed_ms": 3141,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 428,
+          "request_ms": 883,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 455.652,
+            "input_tokens": 113,
+            "output_tokens": 35,
+            "prefill_ms": 423.243
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:41.753790300+00:00",
+        "elapsed_ms": 3148,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:41.758886700+00:00",
+        "elapsed_ms": 3153,
+        "job": "d4177f87-ad9b-42fa-8054-0af0d667c294",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:44.610966900+00:00",
+        "elapsed_ms": 0,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:46.565782100+00:00",
+        "elapsed_ms": 1954,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1948
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:46.567317500+00:00",
+        "elapsed_ms": 1956,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {
+          "input_tokens": 71,
+          "resumed": false,
+          "source_bytes": 59
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:47.197973800+00:00",
+        "elapsed_ms": 2587,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 320,
+          "request_ms": 630,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 309.48,
+            "input_tokens": 87,
+            "output_tokens": 24,
+            "prefill_ms": 316.704
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:47.204329900+00:00",
+        "elapsed_ms": 2593,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:47.209564200+00:00",
+        "elapsed_ms": 2598,
+        "job": "3d841a31-4d44-44c2-abfe-fd452cbde17a",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:50.628632600+00:00",
+        "elapsed_ms": 0,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:53.046819700+00:00",
+        "elapsed_ms": 2418,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2346
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:53.048228+00:00",
+        "elapsed_ms": 2419,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {
+          "input_tokens": 77,
+          "resumed": false,
+          "source_bytes": 83
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:53.701700900+00:00",
+        "elapsed_ms": 3073,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 357,
+          "request_ms": 652,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 295.649,
+            "input_tokens": 93,
+            "output_tokens": 23,
+            "prefill_ms": 353.366
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:53.708947800+00:00",
+        "elapsed_ms": 3080,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:53.713121400+00:00",
+        "elapsed_ms": 3084,
+        "job": "194a1282-1d28-4084-9ca3-45c9ea9bec69",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:54.632375800+00:00",
+        "elapsed_ms": 0,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:56.584209100+00:00",
+        "elapsed_ms": 1951,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1945
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:56.585596600+00:00",
+        "elapsed_ms": 1953,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 32
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:57.055789600+00:00",
+        "elapsed_ms": 2423,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 333,
+          "request_ms": 469,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 135.54,
+            "input_tokens": 82,
+            "output_tokens": 11,
+            "prefill_ms": 329.423
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:57.066110400+00:00",
+        "elapsed_ms": 2433,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:02:57.070696900+00:00",
+        "elapsed_ms": 2438,
+        "job": "baa9bc4d-a510-404f-839c-61861ddbb4ad",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:00.641326700+00:00",
+        "elapsed_ms": 0,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:02.594666600+00:00",
+        "elapsed_ms": 1953,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1945
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:02.596120700+00:00",
+        "elapsed_ms": 1954,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {
+          "input_tokens": 76,
+          "resumed": false,
+          "source_bytes": 73
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:03.184914300+00:00",
+        "elapsed_ms": 2543,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 333,
+          "request_ms": 588,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 254.444,
+            "input_tokens": 92,
+            "output_tokens": 20,
+            "prefill_ms": 328.266
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:03.192121+00:00",
+        "elapsed_ms": 2550,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:03.199576600+00:00",
+        "elapsed_ms": 2558,
+        "job": "efd17787-7ec4-4d1d-b0cf-7bb7674b1f1a",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:04.645937100+00:00",
+        "elapsed_ms": 0,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:04.654705800+00:00",
+        "elapsed_ms": 8,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "cursor": 8,
+          "selected": 8
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:04.655547+00:00",
+        "elapsed_ms": 9,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 8
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:06.610240400+00:00",
+        "elapsed_ms": 1964,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1946
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:06.613664900+00:00",
+        "elapsed_ms": 1967,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "input_tokens": 391,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:09.522034300+00:00",
+        "elapsed_ms": 4876,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 1219,
+          "request_ms": 2906,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 1687.452,
+            "input_tokens": 408,
+            "output_tokens": 121,
+            "prefill_ms": 1214.315
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:11.583478+00:00",
+        "elapsed_ms": 6937,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 967,
+          "request_ms": 2053,
+          "usage": {
+            "cached_tokens": 3,
+            "decode_ms": 1086.057,
+            "input_tokens": 332,
+            "output_tokens": 79,
+            "prefill_ms": 961.409
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:11.734286500+00:00",
+        "elapsed_ms": 7088,
+        "job": "1569252f-05e1-4a20-9f29-df2c857df6f0",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:03:12.651988300+00:00",
+        "elapsed_ms": 0,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:14.611769700+00:00",
+        "elapsed_ms": 1959,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1951
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:14.613457200+00:00",
+        "elapsed_ms": 1961,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "input_tokens": 84,
+          "resumed": false,
+          "source_bytes": 99
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.329079600+00:00",
+        "elapsed_ms": 2677,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 387,
+          "request_ms": 715,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 327.591,
+            "input_tokens": 100,
+            "output_tokens": 25,
+            "prefill_ms": 382.894
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.336528800+00:00",
+        "elapsed_ms": 2684,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "input_tokens": 65,
+          "resumed": false,
+          "source_bytes": 26
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.600654+00:00",
+        "elapsed_ms": 2948,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 88,
+          "request_ms": 263,
+          "usage": {
+            "cached_tokens": 64,
+            "decode_ms": 174.711,
+            "input_tokens": 81,
+            "output_tokens": 14,
+            "prefill_ms": 83.579
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.608612700+00:00",
+        "elapsed_ms": 2956,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "input_tokens": 70,
+          "resumed": false,
+          "source_bytes": 56
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.884237700+00:00",
+        "elapsed_ms": 3232,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "attempt": 3,
+          "completed": true,
+          "first_token_ms": 86,
+          "request_ms": 275,
+          "usage": {
+            "cached_tokens": 64,
+            "decode_ms": 188.504,
+            "input_tokens": 86,
+            "output_tokens": 15,
+            "prefill_ms": 82.414
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.891918400+00:00",
+        "elapsed_ms": 3239,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:15.896172900+00:00",
+        "elapsed_ms": 3244,
+        "job": "bb02db4b-1ca6-4f48-a0f1-82672168bbe7",
+        "metrics": {
+          "committed": true,
+          "items": 3
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:16.657394200+00:00",
+        "elapsed_ms": 0,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:18.603615+00:00",
+        "elapsed_ms": 1946,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1938
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:18.604980100+00:00",
+        "elapsed_ms": 1947,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 32
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:19.091376600+00:00",
+        "elapsed_ms": 2433,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 349,
+          "request_ms": 485,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 136.328,
+            "input_tokens": 82,
+            "output_tokens": 11,
+            "prefill_ms": 343.265
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:19.098913900+00:00",
+        "elapsed_ms": 2441,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:19.109000700+00:00",
+        "elapsed_ms": 2451,
+        "job": "74c7a40a-07a4-4158-abd4-a647966dbda5",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:22.665616800+00:00",
+        "elapsed_ms": 0,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:24.687398600+00:00",
+        "elapsed_ms": 2021,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1948
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:24.688906900+00:00",
+        "elapsed_ms": 2023,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {
+          "input_tokens": 75,
+          "resumed": false,
+          "source_bytes": 72
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:25.333374300+00:00",
+        "elapsed_ms": 2667,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 344,
+          "request_ms": 643,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 281.195,
+            "input_tokens": 91,
+            "output_tokens": 21,
+            "prefill_ms": 338.962
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:25.346164900+00:00",
+        "elapsed_ms": 2680,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:25.352544700+00:00",
+        "elapsed_ms": 2686,
+        "job": "815ee036-a0da-4408-8589-f1eae6354e32",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:28.674312900+00:00",
+        "elapsed_ms": 0,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:30.629183800+00:00",
+        "elapsed_ms": 1954,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1944
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:30.630770700+00:00",
+        "elapsed_ms": 1956,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {
+          "input_tokens": 84,
+          "resumed": false,
+          "source_bytes": 99
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:31.351352800+00:00",
+        "elapsed_ms": 2677,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 389,
+          "request_ms": 719,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 329.997,
+            "input_tokens": 100,
+            "output_tokens": 25,
+            "prefill_ms": 383.578
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:31.359196300+00:00",
+        "elapsed_ms": 2684,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:31.363547900+00:00",
+        "elapsed_ms": 2689,
+        "job": "fd5dfc87-192f-4b9b-a567-b3f40bfab989",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:32.679330+00:00",
+        "elapsed_ms": 0,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:34.839420+00:00",
+        "elapsed_ms": 2160,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2151
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:34.841526600+00:00",
+        "elapsed_ms": 2162,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {
+          "input_tokens": 65,
+          "resumed": false,
+          "source_bytes": 26
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:35.366005900+00:00",
+        "elapsed_ms": 2686,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 343,
+          "request_ms": 523,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 179.839,
+            "input_tokens": 81,
+            "output_tokens": 14,
+            "prefill_ms": 339.575
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:35.376111+00:00",
+        "elapsed_ms": 2696,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:35.380826500+00:00",
+        "elapsed_ms": 2701,
+        "job": "c45664c1-3cc3-4ca8-b93d-7b63566a3807",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:03:36.686446+00:00",
+        "elapsed_ms": 0,
+        "job": "dcbf5935-9ccb-4df3-911f-b89e608a08d0",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      }
+    ],
+    "observed_owned_children": {
+      "21676": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "4576": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "6428": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "19320": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "14312": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "13704": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "17168": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "18992": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "22760": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "14996": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "25412": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "25132": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "8676": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "25612": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+    },
+    "module_audits": [
+      {
+        "pid": 21676,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 4576,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 6428,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 19320,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 14312,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 13704,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 17168,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 18992,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 22760,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 14996,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 25412,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 25132,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 8676,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 25612,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      }
+    ],
+    "killed_owned_gpu_pid": null,
+    "errors": [],
+    "fixture": {
+      "method": "Synthetic Zira fictional paced replay; no microphone",
+      "seconds": 92,
+      "wav_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+      "expected_pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980"
+    },
+    "meeting": "cca7c589-d733-4534-847e-079503e7b80b",
+    "exit_code": 0,
+    "remaining_owned_children": [],
+    "worker_backends": [
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda"
+    ],
+    "snapshot_at_stop": {
+      "cursor": 8,
+      "sections": 1,
+      "segments": 16,
+      "translations": 15,
+      "runtime": {
+        "asr_rtf": 0.03803276413043478,
+        "diarization_busy": false,
+        "diarization_meeting_id": null,
+        "diarization_status": "",
+        "elapsed_ms": 92000,
+        "error": null,
+        "level": 0.0,
+        "meeting_id": "cca7c589-d733-4534-847e-079503e7b80b",
+        "notes_busy": false,
+        "notes_elapsed_ms": 424,
+        "notes_status": "文档已同步 · 1 个章节",
+        "partial": "",
+        "paused": false,
+        "processed_ms": 92000,
+        "recording": false,
+        "transcribing": false,
+        "translation_busy": true,
+        "translation_status": "translation:working"
+      }
+    },
+    "telemetry_sha256": "d66153d706eb17d5d312b03af234c04aad4b5e3066404857eb09f2cb1b9f0c15",
+    "live_clock_lead_ms": 25,
+    "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+    "audio_samples": 1472000,
+    "telemetry": {
+      "samples": 456,
+      "interval_ms": 200,
+      "largest_sample_gap_ms": 545,
+      "lag_p50_ms": 232.0,
+      "lag_p95_ms": 448.0,
+      "lag_max_ms": 1984,
+      "capture_wall_overhead_ms": 417,
+      "asr_compute_rtf": 0.03803276413043478,
+      "live_translations": 15,
+      "live_notes_cursor": 8,
+      "live_worker_samples": 219,
+      "worker_starts": 13,
+      "worker_reuses": 1
+    },
+    "asr_config": {
+      "decoder": "greedy_search",
+      "default_hotword_buffer_present": false,
+      "fallback": null,
+      "hotword_count": 0,
+      "hotword_update_mode": "recognizer",
+      "initial_load_ms": 1720,
+      "last_update_ms": 0,
+      "model_load_attempts": 1,
+      "stream_updates": 0,
+      "threads": 2
+    },
+    "raw_stdout_sha256": "702fcb6fb423a463f352a43d64b10c7aa4c56646cc5843a111f42b29e74d99cf"
+  },
+  "post_stop_completion": {
+    "result": {
+      "schema": 1,
+      "passed": true,
+      "kind": "explicit_bounded_post_stop_completion",
+      "meeting": "cca7c589-d733-4534-847e-079503e7b80b",
+      "first_attempt_report": "paced-replay-explicit-completion.json",
+      "first_attempt_passed": false,
+      "first_attempt_explanation": "Harness expected full cursor in one generation; product committed through13/16 within2048 context. This is a retained single-call completion failure, not a CUDA or model-validator failure.",
+      "stages": [
+        {
+          "mode": "drain",
+          "report": "cli-drain-01.json"
+        },
+        {
+          "mode": "first_generate",
+          "report": "cli-finish-01.json"
+        },
+        {
+          "mode": "second_generate",
+          "report": "cli-finish-02.json"
+        }
+      ],
+      "cursors": [
+        8,
+        13,
+        16
+      ],
+      "final_segments": 16,
+      "final_translations": 16,
+      "final_generation_elapsed_ms": 14687,
+      "limitation": "Explicit CLI translate and two bounded generate calls; not unattended scheduler settlement, full-summary semantic quality or cost comparison."
+    },
+    "first_attempt": {
+      "schema": 1,
+      "passed": false,
+      "meeting": "cca7c589-d733-4534-847e-079503e7b80b",
+      "kind": "explicit_post_stop_translate_then_generate",
+      "stages": [
+        {
+          "mode": "drain",
+          "report": "cli-drain-02.json",
+          "elapsed_ms": 9406,
+          "cursor": 8,
+          "segments": 16,
+          "translations": 16
+        }
+      ],
+      "elapsed_ms": 24750
+    },
+    "stages": [
+      {
+        "schema": 1,
+        "mode": "drain",
+        "passed": true,
+        "source": "39486eaac27874210e5f56755b3cd3c7eb146af6",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "1b4e3af275fae1c8fb18087ecc6135e60a423b0f",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "54c782d1caca605a1de5156d3a2a1378de2c9e79a17dc30f2284131cb65a6f01",
+            "target": "x86_64-pc-windows-msvc"
+          },
+          "core_and_harness_source_sha256": "fd7a420dfaca6d63af54ad8f013252dc95a8e51fa26be1190c0b6f829b980202",
+          "inference_source_tree_dirty": true,
+          "platform": "Windows-10-10.0.19045-SP0",
+          "machine": "AMD64",
+          "python": "3.12.14",
+          "cli_sha256": "5369cf755c23646fb89717476659bbf4aeba0b2c2a91d842d8cb143e9527c2d6",
+          "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+          "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+          "suite_revision": "39486eaac27874210e5f56755b3cd3c7eb146af6",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "preferences": {
+          "appearance": {
+            "mode": "system",
+            "theme": "neutral",
+            "accent": "#d83b36",
+            "background": "",
+            "foreground": "",
+            "font": "system",
+            "font_size": 13
+          },
+          "asr_model": "zipformer-small",
+          "llm_model": "qwen3-1.7b",
+          "threads": 2,
+          "context_size": 2048,
+          "inference_backend": "auto",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": true,
+          "translation_mode": "bilingual",
+          "minutes_language": "zh",
+          "diarization": false,
+          "speaker_count": 0,
+          "use_knowledge": false,
+          "use_memory": false
+        },
+        "trace_events": [
+          {
+            "at": "2026-10-26T20:42:29.844039500+00:00",
+            "elapsed_ms": 0,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {},
+            "phase": "started",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:32.606130400+00:00",
+            "elapsed_ms": 2762,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "backend": "cpu",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 2343
+            },
+            "phase": "worker",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:32.608220600+00:00",
+            "elapsed_ms": 2764,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "input_tokens": 68,
+              "resumed": false,
+              "source_bytes": 60
+            },
+            "phase": "chunk",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:35.863408300+00:00",
+            "elapsed_ms": 6019,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "attempt": 1,
+              "completed": true,
+              "first_token_ms": 1841,
+              "request_ms": 3254,
+              "usage": {
+                "cached_tokens": 0,
+                "decode_ms": 1412.459,
+                "input_tokens": 84,
+                "output_tokens": 21,
+                "prefill_ms": 1837.112
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:35.873715700+00:00",
+            "elapsed_ms": 6029,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "input_tokens": 79,
+              "resumed": false,
+              "source_bytes": 86
+            },
+            "phase": "chunk",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:39.506381900+00:00",
+            "elapsed_ms": 9662,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "attempt": 2,
+              "completed": true,
+              "first_token_ms": 818,
+              "request_ms": 3631,
+              "usage": {
+                "cached_tokens": 60,
+                "decode_ms": 2813.295,
+                "input_tokens": 95,
+                "output_tokens": 39,
+                "prefill_ms": 815.059
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:39.514568100+00:00",
+            "elapsed_ms": 9670,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "input_tokens": 78,
+              "resumed": false,
+              "source_bytes": 108
+            },
+            "phase": "chunk",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:43.008471400+00:00",
+            "elapsed_ms": 13164,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "attempt": 3,
+              "completed": true,
+              "first_token_ms": 810,
+              "request_ms": 3493,
+              "usage": {
+                "cached_tokens": 60,
+                "decode_ms": 2682.853,
+                "input_tokens": 94,
+                "output_tokens": 38,
+                "prefill_ms": 806.883
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:43.015418900+00:00",
+            "elapsed_ms": 13171,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "committed": 3,
+              "deferred": 0,
+              "remaining_selected": 0,
+              "requests": 3
+            },
+            "phase": "batch",
+            "schema": 1,
+            "task": "translation"
+          },
+          {
+            "at": "2026-10-26T20:42:43.144583800+00:00",
+            "elapsed_ms": 13300,
+            "job": "0973f8ff-b741-4f2d-9ff8-7c6006f72583",
+            "metrics": {
+              "committed": true,
+              "items": 3
+            },
+            "phase": "finished",
+            "schema": 1,
+            "task": "translation"
+          }
+        ],
+        "observed_owned_children": {
+          "11888": "D:\\omascribe\\artifacts\\windows-runtime-release-asr-20261027\\llama\\llama-server.exe"
+        },
+        "module_audits": [],
+        "killed_owned_gpu_pid": null,
+        "errors": [],
+        "meeting": "a28a0402-ea82-4306-a326-442dacaabd4a",
+        "exit_code": 0,
+        "remaining_owned_children": [],
+        "worker_backends": [
+          "cpu"
+        ],
+        "snapshot_at_stop": {
+          "cursor": 3,
+          "sections": 1,
+          "segments": 3,
+          "translations": 3,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 9953,
+            "notes_status": "",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        }
+      },
+      {
+        "schema": 1,
+        "mode": "finish",
+        "passed": false,
+        "source": "83d328728df962ea3ded18a6e71ec80535663140",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "83d328728df962ea3ded18a6e71ec80535663140",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "6c1111515e90deddccaac07e0fea5b3ea797bd883836ae801279d66d7b677871",
+            "target": "x86_64-pc-windows-msvc"
+          },
+          "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+          "inference_source_tree_dirty": false,
+          "platform": "Windows-10-10.0.19045-SP0",
+          "machine": "AMD64",
+          "python": "3.12.14",
+          "cli_sha256": "8ebbcfad42ea54be528dec93535f5aa2c682978e431ac7101bcb29cfcf6cd66c",
+          "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+          "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+          "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "preferences": {
+          "appearance": {
+            "mode": "system",
+            "theme": "neutral",
+            "accent": "#d83b36",
+            "background": "",
+            "foreground": "",
+            "font": "system",
+            "font_size": 13
+          },
+          "asr_model": "zipformer-small",
+          "llm_model": "qwen3-1.7b",
+          "threads": 2,
+          "context_size": 2048,
+          "inference_backend": "auto",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": false,
+          "translation_mode": "bilingual",
+          "minutes_language": "zh",
+          "diarization": false,
+          "speaker_count": 0,
+          "use_knowledge": false,
+          "use_memory": false
+        },
+        "trace_events": [
+          {
+            "at": "2026-10-27T00:04:46.660502900+00:00",
+            "elapsed_ms": 0,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {},
+            "phase": "started",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:04:47.509797700+00:00",
+            "elapsed_ms": 849,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "cursor": 13,
+              "selected": 13
+            },
+            "phase": "retrieval",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:04:47.510965200+00:00",
+            "elapsed_ms": 850,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "enabled": false,
+              "fresh": null,
+              "mode": "full",
+              "selected": 13
+            },
+            "phase": "article_state",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:04:55.438471700+00:00",
+            "elapsed_ms": 8777,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "backend": "cuda",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 1748
+            },
+            "phase": "worker",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:04:55.442221200+00:00",
+            "elapsed_ms": 8781,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "input_tokens": 505,
+              "mode": "full"
+            },
+            "phase": "article_prompt",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:04:59.443204400+00:00",
+            "elapsed_ms": 12782,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "attempt": 1,
+              "completed": true,
+              "first_token_ms": 1567,
+              "request_ms": 3999,
+              "usage": {
+                "cached_tokens": 0,
+                "decode_ms": 2431.67,
+                "input_tokens": 522,
+                "output_tokens": 171,
+                "prefill_ms": 1563.569
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:01.354381300+00:00",
+            "elapsed_ms": 14693,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "attempt": 2,
+              "completed": true,
+              "first_token_ms": 1292,
+              "request_ms": 1903,
+              "usage": {
+                "cached_tokens": 3,
+                "decode_ms": 610.511,
+                "input_tokens": 446,
+                "output_tokens": 45,
+                "prefill_ms": 1287.581
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:01.490876100+00:00",
+            "elapsed_ms": 14830,
+            "job": "e7f75b9c-67f1-4a26-af72-605411b53190",
+            "metrics": {
+              "committed": true,
+              "items": 1
+            },
+            "phase": "finished",
+            "schema": 1,
+            "task": "minutes"
+          }
+        ],
+        "observed_owned_children": {
+          "23196": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+        },
+        "module_audits": [
+          {
+            "pid": 23196,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "killed_owned_gpu_pid": null,
+        "errors": [
+          "AssertionError: Incomplete minutes cursor"
+        ],
+        "meeting": "cca7c589-d733-4534-847e-079503e7b80b",
+        "exit_code": 0,
+        "remaining_owned_children": [],
+        "worker_backends": [
+          "cuda"
+        ]
+      },
+      {
+        "schema": 1,
+        "mode": "finish",
+        "passed": true,
+        "source": "83d328728df962ea3ded18a6e71ec80535663140",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "83d328728df962ea3ded18a6e71ec80535663140",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "6c1111515e90deddccaac07e0fea5b3ea797bd883836ae801279d66d7b677871",
+            "target": "x86_64-pc-windows-msvc"
+          },
+          "core_and_harness_source_sha256": "5a60d714eff9c09070808629552c7ef17da85f406051ecc33b74f89fb3b10717",
+          "inference_source_tree_dirty": false,
+          "platform": "Windows-10-10.0.19045-SP0",
+          "machine": "AMD64",
+          "python": "3.12.14",
+          "cli_sha256": "8ebbcfad42ea54be528dec93535f5aa2c682978e431ac7101bcb29cfcf6cd66c",
+          "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+          "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+          "suite_revision": "83d328728df962ea3ded18a6e71ec80535663140",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "removed_overrides": [
+          "CUDA_PATH",
+          "CUDA_PATH_V11_5"
+        ],
+        "path_restricted": true,
+        "preferences": {
+          "appearance": {
+            "mode": "system",
+            "theme": "neutral",
+            "accent": "#d83b36",
+            "background": "",
+            "foreground": "",
+            "font": "system",
+            "font_size": 13
+          },
+          "asr_model": "zipformer-small",
+          "llm_model": "qwen3-1.7b",
+          "threads": 2,
+          "context_size": 2048,
+          "inference_backend": "auto",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": false,
+          "translation_mode": "bilingual",
+          "minutes_language": "zh",
+          "diarization": false,
+          "speaker_count": 0,
+          "use_knowledge": false,
+          "use_memory": false
+        },
+        "trace_events": [
+          {
+            "at": "2026-10-27T00:05:45.124966900+00:00",
+            "elapsed_ms": 0,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {},
+            "phase": "started",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:46.274052300+00:00",
+            "elapsed_ms": 1149,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "cursor": 16,
+              "selected": 16
+            },
+            "phase": "retrieval",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:46.275595400+00:00",
+            "elapsed_ms": 1150,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "enabled": false,
+              "fresh": null,
+              "mode": "full",
+              "selected": 16
+            },
+            "phase": "article_state",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:55.609094+00:00",
+            "elapsed_ms": 10484,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "backend": "cuda",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 2146
+            },
+            "phase": "worker",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:55.613149900+00:00",
+            "elapsed_ms": 10488,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "input_tokens": 577,
+              "mode": "full"
+            },
+            "phase": "article_prompt",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:58.989402200+00:00",
+            "elapsed_ms": 13864,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "attempt": 1,
+              "completed": true,
+              "first_token_ms": 1798,
+              "request_ms": 3374,
+              "usage": {
+                "cached_tokens": 0,
+                "decode_ms": 1575.696,
+                "input_tokens": 594,
+                "output_tokens": 104,
+                "prefill_ms": 1794.026
+              }
+            },
+            "phase": "generation",
+            "schema": 1,
+            "task": "minutes"
+          },
+          {
+            "at": "2026-10-27T00:05:59.143006700+00:00",
+            "elapsed_ms": 14018,
+            "job": "aa911a70-10a1-44e7-b279-112d258c1ccd",
+            "metrics": {
+              "committed": true,
+              "items": 1
+            },
+            "phase": "finished",
+            "schema": 1,
+            "task": "minutes"
+          }
+        ],
+        "observed_owned_children": {
+          "25160": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+        },
+        "module_audits": [
+          {
+            "pid": 25160,
+            "modules": [
+              {
+                "name": "cublas64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cublaslt64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "cudart64_12.dll",
+                "source": "component"
+              },
+              {
+                "name": "nvcuda.dll",
+                "source": "system_driver"
+              }
+            ]
+          }
+        ],
+        "killed_owned_gpu_pid": null,
+        "errors": [],
+        "meeting": "cca7c589-d733-4534-847e-079503e7b80b",
+        "exit_code": 0,
+        "remaining_owned_children": [],
+        "worker_backends": [
+          "cuda"
+        ],
+        "snapshot_at_stop": {
+          "cursor": 16,
+          "sections": 1,
+          "segments": 16,
+          "translations": 16,
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 2999,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          }
+        }
+      }
+    ],
+    "unattended_settlement": "not measured",
+    "summary_semantic_quality": "not accepted",
+    "explanation": "Translate completed16/16. First explicit generation committed cursor13/16, failing the one-call full-cursor harness assertion; second bounded generation reached16/16. Preserve first failure and do not infer automatic post-stop completion."
+  },
+  "earlier_failures": {
+    "preserved": true,
+    "old_cuda_replay_lag_max_ms": 2880,
+    "old_cpu_asr_only_lag_max_ms": [
+      3264,
+      3136,
+      3456
+    ],
+    "reports": [
+      "windows-signed-lifecycle-2026-10-27.json",
+      "windows-recording-contention-2026-10-27.json"
+    ]
+  },
+  "pending_release_gates": [
+    "Unsupported legacy summary assertions and stale-budget evidence remain failed; this recording exercise is not semantic summary gold.",
+    "Incremental article was rejected and both experimental switches remain off.",
+    "Real allocation OOM fallback and physical microphone acceptance are not established.",
+    "Host has an installed CUDA11.5 toolkit excluded from test PATH/overrides; physically SDK-free machine not tested."
+  ],
+  "limits": [
+    "Synthetic fictional Zira PCM, no microphone or user meeting. Sampled ASR lag is not visible caption latency.",
+    "15s reversed-order pairs isolate replay pacing with byte-identical PCM/ASR units; OS caches, frequency and thermal state were uncontrolled.",
+    "The92s new-source CUDA arm is a single operational acceptance, not a matched old/new cost or performance study; prior failed arms keep their original source identities.",
+    "Live CUDA translation/minutes and exact citations are checked; stop cursor8/16 and translation15/16 are reported separately from explicit later completion.",
+    "ASR ready profile used preverified warm model pages and supports no production thread-policy change.",
+    "No SDK rebuild, new catalog, stable-pointer promotion, installer or release approval."
+  ],
+  "references": {
+    "ffmpeg_options": "https://www.ffmpeg.org/ffmpeg-all.html#Advanced-options",
+    "ffmpeg_demux_source": "https://ffmpeg.org/doxygen/trunk/ffmpeg__demux_8c_source.html",
+    "candidate": "https://github.com/EazyLee30/omascribe/releases/tag/acceleration-ci-40367160891"
+  },
+  "raw_evidence_sha256": {
+    "windows-asr-ready-profile/report.json": "0160a49e0a1b0650d7381781ffbbc22a4af3ef80622fd3b92a9a5d5f01d5ecdf",
+    "windows-replay-pacing-profile/report.json": "0901e529c4682dfe232e5e15dce80874d1006450357dab5654466017a704ceb0",
+    "windows-replay-pacing-comparison/report.json": "963339744f9ec7f51b6e4fdad0996c2741e63fcef24940395be94762feb82103",
+    "windows-gpu-lifecycle-40367160891/cli-verify-01.json": "807136534b908ff93d2c516b44f5ccefb01d19c131ed56456992f9b26877b57c",
+    "windows-gpu-lifecycle-40367160891/cli-replay-02.json": "a241a956dad7076b7ea39298a74f462a70b898085451efd5499788e7bc664d23",
+    "windows-gpu-lifecycle-40367160891/cli-replay-02-stdout.json": "702fcb6fb423a463f352a43d64b10c7aa4c56646cc5843a111f42b29e74d99cf",
+    "windows-gpu-lifecycle-40367160891/cli-replay-02-telemetry.jsonl": "d66153d706eb17d5d312b03af234c04aad4b5e3066404857eb09f2cb1b9f0c15",
+    "windows-gpu-lifecycle-40367160891/paced-replay-explicit-completion.json": "5c863acdb6083064b71b7445a10986800bfb8ce258bbad352cc7cf0c040d1638",
+    "windows-gpu-lifecycle-40367160891/paced-replay-explicit-completion-retry.json": "a2ace593b63285bec380ad2d35a933b4ab98b20784cb028e85ddd71d313fce3a",
+    "windows-gpu-lifecycle-40367160891/cli-drain-01.json": "afab72ce24102587b15ebd842666f058a8c1f1c2cab3635d9410487f3cf759d9",
+    "windows-gpu-lifecycle-40367160891/cli-finish-01.json": "a38cc618c4279702bb1c09f4b6494bc509beecaa0fc1730a69aaa5e12f8d4f41",
+    "windows-gpu-lifecycle-40367160891/cli-finish-02.json": "a95eb249147b53549c67239802238b55a03e4b42e43a01d339e707d666950d69",
+    "windows-gpu-lifecycle-40367160891/cli-finish-01-stdout.json": "1c49f4900f0bee2c11c19014de72604d4fd35d6dbf785a59da12fd769a60b2e3",
+    "windows-gpu-lifecycle-40367160891/cli-finish-02-stdout.json": "3b0290607857aef9a9dc1bfaff0b9da5f95e52bf4a80f0f96daad897c1521871"
+  }
+}
