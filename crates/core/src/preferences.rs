@@ -85,7 +85,7 @@ impl Preferences {
         }
         let a = &self.appearance;
         if !["system", "light", "dark"].contains(&a.mode.as_str())
-            || !["forest", "neutral", "slate"].contains(&a.theme.as_str())
+            || !["forest", "neutral", "slate", "omarchy"].contains(&a.theme.as_str())
             || !["system", "serif", "mono"].contains(&a.font.as_str())
         {
             bail!("Invalid appearance option");

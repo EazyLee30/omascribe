@@ -15,16 +15,10 @@ use std::{
 };
 
 pub fn devices() -> Result<Vec<Device>> {
-    let mut devices = vec![Device {
-        id: "auto".into(),
-        name: "System default microphone".into(),
-    }];
+    let mut devices = vec![Device::microphone("auto", "System default microphone")];
     for device in cpal::default_host().input_devices()? {
         let name = device.name()?;
-        devices.push(Device {
-            id: name.clone(),
-            name,
-        });
+        devices.push(Device::microphone(name.clone(), name));
     }
     Ok(devices)
 }

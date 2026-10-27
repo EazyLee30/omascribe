@@ -30,7 +30,26 @@ pub struct Active {
     pub resumable: bool,
     transition: Mutex<()>,
     pub samples: AtomicU64,
+    /// Session sleep/idle hold. Present only while frames are arriving.
+    hold: Mutex<Option<crate::inhibit::Inhibitor>>,
 }
+
+impl Active {
+    /// Hold the desktop awake for as long as this take is capturing.
+    fn hold_awake(&self) {
+        let mut hold = self.hold.lock().unwrap();
+        if hold.as_ref().is_none_or(|inhibitor| !inhibitor.held()) {
+            *hold = Some(crate::inhibit::Inhibitor::acquire());
+        }
+    }
+    /// Release the hold on pause, finish and failure.
+    fn release_awake(&self) {
+        if let Some(mut inhibitor) = self.hold.lock().unwrap().take() {
+            inhibitor.release();
+        }
+    }
+}
+
 pub struct Engine {
     pub root: PathBuf,
     pub preferences: Mutex<crate::preferences::Preferences>,
@@ -538,6 +557,7 @@ impl Engine {
             resumable: input.is_none(),
             transition: Mutex::new(()),
             samples: AtomicU64::new(initial),
+            hold: Mutex::new(None),
         });
         if let Err(error) = self.store.lock().unwrap().save_take(&RecordingTake {
             id: Uuid::new_v4().to_string(),
@@ -570,9 +590,15 @@ impl Engine {
         };
         *active_guard = Some(active.clone());
         drop(active_guard);
+        // Hold only for a real capture. File imports and replay finish quickly and
+        // should not keep a laptop awake.
+        if live {
+            active.hold_awake();
+        }
         if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq) {
             let _ = child.kill();
             let _ = child.wait();
+            active.release_awake();
             active.capture_done.store(true, Ordering::SeqCst);
             active.worker_done.store(true, Ordering::SeqCst);
             self.finish_take(&active, true)?;
@@ -626,6 +652,9 @@ impl Engine {
                 status.level = 0.;
                 return;
             }
+            // Capture is over, whatever the outcome: never keep the machine
+            // awake because a take ended abnormally.
+            active.release_awake();
             active.capture_done.store(true, Ordering::SeqCst);
             active.paused.store(false, Ordering::SeqCst);
             let _ = fs::remove_file(dir.join("capture.paused"));
@@ -843,6 +872,8 @@ impl Engine {
         if active.capture_running.load(Ordering::SeqCst) {
             platform::stop_process(pid, true);
         }
+        // A pause may last a long time; let the desktop idle again.
+        active.release_awake();
         Ok(())
     }
     pub fn resume_recording(self: &Arc<Self>) -> Result<()> {
@@ -871,6 +902,7 @@ impl Engine {
         *active.capture_stop.lock().unwrap() = Some(child.stop.clone());
         active.paused.store(false, Ordering::SeqCst);
         let _ = fs::remove_file(dir.join("capture.paused"));
+        active.hold_awake();
         let db = self.store.lock().unwrap();
         let mut meeting = db.meeting(&active.id)?;
         meeting.status = "recording".into();
@@ -898,6 +930,7 @@ impl Engine {
             platform::stop_process(pid, true);
         } else if active.paused.swap(false, Ordering::SeqCst) {
             let dir = self.audio_dir(&active.id)?;
+            active.release_awake();
             self.finish_take(active, false)?;
             let db = self.store.lock().unwrap();
             let mut meeting = db.meeting(&active.id)?;
@@ -960,6 +993,7 @@ impl Engine {
             resumable: false,
             transition: Mutex::new(()),
             samples: AtomicU64::new(samples),
+            hold: Mutex::new(None),
         });
         *guard = Some(active.clone());
         drop(guard);
@@ -1107,23 +1141,12 @@ impl Engine {
             "tokens.txt",
         ];
         let mem = platform::available_memory_mib();
-        let accent_path = PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
-            .join(".local/state/omarchy/current/theme/colors.toml");
-        let accent = fs::read_to_string(accent_path)
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .find(|l| l.trim_start().starts_with("accent ="))
-                    .map(|l| {
-                        l.split('=')
-                            .nth(1)
-                            .unwrap_or("")
-                            .trim()
-                            .trim_matches('"')
-                            .to_string()
-                    })
-            })
-            .filter(|s| s.starts_with('#') && s.len() == 7)
+        // Follow the live Omarchy theme when there is one; otherwise keep the
+        // built-in accent so the app is not styled by a stale copied color.
+        let theme = crate::desktheme::current();
+        let accent = theme
+            .as_ref()
+            .map(|t| t.accent.clone())
             .unwrap_or_else(|| "#e5b866".into());
         Diagnostics {
             data_dir: self.root.to_string_lossy().into_owned(),
@@ -1149,6 +1172,7 @@ impl Engine {
             ),
             available_memory_mib: mem,
             accent,
+            desktop_theme: theme,
             version: env!("CARGO_PKG_VERSION").into(),
         }
     }
@@ -1156,6 +1180,10 @@ impl Engine {
         self.cancel_all_downloads();
         let _ = self.stop_recording();
         self.cancel_notes();
+        // Drop the session hold immediately; shutdown must not wait for a drain.
+        if let Some(active) = self.active.lock().unwrap().as_ref() {
+            active.release_awake();
+        }
         platform::stop_process(self.diarization_pid.load(Ordering::SeqCst), false);
         for _ in 0..30 {
             if self

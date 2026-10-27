@@ -10,6 +10,7 @@ import {
   getPreferences,
   savePreferences,
   defaultAppearance,
+  hasDesktopTheme,
   type Preferences,
   type ModelStatus,
   type Hardware,
@@ -253,13 +254,16 @@ export async function mountSettings(
           ["forest", tr("森林", "Forest")],
           ["neutral", tr("简洁", "Neutral", "簡潔")],
           ["slate", tr("岩蓝", "Slate", "岩藍")],
+          ...(hasDesktopTheme()
+            ? [["omarchy", tr("跟随桌面主题", "Desktop theme", "跟隨桌面主題")]]
+            : []),
         ]
           .map(
             ([v, s]) =>
               `<option value="${v}" ${a.theme === v ? "selected" : ""}>${s}</option>`,
           )
           .join("")}</select>`,
-      )}${row(tr("强调色", "Accent", "強調色"), `<div class="color-control"><input type="color" data-appearance="accent" value="${a.accent}" aria-label="${tr("强调色", "Accent", "強調色")}"><code>${a.accent.toUpperCase()}</code></div>`)}${[
+      )}${row(tr("强调色", "Accent", "強調色"), `<div class="color-control"><input type="color" data-appearance="accent" value="${a.accent}" aria-label="${tr("强调色", "Accent", "強調色")}" ${a.theme === "omarchy" ? "disabled" : ""}><code>${a.theme === "omarchy" ? tr("来自桌面", "From desktop", "來自桌面") : a.accent.toUpperCase()}</code></div>`)}${[
         "background",
         "foreground",
       ]
@@ -299,10 +303,40 @@ export async function mountSettings(
       content.innerHTML = modelBody();
     } else if (section === "general") {
       const devices =
-        await invoke<{ id: string; name: string }[]>("list_devices");
+        await invoke<{ id: string; name: string; kind?: string }[]>(
+          "list_devices",
+        );
       if (!alive || section !== active) return;
       const views = await getViewSettings();
-      content.innerHTML = `${header(tr("常规", "General", "一般"), tr("语言、输入设备和工作区行为。", "Language, input device, and workspace behavior.", "語言、輸入裝置與工作區行為。"))}<div class="settings-group">${row(t("language"), `<select id="settings-language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option></select>`)}${row(t("device"), `<select id="settings-device">${devices.map((d) => `<option value="${esc(d.id)}">${esc(d.id === "auto" ? t("defaultDevice") : d.name)}</option>`).join("")}</select>`)}</div><div class="settings-group">${row(t("displaySettings"), `<button class="outline" data-settings="display">${tr("调整", "Configure", "調整")}</button>`, tr("悬浮转写、屏幕字幕与面板布局。", "Floating transcript, screen captions, and panel layout.", "浮動轉寫、螢幕字幕與面板配置。"))}</div><div class="settings-group">${row(tr("桌面录音小助手", "Desktop recording companion", "桌面錄音小助手"), `<input id="settings-companion" type="checkbox" role="switch" ${views.companion_enabled ? "checked" : ""}>`, tr("显示在整个桌面；点击展开后再开始录音。可拖动位置。", "Appears on the desktop. Click to open controls, then start recording. Drag to reposition.", "顯示於整個桌面；點擊展開後再開始錄音，可拖曳位置。"))}${row(tr("小助手动效", "Companion animation", "助手動效"), `<input id="settings-companion-animation" type="checkbox" role="switch" ${views.companion_animation ? "checked" : ""}>`, tr("待机、眨眼和记录动作；遵循系统减少动态效果设置。", "Idle, blink and writing poses. Respects the system reduced-motion preference.", "待機、眨眼及記錄動作；遵循系統減少動態效果設定。"))}</div><div class="privacy-card">${glyph("storage")}<h2>${tr("保存在这台电脑", "Saved on this device", "儲存在這台電腦")}</h2><p>${tr("录音、转写、笔记、记忆和模型均保存在本地。导出配置不会包含会议、笔记或记忆内容。", "Audio, transcripts, notes, memory, and models are stored locally. Shared configurations do not contain meetings, notes, or memory.", "錄音、轉寫、筆記、記憶與模型皆保存在本機。分享設定不含個人內容。")}</p></div>`;
+      const option = (d: { id: string; name: string }) =>
+        `<option value="${esc(d.id)}">${esc(d.id === "auto" ? t("defaultDevice") : d.name)}</option>`;
+      const mixed = devices.filter((d) => d.kind === "mixed");
+      const system = devices.filter((d) => d.kind === "system");
+      const microphones = devices.filter(
+        (d) => d.kind !== "system" && d.kind !== "mixed",
+      );
+      const grouped = (label: string, items: typeof devices) =>
+        items.length
+          ? `<optgroup label="${label}">${items.map(option).join("")}</optgroup>`
+          : "";
+      const deviceOptions =
+        grouped(tr("麦克风", "Microphones", "麥克風"), microphones) +
+        grouped(tr("会议混合", "Meeting mix", "會議混合"), mixed) +
+        grouped(tr("仅系统声音", "System audio only", "僅系統聲音"), system);
+      const deviceHelp = mixed.length
+        ? tr(
+            "“麦克风 + …”同时录制你的声音和浏览器、会议软件播放的声音。选“仅系统声音”只录对方。两者都需要 PipeWire；不支持同一设备的回声消除。",
+            "“Microphone + …” records you and what apps play at once. “System audio only” captures just the other side. Both need PipeWire; echo cancellation is not applied.",
+            "「麥克風 + …」同時錄製你的聲音與瀏覽器、會議軟體播放的聲音；「僅系統聲音」只錄對方。兩者都需要 PipeWire，未套用回音消除。",
+          )
+        : system.length
+          ? tr(
+              "选“系统声音”只录制浏览器或会议软件播放的声音。",
+              "A System audio entry records only what apps play.",
+              "選「系統聲音」只錄製瀏覽器或會議軟體播放的聲音。",
+            )
+          : "";
+      content.innerHTML = `${header(tr("常规", "General", "一般"), tr("语言、输入设备和工作区行为。", "Language, input device, and workspace behavior.", "語言、輸入裝置與工作區行為。"))}<div class="settings-group">${row(t("language"), `<select id="settings-language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option></select>`)}${row(t("device"), `<select id="settings-device">${deviceOptions}</select>`, deviceHelp)}</div><div class="settings-group">${row(t("displaySettings"), `<button class="outline" data-settings="display">${tr("调整", "Configure", "調整")}</button>`, tr("悬浮转写、屏幕字幕与面板布局。", "Floating transcript, screen captions, and panel layout.", "浮動轉寫、螢幕字幕與面板配置。"))}</div><div class="settings-group">${row(tr("桌面录音小助手", "Desktop recording companion", "桌面錄音小助手"), `<input id="settings-companion" type="checkbox" role="switch" ${views.companion_enabled ? "checked" : ""}>`, tr("显示在整个桌面；点击展开后再开始录音。可拖动位置。", "Appears on the desktop. Click to open controls, then start recording. Drag to reposition.", "顯示於整個桌面；點擊展開後再開始錄音，可拖曳位置。"))}${row(tr("小助手动效", "Companion animation", "助手動效"), `<input id="settings-companion-animation" type="checkbox" role="switch" ${views.companion_animation ? "checked" : ""}>`, tr("待机、眨眼和记录动作；遵循系统减少动态效果设置。", "Idle, blink and writing poses. Respects the system reduced-motion preference.", "待機、眨眼及記錄動作；遵循系統減少動態效果設定。"))}</div><div class="privacy-card">${glyph("storage")}<h2>${tr("保存在这台电脑", "Saved on this device", "儲存在這台電腦")}</h2><p>${tr("录音、转写、笔记、记忆和模型均保存在本地。导出配置不会包含会议、笔记或记忆内容。", "Audio, transcripts, notes, memory, and models are stored locally. Shared configurations do not contain meetings, notes, or memory.", "錄音、轉寫、筆記、記憶與模型皆保存在本機。分享設定不含個人內容。")}</p></div>`;
       (root.querySelector("#settings-language") as HTMLSelectElement).value =
         locale;
       (root.querySelector("#settings-device") as HTMLSelectElement).value =
