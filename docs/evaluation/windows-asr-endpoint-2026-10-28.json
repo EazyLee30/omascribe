@@ -1,0 +1,30 @@
+{
+  "source_revision": "81301639608ad559e365d016670cc86eb368b52c",
+  "change": "Isolated worker rule 3 forced endpoint threshold 12 s to 24 s",
+  "worker_sha256": "53e212b35f0d19974e5d1d4d1c93281e6bdc3a08a40fa123fbd0c83126ad3937",
+  "changed_main_rs_sha256": "16252bcacf3364c56456450595984b4c99f0a37c534b0dd0ca8bbc8df31d10fe",
+  "baseline_worker_sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+  "cli_sha256": "7512ba3c498a6061592e8164ea52afea7ee6eda13dd403922b0172f01cfd79ec",
+  "results": {
+    "small": {
+      "names_detected": 0,
+      "names_expected": 4,
+      "segments_baseline": 3,
+      "segments_experiment": 3,
+      "text_identical_to_baseline": true
+    },
+    "quality": {
+      "names_detected": 1,
+      "names_expected": 4,
+      "detected": [
+        "Alice"
+      ],
+      "segments_baseline": 2,
+      "segments_experiment": 1,
+      "text_difference": "one space",
+      "mixed_unit_edits": 0
+    }
+  },
+  "conclusion": "No improvement in requested names in one recording; default endpoint not changed.",
+  "limitations": "Single private recording, not broad accuracy or latency validation. The experimental and baseline workers were separately built; build differences cannot be excluded. Original audio, transcript and hashes of either are omitted."
+}
