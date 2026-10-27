@@ -2,9 +2,30 @@
 
 Updated 2026-10-27. Actual Settings download, test-enable, restart, Use CPU and
 an owned CUDA process fault followed by exactly one CPU retry have Windows
-evidence. Corrected paced-file replay now passes the original backlog gate;
-automatic post-stop completion and release quality remain unaccepted. CPU stays in the base installer;
+evidence. Corrected paced-file replay passes the original backlog gate, and a new
+bounded automatic post-stop fixture finishes16/16. Semantic quality, physical
+capture and allocation OOM still prevent release approval. CPU stays in the base installer;
 CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
+
+## Automatic post-stop fixture
+
+At CLI build `8bcc1f7` / evidence tree `a8feebe`, shared `cc10b6e`, a fresh92s
+fictional replay leaves a fixed90s post-stop budget. Both experiments stay off;
+no explicit Translate/Generate or manual UI actions are used during this arm.
+The original2500ms admission gate passes at1792ms (p95:444ms, p50:240ms).
+PCM remains byte-exact and ASR units match the83d3287 replay.
+
+First stopped telemetry shows minutes8/16, translation15/16. The normal scheduler
+then completes both16/16 in82681ms after capture finishes, within the90s budget.
+All18 worker events use CUDA; exact citations, system/component DLL provenance
+and child cleanup pass. Completion is **not instant**: the roughly83s wait is
+retained as a product latency limitation. This single synthetic operational case
+does not establish microphone capture, natural speech/summary quality or general
+performance. Prior manual single-call and startup failures are retained.
+
+Exact application/worker/model/FFmpeg hashes, telemetry, module audits, source
+identity, stop/final states and full metadata trace:
+[automatic settlement evidence](../evaluation/windows-cuda-automatic-settle-2026-10-27.json).
 
 ## Latest shared validation sync
 
@@ -27,8 +48,9 @@ The narrow re-assessment uses the same immutable outputs, without a model retry.
 Exact source/binary/model hashes, unchanged before/after source fields, raw
 failure explanation and manual evidence:
 [passive/contracted negation](../evaluation/windows-passive-negation-2026-10-27.json).
-Native UI/GPU were not repeated for this validation-only delta; replay evidence
-below remains bound to83d3287. No full22-case or release pass is implied.
+Native UI was not repeated for this validation-only delta. Earlier replay evidence
+below remains bound to83d3287; the subsequent automatic fixture above uses8bcc1f7.
+No full22-case or release pass is implied.
 
 ## Replay pacing correction and current CUDA evidence
 
@@ -263,5 +285,5 @@ to the unified pipeline. Keep startup backlog, untriggered allocation OOM,
 physical microphone coverage and failed attempts visible. The earlier scheduler
 regression passed; the new incremental fact/state gate failed and stays disabled.
 Keep the shared legacy stale-budget finding in the release backlog too. Finish
-automatic post-stop completion, physical capture and model-quality gates before approval. Uploading a Windows
+physical capture, allocation OOM and model-quality gates before approval. Uploading a Windows
 EXE does not activate Settings downloads.
