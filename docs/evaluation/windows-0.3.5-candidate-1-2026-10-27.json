@@ -1,0 +1,646 @@
+{
+  "schema": 1,
+  "kind": "windows_0.3.5_candidate1_acceptance",
+  "date": "2026-10-27",
+  "version": "0.3.5",
+  "candidate_sha": "77999121ae15a14f57cd58b918ebaed18b97701a",
+  "passed": false,
+  "release_eligible": false,
+  "corpus": {
+    "execution": "production automatic scheduler",
+    "cases": 28,
+    "phases": 39,
+    "pattern_passed": 26,
+    "pattern_failed": 2,
+    "manual_checked_cases": 28,
+    "manual_checked_phase_snapshots": 39,
+    "manual_grounding_passed": 25,
+    "combined_case_contract_and_manual_passed": 24,
+    "overall_accepted": false,
+    "backend": "cpu",
+    "worker_events": 38,
+    "all_worker_events_cpu": true,
+    "incremental_enabled": false,
+    "catchup_enabled": false,
+    "per_phase_settle_budget_seconds": 120,
+    "code_binary_catalog_unchanged": true,
+    "total_case_seconds": 612.357
+  },
+  "identity": {
+    "schema": 1,
+    "candidate_sha": "77999121ae15a14f57cd58b918ebaed18b97701a",
+    "version": "0.3.5",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "77999121ae15a14f57cd58b918ebaed18b97701a",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "0f8f620d669d41b6a2211e4c4c674042efd3304e45edacfd4eb33b7e90ad467f",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "d7c214c24b4faed8a0ee7b12d47d34fb96b83b8c14c28685ea27156a1e8fe90c",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "4d0d70e76f82bfe92cbfbaebe819d226c1d28bec9d3e54f37d20cfb31411ff42",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "77999121ae15a14f57cd58b918ebaed18b97701a",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture_sha256": "9f2ad9564367b7e2051b1da098e1b50d336653ea111b40f533e2036b64f5871e",
+    "cases": [
+      "zh_budget_guess",
+      "en_owner_and_deadline",
+      "zh_correction",
+      "bilingual_scope",
+      "zh_calendar_citations",
+      "zh_connected_minutes",
+      "zh_product_spelling",
+      "zh_empty_greetings",
+      "zh_phased_correction",
+      "zh_named_speakers",
+      "en_minutes_from_zh",
+      "zh_minutes_from_en",
+      "zh_long_context_state",
+      "zh_human_paragraph_protected",
+      "zh_note_name_spelling",
+      "en_generic_note_name",
+      "zh_name_context_is_not_evidence",
+      "zh_noisy_name_no_added_topics",
+      "zh_windows_gpu_keyword_lines",
+      "en_incremental_separate_topics",
+      "zh_incremental_withdrawal",
+      "en_incremental_completion",
+      "en_sparse_unapproved",
+      "en_sparse_unapproved_passive",
+      "en_explicit_meeting_closure",
+      "en_budget_invoice_same_amount",
+      "en_completion_independent_pending",
+      "zh_incremental_completion"
+    ],
+    "phase_count": 39,
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "cpu",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "off",
+      "minutes_language": "auto",
+      "diarization": false,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "gguf_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_scope": "CLI snapshot, Windows system directories and Git cmd directory for source provenance; no CUDA SDK paths.",
+    "method": "Full28 production automatic scheduler with120s per-phase settlement; fictional seeded transcripts, CPU baseline, experiments0. No ASR or microphone in this corpus. Manual semantic review required separately."
+  },
+  "results": [
+    {
+      "case": "zh_budget_guess",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 13.531,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 14.156,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_correction",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 16.36,
+      "generation_runs": 1
+    },
+    {
+      "case": "bilingual_scope",
+      "pattern_passed": false,
+      "manual_grounding_passed": false,
+      "accepted": false,
+      "errors": [
+        "Missing: 离线|线下转录",
+        "Missing: 周五|星期五"
+      ],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 15.125,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_calendar_citations",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 16.141,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_connected_minutes",
+      "pattern_passed": true,
+      "manual_grounding_passed": false,
+      "accepted": false,
+      "errors": [],
+      "coverage": 5,
+      "phases": 1,
+      "seconds": 22.39,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_product_spelling",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 15.766,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_empty_greetings",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 6.109,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_phased_correction",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 5,
+      "phases": 2,
+      "seconds": 35.359,
+      "generation_runs": 2
+    },
+    {
+      "case": "zh_named_speakers",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 16.734,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "pattern_passed": true,
+      "manual_grounding_passed": false,
+      "accepted": false,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 17.968,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "pattern_passed": false,
+      "manual_grounding_passed": true,
+      "accepted": false,
+      "errors": [
+        "Missing: Morgan"
+      ],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 20.969,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_long_context_state",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 10,
+      "phases": 2,
+      "seconds": 56.125,
+      "generation_runs": 2
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 3,
+      "phases": 2,
+      "seconds": 24.656,
+      "generation_runs": 2
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 16.953,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_generic_note_name",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 14.157,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 13.75,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 5,
+      "phases": 1,
+      "seconds": 13.75,
+      "generation_runs": 1
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 1,
+      "seconds": 17.828,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 4,
+      "phases": 4,
+      "seconds": 60.11,
+      "generation_runs": 4
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 3,
+      "phases": 3,
+      "seconds": 43.64,
+      "generation_runs": 3
+    },
+    {
+      "case": "en_incremental_completion",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 2,
+      "phases": 2,
+      "seconds": 24.516,
+      "generation_runs": 2
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 14.156,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 13.546,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 1,
+      "phases": 1,
+      "seconds": 13.781,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 3,
+      "phases": 1,
+      "seconds": 16.375,
+      "generation_runs": 1
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 3,
+      "phases": 2,
+      "seconds": 34.531,
+      "generation_runs": 2
+    },
+    {
+      "case": "zh_incremental_completion",
+      "pattern_passed": true,
+      "manual_grounding_passed": true,
+      "accepted": true,
+      "errors": [],
+      "coverage": 3,
+      "phases": 2,
+      "seconds": 23.875,
+      "generation_runs": 2
+    }
+  ],
+  "failures": [
+    {
+      "category": "factual_omission",
+      "severity": "release_blocker",
+      "finding": "Whole English source omitted: offline prototype/review and Friday test disappear while cursor2/2 and both citations claim coverage.",
+      "case": "bilingual_scope",
+      "pattern_passed": false,
+      "source": [
+        "The offline transcription prototype is ready for review. We will test it on Friday.",
+        "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+      ],
+      "focus": "**录音** **offline transcription** **系统音频**",
+      "actual_sources": [
+        "The offline transcription prototype is ready for review. We will test it on Friday.",
+        "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+      ],
+      "output": [
+        "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+      ],
+      "cursor": 2,
+      "quotes": [
+        "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+        "The offline transcription prototype is ready for review. We will test it on Friday."
+      ],
+      "last_job_attempts": 1,
+      "last_job_validation_error": null,
+      "raw_stdout_sha256": "43704740d95c20bd5a1e720e2e317c48fed6e1df6c78294f48e3aec73198e495",
+      "last_generation_sha256": "840d56aa9c295a53f752802fdae63e4973be975c618550a2d018e5e8bd2b2d98"
+    },
+    {
+      "category": "reversed_action",
+      "severity": "release_blocker",
+      "finding": "Complaint that sentence-by-sentence minutes are disconnected becomes an instruction to use sentence-by-sentence output.",
+      "case": "zh_connected_minutes",
+      "pattern_passed": true,
+      "source": [
+        "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+        "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。",
+        "引用放在正文旁边的小标里就行，点一下再看原话。",
+        "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+        "这两项调整还没有完成，先记录下来，完成以后再一起验证。"
+      ],
+      "focus": "**会议纪要** **引用** **实时转写** **实时字幕**",
+      "actual_sources": [
+        "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+        "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。",
+        "引用放在正文旁边的小标里就行，点一下再看原话。",
+        "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+        "这两项调整还没有完成，先记录下来，完成以后再一起验证。"
+      ],
+      "output": [
+        "实时转写和实时字幕的入口应放在工具栏，而非二级菜单。AI纪要显示不连贯，需分句显示。引用应放在正文旁边的小标里，点一下再看原话。离线会议笔记的实时转写已显示，但AI纪要仍需一小句一小句显示。两项调整尚未完成，先记录下来，完成后再一起验证。"
+      ],
+      "cursor": 5,
+      "quotes": [
+        "引用放在正文旁边的小标里就行，点一下再看原话。",
+        "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+        "这两项调整还没有完成，先记录下来，完成以后再一起验证。",
+        "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+        "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。"
+      ],
+      "last_job_attempts": 1,
+      "last_job_validation_error": null,
+      "raw_stdout_sha256": "1fa1dc1ca16433a38a39e6075cbe9f59180cf84d3587b8d2a063cc84a4f086e1",
+      "last_generation_sha256": "5549fafaa82ef42325547d3e5236134e3e4cc586085fe4e2cddd9d40344e8cc4"
+    },
+    {
+      "category": "unsupported_meeting_ordinal",
+      "severity": "quality_failure",
+      "finding": "Source says this discussion; output invents first meeting. Other source facts remain represented.",
+      "case": "en_minutes_from_zh",
+      "pattern_passed": true,
+      "source": [
+        "这次只做离线转写，模型由用户手动下载。",
+        "录音、转写和纪要不上传服务器。系统音频采集还没有实现。"
+      ],
+      "focus": "**离线转写** **模型**",
+      "actual_sources": [
+        "这次只做离线转写，模型由用户手动下载。",
+        "录音、转写和纪要不上传服务器。系统音频采集还没有实现。"
+      ],
+      "output": [
+        "In the first meeting, it was discussed that only offline transcription would be performed, with the model downloaded by the user. The discussion also mentioned that audio recording, transcription, and note-taking would not be uploaded to the server, and that the system for audio collection had not been implemented yet."
+      ],
+      "cursor": 2,
+      "quotes": [
+        "这次只做离线转写，模型由用户手动下载。",
+        "录音、转写和纪要不上传服务器。系统音频采集还没有实现。"
+      ],
+      "last_job_attempts": 1,
+      "last_job_validation_error": null,
+      "raw_stdout_sha256": "9cd95683477395acb91cc1059fc65c2ff82fbff795ed2406ee5cbaf989eb8eef",
+      "last_generation_sha256": "27ef2433cb17449462c708fc9cd51fd6f7a70cd60b50fc80d508b9a9dfd9de7a"
+    },
+    {
+      "category": "canonical_name_contract",
+      "severity": "case_contract_failure",
+      "finding": "Morgan is transliterated as 莫根; identity/owner/deadline/negation are present, but the fixture requires original spelling. Not a factual omission.",
+      "case": "zh_minutes_from_en",
+      "pattern_passed": false,
+      "source": [
+        "The offline recorder is ready for internal testing. The public release is not approved yet.",
+        "Morgan owns the latency report and will deliver it on Thursday."
+      ],
+      "focus": "**offline** **release**",
+      "actual_sources": [
+        "The offline recorder is ready for internal testing. The public release is not approved yet.",
+        "Morgan owns the latency report and will deliver it on Thursday."
+      ],
+      "output": [
+        "离线记录器已准备好进行内部测试，公版发布尚未获批。莫根拥有延迟报告，将于周四交付。"
+      ],
+      "cursor": 2,
+      "quotes": [
+        "The offline recorder is ready for internal testing. The public release is not approved yet.",
+        "Morgan owns the latency report and will deliver it on Thursday."
+      ],
+      "last_job_attempts": 2,
+      "last_job_validation_error": null,
+      "raw_stdout_sha256": "88db5a64554d4b05cd0e2f3d8f078b9db75e2869a56a5f4a725311f28fe99b5f",
+      "last_generation_sha256": "7f52f72b6b9596a8e0d1780cc2287b9edf33f6e41b36c432dd2547365802538e"
+    }
+  ],
+  "code_checks": {
+    "core_passed": 144,
+    "core_ignored_opt_in": 6,
+    "core_clippy": "passed -D warnings all targets",
+    "actual_ffmpeg_pcm_timing_test": "passed",
+    "frontend_typescript_vite": "passed",
+    "native_ui_test_clippy": "passed -D warnings all targets",
+    "native_ui_test_build": "passed",
+    "remote_exact_head": {
+      "linux_run": 40448659190,
+      "website_run": 40448659224,
+      "optional_run": 40448659264,
+      "linux": "success",
+      "website": "success",
+      "prepare": "success",
+      "windows_core": "success",
+      "gpu_build": "skipped",
+      "catalog": "skipped"
+    }
+  },
+  "native_startup_smoke": {
+    "passed": true,
+    "version_asserted": "0.3.5",
+    "identity": {
+      "app_sha256": "6a575bb69f6372ae257f6df87095e85c497875001e0207e76797bd3521ddd8b2",
+      "source": "77999121ae15a14f57cd58b918ebaed18b97701a",
+      "tree": "843c22566769f6c27b15b0bcba6348f8283d805c",
+      "fixture_sha256": "bcc5caa83748207ccfd80f731b3d6eaaebee7a7a8acba5e067e17e40d3fd316d",
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "exit_code": 0,
+      "scope": "Frozen0.3.5 candidate1 native startup/locale/device smoke, source77999121. Derived from tracked native-windows-acceptance.js with version/input/theme assertions. No installer, microphone, ASR or model inference."
+    },
+    "checks": [
+      "Open native companion/transcript follow five language changes and preserve expansion",
+      "Windows microphone options and default selection survive five language changes; no Linux-only capture kind/theme appears",
+      "Native hardware reaches settings while activation still requires component verification"
+    ],
+    "language_changes": [
+      "en",
+      "zh-CN",
+      "zh-TW",
+      "en",
+      "zh-CN"
+    ],
+    "input_observations": [
+      {
+        "locale": "en",
+        "valueBeforeWait": null
+      },
+      {
+        "locale": "zh-CN",
+        "valueBeforeWait": null
+      },
+      {
+        "locale": "zh-TW",
+        "valueBeforeWait": null
+      },
+      {
+        "locale": "en",
+        "valueBeforeWait": null
+      },
+      {
+        "locale": "zh-CN",
+        "valueBeforeWait": null
+      }
+    ],
+    "report_sha256": "79c0e8ad2006d26637dbe9104c0c654a3d503474a13686d3eb6485015b0f4343",
+    "scope": "Native ui-test startup/three-window locale/device/hardware UI only; not installed production artifacts or recording."
+  },
+  "candidate_gates_not_completed": {
+    "real_microphone_recording": "not run; user availability for spoken fixture requested and no answer received at report time",
+    "candidate_recording_plus_gpu_and_automatic_settlement": "not run on candidate1; older82.681s result stays at8bcc1f7/e9be9db",
+    "installer": "not built/run; unified candidate publish=false pipeline has no artifact for this SHA at the last check; pinned plan packages after complete checks",
+    "installation_upgrade_data_preservation": "not run; native debug startup and protected-human-paragraph corpus case do not establish installer upgrade/data retention",
+    "candidate_settings_download_enable_restart_cpu_fault_removal": "not rerun on candidate1; earlier signed component lifecycle evidence keeps its own source",
+    "actual_allocation_oom": "not established"
+  },
+  "sdk_action": "No CUDA/Vulkan SDK build or signing; existing normal-key four-way signed components retained for reuse.",
+  "limits": [
+    "Fictional seeded transcript corpus on CPU; no ASR, microphone, GPU or natural-conversation accuracy claim from these28 cases.",
+    "Manual review checks all39 phase outputs. Additional failures include reversed instructions and a minor unsupported ordinal; canonical spelling failure is distinguished from loss of facts.",
+    "One Windows/profile run; no controlled pre-change comparison or broad performance/cost claim. Model pages and OS caches were warm/uncontrolled.",
+    "Automatic phase retains its last draft/repair diagnostic and complete metadata trace; earlier auto-job raw bodies may be overwritten. No complete raw-draft cost claim.",
+    "Candidate1 remains rejected. No stable promotion or production installer acceptance; fixes belong to the shared production owner before another candidate."
+  ],
+  "raw_evidence_sha256": {
+    "evaluation": "15b491dbe76cbe29a39b10b46273b5414cf142da16a6904126dc5f8163263521",
+    "completion": "7685eb147ee79d5f100865e3fce84bfeb902145d46dd48d52bbdf8cee91f3800",
+    "identity": "f23422b988d4e7a0d95b3d4dd127432c5c335502aad5d4fb6c2206dc4d69e337",
+    "console": "5c0e591b9ff361bed6b6e50d1203c1b6c2fd1b6553695fb9acb59790c0ea3022",
+    "native_report": "79c0e8ad2006d26637dbe9104c0c654a3d503474a13686d3eb6485015b0f4343",
+    "native_identity": "68a47e70a0a2119008278e82cebe6f2fcb363561e3b1290ec7cfe07febb62401"
+  }
+}
