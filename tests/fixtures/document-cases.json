@@ -1508,7 +1508,8 @@
       "consent|permission|approv"
     ],
     "forbidden": [
-      "responsible for (?:Chen Ming|陈明)"
+      "responsible for (?:Chen Ming|陈明)",
+      "[（(]\\s*[A-L]\\s*[)）]"
     ],
     "translation_checks": [
       {
@@ -1521,7 +1522,8 @@
           "consent|permission|approv"
         ],
         "forbidden": [
-          "responsible for (?:Chen Ming|陈明)"
+          "responsible for (?:Chen Ming|陈明)",
+          "[（(]\\s*[A-L]\\s*[)）]"
         ]
       }
     ]
@@ -1544,7 +1546,8 @@
     "forbidden": [
       "responsible for (?:Li Hua|李华)",
       "李华[^.。]*\\band cannot be (?:published|released)",
-      "check[^.。]*\\bwhich cannot be (?:published|released)"
+      "check[^.。]*\\bwhich cannot be (?:published|released)",
+      "[（(]\\s*[A-L]\\s*[)）]"
     ],
     "translation_checks": [
       {
@@ -1559,7 +1562,8 @@
         "forbidden": [
           "responsible for (?:Li Hua|李华)",
           "李华[^.。]*\\band cannot be (?:published|released)",
-          "check[^.。]*\\bwhich cannot be (?:published|released)"
+          "check[^.。]*\\bwhich cannot be (?:published|released)",
+          "[（(]\\s*[A-L]\\s*[)）]"
         ]
       }
     ]
@@ -1580,7 +1584,8 @@
       "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
     ],
     "forbidden": [
-      "陈明 is responsible for"
+      "陈明 is responsible for",
+      "[（(]\\s*[A-L]\\s*[)）]"
     ],
     "translation_checks": [
       {
@@ -1593,7 +1598,8 @@
           "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
         ],
         "forbidden": [
-          "陈明 is responsible for"
+          "陈明 is responsible for",
+          "[（(]\\s*[A-L]\\s*[)）]"
         ]
       }
     ]
@@ -1616,7 +1622,8 @@
     "forbidden": [
       "陈明",
       "李华",
-      "responsible for (?:the )?server"
+      "responsible for (?:the )?server",
+      "[（(]\\s*[A-L]\\s*[)）]"
     ],
     "translation_checks": [
       {
@@ -1631,7 +1638,8 @@
         "forbidden": [
           "陈明",
           "李华",
-          "responsible for (?:the )?server"
+          "responsible for (?:the )?server",
+          "[（(]\\s*[A-L]\\s*[)）]"
         ]
       }
     ]

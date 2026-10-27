@@ -329,6 +329,14 @@ impl Repair {
             }
         }
         let mut body = output.translation;
+        static ALIAS: OnceLock<Regex> = OnceLock::new();
+        if ALIAS
+            .get_or_init(|| Regex::new(r"[（(]\s*[A-L]\s*[)）]").unwrap())
+            .find_iter(&body)
+            .any(|m| !self.input.contains(m.as_str()))
+        {
+            bail!("Translation invented an unresolved name ID alias");
+        }
         let mut prose = body.clone();
         let mut source_prose = self.input.clone();
         for (i, name) in self.names.iter().enumerate() {
@@ -417,6 +425,7 @@ mod tests {
             r#"{"translation":"[A] [B]"}"#,
             r#"{"translation":"[A] [B] [C] says something."}"#,
             r#"{"translation":"Professor [A] of [B] says this may be risky.","translation":"bad"}"#,
+            r#"{"translation":"Professor [A] of [B] says (A) may be risky."}"#,
         ] {
             assert!(repair.body(raw).is_err());
         }

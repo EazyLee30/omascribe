@@ -21,7 +21,6 @@ impl std::error::Error for Mismatch {}
 pub(crate) struct Assignment {
     pub actor: String,
     task: String,
-    end: usize,
 }
 impl Assignment {
     pub(crate) fn english_predicate(&self) -> &'static str {
@@ -66,7 +65,6 @@ fn frames(source: &str) -> Vec<Assignment> {
             Some(Assignment {
                 actor: c["actor"].into(),
                 task: c["task"].trim().into(),
-                end: c.get(0)?.end(),
             })
         })
         .take(12)
@@ -113,16 +111,6 @@ fn references(source: &str) -> Vec<Assignment> {
 }
 pub(crate) fn has_frame(source: &str) -> bool {
     !frames(source).is_empty()
-}
-/// Keep the task/actor clause separate from its independent consent or release
-/// condition. Return original byte offsets, retaining every source character.
-pub(crate) fn boundary(source: &str) -> Option<usize> {
-    frames(source).into_iter().find_map(|a| {
-        let separator = source[a.end..].chars().next()?;
-        let end = a.end + separator.len_utf8();
-        (matches!(separator, '，' | ',' | '；' | ';') && !source[end..].trim().is_empty())
-            .then_some(end)
-    })
 }
 pub(crate) fn actors(source: &str) -> Vec<String> {
     let mut names: Vec<_> = references(source).into_iter().map(|a| a.actor).collect();
@@ -260,14 +248,11 @@ mod tests {
         assert!(repair_prefix("构建任务将由服务器负责。").is_none());
     }
     #[test]
-    fn task_qualifiers_and_following_conditions_keep_independent_source_parts() {
+    fn task_qualifiers_survive_for_named_and_generic_actors() {
         for source in [
             "构建检查由李华负责，完成前不能发布。",
             "构建任务由服务器负责，人工不需要介入。",
         ] {
-            let end = boundary(source).unwrap();
-            assert!(source[..end].ends_with('，'));
-            assert!(!source[end..].is_empty());
             assert!(validate(source, "The task is handled by the server.").is_err());
         }
         assert!(validate(
