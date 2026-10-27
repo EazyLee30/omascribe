@@ -126,6 +126,27 @@ fn explicit_glossary_wins_and_conflicting_aliases_are_not_guessed() {
     ];
     let terms = Terms::new(&[note("GTX 1650")], &ambiguous);
     assert_eq!(terms.normalize("GTX1650"), "GTX1650");
+
+    let priority = [
+        glossary_term("Graphics", "GTX1650"),
+        glossary_term("Order", "GTX 一六五零"),
+    ];
+    assert_eq!(
+        Terms::new(&[], &priority).normalize("GTX 一六五零"),
+        "Order"
+    );
+    assert_eq!(
+        Terms::new(
+            &[note("GTX 1650")],
+            &[glossary_term("Order", "GTX 一六五零")]
+        )
+        .normalize("GTX 一六五零"),
+        "Order"
+    );
+    let several_models = [glossary_term("Graphics", "GTX1650, RTX3060")];
+    let hints = Terms::new(&[], &several_models).recognition_hotwords();
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("GTX 一六五零")));
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("RTX 三零六零")));
 }
 
 #[test]
@@ -142,8 +163,20 @@ fn unrelated_models_extra_digits_amounts_and_missing_context_stay_unchanged() {
         "GTX 一六五零六",
         "GTX 一六五零2",
         "GTX 一六五零元",
+        "GTX 一六五零.5",
+        "GTX 一六五零点五",
+        "GTX 一六五零 点五",
+        "GTX 一 六 五 零 点 五",
+        "GTX 一六五零 .5",
+        "GTX 一六五零件",
+        "GTX 一六五零公斤",
+        "GTX 一六五零美元",
+        "GTX 一六五零%",
         "GTX 一 六 五 零 六",
         "GTX ONE SIX FIVE ZERO SIX",
+        "GTX ONE SIX FIVE ZERO POINT FIVE",
+        "GTX ONE SIX FIVE ZERO DOLLARS",
+        "GTX ONE SIX FIVE ZERO USD",
         "预算一六五零元",
         "会议安排在 1650 年",
     ] {
@@ -154,7 +187,7 @@ fn unrelated_models_extra_digits_amounts_and_missing_context_stay_unchanged() {
     assert_eq!(no_model_note.normalize("GTX 一六五零"), "GTX 一六五零");
     assert_eq!(Terms::new(&[], &[]).normalize("GTX1650"), "GTX1650");
     assert!(terms.spellings("MY_GTX1650_CARD").is_empty());
-    for label in ["Budget 3000", "budget3000", "YEAR 2026"] {
+    for label in ["Budget 3000", "budget3000", "YEAR 2026", "RMB 3000"] {
         let ordinary = Terms::new(&[note(label)], &[]);
         assert_eq!(ordinary.normalize(label), label);
         assert!(!ordinary
@@ -166,4 +199,25 @@ fn unrelated_models_extra_digits_amounts_and_missing_context_stay_unchanged() {
         terms.fingerprint(),
         Terms::new(&[note("GTX 1650")], &[]).fingerprint()
     );
+}
+
+#[test]
+fn duplicate_model_lines_do_not_hide_later_models_or_names() {
+    let content = format!("{}RTX 3060\nAlice", "GTX 1650\n".repeat(80));
+    let terms = Terms::new(&[note(&content)], &[]);
+    let hints = terms.recognition_hotwords();
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("GTX 一六五零")));
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("RTX 三零六零")));
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("Alice")));
+    assert!(hints.len() <= 80);
+    assert_eq!(terms.normalize("RTX 三零六零"), "RTX 3060");
+    let repeated = Terms::new(&[note(&format!("{}Alice", "Bob\n".repeat(80)))], &[]);
+    assert!(repeated.recognition_hotwords().iter().any(|s| s == "Bob"));
+    assert!(repeated.recognition_hotwords().iter().any(|s| s == "Alice"));
+
+    let mut at_limit = vec![glossary_term("Graphics", "GTX1650")];
+    at_limit.extend((0..79).map(|n| glossary_term(&format!("Term{n:02}"), "")));
+    let hints = Terms::new(&[], &at_limit).recognition_hotwords();
+    assert_eq!(hints.len(), 80);
+    assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("GTX 一六五零")));
 }

@@ -15,17 +15,17 @@ pub struct Terms {
     approximate: Vec<String>,
 }
 
-// Only an explicit acronym-like identifier supplies a model number. Ordinary
-// labels such as "Budget 3000" must remain translatable prose, not model IDs.
+// A complete explicit graphics-series keyword may supply a model number.
+// Monetary abbreviations such as "RMB 3000" are not graphics identifiers.
 fn model_identifier(value: &str) -> Option<(&str, &str)> {
     static MODEL: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let parts = MODEL
         .get_or_init(|| Regex::new(r"(?i)^([a-z]{2,8})[ \t]*([0-9]{2,8})$").unwrap())
         .captures(value)?;
     let prefix = parts.get(1)?.as_str();
-    if prefix
-        .chars()
-        .any(|c| matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y'))
+    if !["gtx", "rtx", "gts", "gt", "mx", "rx", "arc"]
+        .iter()
+        .any(|series| prefix.eq_ignore_ascii_case(series))
     {
         return None;
     }
@@ -95,12 +95,53 @@ fn model_spellings(name: &str) -> Option<Vec<String>> {
 }
 
 fn model_continuation(c: char) -> bool {
-    c.is_ascii_alphanumeric()
-        || c == '_'
-        || "零〇一二三四五六七八九十百千万亿两幺元个张台年月日次份块".contains(c)
+    c.is_ascii_alphanumeric() || c == '_' || "零〇一二三四五六七八九十百千万亿两幺点%％".contains(c)
 }
 
 fn model_has_continuation(text: &str) -> bool {
+    let trimmed = text.trim_start_matches([' ', '\t']);
+    if trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点') {
+        if trimmed
+            .chars()
+            .nth(1)
+            .is_some_and(|c| c.is_ascii_digit() || "零〇一二三四五六七八九".contains(c))
+        {
+            return true;
+        }
+    }
+    if [
+        "美元",
+        "人民币",
+        "公斤",
+        "千克",
+        "毫秒",
+        "毫升",
+        "元",
+        "个",
+        "件",
+        "号",
+        "张",
+        "台",
+        "年",
+        "月",
+        "日",
+        "次",
+        "份",
+        "块",
+        "分",
+        "支",
+        "款",
+        "吨",
+        "米",
+        "秒",
+        "%",
+        "％",
+    ]
+    .iter()
+    .any(|unit| trimmed.starts_with(unit))
+    {
+        return true;
+    }
     if text.chars().next().is_some_and(model_continuation) {
         return true;
     }
@@ -129,7 +170,8 @@ fn model_has_continuation(text: &str) -> bool {
         .unwrap_or_default();
     [
         "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TI",
-        "SUPER", "XT",
+        "SUPER", "XT", "POINT", "PERCENT", "DOLLAR", "DOLLARS", "YUAN", "EURO", "EUROS", "USD",
+        "RMB", "CNY", "EUR", "GBP",
     ]
     .iter()
     .any(|suffix| word.eq_ignore_ascii_case(suffix))
@@ -165,7 +207,7 @@ impl Terms {
         let mut writer_names = Vec::new();
         let mut caption_names = Vec::new();
         let mut approximate = Vec::new();
-        let mut expanded_models = 0;
+        let mut expanded_models = HashSet::new();
         let explicit: HashSet<String> = entries
             .iter()
             .filter(|e| e.kind == "term" && e.enabled && !e.deleted)
@@ -201,12 +243,26 @@ impl Terms {
                 .chain(e.aliases.split([',', '，', ';', '；', '\n', '|']))
             {
                 add(alias, &e.title);
-                if expanded_models < 80 {
-                    if let Some(variants) = model_spellings(alias.trim()) {
-                        expanded_models += 1;
-                        for variant in variants {
-                            model_aliases.insert(variant.to_lowercase());
-                            add(&variant, &e.title);
+                if let Some((prefix, digits)) = model_identifier(alias.trim()) {
+                    model_aliases.insert(alias.trim().to_lowercase());
+                    let key = (
+                        format!("{}{digits}", prefix.to_ascii_lowercase()),
+                        e.title.to_lowercase(),
+                    );
+                    if expanded_models.contains(&key) || expanded_models.len() < 80 {
+                        let is_new = expanded_models.insert(key);
+                        if is_new {
+                            let variants =
+                                model_spellings(alias.trim()).expect("validated identifier");
+                            for variant in variants {
+                                if explicit.contains(&variant.to_lowercase())
+                                    && !variant.eq_ignore_ascii_case(alias.trim())
+                                {
+                                    continue;
+                                }
+                                model_aliases.insert(variant.to_lowercase());
+                                add(&variant, &e.title);
+                            }
                         }
                     }
                 }
@@ -215,17 +271,7 @@ impl Terms {
         // User-written Latin names supply spelling/casing, never facts or inferred aliases.
         let latin = Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap();
         for n in crate::notes::document_notes(notes) {
-            for line in n
-                .content
-                .lines()
-                .filter(|line| {
-                    model_identifier(line.trim().trim_matches(['*', '-', '#', ' '])).is_some()
-                })
-                .take(80)
-            {
-                if expanded_models >= 80 {
-                    break;
-                }
+            for line in n.content.lines() {
                 let name = line.trim().trim_matches(['*', '-', '#', ' ']);
                 let Some((prefix, digits)) = model_identifier(name) else {
                     continue;
@@ -238,8 +284,18 @@ impl Terms {
                 {
                     continue;
                 }
-                expanded_models += 1;
+                let key = (
+                    compact.to_lowercase(),
+                    format!("note:{}", compact.to_lowercase()),
+                );
+                if expanded_models.contains(&key) || expanded_models.len() >= 80 {
+                    continue;
+                }
+                expanded_models.insert(key);
                 for alias in model_spellings(name).expect("validated model identifier") {
+                    if explicit.contains(&alias.to_lowercase()) {
+                        continue;
+                    }
                     model_aliases.insert(alias.to_lowercase());
                     add(&alias, name);
                 }
@@ -251,7 +307,8 @@ impl Terms {
                 .content
                 .chars()
                 .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
-            for word in latin.find_iter(&n.content).take(80) {
+            let mut accepted_words = HashSet::new();
+            for word in latin.find_iter(&n.content) {
                 let line_start = n.content[..word.start()].rfind('\n').map_or(0, |i| i + 1);
                 let line_end = n.content[word.end()..]
                     .find('\n')
@@ -263,6 +320,13 @@ impl Terms {
                     continue;
                 }
                 let word = word.as_str().trim_end_matches(['.', '-']);
+                if accepted_words.contains(word) {
+                    continue;
+                }
+                if accepted_words.len() >= 80 {
+                    break;
+                }
+                accepted_words.insert(word.to_owned());
                 if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
                     continue;
                 }
@@ -419,25 +483,46 @@ impl Terms {
     /// Keep the display spelling for notes, but send a complete encodable hint.
     pub fn recognition_hotwords(&self) -> Vec<String> {
         let mut primary = Vec::new();
+        let mut other_models = Vec::new();
         let mut alternatives = Vec::new();
+        let mut title_fallbacks = Vec::new();
         for name in &self.hotwords {
-            let model = model_identifier(name).or_else(|| {
-                self.names.iter().find_map(|(alias, canonical)| {
-                    (canonical == name)
-                        .then(|| model_identifier(alias))
-                        .flatten()
-                })
-            });
-            if let Some((prefix, digits)) = model {
-                primary.push(format!("{prefix} {}", spoken_digits(digits, '零')));
-                alternatives.push(format!("{prefix} {}", english_digits(digits)));
-            } else {
+            let mut seen_models = HashSet::new();
+            let mut models = Vec::new();
+            for (prefix, digits) in
+                model_identifier(name)
+                    .into_iter()
+                    .chain(self.names.iter().filter_map(|(alias, canonical)| {
+                        (canonical == name)
+                            .then(|| model_identifier(alias))
+                            .flatten()
+                    }))
+            {
+                if seen_models.insert((prefix.to_ascii_lowercase(), digits.to_owned())) {
+                    models.push((prefix, digits));
+                }
+            }
+            if models.is_empty() {
                 primary.push(name.clone());
+            } else if model_identifier(name).is_none() && !name.chars().any(|c| c.is_ascii_digit())
+            {
+                title_fallbacks.push(name.clone());
+            }
+            for (i, (prefix, digits)) in models.iter().enumerate() {
+                let hint = format!("{prefix} {}", spoken_digits(digits, '零'));
+                if i == 0 {
+                    primary.push(hint);
+                } else {
+                    other_models.push(hint);
+                }
+                alternatives.push(format!("{prefix} {}", english_digits(digits)));
             }
         }
         let mut seen = HashSet::new();
         primary
             .into_iter()
+            .chain(other_models)
+            .chain(title_fallbacks)
             .chain(alternatives)
             .filter(|word| seen.insert(word.to_lowercase()))
             .take(80)
