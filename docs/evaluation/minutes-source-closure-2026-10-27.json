@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "Test-only source-bound fact protocol development, with negative semantic reviews retained",
+  "passed": false,
+  "promotion_eligible": false,
+  "product_generator_connected": false,
+  "runs": [
+    {
+      "revision": "dd31d15dabeafda7786e4c9d7654558be59e95e0",
+      "source_sha256": "8712eaf0eb92e611547ac74311ff0de6868d3c4d87638d446666261df838c465",
+      "runtime_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+      "variant": "source-choices",
+      "automated_passed": false,
+      "complete": true,
+      "passed_cases": 0,
+      "cases": [
+        {
+          "case": "en_amount",
+          "passed": false,
+          "error": "Article omitted active fact records"
+        },
+        {
+          "case": "zh_amount_owner",
+          "passed": false,
+          "error": "Two updates target the same fact"
+        },
+        {
+          "case": "en_completion",
+          "passed": false,
+          "error": "Article omitted active fact records"
+        }
+      ],
+      "manual_review": {
+        "passed": false,
+        "reason": "Not a full corpus or subject-entailment acceptance."
+      },
+      "requests": 11,
+      "input_tokens": 3079,
+      "output_tokens": 1397,
+      "requests_including_repair": true,
+      "elapsed_ms": 25550,
+      "backend_evidence": [
+        {
+          "case": "en_amount",
+          "sha256": "e0b12768f23b5d09665eed3202c8dc3d98836f5d899ddaab8c713cc5a75ab50c",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "zh_amount_owner",
+          "sha256": "201c726b2b9d44c69731068104dcad2550c21dfc3bc48613ebdaa45e0ff0ba36",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "en_completion",
+          "sha256": "a5bcf73c6168175bed0a27f4623a9e77be6b7e6ab41729e430c1475a636f3a8e",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        }
+      ],
+      "worker_released": true,
+      "owned_model_links_cleaned": true,
+      "raw_path": "artifacts/benchmarks/fact-protocol-source-choices/report.json",
+      "raw_sha256": "9ce52116fe49f097453090d35161e067f06080a438441863f9b5ea46c9e4c8bc",
+      "requests_sha256": "b45fca1131eb23e1952aa31182541a65ac8830dfb6f77242d1c4a18f532ba536"
+    },
+    {
+      "revision": "1c0ee5a615b22ccbb56bbd6c8146032d50e245a2",
+      "source_sha256": "2e1e6f8ac9384cb772d09253045a63b9cd8f652c7aaf06ee5fa94b5696adc10b",
+      "runtime_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+      "variant": "withdrawal",
+      "automated_passed": false,
+      "complete": true,
+      "passed_cases": 1,
+      "cases": [
+        {
+          "case": "en_amount",
+          "passed": false,
+          "error": "Article omitted active fact IDs: [3, 4]"
+        },
+        {
+          "case": "zh_amount_owner",
+          "passed": true,
+          "error": null
+        },
+        {
+          "case": "en_completion",
+          "passed": false,
+          "error": "Article omitted active fact IDs: [3]"
+        }
+      ],
+      "manual_review": {
+        "passed": false,
+        "reason": "Automated Chinese pass is rejected: person retirement became an unsupported cancelled change request.",
+        "actual": "会议记录：预算金额确认为2000元，负责人已确认为王华，系统音频状态为尚未进行，负责人变更申请已撤回。",
+        "source": "最终预算改为2000元，王华负责，李明不再负责。"
+      },
+      "requests": 11,
+      "input_tokens": 3068,
+      "output_tokens": 1241,
+      "requests_including_repair": true,
+      "elapsed_ms": 23046,
+      "backend_evidence": [
+        {
+          "case": "en_amount",
+          "sha256": "b8def3cd447649ad80829618cdfccafbb446d066163ff776add7cd0f62a0f1ea",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "zh_amount_owner",
+          "sha256": "96f3f4185e3febf5a171fc9ea181f51bd697a7f389e54adc117e048356d57eda",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "en_completion",
+          "sha256": "6021641f8848f8117713bc197cb610b125453d6f7372c7d9fa3ab5fd3932240c",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        }
+      ],
+      "worker_released": true,
+      "owned_model_links_cleaned": true,
+      "raw_path": "artifacts/benchmarks/fact-protocol-withdrawal/report.json",
+      "raw_sha256": "72e9cb4f8a280f9f495b72dde9694b749719f0f670d4031ba43b0c92ff4859d1",
+      "requests_sha256": "5e2aae0ab1dd616a5a986f0b785d955ef1d1a75414de245f195da9c04998f8c8"
+    },
+    {
+      "revision": "9fb00e575448094ff553579f1bed13b08d352c99",
+      "source_sha256": "6746b3aec25ce81f9564a44901a2ee86a9035e48f5315e2dc3925df1573079fc",
+      "runtime_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+      "variant": "current-claims",
+      "automated_passed": false,
+      "complete": true,
+      "passed_cases": 2,
+      "cases": [
+        {
+          "case": "en_amount",
+          "passed": false,
+          "error": "文档可能遗漏待确认状态，本轮未提交"
+        },
+        {
+          "case": "zh_amount_owner",
+          "passed": true,
+          "error": null
+        },
+        {
+          "case": "en_completion",
+          "passed": true,
+          "error": null
+        }
+      ],
+      "manual_review": {
+        "passed": false,
+        "reason": "Not a full corpus or subject-entailment acceptance."
+      },
+      "requests": 10,
+      "input_tokens": 3116,
+      "output_tokens": 1082,
+      "requests_including_repair": true,
+      "elapsed_ms": 22275,
+      "backend_evidence": [
+        {
+          "case": "en_amount",
+          "sha256": "4d1826707fddc20f586caf0d0308fe98880174e081ff5aba815b0fcdc0d60e43",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "zh_amount_owner",
+          "sha256": "1043f201fa0e1fc0c493accdbb2cacda86fc9917e226c11c1ff312c171ceb4d3",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "en_completion",
+          "sha256": "6b3e1742c1157c90a8fe60499e5f3f8a99f0aff0d3f37ddd7324d26a55f4d114",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        }
+      ],
+      "worker_released": true,
+      "owned_model_links_cleaned": true,
+      "raw_path": "artifacts/benchmarks/fact-protocol-current-claims/report.json",
+      "raw_sha256": "b5451c9a17f3b36072c0b7b0be7113d670cd80dc08304e0a525ee6500971f354",
+      "requests_sha256": "7a4c1bf8fbce581076934ea34bef53394d919b8474450f6b3bbfe8bd08159423"
+    },
+    {
+      "revision": "cc10b6e6d7e957d6d8e339c3e6af49c12d01a166",
+      "source_sha256": "85e79a370621f84d72c91e69ada73705673101371fbdd78b06192b041c25ebd2",
+      "runtime_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+      "variant": "passive-negation",
+      "automated_passed": true,
+      "complete": true,
+      "passed_cases": 3,
+      "cases": [
+        {
+          "case": "en_amount",
+          "passed": true,
+          "error": null
+        },
+        {
+          "case": "zh_amount_owner",
+          "passed": true,
+          "error": null
+        },
+        {
+          "case": "en_completion",
+          "passed": true,
+          "error": null
+        }
+      ],
+      "manual_review": {
+        "passed": false,
+        "accepted_narrow_cases": [
+          "zh_amount_owner",
+          "en_completion"
+        ],
+        "open": "English retains amount/owner/deadline/negative polarity but says the review has not been approved; source states the budget is unapproved. Subject linkage remains ambiguous, while the extractor still uses not as a statement subject.",
+        "actual": "The Budget has been corrected to 5000, and the review is owned by Morgan. The deadline is Thursday, but the review has not been approved."
+      },
+      "requests": 9,
+      "input_tokens": 2687,
+      "output_tokens": 1017,
+      "requests_including_repair": true,
+      "elapsed_ms": 20882,
+      "backend_evidence": [
+        {
+          "case": "en_amount",
+          "sha256": "63b9c26a901870881774a370897c48c2c78ba6dc236fe498d1446f92d5bd54d7",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "zh_amount_owner",
+          "sha256": "ceed558328298377c094f08caa4393d8a995c9d71a74996bb1573466185fe12a",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        },
+        {
+          "case": "en_completion",
+          "sha256": "a50e98b436e137ab617f4e797f9567993e0a829e032fb4992d8b0d982c39dd21",
+          "layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "positive": true
+        }
+      ],
+      "worker_released": true,
+      "owned_model_links_cleaned": true,
+      "raw_path": "artifacts/benchmarks/fact-protocol-passive-negation/report.json",
+      "raw_sha256": "4ca1a98cdb8e46eddaebf17d498e42aab88459f50a7de496693af49d438be90e",
+      "requests_sha256": "8ee4d225af8eb30a667400de7c9d94ba40f6eed807aa63cce83dd5c038fcd328"
+    }
+  ],
+  "limits": [
+    "Different schemas/guards/repair inputs, not paired performance or comparable aggregate quality-rate trials.",
+    "All three cases attempted per run, every request/repair retained; no failed arm dropped.",
+    "The latest automated3/3 covers only three fictional final-state examples; it is not the complete21-case corpus, per-phase fidelity, persistent/history/transaction, human-edit or long-meeting validation.",
+    "Known-ID grammar closure and current literal citations do not prove that the prose expresses every fact with the right subject.",
+    "Model unchanged1.7B,2048context,one thread and Metal; no SDK/model downloads/default changes.",
+    "No energy, unique Metal allocation or broad M-series compatibility claim."
+  ],
+  "next_gate": "Preserve field/topic identity across subordinate status clauses, check source-scoped meaning independently, compose every phase/affected group, then persist versioned facts/history with atomic article commits and run the full corpus/cost comparison."
+}
