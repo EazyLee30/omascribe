@@ -103,15 +103,14 @@ fn model_continuation(c: char) -> bool {
 
 fn model_has_continuation(text: &str) -> bool {
     let trimmed = text.trim_start_matches([' ', '\t']);
-    if trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点') {
-        if trimmed[trimmed.chars().next().unwrap().len_utf8()..]
+    if (trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点'))
+        && trimmed[trimmed.chars().next().unwrap().len_utf8()..]
             .trim_start_matches([' ', '\t'])
             .chars()
             .next()
             .is_some_and(|c| c.is_numeric() || "零〇一二三四五六七八九".contains(c))
-        {
-            return true;
-        }
+    {
+        return true;
     }
     if [
         "美元",
