@@ -109,6 +109,35 @@ fn minutes_must_keep_the_complete_explicit_model_when_it_is_in_the_source() {
 }
 
 #[test]
+fn minutes_keep_both_explicit_owner_and_model_after_normalization() {
+    let terms = Terms::new(&[note("Alice\nGTX 1650")], &[]);
+    let source = "Alice负责检查GTX 一六五零显卡。";
+    assert!(terms
+        .validate_writer_names(source, "Alice负责检查GTX1650显卡。")
+        .is_ok());
+    assert!(terms
+        .validate_writer_names(source, "负责检查GTX 1650显卡。")
+        .is_err());
+    assert!(terms
+        .validate_writer_names(source, "Alice负责检查显卡。")
+        .is_err());
+    assert!(terms
+        .validate_writer_names(source, "Alice负责检查GTX 16500显卡。")
+        .is_err());
+    let explicit = Terms::new(
+        &[note("Alice\nGTX 1650")],
+        &[glossary_term("Alice", "艾莉丝")],
+    );
+    assert_eq!(
+        explicit.normalize("艾莉丝负责检查GTX1650显卡。"),
+        "Alice负责检查GTX 1650显卡。"
+    );
+    assert!(explicit
+        .validate_writer_names(source, "艾莉丝负责检查GTX1650显卡。")
+        .is_ok());
+}
+
+#[test]
 fn explicit_glossary_wins_and_conflicting_aliases_are_not_guessed() {
     let glossary = [glossary_term("GeForce GTX 1650", "GTX1650,GTX 1650")];
     let terms = Terms::new(&[note("gtx 1650")], &glossary);
