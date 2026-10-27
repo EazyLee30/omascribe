@@ -1615,7 +1615,8 @@
     ],
     "forbidden": [
       "陈明",
-      "李华"
+      "李华",
+      "responsible for (?:the )?server"
     ],
     "translation_checks": [
       {
@@ -1629,7 +1630,8 @@
         ],
         "forbidden": [
           "陈明",
-          "李华"
+          "李华",
+          "responsible for (?:the )?server"
         ]
       }
     ]

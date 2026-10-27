@@ -33,15 +33,15 @@ impl Assignment {
     }
 }
 pub(crate) fn repair_prefix(source: &str) -> Option<&'static str> {
-    if !assignments(source).is_empty() {
+    if !current(source) || !assignments(source).is_empty() {
         return None;
     }
     let frames = frames(source);
     let first = frames.first()?;
     if first.task.contains("构建检查") {
-        Some("Build checks ")
+        Some("Build checks are handled by ")
     } else if first.task.contains("构建任务") {
-        Some("The build task ")
+        Some("The build task is handled by ")
     } else {
         None
     }
@@ -130,7 +130,7 @@ pub(crate) fn actors(source: &str) -> Vec<String> {
     names.dedup();
     names
 }
-pub(crate) fn assignments(source: &str) -> Vec<Assignment> {
+fn current(source: &str) -> bool {
     // Do not force an old or hypothetical assignment through a later change.
     if [
         "不再负责",
@@ -167,6 +167,12 @@ pub(crate) fn assignments(source: &str) -> Vec<Assignment> {
     .any(|p| source.contains(p))
         || source.contains(['?', '？'])
     {
+        return false;
+    }
+    true
+}
+pub(crate) fn assignments(source: &str) -> Vec<Assignment> {
+    if !current(source) {
         return Vec::new();
     }
     references(source)
@@ -189,10 +195,22 @@ pub(crate) fn validate(source: &str, body: &str) -> Result<()> {
     static AFTER: OnceLock<Regex> = OnceLock::new();
     static PASSIVE: OnceLock<Regex> = OnceLock::new();
     let after = AFTER.get_or_init(|| Regex::new(r"(?i)^\s*(?:(?:is\s+(?:(?:currently|now|still)\s+)?responsible\s+for)\b|(?:handles|manages|oversees)\b|(?:仍|将)?(?:负责|承担|管理)|(?:是|为)[^，,。.;；\n]{0,40}负责人)").unwrap());
-    let passive = PASSIVE.get_or_init(|| Regex::new(r"(?i)(?:(?:handled|managed|overseen)\s+by\s*|responsibility\s+[^.;。；\n]{0,60}\s+(?:lies|rests)\s+with\s*|负责人(?:是|为))$").unwrap());
-    for a in assignments(source) {
+    let passive = PASSIVE.get_or_init(|| Regex::new(r"(?i)(?:(?:handled|managed|overseen)\s+by\s+(?:the\s+)?|responsibility\s+[^.;。；\n]{0,60}\s+(?:lies|rests)\s+with\s*|负责人(?:是|为))$").unwrap());
+    let mut expected = assignments(source);
+    // A server is a translatable role, not a person's literal name.
+    if current(source) {
+        for mut a in frames(source).into_iter().filter(|a| a.actor == "服务器") {
+            if body.to_ascii_lowercase().contains("server") {
+                a.actor = "server".into();
+            }
+            expected.push(a);
+        }
+    }
+    let body = body.to_ascii_lowercase();
+    for a in expected {
+        let actor = a.actor.to_ascii_lowercase();
         let occurrences: Vec<_> = body
-            .match_indices(&a.actor)
+            .match_indices(&actor)
             .filter(|(i, _)| {
                 !a.actor.is_ascii()
                     || (body[..*i]
@@ -232,6 +250,15 @@ pub(crate) fn validate(source: &str, body: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_generic_server_role_cannot_be_reversed_or_forced_into_a_future_task() {
+        assert!(validate(
+            "构建任务由服务器负责，人工不需要介入。",
+            "The build task is responsible for the server. No human intervention is required."
+        )
+        .is_err());
+        assert!(repair_prefix("构建任务将由服务器负责。").is_none());
+    }
     #[test]
     fn task_qualifiers_and_following_conditions_keep_independent_source_parts() {
         for source in [
