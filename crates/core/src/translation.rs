@@ -488,6 +488,11 @@ fn validate_text(
     let prose = names::Names::new(terms, &passage.text).validate(text)?;
     notes::validate_output_language(&prose, target == "zh")
 }
+pub(crate) fn preserves_source_spellings(source: &str, translated: &str) -> bool {
+    names::Names::new(&crate::terminology::Terms::new(&[], &[]), source)
+        .validate(translated)
+        .is_ok()
+}
 
 fn rotate_after(passages: &mut [crate::Segment], last: &str) {
     if let Some(index) = passages.iter().position(|p| p.id == last) {

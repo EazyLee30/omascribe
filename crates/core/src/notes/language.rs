@@ -15,16 +15,11 @@ pub(super) fn cached_text<'a>(
     // A budget/current-task view may have removed stale clauses: never restore
     // them by substituting a translation of the original, longer passage.
     let target = if chinese { "zh" } else { "en" };
-    // All-caps ASR cannot distinguish names/acronyms from prose (e.g. UN VIDEO
-    // CARD). The caption fact guards do not prove such translations faithful.
-    // Keep this source on the original-prose/checked-language-repair path.
-    let ambiguous_caps = source.text.chars().filter(char::is_ascii_uppercase).count() > 16
-        && !source
-            .text
-            .chars()
-            .any(|c| c.is_ascii_lowercase() || ('\u{3400}'..='\u{9fff}').contains(&c));
+    // Current cached captions also preserve literal source spellings. Reuse a
+    // checked all-caps passage only when names remain exact; never reintroduce
+    // guessed identities or restore a removed historical clause.
     (active_text == source.text
-        && !ambiguous_caps
+        && crate::translation::preserves_source_spellings(&source.text, &cached.text)
         && cached.segment_id == source.id
         && cached.revision == source.revision
         && cached.target == target
@@ -310,6 +305,11 @@ mod tests {
         source.text = "ALICE WILL CHECK THE UN VIDEO CARD".into();
         cached.text = "艾丽丝将检查未授权的视频卡。".into();
         assert!(cached_text(&source, &source.text, &cached, true).is_none());
+        cached.text = "ALICE将检查UN VIDEO CARD。".into();
+        assert_eq!(
+            cached_text(&source, &source.text, &cached, true),
+            Some(cached.text.as_str())
+        );
     }
     #[test]
     fn language_repair_has_only_checked_prose_and_strict_translation_shape() {

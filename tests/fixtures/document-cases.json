@@ -919,7 +919,13 @@
       "预算",
       "未|不.*批准",
       "本机|本地|电脑|计算机",
-      "3000|三千"
+      "3000|三千",
+      "ILLMIS\\s+CRIBE",
+      "LLAS\\s+CRIBE",
+      "\\bLICE\\b",
+      "ENVY A CARD",
+      "ALICE",
+      "UN VIDEO CARD"
     ],
     "max_sections": 2,
     "merged_sources": true,
