@@ -1,0 +1,413 @@
+{
+  "schema": 1,
+  "accepted": false,
+  "release_accepted": false,
+  "scope": "Bounded report-task semantic guards and repair plumbing. Assistant-inspected fictional seeded text, not human review, real ASR, or general entailment.",
+  "development_source_revisions": [
+    "54d6e38125d24f002c4749667459a259b48604db",
+    "12c5a605b88d83d0ccb78e381144f3a165bd9eab"
+  ],
+  "frozen_candidate6_unchanged": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "retained_candidate6_counterexamples": [
+    {
+      "case": "en_owner_and_deadline",
+      "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+      "original_pattern_pass": true,
+      "new_semantic_expectation_errors": [
+        "Translation 1 missing: 发送|提交|交付|送出|寄送"
+      ],
+      "snapshot_sha256": "43b8dae9e0c5c1807a82d662a5d6c685bab78c37cdd40d59be192f3271a58c69"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+      "original_pattern_pass": true,
+      "new_semantic_expectation_errors": [
+        "Missing: 负责|责任",
+        "Unsupported claim: 拥有[^。！？]*报告",
+        "Translation 2 missing: 负责|责任",
+        "Translation 2 unsupported: 拥有[^。！？]*报告"
+      ],
+      "snapshot_sha256": "3c762eb30d4edc73ca045773e73c087856dddd7789d5e919d0a209e2c050a85f"
+    }
+  ],
+  "static_checks": {
+    "mac_core_library": {
+      "passed": 182,
+      "ignored": 7,
+      "log_sha256": "81210ecde26ab44cb9bacc5eb10858356b5a4e05be979aa1c1ed9c9b578c2a6a"
+    },
+    "core_all_targets_strict_clippy": {
+      "passed": true,
+      "log_sha256": "7d3d5f958abdeed7d94cebc5efd53c5175e45b459e20232ca95076b5d89492a8"
+    },
+    "python_harness_tests": {
+      "passed": 22
+    }
+  },
+  "first_automatic_run": [
+    {
+      "case": "en_owner_and_deadline",
+      "passed": false,
+      "seconds": 120.182,
+      "coverage": 1,
+      "errors": [
+        "RuntimeError: Exit 1; see artifacts/benchmarks/report-relations-targeted-20261028/en_owner_and_deadline.artifacts/en_owner_and_deadline/phase-1/batch-1"
+      ],
+      "document": [
+        "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "core_and_harness_source_sha256": "828e37124d0727f530c7d07efff847bb31c2ce9c5214453aadd6347f919ad67b",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-targeted-20261028/en_owner_and_deadline.json",
+      "raw_report_sha256": "ec5a214e3cb573ef6b795a8021d02dcf7ab3de87bd819f3c9dba4621f11285de"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": false,
+      "seconds": 120.619,
+      "coverage": 0,
+      "errors": [
+        "RuntimeError: Exit 1; see artifacts/benchmarks/report-relations-targeted-20261028/zh_minutes_from_en.artifacts/zh_minutes_from_en/phase-1/batch-1"
+      ],
+      "document": [],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "core_and_harness_source_sha256": "828e37124d0727f530c7d07efff847bb31c2ce9c5214453aadd6347f919ad67b",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-targeted-20261028/zh_minutes_from_en.json",
+      "raw_report_sha256": "3e9c891ff31517e4770d63c4bd7ab026b266e74cb92319cb079bb5333dd97903"
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": false,
+      "seconds": 7.121,
+      "coverage": 1,
+      "errors": [
+        "Translation 1 missing: Morgan"
+      ],
+      "document": [
+        "Morgan 将于周四发布发布报告。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "core_and_harness_source_sha256": "828e37124d0727f530c7d07efff847bb31c2ce9c5214453aadd6347f919ad67b",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-targeted-20261028/zh_actual_report_publication.json",
+      "raw_report_sha256": "b2c8831547866033ad3c6c362d969cad73cba867dda163121bcb7b6b58b014ff"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "seconds": 6.879,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan 拥有原始论文报告，并将于周四交付。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "core_and_harness_source_sha256": "828e37124d0727f530c7d07efff847bb31c2ce9c5214453aadd6347f919ad67b",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-targeted-20261028/zh_physical_report_ownership.json",
+      "raw_report_sha256": "31dd6b6e2e4c890ffc9fc5e0e46478ef98ade35fc5a7b622be26732654588606"
+    }
+  ],
+  "bounded_translation_diagnostics": [
+    {
+      "case": "en_owner_and_deadline",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: Keep sending/delivering the report as 发送/交付/提交报告, not 发布报告. A release report is a report title, not a publishing action.",
+        "input": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+        "raw": "{ \"translation\": \"[A] 将于周四发布报告。我们尚未批准发布日期。\" }",
+        "stage": "validation"
+      },
+      "raw_local_report": "artifacts/benchmarks/report-relations-diagnostic-20261028/en_owner_and_deadline/diagnostic.json",
+      "raw_sha256": "16e214e2027062e10c1a99d91c55f5cc354dea0e997506dba6b64030230cddf0"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "54d6e38125d24f002c4749667459a259b48604db",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "80772e582e19d8ff8d6670b18f15c99fca9762b53993fc2b8d9758728674d49c",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "ed642157a565092f6e9a61c865cc9448f5c45f987c22baf861840805ae66611e",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: In this task-and-delivery context, owns the report means 负责报告, not 拥有报告. Preserve the same owner, delivery action and deadline.",
+        "input": "Morgan owns the latency report and will deliver it on Thursday.",
+        "raw": "{ \"translation\": \"[A] 拥有延迟报告，并将于周四交付。\" }",
+        "stage": "validation"
+      },
+      "raw_local_report": "artifacts/benchmarks/report-relations-diagnostic-20261028/zh_minutes_from_en/diagnostic.json",
+      "raw_sha256": "f3364aabd123b2b1c656a9bf6c2350f1dbc256e18baacb87d77eaca92793de1e"
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: 该句的动作是发送：send 译作“发送”。报告名称与发送动作分开翻译，保留原期限。Keep the sending action and the report title separately.",
+        "input": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+        "raw": "{ \"translation\": \"[A] 将于周四发布报告。我们尚未批准发布日期。\" }",
+        "stage": "validation"
+      },
+      "raw_local_report": "artifacts/benchmarks/report-relations-diagnostic2-20261028/en_owner_and_deadline/diagnostic.json",
+      "raw_sha256": "4f30f0300e8cf3bbe91d3724a2bb59be3149660972cbbaa7757e86cb4f48f544"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: 该句是任务分工：owns the report 译作“负责报告”。保留同一负责人、报告名称、交付动作和期限。Use responsibility for this task-and-delivery context.",
+        "input": "Morgan owns the latency report and will deliver it on Thursday.",
+        "raw": "{ \"translation\": \"[A] 拥有延迟报告，并将于周四交付。\" }",
+        "stage": "validation"
+      },
+      "raw_local_report": "artifacts/benchmarks/report-relations-diagnostic2-20261028/zh_minutes_from_en/diagnostic.json",
+      "raw_sha256": "82fbf448c43ab8b3655a5165b92921a1364dd686d111f2f71f1a23327d13a4de"
+    }
+  ],
+  "followup_explicit_minutes": [
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 1.93,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-minutes2-20261028/en_owner_and_deadline.json",
+      "raw_report_sha256": "6b5a9ccde384d50d7350f69da35f4ad78fcb44d67cb01d5d4d6680797e00bba7"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": false,
+      "seconds": 3.808,
+      "coverage": 0,
+      "errors": [
+        "Phase 1: uncovered transcript",
+        "No document: 纪要输出语言与选择不符，原话仍待整理",
+        "Missing: 离线",
+        "Missing: Morgan",
+        "Missing: 周四|星期四",
+        "Missing: 负责|责任",
+        "Missing: 未|待",
+        "Related evidence was not synthesized"
+      ],
+      "document": [],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-minutes2-20261028/zh_minutes_from_en.json",
+      "raw_report_sha256": "e22661f5e6c03d3198c7d7e46615e43c5628587113934bbbafcf59e929f146a2"
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": true,
+      "seconds": 1.305,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan 将于周四发布发布报告。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-minutes2-20261028/zh_actual_report_publication.json",
+      "raw_report_sha256": "2aa96b736cb7b8e46072335aa08e6bc2189593c329f3ad92e545f360d1938dbb"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "seconds": 1.291,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan 拥有原始纸质报告，并将在周四交付。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-minutes2-20261028/zh_physical_report_ownership.json",
+      "raw_report_sha256": "974664a0a3c065e77f612182354061327249e31f70bae8ea006efb1c452c47d0"
+    }
+  ],
+  "followup_automatic_controls": [
+    {
+      "case": "zh_actual_report_publication",
+      "passed": true,
+      "seconds": 6.906,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan 将于周四发布报告。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-controls2-20261028/zh_actual_report_publication.json",
+      "raw_report_sha256": "56282ad950bed581ee293eaab4854eac6a71a51487d57b89b1c838209d975e7b"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "seconds": 6.909,
+      "coverage": 1,
+      "errors": [],
+      "document": [
+        "Morgan 拥有原始论文报告，并将于周四交付。"
+      ],
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "12c5a605b88d83d0ccb78e381144f3a165bd9eab",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "b0eb45f17a82609320fb4cbc2f46543645d9a7b573b41f95ac08c9579e99c9ce",
+        "target": "aarch64-apple-darwin"
+      },
+      "cli_sha256": "7b2ee6cef9a4bc2a0a176b7beaf6cc9504cb30d23c7338a317b2327860790596",
+      "core_and_harness_source_sha256": "c7f3e3802271be5a350f4c993a468d87d4df9a7f0103db725d5fdb2d59573536",
+      "inference_source_tree_dirty": false,
+      "fixture_sha256": "1ac5c96a140a39557c286478d78f37221c79a56131c8b941f43dd90d67dacf0d",
+      "raw_local_report": "artifacts/benchmarks/report-relations-controls2-20261028/zh_physical_report_ownership.json",
+      "raw_report_sha256": "ccd4565f7703571ef83ef9f90268202e596fc94e61bbcd94ed8363305290da12"
+    }
+  ],
+  "settings": {
+    "model": "qwen3-1.7b",
+    "backend": "metal",
+    "context_size": 2048,
+    "threads": 1,
+    "temperature_and_request_limits": "Production defaults; no retry, output, settle, or live-work budget raised",
+    "keep_alive_seconds": 0,
+    "auto_catchup": false,
+    "incremental_minutes": false,
+    "originals_and_human_paragraphs": "No source or protected human text rewritten"
+  },
+  "cleanup": {
+    "expected_workspaces": 14,
+    "released_model_borrow_directories": 14,
+    "all_released": true,
+    "source_model_store_retained": true,
+    "owned_inference_processes_remaining": 0
+  },
+  "conclusion": "The guards reject both retained semantic errors, and factual hints survive name-constrained retry. They do not yet repair the two captions: both bounded diagnostic retries still produce the wrong action/role. The first automatic run times out at 120s for each; follow-up Chinese minutes repairs change output language and fail. Two genuine publication/physical-ownership automatic controls pass after the explicit publishing subject name gap is fixed. No new candidate or release.",
+  "next_step": "Stop prompt-wording sweeps. Investigate a bounded source-relation representation and productive repair on these two counterexamples before another full candidate matrix. Keep scheduler retry/resource churn and existing Windows CPU timeout visible.",
+  "limitations": [
+    "Named English report clauses only; ambiguous ownership, multiword identities and separate objects for one actor are not resolved by this guard.",
+    "Pattern controls and these targeted rejects do not establish semantic correctness across the wider corpus.",
+    "The first direct diagnostic driver later gained an output-directory argument; raw results and compiled identities are retained separately.",
+    "No microphone, ASR change, cross-platform runtime acceptance, native UI, installer or upgrade acceptance was run here."
+  ]
+}
