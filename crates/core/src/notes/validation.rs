@@ -544,7 +544,14 @@ pub fn validate_with_speakers(
 }
 pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
     static UNAPPROVED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过").unwrap());
+    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(concat!(
+        r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b",
+        r"|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)",
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过",
+        // A subjectless continuation retains the explicit approval topic.
+        // A new noun (e.g. “但测试未通过”) must not inherit that state.
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,40}[,，]\s*(?:但|不过|而)?\s*(?:仍|还|依然|目前|暂时|尚)?(?:未|没)(?:被|获|能)?通过"
+    )).unwrap());
     if unapproved.is_match(&polarity_text(&source.text))
         && !unapproved.is_match(&polarity_text(text))
     {
@@ -851,6 +858,24 @@ mod tests {
         assert!(validate_translation("已获批准，Alice将检查模型。", &source, "m").is_ok());
         source.text = "测试尚未通过。".into();
         assert!(validate_translation("The test has not passed yet.", &source, "m").is_ok());
+    }
+    #[test]
+    fn approval_continuations_do_not_borrow_an_unrelated_failed_test() {
+        let mut source = data()[0].clone();
+        source.text="The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.".into();
+        for body in [
+            "预算金额已修正为5000，但仍未通过。Morgan仍保持周四的截止日期。",
+            "预算金额改为5000，尚未通过。Morgan保留周四期限。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_ok(), "{body}");
+        }
+        for body in [
+            "预算金额改为5000，但测试未通过。Morgan保留周四期限。",
+            "预算金额改为5000，但仍已通过。Morgan保留周四期限。",
+            "预算金额改为5000，报告未通过。Morgan保留周四期限。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
     }
     #[test]
     fn budget_review_is_not_a_promised_decision_even_with_a_pending_adjective() {
