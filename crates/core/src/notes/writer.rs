@@ -233,7 +233,7 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
         .unwrap_or(trimmed)
         .trim();
     let Ok(value) = serde_json::from_str::<Value>(json) else {
-        return Ok(trimmed.to_owned());
+        return Ok(without_sequential_labels(trimmed));
     };
     if !value.is_object() && !value.is_array() {
         return Ok(trimmed.to_owned());
@@ -287,6 +287,29 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
         }
     }
     Ok(texts.into_values().collect::<Vec<_>>().join(" "))
+}
+
+/// Normalize a model's complete sequential presentation list into prose. Only
+/// ordinal prefixes are removed; amounts, dates and other numbers stay intact
+/// for factual validation. Wrapped/mixed/nonsequential lines are left alone.
+fn without_sequential_labels(text: &str) -> String {
+    let lines: Vec<_> = text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    if lines.len() < 2 {
+        return text.to_owned();
+    }
+    let prose: Option<Vec<_>> = lines
+        .iter()
+        .enumerate()
+        .map(|(i, line)| {
+            line.trim()
+                .strip_prefix(&format!("{}. ", i + 1))
+                .map(str::trim)
+        })
+        .collect();
+    prose.map_or_else(|| text.to_owned(), |lines| lines.join(" "))
 }
 
 fn fragmented(segments: &[crate::Segment]) -> bool {
@@ -409,6 +432,20 @@ pub fn non_substantive(text: &str) -> bool {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn presentation_ordinals_are_removed_without_erasing_factual_numbers() {
+        assert_eq!(
+            super::without_sequential_labels("1. 预算3000元未批准。\n2. 周四而非周五测试。"),
+            "预算3000元未批准。 周四而非周五测试。"
+        );
+        for body in [
+            "1.4版本尚未发布。\n2.5版本已撤回。",
+            "1. 预算3000元。\n3. 报价5000元。",
+            "1. 项目状态。\n后续内容。",
+        ] {
+            assert_eq!(super::without_sequential_labels(body), body);
+        }
+    }
     #[test]
     fn source_line_wrapping_becomes_article_paragraphs_without_touching_code() {
         assert_eq!(

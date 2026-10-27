@@ -922,7 +922,7 @@
       "3000|三千",
       "ILLMIS\\s+CRIBE",
       "LLAS\\s+CRIBE",
-      "\\bLICE\\b",
+      "(?<![A-Za-z0-9])LICE(?![A-Za-z0-9])",
       "ENVY A CARD",
       "ALICE",
       "UN VIDEO CARD"
