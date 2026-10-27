@@ -8,7 +8,7 @@ pub fn prompt(
     background: &Value,
     language: &str,
 ) -> (String, String) {
-    prompt_mode(snapshot, context, background, language, false)
+    prompt_sources(snapshot, context, background, language, false, true)
 }
 
 pub fn prompt_mode(
@@ -17,6 +17,19 @@ pub fn prompt_mode(
     background: &Value,
     language: &str,
     narrow: bool,
+) -> (String, String) {
+    // A factual repair must return to original evidence rather than repeat a
+    // possibly faulty caption paraphrase. Incremental mode stays conservative.
+    prompt_sources(snapshot, context, background, language, narrow, false)
+}
+
+fn prompt_sources(
+    snapshot: &Snapshot,
+    context: &Context,
+    background: &Value,
+    language: &str,
+    narrow: bool,
+    reuse_translations: bool,
 ) -> (String, String) {
     let chinese = chinese(snapshot, language);
     let fragmentary = narrow || fragmented(&context.segments);
@@ -107,7 +120,11 @@ pub fn prompt_mode(
             if text.trim().is_empty() {
                 return None;
             }
-            let mut passage = json!({"id":i+1,"text":text});
+            let translated = reuse_translations
+                .then(|| snapshot.translations.get(&s.id))
+                .flatten()
+                .and_then(|cached| super::language::cached_text(s, &text, cached, chinese));
+            let mut passage = json!({"id":i+1,"text":translated.unwrap_or(&text)});
             if let Some(name) = s
                 .speaker
                 .as_ref()
@@ -169,12 +186,35 @@ pub fn chinese(snapshot: &Snapshot, language: &str) -> bool {
 }
 
 pub fn validate_language(body: &str, chinese: bool) -> anyhow::Result<()> {
+    static ENGLISH_RUN: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let cjk = body
         .chars()
         .filter(|c| ('\u{3400}'..='\u{9fff}').contains(c))
         .count();
     let latin = body.chars().filter(|c| c.is_ascii_alphabetic()).count();
-    if !body.trim().is_empty() && (chinese && cjk == 0 || !chinese && cjk > latin) {
+    // A Chinese preface must not hide a copied English paragraph. Preserve
+    // proper-name sequences; require grammatical English words in a long run.
+    let copied_english = chinese
+        && ENGLISH_RUN
+            .get_or_init(|| {
+                regex::Regex::new(r"(?i)\b[a-z][a-z'’-]*(?:[ \t]+[a-z][a-z'’-]*){5,}\b").unwrap()
+            })
+            .find_iter(body)
+            .any(|m| {
+                m.as_str()
+                    .split_whitespace()
+                    .filter(|word| {
+                        [
+                            "the", "is", "not", "has", "been", "will", "should", "this", "on",
+                            "in", "are", "was", "and", "for", "to",
+                        ]
+                        .contains(&word.to_ascii_lowercase().as_str())
+                    })
+                    .count()
+                    >= 2
+            });
+    if !body.trim().is_empty() && (chinese && cjk == 0 || !chinese && cjk > latin || copied_english)
+    {
         anyhow::bail!("纪要输出语言与选择不符，原话仍待整理");
     }
     Ok(())
@@ -414,6 +454,12 @@ mod tests {
         assert!(super::validate_language("报告尚未完成。", false).is_err());
         assert!(super::validate_language("OmaScribe 的报告尚未完成。", true).is_ok());
         assert!(super::validate_language("林悦 will send the report on Thursday.", false).is_ok());
+        assert!(super::validate_language("预算未定。FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER.", true).is_err());
+        assert!(super::validate_language(
+            "周四测试 OmaScribe NVIDIA GTX1650 CUDA Vulkan Qwen Local Model。",
+            true
+        )
+        .is_ok());
     }
     #[test]
     fn prose_is_not_rewritten_when_sources_are_attached() {

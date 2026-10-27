@@ -235,7 +235,9 @@ fn run_inner(
                 .agent
                 .post(&format!("{}/tokenize", session.base))
                 .set("Authorization", &session.auth)
-                .send_json(json!({"content":format!("{system}\n{input}")}))?
+                .send_json(
+                    json!({"content":format!("{system}\n{}", notes::normalize_money(input))}),
+                )?
                 .into_json()?;
             let count = tokens["tokens"]
                 .as_array()
@@ -257,8 +259,8 @@ fn run_inner(
             }
             Err(error) => return Err(error),
         };
-        let input = &passage.text[chunk.start..chunk.end];
-        trace.event("chunk", json!({"source_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0}));
+        let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
+        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
         session.begin_request();

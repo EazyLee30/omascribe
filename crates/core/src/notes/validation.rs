@@ -221,7 +221,7 @@ struct Section {
 }
 // Date spelling may legitimately change between ASR and prose. Normalize only
 // calendar-number fields; ordinary Chinese numerals remain untouched.
-fn chinese_number(text: &str) -> Option<u32> {
+pub(super) fn chinese_number(text: &str) -> Option<u32> {
     fn digit(c: char) -> Option<u32> {
         match c {
             '零' | '〇' => Some(0),
@@ -302,7 +302,7 @@ fn normalize_date_numbers(text: &str) -> String {
     result
 }
 fn numbers(s: &str) -> HashSet<String> {
-    normalize_clock_numbers(&normalize_date_numbers(s))
+    normalize_clock_numbers(&normalize_date_numbers(&super::amounts::normalize(s)))
         .split(|c: char| !c.is_ascii_digit() && c != '.')
         .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
         .map(|s| s.trim_matches('.').to_owned())
@@ -335,6 +335,7 @@ pub(super) fn polarity_text(s: &str) -> String {
         .replace("n’t", " not")
 }
 pub(super) fn uncertain(s: &str) -> bool {
+    static NEGATIVE_STATE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let s = polarity_text(s);
     [
         "未",
@@ -358,6 +359,9 @@ pub(super) fn uncertain(s: &str) -> bool {
     ]
     .iter()
     .any(|q| s.contains(q))
+        || NEGATIVE_STATE.get_or_init(|| regex::Regex::new(
+            r"\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}(?:approved|decided|confirmed|finalized)\b"
+        ).unwrap()).is_match(&s)
 }
 fn calendar_weekdays(text: &str) -> HashSet<String> {
     use chrono::Datelike;
@@ -699,6 +703,45 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn spoken_money_does_not_allow_a_tenfold_translation_error() {
+        let mut source = data();
+        source[0].text = "THE BUDGET IS THREE THOUSAND DOLLARS AND IT HAS NOT BEEN APPROVED".into();
+        assert!(validate_translation("预算三千美元尚未批准。", &source[0], "m").is_ok());
+        for body in ["预算三万美元尚未批准。", "预算30000美元尚未批准。"] {
+            assert!(validate_translation(body, &source[0], "m").is_err());
+            let draft =
+                serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]})
+                    .to_string();
+            assert!(validate(&draft, &source, "m").is_err());
+        }
+    }
+    #[test]
+    fn approval_negation_accepts_bounded_adverbs_without_accepting_affirmation() {
+        let mut source = data();
+        source[0].text = "The budget is provisionally 3000 yuan and has not been approved.".into();
+        for body in [
+            "The budget is provisionally set at 3000 yuan and has not been officially approved.",
+            "The budget has not yet been formally approved; it is provisionally 3000 yuan.",
+            "The budget hasn't been fully approved; it is provisionally 3000 yuan.",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]})
+                    .to_string();
+            assert!(validate(&draft, &source, "m").is_ok(), "{body}");
+            assert!(validate_translation(body, &source[0], "m").is_ok());
+        }
+        for body in [
+            "The budget has been officially approved at 3000 yuan.",
+            "The budget has not only been officially approved but increased to 3000 yuan.",
+            "The budget is 3000 yuan. This is not a question; it has been approved.",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]})
+                    .to_string();
+            assert!(validate(&draft, &source, "m").is_err(), "{body}");
+        }
+    }
     #[test]
     fn a_public_release_does_not_establish_a_public_beta_stage() {
         let source="The offline recorder is ready for internal testing. The public release is not approved yet.";

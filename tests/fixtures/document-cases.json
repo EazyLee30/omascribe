@@ -831,5 +831,85 @@
       "上传验证还没有完成"
     ],
     "max_sections": 2
+  },
+  {
+    "name": "zh_windows_long_acceptance",
+    "focus": "OmaScribe",
+    "transcript": [
+      "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+      "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+      "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "OmaScribe",
+      "Alice",
+      "NVIDIA",
+      "GTX\\s*1650",
+      "3000",
+      "周四|星期四",
+      "周五|星期五",
+      "未|不.*批准",
+      "可选|按需|选择",
+      "本机|本地|电脑|计算机"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "en_windows_long_acceptance",
+    "focus": "OmaScribe",
+    "transcript": [
+      "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+      "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+      "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+    ],
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "required": [
+      "OmaScribe",
+      "Alice",
+      "NVIDIA",
+      "GTX\\s*1650",
+      "3000",
+      "Thursday",
+      "Friday",
+      "not.*approved",
+      "optional",
+      "this computer"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "zh_windows_uppercase_asr",
+    "focus": "",
+    "transcript": [
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+      "LICE WILL CHECK THE ENVY A CARD",
+      "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+      "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "周四|星期四",
+      "周五|星期五",
+      "预算",
+      "未|不.*批准",
+      "本机|本地|电脑|计算机",
+      "3000|三千"
+    ],
+    "max_sections": 2,
+    "merged_sources": true,
+    "forbidden": [
+      "三万美元",
+      "30000"
+    ]
   }
 ]

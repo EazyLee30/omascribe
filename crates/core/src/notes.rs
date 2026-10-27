@@ -1,9 +1,12 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+mod amounts;
+pub(crate) use amounts::normalize as normalize_money;
 mod completion;
 mod corrections;
 #[cfg(test)]
 pub(crate) mod facts;
 pub(crate) mod incremental;
+mod language;
 mod lexical;
 mod retrieval;
 pub(crate) mod stream;
@@ -260,7 +263,8 @@ fn generate_inner(
     };
     trace.event(
         "article_prompt",
-        json!({"mode":if delta.is_some(){"delta"}else{"full"},"input_tokens":prompt_tokens}),
+        json!({"mode":if delta.is_some(){"delta"}else{"full"},"input_tokens":prompt_tokens,
+        "reused_translation_passages":language::reused_count(&content, &context.segments, snapshot)}),
     );
     let mut messages = vec![
         json!({"role":"system","content":system}),
@@ -268,6 +272,7 @@ fn generate_inner(
     ];
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
+    let mut translation_repair = false;
     let terms = engine.terminology(meeting)?;
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
@@ -281,10 +286,19 @@ fn generate_inner(
         let mut first_token_ms = None;
         let mut partial_draft = String::new();
         session.begin_request();
-        let response = agent.post(&format!("{base}/v1/chat/completions")).set("Authorization",auth).send_json(json!({
+        let mut request = json!({
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
-        }));
+        });
+        if translation_repair {
+            request["temperature"] = json!(0.0);
+            request["response_format"] = json!({"type":"json_schema","json_schema":{
+                "name":"translation","strict":true,"schema":serde_json::from_str::<Value>(crate::translation::OUTPUT_SCHEMA)?}});
+        }
+        let response = agent
+            .post(&format!("{base}/v1/chat/completions"))
+            .set("Authorization", auth)
+            .send_json(request);
         let generated = response.map_err(anyhow::Error::from).and_then(|response| {
             stream::read_observed(BufReader::new(response.into_reader()), |draft| {
                 partial_draft = draft.to_owned();
@@ -342,16 +356,16 @@ fn generate_inner(
                 error
             }
         })?;
-        let prose = writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"));
+        let prose = if translation_repair {
+            language::repaired_body(&raw_body)
+        } else {
+            writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
+        };
         let normalized = prose
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
             .and_then(|body| {
                 let body = uncertainty::restore(&terms.normalize(body), &context.segments);
-                writer::validate_language(
-                    &body,
-                    writer::chinese(snapshot, &prefs.minutes_language),
-                )?;
                 terms.validate_writer_names(
                     &context
                         .segments
@@ -381,10 +395,21 @@ fn generate_inner(
                     &context.segments,
                     &sections,
                 )?;
+                // A language-only repair may translate this checked prose; it
+                // must never be used to launder an unsupported first draft.
+                writer::validate_language(
+                    &sections
+                        .iter()
+                        .map(|s| s.text.as_str())
+                        .collect::<Vec<_>>()
+                        .join("\n\n"),
+                    writer::chinese(snapshot, &prefs.minutes_language),
+                )?;
                 Ok(sections)
             });
         attempts.push(json!({
             "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
+            "mode":if translation_repair {"translate_checked_prose"} else {"compose"},
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
             "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
@@ -406,80 +431,77 @@ fn generate_inner(
                 break;
             }
             Err(error) if attempt == 0 => {
-                // Rebuild from pending evidence for factual failures: small
-                // models otherwise repeat invalid attributions. A language-only
-                // failure instead needs translation without dropping details;
-                // its result still passes every factual check below.
-                // Keep historical evidence too: a repair must not forget earlier decisions.
-                let spelling_context = background
-                    .get("spellings")
-                    .map(|v| json!({"spellings":v}))
-                    .unwrap_or_else(|| json!({}));
-                let narrow = error.to_string().contains("数字或日期");
-                let (repair_system, repair_content) = delta.as_ref().map_or_else(
-                    || {
-                        writer::prompt_mode(
-                            snapshot,
-                            &context,
-                            &spelling_context,
-                            &prefs.minutes_language,
-                            narrow,
-                        )
-                    },
-                    |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
-                );
-                let mut repair: Value = serde_json::from_str(&repair_content)?;
                 if error.to_string().contains("输出语言") {
-                    repair["draft_for_translation"] = json!(prose.as_deref().unwrap_or(&raw_body));
-                }
-                let attribution = error.to_string().contains("speaker attribution");
-                if attribution {
-                    for passage in repair["transcript"].as_array_mut().unwrap() {
-                        passage["speaker"] = Value::Null;
-                    }
-                }
-                let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
-                let name_hint = error.to_string();
-                let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
-                let hint = if name_hint.contains("专有名称") {
-                    &name_hint
-                } else if error.to_string().contains("历史来源") {
-                    &history_hint
-                } else if error.to_string().contains("转写仍待整理") {
-                    "提问和问题反馈也是实质内容。仅整理可理解的原话，保留疑问而不将它写成确认结论；不能因部分片段含混而忽略全部内容。Questions and reported problems are substantive. Keep them as questions, not confirmed conclusions; unclear passages do not invalidate the rest."
-                } else if error.to_string().contains("输出语言") {
-                    if writer::chinese(snapshot, &prefs.minutes_language) {
-                        "将draft_for_translation完整译成中文纪要正文，保留每个议题、技术限定词、日期和未完成状态，专有名称保留原文。仍以transcript核对事实，删除没有原话依据的内容。"
-                    } else {
-                        "Translate draft_for_translation completely into English minutes prose, preserving every topic, technical qualifier, date and unfinished status. Keep proper names in their original spelling. Check against transcript and remove unsupported claims."
-                    }
-                } else if error.to_string().contains("预算最新更正") {
-                    "采用current_budget中已由原文明确更正的最新金额，不输出被替换的旧金额；保留其他议题、负责人、期限和否定状态。Use the current_budget value and omit superseded amounts, retaining unrelated topics, owners, deadlines and negative status."
-                } else if error.to_string().contains("最新完成状态") {
-                    "同一任务后文明示完成时写已完成；其他任务仍未完成的状态保留。不要把已被更新的旧计划写成当前计划。Use the later explicit completion for that same task, retain unrelated pending work, and omit superseded plans."
-                } else if error.to_string().contains("无依据补写") {
-                    &unsupported_hint
-                } else if error.to_string().contains("问题反馈反向") {
-                    "原话抱怨的现状只记录为问题，不要将其改写成需要继续这样做，不推测解决方案。Preserve the complaint as a problem report; do not turn the criticized behavior into a new requirement."
-                } else if error.to_string().contains("技术限定") {
-                    &name_hint
-                } else if error.to_string().contains("因果关系") {
-                    "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
-                } else if error.to_string().contains("未完成") {
-                    "保留来源中仍未完成的具体事项。另一项任务已完成，不能作为这项也已完成的依据。Keep the specific unresolved work from its own source; another task's completion does not resolve it."
-                } else if error.to_string().contains("相对日期") {
-                    "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，做不到就删去时间词，只保留原话支持的内容。"
-                } else if attribution {
-                    "所有片段采用中性叙述，不写人名，不推测是谁说的。"
-                } else if error.to_string().contains("attendee") {
-                    "不要生成参会名单，只写转写明确支持的讨论内容。"
+                    messages = language::repair_messages(
+                        normalized.as_ref().map_err(|e| anyhow::anyhow!("{e}"))?,
+                        writer::chinese(snapshot, &prefs.minutes_language),
+                    )?;
+                    translation_repair = true;
                 } else {
-                    "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
-                };
-                messages = vec![
-                    json!({"role":"system","content":format!("{repair_system} {hint}")}),
-                    json!({"role":"user","content":serde_json::to_string(&repair)?}),
-                ];
+                    // Rebuild from original evidence for factual failures: small
+                    // models otherwise repeat invalid attributions.
+                    // Keep historical evidence too: a repair must not forget earlier decisions.
+                    let spelling_context = background
+                        .get("spellings")
+                        .map(|v| json!({"spellings":v}))
+                        .unwrap_or_else(|| json!({}));
+                    let narrow = error.to_string().contains("数字或日期");
+                    let (repair_system, repair_content) = delta.as_ref().map_or_else(
+                        || {
+                            writer::prompt_mode(
+                                snapshot,
+                                &context,
+                                &spelling_context,
+                                &prefs.minutes_language,
+                                narrow,
+                            )
+                        },
+                        |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
+                    );
+                    let mut repair: Value = serde_json::from_str(&repair_content)?;
+                    let attribution = error.to_string().contains("speaker attribution");
+                    if attribution {
+                        for passage in repair["transcript"].as_array_mut().unwrap() {
+                            passage["speaker"] = Value::Null;
+                        }
+                    }
+                    let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
+                    let name_hint = error.to_string();
+                    let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
+                    let hint = if name_hint.contains("专有名称") {
+                        &name_hint
+                    } else if error.to_string().contains("历史来源") {
+                        &history_hint
+                    } else if error.to_string().contains("转写仍待整理") {
+                        "提问和问题反馈也是实质内容。仅整理可理解的原话，保留疑问而不将它写成确认结论；不能因部分片段含混而忽略全部内容。Questions and reported problems are substantive. Keep them as questions, not confirmed conclusions; unclear passages do not invalidate the rest."
+                    } else if error.to_string().contains("预算最新更正") {
+                        "采用current_budget中已由原文明确更正的最新金额，不输出被替换的旧金额；保留其他议题、负责人、期限和否定状态。Use the current_budget value and omit superseded amounts, retaining unrelated topics, owners, deadlines and negative status."
+                    } else if error.to_string().contains("最新完成状态") {
+                        "同一任务后文明示完成时写已完成；其他任务仍未完成的状态保留。不要把已被更新的旧计划写成当前计划。Use the later explicit completion for that same task, retain unrelated pending work, and omit superseded plans."
+                    } else if error.to_string().contains("无依据补写") {
+                        &unsupported_hint
+                    } else if error.to_string().contains("问题反馈反向") {
+                        "原话抱怨的现状只记录为问题，不要将其改写成需要继续这样做，不推测解决方案。Preserve the complaint as a problem report; do not turn the criticized behavior into a new requirement."
+                    } else if error.to_string().contains("技术限定") {
+                        &name_hint
+                    } else if error.to_string().contains("因果关系") {
+                        "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
+                    } else if error.to_string().contains("未完成") {
+                        "保留来源中仍未完成的具体事项。另一项任务已完成，不能作为这项也已完成的依据。Keep the specific unresolved work from its own source; another task's completion does not resolve it."
+                    } else if error.to_string().contains("相对日期") {
+                        "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，做不到就删去时间词，只保留原话支持的内容。"
+                    } else if attribution {
+                        "所有片段采用中性叙述，不写人名，不推测是谁说的。"
+                    } else if error.to_string().contains("attendee") {
+                        "不要生成参会名单，只写转写明确支持的讨论内容。"
+                    } else {
+                        "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
+                    };
+                    messages = vec![
+                        json!({"role":"system","content":format!("{repair_system} {hint}")}),
+                        json!({"role":"user","content":serde_json::to_string(&repair)?}),
+                    ];
+                }
                 let repair_input = messages
                     .iter()
                     .filter_map(|m| m["content"].as_str())

@@ -1,5 +1,6 @@
 //! Restore an omitted hedge only for the same literal subject + claim from the
-//! latest source. Do not guess paraphrases, identities, or cross-run state.
+//! latest source. Only the bounded 有问题/存在问题 predicate pair is equivalent;
+//! do not guess other paraphrases, identities, or cross-run state.
 use crate::Segment;
 use std::collections::BTreeMap;
 
@@ -69,10 +70,16 @@ pub(super) fn restore(body: &str, segments: &[Segment]) -> String {
                 {
                     continue;
                 }
-                let assertion = format!("{subject}{claim}");
-                for (at, _) in text.match_indices(&assertion) {
-                    if let Some(original) = offsets.get(&(at + subject.len())) {
-                        insertions.insert(*original, hedge);
+                let claims = match claim {
+                    "有问题" | "存在问题" => vec!["有问题", "存在问题"],
+                    _ => vec![claim],
+                };
+                for claim in claims {
+                    let assertion = format!("{subject}{claim}");
+                    for (at, _) in text.match_indices(&assertion) {
+                        if let Some(original) = offsets.get(&(at + subject.len())) {
+                            insertions.insert(*original, hedge);
+                        }
                     }
                 }
             }
@@ -143,5 +150,35 @@ mod tests {
             ),
             body
         );
+    }
+    #[test]
+    fn equivalent_problem_predicate_keeps_source_hedge_and_subject() {
+        let sources = [source(
+            1,
+            "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。",
+        )];
+        assert_eq!(restore(
+            "转写中提到 PixelLedger 的人员分配存在问题，需要核对。OtherLedger的人员分配存在问题。",
+            &sources),
+            "转写中提到 PixelLedger 的人员分配好像存在问题，需要核对。OtherLedger的人员分配存在问题。");
+        for body in [
+            "PixelLedger的人员分配不存在问题。",
+            "PixelLedger的人员分配可能存在问题。",
+        ] {
+            assert_eq!(restore(body, &sources), body);
+        }
+        assert_eq!(
+            restore(
+                "PixelLedger的人员分配有问题。",
+                &[source(1, "PixelLedger的人员分配似乎存在问题。")]
+            ),
+            "PixelLedger的人员分配似乎有问题。"
+        );
+        let confirmed = [
+            sources[0].clone(),
+            source(2, "已确认PixelLedger的人员分配存在问题。"),
+        ];
+        let body = "PixelLedger的人员分配存在问题。";
+        assert_eq!(restore(body, &confirmed), body);
     }
 }

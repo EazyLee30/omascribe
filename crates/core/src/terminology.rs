@@ -347,9 +347,13 @@ impl Terms {
 /// translatable; this does not create aliases or alter the original transcript.
 fn source_owner_names(text: &str) -> Vec<String> {
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static FUTURE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
     let mut names = Vec::new();
-    for c in re.captures_iter(text) {
+    // Title-case subjects with a stated future task are also name spellings.
+    // Do not infer names from an all-caps ASR sentence ("BEEN APPROVED ALICE").
+    let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify)\b").unwrap());
+    for c in re.captures_iter(text).chain(future.captures_iter(text)) {
         let name = &c["name"];
         if [
             "We",
@@ -380,6 +384,12 @@ fn source_owner_names(text: &str) -> Vec<String> {
         }
     }
     names
+}
+pub(crate) fn preserves_owner_spelling(source: &str, body: &str) -> bool {
+    let body = body.to_lowercase();
+    source_owner_names(source)
+        .iter()
+        .all(|n| contains_name(&body, &n.to_lowercase()))
 }
 fn contains_name(text: &str, name: &str) -> bool {
     text.match_indices(name).any(|(start, value)| {
@@ -601,6 +611,28 @@ mod tests {
             .terminology_candidates(&meeting)?
             .is_empty());
         Ok(())
+    }
+    #[test]
+    fn future_task_owner_spelling_is_preserved_without_guessing_all_caps_subjects() {
+        let terms = Terms::new(&[], &[]);
+        let source =
+            "The budget has not been approved. Alice will check the NVIDIA GTX1650 local model.";
+        assert_eq!(terms.spellings(source), ["Alice"]);
+        assert!(!preserves_owner_spelling(
+            source,
+            "艾莉丝将检查NVIDIA GTX1650本地模型。"
+        ));
+        assert!(preserves_owner_spelling(
+            source,
+            "Alice将检查NVIDIA GTX1650本地模型。"
+        ));
+        assert!(terms
+            .validate_writer_names(source, "艾莉丝将检查显卡。")
+            .is_err());
+        assert!(terms
+            .spellings("THE BUDGET HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD")
+            .is_empty());
+        assert!(terms.spellings("We will check the recorder.").is_empty());
     }
     #[test]
     fn disabling_a_term_reverts_only_automatic_corrections() -> Result<()> {
