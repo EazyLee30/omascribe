@@ -1315,5 +1315,273 @@
     "ordinary_auto_reused_passages": 2,
     "ambiguous_caps_auto_reused_passages": 0,
     "candidate_frozen": false
+  },
+  "integrated_followup": {
+    "source_commit": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+    "merged_windows_pr": 5,
+    "merged_windows_head": "3841298d422313257fe4068af68bb82097f78d76",
+    "checks": {
+      "core": "163 passed/7 ignored",
+      "workspace_all_targets_clippy": "passed -D warnings",
+      "native_ui_test_all_targets_clippy": "passed -D warnings",
+      "typescript_vite": "passed",
+      "prettier": "passed",
+      "source_log_sha256": "2907a315425888f52359199c8b843df2eb86bdfde59e7d012765a03a736a5670",
+      "python": "63 tests run, 1 skipped, passed"
+    },
+    "runs": [
+      {
+        "case": "zh_windows_long_acceptance",
+        "execution": "automatic",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 7.937,
+        "report_sha256": "b4eedbdf8c4f0019287ff672d4679c4f51f3dd50bdbecf883cd078c275faa4ca",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "6b39661cdde788bf860eb6dd93cdea1949b66591b2c44cd645bda068424af2d8"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "execution": "automatic",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 10.621,
+        "report_sha256": "b137f1064175dbde7f2920e65d613d67eede0122b9f98ec7426edfc6c6b95b74",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_uppercase_asr",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "b9de6e1ec79a967c494abc874db7bae29846fbd153cb2bd701fb436c4875ff54"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "en_windows_long_acceptance",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 2.342,
+        "report_sha256": "524e468bddf970b2773d47e2503b1ddc4fee4988b5b1645720cd5fbfc1715d78",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "en_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "edab3b5950d8fa9fec49c68808892679a31cf5d3e6ae771689125f72e9149c13"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 3.367,
+        "report_sha256": "fce674d408ff41bfcda73cf0fe2191033780c7edec7298ef4654acd2875694d0",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "3e309bfe3594441c009d8b443537a2f03a5a23c97eee0a52a1cb4f297cc5d57a"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 4.56,
+        "report_sha256": "f144c7bd6260b92e40e7b6f07340e05984880d3cd34460c5d469b4ca08cd015d",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_uppercase_asr",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "1186644b722171b4b1ad9330b4f927b5de3878810400a83e862aa4894c9ced76"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      }
+    ],
+    "release_eligible": false,
+    "scope": "Same exact integrated source checkpoint; seeded text/scheduler and actual Metal evidence, not Windows PCM/physical recording/installer acceptance."
   }
 }

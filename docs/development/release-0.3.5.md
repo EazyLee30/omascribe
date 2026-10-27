@@ -20,7 +20,7 @@
 
 开发修复 `cb85620d0a143fb1a865b9244b042234727ff128` 已推送，尚未冻结下一候选。补入Windows原始三段/全大写ASR输入后语料共31项；Mac上11项受影响回归和2组自动翻译→纪要通过，160项core/7忽略与严格clippy通过。中文回抄改为既有第二次尝试内翻译已通过事实检查的正文；正常来源复用同版本有效译文，裁剪过的来源、姓名缺失或全大写含混来源不复用。修复待确认副词误拒、同主体问题谓词的不确定性，并拦截文字金额三千→三万。源文/引用不改，原始失败保留。[开发证据与源码内容绑定](../evaluation/apple-minutes-language-repair-2026-10-27.json)。这些种子文本检查不能替代Windows原92s音频/自动CUDA复现或候选完整验收。
 
-Windows [PR #5](https://github.com/EazyLee30/omascribe/pull/5) 的 `3841298d422313257fe4068af68bb82097f78d76` 已纳入本地集成检查：设置显示实际默认输入、选中设备的有界电平预览与原生30秒停止；Unix进程输入会终止owned采集进程。Mac集成core163通过/7忽略、workspace及ui-test严格clippy、TypeScript/Vite和格式检查通过。Realtek硬件证据仍绑定PR内较早源码，未冒充当前集成实测；实际读稿与冷ASR阻塞继续保留。
+Windows [PR #5](https://github.com/EazyLee30/omascribe/pull/5) 的 `3841298d422313257fe4068af68bb82097f78d76` 已正常合入开发检查点`6ac25b48e7ee755fb15ae581ab5a82d14c490f9d`：设置显示实际默认输入、选中设备的有界电平预览与原生30秒停止；Unix进程输入会终止owned采集进程。Mac集成core163通过/7忽略、workspace及ui-test严格clippy、TypeScript/Vite和格式检查通过。该干净源码的编译版本已完成原始三段/全大写输入的3项显式生成和2组自动翻译→纪要，正文与此前人工复核结果相同，实际Metal诊断通过；63项Python检查（1项忽略）通过。Realtek硬件证据仍绑定PR内较早源码，未冒充当前集成实测；实际读稿与冷ASR阻塞继续保留。
 
 ## 失败项—负责人—验证结果
 
