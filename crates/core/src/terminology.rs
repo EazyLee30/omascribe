@@ -289,8 +289,11 @@ impl Terms {
     pub fn spellings(&self, transcript: &str) -> Vec<String> {
         let normalized = self.normalize(transcript).to_lowercase();
         let mut names = self.writer_names.clone();
+        names.extend(source_owner_names(transcript));
         // Unspoken note words must not become invented meeting subjects.
         names.retain(|n| contains_name(&normalized, &n.to_lowercase()));
+        names.sort();
+        names.dedup();
         names.sort_by_key(|n| n.len());
         let mut budget = 240;
         names
@@ -308,9 +311,17 @@ impl Terms {
     }
     pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {
         let body = body.to_lowercase();
+        let owners = source_owner_names(transcript);
+        // A sole explicit owner is a source spelling, not a guessed translation.
+        // Multiple/changed ownership needs field identity; do not demand obsolete
+        // owners merely because their names occurred in an earlier passage.
+        static CHANGED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+        let changed = CHANGED.get_or_init(|| Regex::new(r"(?i)no longer|not responsible|changed?|corrected|reassigned|不再负责|负责人.{0,12}(?:改|换|变)").unwrap());
+        let sole_owner = owners.len() == 1 && !changed.is_match(transcript);
         let missing: Vec<_> = self
             .spellings(transcript)
             .into_iter()
+            .filter(|name| self.writer_names.contains(name) || sole_owner && owners.contains(name))
             .filter(|name| !contains_name(&body, &name.to_lowercase()))
             .collect();
         if !missing.is_empty() {
@@ -331,6 +342,44 @@ impl Terms {
         }
         Ok(serde_json::to_string(&value)?)
     }
+}
+/// Explicit ownership subjects only. Ordinary capitalized technical prose is
+/// translatable; this does not create aliases or alter the original transcript.
+fn source_owner_names(text: &str) -> Vec<String> {
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
+    let mut names = Vec::new();
+    for c in re.captures_iter(text) {
+        let name = &c["name"];
+        if [
+            "We",
+            "You",
+            "They",
+            "He",
+            "She",
+            "It",
+            "Someone",
+            "Anyone",
+            "This",
+            "That",
+            "Team",
+            "The Team",
+            "Nobody",
+            "Everybody",
+            "Management",
+        ]
+        .contains(&name)
+        {
+            continue;
+        }
+        if !names.iter().any(|n| n == name) {
+            names.push(name.to_owned());
+        }
+        if names.len() == 12 {
+            break;
+        }
+    }
+    names
 }
 fn contains_name(text: &str, name: &str) -> bool {
     text.match_indices(name).any(|(start, value)| {
@@ -441,6 +490,27 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn explicit_source_owner_keeps_spelling_without_guessing_transliterations_or_old_owners() {
+        let terms = Terms::new(&[], &[]);
+        let source="The offline recorder is ready for testing. Morgan owns the latency report and will deliver it on Thursday.";
+        assert_eq!(terms.spellings(source), ["Morgan"]);
+        assert!(terms
+            .validate_writer_names(source, "Morgan 周四交付延迟报告。")
+            .is_ok());
+        assert!(terms
+            .validate_writer_names(source, "莫根周四交付延迟报告。")
+            .is_err());
+        assert_eq!(terms.normalize(source), source);
+        assert!(terms
+            .spellings("The offline prototype is ready for review. We will test it on Friday.")
+            .is_empty());
+        let changed =
+            "Morgan owns the latency report. Ownership changed: Riley owns the latency report.";
+        assert!(terms
+            .validate_writer_names(changed, "Riley 周四交付延迟报告。")
+            .is_ok());
+    }
     #[test]
     fn unchanged_terminology_only_rechecks_new_or_revised_passages() -> Result<()> {
         let root = tempfile::tempdir()?;

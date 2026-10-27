@@ -112,7 +112,8 @@
       "嗯",
       "那个，",
       "调整已完成",
-      "调整已经完成"
+      "调整已经完成",
+      "(?<![不无勿别])(?:需要|仍需|需|应该|应).{0,6}(?:分句|逐句|一小句一小句).{0,6}显示"
     ],
     "max_sections": 2,
     "merged_sources": true
@@ -228,7 +229,8 @@
       "not|pending|unimplemented"
     ],
     "forbidden": [
-      "[\\u3400-\\u9fff]"
+      "[\\u3400-\\u9fff]",
+      "\\b(?:first|second|third)\\s+meeting\\b"
     ],
     "max_sections": 2,
     "merged_sources": true

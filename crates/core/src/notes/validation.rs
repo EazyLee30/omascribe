@@ -14,6 +14,7 @@ fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str>
         ("不需要后续行动",r"(?i)\bno\s+(?:further\s+)?actions?\s+(?:is|are)\s+(?:needed|required)\b|(?:无需|不需要)(?:采取)?(?:任何|后续|进一步)*行动"),
         ("未讨论其他议题",r"(?i)(?:did\s+not|didn['’]t)\s+(?:discuss|cover|address)\s+(?:any\s+)?other\s+topics|\bno\s+other\s+topics\s+(?:were|have\s+been|had\s+been)\s+(?:discussed|covered|addressed)|(?:没有|未)讨论(?:任何)?其他(?:议题|话题)"),
         ("期限缺乏信息的推断",r"(?i)no\s+(?:indication|mention|evidence)\s+of\s+(?:a\s+|the\s+)?deadline|没有(?:提及|提供)(?:审批)?期限"),
+        ("不同场次的会议",r"(?i)\b(?:first|second|third)\s+(?:meeting|session)\b|第[一二三](?:次|场)会议"),
         ("未发生修改或更正",r"(?i)\bno\s+(?:changes?|corrections?)\s+(?:(?:or|and)\s+(?:changes?|corrections?)\s+)?(?:were|was|have\s+been|had\s+been)\s+(?:made|applied)\b|(?:没有|未)(?:进行|做出|作出)?(?:任何)?(?:修改|更改|更正)"),
     ].into_iter().map(|(name,pattern)|(name,regex::Regex::new(pattern).unwrap())).collect());
     let assertions = |text: &str| {
@@ -46,6 +47,50 @@ fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str>
         .map(|(name, _)| *name)
 }
 
+fn inverted_fragmentation_request(body: &str, evidence: &str) -> bool {
+    let evidence = evidence.to_lowercase();
+    let complaint = evidence.split(['。', '\n']).any(|s| {
+        ["纪要", "摘要", "minutes", "summary"]
+            .iter()
+            .any(|w| s.contains(w))
+            && [
+                "一小句一小句",
+                "一句一句",
+                "逐句",
+                "分句",
+                "sentence by sentence",
+                "one sentence at a time",
+                "fragmented",
+            ]
+            .iter()
+            .any(|w| s.contains(w))
+            && [
+                "不连贯",
+                "太碎",
+                "混乱",
+                "难读",
+                "disjointed",
+                "hard to read",
+                "incoherent",
+            ]
+            .iter()
+            .any(|w| s.contains(w))
+    });
+    static REQUEST: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let request=REQUEST.get_or_init(||regex::Regex::new(r"(?i)(?:需要|仍需|需|应该|应|必须|建议).{0,8}(?:分句|逐句|一小句一小句|一句一句).{0,8}(?:显示|呈现)|\b(?:needs?|should|must)\b.{0,15}(?:split(?:ting)?|one sentence at a time|sentence by sentence)").unwrap());
+    let asks = |text: &str| {
+        request.find_iter(text).any(|m| {
+            !text[..m.start()]
+                .trim_end()
+                .ends_with(['不', '无', '勿', '别'])
+                && !text[..m.start()].trim_end().to_lowercase().ends_with("not")
+                && !m.as_str().to_lowercase().contains("not ")
+                && !m.as_str().contains("n't")
+        })
+    };
+    complaint && asks(body) && !asks(&evidence)
+}
+
 fn causal_language(text: &str) -> bool {
     let text = text.to_lowercase();
     [
@@ -56,6 +101,67 @@ fn causal_language(text: &str) -> bool {
         || regex::Regex::new(r"\b(because|due to|caused?|resulted in|therefore|as a result)\b")
             .unwrap()
             .is_match(&text)
+}
+
+/// Preserve explicit recording qualifiers across translation. Negated/changed
+/// modes abstain rather than forcing an obsolete qualifier into the article.
+fn missing_technical_qualifier(body: &str, evidence: &str) -> Option<&'static str> {
+    let source = evidence.to_lowercase();
+    let body = body.to_lowercase();
+    let recording = [
+        "转写",
+        "转录",
+        "转錄",
+        "录音",
+        "錄音",
+        "音频",
+        "音訊",
+        "transcription",
+        "recorder",
+        "recording",
+        "audio",
+    ]
+    .iter()
+    .any(|w| body.contains(w));
+    if !recording {
+        return None;
+    }
+    static NEGATED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let negated=NEGATED.get_or_init(||regex::Regex::new(r"(?i)\b(?:not|never|without|no|instead of)\b[^.!?;。\n]{0,30}\boffline\b|\boffline\b[^.!?;。\n]{0,25}\b(?:now|moved|changed|switched)\b[^.!?;。\n]{0,15}\bonline\b").unwrap());
+    if source.contains("offline")
+        && ["transcription", "recorder", "recording"]
+            .iter()
+            .any(|w| source.contains(w))
+        && !negated.is_match(&source)
+        && !["改为在线", "转为在线"].iter().any(|w| source.contains(w))
+        && !["离线", "離線", "offline"].iter().any(|w| body.contains(w))
+    {
+        return Some("offline / 离线");
+    }
+    let system = ["系统音频", "系統音訊", "system audio"];
+    if system.iter().any(|w| source.contains(w))
+        && ![
+            "not system audio",
+            "不是系统音频",
+            "改为麦克风",
+            "switched to microphone",
+        ]
+        .iter()
+        .any(|w| source.contains(w))
+        && ![
+            "系统音频",
+            "系統音訊",
+            "system audio",
+            "desktop audio",
+            "loopback audio",
+            "系统声音",
+        ]
+        .iter()
+        .any(|w| body.contains(w))
+    {
+        return Some("system audio / 系统音频");
+    }
+    None
 }
 
 /// Replacing an unlocked paragraph must not silently discard its still-selected
@@ -454,9 +560,16 @@ fn validate_document(
             if let Some(claim) = unsupported_summary_claim(body, &raw_evidence) {
                 bail!("纪要含有无依据补写（{claim}），请仅保留原话支持的内容；本轮未提交");
             }
+            if inverted_fragmentation_request(body, &raw_evidence) {
+                bail!("纪要把问题反馈反向改成了要求，请保留原话的问题状态；本轮未提交");
+            }
         }
         if causal_language(body) && !causal_language(&evidence) {
             bail!("纪要增加了原话未明确说明的因果关系，请分别记录事实和疑问");
+        }
+        let lower = evidence.to_lowercase();
+        if let Some(qualifier) = missing_technical_qualifier(body, &evidence) {
+            bail!("纪要遗漏了原文技术限定（{qualifier}），请翻译并保留限定词；本轮未提交");
         }
         if [
             "参会者：",
@@ -543,11 +656,16 @@ fn validate_document(
         {
             bail!("文档可能将计划写成了已完成事项，本轮未提交");
         }
-        let shares_uncertain_topic = ["预算", "budget", "金额", "launch", "发布日期", "日期"]
-            .iter()
-            .any(|topic| {
-                evidence.to_lowercase().contains(topic) && body.to_lowercase().contains(topic)
-            });
+        let shares_uncertain_topic = [
+            &["预算", "budget", "金额"][..],
+            &["launch", "release", "发布"][..],
+            &["日期"][..],
+        ]
+        .iter()
+        .any(|group| {
+            group.iter().any(|t| lower.contains(t))
+                && group.iter().any(|t| body.to_lowercase().contains(t))
+        });
         if shares_uncertain_topic
             && body.contains("暂定")
             && !evidence.contains("暂定")
@@ -579,6 +697,70 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn recording_qualifiers_survive_translation_but_negated_or_changed_modes_are_not_forced() {
+        let source =
+            "The offline transcription prototype is ready for review. 本阶段只实现麦克风录音。";
+        assert!(missing_technical_qualifier("转写原型已可评审。", source).is_some());
+        assert!(missing_technical_qualifier("离线转写原型已可评审。", source).is_none());
+        assert!(missing_technical_qualifier(
+            "Online transcription is used.",
+            "We are not using offline transcription."
+        )
+        .is_none());
+        assert!(missing_technical_qualifier(
+            "Online transcription is used.",
+            "Offline transcription was switched to online transcription."
+        )
+        .is_none());
+        assert!(missing_technical_qualifier(
+            "The system has not implemented audio acquisition.",
+            "系统音频采集还没有实现。"
+        )
+        .is_some());
+        assert!(missing_technical_qualifier(
+            "System audio capture is not implemented.",
+            "系统音频采集还没有实现。"
+        )
+        .is_none());
+        assert!(missing_technical_qualifier(
+            "Desktop audio capture is not implemented.",
+            "系统音频采集还没有实现。"
+        )
+        .is_none());
+    }
+    #[test]
+    fn a_complaint_about_fragmented_minutes_is_not_a_request_to_continue_it() {
+        let source = "AI纪要还是一小句一小句地显示，阅读起来不连贯。";
+        assert!(inverted_fragmentation_request(
+            "AI纪要显示不连贯，需分句显示。",
+            source
+        ));
+        assert!(inverted_fragmentation_request(
+            "AI纪要仍需一小句一小句显示。",
+            source
+        ));
+        assert!(inverted_fragmentation_request(
+            "The minutes should display one sentence at a time.",
+            source
+        ));
+        assert!(!inverted_fragmentation_request(
+            "AI纪要仍逐句显示，阅读不连贯。",
+            source
+        ));
+        assert!(!inverted_fragmentation_request(
+            "AI纪要不应逐句显示。",
+            source
+        ));
+        assert!(!inverted_fragmentation_request(
+            "The minutes should not display one sentence at a time.",
+            source
+        ));
+        assert!(!inverted_fragmentation_request(
+            "这部分需要分句显示。",
+            &format!("{source}这部分需要分句显示。")
+        ));
+    }
     #[test]
     fn actual_completion_updates_only_that_task_and_does_not_weaken_translations() {
         let mut segments = vec![data()[0].clone(); 3];
@@ -626,6 +808,7 @@ mod tests {
         let fact = "The budget of 3000 is not approved.";
         for claim in [
             "The meeting concluded.",
+            "In the first meeting, the budget was discussed.",
             "No further action has been taken.",
             "No further action is required.",
             "There is no indication of a deadline for approval.",

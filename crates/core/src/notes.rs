@@ -341,30 +341,32 @@ fn generate_inner(
                 error
             }
         })?;
-        let normalized = writer::validate_language(
-            &raw_body,
-            writer::chinese(snapshot, &prefs.minutes_language),
-        )
-        .and_then(|()| {
-            terms.validate_writer_names(
-                &context
-                    .segments
-                    .iter()
-                    .filter(|s| !writer::non_substantive(&s.text))
-                    .map(|s| s.text.as_str())
-                    .collect::<Vec<_>>()
-                    .join(" "),
-                &terms.normalize(&raw_body),
-            )
-        })
-        .and_then(|()| {
-            writer::document(
-                &terms.normalize(&raw_body),
-                &context.segments,
-                &snapshot.meeting.speaker_names,
-            )
-        })
-        .and_then(|text| terms.normalize_draft(&text));
+        let prose = writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"));
+        let normalized = prose
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("{e}"))
+            .and_then(|body| {
+                writer::validate_language(
+                    body,
+                    writer::chinese(snapshot, &prefs.minutes_language),
+                )?;
+                terms.validate_writer_names(
+                    &context
+                        .segments
+                        .iter()
+                        .filter(|s| !writer::non_substantive(&s.text))
+                        .map(|s| s.text.as_str())
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                    &terms.normalize(body),
+                )?;
+                writer::document(
+                    &terms.normalize(body),
+                    &context.segments,
+                    &snapshot.meeting.speaker_names,
+                )
+            })
+            .and_then(|text| terms.normalize_draft(&text));
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
         let validation = normalized
             .as_ref()
@@ -384,7 +386,7 @@ fn generate_inner(
                 Ok(sections)
             });
         attempts.push(json!({
-            "attempt":attempt+1, "draft":text, "body_draft":raw_body, "normalized_draft":normalized.as_ref().ok(), "usage":usage,
+            "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
             "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
@@ -430,7 +432,7 @@ fn generate_inner(
                 );
                 let mut repair: Value = serde_json::from_str(&repair_content)?;
                 if error.to_string().contains("输出语言") {
-                    repair["draft_for_translation"] = json!(raw_body);
+                    repair["draft_for_translation"] = json!(prose.as_deref().unwrap_or(&raw_body));
                 }
                 let attribution = error.to_string().contains("speaker attribution");
                 if attribution {
@@ -458,6 +460,10 @@ fn generate_inner(
                     "同一任务后文明示完成时写已完成；其他任务仍未完成的状态保留。不要把已被更新的旧计划写成当前计划。Use the later explicit completion for that same task, retain unrelated pending work, and omit superseded plans."
                 } else if error.to_string().contains("无依据补写") {
                     "原话没有提供会议是否结束、有无其他议题、有无行动或修改的证据。只写已说出的内容，不补会议层面的结论和缺席信息。Do not add meeting conclusions or claims about absent actions, topics or changes. Restate only the explicit excerpt."
+                } else if error.to_string().contains("问题反馈反向") {
+                    "原话抱怨的现状只记录为问题，不要将其改写成需要继续这样做，不推测解决方案。Preserve the complaint as a problem report; do not turn the criticized behavior into a new requirement."
+                } else if error.to_string().contains("技术限定") {
+                    &name_hint
                 } else if error.to_string().contains("因果关系") {
                     "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
                 } else if error.to_string().contains("未完成") {
