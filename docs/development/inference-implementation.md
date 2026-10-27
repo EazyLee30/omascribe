@@ -4,6 +4,8 @@ Objective: implement the audio efficiency research plan, with optional hardware-
 
 Reference: `docs/research/audio-efficiency-2026-10-26/PLAN.zh-CN.md` and `REPORT.zh-CN.md`. Preserve unrelated private research and user data. No model/default promotion or release based only on compilation.
 
+Current release checkpoint: frozen candidate6 `9bfbfc088a8fcaa471ccee31057a8f99fe4fde66` includes the explicit mixed-script owner guard and reviewed #7/#8. Its complete clean-source Mac automatic bilingual corpus passes33/33 with actual Metal logs; natural ASR quality, same-candidate native/platform and install/upgrade gates remain open. Use [the single release checklist](release-0.3.5.md) for current ownership and status; older dated measurements below remain historical evidence and are not combined into candidate acceptance. The complete research objective and pending work in the table remain active.
+
 ## Work and evidence
 
 | Work | State | Required evidence |

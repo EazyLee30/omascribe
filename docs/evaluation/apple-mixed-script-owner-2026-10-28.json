@@ -1,0 +1,666 @@
+{
+  "schema": 1,
+  "source": "b2d45633b37fe1ef87b42874c5cee988fb48648a",
+  "scope": "One source-spelling guard fix; four affected actual automatic-scheduler Metal cases. Not full33, natural ASR or release acceptance.",
+  "before": {
+    "source_parent": "a3074e7a68a3f4b3965886e3eea23bc478a06b29",
+    "changes": "Only the new failing regression was added to parent product sources.",
+    "log_sha256": "4b140249c4b24d7c3d9799454252c945ae824efa3f1996091da76c002843b07b",
+    "result": "The new unit failed: Alice负责检查显卡 -> 负责检查显卡 was wrongly accepted by validate_writer_names."
+  },
+  "after": {
+    "core_passed": 177,
+    "core_ignored": 7,
+    "terminology_passed": 16,
+    "python_total": 65,
+    "python_skipped": 1,
+    "workspace_strict_clippy": true,
+    "checks": {
+      "artifacts/mixed-owner-after.log": "6b22c424c5a5900056bad2004c843145865d29ce38e2acab74e2ac28f24bbfb8",
+      "artifacts/mixed-owner-core.log": "b63e57b0bd5173e117beb5ecf08505b66da8a315edbe2afe59798f0d9e4d8f53",
+      "artifacts/mixed-owner-clippy.log": "6896e47ea3f1bfe02fdb51c1ffbdc1a7a2bb653620b416b9027624b0dcb2a8fa",
+      "artifacts/mixed-owner-python.log": "b3a8900091aec634bdc62dc18ebb50e34b02924c0d2d82552208ee34fbe2e778"
+    }
+  },
+  "model_cases": [
+    {
+      "execution": "automatic-scheduler",
+      "fixture_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+      "cases": [
+        {
+          "case": "zh_mixed_script_task_owner",
+          "passed": true,
+          "errors": [],
+          "seconds": 7.107,
+          "runs": [
+            {
+              "phase": 1,
+              "batch": 1,
+              "status": "文档已同步 · 1 个章节",
+              "coverage": 1,
+              "generation": {
+                "attempt": 1,
+                "backend": "metal",
+                "cursor_after": 1,
+                "cursor_before": 0,
+                "draft": "{\"sections\":[{\"body\":\"Alice负责检查显卡。\",\"sources\":[1],\"title\":\"会议纪要\"}]}",
+                "meeting_id": "04fbf51b-7cef-4790-a132-905925a4d131",
+                "memory_budget_mib": 4096,
+                "model": "qwen3-1.7b",
+                "resource_mode": "balanced",
+                "trimmed_background": 0,
+                "trimmed_passages": 0,
+                "usage": {
+                  "completion_tokens": 7,
+                  "prompt_tokens": 159,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  },
+                  "timings": {
+                    "cache_n": 0,
+                    "predicted_ms": 70.825,
+                    "predicted_n": 7,
+                    "predicted_per_second": 84.71584892340275,
+                    "predicted_per_token_ms": 11.804166666666667,
+                    "prompt_ms": 103.921,
+                    "prompt_n": 159,
+                    "prompt_per_second": 1530.0083717439206,
+                    "prompt_per_token_ms": 0.6535911949685534
+                  },
+                  "total_tokens": 166
+                },
+                "attempts_recorded": 1
+              },
+              "process": {
+                "command": [
+                  "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+                  "settle",
+                  "04fbf51b-7cef-4790-a132-905925a4d131",
+                  "120"
+                ],
+                "code": 0,
+                "seconds": 7.097,
+                "failure": null,
+                "resources": {
+                  "schema": 1,
+                  "method": "psutil sampled descendant tree",
+                  "psutil_version": "7.1.3",
+                  "interval_seconds": 0.25,
+                  "samples": 27,
+                  "processes_seen": 3,
+                  "cpu_seconds_sampled": 1.410477982,
+                  "peak_tree_rss_mib": 1488.75,
+                  "peak_tree_pss_mib": null,
+                  "gpu_memory_mib": null,
+                  "energy_joules": null,
+                  "sample_errors": 0,
+                  "sampler_stopped": true,
+                  "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+                }
+              },
+              "writer_resource": {
+                "available_before_mib": 5689,
+                "backend": "metal",
+                "budget_mib": 4096
+              },
+              "generation_diagnostic_last_only": true,
+              "trace_events": 13,
+              "trace_phase_counts": {
+                "started": 2,
+                "worker": 2,
+                "chunk": 1,
+                "generation": 2,
+                "batch": 1,
+                "finished": 2,
+                "retrieval": 1,
+                "article_state": 1,
+                "article_prompt": 1
+              }
+            }
+          ],
+          "document": [
+            {
+              "focus": "会议纪要",
+              "id": "ca3b06bc-abb5-4162-be6a-d4b57dafb36a",
+              "kind": "section",
+              "meeting_id": "04fbf51b-7cef-4790-a132-905925a4d131",
+              "sources": [
+                {
+                  "end_ms": 10000,
+                  "quote": "Alice负责检查显卡。",
+                  "revision": 1,
+                  "segment_id": "04fbf51b-7cef-4790-a132-905925a4d131:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "Alice负责检查显卡。"
+            }
+          ],
+          "coverage": 1,
+          "status": "文档已同步 · 1 个章节"
+        }
+      ],
+      "raw_report_sha256": "a66b1b9a2af400015a4b337cfe26cef69474649efca4e80ebed364fb7a587c78",
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "actual_metal_logs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "log_sha256": "529744b0051b9abb3c0ac83b421a35099e5e1c177097f4b495c12984576f538e",
+          "scope": "Saved last-worker runtime log for this automatic command, not a distinct-process count."
+        }
+      ]
+    },
+    {
+      "execution": "automatic-scheduler",
+      "fixture_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+      "cases": [
+        {
+          "case": "en_owner_and_deadline",
+          "passed": true,
+          "errors": [],
+          "seconds": 6.932,
+          "runs": [
+            {
+              "phase": 1,
+              "batch": 1,
+              "status": "文档已同步 · 1 个章节",
+              "coverage": 1,
+              "generation": {
+                "attempt": 1,
+                "backend": "metal",
+                "cursor_after": 1,
+                "cursor_before": 0,
+                "draft": "{\"sections\":[{\"body\":\"Morgan will send the release report on Thursday. We have not approved the launch date yet.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+                "meeting_id": "f0324609-aac3-4398-a75a-cd475cb1bba8",
+                "memory_budget_mib": 4096,
+                "model": "qwen3-1.7b",
+                "resource_mode": "balanced",
+                "trimmed_background": 0,
+                "trimmed_passages": 0,
+                "usage": {
+                  "completion_tokens": 20,
+                  "prompt_tokens": 152,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  },
+                  "timings": {
+                    "cache_n": 0,
+                    "predicted_ms": 227.284,
+                    "predicted_n": 20,
+                    "predicted_per_second": 83.59585364565918,
+                    "predicted_per_token_ms": 11.962315789473683,
+                    "prompt_ms": 102.224,
+                    "prompt_n": 152,
+                    "prompt_per_second": 1486.930662075442,
+                    "prompt_per_token_ms": 0.6725263157894737
+                  },
+                  "total_tokens": 172
+                },
+                "attempts_recorded": 1
+              },
+              "process": {
+                "command": [
+                  "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+                  "settle",
+                  "f0324609-aac3-4398-a75a-cd475cb1bba8",
+                  "120"
+                ],
+                "code": 0,
+                "seconds": 6.926,
+                "failure": null,
+                "resources": {
+                  "schema": 1,
+                  "method": "psutil sampled descendant tree",
+                  "psutil_version": "7.1.3",
+                  "interval_seconds": 0.25,
+                  "samples": 26,
+                  "processes_seen": 3,
+                  "cpu_seconds_sampled": 1.299043032,
+                  "peak_tree_rss_mib": 1484.0,
+                  "peak_tree_pss_mib": null,
+                  "gpu_memory_mib": null,
+                  "energy_joules": null,
+                  "sample_errors": 0,
+                  "sampler_stopped": true,
+                  "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+                }
+              },
+              "writer_resource": {
+                "available_before_mib": 5567,
+                "backend": "metal",
+                "budget_mib": 4096
+              },
+              "generation_diagnostic_last_only": true,
+              "trace_events": 16,
+              "trace_phase_counts": {
+                "started": 2,
+                "worker": 2,
+                "chunk": 2,
+                "generation": 3,
+                "validation_failed": 1,
+                "batch": 1,
+                "finished": 2,
+                "retrieval": 1,
+                "article_state": 1,
+                "article_prompt": 1
+              }
+            }
+          ],
+          "document": [
+            {
+              "focus": "Meeting minutes",
+              "id": "5b1f1a24-369c-4388-840e-92fd7f897474",
+              "kind": "section",
+              "meeting_id": "f0324609-aac3-4398-a75a-cd475cb1bba8",
+              "sources": [
+                {
+                  "end_ms": 10000,
+                  "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+                  "revision": 1,
+                  "segment_id": "f0324609-aac3-4398-a75a-cd475cb1bba8:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+            }
+          ],
+          "coverage": 1,
+          "status": "文档已同步 · 1 个章节"
+        }
+      ],
+      "raw_report_sha256": "eda7da622ef2cfa2a1cac2f5c18ccf01ad42027304a43911fef696f6dea66504",
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "actual_metal_logs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "log_sha256": "df3a1661c28c3100d7cb898360eb1bb06fe7fdd926aa553074b7bc5b8b68f470",
+          "scope": "Saved last-worker runtime log for this automatic command, not a distinct-process count."
+        }
+      ]
+    },
+    {
+      "execution": "automatic-scheduler",
+      "fixture_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+      "cases": [
+        {
+          "case": "zh_windows_long_acceptance",
+          "passed": true,
+          "errors": [],
+          "seconds": 7.921,
+          "runs": [
+            {
+              "phase": 1,
+              "batch": 1,
+              "status": "文档已同步 · 1 个章节",
+              "coverage": 3,
+              "generation": {
+                "attempt": 1,
+                "backend": "metal",
+                "cursor_after": 3,
+                "cursor_before": 0,
+                "draft": "{\"sections\":[{\"body\":\"OmaScribe Windows 接受检查的时间是周四，不是周五。预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。录音、记录和会议纪要都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。\",\"sources\":[2,1,3],\"title\":\"会议纪要\"}]}",
+                "meeting_id": "7b3ff01d-e45f-40c1-a034-055295950b7e",
+                "memory_budget_mib": 4096,
+                "model": "qwen3-1.7b",
+                "resource_mode": "balanced",
+                "trimmed_background": 0,
+                "trimmed_passages": 0,
+                "usage": {
+                  "completion_tokens": 69,
+                  "prompt_tokens": 329,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  },
+                  "timings": {
+                    "cache_n": 0,
+                    "predicted_ms": 895.519,
+                    "predicted_n": 69,
+                    "predicted_per_second": 75.93362061553132,
+                    "predicted_per_token_ms": 13.16939705882353,
+                    "prompt_ms": 153.212,
+                    "prompt_n": 329,
+                    "prompt_per_second": 2147.3513823982457,
+                    "prompt_per_token_ms": 0.4656899696048632
+                  },
+                  "total_tokens": 398
+                },
+                "attempts_recorded": 1
+              },
+              "process": {
+                "command": [
+                  "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+                  "settle",
+                  "7b3ff01d-e45f-40c1-a034-055295950b7e",
+                  "120"
+                ],
+                "code": 0,
+                "seconds": 7.914,
+                "failure": null,
+                "resources": {
+                  "schema": 1,
+                  "method": "psutil sampled descendant tree",
+                  "psutil_version": "7.1.3",
+                  "interval_seconds": 0.25,
+                  "samples": 30,
+                  "processes_seen": 3,
+                  "cpu_seconds_sampled": 1.97590428,
+                  "peak_tree_rss_mib": 1490.71875,
+                  "peak_tree_pss_mib": null,
+                  "gpu_memory_mib": null,
+                  "energy_joules": null,
+                  "sample_errors": 0,
+                  "sampler_stopped": true,
+                  "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+                }
+              },
+              "writer_resource": {
+                "available_before_mib": 5635,
+                "backend": "metal",
+                "budget_mib": 4096
+              },
+              "generation_diagnostic_last_only": true,
+              "trace_events": 17,
+              "trace_phase_counts": {
+                "started": 2,
+                "worker": 2,
+                "chunk": 3,
+                "generation": 4,
+                "batch": 1,
+                "finished": 2,
+                "retrieval": 1,
+                "article_state": 1,
+                "article_prompt": 1
+              }
+            }
+          ],
+          "document": [
+            {
+              "focus": "会议纪要",
+              "id": "92acdb84-0c12-47e9-bb85-e7eb6b0522e8",
+              "kind": "section",
+              "meeting_id": "7b3ff01d-e45f-40c1-a034-055295950b7e",
+              "sources": [
+                {
+                  "end_ms": 20000,
+                  "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+                  "revision": 1,
+                  "segment_id": "7b3ff01d-e45f-40c1-a034-055295950b7e:1:2",
+                  "speaker_name": null,
+                  "start_ms": 10000
+                },
+                {
+                  "end_ms": 10000,
+                  "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+                  "revision": 1,
+                  "segment_id": "7b3ff01d-e45f-40c1-a034-055295950b7e:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                },
+                {
+                  "end_ms": 30000,
+                  "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+                  "revision": 1,
+                  "segment_id": "7b3ff01d-e45f-40c1-a034-055295950b7e:1:3",
+                  "speaker_name": null,
+                  "start_ms": 20000
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "OmaScribe Windows 接受检查的时间是周四，不是周五。预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。录音、记录和会议纪要都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。"
+            }
+          ],
+          "coverage": 3,
+          "status": "文档已同步 · 1 个章节"
+        }
+      ],
+      "raw_report_sha256": "e09d325709c669a8198e3272bef07e4a1dc6dd47dbd9d2b31bb74825b00d4b86",
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "actual_metal_logs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "log_sha256": "18fcd40187f04129a108aaed4c21e80a611fed75f2ebb0ca4a28dd4df7694d5f",
+          "scope": "Saved last-worker runtime log for this automatic command, not a distinct-process count."
+        }
+      ]
+    },
+    {
+      "execution": "automatic-scheduler",
+      "fixture_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+      "cases": [
+        {
+          "case": "en_windows_long_acceptance",
+          "passed": true,
+          "errors": [],
+          "seconds": 8.107,
+          "runs": [
+            {
+              "phase": 1,
+              "batch": 1,
+              "status": "文档已同步 · 1 个章节",
+              "coverage": 3,
+              "generation": {
+                "attempt": 1,
+                "backend": "metal",
+                "cursor_after": 3,
+                "cursor_before": 0,
+                "draft": "{\"sections\":[{\"body\":\"The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will conduct a check on the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads that require a local test before enabling.\",\"sources\":[3,2,1],\"title\":\"Meeting minutes\"}]}",
+                "meeting_id": "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5",
+                "memory_budget_mib": 4096,
+                "model": "qwen3-1.7b",
+                "resource_mode": "balanced",
+                "trimmed_background": 0,
+                "trimmed_passages": 0,
+                "usage": {
+                  "completion_tokens": 78,
+                  "prompt_tokens": 296,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  },
+                  "timings": {
+                    "cache_n": 0,
+                    "predicted_ms": 1015.929,
+                    "predicted_n": 78,
+                    "predicted_per_second": 75.7926981117775,
+                    "predicted_per_token_ms": 13.193883116883116,
+                    "prompt_ms": 149.635,
+                    "prompt_n": 296,
+                    "prompt_per_second": 1978.1468239382496,
+                    "prompt_per_token_ms": 0.5055236486486486
+                  },
+                  "total_tokens": 374
+                },
+                "attempts_recorded": 1
+              },
+              "process": {
+                "command": [
+                  "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+                  "settle",
+                  "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5",
+                  "120"
+                ],
+                "code": 0,
+                "seconds": 8.099,
+                "failure": null,
+                "resources": {
+                  "schema": 1,
+                  "method": "psutil sampled descendant tree",
+                  "psutil_version": "7.1.3",
+                  "interval_seconds": 0.25,
+                  "samples": 30,
+                  "processes_seen": 3,
+                  "cpu_seconds_sampled": 2.01188872,
+                  "peak_tree_rss_mib": 1489.5,
+                  "peak_tree_pss_mib": null,
+                  "gpu_memory_mib": null,
+                  "energy_joules": null,
+                  "sample_errors": 0,
+                  "sampler_stopped": true,
+                  "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+                }
+              },
+              "writer_resource": {
+                "available_before_mib": 5488,
+                "backend": "metal",
+                "budget_mib": 4096
+              },
+              "generation_diagnostic_last_only": true,
+              "trace_events": 17,
+              "trace_phase_counts": {
+                "started": 2,
+                "worker": 2,
+                "chunk": 3,
+                "generation": 4,
+                "batch": 1,
+                "finished": 2,
+                "retrieval": 1,
+                "article_state": 1,
+                "article_prompt": 1
+              }
+            }
+          ],
+          "document": [
+            {
+              "focus": "Meeting minutes",
+              "id": "4e42846e-82d5-4385-9132-3e1c6f3ff96a",
+              "kind": "section",
+              "meeting_id": "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5",
+              "sources": [
+                {
+                  "end_ms": 30000,
+                  "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+                  "revision": 1,
+                  "segment_id": "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5:1:3",
+                  "speaker_name": null,
+                  "start_ms": 20000
+                },
+                {
+                  "end_ms": 20000,
+                  "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+                  "revision": 1,
+                  "segment_id": "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5:1:2",
+                  "speaker_name": null,
+                  "start_ms": 10000
+                },
+                {
+                  "end_ms": 10000,
+                  "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+                  "revision": 1,
+                  "segment_id": "7f7f1d8f-a3ce-4d75-ae6d-095455b409f5:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will conduct a check on the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads that require a local test before enabling."
+            }
+          ],
+          "coverage": 3,
+          "status": "文档已同步 · 1 个章节"
+        }
+      ],
+      "raw_report_sha256": "9837ef7786495e7025f6cbb91527b74445f62c8d46694eaee1da2fa4cbe6fdb8",
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "actual_metal_logs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "log_sha256": "ab2c1b9da829eafc2de56c2d0135cfdc92435096f24767f6e17eea6a78c15969",
+          "scope": "Saved last-worker runtime log for this automatic command, not a distinct-process count."
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "The pre-fix actual candidate5 one-case generation probe already retained Alice; this fixes a demonstrated validator gap, not proof that all actual generations previously lost Alice.",
+    "Exact source responsibility names only; no new audio recognizer, aliases, inferred identity or default changes.",
+    "Ordinary mentions/pronouns/unspoken note names and explicit owner hand-off negatives are unit-tested; full candidate regression remains pending.",
+    "English release-report translation still contains awkward Chinese wording. Four targeted passes do not establish general translation fluency or natural ASR accuracy.",
+    "All borrowed model links released; raw model outputs, original failures and source assets retained locally."
+  ],
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "b2d45633b37fe1ef87b42874c5cee988fb48648a",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "2fa761cc5bc5f8347a433e3669af591e6262ca192571c2672c9e726307173410",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "d5c3d47a1e7977dceea88bdbeacd39f80a716c1e7dde1b475870370a653c81af",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "3140b083cf500a1dbaa1947779673e8c44713b39eea040d8036ba44ac063bdbf",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "b2d45633b37fe1ef87b42874c5cee988fb48648a",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "preferences": {
+    "inference_backend": "metal",
+    "threads": 1,
+    "context_size": 2048,
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": true,
+    "translation_mode": "bilingual",
+    "diarization": false,
+    "use_memory": false,
+    "use_knowledge": false,
+    "llm_model": "qwen3-1.7b"
+  }
+}

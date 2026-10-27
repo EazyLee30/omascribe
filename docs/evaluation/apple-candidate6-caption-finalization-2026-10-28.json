@@ -1,0 +1,4738 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-27T17:24:22.811444+00:00",
+  "kind": "candidate6_complete_automatic_caption_minutes",
+  "candidate_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "candidate_branch": "codex/release-0.3.5-candidate-6",
+  "release_eligible": false,
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "d52a1a6a5a2f402e0274cea6df5b7fff6acdc8b63c248b2bc7971e3c1cbc2fff",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "f7eea00d5534438d73e6e3a1be9325eb54cd3e03a451799a20535798a2eec9cc",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "cfc9b6ffb82751b81194f7935ab52d8152a011c4da40715141a9a2ea1ec4e16d",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "preferences": {
+    "inference_backend": "metal",
+    "threads": 1,
+    "context_size": 2048,
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": true,
+    "translation_mode": "bilingual",
+    "diarization": false,
+    "use_memory": false,
+    "use_knowledge": false,
+    "llm_model": "qwen3-1.7b"
+  },
+  "fixture_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+  "source_checks": {
+    "core_passed": 177,
+    "core_ignored": 7,
+    "model_identifier_integration_passed": 7,
+    "asr_passed": 5,
+    "desktop_passed": 4,
+    "workspace_all_targets_native_ui_test_strict_clippy": true,
+    "log_sha256": "6b136f2832f2909c8440f3c2fc1c4637bbd8eca48243df78e69ee46ccd77145e"
+  },
+  "full_automatic": {
+    "total": 33,
+    "passed": 33,
+    "cases": [
+      {
+        "case": "zh_budget_guess",
+        "passed": true,
+        "errors": [],
+        "seconds": 6.905,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "d5b0cbb1-72f6-4046-bd3b-8f1da56a01ca",
+            "kind": "section",
+            "meeting_id": "7ab6b826-3b37-45d9-ab50-99777c07c76a",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "张老师周五给测试结果，预算先不定，下周再看。",
+                "revision": 1,
+                "segment_id": "7ab6b826-3b37-45d9-ab50-99777c07c76a:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "张老师周五给测试结果，预算先不定，下周再看。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 6.896,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 26,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.37234384,
+                "peak_tree_rss_mib": 1455.28125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "b2b434510d492359f096eaff0d32278df45d40043bb632fd0c71ca393245c03a",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "276c870c742d5013018bd4a4ed01ec08d2a8b923787bbe8e2f0eab8d634dafde"
+            },
+            "translations": [
+              {
+                "cache_key": "f2cad7fe7e825dda40dbe6623ec8e6b2085effab7a7dc6cfb60add7581707309",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ab6b826-3b37-45d9-ab50-99777c07c76a:1:1",
+                "target": "en",
+                "text": "Mr. Zhang will provide the test results on Friday. The budget is not yet determined, and it will be reviewed next week."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "5b9854c0d8a52701a6b273ca23e8aa17861724562d6bd3e8c48892ab407a510b",
+        "models_released": true
+      },
+      {
+        "case": "en_owner_and_deadline",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.09,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "459c8006-9a88-4f02-adcc-bed08a82549d",
+            "kind": "section",
+            "meeting_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+                "revision": 1,
+                "segment_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.081,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.392220556,
+                "peak_tree_rss_mib": 1483.40625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "0e9554b5f10c80c33f20a21889d3bca06fa556f1e4943db61b906a70e6344f96",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "validation_failed": 1,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "ef4ea08868fcc708aef96ce9ba778df53a6c2c35cf938789b59985cf5ac3015c"
+            },
+            "translations": [
+              {
+                "cache_key": "62fefddf298d3e4f8df33d98a3fa43493e84f6d6962b22bb64e0eda24bae5245",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1:1:1",
+                "target": "zh",
+                "text": "Morgan 将于周四发布释放报告。我们尚未批准启动日期。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "c3440fcc7ac51823854b612029f766829a7d5adb46421ac06663958c264281fd",
+        "models_released": true
+      },
+      {
+        "case": "zh_correction",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.321,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "2aa7b257-fc61-452e-83bb-1686f2bdea7d",
+            "kind": "section",
+            "meeting_id": "bb1cb3b7-1570-4010-8bdc-ee244430abd8",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。",
+                "revision": 1,
+                "segment_id": "bb1cb3b7-1570-4010-8bdc-ee244430abd8:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算先按3000算，李明负责。",
+                "revision": 1,
+                "segment_id": "bb1cb3b7-1570-4010-8bdc-ee244430abd8:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算先按3000算，李明负责。更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.311,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.431370202,
+                "peak_tree_rss_mib": 1454.484375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "621089eb599287e375edbe451d89aff6189bd6c4097552c39ffada330274d73b",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "95a792e7555bb31f11511cb9b02ed275e868ba190435795ec2f9443a2312da0f"
+            },
+            "translations": [
+              {
+                "cache_key": "91b1d3c63fc8a99fd070ead91a82425729864e8aa541649e7739290394a457c7",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb1cb3b7-1570-4010-8bdc-ee244430abd8:1:1",
+                "target": "en",
+                "text": "Budget is calculated as 3000, Li Ming is responsible."
+              },
+              {
+                "cache_key": "fa0ebcf8e82fd4f349863f926e4593f17a43a3d4e5a2c5c9f02e79832d68dcfd",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb1cb3b7-1570-4010-8bdc-ee244430abd8:1:2",
+                "target": "en",
+                "text": "Corrected: The budget is finally determined to be 2000 yuan, the responsible person is changed to Wang Hua, and Li Ming is no longer responsible."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "3de1228619947bb0dd113c4de6ea10d5ebcc00a716a46552d52edb2d1e112d6c",
+        "models_released": true
+      },
+      {
+        "case": "bilingual_scope",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.091,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "08c3619c-9913-4504-b92b-19b2403379f3",
+            "kind": "section",
+            "meeting_id": "090bd951-5c76-47ee-b8db-0c1540d75885",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+                "revision": 1,
+                "segment_id": "090bd951-5c76-47ee-b8db-0c1540d75885:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+                "revision": 1,
+                "segment_id": "090bd951-5c76-47ee-b8db-0c1540d75885:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "离线转录原型已准备好审查。我们将于周五进行测试。本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.085,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.360283548,
+                "peak_tree_rss_mib": 1483.546875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "f98e2f2ee8d9af48b047a3027af5a54b8fc90e087618edc5328e0840fdba9b95",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "321c20db457873faa2fc41aecb32d72eca1894427c62857ef85d30fec603f0a6"
+            },
+            "translations": [
+              {
+                "cache_key": "72521e61b9677ab2b74ebd7104011e148d85d3647e535e12db670dcfd3109599",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "090bd951-5c76-47ee-b8db-0c1540d75885:1:1",
+                "target": "zh",
+                "text": "离线转录原型已准备好审查。我们将于周五进行测试。"
+              },
+              {
+                "cache_key": "f558efa0b1ba3d6201de9e2486f166bf144026d977127477188f48f7265e6556",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "090bd951-5c76-47ee-b8db-0c1540d75885:1:2",
+                "target": "en",
+                "text": "This phase implements microphone recording and real-time transcription. System audio capture is postponed to the next version."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "39b2f1bb79823797a199016cf65c4cfc059051d9ad82e20911b1658648f3b943",
+        "models_released": true
+      },
+      {
+        "case": "zh_calendar_citations",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.316,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "c4996448-8afe-4078-bee3-1d4bb17afb1e",
+            "kind": "section",
+            "meeting_id": "9690aa4d-b7d7-4648-a363-b20b4e20ca91",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。",
+                "revision": 1,
+                "segment_id": "9690aa4d-b7d7-4648-a363-b20b4e20ca91:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "会议日期是二〇二四年五月八日，本次先确认测试安排。",
+                "revision": 1,
+                "segment_id": "9690aa4d-b7d7-4648-a363-b20b4e20ca91:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。会议日期是二〇二四年五月八日，本次先确认测试安排。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.308,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.4030129180000002,
+                "peak_tree_rss_mib": 1454.421875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "96e83474b6056975d3873567964b0119c3a18cafd163a0b34f4761c3a665f34e",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "3caca7755d8b46ffe4f54120bbb4015a9955168c8b1e066c1a818ede3b4c1687"
+            },
+            "translations": [
+              {
+                "cache_key": "e6dc4f128491740075dd00e7bef5483ae4bb5819e24d91f0e06fe55df3205fa0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "9690aa4d-b7d7-4648-a363-b20b4e20ca91:1:1",
+                "target": "en",
+                "text": "This discussion is about the recording and transcription process. After ending a segment, you can continue recording the next one."
+              },
+              {
+                "cache_key": "1a63ad7381da84a811ad8f535be18cc6fd36f09614d12cd76bc147d244a2a8ac",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "9690aa4d-b7d7-4648-a363-b20b4e20ca91:1:2",
+                "target": "en",
+                "text": "Meeting date is May 8, 2024, and this is to confirm the test schedule."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "76f0f0bce55010a2e2a48673e8eeaaae9e8a4c7d17d186616405d1978e01ef70",
+        "models_released": true
+      },
+      {
+        "case": "zh_connected_minutes",
+        "passed": true,
+        "errors": [],
+        "seconds": 8.099,
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "cdf6d95a-896f-4e03-b19a-51816d6e2b1b",
+            "kind": "section",
+            "meeting_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce",
+            "sources": [
+              {
+                "end_ms": 40000,
+                "quote": "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "引用放在正文旁边的小标里就行，点一下再看原话。",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "这两项调整还没有完成，先记录下来，完成以后再一起验证。",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "实时转写已显示，但AI纪要仍是一小句一小句地显示，阅读不连贯。引用放在正文旁边的小标里，点一下再看原话。实时转写和实时字幕的入口放在工具栏，别藏到二级菜单。这两项调整尚未完成，先记录下来，完成以后再一起验证。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 5,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 8.093,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 31,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.931426064,
+                "peak_tree_rss_mib": 1485.171875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "4905f7bbc263bed4a7a6cc88f5a440d999dd0152eebda7ef023c0a0334d5a0d2",
+            "trace_phases": {
+              "started": 3,
+              "worker": 3,
+              "chunk": 5,
+              "generation": 6,
+              "batch": 2,
+              "finished": 3,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "f95d1aeee715443d1caa05c5c54afabeb9a7f30e62d315b10430b1ab9b5fbc58"
+            },
+            "translations": [
+              {
+                "cache_key": "a9f321951f57f1dec34e0f388ccf590d8b8750fc9ff405cd176068a7409b880b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:1",
+                "target": "en",
+                "text": "We are mainly testing offline meeting notes, and the real-time transcription is already visible."
+              },
+              {
+                "cache_key": "816cfe6986440e1b02c30d7827c8a70a6cd4e8cfbe4cf1a57fba66ac0941111b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:2",
+                "target": "en",
+                "text": "The AI summary is displayed in small sentences one after another, making it difficult to read smoothly."
+              },
+              {
+                "cache_key": "561dd9e7dbb4a589a03a34f4e2bae5f4a816e8a052c089d053d2ac27ab167ba9",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:3",
+                "target": "en",
+                "text": "Place the quotes in the small brackets next to the text, and click to view the original statement."
+              },
+              {
+                "cache_key": "67b717cf17df73a12a9931551db6f5a369dfe099efa29fe0c040c605f51b7af0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:4",
+                "target": "en",
+                "text": "Real-time transcription and real-time subtitles, with the entry placed in the toolbar, not hidden in a secondary menu."
+              },
+              {
+                "cache_key": "410c500e19a5cce7ea7def8665a7b3e6b012e912a97b734d6a15ba238dd45a2f",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d81fd7a4-d425-4e62-8d98-6956a8de7dce:1:5",
+                "target": "en",
+                "text": "These two adjustments have not yet been completed; they should be recorded first, and then verified together after they are completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "c5918eb665569bd646fed857c6a194570104d71a207b03353d93d885680cd10b",
+        "models_released": true
+      },
+      {
+        "case": "zh_product_spelling",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.317,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "df5a6ea8-dc1c-41df-a96f-cfb3d9df5f1a",
+            "kind": "section",
+            "meeting_id": "a0f803b3-e1dd-44d1-a8ef-07187f685f53",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "OmaScribe的会议纪要仍然需要优化，这项调整尚未完成。",
+                "revision": 2,
+                "segment_id": "a0f803b3-e1dd-44d1-a8ef-07187f685f53:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "我正在测试OmaScribe的转写功能。",
+                "revision": 2,
+                "segment_id": "a0f803b3-e1dd-44d1-a8ef-07187f685f53:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "我正在测试OmaScribe的转写功能。OmaScribe的会议纪要仍然需要优化，这项调整尚未完成。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.31,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 28,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.499226424,
+                "peak_tree_rss_mib": 1491.953125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "ae83605ec57605b6bc02998b752254914b67c898f4bdc9b8b2113b42cab64710",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "fef02575e0762b0288c233f36443498428a30d22525327878095b8f514da51c9"
+            },
+            "translations": [
+              {
+                "cache_key": "13a716ad1db40bc2774a133595d3491ceb813688740e137eff22348101e7a199",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "a0f803b3-e1dd-44d1-a8ef-07187f685f53:1:1",
+                "target": "en",
+                "text": "I am testing the transcription functionality of OmaScribe."
+              },
+              {
+                "cache_key": "49b02749e25371638b3a353d6dcf01f3a14f567f2446f46143b837e877dfdc92",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "a0f803b3-e1dd-44d1-a8ef-07187f685f53:1:2",
+                "target": "en",
+                "text": "The meeting minutes of OmaScribe still need optimization, this adjustment has not yet been completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "4ec2f4d8e0b91ca44d3febc7efb6430541a5c7281bbc24763a974212db274461",
+        "models_released": true
+      },
+      {
+        "case": "zh_empty_greetings",
+        "passed": true,
+        "errors": [],
+        "seconds": 6.09,
+        "coverage": 2,
+        "status": "文档已同步 · 0 个章节",
+        "document": [],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 0 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 6.081,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 23,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 0.9881014020000001,
+                "peak_tree_rss_mib": 1482.046875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "71b024070cad104f1cd1b8ffd039f7bbe2e4ab11768cd069dd207fd232d2df39",
+            "trace_phases": {
+              "started": 2,
+              "worker": 1,
+              "chunk": 2,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "3b134b737e3f5f596b37237d84babecd2eb781d2c3d105fef05dc681bf428044"
+            },
+            "translations": [
+              {
+                "cache_key": "fc329fb81dd1950c7dff2e8216b48b496634b54877a84a756be33146f5c5ca90",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "fc221771-ca4f-4495-af6b-b6d38a3102f0:1:1",
+                "target": "en",
+                "text": "Hey, hey, can you hear me?"
+              },
+              {
+                "cache_key": "2d3e7e19d3e9e733d0ccb92c20f201fc49017b95fcac9254670fb6e20908b90f",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "fc221771-ca4f-4495-af6b-b6d38a3102f0:1:2",
+                "target": "en",
+                "text": "123, test microphone. Thank you, goodbye."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "870344e23335cbcb946a06e26024c90084b3288bc43d4c3d08011e8d102a9317",
+        "models_released": true
+      },
+      {
+        "case": "zh_phased_correction",
+        "passed": true,
+        "errors": [],
+        "seconds": 13.026,
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "179f2988-f0c6-422a-bfde-a1a7f55d094f",
+            "kind": "section",
+            "meeting_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14",
+            "sources": [
+              {
+                "end_ms": 50000,
+                "quote": "更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "离线转写需要保留原始录音，失败后能够重新处理。",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "模型下载是可选联网功能，录音内容不会上传。",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "离线转写先覆盖麦克风录音，系统音频还没有做。",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算暂按3000元安排，负责人是李明。",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算暂按3000元安排，负责人是李明。 离线转写先覆盖麦克风录音，系统音频还没有做。 离线转写需要保留原始录音，失败后能够重新处理。 模型下载是可选联网功能，录音内容不会上传。 更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.118,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.3205503120000002,
+                "peak_tree_rss_mib": 1456.328125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "e46fb53ded3ded805f2b2613b0f77f37a6dcf94b3883387eb6afcd2ef19d01da",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "49f74253a223bb6d9c2aa451b453efd75ab6e1a435b473bbe95dd4f36028a30a"
+            },
+            "translations": [
+              {
+                "cache_key": "11ee2ae8f5b3b35c0acf2d09cf6d9f4a20d5f8fd68dc0fd37784d2a1ea375fad",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:1",
+                "target": "en",
+                "text": "Budget is arranged as 3000 yuan, responsible person is Li Ming."
+              },
+              {
+                "cache_key": "9c7630f010def47efe3c26339018ba1b0a7ff124add041ae155b1b5ea81ec8c3",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:2",
+                "target": "en",
+                "text": "Offline transcription will first cover the microphone recording, and the system audio has not been processed yet."
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 5,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 5.897,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 22,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.5124116880000003,
+                "peak_tree_rss_mib": 1456.25,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "fedbae39ef810229a04aff35d450964a85f56e149f68274abf5bc69fea880c8d",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 3,
+              "generation": 4,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "f3fd607987f78b36326d0bd3a64d817cd3ca8c0c8fc7b6e2ddbee48d924430b6"
+            },
+            "translations": [
+              {
+                "cache_key": "11ee2ae8f5b3b35c0acf2d09cf6d9f4a20d5f8fd68dc0fd37784d2a1ea375fad",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:1",
+                "target": "en",
+                "text": "Budget is arranged as 3000 yuan, responsible person is Li Ming."
+              },
+              {
+                "cache_key": "9c7630f010def47efe3c26339018ba1b0a7ff124add041ae155b1b5ea81ec8c3",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:2",
+                "target": "en",
+                "text": "Offline transcription will first cover the microphone recording, and the system audio has not been processed yet."
+              },
+              {
+                "cache_key": "413cedf5c49779c5f7b1582bac6516c6457c852811c9dbfa404b54240731f4dc",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:3",
+                "target": "en",
+                "text": "Offline transcription should retain the original recording, and if it fails, it should be able to be reprocessed."
+              },
+              {
+                "cache_key": "65ebdc5f286d8aaa1928b598de7ecdd4e8f29d821cc6a32fdd0f0f2f630a78b6",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:4",
+                "target": "en",
+                "text": "Model download is an optional online feature, and audio content will not be uploaded."
+              },
+              {
+                "cache_key": "816950f6713590f6c07d4f9b684b82c1d6b5712dd884239059960a77d774b19f",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "5b4a0d37-80c8-41a9-accf-766eab15ac14:1:5",
+                "target": "en",
+                "text": "Correct the previous budget and responsible person: the final budget is changed to 2000 yuan, Wang Hua is responsible, and Li Ming is no longer responsible."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "78c79e2213828b6e8ef275182298abdff177b113a79e5827a131b5644a9e2ea0",
+        "models_released": true
+      },
+      {
+        "case": "zh_named_speakers",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.079,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "8241dbed-bd4d-4883-b0b6-83825d6e8ba1",
+            "kind": "section",
+            "meeting_id": "6100038d-3f69-4568-8055-6136c46192b1",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。",
+                "revision": 1,
+                "segment_id": "6100038d-3f69-4568-8055-6136c46192b1:1:2",
+                "speaker_name": "陈明",
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "实时转写的延迟测试由我负责，结果周四提交。",
+                "revision": 1,
+                "segment_id": "6100038d-3f69-4568-8055-6136c46192b1:1:1",
+                "speaker_name": "林悦",
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "林悦负责实时转写的延迟测试，结果周四提交。陈明负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.073,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.4227854,
+                "peak_tree_rss_mib": 1456.34375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "694e2546f21b52b749dc357c657a615a9e1a1e6a431562765daa4968d5778370",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "6519fa1fde1230c2314c9b2b6a97b700715ba55ddf03626f66037805315a79de"
+            },
+            "translations": [
+              {
+                "cache_key": "3a5f9dad04dfcc1084ba5567101a3279c2f5d02367a3d481b6f3687b235bf410",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "6100038d-3f69-4568-8055-6136c46192b1:1:1",
+                "target": "en",
+                "text": "The real-time transcription delay test I am responsible for was submitted on Thursday."
+              },
+              {
+                "cache_key": "a9a0a4a22a530b57f949b0d764e4825532f27081bff76809937fa7ddeacc583a",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "6100038d-3f69-4568-8055-6136c46192b1:1:2",
+                "target": "en",
+                "text": "I am responsible for the bilingual subtitle interface, which cannot be delivered this week, and the delivery date has not yet been determined."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "9cd0b1ffbbbf385b6a6aa5b26fadbf0cc69e282b7762afb714411e02019a1e60",
+        "models_released": true
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.124,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "3352bd1e-fcc9-4da7-8bfd-94534df099b7",
+            "kind": "section",
+            "meeting_id": "7bb0771b-3eae-4e63-b662-6b7087d20a2a",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "这次只做离线转写，模型由用户手动下载。",
+                "revision": 1,
+                "segment_id": "7bb0771b-3eae-4e63-b662-6b7087d20a2a:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "录音、转写和纪要不上传服务器。系统音频采集还没有实现。",
+                "revision": 1,
+                "segment_id": "7bb0771b-3eae-4e63-b662-6b7087d20a2a:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "This is only offline transcription, and the model is manually downloaded by the user. Recording, transcription, and summary are not uploaded to the server. System audio capture has not been implemented."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.115,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.3570289199999999,
+                "peak_tree_rss_mib": 1456.625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "bb27d2f171c3787a984201513fd2ff5cd72fc302265a31cdb84c828e13d9483c",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "d14cb88fe917bc793879789ba9a310974c39a17d43d9c5fef688de0a64989864"
+            },
+            "translations": [
+              {
+                "cache_key": "8824b2e978ddea72f3bd0c12b824cebab6f7419f2e05fa231cdb88b6a2822ad8",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7bb0771b-3eae-4e63-b662-6b7087d20a2a:1:1",
+                "target": "en",
+                "text": "This is only offline transcription, and the model is manually downloaded by the user."
+              },
+              {
+                "cache_key": "1bb56d66ad64d8adcf6a91298e7665202abfb85711fe31f8f05a702429dbb68b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7bb0771b-3eae-4e63-b662-6b7087d20a2a:1:2",
+                "target": "en",
+                "text": "Recording, transcription, and summary are not uploaded to the server. System audio capture has not been implemented."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "a5022ca11a4b841b402c5aa4cf7bcd43fe5738c3ea4f9aace16877c23c0df16a",
+        "models_released": true
+      },
+      {
+        "case": "zh_minutes_from_en",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.151,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "37e17e7a-f1cf-44fa-8a2a-238e9120faf3",
+            "kind": "section",
+            "meeting_id": "64f81492-1c25-4586-ba60-d48432b303c5",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+                "revision": 1,
+                "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+                "revision": 1,
+                "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan 拥有延迟报告，并将于周四交付。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.142,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.461501452,
+                "peak_tree_rss_mib": 1483.984375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "8a1eed25a122ba62650b9f5e9726b85b074738795267e741a88f5b1d40650fba",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 3,
+              "generation": 4,
+              "validation_failed": 1,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "81d9a1b607eb01098bda04cf3d0ce55629b48cf47df1a9bb4c396f7992c5e0bc"
+            },
+            "translations": [
+              {
+                "cache_key": "8ef75e4ec556f2b5bd8f704d8934af4c57406973f07c1274dd1a79fec3c0b981",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:1",
+                "target": "zh",
+                "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+              },
+              {
+                "cache_key": "8359b62e93aa512cfe90468ff43900ad015bb8918b89f3141c0eb51c1f218996",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:2",
+                "target": "zh",
+                "text": "Morgan 拥有延迟报告，并将于周四交付。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "fb21885996aca8d459c7c81c40f5ff80c98878995fec690d09f141782de16edd",
+        "models_released": true
+      },
+      {
+        "case": "zh_long_context_state",
+        "passed": true,
+        "errors": [],
+        "seconds": 18.012,
+        "coverage": 10,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "08c3dbbc-8529-4ccc-8c35-01865b4272aa",
+            "kind": "section",
+            "meeting_id": "74ca8d84-c233-4035-84cf-388c5405cf17",
+            "sources": [
+              {
+                "end_ms": 90000,
+                "quote": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:9",
+                "speaker_name": null,
+                "start_ms": 80000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 70000,
+                "quote": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:7",
+                "speaker_name": null,
+                "start_ms": 60000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 100000,
+                "quote": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:10",
+                "speaker_name": null,
+                "start_ms": 90000
+              },
+              {
+                "end_ms": 60000,
+                "quote": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:6",
+                "speaker_name": null,
+                "start_ms": 50000
+              },
+              {
+                "end_ms": 80000,
+                "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:8",
+                "speaker_name": null,
+                "start_ms": 70000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 5,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 8.551,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 32,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 2.002685272,
+                "peak_tree_rss_mib": 1483.796875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "fe5fd62f5342b7d1df9a6d7ccfe27497271326d9b5111487784308b0a9c4752d",
+            "trace_phases": {
+              "started": 3,
+              "worker": 3,
+              "chunk": 5,
+              "generation": 6,
+              "batch": 2,
+              "finished": 3,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "609bebe09bf6310e115262e45c0d14d1deeda23a7041c78876ce13d81ea5ada4"
+            },
+            "translations": [
+              {
+                "cache_key": "7a7dbd0f8b12c49b2fe3b5cc3fa47d562bf424be02591c21d75f08149bb818f6",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:1",
+                "target": "en",
+                "text": "Offline transcription tool is being tested by Lin Yue, and is currently only for internal validation; public release has not yet been approved."
+              },
+              {
+                "cache_key": "79aeee96e8ac4647a4baeea15010a0f9cd2f52d435f2320904f6e9b972f13ffa",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:2",
+                "target": "en",
+                "text": "To save each segment of the original recording, the modified transcription cannot be automatically overwritten by the output result."
+              },
+              {
+                "cache_key": "33b7eb5c5e0d4dd9aba5e7131d8ec1ebe8e85bc3b617ddbcb322d66b34743a50",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:3",
+                "target": "en",
+                "text": "The audio boundaries should be preserved when the recording is paused, and the timestamp after resuming the recording must be continuous."
+              },
+              {
+                "cache_key": "969c052c07b1b3cfe8edbd394ae898f46de57ba774c9d5f82686b1aa6b9cb67e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:4",
+                "target": "en",
+                "text": "Noise scenario: first measure fan and keyboard sounds, do not convert quiet periods into text."
+              },
+              {
+                "cache_key": "1fdb6189e827f8d5ac86c2b653dfa3ffe46e3b2a662bdec493a03d68124df17e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:5",
+                "target": "en",
+                "text": "English and Chinese should both be tested, and English product names should be spelled correctly when mixed speech occurs."
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 10,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 9.448,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 35,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 2.3958714640000003,
+                "peak_tree_rss_mib": 1457.25,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "03e7c0db8a180e8b66077900d16ac9571e32a581a809977ef00026d4e6758a7b",
+            "trace_phases": {
+              "started": 3,
+              "worker": 3,
+              "chunk": 5,
+              "generation": 6,
+              "batch": 2,
+              "finished": 3,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "05d4c75006d45a0cf65be07ce7267a20a6eba1e065585844448ba2d5c0e7e43a"
+            },
+            "translations": [
+              {
+                "cache_key": "7a7dbd0f8b12c49b2fe3b5cc3fa47d562bf424be02591c21d75f08149bb818f6",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:1",
+                "target": "en",
+                "text": "Offline transcription tool is being tested by Lin Yue, and is currently only for internal validation; public release has not yet been approved."
+              },
+              {
+                "cache_key": "bba9293deee5806f1adae78fbdbb57880a8bea3a81f2fa1a1d8c41a4eabab4b7",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:10",
+                "target": "en",
+                "text": "Final confirmation: Public release has not been approved, and Lin Yuejian submitted the test report on Thursday."
+              },
+              {
+                "cache_key": "79aeee96e8ac4647a4baeea15010a0f9cd2f52d435f2320904f6e9b972f13ffa",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:2",
+                "target": "en",
+                "text": "To save each segment of the original recording, the modified transcription cannot be automatically overwritten by the output result."
+              },
+              {
+                "cache_key": "33b7eb5c5e0d4dd9aba5e7131d8ec1ebe8e85bc3b617ddbcb322d66b34743a50",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:3",
+                "target": "en",
+                "text": "The audio boundaries should be preserved when the recording is paused, and the timestamp after resuming the recording must be continuous."
+              },
+              {
+                "cache_key": "969c052c07b1b3cfe8edbd394ae898f46de57ba774c9d5f82686b1aa6b9cb67e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:4",
+                "target": "en",
+                "text": "Noise scenario: first measure fan and keyboard sounds, do not convert quiet periods into text."
+              },
+              {
+                "cache_key": "1fdb6189e827f8d5ac86c2b653dfa3ffe46e3b2a662bdec493a03d68124df17e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:5",
+                "target": "en",
+                "text": "English and Chinese should both be tested, and English product names should be spelled correctly when mixed speech occurs."
+              },
+              {
+                "cache_key": "f1f8bc73d618468a2493cd733747c95adb68b0fadc322cc5fc80d7723ccfebc8",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:6",
+                "target": "en",
+                "text": "The subtitle interface should clearly display the original text and translation, using a local model for the translation."
+              },
+              {
+                "cache_key": "c82806f07d2727ccb2edab39a6bcad65cdfdd08aff1ea1cd6193489892967a8e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:7",
+                "target": "en",
+                "text": "Model download requires internet, recording and note processing are completely offline, and no sharing of meeting content is allowed."
+              },
+              {
+                "cache_key": "3d1f6977e04a626417d22df1b40d5658b712987555d527c68d06e3682ffe04a7",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:8",
+                "target": "en",
+                "text": "The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing."
+              },
+              {
+                "cache_key": "33a497296e12f18a344f91ac8e08e66c3ac10008314796f287401f4783d97ab6",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "74ca8d84-c233-4035-84cf-388c5405cf17:1:9",
+                "target": "en",
+                "text": "Today, only these acceptance requirements will be discussed, without completing the system audio capture, and without determining the release date of the new version."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "52dc603311d787db1001c8ce96febba2b1ee6a4e234b9d901fa4f211005e2b13",
+        "models_released": true
+      },
+      {
+        "case": "zh_human_paragraph_protected",
+        "passed": true,
+        "errors": [],
+        "seconds": 11.361,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "345f956d-1131-41f5-a70b-9e16918488b6",
+            "kind": "section",
+            "meeting_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "预算还没有确定，先等测试报告。",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "accepted",
+            "text": "人工确认：预算仍未确定，先等测试报告。"
+          },
+          {
+            "focus": "会议纪要",
+            "id": "7f35e1e1-3ba6-444f-bfef-384908a992f1",
+            "kind": "section",
+            "meeting_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "模型下载可以联网，会议录音不会上传。",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算还没有确定，先等测试报告。",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算尚未确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 6.885,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 26,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.187277486,
+                "peak_tree_rss_mib": 1451.84375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "a455f1afdafb87c74ea61f0d32261b5489e0b51a75a600b00fd620e7a0e6bcc2",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "55930dfbe164b697ad3ba198327b2f8fe1f206711de2007dc9ac2af51b6e0b5d"
+            },
+            "translations": [
+              {
+                "cache_key": "f340a455caae564704e02da391b58cab3a49c26fd05e5c4ad90eda389ea3e41f",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:1",
+                "target": "en",
+                "text": "The budget has not yet been determined; wait for the test report."
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 4.457,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 17,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.1188584719999999,
+                "peak_tree_rss_mib": 1456.0,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "e87b655c02ffb2231c2d6ae981d57ad527202420defeb22dafd67f3de6453ce9",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "2dfec658d5eab72d916c2bf5e76b047ed01e5e4b8c3949422e1b0426ca7fbdf0"
+            },
+            "translations": [
+              {
+                "cache_key": "f340a455caae564704e02da391b58cab3a49c26fd05e5c4ad90eda389ea3e41f",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:1",
+                "target": "en",
+                "text": "The budget has not yet been determined; wait for the test report."
+              },
+              {
+                "cache_key": "63055e16f2dcdf5239908a2fb81ef5a5920007caa21e9eae43bc1c43452f726e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:2",
+                "target": "en",
+                "text": "Offline model download is responsible for Chen Ming, and download must obtain user consent."
+              },
+              {
+                "cache_key": "961ad78b85f0e808023a347236ee98afd509d2270b8a609589107691e5e3f8fe",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "f37c3ef5-3553-4e42-aa76-04e8b87e3c8c:1:3",
+                "target": "en",
+                "text": "Model download can be connected to the internet, meeting recordings will not be uploaded."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "9421154a4881e78995f0dc249eaa04ec92ab4d059257e98bd9b317d12a102fb3",
+        "models_released": true
+      },
+      {
+        "case": "zh_note_name_spelling",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.282,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "ed9b2eb6-4339-4052-b684-b04eb3e51a18",
+            "kind": "section",
+            "meeting_id": "739e694c-a28d-43c0-8ccb-025399d85458",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "这个 OmaScribe 的实时转写还有延迟，说话人分配也有问题，尚未修复。",
+                "revision": 2,
+                "segment_id": "739e694c-a28d-43c0-8ccb-025399d85458:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "我们下次再测试字幕，目前还没有完成。",
+                "revision": 1,
+                "segment_id": "739e694c-a28d-43c0-8ccb-025399d85458:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "OmaScribe 的实时转写存在延迟，说话人分配也存在问题，尚未修复。我们下次再测试字幕，目前还没有完成。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.276,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 28,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.566435956,
+                "peak_tree_rss_mib": 1491.25,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "08a01dd276fbea774b85cf8d4cc746f0a315f98517970d828553260ea86a59c4",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "3faef715bde695e8886115ee431de4e33b77d89ecd99cd0ec310a98ed8e2c7c4"
+            },
+            "translations": [
+              {
+                "cache_key": "1e13ff52851b2b2e4257dac7f05d91b9ee4dc32333c6db6eb90751db7e66fa7d",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "739e694c-a28d-43c0-8ccb-025399d85458:1:1",
+                "target": "en",
+                "text": "The real-time transcription of OmaScribe is delayed, and there are issues with speaker assignment that have not been fixed."
+              },
+              {
+                "cache_key": "60990f32ba503777866bcbb46396009bb138693f25b5d7fe54e9d037948d7de8",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "739e694c-a28d-43c0-8ccb-025399d85458:1:2",
+                "target": "en",
+                "text": "We will test the subtitles again next time. It is not yet completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "3f572c0421f97106e2530a2a499f5702584824c3fa013a11de7e9822109d08cd",
+        "models_released": true
+      },
+      {
+        "case": "en_generic_note_name",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.167,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "52e967f1-918c-495c-9b38-967f203098ac",
+            "kind": "section",
+            "meeting_id": "62c41418-3750-4042-891e-3961875e9237",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The PixelLedger import still fails. We will investigate it after the review.",
+                "revision": 2,
+                "segment_id": "62c41418-3750-4042-891e-3961875e9237:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The PixelLedger import still fails. We will investigate it after the review."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.157,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.373998834,
+                "peak_tree_rss_mib": 1491.359375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "89930820e0c7305f47f955be8b984a7ed0aa39549a3cbee346273066daaa52d5",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "abe2669b0b46583131b7edfca1d13bf5d47accd7b8c678c1b683a9b20a6ff751"
+            },
+            "translations": [
+              {
+                "cache_key": "f382c63b8afba8d8a7536c26a1462381d5737af1ff098c97c2650bd6c979c784",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "62c41418-3750-4042-891e-3961875e9237:1:1",
+                "target": "zh",
+                "text": "PixelLedger 导入仍然失败。我们将在评审之后进行调查。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "80679114936c4e1b5d1c11a97c7d9e62990c3504a98c988bcc64e5a1b169e3b9",
+        "models_released": true
+      },
+      {
+        "case": "zh_name_context_is_not_evidence",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.153,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "630c1c02-e75e-4d4e-8469-47cf612b195e",
+            "kind": "section",
+            "meeting_id": "c60df736-0997-488f-ba2f-80b56b231962",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "今天只讨论麦克风权限，尚未决定使用哪个产品，预算也没有确定。",
+                "revision": 1,
+                "segment_id": "c60df736-0997-488f-ba2f-80b56b231962:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "今天只讨论麦克风权限，尚未决定使用哪个产品，预算也没有确定。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.146,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.400336396,
+                "peak_tree_rss_mib": 1490.53125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "55ce693bfb2a5bffddbf889047486e382d331ff123135e4ad4cd383948339b53",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "50461ef1b53b45036d1b986cd5a1f9f33432dcadc7221344e42e3316291a6dd1"
+            },
+            "translations": [
+              {
+                "cache_key": "831d8a07a8269068f157c16d6fda2fc6957309d03e9b8aff51adfd594be80f88",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "c60df736-0997-488f-ba2f-80b56b231962:1:1",
+                "target": "en",
+                "text": "Today, only the microphone permissions will be discussed. The product to be used has not yet been decided, and the budget has not been determined."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "42d5bb52059c072e03970d4efd03fe8089e4a755d06b9c09982b0d49b5c0f9df",
+        "models_released": true
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.976,
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "69dceaee-a92e-49de-bbdb-fb454e7d3cf1",
+            "kind": "section",
+            "meeting_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0",
+            "sources": [
+              {
+                "end_ms": 50000,
+                "quote": "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。",
+                "revision": 2,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "嗯 TRY MY OWN ALMOST TRIP NOW",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "嗯",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "AND",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "转写中提到 PixelLedger 的人员分配好像有问题，需要核对。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 5,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.964,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 30,
+                "processes_seen": 4,
+                "cpu_seconds_sampled": 1.948063012,
+                "peak_tree_rss_mib": 1492.4375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "b4ad5ffb6128e989281e62e9ca5bfb6541f3de2a33d4dfbfb0be851c89b4e226",
+            "trace_phases": {
+              "started": 3,
+              "worker": 3,
+              "chunk": 5,
+              "generation": 5,
+              "literal_caption": 2,
+              "batch": 2,
+              "finished": 3,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "5f31f661572e8020abf1d1f542e05c3c6c87b09698269083557e496e4df086ee"
+            },
+            "translations": [
+              {
+                "cache_key": "451aee207d3c214dc65fa9bc11261256c1755caf5eeee127c8a7a5c008f6e4ad",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:1",
+                "target": "zh",
+                "text": "检查 检查"
+              },
+              {
+                "cache_key": "0d6481aeb81ed1568fefdeb16cecd598d405db58854901c0fe2974c78bae4479",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:2",
+                "target": "en",
+                "text": "TRY MY OWN ALMOST TRIP NOW"
+              },
+              {
+                "cache_key": "749aa7b392271ebeae65103db584416abdc22e8ed79c8f53faeed13b59eab3da",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:3",
+                "target": "en",
+                "text": "Hmm"
+              },
+              {
+                "cache_key": "ca312e38788bac9fdac495b063cdc6335b2ab170274052d0f4c2408978c110f0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:4",
+                "target": "zh",
+                "text": "和"
+              },
+              {
+                "cache_key": "8ac1ad6b56d3d365f28d19432bf568361c39a031f14520d82935b862e4c10fbf",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "55ab23df-05f5-4ebe-ac08-0c2bddca0ce0:1:5",
+                "target": "en",
+                "text": "The personnel allocation for PixelLedger seems to have issues, and the transcription still needs to be verified."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "31ab486c4125f14030d5923140c0f3eaa26614f13ae2d0fe6bdd09b677b9600e",
+        "models_released": true
+      },
+      {
+        "case": "zh_windows_gpu_keyword_lines",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.331,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "b42c48cc-174f-4f3b-92e9-13ac45fd7dce",
+            "kind": "section",
+            "meeting_id": "d871b299-e995-4d89-931a-7970502320a2",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。",
+                "revision": 1,
+                "segment_id": "d871b299-e995-4d89-931a-7970502320a2:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "这个 OmaScribe 的功能目前还没有正常运行。",
+                "revision": 2,
+                "segment_id": "d871b299-e995-4d89-931a-7970502320a2:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "这个 OmaScribe 的功能目前还没有正常运行。gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.325,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 28,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.539579144,
+                "peak_tree_rss_mib": 1491.734375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "d514bb3d7818ac4212f3572333c91942751803b01e3444719f0d85cb6b8d5ff0",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "c045084b6a22fa4a1f48c2001de8a6c56ba8e3ea4f00d357ffb1a901fac25631"
+            },
+            "translations": [
+              {
+                "cache_key": "919557bb0ab27da200f77e57b3b672e6443b4b5fc2fdd93fbf4b04d128116a35",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "d871b299-e995-4d89-931a-7970502320a2:1:1",
+                "target": "en",
+                "text": "The current functionality of OmaScribe is not working properly."
+              },
+              {
+                "cache_key": "a983decc139d0d1e1c9cab03ae59418b8124ade05762569ac0cf2eb70cb69d1b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d871b299-e995-4d89-931a-7970502320a2:1:2",
+                "target": "en",
+                "text": "gtx1650 requires optimization for nvidia graphics card, optimization is not yet completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "388cc09bb0820d9c9cc8a55bf7548a473c4b5d8ed459bf34c161f1376281f403",
+        "models_released": true
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "passed": true,
+        "errors": [],
+        "seconds": 20.841,
+        "coverage": 4,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "c4e31e77-cb06-4767-bfd3-d858b600e954",
+            "kind": "section",
+            "meeting_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.102,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.432802568,
+                "peak_tree_rss_mib": 1482.625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "0be16912954a9a4e8d76b48c43136cdaed74eda7c36d141ca769fbaf0e1278b6",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "validation_failed": 1,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "b15f63a62064bfce3229389f20a6220e44a519c470a13d0449c86c91c91adb74"
+            },
+            "translations": [
+              {
+                "cache_key": "b39522e3a4a3e1599f273dc3685b44ae0c518b8539222d0ca23f30631557d7c2",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:1",
+                "target": "zh",
+                "text": "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。"
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 4.245,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 16,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.06068454,
+                "peak_tree_rss_mib": 1456.421875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "e5f52b38f9bd69e9dba38401062370de6ae7aa934eec980078ed44792fa8e94c",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "f00ebf7ae90da93ce7fb60801ee7855879e5b2504233578072becf5e2ced9451"
+            },
+            "translations": [
+              {
+                "cache_key": "b39522e3a4a3e1599f273dc3685b44ae0c518b8539222d0ca23f30631557d7c2",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:1",
+                "target": "zh",
+                "text": "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。"
+              },
+              {
+                "cache_key": "527cc1a35217a879791d85bc3599795465eccdb738ffaffd7129abe0429a882b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:2",
+                "target": "zh",
+                "text": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+              }
+            ]
+          },
+          {
+            "phase": 3,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 5.055,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 19,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.3027657160000001,
+                "peak_tree_rss_mib": 1486.125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "6fe5c49b36de436673418bcf2911dfe857fca908dece38fd57f8a56cf1ddc636",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "validation_failed": 1,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "14e4ffeaeee2589cfca0b94073024e5d022d82f9be57af2c3b5a6c96224e0809"
+            },
+            "translations": [
+              {
+                "cache_key": "b39522e3a4a3e1599f273dc3685b44ae0c518b8539222d0ca23f30631557d7c2",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:1",
+                "target": "zh",
+                "text": "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。"
+              },
+              {
+                "cache_key": "527cc1a35217a879791d85bc3599795465eccdb738ffaffd7129abe0429a882b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:2",
+                "target": "zh",
+                "text": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+              },
+              {
+                "cache_key": "148cf797a865f49fa47e0516746f8435b855413418c4f0f6306e23602fe6d770",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:3",
+                "target": "zh",
+                "text": "预算金额已修正为5000，但仍未通过。Morgan 仍保持周四的截止日期。"
+              }
+            ]
+          },
+          {
+            "phase": 4,
+            "batch": 1,
+            "coverage": 4,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 4.411,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 17,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.10107317,
+                "peak_tree_rss_mib": 1484.859375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "11c7def537f271bdc1e341ecededa63afabd42078521c8e886ab215c353f1698",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "ae825ef915e690e94dfb4c6bd2f4d0238ff6b701c8cef3f1c4857352e58b6985"
+            },
+            "translations": [
+              {
+                "cache_key": "b39522e3a4a3e1599f273dc3685b44ae0c518b8539222d0ca23f30631557d7c2",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:1",
+                "target": "zh",
+                "text": "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。"
+              },
+              {
+                "cache_key": "527cc1a35217a879791d85bc3599795465eccdb738ffaffd7129abe0429a882b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:2",
+                "target": "zh",
+                "text": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+              },
+              {
+                "cache_key": "148cf797a865f49fa47e0516746f8435b855413418c4f0f6306e23602fe6d770",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:3",
+                "target": "zh",
+                "text": "预算金额已修正为5000，但仍未通过。Morgan 仍保持周四的截止日期。"
+              },
+              {
+                "cache_key": "a3593c9753826c5ad7eb5ecd4ef785d2ab1c4fc11aae232c91f7075774ca3aa0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "8d96c0b6-a115-4484-a482-07aa5f7915f4:1:4",
+                "target": "zh",
+                "text": "微检。你好。谢谢。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "59210e224ecae5b17f77ab10885bee3e8d5a9a368d813b5e8c7e7fb0f43cdaf9",
+        "models_released": true
+      },
+      {
+        "case": "zh_incremental_withdrawal",
+        "passed": true,
+        "errors": [],
+        "seconds": 16.427,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "100d3b55-8150-4f6d-8da1-2738ad27eacd",
+            "kind": "section",
+            "meeting_id": "bb8c0838-d546-4833-8cef-92895f4e1d20",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "展览暂定周五开放，刘老师负责布置。周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.109,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.32046203,
+                "peak_tree_rss_mib": 1455.21875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "bb0ecb63a008cefb79bf87dbf81bd10341826ada744155cd20755ecfd863dfc2",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "4c0702cf3634969852d7833aa91cdd63b4f1df9fa97d63b5b8f8716367b05393"
+            },
+            "translations": [
+              {
+                "cache_key": "78447936aa64e58d6c5d4e1d62d94ce2fadb6029a9444a0b4be969e56fc5e9ca",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:1",
+                "target": "en",
+                "text": "The exhibition is tentatively open on Friday, with Mr. Liu responsible for setting it up, and a budget of 3000 yuan has not yet been determined."
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 4.651,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 18,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.159316568,
+                "peak_tree_rss_mib": 1455.59375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "1067a61b0525caf7aec0cb19dff68b94fda51bccc87f8cf4d8c0f00d37a83652",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "213c1371e14a45a7e95ba6a6769987d8e5816c3cde7113f36845783870b29d35"
+            },
+            "translations": [
+              {
+                "cache_key": "78447936aa64e58d6c5d4e1d62d94ce2fadb6029a9444a0b4be969e56fc5e9ca",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:1",
+                "target": "en",
+                "text": "The exhibition is tentatively open on Friday, with Mr. Liu responsible for setting it up, and a budget of 3000 yuan has not yet been determined."
+              },
+              {
+                "cache_key": "8fd0e1be89bbf708b7f9b9721ec898658b168286696b4822824e4c2e02ccbc56",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:2",
+                "target": "en",
+                "text": "The schedule for Friday is canceled, the new date has not been decided, Mr. Liu continues to be responsible for assigning, and the budget has been changed to 5000 yuan but has not been confirmed."
+              }
+            ]
+          },
+          {
+            "phase": 3,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 4.644,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 18,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 1.1902875640000001,
+                "peak_tree_rss_mib": 1455.75,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "d65e4d768933f6cfb80cb2047e39792a057fae8c5947dc64132c2b0d83683295",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "9d41c166269a695b0fd3d32bb8c0fe85e6a0e9fe40ac886859b5ada73362116a"
+            },
+            "translations": [
+              {
+                "cache_key": "78447936aa64e58d6c5d4e1d62d94ce2fadb6029a9444a0b4be969e56fc5e9ca",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:1",
+                "target": "en",
+                "text": "The exhibition is tentatively open on Friday, with Mr. Liu responsible for setting it up, and a budget of 3000 yuan has not yet been determined."
+              },
+              {
+                "cache_key": "8fd0e1be89bbf708b7f9b9721ec898658b168286696b4822824e4c2e02ccbc56",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:2",
+                "target": "en",
+                "text": "The schedule for Friday is canceled, the new date has not been decided, Mr. Liu continues to be responsible for assigning, and the budget has been changed to 5000 yuan but has not been confirmed."
+              },
+              {
+                "cache_key": "347f91cea62e59f4312140c602f2b95df0c1792767a55dc846276479765d5f9e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "bb8c0838-d546-4833-8cef-92895f4e1d20:1:3",
+                "target": "en",
+                "text": "The visitor reservation page is responsible for Mr. Chen. A test link will be sent on Wednesday next week, and the page is still not completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "3098c99a2a43a772fc34e1ec3f8bbec396d200fa955dbb319f3872114edf2022",
+        "models_released": true
+      },
+      {
+        "case": "en_incremental_completion",
+        "passed": true,
+        "errors": [],
+        "seconds": 10.779,
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "78001493-f0cf-4aa8-9cf2-9312d7455a06",
+            "kind": "section",
+            "meeting_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks.",
+                "revision": 1,
+                "segment_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The upload verification is not completed. Morgan will run it on Thursday.",
+                "revision": 1,
+                "segment_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Morgan confirmed that the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 6.923,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 26,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.23780662,
+                "peak_tree_rss_mib": 1482.765625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "82815efdd1e73e08aa2a1b83d08edf385302f38d6ad8d59245e5ed6e883e1139",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "7b88b52108e47ee8b2d299dbe6c4eafdcc62a742205e880c6f9172b809b49350"
+            },
+            "translations": [
+              {
+                "cache_key": "b248faa4798bd206c7eecff5f699469a4acaa2a12f37cf068d020e3e540487c0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3:1:1",
+                "target": "zh",
+                "text": "上传验证未完成。Morgan 将于周四运行它。"
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 3.844,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 14,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 0.9490919600000001,
+                "peak_tree_rss_mib": 1486.03125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "c576668f658c73c8ee49af6f143de3292be9e0088dffb979031029692d489cc4",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "f4b84efdc081fade87225d9c6c1cdcb18c71ab683351f971c3dd8074467bbd2d"
+            },
+            "translations": [
+              {
+                "cache_key": "b248faa4798bd206c7eecff5f699469a4acaa2a12f37cf068d020e3e540487c0",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3:1:1",
+                "target": "zh",
+                "text": "上传验证未完成。Morgan 将于周四运行它。"
+              },
+              {
+                "cache_key": "6840c8de3a38c94a8464aa70fd6dd87a7249f1c53b674de275e7ae827e260efb",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "3e7cb7c8-35d2-44c0-b2cc-1caf6c9741f3:1:2",
+                "target": "zh",
+                "text": "莫根确认周四上传验证已成功完成，且没有剩余的上传任务。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "ce8f8420a79e0b71d53d8da845022a476be70a1d41d4142af5bc87497d849d14",
+        "models_released": true
+      },
+      {
+        "case": "en_sparse_unapproved",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.084,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "97b6324b-07a5-42e2-ac23-840dba787ce8",
+            "kind": "section",
+            "meeting_id": "58d700f5-8847-479b-81c2-2313a610a73b",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The Budget of 3000 is not approved.",
+                "revision": 2,
+                "segment_id": "58d700f5-8847-479b-81c2-2313a610a73b:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The Budget of 3000 is not approved."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.078,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.3056269440000001,
+                "peak_tree_rss_mib": 1488.90625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "124eb5c68c8ae9106949556191741d2a448df68af5359afee043b2fdb23a0c45",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "1116a8bc52e649e07f701ecff35675ba79939d9be93056d40f99b7b3e68f14ae"
+            },
+            "translations": [
+              {
+                "cache_key": "0511341d64bd4059b8687d2ce6542a69eca5568e6faef93acd9c99e181237195",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "58d700f5-8847-479b-81c2-2313a610a73b:1:1",
+                "target": "zh",
+                "text": "3000的预算未通过。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "4cf84457f688403b1a614f6815ecb700676556a08e9ac1cd6afbb08a4df17116",
+        "models_released": true
+      },
+      {
+        "case": "en_sparse_unapproved_passive",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.133,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "0736e581-6059-47f4-8816-e8a718dc317c",
+            "kind": "section",
+            "meeting_id": "33c067d5-a48c-4449-9ffa-35b186596c19",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The Budget of 3000 hasn't been approved.",
+                "revision": 2,
+                "segment_id": "33c067d5-a48c-4449-9ffa-35b186596c19:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The Budget of 3000 has not been approved."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.124,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.307805544,
+                "peak_tree_rss_mib": 1489.203125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "bcc34581cd211098cd62367a3e2d2ab1e1ae0d704264a24bfa23eb22fb5297f8",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "495fe4eaaccbdbec67dfeedeed5968ce98be67a36904e935235573444d46a2f6"
+            },
+            "translations": [
+              {
+                "cache_key": "033c28d95e277609bcae04f8e1d7d8a3a3c1852619682b0206a6e88a537e9cdc",
+                "model": "qwen3-1.7b",
+                "revision": 2,
+                "segment_id": "33c067d5-a48c-4449-9ffa-35b186596c19:1:1",
+                "target": "zh",
+                "text": "3000预算尚未通过。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "251f7c5a2548bae76a445b787f07bf8768d1590f70fae636311a21184847a5f4",
+        "models_released": true
+      },
+      {
+        "case": "en_explicit_meeting_closure",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.142,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "ab476f80-e784-49ad-ba81-2023ae320e79",
+            "kind": "section",
+            "meeting_id": "11e5334d-178a-4893-bc4c-7674c81cffab",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The meeting has ended. No further action has been taken.",
+                "revision": 1,
+                "segment_id": "11e5334d-178a-4893-bc4c-7674c81cffab:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The meeting has ended. No further action has been taken."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.134,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.3369988800000001,
+                "peak_tree_rss_mib": 1489.8125,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "0b9f430334a68cb972e3fce02c6a322d9b8e13665252830c9d3bee190ad940ac",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "63abfd0c4cc6445cefd99a0095a48357818d15e6d643547c950a2a0f09d7e443"
+            },
+            "translations": [
+              {
+                "cache_key": "5d80c80cb59a679e6d9d369c31ce445f00b70ee411ad0d48b6153bd1c680810b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "11e5334d-178a-4893-bc4c-7674c81cffab:1:1",
+                "target": "zh",
+                "text": "会议已结束。未采取进一步行动。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "4a6749e55d7ba121493bd9b4e23f0a7050b51d6224791f773b7690987f494ca5",
+        "models_released": true
+      },
+      {
+        "case": "en_budget_invoice_same_amount",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.328,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "8dcf283a-47b1-4462-ae82-c6db918c3dcb",
+            "kind": "section",
+            "meeting_id": "e7dbd756-0832-4b58-be33-b462b9f18351",
+            "sources": [
+              {
+                "end_ms": 30000,
+                "quote": "The budget amount is corrected to 5000, still not approved.",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "An invoice for 3000 is awaiting review.",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The budget amount is 3000, not approved yet.",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.321,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 28,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.7322076640000001,
+                "peak_tree_rss_mib": 1491.171875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "4fcc409a7a0de817b47b5b4012785e2fd1716b8a16c06b69010b9ca35418422d",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 4,
+              "generation": 5,
+              "validation_failed": 1,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "e9ba6f88ed339a7df2636edd0c0ec8af5573fac39d08be5f562862dbddce1b03"
+            },
+            "translations": [
+              {
+                "cache_key": "24dcf1a2533385f709e5096b7407d5ff3a1d22da3199620ae317099c6b5bdefc",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:1",
+                "target": "zh",
+                "text": "预算金额为3000，尚未批准。"
+              },
+              {
+                "cache_key": "91c909e716b92265789e765f26afc84377b75140a227656d04ed6aa4e6f26782",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:2",
+                "target": "zh",
+                "text": "3000的发票正在等待审核。"
+              },
+              {
+                "cache_key": "e68d35412b992087d0d1053990bbf1200a9b4fc3e41dd9bf31b6198faa2c467e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "e7dbd756-0832-4b58-be33-b462b9f18351:1:3",
+                "target": "zh",
+                "text": "预算金额已修正为5000，但仍未通过审批。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "6ba71fd269ffc0c149061cd06f808be04f46a8a0f0f1b679da68142934f291ad",
+        "models_released": true
+      },
+      {
+        "case": "en_completion_independent_pending",
+        "passed": true,
+        "errors": [],
+        "seconds": 11.108,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "737395b7-b810-495e-9710-b998cca26e66",
+            "kind": "section",
+            "meeting_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2",
+            "sources": [
+              {
+                "end_ms": 30000,
+                "quote": "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks.",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "The invoice review has not been completed. Riley will run it on Friday.",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The upload verification is not completed. Morgan will run it on Thursday.",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The invoice review has not been completed, and Riley will run it on Friday. Morgan confirms that the upload verification has been completed successfully on Thursday, with no remaining upload tasks."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.103,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.371890646,
+                "peak_tree_rss_mib": 1483.234375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "35523829ff191e67f8c81403ac27c1a469d7e73a068da17224a2fe052559c577",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "4eb2c51cf029270b13d442315ce8193f3781508fc26cbed591851004cd7ff023"
+            },
+            "translations": [
+              {
+                "cache_key": "f56a28491f600c1d77b61d4be36905cd008a7c42454fb61b255341430c385271",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:1",
+                "target": "zh",
+                "text": "上传验证未完成。Morgan 将于周四运行它。"
+              },
+              {
+                "cache_key": "149dcf94f8d09ec72e0b8d7034a4ed111e367c0c9a09817beebad364d86968ea",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:2",
+                "target": "zh",
+                "text": "发票审核尚未完成。里利将于周五运行它。"
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 3.993,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 15,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 0.997100436,
+                "peak_tree_rss_mib": 1486.34375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "9167759d9bfbe24bf1baeb7af3d899a59047cbef8c211be4dd9d7c7bc399436e",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "0b29a821ac7fe411bfbb125c0c39043fb023632982b5d2b417a302a9a6e3f9b9"
+            },
+            "translations": [
+              {
+                "cache_key": "f56a28491f600c1d77b61d4be36905cd008a7c42454fb61b255341430c385271",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:1",
+                "target": "zh",
+                "text": "上传验证未完成。Morgan 将于周四运行它。"
+              },
+              {
+                "cache_key": "149dcf94f8d09ec72e0b8d7034a4ed111e367c0c9a09817beebad364d86968ea",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:2",
+                "target": "zh",
+                "text": "发票审核尚未完成。里利将于周五运行它。"
+              },
+              {
+                "cache_key": "8d2b0d4a081dbcabcb9ebd9d6d892e4f1484ae9eaed438215a3b435117e16fe2",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "7ba33cee-7693-4504-bff4-01bda8c1e1d2:1:3",
+                "target": "zh",
+                "text": "莫根确认周四上传验证已成功完成，且没有剩余的上传任务。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "a33433058beb2ef83f2009a1652854591e0fdb3ca5da5bcb246639ce0f33e9f8",
+        "models_released": true
+      },
+      {
+        "case": "zh_incremental_completion",
+        "passed": true,
+        "errors": [],
+        "seconds": 10.484,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "1aa6c0f9-8b0d-407a-9df7-d796d3b46462",
+            "kind": "section",
+            "meeting_id": "d814125f-9475-4021-9e67-9f83444c4c5c",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "发票核对尚未完成。",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "上传验证现已完成。",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "上传验证尚未完成。",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "发票核对尚未完成。上传验证现已完成。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 2,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 6.872,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 26,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.2307848799999999,
+                "peak_tree_rss_mib": 1455.671875,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "087a9e0be806d492e69c4d529dd518d5300092a5a96af19fd3089612d602fe42",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 2,
+              "generation": 3,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "a5e6aed4b30df95ed069aa69226bf77d725239aee832589a6a2fc1943026f62b"
+            },
+            "translations": [
+              {
+                "cache_key": "ccb46e80487b0860737a83c9421295e87575d44ac854e2985c739fcf4c8b19ed",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:1",
+                "target": "en",
+                "text": "File upload verification has not been completed."
+              },
+              {
+                "cache_key": "4eceb2071fad71eb1af5eaf5e488c35ab8f5643e83562f9054cf4fba57ea2535",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:2",
+                "target": "en",
+                "text": "Invoice verification has not been completed."
+              }
+            ]
+          },
+          {
+            "phase": 2,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 3.601,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 14,
+                "processes_seen": 2,
+                "cpu_seconds_sampled": 0.886063816,
+                "peak_tree_rss_mib": 1455.234375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "f62b63e66523d28787a4448489b1322786840177afc1e0559fba12bee9b285a1",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "c321b127a1f1ec34e5189aa78e33833aa93367d6f72671cbdbfe5ecb38e4723e"
+            },
+            "translations": [
+              {
+                "cache_key": "ccb46e80487b0860737a83c9421295e87575d44ac854e2985c739fcf4c8b19ed",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:1",
+                "target": "en",
+                "text": "File upload verification has not been completed."
+              },
+              {
+                "cache_key": "4eceb2071fad71eb1af5eaf5e488c35ab8f5643e83562f9054cf4fba57ea2535",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:2",
+                "target": "en",
+                "text": "Invoice verification has not been completed."
+              },
+              {
+                "cache_key": "95a80c2ef21b7567e83c5b1878eee7550ede4a106d094327c4d28c6782174294",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "d814125f-9475-4021-9e67-9f83444c4c5c:1:3",
+                "target": "en",
+                "text": "Upload verification has been completed."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "8cb969096a165a78afa7d6abec8ef316f5ac0bae40b0b48fe8da6f6c5efaf714",
+        "models_released": true
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.915,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "dd7d9205-9d7b-41f5-a8dd-f907d6d68c5c",
+            "kind": "section",
+            "meeting_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 30000,
+                "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "OmaScribe Windows 接受检查的时间是周四，不是周五。预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。录音、记录和会议纪要都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.905,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 30,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.91388512,
+                "peak_tree_rss_mib": 1492.25,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "4bad850b783181c90c6e842b72883f64f95f2a6a6763d1c09691549d9a0acbfd",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 3,
+              "generation": 4,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "63c88d94f3511d54a3b49809819ed8af792e85f652f8e1d5af914548b87221aa"
+            },
+            "translations": [
+              {
+                "cache_key": "41b9a5b54d53f00d375f78150b24265ad520ca29d7f0cb64776a14a6f0937798",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:1",
+                "target": "zh",
+                "text": "OmaScribe Windows 接受检查是在周四，不是周五。"
+              },
+              {
+                "cache_key": "67accb095b3e6197d14dc2136567a43bafaa4e7a85b9fec4b414fa01809bd98d",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:2",
+                "target": "zh",
+                "text": "预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。"
+              },
+              {
+                "cache_key": "25f3e45a10a07c668fc225913307c5f4c80854c710394d4ba982468196c4d191",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "58e85c10-4a96-4205-b9e6-dd70d0f891d0:1:3",
+                "target": "zh",
+                "text": "录音、记录和会议纪要都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "5ea877c791c1a73b94ee2d134c77050c9fba3a88e29179702b56226642b8ec2f",
+        "models_released": true
+      },
+      {
+        "case": "en_windows_long_acceptance",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.923,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "31052fa0-bab9-41dd-b086-29027320d69e",
+            "kind": "section",
+            "meeting_id": "cdfbc942-a26a-4606-918c-fe7c790783f9",
+            "sources": [
+              {
+                "end_ms": 30000,
+                "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will conduct a check on the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads that require a local test before enabling."
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 3,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.917,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 30,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.999937444,
+                "peak_tree_rss_mib": 1492.34375,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "4304fedc445606c436a893c81206b04d38ecab4568c4f5029a961454eb47b2ef",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 3,
+              "generation": 4,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "5c26181f6c45b8362fce17d5879c4585820ea303a91ef9eacdbd0d5a0128a068"
+            },
+            "translations": [
+              {
+                "cache_key": "c29af91456efd429dec36cb8d16f9f09f85d94a9afcb397f39dec67b7cf90608",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:1",
+                "target": "zh",
+                "text": "OmaScribe Windows 接受检查是在周四，不是周五。"
+              },
+              {
+                "cache_key": "4c88b6c698f31c57d6e1b2fdee547f491e9b0b8bdfee4ef07a68d8791cd482be",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:2",
+                "target": "zh",
+                "text": "预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。"
+              },
+              {
+                "cache_key": "8c690f639e6ac72c95c41844707d28de8eb2f143acd77c4d59775155465c5968",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "cdfbc942-a26a-4606-918c-fe7c790783f9:1:3",
+                "target": "zh",
+                "text": "录音、记录和会议纪要都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "c1e908a8e5e522eed1042ccecf30aab7d1a8b2cce74e03ff0c2af8d9b6095310",
+        "models_released": true
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "passed": true,
+        "errors": [],
+        "seconds": 8.598,
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "ff18f632-1517-42cb-8335-65a6fbf23999",
+            "kind": "section",
+            "meeting_id": "a3a61ad3-6323-4acc-826b-90246a8c329e",
+            "sources": [
+              {
+                "end_ms": 50000,
+                "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "LICE WILL CHECK THE ENVY A CARD",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 30000,
+                "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期，会议记录应留在此电脑上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 尚未批准 ALICE 将检查 UN VIDEO CARD"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 5,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 8.592,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 32,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 2.2325990879999997,
+                "peak_tree_rss_mib": 1521.40625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "e423d52ab5276c8b8730d46306d58189397ac48924000b7460b528784e10b4fa",
+            "trace_phases": {
+              "started": 3,
+              "worker": 3,
+              "chunk": 6,
+              "generation": 7,
+              "validation_failed": 1,
+              "batch": 2,
+              "finished": 3,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "29a009be36f907acaececeac79d6c57d2f1994d4a8dc19d8804aa00b66f1c3bb"
+            },
+            "translations": [
+              {
+                "cache_key": "d1dc6947fd346d8e3c9bb470bdb08a908029a8ec65a5802de769a642c8d62c83",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:1",
+                "target": "zh",
+                "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。"
+              },
+              {
+                "cache_key": "7dbfadc2f9dcdc0f547d542c273e2c8ee798861b16ee7f97384644f98a923634",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:2",
+                "target": "zh",
+                "text": "LICE 将检查 ENVY A CARD"
+              },
+              {
+                "cache_key": "4fc3ed2125119676e8946f14ce2f9e102291ff352c02bed9c95da55cc61e142b",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:3",
+                "target": "zh",
+                "text": "星期五不是截止日期，会议记录应留在此电脑上"
+              },
+              {
+                "cache_key": "c79f35a111f9b37f592abc9c56c965df80fa0e9de657bfab769a443c6a3dff68",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:4",
+                "target": "zh",
+                "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元"
+              },
+              {
+                "cache_key": "f0770e7fd6f7bb251d98796b61d030692165dc2baec29a45e87a1a3f4afe66ac",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "a3a61ad3-6323-4acc-826b-90246a8c329e:1:5",
+                "target": "zh",
+                "text": "尚未批准 ALICE 将检查 UN VIDEO CARD"
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "666e8b2d6896bad5081d0ca70718c37f0d62a31e15fb052461fa07a28dd54c7a",
+        "models_released": true
+      },
+      {
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "passed": true,
+        "errors": [],
+        "seconds": 17.139,
+        "coverage": 6,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "833acfee-10e6-4e8f-a9c2-4a27adb70fb5",
+            "kind": "section",
+            "meeting_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 60000,
+                "quote": "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:6",
+                "speaker_name": null,
+                "start_ms": 50000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 30000,
+                "quote": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "记住，即使主舞台上的音乐已经结束，嘉年华也可能有部分区域继续演奏音乐直到夜幕降临。 当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 记住，即使主舞台上的音乐可能已经结束，但节日的某些部分可能将持续演奏直到深夜。 邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 记住，即使主舞台上的音乐已经结束， festival 中的某些部分可能还会继续演奏到深夜。 大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 6,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 17.131,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 64,
+                "processes_seen": 4,
+                "cpu_seconds_sampled": 4.293605504,
+                "peak_tree_rss_mib": 1525.265625,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "e6a92a3e143aad04a37782be97a70bb25af110e8db14a18ec2a7696192d10913",
+            "trace_phases": {
+              "started": 4,
+              "worker": 4,
+              "chunk": 9,
+              "generation": 11,
+              "validation_failed": 3,
+              "batch": 2,
+              "finished": 4,
+              "retrieval": 2,
+              "article_state": 2,
+              "article_prompt": 2
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "8751cf659e4b3470a5978cc7c0a7b7dc3b9dd3eb0c4b93556b2f072b016c90c5"
+            },
+            "translations": [
+              {
+                "cache_key": "8fcc939b5fd48471ef730791856f37f00dd3f51a77784803908837cbc27ff999",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:1",
+                "target": "zh",
+                "text": "记住，即使主舞台上的音乐已经结束，嘉年华也可能有部分区域继续演奏音乐直到夜幕降临。"
+              },
+              {
+                "cache_key": "e3606a8a34fa9f8104dd653c4d6db1fbef60492ade039eb6c3e3bd6571af1634",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:2",
+                "target": "en",
+                "text": "Professor PAMELA FURGO森 of 当迪大学 pointed out that if journalists publish information such as photographs of the suspect, it may indeed be harmful."
+              },
+              {
+                "cache_key": "ad432944e7e4ff47952c9ad164f5210d34ef30149d44c9467bec3a05c1873a4a",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:3",
+                "target": "zh",
+                "text": "记住，即使主舞台上的音乐可能已经结束，但节日的某些部分可能将持续演奏直到深夜。"
+              },
+              {
+                "cache_key": "f7c556c1def9870dbdd54069c0aa094f86209fd5781c38b8ae25eef3fa42aa79",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:4",
+                "target": "en",
+                "text": "Professor 潘 MALE FERGUSON of 邓迪大学 pointed out that if journalists publish information such as photographs of the suspect, it may indeed be harmful."
+              },
+              {
+                "cache_key": "7b6ced399a3dadfbba7bf5881f3145a7650393a1f3e17382cdf65d7f349a2745",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:5",
+                "target": "zh",
+                "text": "记住，即使主舞台上的音乐已经结束， festival 中的某些部分可能还会继续演奏到深夜。"
+              },
+              {
+                "cache_key": "b6e1c9dc44f1247941aff1633c9c48560741c6b81d08c587355eb910defd0190",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "ab95cd19-7dd7-499c-b02a-e7a8dace2f92:1:6",
+                "target": "en",
+                "text": "Professor 潘 MALE FERGUSTON of the university pointed out that if journalists publish information such as the photos of the suspect, it seems to indeed pose a harmful risk."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "8049e96d85506765a980b027871b790f0319f186782f1c311c7f61a18ecf69c2",
+        "models_released": true
+      },
+      {
+        "case": "zh_mixed_script_task_owner",
+        "passed": true,
+        "errors": [],
+        "seconds": 7.132,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "9fc4132f-0dd7-43f7-8462-f5e862e84e41",
+            "kind": "section",
+            "meeting_id": "279d55cc-9335-44fe-8ab2-d1b65cedb828",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "Alice负责检查显卡。",
+                "revision": 1,
+                "segment_id": "279d55cc-9335-44fe-8ab2-d1b65cedb828:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Alice负责检查显卡。"
+          }
+        ],
+        "commands": [
+          {
+            "phase": 1,
+            "batch": 1,
+            "coverage": 1,
+            "status": "文档已同步 · 1 个章节",
+            "process": {
+              "code": 0,
+              "seconds": 7.124,
+              "failure": null,
+              "resources": {
+                "schema": 1,
+                "method": "psutil sampled descendant tree",
+                "psutil_version": "7.1.3",
+                "interval_seconds": 0.25,
+                "samples": 27,
+                "processes_seen": 3,
+                "cpu_seconds_sampled": 1.3286672880000001,
+                "peak_tree_rss_mib": 1489.0,
+                "peak_tree_pss_mib": null,
+                "gpu_memory_mib": null,
+                "energy_joules": null,
+                "sample_errors": 0,
+                "sampler_stopped": true,
+                "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+              }
+            },
+            "trace_sha256": "5f88802d01e784c3437c4826e8a448b14c6e8bd5de12f49ca4cfda01bcf96216",
+            "trace_phases": {
+              "started": 2,
+              "worker": 2,
+              "chunk": 1,
+              "generation": 2,
+              "batch": 1,
+              "finished": 2,
+              "retrieval": 1,
+              "article_state": 1,
+              "article_prompt": 1
+            },
+            "metal": {
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "log_sha256": "b6a9027894223f293b95d5bdcc46da9b4bb6169457404d06cec9ab4775c50feb"
+            },
+            "translations": [
+              {
+                "cache_key": "dfdf4975459fc2bb6c99944aa3e61d230149f83d3fcf9d4182566741b7c1ff6e",
+                "model": "qwen3-1.7b",
+                "revision": 1,
+                "segment_id": "279d55cc-9335-44fe-8ab2-d1b65cedb828:1:1",
+                "target": "en",
+                "text": "Alice is responsible for checking the GPU."
+              }
+            ]
+          }
+        ],
+        "raw_report_sha256": "ab65735cfeb466e005182020980634cb00597364b23a107a688150ae69927b8f",
+        "models_released": true
+      }
+    ],
+    "raw_results_sha256": "50e19b49a919426df7374a5e877f4878724f1bd371939c1bad586fd99dec8c60",
+    "trace_phases": {
+      "started": 95,
+      "worker": 94,
+      "chunk": 100,
+      "generation": 143,
+      "batch": 50,
+      "finished": 95,
+      "retrieval": 45,
+      "article_state": 45,
+      "article_prompt": 44,
+      "validation_failed": 9,
+      "literal_caption": 2
+    },
+    "worker_lease_events": 94,
+    "worker_events_are_not_distinct_process_count": true,
+    "saved_logs_with_full_metal_offload": 44,
+    "models_released": 33
+  },
+  "manual_review": {
+    "final_articles_read": 33,
+    "source_scope": "All final bodies compared with original fixture utterances; current citation/revision and human paragraphs checked by the existing harness.",
+    "caveats": [
+      "Noisy repeated speech still produces repetitive prose and awkward translations (for example festival/night wording and literal owns).",
+      "Unclear original ASR names are preserved instead of guessed; this is not a natural-ASR accuracy pass.",
+      "Automated fact/name/language checks and manual review of this fixed corpus are not general entailment or comprehensive translation-quality proof."
+    ]
+  },
+  "invariants": [
+    "Same clean compiled CLI, core/harness, fixture, preferences and pinned1.7B/runtime for all33 cases; no mixed candidate evidence.",
+    "No model/beam/score/backend default promotion, new GPU SDK or installer build; optional signed components unchanged.",
+    "Original source and protected human paragraphs preserved; source revisions and names checked before commit.",
+    "Generation caps, retry budget, original lag/settlement gates and negative controls unchanged.",
+    "Temporary borrowed model links released for all33 workspaces; source models retained."
+  ],
+  "pending": [
+    "Current candidate paced Engine recording/concurrency checks are running separately.",
+    "Mac native UI and physical microphone acceptance await desktop unlock.",
+    "Same-candidate Windows CUDA/92s/Realtek and Linux native/install-upgrade results remain separate gates.",
+    "Natural mixed/long ASR, speaker-quality and broader GPU/OOM/reset measurements remain open research work."
+  ]
+}
