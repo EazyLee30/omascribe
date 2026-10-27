@@ -9,6 +9,17 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_future_owner_consent_assertion_accepts_equivalent_negation_but_not_obtained_consent(self):
+        cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
+        case=next(c for c in cases if c['name']=='en_future_named_task_owner')
+        source=dict(id='s',seq=1,text=case['transcript'][0],revision=1)
+        citation=dict(segment_id='s',revision=1,quote=source['text'])
+        def assess(text):
+            snapshot=dict(segments=[source],suggestions=[dict(status='pending',text=text,sources=[citation])],runtime=dict(notes_status=''),translations={'s':dict(revision=1,target='en',text=text)})
+            return evaluate.assess(case,snapshot,True)
+        for clause in ['currently no user consent has been obtained','user consent has not yet been obtained','user consent is still pending']:
+            self.assertEqual(assess('Model download will be handled by 陈明, but '+clause+'.'),[])
+        self.assertTrue(assess('Model download will be handled by 陈明, and user consent has been obtained.'))
     def test_caption_assertions_catch_wrong_names_language_and_revision_independently_of_minutes(self):
         source = dict(id="s", seq=1, text="Alice will check the model.", revision=2)
         snapshot = dict(suggestions=[], segments=[source], runtime=dict(notes_status=""), translations={})

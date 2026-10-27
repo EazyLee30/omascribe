@@ -1542,7 +1542,9 @@
       "not|cannot|before|until"
     ],
     "forbidden": [
-      "responsible for (?:Li Hua|李华)"
+      "responsible for (?:Li Hua|李华)",
+      "李华[^.。]*\\band cannot be (?:published|released)",
+      "check[^.。]*\\bwhich cannot be (?:published|released)"
     ],
     "translation_checks": [
       {
@@ -1555,7 +1557,9 @@
           "not|cannot|before|until"
         ],
         "forbidden": [
-          "responsible for (?:Li Hua|李华)"
+          "responsible for (?:Li Hua|李华)",
+          "李华[^.。]*\\band cannot be (?:published|released)",
+          "check[^.。]*\\bwhich cannot be (?:published|released)"
         ]
       }
     ]
@@ -1573,7 +1577,7 @@
       "陈明",
       "download",
       "will|going to",
-      "not yet|not.*obtained|pending"
+      "not yet|not.*obtained|no user consent has been obtained|pending"
     ],
     "forbidden": [
       "陈明 is responsible for"
@@ -1586,7 +1590,7 @@
           "陈明",
           "download",
           "will|going to",
-          "not yet|not.*obtained|pending"
+          "not yet|not.*obtained|no user consent has been obtained|pending"
         ],
         "forbidden": [
           "陈明 is responsible for"

@@ -21,8 +21,9 @@ impl std::error::Error for Mismatch {}
 pub(crate) struct Assignment {
     pub actor: String,
     task: String,
+    end: usize,
 }
-fn references(source: &str) -> Vec<Assignment> {
+fn frames(source: &str) -> Vec<Assignment> {
     static FRAME: OnceLock<Regex> = OnceLock::new();
     let frame = FRAME.get_or_init(|| Regex::new(concat!(
         r"(?:^|[。.!?！？；;，,\n])\s*(?P<task>[^。.!?！？；;，,\n]{2,64}?)由\s*",
@@ -39,7 +40,20 @@ fn references(source: &str) -> Vec<Assignment> {
             {
                 return None;
             }
-            let actor = &c["actor"];
+            Some(Assignment {
+                actor: c["actor"].into(),
+                task: c["task"].trim().into(),
+                end: c.get(0)?.end(),
+            })
+        })
+        .take(12)
+        .collect()
+}
+fn references(source: &str) -> Vec<Assignment> {
+    frames(source)
+        .into_iter()
+        .filter(|a| {
+            let actor = a.actor.as_str();
             // Pronouns, generic staff/device roles and alternatives are not name
             // spellings. An unknown label stays literal; no person role is inferred.
             if [
@@ -68,15 +82,24 @@ fn references(source: &str) -> Vec<Assignment> {
             .any(|v| actor.eq_ignore_ascii_case(v))
                 || actor.contains(['和', '或', '与', '及', '、'])
             {
-                return None;
+                return false;
             }
-            Some(Assignment {
-                actor: actor.into(),
-                task: c["task"].trim().into(),
-            })
+            true
         })
-        .take(12)
         .collect()
+}
+pub(crate) fn has_frame(source: &str) -> bool {
+    !frames(source).is_empty()
+}
+/// Keep the task/actor clause separate from its independent consent or release
+/// condition. Return original byte offsets, retaining every source character.
+pub(crate) fn boundary(source: &str) -> Option<usize> {
+    frames(source).into_iter().find_map(|a| {
+        let separator = source[a.end..].chars().next()?;
+        let end = a.end + separator.len_utf8();
+        (matches!(separator, '，' | ',' | '；' | ';') && !source[end..].trim().is_empty())
+            .then_some(end)
+    })
 }
 pub(crate) fn actors(source: &str) -> Vec<String> {
     let mut names: Vec<_> = references(source).into_iter().map(|a| a.actor).collect();
@@ -129,6 +152,17 @@ pub(crate) fn assignments(source: &str) -> Vec<Assignment> {
         .collect()
 }
 pub(crate) fn validate(source: &str, body: &str) -> Result<()> {
+    static BUILD: OnceLock<Regex> = OnceLock::new();
+    if frames(source).iter().any(|a| a.task.contains("构建"))
+        && !body.contains("构建")
+        && !BUILD
+            .get_or_init(|| {
+                Regex::new(r"(?i)\b(?:build(?:s|ing)?|construct(?:ion|ing|s)?)\b").unwrap()
+            })
+            .is_match(body)
+    {
+        return Err(Mismatch.into());
+    }
     static AFTER: OnceLock<Regex> = OnceLock::new();
     static PASSIVE: OnceLock<Regex> = OnceLock::new();
     let after = AFTER.get_or_init(|| Regex::new(r"(?i)^\s*(?:(?:is\s+(?:(?:currently|now|still)\s+)?responsible\s+for)\b|(?:handles|manages|oversees)\b|(?:仍|将)?(?:负责|承担|管理)|(?:是|为)[^，,。.;；\n]{0,40}负责人)").unwrap());
@@ -175,6 +209,23 @@ pub(crate) fn validate(source: &str, body: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn task_qualifiers_and_following_conditions_keep_independent_source_parts() {
+        for source in [
+            "构建检查由李华负责，完成前不能发布。",
+            "构建任务由服务器负责，人工不需要介入。",
+        ] {
+            let end = boundary(source).unwrap();
+            assert!(source[..end].ends_with('，'));
+            assert!(!source[end..].is_empty());
+            assert!(validate(source, "The task is handled by the server.").is_err());
+        }
+        assert!(validate(
+            "构建任务由服务器负责，人工不需要介入。",
+            "The build task is handled by the server. No human intervention is required."
+        )
+        .is_ok());
+    }
     #[test]
     fn explicit_roles_keep_direction_and_literal_actor_labels() {
         let source = "离线模型下载由陈明负责，下载必须获得用户同意。";

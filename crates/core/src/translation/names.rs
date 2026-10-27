@@ -17,19 +17,22 @@ space ::= [ \t\r\n]*
     )
 }
 impl Names {
-    pub fn repair_prefixed(&self, source: &str, prefix: &str) -> Option<Repair> {
-        let mut plan = if self.0.is_empty() && !source.contains(['[', ']']) {
-            Repair {
+    pub fn repair_source(&self, source: &str) -> Option<Repair> {
+        if self.0.is_empty() && !source.contains(['[', ']']) {
+            Some(Repair {
                 names: Vec::new(),
                 input: source.into(),
                 grammar: Some(json_grammar("prose")),
                 roles: String::new(),
                 predicates: BTreeMap::new(),
                 prefix: None,
-            }
+            })
         } else {
-            self.repair(source)?
-        };
+            self.repair(source)
+        }
+    }
+    pub fn repair_prefixed(&self, source: &str, prefix: &str) -> Option<Repair> {
+        let mut plan = self.repair_source(source)?;
         plan.prefix(prefix).then_some(plan)
     }
     pub fn new(terms: &Terms, source: &str) -> Self {
