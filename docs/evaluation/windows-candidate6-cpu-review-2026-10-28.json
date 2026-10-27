@@ -1,0 +1,64 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "scope": "Two independent assistant-led reviews of fictional CPU seeded-text cases; not human review, physical audio, or release acceptance.",
+  "automatic_case_results": [
+    {
+      "case": "bilingual_scope",
+      "verdict": "FAIL"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "verdict": "UNCERTAIN"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "verdict": "FAIL"
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "verdict": "FAIL"
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "verdict": "PASS"
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "verdict": "NOT REVIEWED"
+    }
+  ],
+  "automatic_counts": {
+    "PASS": 1,
+    "FAIL": 3,
+    "UNCERTAIN": 1,
+    "NOT REVIEWED": 1
+  },
+  "explicit_control_counts": {
+    "PASS": 0,
+    "FAIL": 0,
+    "UNCERTAIN": 2
+  },
+  "confirmed": [
+    "Only omitted in bilingual caption",
+    "Morgan responsibility mistranslated",
+    "Three noise citations are irrelevant",
+    "Alice owner preserved"
+  ],
+  "uncertain": [
+    "Toolbar request/status phrasing and omitted offline-testing context",
+    "Chinese acceptance-check terminology",
+    "English officially qualifier"
+  ],
+  "timed_out_case": "zh_recorded_mixed_prose_fidelity",
+  "timed_out_case_verdict": "NOT REVIEWED",
+  "review_evidence_sha256": {
+    "windows-candidate6-cpu-targeted-manual-review.json": "5b9982bb8de37349f66215b31c3980024442269aa9beaa3ba64b42e531ec5847",
+    "windows-candidate6-cpu-targeted-independent-review.json": "5761165e47f3d0e5b24463320bd563ccf272d4a19c1306d840c0019d9b0c7023"
+  },
+  "limitations": [
+    "Semantic decisions can be subjective; uncertain cases are not passes.",
+    "Two explicit controls did not test subtitle translation.",
+    "No user audio or real transcript was reviewed."
+  ]
+}
