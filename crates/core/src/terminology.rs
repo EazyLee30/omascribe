@@ -8,34 +8,210 @@ use std::collections::{BTreeMap, HashSet};
 pub struct Terms {
     matcher: Option<Regex>,
     names: BTreeMap<String, String>,
+    model_aliases: HashSet<String>,
     pub hotwords: Vec<String>,
     writer_names: Vec<String>,
     caption_names: Vec<String>,
     approximate: Vec<String>,
 }
+
+// A complete explicit graphics-series keyword may supply a model number.
+// Monetary abbreviations such as "RMB 3000" are not graphics identifiers.
+fn model_identifier(value: &str) -> Option<(&str, &str)> {
+    static MODEL: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let parts = MODEL
+        .get_or_init(|| Regex::new(r"(?i)^([a-z]{2,8})[ \t]*([0-9]{2,8})$").unwrap())
+        .captures(value)?;
+    let prefix = parts.get(1)?.as_str();
+    if !["gtx", "rtx", "gts", "gt", "mx", "rx", "arc"]
+        .iter()
+        .any(|series| prefix.eq_ignore_ascii_case(series))
+    {
+        return None;
+    }
+    Some((prefix, parts.get(2)?.as_str()))
+}
+
+fn spoken_digits(digits: &str, zero: char) -> String {
+    digits
+        .chars()
+        .map(|c| match c {
+            '0' => zero,
+            '1' => '一',
+            '2' => '二',
+            '3' => '三',
+            '4' => '四',
+            '5' => '五',
+            '6' => '六',
+            '7' => '七',
+            '8' => '八',
+            '9' => '九',
+            _ => unreachable!("model_identifier permits only ASCII digits"),
+        })
+        .collect()
+}
+
+fn english_digits(digits: &str) -> String {
+    digits
+        .chars()
+        .map(|c| match c {
+            '0' => "ZERO",
+            '1' => "ONE",
+            '2' => "TWO",
+            '3' => "THREE",
+            '4' => "FOUR",
+            '5' => "FIVE",
+            '6' => "SIX",
+            '7' => "SEVEN",
+            '8' => "EIGHT",
+            '9' => "NINE",
+            _ => unreachable!("model_identifier permits only ASCII digits"),
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn model_spellings(name: &str) -> Option<Vec<String>> {
+    let (prefix, digits) = model_identifier(name)?;
+    let mut variants = vec![
+        name.to_owned(),
+        format!("{prefix}{digits}"),
+        format!("{prefix} {digits}"),
+    ];
+    for zero in ['零', '〇'] {
+        let spoken = spoken_digits(digits, zero);
+        let separated = spoken
+            .chars()
+            .map(|c| c.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        for number in [spoken, separated] {
+            variants.push(format!("{prefix}{number}"));
+            variants.push(format!("{prefix} {number}"));
+        }
+    }
+    variants.push(format!("{prefix} {}", english_digits(digits)));
+    Some(variants)
+}
+
+fn model_continuation(c: char) -> bool {
+    c.is_ascii_alphanumeric()
+        || c.is_numeric()
+        || c == '_'
+        || "零〇一二三四五六七八九十百千万亿两幺点%％".contains(c)
+}
+
+fn model_has_continuation(text: &str) -> bool {
+    let trimmed = text.trim_start_matches([' ', '\t']);
+    if (trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点'))
+        && trimmed[trimmed.chars().next().unwrap().len_utf8()..]
+            .trim_start_matches([' ', '\t'])
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_numeric() || "零〇一二三四五六七八九".contains(c))
+    {
+        return true;
+    }
+    if [
+        "美元",
+        "人民币",
+        "公斤",
+        "千克",
+        "毫秒",
+        "毫升",
+        "元",
+        "个",
+        "件",
+        "号",
+        "张",
+        "台",
+        "年",
+        "月",
+        "日",
+        "次",
+        "份",
+        "块",
+        "分",
+        "支",
+        "款",
+        "吨",
+        "米",
+        "秒",
+        "%",
+        "％",
+    ]
+    .iter()
+    .any(|unit| trimmed.starts_with(unit))
+    {
+        return true;
+    }
+    if text.chars().next().is_some_and(model_continuation) {
+        return true;
+    }
+    let rest = text.trim_start_matches([' ', '\t']);
+    if rest.len() == text.len() {
+        return false;
+    }
+    let mut chars = rest.chars();
+    let first = chars.next();
+    if first.is_some_and(|c| c.is_numeric() || "元个张台年月日次份块".contains(c)) {
+        return true;
+    }
+    if first.is_some_and(|c| "零〇一二三四五六七八九十百千万亿两幺".contains(c))
+        && chars.next().is_none_or(|c| {
+            c.is_ascii_alphanumeric()
+                || c.is_numeric()
+                || c.is_ascii_whitespace()
+                || c.is_ascii_punctuation()
+                || "零〇一二三四五六七八九十百千万亿两幺元个张台年月日次份块".contains(c)
+        })
+    {
+        return true;
+    }
+    let word = rest
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .next()
+        .unwrap_or_default();
+    [
+        "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TI",
+        "SUPER", "XT", "POINT", "PERCENT", "DOLLAR", "DOLLARS", "YUAN", "EURO", "EUROS", "USD",
+        "RMB", "CNY", "EUR", "GBP",
+    ]
+    .iter()
+    .any(|suffix| word.eq_ignore_ascii_case(suffix))
+}
 impl Terms {
     pub fn fingerprint(&self) -> String {
         use sha2::{Digest, Sha256};
-        format!(
-            "{:x}",
-            Sha256::digest(
-                serde_json::to_vec(&(
-                    "terms-v3",
-                    &self.names,
-                    &self.approximate,
-                    &self.caption_names
-                ))
-                .expect("term signature")
-            )
-        )
+        let mut model_aliases: Vec<_> = self.model_aliases.iter().collect();
+        model_aliases.sort_unstable();
+        let payload = if model_aliases.is_empty() {
+            serde_json::to_vec(&(
+                "terms-v3",
+                &self.names,
+                &self.approximate,
+                &self.caption_names,
+            ))
+        } else {
+            serde_json::to_vec(&(
+                "terms-v4-models",
+                &self.names,
+                &self.approximate,
+                &self.caption_names,
+                &model_aliases,
+            ))
+        };
+        format!("{:x}", Sha256::digest(payload.expect("term signature")))
     }
     pub fn new(notes: &[UserNote], entries: &[Entry]) -> Self {
         let mut names = BTreeMap::new();
+        let mut model_aliases = HashSet::new();
         let mut conflicts = HashSet::new();
         let mut hotwords = Vec::new();
         let mut writer_names = Vec::new();
         let mut caption_names = Vec::new();
         let mut approximate = Vec::new();
+        let mut expanded_models = HashSet::new();
         let explicit: HashSet<String> = entries
             .iter()
             .filter(|e| e.kind == "term" && e.enabled && !e.deleted)
@@ -67,19 +243,94 @@ impl Terms {
             caption_names.push(e.title.trim().to_owned());
             approximate.push(e.title.trim().to_owned());
             add(&e.title, &e.title);
-            for alias in e.aliases.split([',', '，', ';', '；', '\n', '|']) {
+            for alias in std::iter::once(e.title.as_str())
+                .chain(e.aliases.split([',', '，', ';', '；', '\n', '|']))
+            {
                 add(alias, &e.title);
+                if let Some((prefix, digits)) = model_identifier(alias.trim()) {
+                    model_aliases.insert(alias.trim().to_lowercase());
+                    let key = (
+                        format!("{}{digits}", prefix.to_ascii_lowercase()),
+                        e.title.to_lowercase(),
+                    );
+                    if expanded_models.contains(&key) || expanded_models.len() < 80 {
+                        let is_new = expanded_models.insert(key);
+                        if is_new {
+                            let variants =
+                                model_spellings(alias.trim()).expect("validated identifier");
+                            for variant in variants {
+                                if explicit.contains(&variant.to_lowercase())
+                                    && !variant.eq_ignore_ascii_case(alias.trim())
+                                {
+                                    continue;
+                                }
+                                model_aliases.insert(variant.to_lowercase());
+                                add(&variant, &e.title);
+                            }
+                        }
+                    }
+                }
             }
         }
         // User-written Latin names supply spelling/casing, never facts or inferred aliases.
         let latin = Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap();
         for n in crate::notes::document_notes(notes) {
+            for line in n.content.lines() {
+                let name = line.trim().trim_matches(['*', '-', '#', ' ']);
+                let Some((prefix, digits)) = model_identifier(name) else {
+                    continue;
+                };
+                let compact = format!("{prefix}{digits}");
+                let spaced = format!("{prefix} {digits}");
+                // Explicit glossary names and aliases always take precedence.
+                if explicit.contains(&compact.to_lowercase())
+                    || explicit.contains(&spaced.to_lowercase())
+                {
+                    continue;
+                }
+                let key = (
+                    compact.to_lowercase(),
+                    format!("note:{}", compact.to_lowercase()),
+                );
+                if expanded_models.contains(&key) || expanded_models.len() >= 80 {
+                    continue;
+                }
+                expanded_models.insert(key);
+                for alias in model_spellings(name).expect("validated model identifier") {
+                    if explicit.contains(&alias.to_lowercase()) {
+                        continue;
+                    }
+                    model_aliases.insert(alias.to_lowercase());
+                    add(&alias, name);
+                }
+                hotwords.push(name.to_owned());
+                writer_names.push(name.to_owned());
+                caption_names.push(name.to_owned());
+            }
             let chinese_context = n
                 .content
                 .chars()
                 .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
-            for word in latin.find_iter(&n.content).take(80) {
+            let mut accepted_words = HashSet::new();
+            for word in latin.find_iter(&n.content) {
+                let line_start = n.content[..word.start()].rfind('\n').map_or(0, |i| i + 1);
+                let line_end = n.content[word.end()..]
+                    .find('\n')
+                    .map_or(n.content.len(), |i| word.end() + i);
+                let line = n.content[line_start..line_end]
+                    .trim()
+                    .trim_matches(['*', '-', '#', ' ']);
+                if model_identifier(line).is_some() {
+                    continue;
+                }
                 let word = word.as_str().trim_end_matches(['.', '-']);
+                if accepted_words.contains(word) {
+                    continue;
+                }
+                if accepted_words.len() >= 80 {
+                    break;
+                }
+                accepted_words.insert(word.to_owned());
                 if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
                     continue;
                 }
@@ -136,12 +387,15 @@ impl Terms {
                 "奥马（OMA）的SCRIB",
                 "奥马 (OMA) 的 SCRIB",
             ] {
-                add(alias, "OmaScribe");
+                if !explicit.contains(&alias.to_lowercase()) {
+                    add(alias, "OmaScribe");
+                }
             }
         }
         for key in conflicts {
             names.remove(&key);
         }
+        model_aliases.retain(|key| names.contains_key(key));
         let mut aliases: Vec<_> = names.keys().collect();
         aliases.sort_by_key(|s| std::cmp::Reverse(s.len()));
         let matcher = (!aliases.is_empty()).then(|| {
@@ -181,6 +435,7 @@ impl Terms {
         Self {
             matcher,
             names,
+            model_aliases,
             hotwords,
             writer_names,
             caption_names,
@@ -198,8 +453,22 @@ impl Terms {
         let mut cursor = 0;
         for hit in matcher.find_iter(text) {
             let value = hit.as_str();
+            let Some(name) = self.names.get(&value.to_lowercase()) else {
+                // Regex Unicode case folding can match characters whose lowercase
+                // spelling differs from the stored key. Leave those unchanged.
+                continue;
+            };
             let first = value.chars().next().unwrap();
             let last = value.chars().last().unwrap();
+            if self.model_aliases.contains(&value.to_lowercase())
+                && (text[..hit.start()]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_')
+                    || model_has_continuation(&text[hit.end()..]))
+            {
+                continue;
+            }
             if first.is_ascii_alphanumeric()
                 && text[..hit.start()]
                     .chars()
@@ -214,11 +483,61 @@ impl Terms {
                 continue;
             }
             result.push_str(&text[cursor..hit.start()]);
-            result.push_str(&self.names[&value.to_lowercase()]);
+            result.push_str(name);
             cursor = hit.end();
         }
         result.push_str(&text[cursor..]);
         result
+    }
+
+    /// The bundled token inventory represents spoken digits as CJK characters.
+    /// Keep the display spelling for notes, but send a complete encodable hint.
+    pub fn recognition_hotwords(&self) -> Vec<String> {
+        let mut primary = Vec::new();
+        let mut other_models = Vec::new();
+        let mut alternatives = Vec::new();
+        let mut title_fallbacks = Vec::new();
+        for name in &self.hotwords {
+            let mut seen_models = HashSet::new();
+            let mut models = Vec::new();
+            for (prefix, digits) in
+                model_identifier(name)
+                    .into_iter()
+                    .chain(self.names.iter().filter_map(|(alias, canonical)| {
+                        (canonical == name)
+                            .then(|| model_identifier(alias))
+                            .flatten()
+                    }))
+            {
+                if seen_models.insert((prefix.to_ascii_lowercase(), digits.to_owned())) {
+                    models.push((prefix, digits));
+                }
+            }
+            if models.is_empty() {
+                primary.push(name.clone());
+            } else if model_identifier(name).is_none() && !name.chars().any(|c| c.is_ascii_digit())
+            {
+                title_fallbacks.push(name.clone());
+            }
+            for (i, (prefix, digits)) in models.iter().enumerate() {
+                let hint = format!("{prefix} {}", spoken_digits(digits, '零'));
+                if i == 0 {
+                    primary.push(hint);
+                } else {
+                    other_models.push(hint);
+                }
+                alternatives.push(format!("{prefix} {}", english_digits(digits)));
+            }
+        }
+        let mut seen = HashSet::new();
+        primary
+            .into_iter()
+            .chain(other_models)
+            .chain(title_fallbacks)
+            .chain(alternatives)
+            .filter(|word| seen.insert(word.to_lowercase()))
+            .take(80)
+            .collect()
     }
     fn normalize_near_names(&self, text: &str) -> String {
         if self.approximate.is_empty() {
@@ -340,7 +659,7 @@ impl Terms {
             .collect()
     }
     pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {
-        let body = body.to_lowercase();
+        let body = self.normalize_exact(body).to_lowercase();
         let owners = source_owner_names(transcript);
         // A sole explicit owner is a source spelling, not a guessed translation.
         // Multiple/changed ownership needs field identity; do not demand obsolete
@@ -438,15 +757,20 @@ pub(crate) fn preserves_owner_spelling(source: &str, body: &str) -> bool {
         .all(|n| contains_name(&body, &n.to_lowercase()))
 }
 fn contains_name(text: &str, name: &str) -> bool {
+    let model = model_identifier(name).is_some();
     text.match_indices(name).any(|(start, value)| {
         !text[..start]
             .chars()
             .next_back()
-            .is_some_and(|c| c.is_ascii_alphanumeric())
-            && !text[start + value.len()..]
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_ascii_alphanumeric())
+            .is_some_and(|c| c.is_ascii_alphanumeric() || model && c == '_')
+            && if model {
+                !model_has_continuation(&text[start + value.len()..])
+            } else {
+                !text[start + value.len()..]
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_alphanumeric())
+            }
     })
 }
 fn edit_distance(a: &[u8], b: &[u8]) -> usize {

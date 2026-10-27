@@ -439,7 +439,11 @@ impl Engine {
         let id = self.active.lock().unwrap().as_ref().map(|a| a.id.clone());
         if let Some(id) = id {
             let dir = self.audio_dir(&id)?;
-            let words = self.terminology(&id)?.hotwords.join("\n").to_uppercase();
+            let words = self
+                .terminology(&id)?
+                .recognition_hotwords()
+                .join("\n")
+                .to_uppercase();
             let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
             fs::write(&temp, words)?;
             if let Err(error) = fs::rename(&temp, dir.join("hotwords.txt")) {
@@ -755,7 +759,7 @@ impl Engine {
         fs::write(
             &hotwords,
             self.terminology(&active.id)?
-                .hotwords
+                .recognition_hotwords()
                 .join("\n")
                 .to_uppercase(),
         )?;
