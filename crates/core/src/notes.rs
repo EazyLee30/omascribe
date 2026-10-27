@@ -7,6 +7,7 @@ pub(crate) mod incremental;
 mod lexical;
 mod retrieval;
 pub(crate) mod stream;
+mod uncertainty;
 mod validation;
 mod writer;
 pub(crate) use crate::inference_worker::open_session;
@@ -346,8 +347,9 @@ fn generate_inner(
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
             .and_then(|body| {
+                let body = uncertainty::restore(&terms.normalize(body), &context.segments);
                 writer::validate_language(
-                    body,
+                    &body,
                     writer::chinese(snapshot, &prefs.minutes_language),
                 )?;
                 terms.validate_writer_names(
@@ -358,13 +360,9 @@ fn generate_inner(
                         .map(|s| s.text.as_str())
                         .collect::<Vec<_>>()
                         .join(" "),
-                    &terms.normalize(body),
+                    &body,
                 )?;
-                writer::document(
-                    &terms.normalize(body),
-                    &context.segments,
-                    &snapshot.meeting.speaker_names,
-                )
+                writer::document(&body, &context.segments, &snapshot.meeting.speaker_names)
             })
             .and_then(|text| terms.normalize_draft(&text));
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
@@ -442,6 +440,7 @@ fn generate_inner(
                 }
                 let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                 let name_hint = error.to_string();
+                let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
                 let hint = if name_hint.contains("专有名称") {
                     &name_hint
                 } else if error.to_string().contains("历史来源") {
@@ -459,7 +458,7 @@ fn generate_inner(
                 } else if error.to_string().contains("最新完成状态") {
                     "同一任务后文明示完成时写已完成；其他任务仍未完成的状态保留。不要把已被更新的旧计划写成当前计划。Use the later explicit completion for that same task, retain unrelated pending work, and omit superseded plans."
                 } else if error.to_string().contains("无依据补写") {
-                    "原话没有提供会议是否结束、有无其他议题、有无行动或修改的证据。只写已说出的内容，不补会议层面的结论和缺席信息。Do not add meeting conclusions or claims about absent actions, topics or changes. Restate only the explicit excerpt."
+                    &unsupported_hint
                 } else if error.to_string().contains("问题反馈反向") {
                     "原话抱怨的现状只记录为问题，不要将其改写成需要继续这样做，不推测解决方案。Preserve the complaint as a problem report; do not turn the criticized behavior into a new requirement."
                 } else if error.to_string().contains("技术限定") {

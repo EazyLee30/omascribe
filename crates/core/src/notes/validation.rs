@@ -15,6 +15,8 @@ fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str>
         ("未讨论其他议题",r"(?i)(?:did\s+not|didn['’]t)\s+(?:discuss|cover|address)\s+(?:any\s+)?other\s+topics|\bno\s+other\s+topics\s+(?:were|have\s+been|had\s+been)\s+(?:discussed|covered|addressed)|(?:没有|未)讨论(?:任何)?其他(?:议题|话题)"),
         ("期限缺乏信息的推断",r"(?i)no\s+(?:indication|mention|evidence)\s+of\s+(?:a\s+|the\s+)?deadline|没有(?:提及|提供)(?:审批)?期限"),
         ("不同场次的会议",r"(?i)\b(?:first|second|third)\s+(?:meeting|session)\b|第[一二三](?:次|场)会议"),
+        ("额外的公开测试阶段",r"(?i)公测|公測|公开测试|公開測試|\b(?:public|open)\s+(?:beta|testing)\b"),
+        ("额外的测试版本阶段",r"(?i)测试版|測試版|\bbeta\s+(?:release|version|build|testing)\b|\bbeta\s*版"),
         ("未发生修改或更正",r"(?i)\bno\s+(?:changes?|corrections?)\s+(?:(?:or|and)\s+(?:changes?|corrections?)\s+)?(?:were|was|have\s+been|had\s+been)\s+(?:made|applied)\b|(?:没有|未)(?:进行|做出|作出)?(?:任何)?(?:修改|更改|更正)"),
     ].into_iter().map(|(name,pattern)|(name,regex::Regex::new(pattern).unwrap())).collect());
     let assertions = |text: &str| {
@@ -658,7 +660,7 @@ fn validate_document(
         }
         let shares_uncertain_topic = [
             &["预算", "budget", "金额"][..],
-            &["launch", "release", "发布"][..],
+            &["launch", "release", "发布", "公测", "公測", "beta"][..],
             &["日期"][..],
         ]
         .iter()
@@ -697,6 +699,22 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_public_release_does_not_establish_a_public_beta_stage() {
+        let source="The offline recorder is ready for internal testing. The public release is not approved yet.";
+        assert!(unsupported_summary_claim("公测发布尚未批准。", source).is_some());
+        assert!(unsupported_summary_claim("公开发布尚未批准。", source).is_none());
+        assert!(unsupported_summary_claim(
+            "公测发布尚未批准。",
+            "The public beta release is not approved yet."
+        )
+        .is_none());
+        assert!(unsupported_summary_claim(
+            "公测发布尚未批准。",
+            "The private beta release is not approved yet."
+        )
+        .is_some());
+    }
     #[test]
     fn recording_qualifiers_survive_translation_but_negated_or_changed_modes_are_not_forced() {
         let source =

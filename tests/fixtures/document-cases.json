@@ -253,7 +253,10 @@
     ],
     "forbidden": [
       "发布已获批准",
-      "公开发布已经批准"
+      "公开发布已经批准",
+      "公测",
+      "公測",
+      "beta"
     ],
     "max_sections": 2,
     "merged_sources": true
@@ -400,10 +403,15 @@
     "required": [
       "PixelLedger",
       "分配",
-      "问题|核对"
+      "问题|核对",
+      "好像|似乎|可能|疑似"
     ],
     "forbidden": [
-      "字幕|延迟|算法|格式|captions|latency|预算|会议日期|已经修复"
+      "字幕|延迟|算法|格式|captions|latency|预算|会议日期|已经修复",
+      "检查检查",
+      "试试我的",
+      "出发",
+      "绊倒"
     ],
     "required_transcript": [
       "PixelLedger"
