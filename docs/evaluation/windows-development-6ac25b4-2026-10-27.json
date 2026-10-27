@@ -1,0 +1,1547 @@
+{
+  "schema": 1,
+  "source_sha": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+  "kind": "Pinned development checkpoint affected checks; not a release candidate",
+  "release_eligible": false,
+  "all_test_attempts_passed": false,
+  "identity": {
+    "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "7839792d12345c0e63e031723c1984fe7a7ae4754a8768a06a7d7622d7708571",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "cli_sha256": "ea84bc10354cec765d178adb1659f3355c1bd0b37b353f03d90bf2c010fb8655",
+    "app_sha256": "54365bb9bceeadfd4cbd7297d2a26fb903fc73b7986a5d6996905675c2ff8dcf",
+    "asr_sha256": "62e876207e80b75816fb28bd88e0a1d2ec824c4a18673be00f6d31c0c97995a0",
+    "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+    "scope": "Pinned development checkpoint, not release candidate. Cached vendor SDK/runtime/models reused; current application binaries rebuilt."
+  },
+  "source_scope": {
+    "product_source_unchanged_during_tests": true,
+    "rolling_shared_head_not_substituted": true,
+    "shared_notes_owned_by_main": true,
+    "sdk_models_signed_catalog_reused": true,
+    "new_installer_dispatched": false
+  },
+  "checks": {
+    "source_builds": {
+      "passed": true,
+      "core_serial": {
+        "passed": 162,
+        "ignored": 6,
+        "ffmpeg_audio_integration_ran": true
+      },
+      "asr_unit_tests": 5,
+      "strict_clippy": [
+        "core all targets",
+        "native ui-test all targets"
+      ],
+      "builds": [
+        "CLI",
+        "native ui-test",
+        "Release/staticCRT ASR application worker"
+      ],
+      "vendor_sdk_rebuilt": false
+    },
+    "cpu_original_three_passages": {
+      "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "identity": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "7839792d12345c0e63e031723c1984fe7a7ae4754a8768a06a7d7622d7708571",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "85f5f66e9bf506ce1593189cd6f96ab2a36ac928ce3c5c6dfcb3cfb51b835428",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "ea84bc10354cec765d178adb1659f3355c1bd0b37b353f03d90bf2c010fb8655",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "results": [
+        {
+          "language": "zh",
+          "passed": true,
+          "cursor": 3,
+          "sections": 1,
+          "body": [
+            "OmaScribe Windows 接受检查在周四，而不是周五。预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。录音、转录和会议记录都留在这台电脑上。GPU组件是可选下载，启用前需要本地测试。"
+          ],
+          "status": "文档已同步 · 1 个章节",
+          "worker_backends": [
+            "cpu"
+          ],
+          "source": [
+            "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+            "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+            "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+          ],
+          "generation_sha256": "05e05bd50df51cf816ef111c83d084c63a73967f1646c2855cd4457e0a4dd575",
+          "manual_review": "passed",
+          "manual_findings": "All original facts represented: Thursday/not Friday,3000yuan/unapproved,Alice/NVIDIA/GTX1650,local recording/transcript/minutes,optional download and test-before-enable. Original source text and exact revision citations unchanged. Chinese is actual Chinese with original proper names; English officially-approved negation retained. Wording acceptance check/接受检查 is awkward, not a factual failure."
+        },
+        {
+          "language": "en",
+          "passed": true,
+          "cursor": 3,
+          "sections": 1,
+          "body": [
+            "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will check the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads and require a local test before enabling."
+          ],
+          "status": "文档已同步 · 1 个章节",
+          "worker_backends": [
+            "cpu"
+          ],
+          "source": [
+            "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+            "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+            "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+          ],
+          "generation_sha256": "63484b14c555f424bb5863dab3e87841f1289f1ed479038f40dfe91f6925a9fc",
+          "manual_review": "passed",
+          "manual_findings": "All original facts represented: Thursday/not Friday,3000yuan/unapproved,Alice/NVIDIA/GTX1650,local recording/transcript/minutes,optional download and test-before-enable. Original source text and exact revision citations unchanged. Chinese is actual Chinese with original proper names; English officially-approved negation retained. Wording acceptance check/接受检查 is awkward, not a factual failure."
+        }
+      ],
+      "source_binary_catalog_unchanged": true,
+      "passed": true,
+      "scope": "Original explicit CPU Generate controls, exact original three passages/focus/profile; not full31 acceptance or automatic recording.",
+      "manual_review": "passed",
+      "manual_review_scope": "Human assessment of both complete outputs, not natural speech, automatic scheduling, CUDA or full31 acceptance.",
+      "pre_manual_completion_sha256": "69157af026c7a3e06a968378976cf1e55f9056fd8102342013333e07566e159d"
+    },
+    "cuda_local_test": {
+      "schema": 1,
+      "mode": "verify",
+      "passed": true,
+      "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "7839792d12345c0e63e031723c1984fe7a7ae4754a8768a06a7d7622d7708571",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "85f5f66e9bf506ce1593189cd6f96ab2a36ac928ce3c5c6dfcb3cfb51b835428",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "ea84bc10354cec765d178adb1659f3355c1bd0b37b353f03d90bf2c010fb8655",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 2,
+        "context_size": 2048,
+        "inference_backend": "auto",
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "en",
+        "diarization": false,
+        "use_knowledge": false,
+        "use_memory": false
+      },
+      "trace_events": [],
+      "observed_owned_children": {
+        "25648": "D:\\omascribe\\artifacts\\windows-candidate2-gpu\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+        "584": "D:\\omascribe\\artifacts\\windows-6ac-runtime\\llama\\llama-server.exe",
+        "11820": "D:\\omascribe\\artifacts\\windows-candidate2-gpu\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+      },
+      "module_audits": [
+        {
+          "pid": 25648,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 11820,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        }
+      ],
+      "killed_owned_gpu_pid": null,
+      "errors": [],
+      "language_control": null,
+      "preferences_before_control": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 2,
+        "context_size": 2048,
+        "inference_backend": "auto",
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "en",
+        "diarization": false,
+        "use_knowledge": false,
+        "use_memory": false
+      },
+      "simple_lifecycle_control": false,
+      "backend": "cuda",
+      "meeting": null,
+      "exit_code": 0,
+      "status": {
+        "component_id": "cuda-windows-x86_64",
+        "reason": null,
+        "report": {
+          "cpu": {
+            "peak_rss_mib": 1998,
+            "requests_ms": [
+              4736,
+              5065
+            ],
+            "runtime_gpu_buffer_mib": null,
+            "startup_ms": 2339,
+            "total_ms": 12142
+          },
+          "faster": true,
+          "gpu": {
+            "peak_rss_mib": 1452,
+            "requests_ms": [
+              841,
+              847
+            ],
+            "runtime_gpu_buffer_mib": 1287.93,
+            "startup_ms": 2143,
+            "total_ms": 3833
+          }
+        },
+        "state": "active"
+      },
+      "active_certificate_exists": true,
+      "remaining_owned_children": []
+    },
+    "cuda_noisy_uncertainty": {
+      "passed": true,
+      "fixture": "zh_noisy_name_no_added_topics",
+      "worker_backends": [
+        "cuda"
+      ],
+      "complete_body": "转写中提到 PixelLedger 的人员分配好像存在问题，需要核对。",
+      "manual_review": "passed",
+      "scope": "One affected fixture, not full31 corpus"
+    },
+    "automatic_recording": {
+      "passed": false,
+      "method": "Original92s paced synthetic PCM, unchanged2500ms gate, automatic default scheduler and fixed90s post-stop budget; no manual Translate/Generate, no ASR prewarm or changed clock origin.",
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 2,
+        "context_size": 2048,
+        "inference_backend": "auto",
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "zh",
+        "use_memory": false,
+        "use_knowledge": false
+      },
+      "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+      "counts": {
+        "cursor": 13,
+        "sections": 1,
+        "segments": 16,
+        "translations": 16,
+        "runtime": {
+          "asr_rtf": 0.05126505543478261,
+          "diarization_busy": false,
+          "diarization_meeting_id": null,
+          "diarization_status": "",
+          "elapsed_ms": 92000,
+          "error": null,
+          "level": 0.0,
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "notes_busy": true,
+          "notes_elapsed_ms": 2792,
+          "notes_status": "writer:writing:161",
+          "partial": "",
+          "paused": false,
+          "processed_ms": 92000,
+          "recording": false,
+          "transcribing": false,
+          "translation_busy": false,
+          "translation_status": ""
+        }
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": false,
+        "wait_ms": 90029,
+        "wall_ms": 181695
+      },
+      "latency": {
+        "samples": 891,
+        "largest_sample_gap_ms": 822,
+        "lag_p50_ms": 232.0,
+        "lag_p95_ms": 454.0,
+        "lag_max_ms": 3520,
+        "live_minutes_cursor": 8,
+        "live_translations": 14
+      },
+      "secondary_diagnostics": {
+        "peak_before_first_llm_worker": true,
+        "peak_before_any_asr_processed": true,
+        "max_lag_after_asr_started_ms": 944,
+        "max_lag_while_llm_leased_ms": 944,
+        "hypothesis_units_match_candidate2": true,
+        "scope": "Additional classification only; full unchanged2500ms gate still fails. Peak occurs during ASR cold initialization before an LLM starts, so not attributed to CUDA contention or this source change. No controlled cache/thermal comparison."
+      },
+      "assertion_failures": [
+        "Sampled ASR lag exceeds unchanged2500ms gate",
+        "Automatic post-stop notes/translation not complete within fixed90s budget"
+      ],
+      "cli_errors": [
+        "ValueError: ASR exceeded the scheduler's 2500 ms admission budget"
+      ],
+      "cli_failure_report_telemetry": null,
+      "telemetry_location": "Separate891-row append-only JSONL retained and diagnosed after writer exit; primary CLI failure telemetry=null does not discard it.",
+      "worker_count": 17,
+      "worker_backends": [
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda",
+        "cuda"
+      ],
+      "module_audits": [
+        {
+          "pid": 16464,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 27536,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 5260,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 13644,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 10860,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 27172,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 24192,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 22804,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 13356,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 9176,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 21304,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 9792,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 3956,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 13924,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        },
+        {
+          "pid": 26728,
+          "modules": [
+            {
+              "name": "cublas64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cublaslt64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "cudart64_12.dll",
+              "source": "component"
+            },
+            {
+              "name": "nvcuda.dll",
+              "source": "system_driver"
+            }
+          ]
+        }
+      ],
+      "asr_config": {
+        "decoder": "greedy_search",
+        "default_hotword_buffer_present": false,
+        "fallback": null,
+        "hotword_count": 0,
+        "hotword_update_mode": "recognizer",
+        "initial_load_ms": 2349,
+        "last_update_ms": 0,
+        "model_load_attempts": 1,
+        "stream_updates": 0,
+        "threads": 2
+      },
+      "segments": [
+        {
+          "end_ms": 12400,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:1",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A"
+        },
+        {
+          "end_ms": 15000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:2",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 12400,
+          "text": "LICE WILL CHECK THE ENVY A CARD"
+        },
+        {
+          "end_ms": 21000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:3",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 3,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 15000,
+          "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "end_ms": 33200,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:4",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 4,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 21000,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN"
+        },
+        {
+          "end_ms": 38000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:5",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 5,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 33200,
+          "text": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        },
+        {
+          "end_ms": 44000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:6",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 6,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 38000,
+          "text": "FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "end_ms": 48800,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:7",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 7,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 44000,
+          "text": "THIS IS A FICTIONAL TEST MEETING"
+        },
+        {
+          "end_ms": 54200,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:8",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 8,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 48800,
+          "text": "THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY"
+        },
+        {
+          "end_ms": 61000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:9",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 9,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 54200,
+          "text": "THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        },
+        {
+          "end_ms": 63200,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:10",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 10,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 61000,
+          "text": "FRIDAY IS NOT THE DEADLINE"
+        },
+        {
+          "end_ms": 67000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:11",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 11,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 63200,
+          "text": "RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "end_ms": 71800,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:12",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 12,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 67000,
+          "text": "THIS IS A FICTIONAL TEST MEETING"
+        },
+        {
+          "end_ms": 77400,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:13",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 13,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 71800,
+          "text": "THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY"
+        },
+        {
+          "end_ms": 84000,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:14",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 14,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 77400,
+          "text": "THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        },
+        {
+          "end_ms": 86200,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:15",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 15,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 84000,
+          "text": "FRIDAY IS NOT THE DEADLINE"
+        },
+        {
+          "end_ms": 89800,
+          "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:16",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "revision": 1,
+          "run": 1,
+          "seq": 16,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 86200,
+          "text": "RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        }
+      ],
+      "committed_paragraphs": [
+        {
+          "focus": "会议纪要",
+          "id": "c82eeaea-60f2-4391-b77e-50486e1eb8c4",
+          "kind": "section",
+          "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+          "sources": [
+            {
+              "end_ms": 15000,
+              "quote": "LICE WILL CHECK THE ENVY A CARD",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:2",
+              "speaker_name": null,
+              "start_ms": 12400
+            },
+            {
+              "end_ms": 38000,
+              "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:5",
+              "speaker_name": null,
+              "start_ms": 33200
+            },
+            {
+              "end_ms": 61000,
+              "quote": "THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:9",
+              "speaker_name": null,
+              "start_ms": 54200
+            },
+            {
+              "end_ms": 77400,
+              "quote": "THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:13",
+              "speaker_name": null,
+              "start_ms": 71800
+            },
+            {
+              "end_ms": 54200,
+              "quote": "THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:8",
+              "speaker_name": null,
+              "start_ms": 48800
+            },
+            {
+              "end_ms": 33200,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:4",
+              "speaker_name": null,
+              "start_ms": 21000
+            },
+            {
+              "end_ms": 12400,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 71800,
+              "quote": "THIS IS A FICTIONAL TEST MEETING",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:12",
+              "speaker_name": null,
+              "start_ms": 67000
+            },
+            {
+              "end_ms": 48800,
+              "quote": "THIS IS A FICTIONAL TEST MEETING",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:7",
+              "speaker_name": null,
+              "start_ms": 44000
+            },
+            {
+              "end_ms": 21000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:3",
+              "speaker_name": null,
+              "start_ms": 15000
+            },
+            {
+              "end_ms": 44000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:6",
+              "speaker_name": null,
+              "start_ms": 38000
+            },
+            {
+              "end_ms": 63200,
+              "quote": "FRIDAY IS NOT THE DEADLINE",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:10",
+              "speaker_name": null,
+              "start_ms": 61000
+            },
+            {
+              "end_ms": 67000,
+              "quote": "RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:11",
+              "speaker_name": null,
+              "start_ms": 63200
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。"
+        }
+      ],
+      "last_completed_generation": {
+        "attempt": 2,
+        "attempts": [
+          {
+            "attempt": 1,
+            "body_draft": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY\",\"sources\":[9,1,4,5,6,3,11,13,8,2,12,7,10],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 6449,
+            "first_token_ms": 2128,
+            "input_tokens": 552,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY\",\"sources\":[9,1,4,5,6,3,11,13,8,2,12,7,10],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED LICE WILL CHECK THE ENVY A CARD FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLNESS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD FRIDAY IS NOT THE DEADLINE RECORDING AND MEETING NOTES SHOULD STAY ON THIS COMPUTER THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ALMOST CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY",
+            "selected": [
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:1",
+                "revision": 1,
+                "seq": 1
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:2",
+                "revision": 1,
+                "seq": 2
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:3",
+                "revision": 1,
+                "seq": 3
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:4",
+                "revision": 1,
+                "seq": 4
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:5",
+                "revision": 1,
+                "seq": 5
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:6",
+                "revision": 1,
+                "seq": 6
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:7",
+                "revision": 1,
+                "seq": 7
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:8",
+                "revision": 1,
+                "seq": 8
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:9",
+                "revision": 1,
+                "seq": 9
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:10",
+                "revision": 1,
+                "seq": 10
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:11",
+                "revision": 1,
+                "seq": 11
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:12",
+                "revision": 1,
+                "seq": 12
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:13",
+                "revision": 1,
+                "seq": 13
+              }
+            ],
+            "usage": {
+              "completion_tokens": 254,
+              "prompt_tokens": 569,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 4301.904,
+                "predicted_n": 254,
+                "predicted_per_second": 58.81116826409887,
+                "predicted_per_token_ms": 17.003573122529644,
+                "prompt_ms": 2119.717,
+                "prompt_n": 569,
+                "prompt_per_second": 268.43205956266803,
+                "prompt_per_token_ms": 3.725337434094904
+              },
+              "total_tokens": 823
+            },
+            "validation_error": "纪要输出语言与选择不符，原话仍待整理"
+          },
+          {
+            "attempt": 2,
+            "body_draft": "{\n  \"translation\": \"这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。\"\n}",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。\",\"sources\":[2,5,9,13,8,4,1,12,7,3,6,10,11],\"title\":\"会议纪要\"}]}",
+            "elapsed_ms": 4341,
+            "first_token_ms": 1341,
+            "input_tokens": 311,
+            "mode": "translate_checked_prose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。\",\"sources\":[2,5,9,13,8,4,1,12,7,3,6,10,11],\"title\":\"会议纪要\"}]}",
+            "prose_body": "这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。",
+            "selected": [
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:1",
+                "revision": 1,
+                "seq": 1
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:2",
+                "revision": 1,
+                "seq": 2
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:3",
+                "revision": 1,
+                "seq": 3
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:4",
+                "revision": 1,
+                "seq": 4
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:5",
+                "revision": 1,
+                "seq": 5
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:6",
+                "revision": 1,
+                "seq": 6
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:7",
+                "revision": 1,
+                "seq": 7
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:8",
+                "revision": 1,
+                "seq": 8
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:9",
+                "revision": 1,
+                "seq": 9
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:10",
+                "revision": 1,
+                "seq": 10
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:11",
+                "revision": 1,
+                "seq": 11
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:12",
+                "revision": 1,
+                "seq": 12
+              },
+              {
+                "id": "a34a6256-f45b-4929-b371-b02ac16ef35d:1:13",
+                "revision": 1,
+                "seq": 13
+              }
+            ],
+            "usage": {
+              "completion_tokens": 180,
+              "prompt_tokens": 327,
+              "prompt_tokens_details": {
+                "cached_tokens": 3
+              },
+              "timings": {
+                "cache_n": 3,
+                "predicted_ms": 2989.429,
+                "predicted_n": 180,
+                "predicted_per_second": 59.877655565661534,
+                "predicted_per_token_ms": 16.70072067039106,
+                "prompt_ms": 1333.664,
+                "prompt_n": 324,
+                "prompt_per_second": 242.93975094176645,
+                "prompt_per_token_ms": 4.116246913580247
+              },
+              "total_tokens": 507
+            },
+            "validation_error": null
+          }
+        ],
+        "backend": "cuda",
+        "cursor_after": 13,
+        "cursor_before": 8,
+        "draft": "{\"sections\":[{\"body\":\"这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在此电脑。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ILLNESS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD，周五不是截止日期。记录和会议笔记应留在此电脑。这是虚构的会议，项目是ALMOST CRIBE，我们将周四测试Windows版本。\",\"sources\":[2,5,9,13,8,4,1,12,7,3,6,10,11],\"title\":\"会议纪要\"}]}",
+        "meeting_id": "a34a6256-f45b-4929-b371-b02ac16ef35d",
+        "memory_budget_mib": 4096,
+        "model": "qwen3-1.7b",
+        "resource_mode": "balanced",
+        "trimmed_background": 0,
+        "trimmed_passages": 0,
+        "usage": {
+          "completion_tokens": 180,
+          "prompt_tokens": 327,
+          "prompt_tokens_details": {
+            "cached_tokens": 3
+          },
+          "timings": {
+            "cache_n": 3,
+            "predicted_ms": 2989.429,
+            "predicted_n": 180,
+            "predicted_per_second": 59.877655565661534,
+            "predicted_per_token_ms": 16.70072067039106,
+            "prompt_ms": 1333.664,
+            "prompt_n": 324,
+            "prompt_per_second": 242.93975094176645,
+            "prompt_per_token_ms": 4.116246913580247
+          },
+          "total_tokens": 507
+        }
+      },
+      "manual_review": {
+        "scope": "Complete committed13/16 source snapshot only; remaining3 segments not covered, final generation incomplete.",
+        "exact_revision_citations": true,
+        "represented_facts": [
+          "Thursday/not Friday",
+          "3000 US dollars/unapproved",
+          "local recording/meeting notes"
+        ],
+        "ambiguous_asr_names_kept": true,
+        "canonical_omascribe_recovery_proven": false,
+        "whole_meeting_semantic_acceptance": false
+      },
+      "owners": {
+        "cold_asr_startup": "Windows",
+        "notes_scheduling_and_completion": "shared/main"
+      }
+    },
+    "native_meeting_stop_selfcheck": {
+      "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "scope": "Independent native stop against paced file with natural input length25s; no microphone, no WebView timer, no human-speech accuracy claim.",
+      "metrics": {
+        "native_stop_requested_ms": 5000,
+        "final_capture_ms": 5056,
+        "final_processed_ms": 5056,
+        "final_segments": 1
+      },
+      "wav_duration_ms": 5056.0,
+      "passed": true,
+      "driver_sha256": "acee5d90da85ef400864ed06d553582a9d95241528045a45028252e18a66375d",
+      "removed_environment_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "stdout_sha256": "2a2e4016cb619b27e1b077d13bd839357b97c1ca604c425b3f6264d57fd37ae5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "realtek_prescribed_reading": {
+      "status": "pending human waveform confirmation and availability",
+      "device": "麦克风阵列 (Realtek(R) Audio)",
+      "microphone_opened_for_this_checkpoint": false,
+      "driver_identity": {
+        "core_checkpoint": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+        "linked_rlib": "D:\\omascribe\\target\\debug\\deps\\libomascribe_core-17c50dbfc82a197c.rlib",
+        "rlib_sha256": "0d6896cb1879c23245ee3b1364e5d93e59706bd6384e9632d2e2eb99022db7e3",
+        "native_import_library_sha256": "24d8cbc445955b0d48041948a3c71ce2cddb948c089b25ec7106fadd9f3efde0",
+        "driver_source_sha256": "da9514d5a004a871748f9daa0d45b96565b71b18bb2005065aec71497ee627d6",
+        "driver_binary_sha256": "acee5d90da85ef400864ed06d553582a9d95241528045a45028252e18a66375d",
+        "first_link_failure": "Initial standalone rustc helper omitted the cached Windows import-library search path; LNK1181 retained separately. Product Cargo builds passed.",
+        "method": "External local harness links exact built checkpoint core; no product sources or capture/ASR logic changed. Native deadline keeps request origin, no model prewarm, no WebView timer."
+      },
+      "preview_does_not_replace_meeting_stop": true
+    }
+  },
+  "microphone_feature": {
+    "pr": "https://github.com/EazyLee30/omascribe/pull/5",
+    "merged_at": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+    "delivery_head": "3841298d422313257fe4068af68bb82097f78d76",
+    "hardware_preview_checkpoint": "db6fb4a947e9034e7a0b8ea8dcab5cfa165c4b4a",
+    "actual_default": "麦克风 (ToDesk Virtual Audio)",
+    "selected_device": "麦克风阵列 (Realtek(R) Audio)",
+    "native_preview_stop_ms": 30071,
+    "waveform_history_bound": 80,
+    "audio_file_created": false,
+    "speech_recognition_accuracy_claim": false,
+    "existing_feature_evidence": "docs/evaluation/windows-microphone-preview-2026-10-27.json",
+    "interactive_local_app_left_open": true
+  },
+  "retained_failures": [
+    {
+      "scope": "Current6ac development",
+      "failure": "ASR cold peak3520ms exceeds unchanged2500ms admission gate; occurs before first LLM and any processed samples, not attributed to CUDA contention."
+    },
+    {
+      "scope": "Current6ac development",
+      "failure": "Automatic Chinese notes cursor13/16 after90.029s post-stop; default translation16/16; not complete."
+    },
+    {
+      "scope": "Current harness preparation",
+      "failure": "First independent rustc compile omitted cached native Windows import-library search directory; LNK1181. Product Cargo builds passed. Corrected helper linked exact existing core library."
+    },
+    {
+      "scope": "Current harness preparation",
+      "failure": "First native stop file self-check PATH omitted privateFFmpeg, exited before capture start. Second same-driver attempt added only privateFFmpeg PATH, native stop requested5000ms/5056ms captured and processed. Original failure retained."
+    },
+    {
+      "scope": "Current report preparation",
+      "failure": "Initial reviewer queried note kind=focus rather than originalseed document, assertionfailed/no mutation. Fixed reviewer verified exact newline focus; original pending completion preserved before annotation. Original model input/output unchanged."
+    },
+    {
+      "scope": "Prior microphone PR source",
+      "failure": "Parallel core repeat153passed/1failed/6ignored, existing pacing462.4605ms>250ms. Isolated and serial pass retained alongside failure; root cause unestablished, audio.rs/threshold not changed."
+    },
+    {
+      "scope": "Prior candidate3 spoken take",
+      "failure": "Human confirmed prescribed reading but defaultToDesk take produced0segments; JS45s stop actually105.2799375s. Audio kept local. Wrong default is confirmed, not proved the sole cause. Preview/self-check do not close actual Realtek speech accuracy."
+    }
+  ],
+  "limitations": [
+    "No new full31 CPU/GPU matrix",
+    "No installer/install-upgrade acceptance at6ac",
+    "No actual allocationOOM fallback proven",
+    "Realtek prescribed physical voice pending",
+    "Actual local host has oldCUDA11.5 toolkit; child PATH/environment/module audits exclude SDK but host is not physically SDK-free"
+  ],
+  "artifact_manifest": [
+    {
+      "path": "artifacts/windows-6ac-core-serial.log",
+      "bytes": 16911,
+      "sha256": "8fca1d3f4d721652024fd0cb57defb33fa08829d7c713832cabb1d185027b843"
+    },
+    {
+      "path": "artifacts/windows-6ac-core-clippy.log",
+      "bytes": 124,
+      "sha256": "484849745e2378f3f173b3d31f3ac12e25f8e902bda24eeb349c936d297c094b"
+    },
+    {
+      "path": "artifacts/windows-6ac-cli-build.log",
+      "bytes": 124,
+      "sha256": "c2dafb0a388997bb001edc5c957faa4cdd6116241ea9b99d27f44e4451375e33"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-clippy.log",
+      "bytes": 180,
+      "sha256": "1939f392a22a8eba8e9e0b710758b1147137414e2d0e46eef2be8b3aaf87f8ef"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-build.log",
+      "bytes": 181,
+      "sha256": "c13c977078ecad352df81e56faf75c9d00679a294f48e2528989ebbe4279bf58"
+    },
+    {
+      "path": "artifacts/windows-6ac-asr-tests.log",
+      "bytes": 842,
+      "sha256": "3ef66902a0b953072f63cb1b7d2af16d0432d7034cdf84740cc505b1070f5582"
+    },
+    {
+      "path": "artifacts/windows-6ac-asr-release.log",
+      "bytes": 188,
+      "sha256": "3d6084cedbd1a390d5a6b39e7499f89c12b4deece2cce66e37ced3e58bc23122"
+    },
+    {
+      "path": "artifacts/windows-6ac-cuda-verify.log",
+      "bytes": 412,
+      "sha256": "69ffbb2b7ae72f611da1f6ca096e49662c81a1f42c94b5fe224d8576ed5aa79a"
+    },
+    {
+      "path": "artifacts/windows-6ac-noisy-gpu.log",
+      "bytes": 182,
+      "sha256": "2ef05372c9e72d71de4168998a09ee1f810c524feaf110ef427eda066d2ba504"
+    },
+    {
+      "path": "artifacts/windows-6ac-p1.log",
+      "bytes": 375,
+      "sha256": "84fc50c039a7018f95674d5567cebd4a9d969c2ab4d2a32b1176940ead3e91e9"
+    },
+    {
+      "path": "artifacts/windows-6ac-p1-diagnosis.log",
+      "bytes": 956,
+      "sha256": "d5ad2b788fc1c307c20b707ee6ef366a18bf784ac597f0bd50dc3be16f46b7df"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01.json",
+      "bytes": 55916,
+      "sha256": "70d3abb978712116199e539f0436a897a925c4a30751095c32e04bbfb5e72c5a"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01-stdout.json",
+      "bytes": 18696,
+      "sha256": "4691396a352aea03eb34770014e077df31e4b6561cdcfe7f6f7d52ee7aaca671"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01-stderr.log",
+      "bytes": 3545,
+      "sha256": "5d71c50d890d0e9db879bc9a1ef629f673761f0b94416a27ebece2c65497db29"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01-telemetry.jsonl",
+      "bytes": 289604,
+      "sha256": "4d8b8e668e84287ffb6abc4c6642f693bb254954c838c2294e484653bb34ab92"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01-last-generation.json",
+      "bytes": 14192,
+      "sha256": "b6c7297951c3a80f7ea09d8d1620dfd21f3b4b50ac4fbca80491e803d0a52871"
+    },
+    {
+      "path": "artifacts/windows-6ac-gpu/cli-settle-01-diagnosis.json",
+      "bytes": 32657,
+      "sha256": "0c90b735a8a0d0d9d846843d9bc8bf0463e2ac72f51acf6ca4c7c4f37eebf976"
+    },
+    {
+      "path": "artifacts/windows-6ac-three-passages/completion.json",
+      "bytes": 4730,
+      "sha256": "dda6933ce6d901f4e52026e6f855258d1c16123edba74633bab29c9065d441ea"
+    },
+    {
+      "path": "artifacts/windows-6ac-three-passages/completion-before-manual.json",
+      "bytes": 3590,
+      "sha256": "69157af026c7a3e06a968378976cf1e55f9056fd8102342013333e07566e159d"
+    },
+    {
+      "path": "artifacts/run-6ac-p1.py",
+      "bytes": 1587,
+      "sha256": "4f83bb4415c86daa75e5b44b47f7e1ac9302e58a49a8175ebf1e8d82e781ef1f"
+    },
+    {
+      "path": "artifacts/diagnose-6ac-settle.py",
+      "bytes": 3390,
+      "sha256": "7856e9205b75b79ce9af17fb6012260ca9edd4695dc7fbd52c7772832c20503c"
+    },
+    {
+      "path": "artifacts/windows-6ac-cli-lifecycle.py",
+      "bytes": 13196,
+      "sha256": "5e07664ea8a9c8577e9077e67d374044104f4d994268adc3a81f1c70ccc9cbc0"
+    },
+    {
+      "path": "artifacts/run-6ac-three-passages.py",
+      "bytes": 4073,
+      "sha256": "4dada8688e6b712681c9863903a11255cf0df0f61c28dae18893cebb2fcdf329"
+    },
+    {
+      "path": "artifacts/review-6ac-three-passages.py",
+      "bytes": 1570,
+      "sha256": "687404e01e6904b6307ce71ba5bc43150850db9dde2500595db906c0b1fbc3ce"
+    },
+    {
+      "path": "artifacts/run-6ac-noisy-gpu.py",
+      "bytes": 2562,
+      "sha256": "e46ec102ab8829e1dfe1921a7f2c977f6db2c03c5cf5e7a50e365f5e160febf3"
+    },
+    {
+      "path": "artifacts/windows-6ac-driver-compile.log",
+      "bytes": 6417,
+      "sha256": "f85e97631fa5fb2391a850c7a81d73999e4a73f796672be2424312256be18d13"
+    },
+    {
+      "path": "artifacts/windows-6ac-driver-compile-02.log",
+      "bytes": 890,
+      "sha256": "6f75ce790bd4fe8755f9ba6482afbb6fd07c9cc71500f52a451799050f031ae0"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck.log",
+      "bytes": 547,
+      "sha256": "da9ce129d2fbf083c9bdcb013150c6afdf29a2692cb516d9f617617ce0d9a2d2"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck-02.log",
+      "bytes": 693,
+      "sha256": "d92d93c493f7ba67f75927b3cc9f47570a95c33a9066f9f18837bafa08e98a15"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck/stderr.log",
+      "bytes": 295,
+      "sha256": "7a06f5ff678fac1da8d8050e3ce8d2d6b417f88b6caf693227a8a42a989f3705"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck-02/stdout.log",
+      "bytes": 556,
+      "sha256": "2a2e4016cb619b27e1b077d13bd839357b97c1ca604c425b3f6264d57fd37ae5"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck-02/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/windows-6ac-native-stop-selfcheck-02/result.json",
+      "bytes": 763,
+      "sha256": "5e79f9ea3a1937ea503d5c52c090f5eb17458985620a212b51fe9d8fc3839c7a"
+    },
+    {
+      "path": "artifacts/realtek-native-driver.rs",
+      "bytes": 3604,
+      "sha256": "da9514d5a004a871748f9daa0d45b96565b71b18bb2005065aec71497ee627d6"
+    },
+    {
+      "path": "artifacts/compile-realtek-driver.py",
+      "bytes": 1613,
+      "sha256": "0441e2f75f6ac956e43fcf1198cb2f07131185fb903643047980bb29fee1aabf"
+    },
+    {
+      "path": "artifacts/run-realtek-driver-selfcheck.py",
+      "bytes": 3366,
+      "sha256": "180b0d14e80eaa217c0a76ac28e375b156e87271a1a32f78bd71c2b9d45632b0"
+    }
+  ],
+  "privacy": "This report includes only fictional source text and aggregate hardware metrics. No actual human audio or actual-human transcript is uploaded."
+}
