@@ -3,6 +3,7 @@
 use crate::terminology::Terms;
 use anyhow::{bail, Result};
 use regex::{Regex, RegexBuilder};
+use serde_json::{json, Value};
 use std::{ops::Range, sync::OnceLock};
 
 pub(super) struct Names(Vec<String>);
@@ -107,6 +108,115 @@ impl Names {
         }
         Ok(prose)
     }
+    pub fn repair(&self, source: &str) -> Option<Repair> {
+        if self.0.is_empty()
+            || self.0.len() > 4
+            || self.0.iter().any(|n| source.matches(n).count() != 1)
+        {
+            return None;
+        }
+        let mut input = source.to_owned();
+        for (i, name) in self.0.iter().enumerate() {
+            input = input.replace(name, &format!("[{}]", char::from(b'A' + i as u8)));
+        }
+        // Only fixed short IDs reach the model. It can choose a natural target
+        // language order; source names are restored by the parser, not generated.
+        let ids: String = (0..self.0.len())
+            .map(|i| char::from(b'A' + i as u8))
+            .collect();
+        fn permutations(prefix: String, rest: &str, output: &mut Vec<String>) {
+            if rest.is_empty() {
+                output.push(prefix);
+                return;
+            }
+            for (i, c) in rest.char_indices() {
+                let next = format!("{}{}", &rest[..i], &rest[i + 1..]);
+                permutations(format!("{prefix}{c}"), &next, output);
+            }
+        }
+        let mut orders = Vec::new();
+        permutations(String::new(), &ids, &mut orders);
+        let mut properties = serde_json::Map::new();
+        properties.insert("order".into(), json!({"type":"string","enum":orders}));
+        for i in 0..=self.0.len() {
+            properties.insert(format!("part{i}"), json!({"type":"string"}));
+        }
+        let schema = json!({"type":"object","required":properties.keys().collect::<Vec<_>>(),"properties":properties,"additionalProperties":false});
+        Some(Repair {
+            names: self.0.clone(),
+            orders,
+            input,
+            schema,
+        })
+    }
+}
+pub(super) struct Repair {
+    names: Vec<String>,
+    orders: Vec<String>,
+    pub input: String,
+    pub schema: Value,
+}
+impl Repair {
+    pub fn instruction(&self) -> String {
+        format!(" Translate the whole sentence naturally. Bracketed IDs are immutable source names. Choose their target-language order in 'order'. Put prose before, between and after them into part0 through part{}. Do not spell or translate names inside parts or include ID markers there. Include every other clause and its negation/uncertainty. Return this JSON object instead of a translation string.",self.names.len())
+    }
+    pub fn body(&self, raw: &str) -> Result<String> {
+        use serde::de::{MapAccess, Visitor};
+        struct Unique;
+        impl<'de> Visitor<'de> for Unique {
+            type Value = std::collections::BTreeMap<String, String>;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("unique translation slots")
+            }
+            fn visit_map<A: MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> std::result::Result<Self::Value, A::Error> {
+                let mut values = Self::Value::new();
+                while let Some((key, value)) = map.next_entry::<String, String>()? {
+                    if values.insert(key, value).is_some() {
+                        return Err(serde::de::Error::custom("duplicate translation slot"));
+                    }
+                }
+                Ok(values)
+            }
+        }
+        use serde::de::Deserializer;
+        let mut parser = serde_json::Deserializer::from_str(raw);
+        let values = parser.deserialize_map(Unique)?;
+        parser.end()?;
+        let order = values
+            .get("order")
+            .filter(|s| self.orders.contains(s))
+            .ok_or_else(|| anyhow::anyhow!("Invalid source name order"))?;
+        if values.len() != self.names.len() + 2 {
+            bail!("Invalid translation slots");
+        }
+        let mut body = String::new();
+        let mut prose = String::new();
+        for i in 0..=self.names.len() {
+            let part = values
+                .get(&format!("part{i}"))
+                .ok_or_else(|| anyhow::anyhow!("Missing translation slot"))?;
+            if part.chars().count() > 4000
+                || part.contains(['[', ']'])
+                || self.names.iter().any(|name| contains(part, name))
+            {
+                bail!("Invalid translated prose slot");
+            }
+            body.push_str(part);
+            prose.push_str(part);
+            if let Some(id) = order.as_bytes().get(i) {
+                body.push_str(&self.names[(id - b'A') as usize]);
+            }
+        }
+        if prose.chars().all(|c| !c.is_alphanumeric())
+            && self.input.chars().any(char::is_alphabetic)
+        {
+            bail!("Translation omitted surrounding clauses");
+        }
+        Ok(json!({"translation":body}).to_string())
+    }
 }
 fn contains(body: &str, name: &str) -> bool {
     let body = body.to_lowercase();
@@ -126,6 +236,27 @@ fn contains(body: &str, name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn structured_repair_reorders_prose_without_generating_or_losing_source_names() {
+        let terms = Terms::new(&[], &[]);
+        let names = Names::new(&terms, "当迪大学的 PAMELA FURGO森教授说这似乎有风险。");
+        let repair = names
+            .repair("当迪大学的 PAMELA FURGO森教授说这似乎有风险。")
+            .unwrap();
+        let raw = r#"{"order":"AB","part0":"Professor ","part1":" of ","part2":" says this may be risky."}"#;
+        let value: Value = serde_json::from_str(&repair.body(raw).unwrap()).unwrap();
+        assert_eq!(
+            value["translation"],
+            "Professor PAMELA FURGO森 of 当迪大学 says this may be risky."
+        );
+        for raw in [
+            r#"{"order":"AA","part0":"","part1":"","part2":""}"#,
+            r#"{"order":"AB","part0":"a","part0":"b","part1":"c","part2":"d"}"#,
+            r#"{"order":"AB","part0":"","part1":"","part2":""}"#,
+        ] {
+            assert!(repair.body(raw).is_err());
+        }
+    }
     #[test]
     fn source_names_survive_without_inventing_identities_or_freezing_generic_words() {
         let terms = Terms::new(&[], &[]);

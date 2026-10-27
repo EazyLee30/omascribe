@@ -241,7 +241,14 @@ fn run_inner(
             input_budget,
             &protected,
             |input| {
-                let system = format!("{system}{}", names::Names::new(&terms, input).hint());
+                let names = names::Names::new(&terms, input);
+                let plan = repair.and_then(|_| names.repair(input));
+                let system = format!(
+                    "{system}{}",
+                    plan.as_ref()
+                        .map_or_else(|| names.hint(), |p| p.instruction())
+                );
+                let input = plan.as_ref().map_or(input, |p| p.input.as_str());
                 session.begin_request();
                 let tokens: Value = session
                     .agent
@@ -273,14 +280,27 @@ fn run_inner(
             Err(error) => return Err(error),
         };
         let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
-        system.push_str(&names::Names::new(&terms, &input).hint());
+        let names = names::Names::new(&terms, &input);
+        let name_repair = repair.and_then(|_| names.repair(&input));
+        system.push_str(
+            &name_repair
+                .as_ref()
+                .map_or_else(|| names.hint(), |p| p.instruction()),
+        );
+        let request_input = name_repair
+            .as_ref()
+            .map_or(input.as_str(), |p| p.input.as_str());
+        let output_schema = name_repair.as_ref().map_or_else(
+            || serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema"),
+            |p| p.schema.clone(),
+        );
         trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some()}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
         session.begin_request();
         let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
-            "messages":[{"role":"system","content":system},{"role":"user","content":input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
-            "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":serde_json::from_str::<Value>(OUTPUT_SCHEMA)?}}
+            "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
+            "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":output_schema}}
         }))?;
         let response =
             notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
@@ -308,8 +328,14 @@ fn run_inner(
             bail!("Translation paused to protect recording and system resources");
         }
         // A malformed or unsupported answer for one passage must not starve the others.
-        let validated =
-            checked_progress(&raw, &input, &progress, &passage, chunk.end, target, &terms);
+        let restored = name_repair
+            .as_ref()
+            .map_or_else(|| Ok(raw.clone()), |p| p.body(&raw));
+        let validated = restored.and_then(|text| {
+            checked_progress(
+                &text, &input, &progress, &passage, chunk.end, target, &terms,
+            )
+        });
         if let Err(error) = &validated {
             trace.event("validation_failed", json!({"reason":error.to_string()}));
             // Explicit local harness opt-in. Normal traces never contain speech or output.
@@ -445,7 +471,8 @@ fn repair_hint(error: &anyhow::Error) -> &'static str {
         " The previous answer added an unsupported currency. Translate the ORIGINAL input again, preserving its stated currency. If none is specified, keep the amount unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文注明币种就保留，未注明则不要添加元或美元。"
     } else if reason.contains("数字或日期") {
         " The previous answer changed a number or date. Translate the ORIGINAL input again, copying every digit exactly without adding a year or inventing a unit. 原文数字照写，不要改成其他数字或年份。"
-    } else if reason.contains("复议") || reason.contains("待确认") {
+    } else if reason.contains("复议") || reason.contains("待确认") || reason.contains("未批准")
+    {
         " The previous answer changed a pending state. Translate the ORIGINAL input again. Keep undecided or unapproved issues pending; later review does not promise a decision. 保留未定、未批准和再讨论，不写成将会确定或批准。"
     } else {
         " The previous answer failed factual validation. Translate the ORIGINAL input literally, preserving every stated fact and qualifier without adding context. Return only valid JSON with one translation string."
