@@ -1,6 +1,11 @@
 name: Native release
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified main commit as a stable release
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -176,6 +181,7 @@ jobs:
           retention-days: 7
   publish:
     needs: build
+    if: inputs.publish
     runs-on: ubuntu-24.04
     permissions:
       contents: write

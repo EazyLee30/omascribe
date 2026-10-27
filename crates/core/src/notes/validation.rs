@@ -363,22 +363,26 @@ fn validate_document(
     {
         bail!("模型未生成可核对的纪要，转写仍待整理");
     }
-    let unfinished = |text: &str| {
-        [
-            "未完成",
-            "还没有完成",
-            "还没完成",
-            "尚未完成",
-            "not completed",
-            "not yet complete",
-            "not finished",
-            "not yet finished",
-            "still pending",
-        ]
-        .iter()
-        .any(|v| text.to_lowercase().contains(v))
+    let unfinished = super::completion::unfinished;
+    let completed = if require_prose {
+        super::completion::view(segments)
+    } else {
+        super::completion::View::default()
     };
-    if segments.iter().any(|s| unfinished(&s.text))
+    if require_prose {
+        completed.validate(
+            &draft
+                .sections
+                .iter()
+                .map(|s| s.body.as_str())
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )?;
+    }
+    if segments
+        .iter()
+        .enumerate()
+        .any(|(i, s)| !completed.retired(i) && unfinished(&s.text))
         && !draft.sections.iter().any(|s| {
             unfinished(&s.body)
                 || s.body.contains("待完成")
@@ -432,6 +436,13 @@ fn validate_document(
         let evidence = sources
             .iter()
             .map(|s| format!("{} {}", s.speaker_name.as_deref().unwrap_or(""), s.quote))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let current_evidence = segments
+            .iter()
+            .enumerate()
+            .filter(|(i, s)| !completed.retired(*i) && sources.iter().any(|q| q.segment_id == s.id))
+            .map(|(_, s)| s.text.as_str())
             .collect::<Vec<_>>()
             .join(" ");
         if require_prose {
@@ -546,7 +557,7 @@ fn validate_document(
         {
             bail!("文档将尚未决定写成暂定，本轮未提交");
         }
-        if shares_uncertain_topic && uncertain(&evidence) && !uncertain(body) {
+        if shares_uncertain_topic && uncertain(&current_evidence) && !uncertain(body) {
             bail!("文档可能遗漏待确认状态，本轮未提交");
         }
         if !seen.insert(body.to_string()) {
@@ -568,6 +579,47 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn actual_completion_updates_only_that_task_and_does_not_weaken_translations() {
+        let mut segments = vec![data()[0].clone(); 3];
+        for (i, (s, text)) in segments.iter_mut().zip([
+            "The upload verification is not completed. Morgan will run it on Thursday.",
+            "The invoice review has not been completed. Riley will run it on Friday.",
+            "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+        ]).enumerate() {
+            s.id = format!("s{i}"); s.seq = i as u32 + 1; s.text = text.into();
+        }
+        let draft = |body: &str| {
+            serde_json::json!({"sections":[{"title":"Tasks","body":body,"sources":[1,2,3]}]})
+                .to_string()
+        };
+        let body="Morgan confirms the upload verification has now been completed on Thursday. The invoice review has not been completed; Riley will run it on Friday.";
+        let valid = validate(&draft(body), &segments, "m").unwrap();
+        assert_eq!(valid[0].sources[0].quote, segments[0].text);
+        assert!(validate(
+            &draft("The upload verification has been completed on Thursday."),
+            &segments,
+            "m"
+        )
+        .is_err());
+        assert!(validate(
+            &draft(
+                "The upload verification is not completed. The invoice review is not completed."
+            ),
+            &segments,
+            "m"
+        )
+        .is_err());
+        assert!(validate_translation(
+            "The upload verification has been completed.",
+            &segments[0],
+            "m"
+        )
+        .is_err());
+        segments.remove(1);
+        let draft=serde_json::json!({"sections":[{"title":"Tasks","body":"Morgan confirms the upload verification has now been completed on Thursday.","sources":[1,2]}]}).to_string();
+        assert!(validate(&draft, &segments, "m").is_ok());
+    }
     #[test]
     fn excerpt_does_not_prove_meeting_wide_absence_or_closure() {
         let mut source = data()[0].clone();

@@ -72,11 +72,13 @@ pub fn prompt_mode(
         system.push('。');
     }
     let budget = super::corrections::budget_view(&context.segments);
+    let completed = super::completion::view(&context.segments);
     let transcript: Vec<Value> = context
         .segments
         .iter()
         .enumerate()
         .filter(|(_, s)| !non_substantive(&s.text))
+        .filter(|(i, _)| !completed.retired(*i))
         .filter_map(|(i, s)| {
             let text = budget
                 .as_ref()

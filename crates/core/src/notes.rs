@@ -1,4 +1,5 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+mod completion;
 mod corrections;
 #[cfg(test)]
 pub(crate) mod facts;
@@ -453,12 +454,14 @@ fn generate_inner(
                     }
                 } else if error.to_string().contains("预算最新更正") {
                     "采用current_budget中已由原文明确更正的最新金额，不输出被替换的旧金额；保留其他议题、负责人、期限和否定状态。Use the current_budget value and omit superseded amounts, retaining unrelated topics, owners, deadlines and negative status."
+                } else if error.to_string().contains("最新完成状态") {
+                    "同一任务后文明示完成时写已完成；其他任务仍未完成的状态保留。不要把已被更新的旧计划写成当前计划。Use the later explicit completion for that same task, retain unrelated pending work, and omit superseded plans."
                 } else if error.to_string().contains("无依据补写") {
                     "原话没有提供会议是否结束、有无其他议题、有无行动或修改的证据。只写已说出的内容，不补会议层面的结论和缺席信息。Do not add meeting conclusions or claims about absent actions, topics or changes. Restate only the explicit excerpt."
                 } else if error.to_string().contains("因果关系") {
                     "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
                 } else if error.to_string().contains("未完成") {
-                    "必须说明转写中提到的调整尚未完成，完成之后才会验证。"
+                    "保留来源中仍未完成的具体事项。另一项任务已完成，不能作为这项也已完成的依据。Keep the specific unresolved work from its own source; another task's completion does not resolve it."
                 } else if error.to_string().contains("相对日期") {
                     "今天、明天、本周、下周这类相对日期，只能原样来自引用的片段，做不到就删去时间词，只保留原话支持的内容。"
                 } else if attribution {

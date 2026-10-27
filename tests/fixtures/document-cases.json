@@ -610,7 +610,8 @@
           "forbidden": [
             "still pending",
             "remains incomplete",
-            "not yet completed"
+            "not yet completed",
+            "Morgan will run"
           ]
         }
       }
@@ -624,7 +625,8 @@
       "still pending",
       "remains incomplete",
       "not yet completed",
-      "verification is not completed"
+      "verification is not completed",
+      "Morgan will run"
     ],
     "max_sections": 2
   },
@@ -715,5 +717,109 @@
     ],
     "max_sections": 2,
     "max_body_words": 45
+  },
+  {
+    "name": "en_completion_independent_pending",
+    "focus": "**upload** **invoice**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "The upload verification is not completed. Morgan will run it on Thursday.",
+          "The invoice review has not been completed. Riley will run it on Friday."
+        ],
+        "expect": {
+          "required": [
+            "upload",
+            "invoice",
+            "Morgan",
+            "Riley",
+            "Thursday",
+            "Friday",
+            "not|pending"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+        ],
+        "expect": {
+          "required": [
+            "upload.{0,70}(?:completed|finished)",
+            "invoice.{0,70}(?:not|pending)",
+            "Morgan",
+            "Riley",
+            "Thursday",
+            "Friday"
+          ],
+          "forbidden": [
+            "verification is not completed",
+            "Morgan will run"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "upload.{0,70}(?:completed|finished)",
+      "invoice.{0,70}(?:not|pending)",
+      "Morgan",
+      "Riley",
+      "Thursday",
+      "Friday"
+    ],
+    "forbidden": [
+      "verification is not completed",
+      "Morgan will run"
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "zh_incremental_completion",
+    "focus": "**上传验证** **发票核对**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "上传验证尚未完成。",
+          "发票核对尚未完成。"
+        ],
+        "expect": {
+          "required": [
+            "上传验证",
+            "发票核对",
+            "未完成|待完成"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "上传验证现已完成。"
+        ],
+        "expect": {
+          "required": [
+            "上传验证.{0,12}(?:已完成|已经完成|完成)",
+            "发票核对.{0,12}(?:未完成|待完成)"
+          ],
+          "forbidden": [
+            "上传验证尚未完成",
+            "上传验证还没有完成"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "上传验证.{0,12}(?:已完成|已经完成|完成)",
+      "发票核对.{0,12}(?:未完成|待完成)"
+    ],
+    "forbidden": [
+      "上传验证尚未完成",
+      "上传验证还没有完成"
+    ],
+    "max_sections": 2
   }
 ]

@@ -1,0 +1,220 @@
+//! Retire only a whole, simple pending-task passage covered by a later explicit
+//! completion of the same literal task, including its stated owner and date.
+//! Raw transcript and citation revisions remain unchanged. Ambiguous passages
+//! stay on the normal source path; this is not a general task/fact extractor.
+use crate::Segment;
+use anyhow::{bail, Result};
+use regex::Regex;
+use std::{collections::BTreeSet, sync::OnceLock};
+
+#[derive(Default)]
+pub(super) struct View {
+    retired: BTreeSet<usize>,
+    tasks: BTreeSet<String>,
+}
+struct Claim {
+    task: String,
+    owner: Option<String>,
+    date: Option<String>,
+}
+fn clauses(text: &str) -> impl Iterator<Item = &str> {
+    text.split(['.', '。', ';', '；', '\n'])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+}
+fn normalize(text: &str) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+pub(super) fn unfinished(text: &str) -> bool {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)未完成|还没有完成|还没完成|待完成|\bnot(?:\s+(?:yet|been)){0,2}\s+(?:completed?|finished)\b|\bhasn['’]t\s+been\s+(?:completed|finished)\b|\b(?:still\s+pending|incomplete|unfinished)\b").unwrap()).is_match(text)
+}
+fn pending(text: &str) -> Option<String> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(concat!(
+        r"(?i)^(?:(?:the\s+)?(?P<en>[A-Za-z0-9][A-Za-z0-9 _-]{1,79}?)\s+",
+        r"(?:is\s+(?:not(?:\s+yet)?|still\s+not)\s+(?:completed|complete|finished)|has\s+not\s+(?:yet\s+)?been\s+(?:completed|finished)|hasn['’]t\s+been\s+(?:completed|finished))",
+        r"|(?P<zh>[\u{3400}-\u{9fff}A-Za-z0-9 _-]{2,60}?)(?:尚未完成|还没有完成|还没完成|未完成))$"
+    )).unwrap());
+    let c = re.captures(text)?;
+    Some(normalize(c.name("en").or_else(|| c.name("zh"))?.as_str()))
+}
+fn old_claim(text: &str) -> Option<Claim> {
+    let mut parts = clauses(text);
+    let task = pending(parts.next()?)?;
+    let mut claim = Claim {
+        task,
+        owner: None,
+        date: None,
+    };
+    if let Some(assignment) = parts.next() {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        let re = RE.get_or_init(|| Regex::new(concat!(
+            r"(?i)^(?P<owner>[A-Za-z][A-Za-z'’ -]{0,60}?)\s+will\s+(?:run|perform|complete|finish|verify)\s+",
+            r"(?:it|the\s+(?P<task>[A-Za-z0-9][A-Za-z0-9 _-]{1,79}?))(?:\s+on\s+(?P<date>[A-Za-z0-9 -]{1,40}))?$"
+        )).unwrap());
+        let c = re.captures(assignment)?;
+        if c.name("task")
+            .is_some_and(|m| normalize(m.as_str()) != claim.task)
+        {
+            return None;
+        }
+        claim.owner = Some(normalize(&c["owner"]));
+        claim.date = c.name("date").map(|m| normalize(m.as_str()));
+    }
+    parts.next().is_none().then_some(claim)
+}
+fn completed(text: &str) -> Option<Claim> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(concat!(
+        r"(?i)^(?:(?:(?P<owner>[A-Za-z][A-Za-z'’ -]{0,60}?)\s+(?:confirms?|confirmed|reports?|reported)\s+(?:that\s+)?)?",
+        r"(?:the\s+)?(?P<en>[A-Za-z0-9][A-Za-z0-9 _-]{1,79}?)\s+(?:has\s+(?:now\s+)?been|is\s+now)\s+(?:completed|finished|complete)(?:\s+successfully)?(?:\s+on\s+(?P<date>[A-Za-z0-9 -]{1,40}))?",
+        r"|(?P<zh>[\u{3400}-\u{9fff}A-Za-z0-9 _-]{2,60}?)(?:现已完成|已经完成|已完成))$"
+    )).unwrap());
+    let lower = normalize(text);
+    if [
+        "if ", "when ", "once ", "unless ", "如果", "假如", "等", "待",
+    ]
+    .iter()
+    .any(|p| lower.starts_with(p))
+    {
+        return None;
+    }
+    let c = re.captures(text)?;
+    Some(Claim {
+        task: normalize(c.name("en").or_else(|| c.name("zh"))?.as_str()),
+        owner: c.name("owner").map(|m| normalize(m.as_str())),
+        date: c.name("date").map(|m| normalize(m.as_str())),
+    })
+}
+pub(super) fn view(segments: &[Segment]) -> View {
+    let mut result = View::default();
+    let Some(first) = segments.first() else {
+        return result;
+    };
+    if segments
+        .iter()
+        .any(|s| s.meeting_id != first.meeting_id || s.run != first.run)
+    {
+        return result;
+    }
+    for (index, s) in segments.iter().enumerate() {
+        let Some(old) = old_claim(&s.text) else {
+            continue;
+        };
+        // Any newer, unparsed mention is ambiguous. A pending/reopened task must
+        // not inherit an older completion merely because its words also match.
+        let Some(latest) = segments
+            .iter()
+            .filter(|n| n.seq > s.seq && normalize(&n.text).contains(&old.task))
+            .max_by_key(|n| n.seq)
+        else {
+            continue;
+        };
+        if normalize(&latest.text).matches(&old.task).count() != 1 {
+            continue;
+        }
+        let Some(new) = clauses(&latest.text)
+            .filter_map(completed)
+            .find(|c| c.task == old.task)
+        else {
+            continue;
+        };
+        if old
+            .owner
+            .as_ref()
+            .is_some_and(|o| Some(o) != new.owner.as_ref())
+            || old
+                .date
+                .as_ref()
+                .is_some_and(|d| Some(d) != new.date.as_ref())
+        {
+            continue;
+        }
+        result.retired.insert(index);
+        result.tasks.insert(old.task);
+    }
+    result
+}
+impl View {
+    pub(super) fn retired(&self, index: usize) -> bool {
+        self.retired.contains(&index)
+    }
+    pub(super) fn validate(&self, body: &str) -> Result<()> {
+        for task in &self.tasks {
+            let escaped = regex::escape(task);
+            let now = Regex::new(&format!(
+                r"(?i){escaped}\s*(?:has\s+(?:now\s+)?been|is(?:\s+now)?|现已|已经|已)\s*(?:successfully\s+)?(?:completed|complete|finished|完成)"
+            ))?;
+            let stale = Regex::new(&format!(
+                r"(?i){escaped}\s*(?:is\s+(?:not(?:\s+yet)?|still\s+not)\s+(?:completed|complete|finished)|has\s+not\s+(?:yet\s+)?been\s+(?:completed|finished)|hasn['’]t\s+been\s+(?:completed|finished)|尚未完成|还没有完成|还没完成|未完成)"
+            ))?;
+            if !now.is_match(body) || stale.is_match(body) {
+                bail!("纪要未采用同一任务的最新完成状态，原始转写已保留；本轮未提交");
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn source(seq: u32, text: &str) -> Segment {
+        Segment {
+            id: format!("m:1:{seq}"),
+            meeting_id: "m".into(),
+            run: 1,
+            seq,
+            start_ms: 0,
+            end_ms: 1,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        }
+    }
+    #[test]
+    fn only_a_later_explicit_same_task_completion_retires_the_old_state_and_plan() {
+        let sources = vec![source(1,"The upload verification is not completed. Morgan will run it on Thursday."),source(2,"The invoice review is not completed. Riley will run it on Friday."),source(3,"Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks.")];
+        let original = sources[0].text.clone();
+        let current = view(&sources);
+        assert!(current.retired(0));
+        assert!(!current.retired(1));
+        assert_eq!(sources[0].text, original);
+        assert!(current.validate("Morgan confirms the upload verification has now been completed on Thursday. The invoice review is not completed.").is_ok());
+        assert!(current
+            .validate("The upload verification is not completed.")
+            .is_err());
+        assert!(current
+            .validate("The invoice review has been completed.")
+            .is_err());
+    }
+    #[test]
+    fn missing_identity_owner_date_and_conditional_or_later_reopening_abstain() {
+        for new in [
+            "Morgan confirms the invoice review has now been completed successfully on Thursday.",
+            "Riley confirms the upload verification has now been completed successfully on Thursday.",
+            "Morgan confirms the upload verification has now been completed successfully on Friday.",
+            "The upload verification has now been completed successfully on Thursday.",
+            "If Morgan confirms the upload verification has now been completed successfully on Thursday.",
+            "Morgan confirms the upload verification has now been completed successfully on Thursday?",
+        ] {
+            assert!(!view(&[source(1,"The upload verification is not completed. Morgan will run it on Thursday."),source(2,new)]).retired(0), "{new}");
+        }
+        let mut sources = vec![
+            source(1, "上传验证尚未完成。"),
+            source(2, "上传验证现已完成。"),
+        ];
+        assert!(view(&sources).retired(0));
+        assert!(view(&sources).validate("上传验证现已完成。").is_ok());
+        sources.push(source(3, "上传验证还没有完成。"));
+        assert!(!view(&sources).retired(0));
+        sources.pop();
+        sources[1].run = 2;
+        assert!(!view(&sources).retired(0));
+    }
+}
