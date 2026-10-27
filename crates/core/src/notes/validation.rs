@@ -302,11 +302,52 @@ fn normalize_date_numbers(text: &str) -> String {
     result
 }
 fn numbers(s: &str) -> HashSet<String> {
-    normalize_clock_numbers(&normalize_date_numbers(&super::amounts::normalize(s)))
-        .split(|c: char| !c.is_ascii_digit() && c != '.')
-        .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
-        .map(|s| s.trim_matches('.').to_owned())
-        .collect()
+    normalize_digit_words(&normalize_clock_numbers(&normalize_date_numbers(
+        &super::amounts::normalize(s),
+    )))
+    .split(|c: char| !c.is_ascii_digit() && c != '.')
+    .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
+    .map(|s| s.trim_matches('.').to_owned())
+    .collect()
+}
+fn normalize_digit_words(text: &str) -> String {
+    // Literal digit-by-digit readings (e.g. a mic check or a spoken ID) are
+    // equivalent to the same Arabic digits. Do not reinterpret approximate
+    // counts, ordinary Han words, dates or magnitude-bearing amounts.
+    static DIGITS: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    DIGITS
+        .get_or_init(|| regex::Regex::new(r"[零〇一二三四五六七八九]{2,8}").unwrap())
+        .replace_all(text, |c: &regex::Captures<'_>| {
+            let m = c.get(0).unwrap();
+            if text[..m.start()]
+                .chars()
+                .next_back()
+                .is_some_and(char::is_alphanumeric)
+                || text[m.end()..]
+                    .chars()
+                    .next()
+                    .is_some_and(char::is_alphanumeric)
+            {
+                return m.as_str().to_owned();
+            }
+            m.as_str()
+                .chars()
+                .map(|c| match c {
+                    '零' | '〇' => '0',
+                    '一' => '1',
+                    '二' => '2',
+                    '三' => '3',
+                    '四' => '4',
+                    '五' => '5',
+                    '六' => '6',
+                    '七' => '7',
+                    '八' => '8',
+                    '九' => '9',
+                    _ => unreachable!(),
+                })
+                .collect()
+        })
+        .into_owned()
 }
 fn normalize_clock_numbers(text: &str) -> String {
     // Only reinterpret a complete hour/minute expression, never unrelated
@@ -773,6 +814,33 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn literal_spoken_digits_support_the_same_number_without_supporting_a_changed_count() {
+        let mut source = data()[0].clone();
+        source.text = "一二三，测试麦克风。谢谢，再见。".into();
+        assert!(
+            validate_translation("123, test microphone. Thank you, goodbye.", &source, "m").is_ok()
+        );
+        for body in [
+            "321, test microphone.",
+            "124, test microphone.",
+            "3000, test microphone.",
+            "123 yuan, test microphone.",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
+        for text in [
+            "一二月",
+            "一二人",
+            "两三",
+            "三千",
+            "预算一二",
+            "一二三四五六七八九",
+        ] {
+            assert_eq!(normalize_digit_words(text), text);
+        }
+        assert_eq!(normalize_digit_words("编号：〇一二三。"), "编号：0123。");
+    }
     #[test]
     fn caption_approval_negation_cannot_disappear_when_the_subject_is_a_pronoun() {
         let mut source = data()[0].clone();

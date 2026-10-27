@@ -288,20 +288,25 @@ fn run_inner(
         let request_input = name_repair
             .as_ref()
             .map_or(input.as_str(), |p| p.input.as_str());
-        let output_schema = name_repair.as_ref().map_or_else(
-            || serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema"),
-            |p| p.schema.clone(),
-        );
         trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.is_some()}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
         let diagnostics = std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1");
         let mut draft = String::new();
         session.begin_request();
-        let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
+        let mut request = json!({
             "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
-            "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":output_schema}}
-        }))?;
+        });
+        if let Some(grammar) = name_repair.as_ref().and_then(|p| p.grammar.as_ref()) {
+            request["grammar"] = grammar.clone().into();
+        } else {
+            request["response_format"] = json!({"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema")}});
+        }
+        let response = session
+            .agent
+            .post(&format!("{}/v1/chat/completions", session.base))
+            .set("Authorization", &session.auth)
+            .send_json(request)?;
         let response =
             notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
                 if !text.is_empty() {
