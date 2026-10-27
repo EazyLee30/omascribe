@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "windows_selected_microphone_preview",
+  "feature_native_passed": true,
+  "all_test_attempts_passed": false,
+  "release_eligible": false,
+  "identity": {
+    "source_base": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+    "source_files_sha256": {
+      "crates/core/src/microphone.rs": "f9513c05854b76b5cfa0ffb06869110d62aad4d0d1d89c8c9e319982ee750d59",
+      "crates/core/src/native_audio.rs": "199fe69b3aaeb4accea2bd38100dc47958c29c8345bd69653ea1dcf6bad9f5f0",
+      "crates/core/src/engine.rs": "afeb8bd3370180d01aac3c7bf13fe91b6030b18fc31288eb056b48c2ad65ff68",
+      "crates/core/src/lib.rs": "aae2fdaa2fcf333d046bbce816968947f2cf19c857b4d9e31711db8c17fe798e",
+      "src-tauri/src/main.rs": "c2a62812b092d6123d09da3e36e87da553bdf201c79566532f4531714a3383b5",
+      "src/microphone-test.ts": "f1285c1ad74817f39ccab0451af841de8306f247b4beb45b582553890368a05b",
+      "src/settings.ts": "366a486961d2df7f84f595b5a72ceb729ba6e266084fc6e39b8003c50ef68d84",
+      "src/workspace.css": "91d0ae9cb3181828369a94776ed3ff36eb20579e99e87066c0f9ec685df3e5fe",
+      "tests/native-microphone-preview.js": "0e10d66c8af3a0d88b3a55062196adadeceec3be18fa15541556c1ca2e29af6e"
+    },
+    "tracked_diff_sha256": "daa7c4dbc9bcb7145424dcba34ffd5ddd7a0f16534665b3e6ae5734ed87c07a0",
+    "app_sha256": "1e05e519a047ef2b3ff7cbc30cb2cdc5406935ed87eb6698637327dfb1a215fc",
+    "fixture_sha256": "0e10d66c8af3a0d88b3a55062196adadeceec3be18fa15541556c1ca2e29af6e",
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "exit_code": 0,
+    "no_audio_files": true,
+    "scope": "Development working tree; level-only hardware preview, not transcription/installer acceptance"
+  },
+  "native": {
+    "checks": [
+      "Realtek input selected and persisted; actual input envelope updates without replacing controls",
+      "Native30s deadline stops capture without a UI stop command or UI polling",
+      "Leaving settings releases capture; input choice survives four language changes; no meeting created"
+    ],
+    "devices": [
+      {
+        "id": "auto",
+        "kind": "microphone",
+        "name": "麦克风 (ToDesk Virtual Audio)"
+      },
+      {
+        "id": "麦克风阵列 (Realtek(R) Audio)",
+        "kind": "microphone",
+        "name": "麦克风阵列 (Realtek(R) Audio)"
+      },
+      {
+        "id": "麦克风 (Steam Streaming Microphone)",
+        "kind": "microphone",
+        "name": "麦克风 (Steam Streaming Microphone)"
+      },
+      {
+        "id": "麦克风 (ToDesk Virtual Audio)",
+        "kind": "microphone",
+        "name": "麦克风 (ToDesk Virtual Audio)"
+      }
+    ],
+    "ended": {
+      "device": "麦克风阵列 (Realtek(R) Audio)",
+      "elapsed_ms": 30071,
+      "history": 80,
+      "peak": 0.00021362305,
+      "rms": 7.214542e-05
+    },
+    "passed": true,
+    "running": {
+      "device": "麦克风阵列 (Realtek(R) Audio)",
+      "peak": 0,
+      "rms": 0,
+      "samples": 6
+    }
+  },
+  "findings": {
+    "actual_default": "麦克风 (ToDesk Virtual Audio)",
+    "explicit_user_selection": "麦克风阵列 (Realtek(R) Audio)",
+    "preview_native_stop_ms": 30071,
+    "audio_files_saved": false,
+    "new_meetings_created": false,
+    "selection_survives_locale_changes": true,
+    "scope": "Memory-only level envelope, no ASR/notes/network, no raw microphone audio persisted or uploaded. End-of-test levels are quiet-window observations, not proof of spoken-word recognition."
+  },
+  "checks": {
+    "core_serial": "154 passed/6 opt-in ignored",
+    "isolated_original_pacing": "1 passed",
+    "microphone_unit": "2 passed",
+    "core_native_all_targets_clippy": "passed -D warnings",
+    "typescript_vite": "passed",
+    "native_ui_test_build": "passed",
+    "manual_hardware_fixture": "passed on physical Realtek; native deadline without UI polling, input persistence, settings cleanup and stable controls"
+  },
+  "retained_failure": {
+    "check": "Repeated parallel full-core test",
+    "result": "153 passed/1 failed/6 ignored",
+    "case": "audio::tests::paced_replay_preserves_pcm_without_an_initial_read_burst",
+    "observed_lead_ms": 462.4605,
+    "original_limit_ms": 250,
+    "subsequent_controls": "Same binary isolated pacing and serial full-core pass. Root cause is not established. audio.rs, PCM origin, replay timing and thresholds unchanged; failure is retained, not reclassified as pass.",
+    "log_sha256": "6f7c77c6b6bf057d3d0ac628ce139c376b716585d3f36342e78e1e6d7a4a3f4c"
+  },
+  "original_spoken_attempt": {
+    "source": "72824c442a25c46b18d244fe30c1c96770431484",
+    "user_confirmed_reading": true,
+    "transcript_segments": 0,
+    "private_js_target_seconds": 45,
+    "actual_pcm_seconds": 105.2799375,
+    "result": "Failed; original data and logs remain private. Default was a virtual input and UI timer timed out. This change does not establish spoken accuracy or prove the timeout cause."
+  },
+  "limits": [
+    "Development ui-test build, no production installer or stable release.",
+    "User chose Realtek; other users retain their own selection/default. No global Windows device/privacy settings changed.",
+    "Cold-ASR startup and shared notes quality remain separate P1/Q2/Q4 blockers. No SDK build/signing."
+  ],
+  "evidence_sha256": {
+    "windows-microphone-preview-core-serial.log": "18fdf8e7f44acca99182d670154dd82121c17a1e0940c56633c72400ff8e4372",
+    "windows-microphone-preview-pacing-isolated.log": "ecce4e5df594d2cff44c71de4f107760b318b51d58c1c88ded641974f20db20a",
+    "windows-microphone-preview-core-clippy.log": "73f1500aec38afd8d8bd2d70819bb226f8491cf4677a84884e93192c5414ba79",
+    "windows-microphone-preview-native-clippy.log": "ee6e224e9158f78f385b2155871b16651d1773857dbb64cbb807e360a87e715a",
+    "windows-microphone-preview-frontend.log": "aba77480924f19e1bab981092ebeb1e2647bf142c1227e124219ce40a5924980",
+    "windows-microphone-preview-native-build.log": "f9d344165a1b55f7ba0d9ef3f7f8cf57d1a69c61d1617c6292aa0b31ef43d3d1"
+  }
+}

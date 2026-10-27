@@ -67,6 +67,29 @@ async fn list_devices() -> Reply<Vec<Device>> {
         .map_err(err)?
 }
 #[tauri::command]
+fn microphone_test_status(engine: State<AppState>) -> omascribe_core::microphone::InputLevel {
+    engine.microphone_level()
+}
+#[tauri::command]
+async fn start_microphone_test(
+    engine: State<'_, AppState>,
+    device: String,
+) -> Reply<omascribe_core::microphone::InputLevel> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.start_microphone_preview(device).map_err(err))
+        .await
+        .map_err(err)?
+}
+#[tauri::command]
+async fn stop_microphone_test(
+    engine: State<'_, AppState>,
+) -> Reply<omascribe_core::microphone::InputLevel> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.stop_microphone_preview())
+        .await
+        .map_err(err)
+}
+#[tauri::command]
 fn update_meeting(
     engine: State<AppState>,
     id: String,
@@ -359,6 +382,9 @@ fn main() {
         diagnostics,
         extract_focus_terms,
         list_devices,
+        microphone_test_status,
+        start_microphone_test,
+        stop_microphone_test,
         update_meeting,
         save_note,
         edit_segment,

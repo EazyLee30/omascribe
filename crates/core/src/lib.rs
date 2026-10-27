@@ -30,6 +30,7 @@ mod minutes_schedule;
 mod probe;
 pub use inference_worker::WorkerStatus;
 pub mod library;
+pub mod microphone;
 pub mod models;
 pub mod network;
 pub mod preferences;

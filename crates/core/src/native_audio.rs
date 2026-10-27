@@ -15,12 +15,29 @@ use std::{
 };
 
 pub fn devices() -> Result<Vec<Device>> {
-    let mut devices = vec![Device::microphone("auto", "System default microphone")];
-    for device in cpal::default_host().input_devices()? {
+    let host = cpal::default_host();
+    let default_name = host
+        .default_input_device()
+        .and_then(|device| device.name().ok())
+        .unwrap_or_else(|| "System default microphone".into());
+    let mut devices = vec![Device::microphone("auto", &default_name)];
+    for device in host.input_devices()? {
         let name = device.name()?;
         devices.push(Device::microphone(name.clone(), name));
     }
     Ok(devices)
+}
+
+pub(crate) fn input_name(name: &str) -> Result<String> {
+    if name == "auto" {
+        cpal::default_host()
+            .default_input_device()
+            .context("No default microphone")?
+            .name()
+            .map_err(Into::into)
+    } else {
+        Ok(name.to_owned())
+    }
 }
 
 struct Input {
