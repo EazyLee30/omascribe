@@ -426,7 +426,7 @@ fn checked_progress(
 fn repair_hint(error: &anyhow::Error) -> &'static str {
     let reason = format!("{error:#}");
     if reason.contains("币种") {
-        " The previous answer added an unsupported currency. Translate the ORIGINAL input again. If its amount has no currency, keep it unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文没有币种，译文金额后不要添加元或美元。"
+        " The previous answer added an unsupported currency. Translate the ORIGINAL input again, preserving its stated currency. If none is specified, keep the amount unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文注明币种就保留，未注明则不要添加元或美元。"
     } else if reason.contains("数字或日期") {
         " The previous answer changed a number or date. Translate the ORIGINAL input again, copying every digit exactly without adding a year or inventing a unit. 原文数字照写，不要改成其他数字或年份。"
     } else if reason.contains("复议") || reason.contains("待确认") {
