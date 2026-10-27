@@ -4734,5 +4734,10 @@
     "Mac native UI and physical microphone acceptance await desktop unlock.",
     "Same-candidate Windows CUDA/92s/Realtek and Linux native/install-upgrade results remain separate gates.",
     "Natural mixed/long ASR, speaker-quality and broader GPU/OOM/reset measurements remain open research work."
-  ]
+  ],
+  "later_semantic_review": {
+    "accepted": false,
+    "correction": "Original33 automated passes remain recorded; the initial manual wording assessment did not establish semantic correctness.",
+    "counter_evidence": "candidate6-semantic-failures-2026-10-28.json"
+  }
 }
