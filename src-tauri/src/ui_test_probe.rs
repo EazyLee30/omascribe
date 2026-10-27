@@ -53,9 +53,9 @@ pub fn ui_test_window_result(
 ) -> Result<(), String> {
     let mut pending = probes.0.lock().unwrap();
     if snapshot.to_string().len() > 8192
-        || !pending
+        || pending
             .get(&request_id)
-            .is_some_and(|(label, _)| label == window.label())
+            .is_none_or(|(label, _)| label != window.label())
     {
         return Err("Invalid native window probe response".into());
     }
