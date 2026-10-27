@@ -9,7 +9,9 @@ pub(crate) mod incremental;
 mod language;
 mod lexical;
 mod qualifiers;
-pub(crate) use qualifiers::{prefix as qualifier_prefix, Mismatch as QualifierMismatch};
+pub(crate) use qualifiers::{
+    boundary as qualifier_boundary, prefix as qualifier_prefix, Mismatch as QualifierMismatch,
+};
 mod relations;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
@@ -483,7 +485,7 @@ fn generate_inner(
                     None
                 };
                 if let Some(plan) = source_plan {
-                    trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates()}));
+                    trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates(),"source_slots":plan.source_slots()}));
                     messages = plan.messages.clone();
                     relation_repair = Some(plan);
                 } else if error.to_string().contains("输出语言") {

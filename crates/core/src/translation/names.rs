@@ -215,6 +215,9 @@ pub(super) struct Repair {
     prefix: Option<String>,
 }
 impl Repair {
+    pub fn roles(&self) -> &str {
+        &self.roles
+    }
     pub fn has_names(&self) -> bool {
         !self.names.is_empty()
     }

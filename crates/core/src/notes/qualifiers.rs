@@ -88,21 +88,75 @@ fn withdrawn(source: &str) -> bool {
     .iter()
     .any(|v| s.contains(v))
 }
-fn placement(source: &str) -> Option<bool> {
+struct Placement {
+    requested: bool,
+    start: usize,
+}
+fn placement(source: &str) -> Option<Placement> {
     if withdrawn(source) {
         return None;
     }
     static REQUEST: OnceLock<Regex> = OnceLock::new();
     static EXISTING: OnceLock<Regex> = OnceLock::new();
-    let request=REQUEST.get_or_init(||Regex::new(r"(?:^|[，,。；;\n])\s*(?:请|要|应|应该|需要)?(?:把)?入口放在工具栏[，,；;]\s*(?:别|不要|勿)(?:藏|隐藏)").unwrap()).is_match(source);
+    let request=REQUEST.get_or_init(||Regex::new(r"(?:^|[，,。；;\n])\s*(?:请|要|应|应该|需要)?(?:把)?入口放在工具栏[，,；;]\s*(?:别|不要|勿)(?:藏|隐藏)").unwrap()).find(source);
     let existing = EXISTING
         .get_or_init(|| Regex::new(r"入口(?:已经|已)(?:放在|放到|位于)工具栏").unwrap())
-        .is_match(source);
+        .find(source);
     match (request, existing) {
-        (true, false) => Some(true),
-        (false, true) => Some(false),
+        (Some(m), None) => Some(Placement {
+            requested: true,
+            start: m.start(),
+        }),
+        (None, Some(m)) => Some(Placement {
+            requested: false,
+            start: m.start(),
+        }),
         _ => None,
     }
+}
+#[derive(Clone, Copy)]
+enum Feature {
+    Transcript,
+    Captions,
+}
+impl Feature {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Transcript => "real-time transcription",
+            Self::Captions => "live captions",
+        }
+    }
+    fn mentioned(self, text: &str) -> bool {
+        static TRANSCRIPT: OnceLock<Regex> = OnceLock::new();
+        static CAPTIONS: OnceLock<Regex> = OnceLock::new();
+        match self {
+            Self::Transcript => TRANSCRIPT.get_or_init(|| {
+                Regex::new(r"(?i)实时转写|\b(?:live|real[- ]?time)\s+transcri(?:ption|pt)s?\b")
+                    .unwrap()
+            }),
+            Self::Captions => CAPTIONS.get_or_init(|| {
+                Regex::new(r"(?i)实时字幕|\b(?:live|real[- ]?time)\s+(?:captions?|subtitles?)\b")
+                    .unwrap()
+            }),
+        }
+        .is_match(text)
+    }
+}
+fn features(source: &str, placement: &Placement) -> Vec<Feature> {
+    // Bind the placement to its immediately preceding topic, not to features
+    // mentioned as unrelated facts earlier in the meeting.
+    let topic = source[..placement.start]
+        .rsplit(['，', ',', '。', '.', '；', ';', '\n'])
+        .next()
+        .unwrap_or("");
+    [Feature::Transcript, Feature::Captions]
+        .into_iter()
+        .filter(|f| f.mentioned(topic))
+        .collect()
+}
+fn available(clause: &str) -> bool {
+    static AVAILABLE: OnceLock<Regex> = OnceLock::new();
+    AVAILABLE.get_or_init(||Regex::new(r"(?i)\b(?:is|are)\s+(?:already\s+)?(?:available|ready|enabled)\b|(?:已经|已)(?:能显示|可用|启用|上线|就绪)").unwrap()).is_match(clause)
 }
 fn requested(clause: &str) -> bool {
     static MODAL: OnceLock<Regex> = OnceLock::new();
@@ -142,13 +196,39 @@ pub(crate) fn prefix(source: &str, chinese: bool) -> Option<String> {
         });
     }
     if !chinese {
-        return placement(source).map(|r| {
-            if r {
-                "The entry points should be placed ".into()
+        return placement(source).map(|p| {
+            let subjects = features(source, &p)
+                .into_iter()
+                .map(Feature::label)
+                .collect::<Vec<_>>()
+                .join(" and ");
+            let subject = if subjects.is_empty() {
+                "The entry points".into()
             } else {
-                "The entry points are already in the toolbar ".into()
+                format!("The entry points for {subjects}")
+            };
+            if p.requested {
+                format!("{subject} should be placed ")
+            } else {
+                format!("{subject} are already in the toolbar ")
             }
         });
+    }
+    None
+}
+/// Keep independently qualified source sentences in separate bounded chunks.
+/// Offsets remain in the original UTF-8 text; no speech is rewritten or lost.
+pub(crate) fn boundary(source: &str, chinese: bool) -> Option<usize> {
+    let mut seen = false;
+    let mut offset = 0;
+    for sentence in source.split_inclusive(['。', '\n']) {
+        if prefix(sentence, chinese).is_some() {
+            if seen {
+                return Some(offset);
+            }
+            seen = true;
+        }
+        offset += sentence.len();
     }
     None
 }
@@ -221,13 +301,35 @@ pub(super) fn validate(body: &str, source: &str) -> Result<()> {
             return Err(Mismatch::Scope.into());
         }
     }
-    if let Some(request) = placement(source) {
+    if let Some(placement) = placement(source) {
+        let topics = features(source, &placement);
+        if topics.iter().any(|f| !f.mentioned(body)) {
+            return Err(Mismatch::Placement.into());
+        }
         let matching: Vec<_> = clauses
             .iter()
             .filter(|c| c.contains("toolbar") || c.contains("工具栏"))
             .collect();
-        if matching.is_empty() || matching.iter().any(|c| requested(c)) != request {
+        if matching.is_empty() || matching.iter().any(|c| requested(c)) != placement.requested {
             return Err(Mismatch::Placement.into());
+        }
+        if placement.requested {
+            for feature in topics {
+                let supported = source
+                    .split(['。', '.', '，', ',', ';', '；', '\n'])
+                    .any(|c| feature.mentioned(c) && available(c));
+                if !supported
+                    && clauses.iter().any(|c| {
+                        available(c)
+                            && (feature.mentioned(c)
+                                || ["these features", "both features", "they are"]
+                                    .iter()
+                                    .any(|p| c.contains(p)))
+                    })
+                {
+                    return Err(Mismatch::Placement.into());
+                }
+            }
         }
         static OPPOSITE: OnceLock<Regex> = OnceLock::new();
         if matching.iter().any(|c|OPPOSITE.get_or_init(||Regex::new(r"(?i)\b(?:should|must)\s+not\s+(?:be\s+)?(?:placed|put|located|in)\b[^.;]{0,20}\btoolbar\b|\b(?:are|is)\s+not\s+(?:already\s+)?(?:placed\s+)?in\s+(?:the\s+)?toolbar\b|入口(?:不应|不应该|不可|不能)[^。；]{0,8}放(?:在|到)工具栏|不要把入口放在工具栏").unwrap()).is_match(c)) {
@@ -239,6 +341,17 @@ pub(super) fn validate(body: &str, source: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn placement_preserves_the_named_features_without_inventing_availability() {
+        let source = "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。";
+        for body in [
+            "The entry points should be placed in the toolbar, not hidden in a secondary menu.",
+            "The entry points should be placed in the toolbar, not hidden in a secondary menu. Real-time transcription and real-time subtitles are available.",
+        ] {
+            assert!(validate(body, source).is_err(), "{body}");
+        }
+        assert!(validate("The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu.", source).is_ok());
+    }
     #[test]
     fn scope_is_bound_to_implementation_not_an_unrelated_day() {
         let source = "本阶段只实现麦克风录音与实时转写。";
@@ -280,8 +393,8 @@ mod tests {
         let request = "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。";
         let existing = "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。";
         for body in [
-            "The entry points should be placed in the toolbar, not hidden in secondary menus.",
-            "Place the entry points in the toolbar rather than in a secondary menu.",
+            "The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in secondary menus.",
+            "Place the live transcript and real-time subtitles entry points in the toolbar rather than in a secondary menu.",
             request,
         ] {
             assert!(validate(body, request).is_ok(), "{body}");
@@ -298,8 +411,39 @@ mod tests {
             existing
         )
         .is_err());
-        assert!(validate("The entry points are already in the toolbar.", existing).is_ok());
+        assert!(validate(
+            "The entry points for live transcription and live captions are already in the toolbar.",
+            existing
+        )
+        .is_ok());
         assert!(prefix("不要把入口放在工具栏，别藏到二级菜单。", false).is_none());
         assert!(prefix("入口放在工具栏，别藏到二级菜单。这个要求已经取消。", false).is_none());
+    }
+    #[test]
+    fn topic_and_availability_are_local_to_the_feature() {
+        let source = "实时转写已经能显示。实时字幕，入口放在工具栏，别藏到二级菜单。";
+        let prefix = prefix(source, false).unwrap();
+        assert_eq!(
+            prefix,
+            "The entry points for live captions should be placed "
+        );
+        assert!(validate("Real-time transcription is available. Live captions should be placed in the toolbar, not hidden in a secondary menu.", source).is_ok());
+        assert!(validate("Real-time transcription and live captions are available. Live captions should be placed in the toolbar.", source).is_err());
+        assert!(validate("Live captions are already available; their entry points should be placed in the toolbar.", "实时字幕已可用。实时字幕，入口放在工具栏，别藏到二级菜单。").is_ok());
+    }
+    #[test]
+    fn independent_qualifiers_have_original_utf8_sentence_boundaries() {
+        let first = "本阶段只实现麦克风录音与实时转写。";
+        let second = "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项调整还没有完成。";
+        assert_eq!(
+            boundary(&format!("{first}{second}"), false),
+            Some(first.len())
+        );
+        assert_eq!(boundary(first, false), None);
+        assert_eq!(boundary(second, false), None);
+        assert_eq!(
+            boundary("本阶段只实现麦克风录音，系统音频推迟到下个版本。", false),
+            None
+        );
     }
 }

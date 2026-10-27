@@ -160,7 +160,8 @@
           "not|rather than|instead"
         ],
         "forbidden": [
-          "with the entry placed"
+          "with the entry placed",
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
         ]
       }
     ]
@@ -1414,10 +1415,13 @@
     "required": [
       "should|must|please|need to",
       "toolbar",
-      "not.*completed|not.*finished|pending"
+      "not.*completed|not.*finished|pending",
+      "transcri",
+      "caption|subtitle"
     ],
     "forbidden": [
-      "already in the toolbar"
+      "already in the toolbar",
+      "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
     ],
     "translation_checks": [
       {
@@ -1428,6 +1432,9 @@
           "toolbar",
           "transcri",
           "subtitle|caption"
+        ],
+        "forbidden": [
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
         ]
       }
     ]
@@ -1446,7 +1453,9 @@
       "microphone",
       "should|must|need to|please",
       "toolbar",
-      "not.*completed|not.*finished|pending"
+      "not.*completed|not.*finished|pending",
+      "transcri",
+      "caption|subtitle"
     ],
     "translation_checks": [
       {
@@ -1458,8 +1467,14 @@
           "should|must|need to|please",
           "toolbar",
           "not.*completed|not.*finished|pending"
+        ],
+        "forbidden": [
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
         ]
       }
+    ],
+    "forbidden": [
+      "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
     ]
   }
 ]

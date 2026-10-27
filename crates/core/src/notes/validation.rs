@@ -619,6 +619,24 @@ fn validate_document(
     if draft.sections.len() > 3 {
         bail!("文档超过本轮段落预算");
     }
+    // A source qualifier may live in a different paragraph than its citation.
+    // Check the current article once, while per-paragraph source/fact checks
+    // below still reject unsupported content and stale source revisions.
+    super::qualifiers::validate(
+        &draft
+            .sections
+            .iter()
+            .map(|s| s.body.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        &segments
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !completed.retired(*i))
+            .map(|(_, s)| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )?;
     let mut result = Vec::new();
     let mut seen = HashSet::new();
     for (index, section) in draft.sections.into_iter().enumerate() {
@@ -670,7 +688,6 @@ fn validate_document(
             .collect::<Vec<_>>()
             .join(" ");
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
-        super::qualifiers::validate(body, &current_evidence)?;
         if require_prose {
             let raw_evidence = sources
                 .iter()
