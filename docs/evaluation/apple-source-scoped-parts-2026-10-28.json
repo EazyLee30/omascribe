@@ -1,0 +1,1296 @@
+{
+  "schema": 1,
+  "scope": "Explicit implementation scope and toolbar-request subjects/state only. Seeded text does not establish natural ASR or full semantic quality.",
+  "targeted_scope_and_placement_gate_passed": true,
+  "full_semantic_acceptance": false,
+  "release_accepted": false,
+  "source_revision": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "21c954821c9344e8120fb500bbe331b0b84e25d123e8bf92a2c628c6a8a53e6a",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "3a341e0c78c674b0f2a3f002161f9e0afa0d896309b5308715205dec15a98033",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "b1dac1d799e30027ec29220325a5b995a1c418414ffba4c9d5796aebd67c4105",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_case_count": 41,
+  "resource_configuration": {
+    "backend": "metal",
+    "model": "qwen3-1.7b",
+    "threads": 1,
+    "context_size": 2048,
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "incremental_minutes": false,
+    "minutes_catchup": false,
+    "automatic_translation_mode": "bilingual",
+    "explicit_translation_mode": "off"
+  },
+  "static_checks": {
+    "core_library": {
+      "passed": 194,
+      "ignored": 7,
+      "log_sha256": "7600c986a5191933119884721546ef1c52f1faef5d34ccfa9f33bbcfe0b160d7"
+    },
+    "strict_core_all_targets_clippy": {
+      "passed": true,
+      "log_sha256": "459f88b405d6cdb6b9f1a769e942e037a5d7a5ddbec0e236d9cce1670a0f54cd"
+    },
+    "python_harness": {
+      "passed": 22,
+      "log_sha256": "7c18de5cabdc86de2a2f00f2361cd8ebf2092f1d2485c7d8f55be629322ecbcd"
+    }
+  },
+  "retained_original_failures": [
+    {
+      "case": "en_toolbar_requested_state",
+      "source_revision": "12d5b2c0ecf51703cd4e7e7766386500650aa95d",
+      "automatic_passed": false,
+      "seconds": 7.132,
+      "errors": [
+        "Translation 1 missing: transcri",
+        "Translation 1 missing: subtitle|caption"
+      ],
+      "report_sha256": "0da4162642d97f55649347e5b2ae1e7dec41f4a4bc3b6890e1fb974fed0a424c",
+      "raw_report": "artifacts/benchmarks/source-qualifier-auto-20261028/en_toolbar_requested_state.json"
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "source_revision": "12d5b2c0ecf51703cd4e7e7766386500650aa95d",
+      "automatic_passed": false,
+      "seconds": 120.2,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/source-qualifier-auto-20261028/en_compound_scope_and_request.artifacts/en_compound_scope_and_request/phase-1/batch-1"
+      ],
+      "report_sha256": "4d589b3bed0e2682053792a14adf2419661ca9068e6e6b9db33e1248eacfb74c",
+      "raw_report": "artifacts/benchmarks/source-qualifier-auto-20261028/en_compound_scope_and_request.json"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "source_revision": "12d5b2c0ecf51703cd4e7e7766386500650aa95d",
+      "automatic_passed": true,
+      "seconds": 8.357,
+      "errors": [],
+      "report_sha256": "3327a249133a4aa1f44458155b96bd1fa7d0406dcf7fa69313e3b0e6a55a6d9c",
+      "raw_report": "artifacts/benchmarks/source-qualifier-auto-20261028/zh_connected_minutes.json",
+      "additional_semantic_failure": "Caption 4 invents transcription/subtitle availability; source only requests toolbar entry placement. Original pattern PASS is retained, not semantic PASS."
+    }
+  ],
+  "original_missing_subject_unit_reproduction": {
+    "failed_on_pre_change_source": true,
+    "log_sha256": "6b35a9ba30ff4462b6bb0484bf73211ca22f8119c38eea25dfa58e166ef41f5f"
+  },
+  "automatic_cases": [
+    {
+      "case": "en_compound_scope_and_request",
+      "passed": true,
+      "seconds": 7.269,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。",
+              "revision": 1,
+              "segment_id": "7c2da047-cb8b-4b6c-b030-815a59dc360b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "c10c581996199bcbc58502eae41c5db97383e39f94eff16cbea844d7a16971cb",
+      "report_sha256": "0bf966b90f321151ee26d684f5b226722623ad6a93bf10e9fd1ad319468620de",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-smoke-20261028/en_compound_scope_and_request.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 115,
+          "name_references": false,
+          "prompt_bytes": 51,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 51,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 145,
+          "name_references": false,
+          "prompt_bytes": 51,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 51,
+          "source_predicates": 1
+        },
+        {
+          "input_tokens": 129,
+          "name_references": false,
+          "prompt_bytes": 117,
+          "repair": false,
+          "resumed": true,
+          "source_bytes": 117,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 159,
+          "name_references": false,
+          "prompt_bytes": 117,
+          "repair": true,
+          "resumed": true,
+          "source_bytes": 117,
+          "source_predicates": 1
+        }
+      ]
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "passed": true,
+      "seconds": 7.114,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "这两项调整还没有完成。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "These two adjustments have not yet been completed."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These two adjustments have not yet been completed.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+              "revision": 1,
+              "segment_id": "f25530ac-4759-4da1-8c79-4a7cb9ae8684:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "这两项调整还没有完成。",
+              "revision": 1,
+              "segment_id": "f25530ac-4759-4da1-8c79-4a7cb9ae8684:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            }
+          ]
+        }
+      ],
+      "coverage": 2,
+      "final_snapshot_sha256": "c88adfdfdd07a64b45dfbd0af362d88a6dbbf718622f5a464a6c61f5e63d2663",
+      "report_sha256": "9d02d81f9dd32443d0c5c915163b935dfc318bcff1892f0f0749154a650b125f",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-smoke-20261028/en_toolbar_requested_state.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 122,
+          "name_references": false,
+          "prompt_bytes": 78,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 78,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 109,
+          "name_references": false,
+          "prompt_bytes": 33,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 33,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 152,
+          "name_references": false,
+          "prompt_bytes": 78,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 78,
+          "source_predicates": 1
+        }
+      ]
+    },
+    {
+      "case": "zh_connected_minutes",
+      "passed": true,
+      "seconds": 8.134,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。"
+        },
+        {
+          "seq": 3,
+          "revision": 1,
+          "text": "引用放在正文旁边的小标里就行，点一下再看原话。"
+        },
+        {
+          "seq": 4,
+          "revision": 1,
+          "text": "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。"
+        },
+        {
+          "seq": 5,
+          "revision": 1,
+          "text": "这两项调整还没有完成，先记录下来，完成以后再一起验证。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "We are mainly testing offline meeting notes, and the real-time transcription is already visible."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The AI summary is displayed in small sentences one after another, making it difficult to read smoothly."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Place the quotes in the small brackets next to the text, and click to view the original statement."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "These two adjustments have not yet been completed; they should be recorded first, and then verified together after they are completed."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "实时转写已显示，但AI纪要仍是一小句一小句地显示，阅读不连贯。引用放在正文旁边的小标里，点一下再看原话。实时转写和实时字幕的入口放在工具栏，别藏到二级菜单。这两项调整尚未完成，先记录下来，完成以后再一起验证。",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 40000,
+              "quote": "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+              "revision": 1,
+              "segment_id": "4c2069ac-dcb6-4524-bc3c-55fecc04d181:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "引用放在正文旁边的小标里就行，点一下再看原话。",
+              "revision": 1,
+              "segment_id": "4c2069ac-dcb6-4524-bc3c-55fecc04d181:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 50000,
+              "quote": "这两项调整还没有完成，先记录下来，完成以后再一起验证。",
+              "revision": 1,
+              "segment_id": "4c2069ac-dcb6-4524-bc3c-55fecc04d181:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。",
+              "revision": 1,
+              "segment_id": "4c2069ac-dcb6-4524-bc3c-55fecc04d181:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+              "revision": 1,
+              "segment_id": "4c2069ac-dcb6-4524-bc3c-55fecc04d181:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 5,
+      "final_snapshot_sha256": "54b07e1bddc76d520c3a5def4137aab87e881afe2052f6c7309abbc74ed95de6",
+      "report_sha256": "78cfc09a7f362fcbf3f782760a692283b506a030a68303dbad5ff2a59d607ad1",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-smoke-20261028/zh_connected_minutes.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 125,
+          "name_references": false,
+          "prompt_bytes": 102,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 102,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 122,
+          "name_references": false,
+          "prompt_bytes": 74,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 74,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 123,
+          "name_references": false,
+          "prompt_bytes": 84,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 84,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 119,
+          "name_references": false,
+          "prompt_bytes": 81,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 81,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 153,
+          "name_references": false,
+          "prompt_bytes": 84,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 84,
+          "source_predicates": 1
+        },
+        {
+          "input_tokens": 119,
+          "name_references": false,
+          "prompt_bytes": 69,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 69,
+          "source_predicates": 0
+        }
+      ]
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true,
+      "seconds": 7.145,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The offline transcription prototype is ready for review. We will test it on Friday."
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "离线转录原型已准备好审查。我们将于周五进行测试。"
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "This phase only implements microphone recording and real-time transcription, with system audio capture postponed to the next version."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "离线转录原型已准备好审查。我们将于周五进行测试。本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+              "revision": 1,
+              "segment_id": "672c3535-2f85-41f3-aa52-bfffff799cac:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+              "revision": 1,
+              "segment_id": "672c3535-2f85-41f3-aa52-bfffff799cac:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 2,
+      "final_snapshot_sha256": "b0734c1f73e416993e77edc6868c326b35ec47067a597ecefa2ae138cf209f9d",
+      "report_sha256": "e943763a6a270c5d138c73eb3d96756534b6b7333bf13f6b6a0d0cf93394514a",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/bilingual_scope.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 123,
+          "name_references": false,
+          "prompt_bytes": 83,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 83,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 124,
+          "name_references": false,
+          "prompt_bytes": 93,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 93,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 154,
+          "name_references": false,
+          "prompt_bytes": 93,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 93,
+          "source_predicates": 1
+        }
+      ]
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 7.083,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "Morgan将于周四发送发布报告。我们尚未批准发布日期。"
+        }
+      ],
+      "minutes": [
+        {
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+              "revision": 1,
+              "segment_id": "8531dc9d-d6be-4f1a-b247-4628c33391e4:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "e7412f2c8925af2ec2dc73a349821ce8b2d1d5d50cef50214355c8f5091561a1",
+      "report_sha256": "7585b4b68b810bf298d7fcd473bb649e565f00179f0f486de1fcdee09ac4ee28",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/en_owner_and_deadline.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 148,
+          "name_references": false,
+          "prompt_bytes": 90,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 90,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 183,
+          "name_references": true,
+          "prompt_bytes": 90,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 90,
+          "source_predicates": 1
+        }
+      ]
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "passed": true,
+      "seconds": 6.91,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只支持麦克风录音，系统音频将在下个版本加入。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "This stage only supports microphone recording, and system audio will be added in the next version."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "This stage only supports microphone recording, and system audio will be added in the next version.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只支持麦克风录音，系统音频将在下个版本加入。",
+              "revision": 1,
+              "segment_id": "40474617-9261-4a94-9e6c-965caf87b3b9:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "74d6616157c8f0028a171d38ee9d7c67be64f7b440425d43fae4a37f5ab57266",
+      "report_sha256": "2657e9491fbabf3e7cb79d3a3909ce845ec4761bc7328c296508cc2e54aea44e",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/en_phase_exclusive_scope.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 119,
+          "name_references": false,
+          "prompt_bytes": 75,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 75,
+          "source_predicates": 0
+        }
+      ]
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "passed": true,
+      "seconds": 6.895,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段实现麦克风录音与实时转写。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "This stage implements microphone recording and real-time transcription."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "This stage implements microphone recording and real-time transcription.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段实现麦克风录音与实时转写。",
+              "revision": 1,
+              "segment_id": "3c99b9a9-6e88-458a-b083-942d384f8973:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "0062d0359aa1e292fde4b7fd52a80086f01011b988c2728a421f14fe3962bfca",
+      "report_sha256": "4c428acd4340b5d1b275d7ceb26f71d24cc5b29f01d45bb75b106f28a17d692b",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/en_phase_nonexclusive_scope.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 114,
+          "name_references": false,
+          "prompt_bytes": 48,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 48,
+          "source_predicates": 0
+        }
+      ]
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "passed": true,
+      "seconds": 6.933,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The entry for real-time transcription and real-time subtitles has been placed in the toolbar, not in a secondary menu."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "The entry for real-time transcription and real-time subtitles has been placed in the toolbar, not in a secondary menu.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。",
+              "revision": 1,
+              "segment_id": "a5b2b8f7-b095-4ed5-aa28-09256482ab9b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "3b7e3051c5e1b1ecf444dfd23d31cc4c197fb6c74ac384d0b7aac5902226bafe",
+      "report_sha256": "bba1e8a741a369da9c18ec3ea4edcb1ebbd5d3f7b3a6f1fa13d365c3858e8866",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/en_toolbar_existing_state.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 123,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 0
+        }
+      ]
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "seconds": 11.294,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "预算还没有确定，先等测试报告。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        },
+        {
+          "seq": 3,
+          "revision": 1,
+          "text": "模型下载可以联网，会议录音不会上传。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The budget has not yet been determined; wait for the test report."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Offline model download is responsible for Chen Ming, and download must obtain user consent."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Model download can be connected to the internet, meeting recordings will not be uploaded."
+        }
+      ],
+      "minutes": [
+        {
+          "text": "人工确认：预算仍未确定，先等测试报告。",
+          "status": "accepted",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "预算还没有确定，先等测试报告。",
+              "revision": 1,
+              "segment_id": "2aef52a8-bad8-4d98-a91c-5cdb65b4c121:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        },
+        {
+          "text": "预算尚未确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+              "revision": 1,
+              "segment_id": "2aef52a8-bad8-4d98-a91c-5cdb65b4c121:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "模型下载可以联网，会议录音不会上传。",
+              "revision": 1,
+              "segment_id": "2aef52a8-bad8-4d98-a91c-5cdb65b4c121:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "预算还没有确定，先等测试报告。",
+              "revision": 1,
+              "segment_id": "2aef52a8-bad8-4d98-a91c-5cdb65b4c121:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 3,
+      "final_snapshot_sha256": "a3793a2ab21370f171d9ffc5ac9ee2dac2a71d16d3f264b5f0f86354de791bd3",
+      "report_sha256": "9b1a973f57c22d16cbbe2553fe13978a50e60c8527601a548b7d5aa0483458d3",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/zh_human_paragraph_protected.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 118,
+          "name_references": false,
+          "prompt_bytes": 69,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 69,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 113,
+          "name_references": false,
+          "prompt_bytes": 54,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 54,
+          "source_predicates": 0
+        }
+      ]
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "seconds": 7.098,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+        },
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan负责提供延迟报告，并将于周四交付。",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "067eef67-0aad-4783-be75-5849129e14fe:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+              "revision": 1,
+              "segment_id": "067eef67-0aad-4783-be75-5849129e14fe:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 2,
+      "final_snapshot_sha256": "505e6fa124543b00b2637731c91e7f845e3d7ee44c1703570d191d49db8ba044",
+      "report_sha256": "d46c8bcf7161349dec5a68d15fe8dbced8eac5a32818abc2c868dd176f4f3f5d",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-controls-20261028/zh_minutes_from_en.json",
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 124,
+          "name_references": false,
+          "prompt_bytes": 91,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 91,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 142,
+          "name_references": false,
+          "prompt_bytes": 63,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 63,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 177,
+          "name_references": true,
+          "prompt_bytes": 63,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 63,
+          "source_predicates": 1
+        }
+      ]
+    }
+  ],
+  "translation_off_explicit_minutes": [
+    {
+      "case": "en_compound_scope_and_request",
+      "passed": true,
+      "seconds": 3.351,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in the secondary menu. These two adjustments have not been completed yet.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。",
+              "revision": 1,
+              "segment_id": "e56ad7b7-af32-4017-8209-65481b48294d:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "3306a37a1b61c4dcbe66786d8d11853c0744413265f9764bc41b3c8abff3c5c7",
+      "report_sha256": "66fe011ce4cfe98ad270438463eca645c36b564d6ebe0c7e4f52aee83bb9cc20",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-minutes-20261028/en_compound_scope_and_request.json",
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 2,
+          "source_slots": 2
+        }
+      ],
+      "translation_chunks": []
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "passed": true,
+      "seconds": 1.309,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只支持麦克风录音，系统音频将在下个版本加入。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "text": "This stage only supports microphone recording, with system audio to be added in the next version.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只支持麦克风录音，系统音频将在下个版本加入。",
+              "revision": 1,
+              "segment_id": "84f6c12e-5113-431c-841f-19e4a5311130:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "82503e68d4218c7b0e9291923214275df527d55e54b34f445ef7c7e8cc8f9dbb",
+      "report_sha256": "1604543fe52298783d28a238ae1659cb8eebb28adf93c99fa365f0333fbba7bc",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-minutes-20261028/en_phase_exclusive_scope.json",
+      "source_repairs": [],
+      "translation_chunks": []
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "passed": true,
+      "seconds": 1.302,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段实现麦克风录音与实时转写。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "text": "This stage implements microphone recording and real-time transcription.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段实现麦克风录音与实时转写。",
+              "revision": 1,
+              "segment_id": "1d97434c-bd36-4b0c-95ec-07ee6b20591b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "b6acda5b4ed69ea071fd46a1285e620aefbe587894ab3d3f3a744a01711c91b8",
+      "report_sha256": "fd00b53ef19f28ef6f0a732e92d305f318d4bb25540ad40b49303e8aa5d49266",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-minutes-20261028/en_phase_nonexclusive_scope.json",
+      "source_repairs": [],
+      "translation_chunks": []
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "passed": true,
+      "seconds": 2.151,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "text": "The entry points for real-time transcription and live captions are already in the toolbar and not hidden in a secondary menu.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。",
+              "revision": 1,
+              "segment_id": "538e45ea-727c-474a-ac40-822a1fb2c3f8:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ]
+        }
+      ],
+      "coverage": 1,
+      "final_snapshot_sha256": "75f06d7bdcc383e370cd94bb9863720b5e8aff901264ce78d073af76a37f8e7d",
+      "report_sha256": "fb035a8afe5ce02bdf46038827bf7ce1e872dd4dbcdb24c8df41b2c6802fbd6d",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-minutes-20261028/en_toolbar_existing_state.json",
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_chunks": []
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "passed": true,
+      "seconds": 2.341,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "这两项调整还没有完成。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "text": "The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These two adjustments have not yet been completed.",
+          "status": "pending",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+              "revision": 1,
+              "segment_id": "65d6ab58-8873-48df-ab84-08a1eff71688:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "这两项调整还没有完成。",
+              "revision": 1,
+              "segment_id": "65d6ab58-8873-48df-ab84-08a1eff71688:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            }
+          ]
+        }
+      ],
+      "coverage": 2,
+      "final_snapshot_sha256": "99bee05dff016bea1cdf650f42c0070f5b2f4e09ed06039399bb1453cc60c983",
+      "report_sha256": "3c09e1a2816720ef1ef5813d1adcdc8f7ecb84fa5ea7fcd579b1970c94b3a841",
+      "raw_report": "artifacts/benchmarks/source-scoped-parts-minutes-20261028/en_toolbar_requested_state.json",
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_chunks": []
+    }
+  ],
+  "assistant_review": {
+    "scope": "Final output inspection for only versus nonexclusive scope, requested versus already placed entries, named features, unfinished state, report sending/ownership controls and cited source fields; assistant review, not human study.",
+    "confirmed_targeted_fixes": [
+      "Toolbar request retains real-time transcription and live captions without inventing availability.",
+      "Compound source preserves scope, request and pending state.",
+      "Nonexclusive implementation stays nonexclusive; existing toolbar placement does not become a request."
+    ],
+    "compound_explicit_source_slots": 2,
+    "known_unresolved_captions": [
+      "zh_connected_minutes caption 3 still translates 小标 as small brackets rather than citation markers. That case only passes targeted scope/placement checks, not full semantic review.",
+      "zh_human_paragraph_protected final caption 2 still reverses responsibility: Offline model download is responsible for Chen Ming. This remains a semantic failure despite the automated assertions passing; the human paragraph is preserved."
+    ]
+  },
+  "bounds": {
+    "translation_requests_per_batch": 8,
+    "retries_per_chunk": 1,
+    "recording_translation_work_seconds": 8,
+    "minutes_attempts": 2,
+    "minutes_output_tokens": 440,
+    "automatic_settle_seconds": 120,
+    "changed": false,
+    "note": "Compound captions used 4 requests for 2 independent source chunks. Explicit compound minutes used one 2-item array in the existing second attempt; no extra per-item LLM call."
+  },
+  "runtime_logs": [
+    {
+      "case": "en_compound_scope_and_request",
+      "mode": "automatic_cases",
+      "sha256": "6732773072fe6d549ddeebb806fa3ea6b64e5eefd1462f29fc0b1d1fc55c6bb2",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "mode": "automatic_cases",
+      "sha256": "9917e68756f3d5483fea41819c1e0a0a818b9238d744f5adeb789dc2714142c6",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "zh_connected_minutes",
+      "mode": "automatic_cases",
+      "sha256": "7f1581e19dcf3da54070962036955e7a6c25f32110d165ee3e4ef55c1e8e7091",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "bilingual_scope",
+      "mode": "automatic_cases",
+      "sha256": "266ef319785fab9fef59d11931e4e46ad50716dca1a4446b6956f0f413eb41f0",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "mode": "automatic_cases",
+      "sha256": "bd477eb412e70712fc660f5508d56797cce778a676fe8fa177850b12728844d7",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "mode": "automatic_cases",
+      "sha256": "66cdfd4639bc28a30fb60e5cad5146240ec4446932410382a6050fcc1fc296ee",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "mode": "automatic_cases",
+      "sha256": "7dfb708c2cd1ab2c4a599b08af84c416786585a2b5d0322b22171b494f4ec769",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "mode": "automatic_cases",
+      "sha256": "d47658da8306d59f65f6d492f3b57b68e93d99e18fcd07f5c18b43de8441d68b",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "mode": "automatic_cases",
+      "sha256": "cc5870fae8335a802d1095904c922dd9d20333e839c1e45fa4a92d969d1a1c55",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "mode": "automatic_cases",
+      "sha256": "8894f07b02c150cd657f905aa37e7817332327e05992d620909971779edff215",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "mode": "translation_off_explicit_minutes",
+      "sha256": "9d19137ee74dc92660b781f3329cd027c0d8c0c2b842948181d6c71c1c1b793f",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "mode": "translation_off_explicit_minutes",
+      "sha256": "60e7b63a9437bbd74b50d626c813abeb6eb4c5ef73acb22609fbc729a8995de7",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "mode": "translation_off_explicit_minutes",
+      "sha256": "fc33522f78b26c9b7bb7afa9dfd38f828870e0e098020d7621d02b8873e65e9c",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "mode": "translation_off_explicit_minutes",
+      "sha256": "bb28b11cd387cd67b1b6670574928b6eb12f9783e8da59b23df13a9421369abb",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "mode": "translation_off_explicit_minutes",
+      "sha256": "c7dfe760e877c9e978fe0f1fea03013c4f01da5eba34ad795c2e55427abc607a",
+      "m5_metal_device_observed": true,
+      "all_layers_offloaded": true
+    }
+  ],
+  "cleanup": {
+    "borrowed_model_directories": 15,
+    "released": 15,
+    "source_model_store_retained": true,
+    "note": "Borrowed links/copies released. Logical bytes are not reclaimed-disk-space evidence. Raw failure/success evidence retained."
+  },
+  "performance_limits": [
+    "Compound chain completes in 7.269 seconds after the previous 120-second product timeout. This is one seeded failed-chain repair, not a general ASR/cold-start speedup.",
+    "No new energy, standalone VRAM or physical microphone measurement. GPU components, runtime, model and base installer policy unchanged."
+  ],
+  "still_open": [
+    "Small citation marker mistranslation, other metric/role/grounding failures, broad semantic review and real-speech proper names.",
+    "Candidate 6 remains rejected; next unified candidate, full same-source regression, native recording and install/upgrade/model retention are pending.",
+    "P0-P3 and G1-G2 plan scope retained. No AMD hardware or new backend promotion from these text tests."
+  ]
+}

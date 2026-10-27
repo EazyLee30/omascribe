@@ -6,6 +6,8 @@ Reference: `docs/research/audio-efficiency-2026-10-26/PLAN.zh-CN.md` and `REPORT
 
 Current release checkpoint: frozen candidate6 `9bfbfc088a8fcaa471ccee31057a8f99fe4fde66` is **not semantically accepted**. Its33 automatic pattern passes and actual Metal logs remain valid narrow observations, but cross-platform review exposed source-action/role/scope errors, including confirmed retained Mac outputs. See [counter-evidence](../evaluation/candidate6-semantic-failures-2026-10-28.json) and [the single release checklist](release-0.3.5.md) for ownership and next fixes. Natural ASR, same-candidate native/platform and install/upgrade gates also remain open; the complete research objective and pending work below remain active. The lazy literal-caption worker optimization is independent and does not modify this frozen candidate.
 
+Latest development source `b5eb12c` closes the retained explicit phase-scope and toolbar-request subject/state failures: 10 affected automatic cases and 5 translation-off minutes pass at the same source, with bounded source-sentence partitioning and one existing structured repair. It is not a new candidate. The same retained outputs still contain a citation-marker mistranslation and a reversed Chinese responsibility caption; these remain semantic failures despite automated passes. [Outputs, original failures, Metal logs and limits](../evaluation/apple-source-scoped-parts-2026-10-28.json).
+
 ## Work and evidence
 
 | Work | State | Required evidence |
