@@ -1294,9 +1294,64 @@
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "realtek_prescribed_reading": {
-      "status": "pending human waveform confirmation and availability",
+      "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "scope": "One actual prescribed physical Realtek reading; ASR-only, no GPU/LLM contention, no GUI Stop-button assertion or general ASR accuracy claim.",
       "device": "麦克风阵列 (Realtek(R) Audio)",
-      "microphone_opened_for_this_checkpoint": false,
+      "human_waveform_confirmed": true,
+      "metrics": {
+        "native_stop_requested_ms": 35000,
+        "final_capture_ms": 34400,
+        "final_processed_ms": 34400,
+        "final_segments": 3
+      },
+      "wav_duration_ms": 34400.0,
+      "sample_rate": 16000,
+      "channels": 1,
+      "peak": 10632,
+      "rms": 767.037524918432,
+      "nonzero_fraction": 0.9293568313953489,
+      "capture_stop_drain_passed": true,
+      "critical_fact_checks": {
+        "omascribe": false,
+        "windows": true,
+        "thursday_not_friday": true,
+        "budget3000yuan": true,
+        "unapproved": true,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false,
+        "local_recording_and_minutes": true
+      },
+      "critical_fact_pass_count": 5,
+      "critical_fact_count": 9,
+      "semantic_acceptance_passed": false,
+      "reference": "OmaScribe 的 Windows 测试安排在周四，不是周五。预算三千元，尚未批准。Alice 负责检查 NVIDIA GTX 1650，录音和会议纪要都保存在本机。",
+      "reference_discrepancy": {
+        "metric": "MER",
+        "counts": {
+          "substitutions": 7,
+          "deletions": 0,
+          "insertions": 1
+        },
+        "reference_units": 44,
+        "rate": 0.18181818181818182,
+        "scope": "Comparison with prompted text, not independent human-verified gold transcript or corpus accuracy."
+      },
+      "asr_config": {
+        "decoder": "modified_beam_search",
+        "default_hotword_buffer_present": true,
+        "fallback": null,
+        "hotword_count": 5,
+        "hotword_update_mode": "recognizer",
+        "initial_load_ms": 3310,
+        "last_update_ms": 0,
+        "model_load_attempts": 1,
+        "stream_updates": 0,
+        "threads": 2
+      },
+      "actual_hotwords": "ALICE\nGTX\nNVIDIA\nOMASCRIBE\nWINDOWS",
+      "focus": "OmaScribe\nWindows\nAlice\nNVIDIA\nGTX 1650",
+      "hotword_note_limitation": "Original note GTX 1650 with space produced only GTX in keyword extraction; numeric model suffix not present in ASR hotword file. Does not establish sole cause of model-name failure.",
       "driver_identity": {
         "core_checkpoint": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
         "linked_rlib": "D:\\omascribe\\target\\debug\\deps\\libomascribe_core-17c50dbfc82a197c.rlib",
@@ -1307,7 +1362,114 @@
         "first_link_failure": "Initial standalone rustc helper omitted the cached Windows import-library search path; LNK1181 retained separately. Product Cargo builds passed.",
         "method": "External local harness links exact built checkpoint core; no product sources or capture/ASR logic changed. Native deadline keeps request origin, no model prewarm, no WebView timer."
       },
-      "preview_does_not_replace_meeting_stop": true
+      "private_audio_sha256": "8de73ebb56a10c2fe248cefacc0e5424216cbbeaccd358f19a685fab1a2cef78",
+      "private_transcript_sha256": "382a9427e81ea6c52e13bd0ea2e73c1ac3e7724a6e5f3c63bd8cbf673910e220",
+      "stdout_sha256": "2c9bfcd0f2969b508090c77b9b3f5fcb7b3662c173edbcce6e446a6efa160fde",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "privacy": "Actual audio and hypothesis remain local. Public evidence contains prompted reference, hashes and aggregate fact flags only."
+    },
+    "realtek_offline_hotword_diagnostics": {
+      "source": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "scope": "Same private PCM decoded offline under unchanged worker and profile, distinct hotword diagnostics; cannot replace original live result, latency or cold-start acceptance.",
+      "results": [
+        {
+          "name": "original_repeat",
+          "hotwords": "ALICE\nGTX\nNVIDIA\nOMASCRIBE\nWINDOWS",
+          "wall_seconds": null,
+          "critical_fact_checks": {
+            "omascribe": false,
+            "windows": true,
+            "thursday_not_friday": true,
+            "budget3000yuan": true,
+            "unapproved": true,
+            "alice": false,
+            "nvidia": false,
+            "gtx1650": false,
+            "local_recording_and_minutes": true
+          },
+          "segments": 3,
+          "hypothesis_matches_live_units": true,
+          "hypothesis_sha256": "b3a132cf25b6e07f5754720b3a99afe367a066da1a790a85c5c002de4165cab8",
+          "worker_sha256": "62e876207e80b75816fb28bd88e0a1d2ec824c4a18673be00f6d31c0c97995a0",
+          "config": {
+            "decoder": "modified_beam_search",
+            "default_hotword_buffer_present": true,
+            "fallback": null,
+            "hotword_count": 5,
+            "hotword_update_mode": "recognizer",
+            "initial_load_ms": 1929,
+            "last_update_ms": 0,
+            "model_load_attempts": 1,
+            "stream_updates": 0,
+            "threads": 2
+          }
+        },
+        {
+          "name": "no_hotwords",
+          "hotwords": "",
+          "wall_seconds": 3.687,
+          "critical_fact_checks": {
+            "omascribe": false,
+            "windows": false,
+            "thursday_not_friday": true,
+            "budget3000yuan": true,
+            "unapproved": true,
+            "alice": false,
+            "nvidia": false,
+            "gtx1650": false,
+            "local_recording_and_minutes": false
+          },
+          "segments": 2,
+          "hypothesis_matches_live_units": false,
+          "hypothesis_sha256": "e508995c3d91547469c6053a6c6254de1d0e1d21a066dca17c0dd01f80c7c3b3",
+          "worker_sha256": "62e876207e80b75816fb28bd88e0a1d2ec824c4a18673be00f6d31c0c97995a0",
+          "config": {
+            "decoder": "greedy_search",
+            "default_hotword_buffer_present": false,
+            "fallback": null,
+            "hotword_count": 0,
+            "hotword_update_mode": "recognizer",
+            "initial_load_ms": 1778,
+            "last_update_ms": 0,
+            "model_load_attempts": 1,
+            "stream_updates": 0,
+            "threads": 2
+          }
+        },
+        {
+          "name": "explicit_compound_words",
+          "hotwords": "ALICE\nGTX 1650\nGTX1650\nNVIDIA\nOMASCRIBE\nOMA SCRIBE\nWINDOWS",
+          "wall_seconds": 4.171,
+          "critical_fact_checks": {
+            "omascribe": false,
+            "windows": true,
+            "thursday_not_friday": true,
+            "budget3000yuan": true,
+            "unapproved": true,
+            "alice": false,
+            "nvidia": false,
+            "gtx1650": false,
+            "local_recording_and_minutes": true
+          },
+          "segments": 3,
+          "hypothesis_matches_live_units": true,
+          "hypothesis_sha256": "b3a132cf25b6e07f5754720b3a99afe367a066da1a790a85c5c002de4165cab8",
+          "worker_sha256": "62e876207e80b75816fb28bd88e0a1d2ec824c4a18673be00f6d31c0c97995a0",
+          "config": {
+            "decoder": "modified_beam_search",
+            "default_hotword_buffer_present": true,
+            "fallback": null,
+            "hotword_count": 7,
+            "hotword_update_mode": "recognizer",
+            "initial_load_ms": 1676,
+            "last_update_ms": 0,
+            "model_load_attempts": 1,
+            "stream_updates": 0,
+            "threads": 2
+          }
+        }
+      ],
+      "private_hypotheses_uploaded": false
     }
   },
   "microphone_feature": {
@@ -1322,7 +1484,8 @@
     "audio_file_created": false,
     "speech_recognition_accuracy_claim": false,
     "existing_feature_evidence": "docs/evaluation/windows-microphone-preview-2026-10-27.json",
-    "interactive_local_app_left_open": true
+    "interactive_local_app_left_open": true,
+    "human_waveform_confirmed_at_followup": true
   },
   "retained_failures": [
     {
@@ -1352,14 +1515,22 @@
     {
       "scope": "Prior candidate3 spoken take",
       "failure": "Human confirmed prescribed reading but defaultToDesk take produced0segments; JS45s stop actually105.2799375s. Audio kept local. Wrong default is confirmed, not proved the sole cause. Preview/self-check do not close actual Realtek speech accuracy."
+    },
+    {
+      "scope": "Current6ac actual Realtek reading",
+      "failure": "Native35000ms stop/34400ms capture and ASR drain/3segments passed, but4/9 prompted critical checks failed: OmaScribe/Alice/NVIDIA/full GTX1650. Hotword decoder active5words/no fallback. Same PCM/worker original offline output identical; explicitly adding GTX1650/GTX1650 spaced/OMA SCRIBE still identical and did not repair names. Cannot claim semantic or general ASR acceptance."
+    },
+    {
+      "scope": "Current offline diagnostic harness",
+      "failure": "First completed original-repeat worker output could not be parsed by helper because Windows defaultGBK read_text was used on UTF8JSONL. Completed raw output retained, parsed asUTF8 without rerunning original worker; its wall time remains unknown. Not a product ASR process failure."
     }
   ],
   "limitations": [
     "No new full31 CPU/GPU matrix",
     "No installer/install-upgrade acceptance at6ac",
     "No actual allocationOOM fallback proven",
-    "Realtek prescribed physical voice pending",
-    "Actual local host has oldCUDA11.5 toolkit; child PATH/environment/module audits exclude SDK but host is not physically SDK-free"
+    "Actual local host has oldCUDA11.5 toolkit; child PATH/environment/module audits exclude SDK but host is not physically SDK-free",
+    "Actual Realtek capture/native stop passes; prompted critical names/model semantic acceptance fails5/9. No actual microphone+GPU same-engine concurrence in this isolated ASR-only take."
   ],
   "artifact_manifest": [
     {
@@ -1541,7 +1712,53 @@
       "path": "artifacts/run-realtek-driver-selfcheck.py",
       "bytes": 3366,
       "sha256": "180b0d14e80eaa217c0a76ac28e375b156e87271a1a32f78bd71c2b9d45632b0"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-spoken-01/result-public.json",
+      "bytes": 3704,
+      "sha256": "c56f689efaff3880ed90bcc4ae9c4953e9832cc33c7d7b132ea73a5a73576fc9"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-spoken-01/offline-controls-public.json",
+      "bytes": 3570,
+      "sha256": "bbb1e8e26e177e28d9f82cdc4b816c13262019eba32600589fa5c1175acddd2f"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-spoken-01/stdout.log",
+      "bytes": 1547,
+      "sha256": "2c9bfcd0f2969b508090c77b9b3f5fcb7b3662c173edbcce6e446a6efa160fde"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-spoken-01/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-spoken-01/launch.json",
+      "bytes": 1852,
+      "sha256": "08f5c6f72f5665d4b8e0a5b4f20104236c9dc1285cdc38e231de409075d36792"
+    },
+    {
+      "path": "artifacts/start-6ac-realtek-reading.py",
+      "bytes": 3079,
+      "sha256": "270eb16c57d31382eeed7fd32d36b0e8353ef3f6562894cd06e1e17c19566f3a"
+    },
+    {
+      "path": "artifacts/diagnose-6ac-realtek.py",
+      "bytes": 6614,
+      "sha256": "119e70c7465c3d913e91bc32037c86203e6cccf8d5441b8a592ca19cb6dde2da"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-diagnosis.log",
+      "bytes": 1255,
+      "sha256": "9ee8e8e68807318b7410ff0373d3714f29759609187f71b7f77c2897c66b19b9"
+    },
+    {
+      "path": "artifacts/windows-6ac-realtek-diagnosis-02.log",
+      "bytes": 3163,
+      "sha256": "e81b7bff86807aa0564a8faa762d2f9ab32718a57ed235ab93f55d8b15f26bc6"
     }
   ],
-  "privacy": "This report includes only fictional source text and aggregate hardware metrics. No actual human audio or actual-human transcript is uploaded."
+  "privacy": "This report includes only fictional source text and aggregate hardware metrics. No actual human audio or actual-human transcript is uploaded.",
+  "prior_evidence_commit": "6f2f98386dd1b79097ad54cfc853af3ee461d28c"
 }
