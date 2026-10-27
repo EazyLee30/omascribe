@@ -272,7 +272,7 @@ fn generate_inner(
     ];
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
-    let mut translation_repair = false;
+    let mut translation_repair: Option<language::Repair> = None;
     let terms = engine.terminology(meeting)?;
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
@@ -290,10 +290,10 @@ fn generate_inner(
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
         });
-        if translation_repair {
+        if let Some(plan) = &translation_repair {
             request["temperature"] = json!(0.0);
             request["response_format"] = json!({"type":"json_schema","json_schema":{
-                "name":"translation","strict":true,"schema":serde_json::from_str::<Value>(crate::translation::OUTPUT_SCHEMA)?}});
+                "name":"translation","strict":true,"schema":plan.schema()}});
         }
         let response = agent
             .post(&format!("{base}/v1/chat/completions"))
@@ -356,11 +356,12 @@ fn generate_inner(
                 error
             }
         })?;
-        let prose = if translation_repair {
-            language::repaired_body(&raw_body)
+        let prose = if let Some(plan) = &translation_repair {
+            plan.body(&raw_body)
         } else {
             writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
         };
+        let mut checked_prose = None;
         let normalized = prose
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -376,7 +377,10 @@ fn generate_inner(
                         .join(" "),
                     &body,
                 )?;
-                writer::document(&body, &context.segments, &snapshot.meeting.speaker_names)
+                let document =
+                    writer::document(&body, &context.segments, &snapshot.meeting.speaker_names)?;
+                checked_prose = Some(body);
+                Ok(document)
             })
             .and_then(|text| terms.normalize_draft(&text));
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
@@ -409,7 +413,8 @@ fn generate_inner(
             });
         attempts.push(json!({
             "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
-            "mode":if translation_repair {"translate_checked_prose"} else {"compose"},
+            "mode":if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
+            "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
             "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
@@ -432,11 +437,13 @@ fn generate_inner(
             }
             Err(error) if attempt == 0 => {
                 if error.to_string().contains("输出语言") {
-                    messages = language::repair_messages(
+                    let plan = language::repair_messages(
                         normalized.as_ref().map_err(|e| anyhow::anyhow!("{e}"))?,
+                        checked_prose.as_deref().context("Missing checked prose")?,
                         writer::chinese(snapshot, &prefs.minutes_language),
                     )?;
-                    translation_repair = true;
+                    messages = plan.messages.clone();
+                    translation_repair = Some(plan);
                 } else {
                     // Rebuild from original evidence for factual failures: small
                     // models otherwise repeat invalid attributions.

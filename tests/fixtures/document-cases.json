@@ -911,5 +911,31 @@
       "三万美元",
       "30000"
     ]
+  },
+  {
+    "name": "zh_recorded_mixed_prose_fidelity",
+    "focus": "",
+    "transcript": [
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
+      "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+      "邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+      "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "当迪大学",
+      "邓迪大学",
+      "(?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+    ],
+    "forbidden": [
+      "迪尔大学",
+      "(?:尽管|虽然)[^，。；,.;!?！？]{0,20}音乐已经结束"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
   }
 ]
