@@ -1,0 +1,71 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "app_sha256": "86ee08401c57b9aa2b53cd289b130961169939ef53d8e2f815700b414e87ab79",
+  "app_kind": "Source-built isolated debug ui-test application",
+  "component_id": "vulkan-windows-x86_64",
+  "component_version": "acceleration-ci-40367160891",
+  "device_probe": {
+    "passed": true,
+    "device_count": 1,
+    "gtx1650_observed": true,
+    "component_sha256": "2b98f4400eeb8e7fef01027d59ac72fc282aebecc98b6d0f26190910568c59c1"
+  },
+  "stages": [
+    {
+      "stage": "smoke",
+      "passed": true,
+      "checks": [
+        "Settings shows GTX 1650 and copied Vulkan component; detection alone did not activate it"
+      ],
+      "seconds": 7.312,
+      "report_sha256": "068a45fd3512fc0cac97449fa86eee7b43c257a55e6d444b63cf9443e03d88ef",
+      "identity_sha256": "83b2ea19f31436e880fa4ed9af4635e89054c25ec799acefed5ec639beb87518"
+    },
+    {
+      "stage": "enable",
+      "passed": true,
+      "checks": [
+        "Settings test activated Vulkan after product CPU/GPU fact, offload and speed checks"
+      ],
+      "seconds": 26.688,
+      "report_sha256": "3d5996ecc553309b6ae8ab40673f69a4eec5228798fd894ccfdaddd12818e6fe",
+      "identity_sha256": "d81fdee52f452a9440f77f408e8ed2590893f791c5b2afe6ff35dcff21a3fe18"
+    },
+    {
+      "stage": "restart",
+      "passed": true,
+      "checks": [
+        "New native app process restored the verified Vulkan activation"
+      ],
+      "seconds": 5.172,
+      "report_sha256": "4fc5af4ca18591da52b1a4f57d08cc35c4e2143b112b74553877830dae3ac5b0",
+      "identity_sha256": "6d3dd906548b4280230e126829070b8c1e22858cdae0c4365505fa312e5722b2"
+    },
+    {
+      "stage": "cpu",
+      "passed": true,
+      "checks": [
+        "Settings Use CPU cleared activation; actual CPU inference was not exercised"
+      ],
+      "seconds": 5.234,
+      "report_sha256": "10c9e9a49ddcc58355ab7365db60fac87a24084eca6c5d6b8b6059796a70c074",
+      "identity_sha256": "d8ed745a95afa05c202558b07d99fef4f84672d16f4db048701819b6b4f0e467"
+    }
+  ],
+  "selected_device": {
+    "id": "Vulkan0",
+    "name": "NVIDIA GeForce GTX 1650",
+    "total_mib": 4149,
+    "free_mib": 3558
+  },
+  "driver_evidence": "observed_and_named",
+  "screenshot_verified": false,
+  "passed": true,
+  "limitations": [
+    "Previously signed component copied and product-verified in an isolated root; fresh download and installation not tested.",
+    "Observed VulkanN enumeration index is not a stable hardware identity; system loader presence alone does not identify the vendor ICD.",
+    "Programmatic WebView2 DOM/invoke checks, not screenshot verification.",
+    "No physical microphone, GPU concurrency, subsequent CPU inference, installer upgrade or release acceptance."
+  ]
+}
