@@ -1,0 +1,1884 @@
+{
+  "schema": 1,
+  "issue": "P1 Windows cold ASR progress/admission",
+  "owner": "Windows",
+  "source_sha": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+  "base_checkpoint": "d5207e8e4dec4deb762158ebd9813cd032ed6ee4",
+  "pr": "https://github.com/EazyLee30/omascribe/pull/6",
+  "change": "Pin known Zipformer family to avoid encoder autodetection session; acknowledge first actually decoded200ms block and queued catch-up blocks immediately, retain300ms wall reporting for ordinary live flow.",
+  "scope": "Only twoASRfiles; main sharednotes/caption changes afterd520 are not included or claimed.",
+  "identity": {
+    "source": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "cdff25d39a9f9fe07ff638200400dfa24c2f26a6bdd3367220a3130b94cfd353",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "cli_sha256": "74334d4c2a73a2ff5ca6cce8b220c36a00f037dee8e84ac64117a3d28b38a100",
+    "asr_sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+    "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+    "scope": "d520 plus explicit model family and timely decoded-progress acknowledgements. CurrentCLI/Release-ASR rebuilt; vendorSDK/model/normalGPUinstallation reused. No newASR model execution before first original92s automaticCUDA replay."
+  },
+  "asr_source_files": [
+    {
+      "path": "crates/asr/src/main.rs",
+      "git_blob_sha256": "ca57687c2cc44f6a908ca916523f855324443487fb696b941c6fc4b8eac27b69",
+      "on_disk_sha256": "ca57687c2cc44f6a908ca916523f855324443487fb696b941c6fc4b8eac27b69"
+    },
+    {
+      "path": "crates/asr/src/decoder.rs",
+      "git_blob_sha256": "dc8c449e796da2efdc807c6541c0e75005eeadbf1d9f54becb62b6ba2a552e2b",
+      "on_disk_sha256": "65249badfa644a178033a79ae88a1202be50081b081b279efdf47b4bf74da4c9"
+    }
+  ],
+  "build_checks": {
+    "source": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+    "stages": [
+      {
+        "stage": "asr-tests",
+        "exit_code": 0,
+        "wall_seconds": 14.531
+      },
+      {
+        "stage": "asr-clippy",
+        "exit_code": 0,
+        "wall_seconds": 5.687
+      },
+      {
+        "stage": "asr-release",
+        "exit_code": 0,
+        "wall_seconds": 98.782
+      },
+      {
+        "stage": "cli-build",
+        "exit_code": 0,
+        "wall_seconds": 7.843
+      }
+    ],
+    "passed": true
+  },
+  "automatic_original92s": {
+    "passed": true,
+    "errors": [],
+    "settle": {
+      "budget_seconds": 90,
+      "completed": true,
+      "wait_ms": 39918,
+      "wall_ms": 131395
+    },
+    "final": {
+      "cursor": 16,
+      "sections": 1,
+      "segments": 16,
+      "translations": 16,
+      "runtime": {
+        "asr_rtf": 0.05523921195652173,
+        "diarization_busy": false,
+        "diarization_meeting_id": null,
+        "diarization_status": "",
+        "elapsed_ms": 92000,
+        "error": null,
+        "level": 0.0,
+        "meeting_id": "41c0822e-fa12-4d46-93a6-fde265fb3aca",
+        "notes_busy": false,
+        "notes_elapsed_ms": 16201,
+        "notes_status": "文档已同步 · 1 个章节",
+        "partial": "",
+        "paused": false,
+        "processed_ms": 92000,
+        "recording": false,
+        "transcribing": false,
+        "translation_busy": false,
+        "translation_status": ""
+      }
+    },
+    "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+    "full_original2500ms_gate_passed": true,
+    "latency": {
+      "samples": 640,
+      "largest_sample_gap_ms": 564,
+      "lag_p50_ms": 144.0,
+      "lag_p95_ms": 392.0,
+      "lag_max_ms": 2432,
+      "live_minutes_cursor": 8,
+      "live_translations": 15,
+      "peak_samples": [
+        {
+          "asr_rtf": 0.0,
+          "captured_ms": 2432,
+          "has_error": false,
+          "notes_busy": false,
+          "notes_cursor": 0,
+          "processed_ms": 0,
+          "recording": true,
+          "schema": 1,
+          "sections": 0,
+          "segments": 0,
+          "transcribing": true,
+          "translation_busy": false,
+          "translations": 0,
+          "wall_ms": 1422,
+          "worker": {
+            "idle_pid": null,
+            "leased": false,
+            "reuses": 0,
+            "starts": 0
+          }
+        },
+        {
+          "asr_rtf": 0.0,
+          "captured_ms": 2240,
+          "has_error": false,
+          "notes_busy": false,
+          "notes_cursor": 0,
+          "processed_ms": 0,
+          "recording": true,
+          "schema": 1,
+          "sections": 0,
+          "segments": 0,
+          "transcribing": true,
+          "translation_busy": false,
+          "translations": 0,
+          "wall_ms": 1220,
+          "worker": {
+            "idle_pid": null,
+            "leased": false,
+            "reuses": 0,
+            "starts": 0
+          }
+        },
+        {
+          "asr_rtf": 0.04871416666666667,
+          "captured_ms": 2624,
+          "has_error": false,
+          "notes_busy": false,
+          "notes_cursor": 0,
+          "processed_ms": 600,
+          "recording": true,
+          "schema": 1,
+          "sections": 0,
+          "segments": 0,
+          "transcribing": true,
+          "translation_busy": false,
+          "translations": 0,
+          "wall_ms": 1624,
+          "worker": {
+            "idle_pid": null,
+            "leased": false,
+            "reuses": 0,
+            "starts": 0
+          }
+        },
+        {
+          "asr_rtf": 0.0,
+          "captured_ms": 1984,
+          "has_error": false,
+          "notes_busy": false,
+          "notes_cursor": 0,
+          "processed_ms": 0,
+          "recording": true,
+          "schema": 1,
+          "sections": 0,
+          "segments": 0,
+          "transcribing": true,
+          "translation_busy": false,
+          "translations": 0,
+          "wall_ms": 1018,
+          "worker": {
+            "idle_pid": null,
+            "leased": false,
+            "reuses": 0,
+            "starts": 0
+          }
+        },
+        {
+          "asr_rtf": 0.0,
+          "captured_ms": 1792,
+          "has_error": false,
+          "notes_busy": false,
+          "notes_cursor": 0,
+          "processed_ms": 0,
+          "recording": true,
+          "schema": 1,
+          "sections": 0,
+          "segments": 0,
+          "transcribing": true,
+          "translation_busy": false,
+          "translations": 0,
+          "wall_ms": 811,
+          "worker": {
+            "idle_pid": null,
+            "leased": false,
+            "reuses": 0,
+            "starts": 0
+          }
+        }
+      ]
+    },
+    "secondary": {
+      "peak_before_first_llm_worker": true,
+      "peak_before_any_asr_processed": true,
+      "max_lag_after_asr_started_ms": 2024,
+      "max_lag_while_llm_leased_ms": 688,
+      "hypothesis_units_match_candidate2": true,
+      "scope": "Additional classification only; full unchanged2500ms gate still fails. Peak occurs during ASR cold initialization before an LLM starts, so not attributed to CUDA contention or this source change. No controlled cache/thermal comparison."
+    },
+    "asr_config": {
+      "decoder": "greedy_search",
+      "default_hotword_buffer_present": false,
+      "fallback": null,
+      "hotword_count": 0,
+      "hotword_update_mode": "recognizer",
+      "initial_load_ms": 1483,
+      "last_update_ms": 0,
+      "model_load_attempts": 1,
+      "model_type": "zipformer",
+      "stream_updates": 0,
+      "threads": 2
+    },
+    "worker_backends": [
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda"
+    ],
+    "module_audits": [
+      {
+        "pid": 25660,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 27140,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 22084,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 14916,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 9856,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 22544,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 10300,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 7024,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 26684,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 16880,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 21592,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 10456,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 19980,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 26984,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 27168,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      }
+    ],
+    "owned_children_after_exit": [],
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "auto",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "minutes_language": "zh",
+      "use_memory": false,
+      "use_knowledge": false
+    },
+    "experimental_live_catchup_and_incremental": false,
+    "post_capture_drain": "Default enabled, override unset",
+    "manual_translate_generate": false,
+    "clocks_or_threshold_changed": false,
+    "asr_prewarmed": false,
+    "scope": "First model execution of newly built worker; fresh process, original recording pipeline. OS/model caches not flushed or controlled; no cold-disk/all-host guarantee."
+  },
+  "offline_ab": {
+    "source": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+    "scope": "ABBAoffline old/new worker on original92s synthetic PCM plus old/new existing private RealtekPCM hotword compatibility. Model/OS cache was already exercised. Not cold disk, physical recapture or general accuracy acceptance. Actual human waveform/hypothesis never uploaded.",
+    "rows": [
+      {
+        "first_progress_ms": 6000,
+        "progress_events": 17,
+        "monotonic_progress": true,
+        "order": 1,
+        "worker": "old",
+        "condition": "original",
+        "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+        "initial_load_ms": 2299,
+        "whole_process_wall_ms": 7985,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 2299,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 92000
+      },
+      {
+        "first_progress_ms": 200,
+        "progress_events": 456,
+        "monotonic_progress": true,
+        "order": 2,
+        "worker": "new",
+        "condition": "original",
+        "worker_sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+        "initial_load_ms": 960,
+        "whole_process_wall_ms": 6890,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 960,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "model_type": "zipformer",
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 92000
+      },
+      {
+        "first_progress_ms": 200,
+        "progress_events": 456,
+        "monotonic_progress": true,
+        "order": 3,
+        "worker": "new",
+        "condition": "original",
+        "worker_sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+        "initial_load_ms": 1660,
+        "whole_process_wall_ms": 7812,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1660,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "model_type": "zipformer",
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 92000
+      },
+      {
+        "first_progress_ms": 4400,
+        "progress_events": 18,
+        "monotonic_progress": true,
+        "order": 4,
+        "worker": "old",
+        "condition": "original",
+        "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+        "initial_load_ms": 1724,
+        "whole_process_wall_ms": 7438,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "greedy_search",
+          "default_hotword_buffer_present": false,
+          "fallback": null,
+          "hotword_count": 0,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1724,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 92000
+      },
+      {
+        "first_progress_ms": 3400,
+        "progress_events": 10,
+        "monotonic_progress": true,
+        "order": 5,
+        "worker": "old",
+        "condition": "realtek",
+        "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+        "initial_load_ms": 1736,
+        "whole_process_wall_ms": 5421,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "modified_beam_search",
+          "default_hotword_buffer_present": true,
+          "fallback": null,
+          "hotword_count": 5,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1736,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 34400
+      },
+      {
+        "first_progress_ms": 200,
+        "progress_events": 170,
+        "monotonic_progress": true,
+        "order": 6,
+        "worker": "new",
+        "condition": "realtek",
+        "worker_sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+        "initial_load_ms": 1301,
+        "whole_process_wall_ms": 4672,
+        "hypothesis_units_match_prior_live": true,
+        "config": {
+          "decoder": "modified_beam_search",
+          "default_hotword_buffer_present": true,
+          "fallback": null,
+          "hotword_count": 5,
+          "hotword_update_mode": "recognizer",
+          "initial_load_ms": 1301,
+          "last_update_ms": 0,
+          "model_load_attempts": 1,
+          "model_type": "zipformer",
+          "stream_updates": 0,
+          "threads": 2
+        },
+        "processed_ms": 34400
+      }
+    ]
+  },
+  "prior_gate_failures": [
+    {
+      "source": "d5207e8e4dec4deb762158ebd9813cd032ed6ee4",
+      "lag_max_ms": 3648,
+      "notes_cursor": 16,
+      "settle_wait_ms": 38320,
+      "evidence": "https://github.com/EazyLee30/omascribe/blob/d9fe3019a569298dc0bc0a8dbc693ea83e68318f/docs/evaluation/windows-development-d5207e8-2026-10-27.json"
+    },
+    {
+      "source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+      "lag_max_ms": 2752,
+      "gate_passed": false,
+      "evidence_sha256": "df0f9a115cd7cd4b793e16c3b6606893bae5577099319682fd77e5845ae6e22b",
+      "evidence": {
+        "schema": 1,
+        "issue": "Windows cold ASR admission lag",
+        "owner": "Windows",
+        "source_sha": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+        "parent_checkpoint": "d5207e8e4dec4deb762158ebd9813cd032ed6ee4",
+        "change": "Explicit Zipformer model family prevents Sherpa1.13.8 from loading encoder once for auto-detection and again for actual recognizer. Diagnostics expose configured family.",
+        "source_files": [
+          {
+            "path": "crates/asr/src/main.rs",
+            "git_blob_sha256": "e8a185896697b91632c8cc1ad0e6db2d93b960d4d8fafde8baf182f9241f9df1",
+            "on_disk_sha256": "e8a185896697b91632c8cc1ad0e6db2d93b960d4d8fafde8baf182f9241f9df1",
+            "line_endings": "GitLF and Windows working-copy line endings may differ; both hashes recorded"
+          },
+          {
+            "path": "crates/asr/src/decoder.rs",
+            "git_blob_sha256": "dc8c449e796da2efdc807c6541c0e75005eeadbf1d9f54becb62b6ba2a552e2b",
+            "on_disk_sha256": "65249badfa644a178033a79ae88a1202be50081b081b279efdf47b4bf74da4c9",
+            "line_endings": "GitLF and Windows working-copy line endings may differ; both hashes recorded"
+          }
+        ],
+        "identity": {
+          "source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "cdff25d39a9f9fe07ff638200400dfa24c2f26a6bdd3367220a3130b94cfd353",
+            "target": "x86_64-pc-windows-msvc"
+          },
+          "cli_sha256": "ff3265936a28b80e4c4986c2358be18a5fe1d7ce230b7398cdd5359c1c5501ad",
+          "asr_sha256": "742f4fe6f0f6b5153514f60a411d46fcd671b8c51336297385e91fa9036eba6a",
+          "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+          "scope": "d520plus4-lineASRmodel-type small fix. CurrentCLI/Release-ASR rebuilt; vendorSDK/model/normalGPUinstallation reused. No newASR model execution before first original92s automaticCUDA replay."
+        },
+        "sdk_rebuilt": false,
+        "model_weights_changed": false,
+        "decoder_thread_policy_changed": false,
+        "upstream_evidence": {
+          "implementation": "https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/sherpa-onnx/csrc/online-transducer-model.cc#L133",
+          "model_config": "https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/sherpa-onnx/csrc/online-model-config.h#L28",
+          "small_model_metadata": "Read actual pinned localONNXprotobuf: model_type=zipformer, encoderSHA256db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+          "quality_model_metadata": {
+            "model": "zipformer-bilingual",
+            "metadata_model_type": "zipformer",
+            "pinned_url": "https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20/resolve/98590b7ed6443e77b714204da2757d75e1a642f4/encoder-epoch-99-avg-1.int8.onnx",
+            "content_range": "bytes 181886840-181895031/181895032",
+            "bytes_read": 8192,
+            "scope": "Exact protobuf model_type metadata entry in pinned ONNX tail. No full quality model download or inference acceptance claimed."
+          }
+        },
+        "build_checks": {
+          "source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+          "stages": [
+            {
+              "stage": "asr-tests",
+              "exit_code": 0,
+              "wall_seconds": 13.641
+            },
+            {
+              "stage": "asr-clippy",
+              "exit_code": 0,
+              "wall_seconds": 4.437
+            },
+            {
+              "stage": "asr-release",
+              "exit_code": 0,
+              "wall_seconds": 89.469
+            },
+            {
+              "stage": "cli-build",
+              "exit_code": 0,
+              "wall_seconds": 13.375
+            }
+          ],
+          "passed": true
+        },
+        "cuda_verification": {
+          "component_id": "cuda-windows-x86_64",
+          "reason": null,
+          "report": {
+            "cpu": {
+              "peak_rss_mib": 2002,
+              "requests_ms": [
+                5252,
+                5944
+              ],
+              "runtime_gpu_buffer_mib": null,
+              "startup_ms": 4747,
+              "total_ms": 15944
+            },
+            "faster": true,
+            "gpu": {
+              "peak_rss_mib": 1448,
+              "requests_ms": [
+                838,
+                866
+              ],
+              "runtime_gpu_buffer_mib": 1287.93,
+              "startup_ms": 2149,
+              "total_ms": 3854
+            }
+          },
+          "state": "active"
+        },
+        "original92s_live_replay": {
+          "passed": false,
+          "errors": [
+            "ValueError: ASR exceeded the scheduler's 2500 ms admission budget"
+          ],
+          "settle": {
+            "budget_seconds": 90,
+            "completed": true,
+            "wait_ms": 38706,
+            "wall_ms": 129992
+          },
+          "full_2500ms_gate_passed": false,
+          "latency": {
+            "samples": 635,
+            "largest_sample_gap_ms": 1130,
+            "lag_p50_ms": 248.0,
+            "lag_p95_ms": 456.0,
+            "lag_max_ms": 2752,
+            "live_minutes_cursor": 8,
+            "live_translations": 14,
+            "peak_samples": [
+              {
+                "asr_rtf": 0.0,
+                "captured_ms": 2752,
+                "has_error": false,
+                "notes_busy": false,
+                "notes_cursor": 0,
+                "processed_ms": 0,
+                "recording": true,
+                "schema": 1,
+                "sections": 0,
+                "segments": 0,
+                "transcribing": true,
+                "translation_busy": false,
+                "translations": 0,
+                "wall_ms": 1821,
+                "worker": {
+                  "idle_pid": null,
+                  "leased": false,
+                  "reuses": 0,
+                  "starts": 0
+                }
+              },
+              {
+                "asr_rtf": 0.0,
+                "captured_ms": 2560,
+                "has_error": false,
+                "notes_busy": false,
+                "notes_cursor": 0,
+                "processed_ms": 0,
+                "recording": true,
+                "schema": 1,
+                "sections": 0,
+                "segments": 0,
+                "transcribing": true,
+                "translation_busy": false,
+                "translations": 0,
+                "wall_ms": 1621,
+                "worker": {
+                  "idle_pid": null,
+                  "leased": false,
+                  "reuses": 0,
+                  "starts": 0
+                }
+              },
+              {
+                "asr_rtf": 0.0,
+                "captured_ms": 2368,
+                "has_error": false,
+                "notes_busy": false,
+                "notes_cursor": 0,
+                "processed_ms": 0,
+                "recording": true,
+                "schema": 1,
+                "sections": 0,
+                "segments": 0,
+                "transcribing": true,
+                "translation_busy": false,
+                "translations": 0,
+                "wall_ms": 1419,
+                "worker": {
+                  "idle_pid": null,
+                  "leased": false,
+                  "reuses": 0,
+                  "starts": 0
+                }
+              },
+              {
+                "asr_rtf": 0.0,
+                "captured_ms": 2176,
+                "has_error": false,
+                "notes_busy": false,
+                "notes_cursor": 0,
+                "processed_ms": 0,
+                "recording": true,
+                "schema": 1,
+                "sections": 0,
+                "segments": 0,
+                "transcribing": true,
+                "translation_busy": false,
+                "translations": 0,
+                "wall_ms": 1218,
+                "worker": {
+                  "idle_pid": null,
+                  "leased": false,
+                  "reuses": 0,
+                  "starts": 0
+                }
+              },
+              {
+                "asr_rtf": 0.0,
+                "captured_ms": 1984,
+                "has_error": false,
+                "notes_busy": false,
+                "notes_cursor": 0,
+                "processed_ms": 0,
+                "recording": true,
+                "schema": 1,
+                "sections": 0,
+                "segments": 0,
+                "transcribing": true,
+                "translation_busy": false,
+                "translations": 0,
+                "wall_ms": 1016,
+                "worker": {
+                  "idle_pid": null,
+                  "leased": false,
+                  "reuses": 0,
+                  "starts": 0
+                }
+              }
+            ]
+          },
+          "secondary": {
+            "peak_before_first_llm_worker": true,
+            "peak_before_any_asr_processed": true,
+            "max_lag_after_asr_started_ms": 688,
+            "max_lag_while_llm_leased_ms": 688,
+            "hypothesis_units_match_candidate2": true,
+            "scope": "Additional classification only; full unchanged2500ms gate still fails. Peak occurs during ASR cold initialization before an LLM starts, so not attributed to CUDA contention or this source change. No controlled cache/thermal comparison."
+          },
+          "asr_config": {
+            "decoder": "greedy_search",
+            "default_hotword_buffer_present": false,
+            "fallback": null,
+            "hotword_count": 0,
+            "hotword_update_mode": "recognizer",
+            "initial_load_ms": 1485,
+            "last_update_ms": 0,
+            "model_load_attempts": 1,
+            "model_type": "zipformer",
+            "stream_updates": 0,
+            "threads": 2
+          },
+          "final": {
+            "cursor": 16,
+            "sections": 1,
+            "segments": 16,
+            "translations": 16,
+            "runtime": {
+              "asr_rtf": 0.04845648043478261,
+              "diarization_busy": false,
+              "diarization_meeting_id": null,
+              "diarization_status": "",
+              "elapsed_ms": 92000,
+              "error": null,
+              "level": 0.0,
+              "meeting_id": "edd447a4-ae79-4c47-ba51-fc55ae9e239e",
+              "notes_busy": false,
+              "notes_elapsed_ms": 16160,
+              "notes_status": "文档已同步 · 1 个章节",
+              "partial": "",
+              "paused": false,
+              "processed_ms": 92000,
+              "recording": false,
+              "transcribing": false,
+              "translation_busy": false,
+              "translation_status": ""
+            }
+          },
+          "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+          "worker_backends": [
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda",
+            "cuda"
+          ],
+          "module_audits": [
+            {
+              "pid": 13608,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 10320,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 3104,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 20168,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 10100,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 16980,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 27248,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 18000,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 24236,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 18448,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 22160,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 16620,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 4940,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 26816,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            },
+            {
+              "pid": 26908,
+              "modules": [
+                {
+                  "name": "cublas64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cublaslt64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "cudart64_12.dll",
+                  "source": "component"
+                },
+                {
+                  "name": "nvcuda.dll",
+                  "source": "system_driver"
+                }
+              ]
+            }
+          ],
+          "owned_children_after_exit": [],
+          "same_original_profile_and_pcm": true,
+          "experimental_live_catchup_and_incremental": false,
+          "post_capture_drain": "Default, environment override removed",
+          "manual_translate_generate": false,
+          "asr_prewarm": false,
+          "scope": "First model execution of newly built ASRworker. Fresh process, normal main recording/replay path and unchanged clocks. Model/OS caches were not flushed or controlled; not a cold-disk or all-host latency guarantee."
+        },
+        "offline_ab": {
+          "source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+          "scope": "ABBAoffline old/new worker on original92s synthetic PCM plus old/new existing private RealtekPCM hotword compatibility. Model/OS cache was already exercised. Not cold disk, physical recapture or general accuracy acceptance. Actual human waveform/hypothesis never uploaded.",
+          "rows": [
+            {
+              "order": 1,
+              "worker": "old",
+              "condition": "original",
+              "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+              "initial_load_ms": 2270,
+              "whole_process_wall_ms": 9000,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "greedy_search",
+                "default_hotword_buffer_present": false,
+                "fallback": null,
+                "hotword_count": 0,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 2270,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 92000
+            },
+            {
+              "order": 2,
+              "worker": "new",
+              "condition": "original",
+              "worker_sha256": "742f4fe6f0f6b5153514f60a411d46fcd671b8c51336297385e91fa9036eba6a",
+              "initial_load_ms": 1030,
+              "whole_process_wall_ms": 6406,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "greedy_search",
+                "default_hotword_buffer_present": false,
+                "fallback": null,
+                "hotword_count": 0,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 1030,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "model_type": "zipformer",
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 92000
+            },
+            {
+              "order": 3,
+              "worker": "new",
+              "condition": "original",
+              "worker_sha256": "742f4fe6f0f6b5153514f60a411d46fcd671b8c51336297385e91fa9036eba6a",
+              "initial_load_ms": 1032,
+              "whole_process_wall_ms": 6500,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "greedy_search",
+                "default_hotword_buffer_present": false,
+                "fallback": null,
+                "hotword_count": 0,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 1032,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "model_type": "zipformer",
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 92000
+            },
+            {
+              "order": 4,
+              "worker": "old",
+              "condition": "original",
+              "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+              "initial_load_ms": 1676,
+              "whole_process_wall_ms": 6859,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "greedy_search",
+                "default_hotword_buffer_present": false,
+                "fallback": null,
+                "hotword_count": 0,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 1676,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 92000
+            },
+            {
+              "order": 5,
+              "worker": "old",
+              "condition": "realtek",
+              "worker_sha256": "d184f36765962a408d70c591c867f36b00493f917ca95063940773fa5b322c01",
+              "initial_load_ms": 1811,
+              "whole_process_wall_ms": 4453,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "modified_beam_search",
+                "default_hotword_buffer_present": true,
+                "fallback": null,
+                "hotword_count": 5,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 1811,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 34400
+            },
+            {
+              "order": 6,
+              "worker": "new",
+              "condition": "realtek",
+              "worker_sha256": "742f4fe6f0f6b5153514f60a411d46fcd671b8c51336297385e91fa9036eba6a",
+              "initial_load_ms": 900,
+              "whole_process_wall_ms": 3609,
+              "hypothesis_units_match_prior_live": true,
+              "config": {
+                "decoder": "modified_beam_search",
+                "default_hotword_buffer_present": true,
+                "fallback": null,
+                "hotword_count": 5,
+                "hotword_update_mode": "recognizer",
+                "initial_load_ms": 900,
+                "last_update_ms": 0,
+                "model_load_attempts": 1,
+                "model_type": "zipformer",
+                "stream_updates": 0,
+                "threads": 2
+              },
+              "processed_ms": 34400
+            }
+          ]
+        },
+        "remaining_scope": [
+          "No new physical microphone capture, GUIStopButton or installer acceptance at this source",
+          "No full32corpus or CPU/GPUmatrix rerun",
+          "Qualitymodel exact metadata verified; actual large-model inference not exercised locally",
+          "PriorRealtek critical names remained wrong under both old/new replay; this change reduces startup only",
+          "Sharednotes fixes afterd520 are not claimed by this branch or these measurements"
+        ],
+        "harness_preparation_failure": {
+          "kind": "Harness identity-preparation failure, not model/capture test",
+          "source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+          "observed_cli_compile_revision": "d5207e8e4dec4deb762158ebd9813cd032ed6ee4",
+          "failure": "Initial4-lineASR build reused unchanged core and its cached compile-revision stamp. prepare-asr-type-regression identity assertion rejected it before CUDA verification or any new ASR model execution.",
+          "retained_partial_folder": "artifacts/windows-asr-type-da7b655",
+          "unexecuted_initial_asr_sha256": "319873f01660297261339c33f0dc65f55fbb6a16b417acafd57594742a9a8e8c",
+          "remedy": "Refreshed core/build.rs filemtime only, byte content unchanged, to force same-source build identity regeneration. Current snapshot uses distinct-02folder. No threshold, source, SDK/model or activation-state change."
+        },
+        "all_affected_product_checks_passed": false,
+        "all_harness_preparation_attempts_passed": false,
+        "release_eligible": false,
+        "artifact_manifest": [
+          {
+            "path": "artifacts/windows-asr-type-build-summary.json",
+            "bytes": 491,
+            "sha256": "57c2945d71e59843ae64baeb1e6f92be416d22c47637cf6162ab5c9fbc13c6f4"
+          },
+          {
+            "path": "artifacts/windows-asr-type-check-summary.json",
+            "bytes": 371,
+            "sha256": "03ae3e2364bc82ab32df03c6bfeabf049a78867d0d12c2e619101d0b4fbc0c7c"
+          },
+          {
+            "path": "artifacts/windows-asr-type-asr-tests.log",
+            "bytes": 828,
+            "sha256": "0605b3fe5b040c5e7978ec891890b18efa2d1e9d0ab84a0cd7fd6fd364a5cd39"
+          },
+          {
+            "path": "artifacts/windows-asr-type-asr-clippy.log",
+            "bytes": 182,
+            "sha256": "834940d7382e82afebb8293431b9bcfae089ea6f87fd7bcc58fc4208e65e4283"
+          },
+          {
+            "path": "artifacts/windows-asr-type-asr-release.log",
+            "bytes": 185,
+            "sha256": "8b10fa7d8da82dbc253b4cebbbc5d2c9f354a2715be6823c2355a534fd1e4ba1"
+          },
+          {
+            "path": "artifacts/windows-asr-type-cli-build.log",
+            "bytes": 123,
+            "sha256": "a1c6600c6cdbff0b4a80bf01a8a23e7c23088f920c35aeb34f09d13f61772487"
+          },
+          {
+            "path": "artifacts/windows-asr-type-cuda-verify.log",
+            "bytes": 412,
+            "sha256": "b9f2aac6891e22f73c764cfae0d2a3c02ca8b42acb89a28d448911f4bbf8224f"
+          },
+          {
+            "path": "artifacts/windows-asr-type-p1.log",
+            "bytes": 375,
+            "sha256": "dba3bb76a70304aa6c34f77e542b823c1db82bbc25f27e3cee8412315ff62a4f"
+          },
+          {
+            "path": "artifacts/windows-asr-type-p1-diagnosis.log",
+            "bytes": 893,
+            "sha256": "2356f57e805b04d893b7d5e17811585828c3835f4d29e9bd48815f4758282143"
+          },
+          {
+            "path": "artifacts/windows-asr-type-ab.log",
+            "bytes": 3245,
+            "sha256": "12df5f90de2e039857681c9b187953996bc94a172ac5aa644013f1962c3ee0c7"
+          },
+          {
+            "path": "artifacts/windows-asr-type-ab/result.json",
+            "bytes": 4684,
+            "sha256": "0c509083d476893807efabf95c78ad3d43a85dd669eb8d93c0274bffd15f5b46"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-verify-01.json",
+            "bytes": 4394,
+            "sha256": "adc766903914c35a72ca1db1a7ed3f5ac75a12c3c5f44b62720b2edc91c48694"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01.json",
+            "bytes": 57393,
+            "sha256": "79685e4ac62a99344968e2763a83e7aa6d7415ca385a325071c8dce960268d36"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01-stdout.json",
+            "bytes": 19750,
+            "sha256": "64ac1bfd948b11daf16c98b4f97f0d7888c9dff799f61e11a6dd42e39acfcf4a"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01-stderr.log",
+            "bytes": 2433,
+            "sha256": "e95f10d8fb4cd87df93f41da4ee6a2f35af0547470c3a7a7eda57af8cd88f532"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01-telemetry.jsonl",
+            "bytes": 205117,
+            "sha256": "a67c7f672f8d4c35c0a50d437f1e3b3b3af1723e565e8d7856ed67c699cf168a"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01-diagnosis.json",
+            "bytes": 35102,
+            "sha256": "eee56667fc32c82a292bfc8b6e0985393bc567970fe418a38db834cbc9a077ff"
+          },
+          {
+            "path": "artifacts/windows-asr-type-gpu/cli-settle-01-last-generation.json",
+            "bytes": 16563,
+            "sha256": "c0d5b296e35002a92813563bae368f3aaeff7114d051db569b05c892b6cb17f8"
+          },
+          {
+            "path": "artifacts/windows-asr-type-preparation-01/failure.json",
+            "bytes": 837,
+            "sha256": "af6cdd12ee35bff9f67221e99f1e94736760fc39128720aee6cd937fc7b9ca05"
+          },
+          {
+            "path": "artifacts/build-asr-model-type.py",
+            "bytes": 1593,
+            "sha256": "b06c55b0ad37e78d19da3f498af7d3d496f88726426202616a48d71da8b0802d"
+          },
+          {
+            "path": "artifacts/prepare-asr-type-regression.py",
+            "bytes": 2106,
+            "sha256": "5adeb989b0a5e59aa060715ee18261c262df684baadacef4dfcedb039b0dd7bd"
+          },
+          {
+            "path": "artifacts/run-asr-type-checks.py",
+            "bytes": 893,
+            "sha256": "32376639bcb8060c85c3a609f475d9bc613bb4aaed31a87896dcfb042b245e19"
+          },
+          {
+            "path": "artifacts/run-asr-type-p1.py",
+            "bytes": 1602,
+            "sha256": "530d2792779834b76fcd1f2f2e28628d659c92e13e958c7d18941ea12fea8d1f"
+          },
+          {
+            "path": "artifacts/diagnose-asr-type-settle.py",
+            "bytes": 3395,
+            "sha256": "63751b527ca205d01eaae1b6f670ae4e07e0c104ecdc197476722a2b6f593cc6"
+          },
+          {
+            "path": "artifacts/windows-asr-type-cli-lifecycle.py",
+            "bytes": 13330,
+            "sha256": "34027296452fa6e0101e2904732a9cb4bccf12e059bc709aca40a0b660adc5f4"
+          },
+          {
+            "path": "artifacts/benchmark-asr-type-ab.py",
+            "bytes": 3281,
+            "sha256": "7d8353d82fbf45791d4378ec196ff73a7802ece72222c7a4072e42a1887e538c"
+          },
+          {
+            "path": "artifacts/read-onnx-metadata.py",
+            "bytes": 903,
+            "sha256": "b486948f4272703755609e6a51fd342e6f65d3e0ee927caa79b090eeefc3762d"
+          },
+          {
+            "path": "artifacts/verify-quality-model-metadata.py",
+            "bytes": 1133,
+            "sha256": "58d0c9f549f34e9a191a203a10425bed66264e95880c7db6aae79d8514143b63"
+          }
+        ],
+        "privacy": "Actual RealtekPCM/hypothesis only in private local artifacts. PublicAB contains counts/config/hashes/equalityflags only."
+      }
+    }
+  ],
+  "model_family_evidence": {
+    "model": "zipformer-bilingual",
+    "metadata_model_type": "zipformer",
+    "pinned_url": "https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20/resolve/98590b7ed6443e77b714204da2757d75e1a642f4/encoder-epoch-99-avg-1.int8.onnx",
+    "content_range": "bytes 181886840-181895031/181895032",
+    "bytes_read": 8192,
+    "scope": "Exact protobuf model_type metadata entry in pinned ONNX tail. No full quality model download or inference acceptance claimed."
+  },
+  "upstream": "https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/sherpa-onnx/csrc/online-transducer-model.cc#L133",
+  "gpu_normal_activation": {
+    "reused_real_installation": true,
+    "earlier_source": "da7b655c495fe05dcffc22aeb5d80c358791b2e9",
+    "normal_test": {
+      "component_id": "cuda-windows-x86_64",
+      "reason": null,
+      "report": {
+        "cpu": {
+          "peak_rss_mib": 2002,
+          "requests_ms": [
+            5252,
+            5944
+          ],
+          "runtime_gpu_buffer_mib": null,
+          "startup_ms": 4747,
+          "total_ms": 15944
+        },
+        "faster": true,
+        "gpu": {
+          "peak_rss_mib": 1448,
+          "requests_ms": [
+            838,
+            866
+          ],
+          "runtime_gpu_buffer_mib": 1287.93,
+          "startup_ms": 2149,
+          "total_ms": 3854
+        }
+      },
+      "state": "active"
+    },
+    "recalibrated_after_ack_only_change": false,
+    "scope": "Actual normal installation/certificate reused directly; no copied or forged markers. GPU code/model/runtime/profile unchanged. Actual current CUDA workers/modules audited in replay."
+  },
+  "all_affected_product_checks_passed": true,
+  "release_eligible": false,
+  "limitations": [
+    "Single local live-pipeline replay, uncontrolled OS/model cache",
+    "Qualitymodel exactmetadata verified; large-model inference not tested locally",
+    "No new physical recording or GUI-stop acceptance at thisSHA",
+    "ExistingRealtek critical names remain wrong and offlinehypotheses unchanged; no general ASRaccuracyclaim",
+    "No full32matrix, SDKrebuild, signing, installer or release dispatch"
+  ],
+  "artifact_manifest": [
+    {
+      "path": "artifacts/windows-asr-progress-build-summary.json",
+      "bytes": 490,
+      "sha256": "693cd845ddda395dc9ca31d2489af65c159571055deeb0ef9bbb917152b098d6"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-check-summary.json",
+      "bytes": 272,
+      "sha256": "c8b0a319b5acca4dc02e8a1d1e35d1ec966b6ef458f31d46f86a8228fde1ae80"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-asr-tests.log",
+      "bytes": 828,
+      "sha256": "8ec76325670b454c1770c472c83b67a1c9db0b9a74f450fc9841fe2119443bb2"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-asr-clippy.log",
+      "bytes": 182,
+      "sha256": "1e297c6c72445315726c332919f0e66d44e0479d02ebc92aaf33fdcb8b2f4f08"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-asr-release.log",
+      "bytes": 185,
+      "sha256": "ac563093b64bcc68dac09d75c0d5e728cf87ce24dca1520b4ed5e455502cd9a4"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-cli-build.log",
+      "bytes": 122,
+      "sha256": "10bf3b37c7457e42790ce55f39be389fbcdb6c8bc69ad321ee73b108051f05d4"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-p1.log",
+      "bytes": 615,
+      "sha256": "462fdc23ee63fddbf746d8eef29381e0a1989796ff86302e078dda313f38631e"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-p1-diagnosis.log",
+      "bytes": 845,
+      "sha256": "6e0f2308451d7f3f2de42e4a0b6d6e19c56eab5fd4962ee0b6e332ffff934b7f"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-ab.log",
+      "bytes": 3713,
+      "sha256": "2989f277e2a1526a3af61dfca7fcf7c56e10acfb64e79ed9a8c658201f1e66a6"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-ab/result.json",
+      "bytes": 5278,
+      "sha256": "86f4a2e6366b0a592657a4ae0745aa2b920753ce1f3340c26f285092944f2ee1"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01.json",
+      "bytes": 56426,
+      "sha256": "cbc89d68e436eb407e18e57468888377e02e16b2d32b670de1380ee374aaa9dd"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01-stdout.json",
+      "bytes": 19750,
+      "sha256": "ef17f19bd8c929fb37a14518ac9e400665429f17d3e2462b9dd1eda7ae21347a"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01-stderr.log",
+      "bytes": 2678,
+      "sha256": "c2e3dcdf7640974f3459d6bbf20a8e649662bca864fca9d1578a37f137e30f7e"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01-telemetry.jsonl",
+      "bytes": 206781,
+      "sha256": "6547ecf7ebe77c50d02d9935e1787fabea81f41a2241dae29b6332512a437cbd"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01-diagnosis.json",
+      "bytes": 35061,
+      "sha256": "c08de561d200119a8afb431bd756814508cd4294dc1c6ec8868b72f3c282f455"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-gpu/cli-settle-01-last-generation.json",
+      "bytes": 16562,
+      "sha256": "3b8a1ccf780f0600c704fefa45c2f6db964513b5da4f803a3c9e0bbe2773cf22"
+    },
+    {
+      "path": "artifacts/windows-asr-type-da7b655-02/validation.json",
+      "bytes": 29426,
+      "sha256": "df0f9a115cd7cd4b793e16c3b6606893bae5577099319682fd77e5845ae6e22b"
+    },
+    {
+      "path": "artifacts/build-asr-progress.py",
+      "bytes": 1614,
+      "sha256": "d8669adb6b4b5da79b529b1c9d977a36515cb72e996e3b7d0d585c8642934594"
+    },
+    {
+      "path": "artifacts/prepare-asr-progress-regression.py",
+      "bytes": 2198,
+      "sha256": "8d83856994c0d7309c8ebf8aab3e80786197fba603f0565265d28057b34e9853"
+    },
+    {
+      "path": "artifacts/run-asr-progress-checks.py",
+      "bytes": 854,
+      "sha256": "de31b240e392cc08453016012fba4e9508422fbdfa0c0ac50787f3ae2c78f5f0"
+    },
+    {
+      "path": "artifacts/run-asr-progress-p1.py",
+      "bytes": 1614,
+      "sha256": "c2134a555ac734b0ec9cfc46598d60464d1322f7120fa1526b3bebebd11daa12"
+    },
+    {
+      "path": "artifacts/diagnose-asr-progress-settle.py",
+      "bytes": 3399,
+      "sha256": "6fe49bd75ea44d230a222bf111559d8d69e250b39407869ec41110c7fd1ce201"
+    },
+    {
+      "path": "artifacts/windows-asr-progress-cli-lifecycle.py",
+      "bytes": 13342,
+      "sha256": "66f0819fcedebc23055ca8474712f01196f0acf06e5d8b130c789b5fff5d5105"
+    },
+    {
+      "path": "artifacts/benchmark-asr-progress-ab.py",
+      "bytes": 3590,
+      "sha256": "17abc50bf28ee21436b911c52a2795ac4f9045577afc72f19e16e7ba6da9293a"
+    }
+  ],
+  "privacy": "Actual human audio/hypotheses remain private local; only fictional source and human-clip equality/aggregate metrics included."
+}
