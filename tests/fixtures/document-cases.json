@@ -338,6 +338,24 @@
     ]
   },
   {
+    "name": "zh_report_delivery_variant",
+    "focus": "**Nora** **latency report**",
+    "preferences": { "minutes_language": "zh" },
+    "transcript": [
+      "Nora will deliver the latency report on Friday. The deployment date is not approved yet."
+    ],
+    "required": ["Nora", "周五|星期五", "交付|提交|送交", "未.*批准|尚未.*批准"],
+    "forbidden": ["发布延迟报告", "周四|星期四"],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": ["Nora", "周五|星期五", "交付|提交|送交", "未.*批准|尚未.*批准"],
+        "forbidden": ["发布延迟报告", "周四|星期四"]
+      }
+    ]
+  },
+  {
     "name": "zh_physical_report_ownership",
     "focus": "**original report** **Morgan**",
     "preferences": {

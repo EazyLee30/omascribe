@@ -193,7 +193,7 @@ pub(super) struct Repair {
     pub input: String,
     pub grammar: Option<String>,
     roles: String,
-    predicates: BTreeMap<usize, &'static str>,
+    predicates: BTreeMap<usize, String>,
 }
 impl Repair {
     pub fn source_predicates(&self) -> usize {
@@ -201,7 +201,7 @@ impl Repair {
     }
     /// Replace an already protected name terminal, not arbitrary prose. The
     /// predicate comes from a bounded source relation, never from model output.
-    pub fn anchor_predicate(&mut self, actor: &str, predicate: &'static str) -> bool {
+    pub fn anchor_predicate(&mut self, actor: &str, predicate: &str) -> bool {
         let Some(index) = self.names.iter().position(|name| name == actor) else {
             return false;
         };
@@ -216,7 +216,7 @@ impl Repair {
             return false;
         }
         *grammar = grammar.replace(&needle, &format!("{anchored} prose"));
-        self.predicates.insert(index, predicate);
+        self.predicates.insert(index, predicate.into());
         true
     }
     pub fn system(&self, language: &str) -> String {

@@ -12,7 +12,7 @@ pub(crate) enum Mismatch {
 impl Mismatch {
     pub(crate) fn hint(self) -> &'static str {
         match self {
-            Self::Delivery => " 该句的动作是发送：send 译作“发送”。报告名称与发送动作分开翻译，保留原期限。Keep the sending action and the report title separately.",
+            Self::Delivery => " 报告是送交事项：按原文保留send、deliver或submit的动作、报告名称和期限。Keep the stated delivery action separate from the report title.",
             Self::Responsibility => " 该句是任务分工：owns the report 译作“负责报告”。保留同一负责人、报告名称、交付动作和期限。Use responsibility for this task-and-delivery context.",
         }
     }
@@ -77,7 +77,7 @@ fn task_delivery(tail: &str) -> bool {
 
 pub(crate) struct Anchor {
     pub actor: String,
-    pub predicate: &'static str,
+    pub predicate: String,
 }
 
 /// A repair may constrain an explicit source predicate, never infer a role
@@ -152,6 +152,20 @@ pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
                 }
                 _ => return None,
             };
+            // Bind a directly stated weekday to the sending action. Leaving
+            // its position unconstrained can turn "on Thursday" into a report
+            // about last Thursday even when the verb itself is correct.
+            let mut predicate = predicate.to_owned();
+            if mismatch == Mismatch::Delivery {
+                static DAY: OnceLock<Regex> = OnceLock::new();
+                if let Some(day) = DAY.get_or_init(|| Regex::new(r"(?i)\bon\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b").unwrap()).captures(tail) {
+                    let day = match day[1].to_ascii_lowercase().as_str() {
+                        "monday" => "周一", "tuesday" => "周二", "wednesday" => "周三",
+                        "thursday" => "周四", "friday" => "周五", "saturday" => "周六", _ => "周日",
+                    };
+                    predicate = format!("将于{day}{}", predicate.strip_prefix('将').unwrap());
+                }
+            }
             Some(Anchor {
                 actor: actor.into(),
                 predicate,
@@ -271,19 +285,19 @@ mod tests {
                 "Morgan will send the release report on Thursday.",
                 Mismatch::Delivery,
                 "Morgan",
-                "将发送",
+                "将于周四发送",
             ),
             (
                 "Taylor will submit the budget report on Monday.",
                 Mismatch::Delivery,
                 "Taylor",
-                "将提交",
+                "将于周一提交",
             ),
             (
                 "Nora will deliver the technical report on Friday.",
                 Mismatch::Delivery,
                 "Nora",
-                "将交付",
+                "将于周五交付",
             ),
             (
                 "Riley owns the latency report and will deliver it on Thursday.",

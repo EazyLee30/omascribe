@@ -22,7 +22,7 @@ fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::R
             notes::RelationMismatch::Responsibility,
         ] {
             for anchor in notes::report_anchors(input, relation) {
-                plan.anchor_predicate(&anchor.actor, anchor.predicate);
+                plan.anchor_predicate(&anchor.actor, &anchor.predicate);
             }
         }
     }
@@ -51,7 +51,7 @@ impl ReportRepair {
         let mut plan = names.repair(input)?;
         if !anchors
             .iter()
-            .all(|a| plan.anchor_predicate(&a.actor, a.predicate))
+            .all(|a| plan.anchor_predicate(&a.actor, &a.predicate))
         {
             return None;
         }
