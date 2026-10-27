@@ -1,0 +1,533 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "fixture_git_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+  "scope": "Assistant-led review of fictional seeded transcripts and generated outputs. No human reviewer; not real ASR or release acceptance.",
+  "reconciliation": "Disagreement or ambiguous wording remains UNCERTAIN. Cases 1–11 had one full review and an independent caption-only cross-check; cases 12–33 had two independent full reviews.",
+  "outcome_counts": {
+    "UNCERTAIN": 9,
+    "FAIL": 13,
+    "PASS": 11
+  },
+  "cases": [
+    {
+      "index": 1,
+      "case": "zh_budget_guess",
+      "primary": "FAIL",
+      "independent": "存疑",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "f44cc2a3957ffd3420682ff7ff27b423e5ac9a7857ef5af821b134c8968db33c"
+      ]
+    },
+    {
+      "index": 2,
+      "case": "en_owner_and_deadline",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "76d8fadc1a2ba6d0c4d2eec2c7f4924d166aa40110293336fe60bbb818e94214"
+      ]
+    },
+    {
+      "index": 3,
+      "case": "zh_correction",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "a5985f2f3094fb6f32772002d01b3b8842cf2d1be9ac13a7cf3d67ababd16d35"
+      ]
+    },
+    {
+      "index": 4,
+      "case": "bilingual_scope",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "f746ecf071fb5e742653dea5b725457cb4fe6bd049f836064a500443c0273975"
+      ]
+    },
+    {
+      "index": 5,
+      "case": "zh_calendar_citations",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "ffcbfe85bd03ae892e267eb8cca87fb1237c7aefac8432bd34d2752c819f755a"
+      ]
+    },
+    {
+      "index": 6,
+      "case": "zh_connected_minutes",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "c538587aa01a5c4957dc9aa697fb46e4533b5adb6f3745ecf37214b1a98f2150"
+      ]
+    },
+    {
+      "index": 7,
+      "case": "zh_product_spelling",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "ec08ed15a750425a386b90088c4db02f1bdb379a5ac08594a09764a5862a430b"
+      ]
+    },
+    {
+      "index": 8,
+      "case": "zh_empty_greetings",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "NA",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "efed400ecc383802544e6add2ab695fb9f05a2f5af085760295fc9d2ab363e07"
+      ]
+    },
+    {
+      "index": 9,
+      "case": "zh_phased_correction",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "4f6b53e14fd63d890a4388e22e13130a3f19a2f319f616e6dff6c1c57617638f",
+        "097ee730688dd1814a0a7eebe8d21988aa65b8bbdb1aa353dac3de037d69ab0e"
+      ]
+    },
+    {
+      "index": 10,
+      "case": "zh_named_speakers",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "5a1e9d5e5ee71c45a9f720bd8c8d0de2d53a36c591c4db99112f70239e1b6276"
+      ]
+    },
+    {
+      "index": 11,
+      "case": "en_minutes_from_zh",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "captions only",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": null,
+      "phase_snapshot_sha256": [
+        "afa3cc12fc23bb4929238513849e626834772af11181bc8ad4c4cbf175bf9173"
+      ]
+    },
+    {
+      "index": 12,
+      "case": "zh_minutes_from_en",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "FAIL",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "UNCERTAIN",
+      "phase_snapshot_sha256": [
+        "e34dba81435349e747b1ae25724bfc0524369e5542138fd0a25a4dec7ac0db42"
+      ]
+    },
+    {
+      "index": 13,
+      "case": "zh_long_context_state",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "2cded024c3bd12396af246ae6317c3336b3e2c0c94a71feece975affc75a9f94",
+        "8c3672493a8d237ac21cece0af0d95f1735c1aeb274c46e0d5fc9158491d2090"
+      ]
+    },
+    {
+      "index": 14,
+      "case": "zh_human_paragraph_protected",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "7dc531bf4e0cce01ec976913719415ab7715f819aa56206ff8f83a47efc2eb3c",
+        "1880f43c60d4b358faadc18728a6b2971405f0714ab92367cae46981063a5cf3"
+      ]
+    },
+    {
+      "index": 15,
+      "case": "zh_note_name_spelling",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "239b2057bd3c143bdab598451923cc53f4e4f6f23e7e4e3cb00eff38a4211ba6"
+      ]
+    },
+    {
+      "index": 16,
+      "case": "en_generic_note_name",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "1ab7ecc39b4a843fb21663cabb1b07a5ae9f8b968c6d125dfec5bb1c4178d35d"
+      ]
+    },
+    {
+      "index": 17,
+      "case": "zh_name_context_is_not_evidence",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "0ae90ec80890563c752f42919ef0edb10892dbc98dbad68f82cd5a95bd6a073c"
+      ]
+    },
+    {
+      "index": 18,
+      "case": "zh_noisy_name_no_added_topics",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "FAIL",
+      "phase_snapshot_sha256": [
+        "ac4176569c6e8629cbc5494b8ff9962bc874a568b9ee100442dd8210a54563b6"
+      ]
+    },
+    {
+      "index": 19,
+      "case": "zh_windows_gpu_keyword_lines",
+      "primary": "PASS",
+      "independent": "确认",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "07d7acd34c0c0ce7f3cd6d0e07f9a2225a26d7dff02ae18deb17d8c5640071d7"
+      ]
+    },
+    {
+      "index": 20,
+      "case": "en_incremental_separate_topics",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "ff380c4c65619d964a1eeb64c6905f9b73458e3768aa247dbd2771890a88a0c5",
+        "26ed2d30f25b2a34f1328262fd9461a315bf3ee5cb2c6e491315fa2d9803793b",
+        "0f08cb7a43f11387701bffe0187c9cd0b1738adbc9b6136094a1eb109f12311c",
+        "a760fce04d20ceeae98c95d1f7200a0a24df00f2a122e86a636fa8216ee167a6"
+      ]
+    },
+    {
+      "index": 21,
+      "case": "zh_incremental_withdrawal",
+      "primary": "FAIL",
+      "independent": "确认",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "fabfb18a57039f3920c2200894e4abdef489af39e5db817c5e52bba598e1e806",
+        "4ee129127cb336c6088e36d91aa84c7013ab4593677f4917d50e43f976cb84b0",
+        "ca9a26d3b86cb8cf6f9a262065004aed57a20cdd7297b5808ea1715c17a59348"
+      ]
+    },
+    {
+      "index": 22,
+      "case": "en_incremental_completion",
+      "primary": "UNCERTAIN",
+      "independent": "存疑",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "UNCERTAIN",
+      "phase_snapshot_sha256": [
+        "af95545ae77aff6dbe6a366304bb39c689516748d0d5c8482efd076bc3b71384",
+        "50989c5399e5a44dd06678649b908d97ecbe3b8486ec81cf3bd4219e5da8b0b4"
+      ]
+    },
+    {
+      "index": 23,
+      "case": "en_sparse_unapproved",
+      "primary": "UNCERTAIN",
+      "independent": "UNCERTAIN",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "1551afc33fb542ea4cd885c432cc0f37f41da3358458d4837db6b76a565cf62a"
+      ]
+    },
+    {
+      "index": 24,
+      "case": "en_sparse_unapproved_passive",
+      "primary": "PASS",
+      "independent": "PASS",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "a61151f7e9adeef7bf701240ed21c590b1838f1731166e311b8a09c617ae4543"
+      ]
+    },
+    {
+      "index": 25,
+      "case": "en_explicit_meeting_closure",
+      "primary": "PASS",
+      "independent": "PASS",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "0f7970d5969f6176faa3547c1ce781b7ee0db7556648db073184be185b19297e"
+      ]
+    },
+    {
+      "index": 26,
+      "case": "en_budget_invoice_same_amount",
+      "primary": "PASS",
+      "independent": "UNCERTAIN",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "da84449c18ad1901e948c056fc69f6e3c8222eee94eeca2f363265938ac2a9f3"
+      ]
+    },
+    {
+      "index": 27,
+      "case": "en_completion_independent_pending",
+      "primary": "UNCERTAIN",
+      "independent": "UNCERTAIN",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "UNCERTAIN",
+      "phase_snapshot_sha256": [
+        "ec38e544799e277ef9e4a44957d774a782ebcc0a0d4a3950d69e24e1371470b9",
+        "61c8a8937b23af7ccd8d45f8a63e750c3e1ef15877308e90a7a10a13debec9c8"
+      ]
+    },
+    {
+      "index": 28,
+      "case": "zh_incremental_completion",
+      "primary": "FAIL",
+      "independent": "FAIL",
+      "conservative_verdict": "FAIL",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "f19d07ba171f3f6a31583355269ee389fd9b93ce262f6d819b0791464c426cd6",
+        "7c1316331096adf7580d4ab0131ec36c16c59720a73b9a88f8dfaa73e110d3ed"
+      ]
+    },
+    {
+      "index": 29,
+      "case": "zh_windows_long_acceptance",
+      "primary": "UNCERTAIN",
+      "independent": "FAIL",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "UNCERTAIN",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "7dd6237e0236542ef6cb224640f962c89b8a24ded44377a9f0440fc6dd62c5a5"
+      ]
+    },
+    {
+      "index": 30,
+      "case": "en_windows_long_acceptance",
+      "primary": "UNCERTAIN",
+      "independent": "FAIL",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "c68e67868ce9fd6dc76434ffdcfb4d558ffe4fd5e775c34f5d99029c77c360b4"
+      ]
+    },
+    {
+      "index": 31,
+      "case": "zh_windows_uppercase_asr",
+      "primary": "FAIL",
+      "independent": "UNCERTAIN",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "FAIL",
+      "caption": "FAIL",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "e7781961ebbf95a77b82d4b144e343fce4d0bd403912e2d32eb5ea5cc7add694"
+      ]
+    },
+    {
+      "index": 32,
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "primary": "UNCERTAIN",
+      "independent": "UNCERTAIN",
+      "conservative_verdict": "UNCERTAIN",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "UNCERTAIN",
+      "caption": "UNCERTAIN",
+      "citation_identity": "PASS",
+      "citation_relevance": "UNCERTAIN",
+      "phase_snapshot_sha256": [
+        "6b61cb0c6264d2bb9567a1a1a9e2776c6a492be8d607460567e36c6f7fd8bfff"
+      ]
+    },
+    {
+      "index": 33,
+      "case": "zh_mixed_script_task_owner",
+      "primary": "PASS",
+      "independent": "PASS",
+      "conservative_verdict": "PASS",
+      "independent_scope": "minutes, captions and citations",
+      "minutes": "PASS",
+      "caption": "PASS",
+      "citation_identity": "PASS",
+      "citation_relevance": "PASS",
+      "phase_snapshot_sha256": [
+        "4117c02c79a732a3589d342ebe09d0ad84be1f4636a516986c4e10c36b0dd9c1"
+      ]
+    }
+  ],
+  "review_evidence_sha256": {
+    "windows-candidate6-corpus-review-cases-01-11.json": "3c2bdf2a2781a6e90584246eedd0782f6fe919c3d9d2d750b13e27a57f3082e7",
+    "windows-candidate6-caption-independent-review-01-11.json": "872d14511b39ba9db848280ecb1a5a2e54110d2179c5baf1c6df8c934e95741c",
+    "windows-candidate6-corpus-review-cases-12-22.json": "4349c84f8ff8b0b4df6ca5e1ce831429c3e7bfb839b3dc5a040979a75675fd96",
+    "windows-candidate6-independent-review-12-22.json": "d5a3371fc2081734eb44928bff01d757b98da0a47c076596c3d6c5de3eae75ef",
+    "windows-candidate6-corpus-review-cases-23-33.json": "7e9f81595583c85df8e4fb0b8a4f67f0e20fca1dc2ed75ee397c2a9230e36973",
+    "windows-candidate6-independent-review-23-33.json": "d4cfabc197217b8e97c37fa35c740446e65e83fdcc7025d5ff47cee54f1bfdb2"
+  },
+  "limitations": [
+    "Semantic assessments are subjective and not independent human approval.",
+    "Citation identity and semantic support are distinct.",
+    "Case 1 tense and case 32 concessive modality are uncertain.",
+    "Automatic patterns passed 33/33 but are not semantic acceptance."
+  ]
+}
