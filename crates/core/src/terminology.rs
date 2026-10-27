@@ -346,7 +346,7 @@ impl Terms {
         // Multiple/changed ownership needs field identity; do not demand obsolete
         // owners merely because their names occurred in an earlier passage.
         static CHANGED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-        let changed = CHANGED.get_or_init(|| Regex::new(r"(?i)no longer|not responsible|changed?|corrected|reassigned|不再负责|负责人.{0,12}(?:改|换|变)").unwrap());
+        let changed = CHANGED.get_or_init(|| Regex::new(r"(?i)no longer|not responsible|changed?|corrected|reassigned|不再负责|改由|转由|负责人.{0,12}(?:改|换|变)").unwrap());
         let sole_owner = owners.len() == 1 && !changed.is_match(transcript);
         let missing: Vec<_> = self
             .spellings(transcript)
@@ -379,6 +379,7 @@ fn source_owner_names(text: &str) -> Vec<String> {
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static FUTURE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static RETAINED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static MIXED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
     let mut names = Vec::new();
     // Title-case subjects with a stated future task are also name spellings.
@@ -388,10 +389,15 @@ fn source_owner_names(text: &str) -> Vec<String> {
     // "owns". This is an explicit task subject, never a name inferred from a
     // note or a bare title-cased word elsewhere in the sentence.
     let retained=RETAINED.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+(?:keeps|retains)\s+(?:the\s+)?(?:[A-Z][a-z]+\s+)?deadline\b").unwrap());
+    // Chinese has no word boundary before an adjacent Latin name. Require an
+    // explicit responsibility predicate and a full ASCII token; notes alone
+    // never create an owner or an alias for a different name in the source.
+    let mixed=MIXED.get_or_init(||Regex::new(r"(?:^|[^A-Za-z0-9_])(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:[ \t]+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})[ \t]*(?:将[ \t]*)?负责").unwrap());
     for c in re
         .captures_iter(text)
         .chain(future.captures_iter(text))
         .chain(retained.captures_iter(text))
+        .chain(mixed.captures_iter(text))
     {
         let name = &c["name"];
         if [
@@ -411,7 +417,8 @@ fn source_owner_names(text: &str) -> Vec<String> {
             "Everybody",
             "Management",
         ]
-        .contains(&name)
+        .iter()
+        .any(|word| word.eq_ignore_ascii_case(name))
         {
             continue;
         }
@@ -539,6 +546,59 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn mixed_script_responsibility_preserves_only_stated_current_names() {
+        let terms = Terms::new(&[note("Alice负责检查")], &[]);
+        let source = "Alice负责检查显卡。";
+        assert!(
+            terms
+                .validate_writer_names(source, "负责检查显卡。")
+                .is_err(),
+            "the writer must not silently drop the explicit task owner"
+        );
+        assert_eq!(terms.spellings(source), ["Alice"]);
+        assert!(terms.caption_spellings(source).iter().any(|n| n == "Alice"));
+        assert!(terms
+            .validate_writer_names(source, "Alice负责检查显卡。")
+            .is_ok());
+        assert!(!preserves_owner_spelling(
+            source,
+            "Check the graphics card."
+        ));
+        assert!(preserves_owner_spelling(
+            source,
+            "Alice will check the graphics card."
+        ));
+        assert_eq!(terms.normalize(source), source);
+
+        let other = "请Bob负责检查显卡。";
+        assert_eq!(terms.spellings(other), ["Bob"]);
+        assert!(terms
+            .validate_writer_names(other, "Bob负责检查显卡。")
+            .is_ok());
+        assert!(terms
+            .validate_writer_names(other, "Alice负责检查显卡。")
+            .is_err());
+        for ordinary in [
+            "Alice的显卡需要检查。",
+            "WE负责检查显卡。",
+            "The Team负责检查显卡。",
+            "preAlice负责检查显卡。",
+        ] {
+            assert!(terms.spellings(ordinary).is_empty(), "{ordinary}");
+        }
+        for withdrawn in [
+            "Alice不再负责检查显卡，改由Bob接手。",
+            "Alice负责检查显卡，现在改由Bob接手。",
+        ] {
+            assert!(
+                terms
+                    .validate_writer_names(withdrawn, "Bob接手显卡检查。")
+                    .is_ok(),
+                "{withdrawn}"
+            );
+        }
+    }
     #[test]
     fn explicit_source_owner_keeps_spelling_without_guessing_transliterations_or_old_owners() {
         let terms = Terms::new(&[], &[]);

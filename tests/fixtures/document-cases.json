@@ -1148,5 +1148,30 @@
         ]
       }
     ]
+  },
+  {
+    "name": "zh_mixed_script_task_owner",
+    "focus": "Alice负责检查",
+    "transcript": [
+      "Alice负责检查显卡。"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "Alice",
+      "检查|核对|检验"
+    ],
+    "max_sections": 1,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "Alice",
+          "check|inspect|examin|verif"
+        ]
+      }
+    ]
   }
 ]
