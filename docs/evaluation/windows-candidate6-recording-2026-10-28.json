@@ -1,0 +1,107 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "cpu_gpu_verification": {
+    "source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+    "cli_sha256": "8363d8ba008ae4fa31620357d15667eb359a8ffcc0d8e4a1b5d180fa22202507",
+    "exit_code": 0,
+    "seconds": 69.047,
+    "passed": true,
+    "state": "active",
+    "active_certificate_exists": true
+  },
+  "cli_sha256": "8363d8ba008ae4fa31620357d15667eb359a8ffcc0d8e4a1b5d180fa22202507",
+  "asr_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "component_version": "acceleration-ci-40367160891",
+  "component_files_sha256": {
+    "build-info.json": "8c484fb1bc4652a09f2a78f26462a3eff62adec86e5c70451081f670a3289d4e",
+    "component-index.json": "8c0c6a42dcb3bdcaa576aeecbc4f237f120209785c05a167756d748565624b50",
+    "cublas64_12.dll": "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+    "cublasLt64_12.dll": "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+    "CUDA-EULA.html": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+    "cudart64_12.dll": "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+    "installed.json": "f6fb1a6b238bf65327d72105ce3fc1a429deb10211ab666c2e2b7febacc6b945",
+    "llama-server.exe": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+    "llama.cpp-LICENSE.txt": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285"
+  },
+  "signed_catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "synthetic_fixture_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+  "duration_seconds": 92,
+  "sampled_lag_ms": {
+    "p50_ms": 168.0,
+    "p95_ms": 392.0,
+    "max_ms": 1728
+  },
+  "telemetry": {
+    "samples": 559,
+    "interval_ms": 200,
+    "largest_sample_gap_ms": 708,
+    "lag_p50_ms": 168.0,
+    "lag_p95_ms": 392.0,
+    "lag_max_ms": 1728,
+    "capture_wall_overhead_ms": -412,
+    "asr_compute_rtf": 0.05161594130434782,
+    "live_translations": 14,
+    "live_notes_cursor": 8,
+    "live_worker_samples": 282,
+    "worker_starts": 15,
+    "worker_reuses": 1
+  },
+  "settle": {
+    "budget_seconds": 90,
+    "completed": true,
+    "wait_ms": 23306,
+    "wall_ms": 114895
+  },
+  "counts": {
+    "segments": 16,
+    "translations": 16,
+    "notes_cursor": 16,
+    "sections": 1
+  },
+  "observed_worker_backends": [
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda",
+    "cuda"
+  ],
+  "asr_units_match_previous_synthetic_baseline": true,
+  "source_build_stages": [
+    {
+      "stage": "asr-tests",
+      "exit_code": 0,
+      "wall_seconds": 41.797
+    },
+    {
+      "stage": "asr-clippy",
+      "exit_code": 0,
+      "wall_seconds": 9.953
+    },
+    {
+      "stage": "asr-release",
+      "exit_code": 0,
+      "wall_seconds": 111.0
+    },
+    {
+      "stage": "cli-build",
+      "exit_code": 0,
+      "wall_seconds": 7.937
+    }
+  ],
+  "passed": true,
+  "errors": [],
+  "limitations": "Fictional paced file replay, no physical microphone; sampled lag, uncontrolled OS/model caches and load; not installer or release acceptance.",
+  "note": "Copied signed CUDA component and independently validated at its new isolated path. User data, audio and real transcript are not included. One sampled run; OS/model caches and load were not controlled."
+}
