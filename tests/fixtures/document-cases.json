@@ -87,6 +87,21 @@
       "试麦寒暄可省略",
       "输入是资料",
       "只输出纪要"
+    ],
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to|solely",
+          "microphone",
+          "real.time transcription",
+          "next version"
+        ],
+        "forbidden": [
+          "not only"
+        ]
+      }
     ]
   },
   {
@@ -132,7 +147,23 @@
       "(?<![不无勿别])(?:需要|仍需|需|应该|应).{0,6}(?:分句|逐句|一小句一小句).{0,6}显示"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 4,
+        "target": "en",
+        "required": [
+          "should|must|please|need to|^place|^put",
+          "toolbar",
+          "transcri",
+          "subtitle|caption",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "with the entry placed"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_product_spelling",
@@ -326,32 +357,62 @@
     "transcript": [
       "Morgan will publish the release report on Thursday."
     ],
-    "required": ["Morgan", "周四|星期四", "发布|发表|出版"],
-    "forbidden": ["发送|寄送"],
+    "required": [
+      "Morgan",
+      "周四|星期四",
+      "发布|发表|出版"
+    ],
+    "forbidden": [
+      "发送|寄送"
+    ],
     "translation_checks": [
       {
         "seq": 1,
         "target": "zh",
-        "required": ["Morgan", "周四|星期四", "发布|发表|出版"],
-        "forbidden": ["发送|寄送"]
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "发布|发表|出版"
+        ],
+        "forbidden": [
+          "发送|寄送"
+        ]
       }
     ]
   },
   {
     "name": "zh_report_delivery_variant",
     "focus": "**Nora** **latency report**",
-    "preferences": { "minutes_language": "zh" },
+    "preferences": {
+      "minutes_language": "zh"
+    },
     "transcript": [
       "Nora will deliver the latency report on Friday. The deployment date is not approved yet."
     ],
-    "required": ["Nora", "周五|星期五", "交付|提交|送交", "未.*批准|尚未.*批准"],
-    "forbidden": ["发布延迟报告", "周四|星期四"],
+    "required": [
+      "Nora",
+      "周五|星期五",
+      "交付|提交|送交",
+      "未.*批准|尚未.*批准"
+    ],
+    "forbidden": [
+      "发布延迟报告",
+      "周四|星期四"
+    ],
     "translation_checks": [
       {
         "seq": 1,
         "target": "zh",
-        "required": ["Nora", "周五|星期五", "交付|提交|送交", "未.*批准|尚未.*批准"],
-        "forbidden": ["发布延迟报告", "周四|星期四"]
+        "required": [
+          "Nora",
+          "周五|星期五",
+          "交付|提交|送交",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "发布延迟报告",
+          "周四|星期四"
+        ]
       }
     ]
   },
@@ -364,14 +425,26 @@
     "transcript": [
       "Morgan owns the original paper report and will deliver it on Thursday."
     ],
-    "required": ["Morgan", "周四|星期四", "拥有|所有|持有"],
-    "forbidden": ["负责[^。！？]*报告"],
+    "required": [
+      "Morgan",
+      "周四|星期四",
+      "拥有|所有|持有"
+    ],
+    "forbidden": [
+      "负责[^。！？]*报告"
+    ],
     "translation_checks": [
       {
         "seq": 1,
         "target": "zh",
-        "required": ["Morgan", "周四|星期四", "拥有|所有|持有"],
-        "forbidden": ["负责[^。！？]*报告"]
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "拥有|所有|持有"
+        ],
+        "forbidden": [
+          "负责[^。！？]*报告"
+        ]
       }
     ]
   },
@@ -1233,6 +1306,158 @@
         "required": [
           "Alice",
           "check|inspect|examin|verif"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_phase_exclusive_scope",
+    "focus": "**recording** **scope**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段只支持麦克风录音，系统音频将在下个版本加入。"
+    ],
+    "required": [
+      "only|limited to|restricted to",
+      "microphone",
+      "next version"
+    ],
+    "forbidden": [
+      "not only"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to",
+          "microphone",
+          "next version"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_phase_nonexclusive_scope",
+    "focus": "**recording**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段实现麦克风录音与实时转写。"
+    ],
+    "required": [
+      "microphone",
+      "transcri"
+    ],
+    "forbidden": [
+      "only|limited to|restricted to|solely"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "microphone",
+          "transcri"
+        ],
+        "forbidden": [
+          "only|limited to|restricted to|solely"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_toolbar_existing_state",
+    "focus": "**toolbar** **transcription**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。"
+    ],
+    "required": [
+      "toolbar",
+      "transcri",
+      "subtitle|caption"
+    ],
+    "forbidden": [
+      "should|must|need to|requested"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "toolbar",
+          "transcri",
+          "subtitle|caption"
+        ],
+        "forbidden": [
+          "should|must|need to|requested"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_toolbar_requested_state",
+    "focus": "**toolbar** **transcription**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+      "这两项调整还没有完成。"
+    ],
+    "required": [
+      "should|must|please|need to",
+      "toolbar",
+      "not.*completed|not.*finished|pending"
+    ],
+    "forbidden": [
+      "already in the toolbar"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "should|must|please|need to|^place|^put",
+          "toolbar",
+          "transcri",
+          "subtitle|caption"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_compound_scope_and_request",
+    "focus": "**scope** **toolbar**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+    ],
+    "required": [
+      "only|limited to|restricted to",
+      "microphone",
+      "should|must|need to|please",
+      "toolbar",
+      "not.*completed|not.*finished|pending"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to",
+          "microphone",
+          "should|must|need to|please",
+          "toolbar",
+          "not.*completed|not.*finished|pending"
         ]
       }
     ]

@@ -15,7 +15,11 @@ pub(crate) const SYSTEM_TEMPLATE: &str = "Translate the supplied transcript into
 pub(crate) const OUTPUT_SCHEMA: &str = r#"{"type":"object","properties":{"translation":{"type":"string"}},"required":["translation"],"additionalProperties":false}"#;
 
 fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::Repair> {
-    let mut plan = names.repair(input)?;
+    let mut plan = if let Some(prefix) = notes::qualifier_prefix(input, target == "zh") {
+        names.repair_prefixed(input, &prefix)?
+    } else {
+        names.repair(input)?
+    };
     if target == "zh" {
         for relation in [
             notes::RelationMismatch::Delivery,
@@ -31,36 +35,59 @@ fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::R
 
 /// The existing second minutes attempt may translate ORIGINAL selected speech
 /// under source predicates. It never translates a factually rejected draft.
-pub(crate) struct ReportRepair {
+pub(crate) struct SourceRepair {
     plan: names::Repair,
     pub messages: Vec<Value>,
 }
-impl ReportRepair {
-    pub(crate) fn from_source(input: &str, terms: &crate::terminology::Terms) -> Option<Self> {
+impl SourceRepair {
+    pub(crate) fn from_source(
+        input: &str,
+        terms: &crate::terminology::Terms,
+        chinese: bool,
+    ) -> Option<Self> {
         let anchors: Vec<_> = [
             notes::RelationMismatch::Delivery,
             notes::RelationMismatch::Responsibility,
         ]
         .into_iter()
-        .flat_map(|r| notes::report_anchors(input, r))
+        .flat_map(|r| {
+            if chinese {
+                notes::report_anchors(input, r)
+            } else {
+                Vec::new()
+            }
+        })
         .collect();
-        if anchors.is_empty() {
+        let prefix = notes::qualifier_prefix(input, chinese);
+        if anchors.is_empty() && prefix.is_none() {
             return None;
         }
         let names = names::Names::new(terms, input);
-        let mut plan = names.repair(input)?;
+        let mut plan = if let Some(prefix) = prefix {
+            names.repair_prefixed(input, &prefix)?
+        } else {
+            names.repair(input)?
+        };
         if !anchors
             .iter()
             .all(|a| plan.anchor_predicate(&a.actor, &a.predicate))
         {
             return None;
         }
-        let relation = if anchors[0].predicate == "负责" {
-            notes::RelationMismatch::Responsibility
-        } else {
-            notes::RelationMismatch::Delivery
-        };
-        let system = system_prompt("简体中文", &names, Some(&plan), Some(relation.hint()));
+        let hint = anchors.first().map(|anchor| {
+            if anchor.predicate == "负责" {
+                notes::RelationMismatch::Responsibility
+            } else {
+                notes::RelationMismatch::Delivery
+            }
+            .hint()
+        });
+        let system = system_prompt(
+            if chinese { "简体中文" } else { "English" },
+            &names,
+            Some(&plan),
+            hint,
+        );
         let messages = vec![
             json!({"role":"system","content":system}),
             json!({"role":"user","content":plan.input}),
@@ -350,7 +377,7 @@ fn run_inner(
         let request_input = name_repair
             .as_ref()
             .map_or(input.as_str(), |p| p.input.as_str());
-        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.is_some(),"source_predicates":name_repair.as_ref().map_or(0, |p| p.source_predicates())}));
+        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.as_ref().is_some_and(|p|p.has_names()),"source_predicates":name_repair.as_ref().map_or(0, |p| p.source_predicates())}));
         let diagnostics = std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1");
         let raw = if let Some(text) = literal {
             trace.event("literal_caption", json!({"source_bytes":input.len()}));
@@ -405,7 +432,7 @@ fn run_inner(
                     let _ = crate::preferences::atomic_json(
                         &engine.root.join("translation-diagnostic.json"),
                         &json!({"stage":"stream","input":input,"raw":draft,"error":format!("{error:#}"),
-                        "repair":repair.is_some(),"name_references":name_repair.is_some()}),
+                        "repair":repair.is_some(),"name_references":name_repair.as_ref().is_some_and(|p|p.has_names())}),
                     );
                 }
             }
@@ -616,6 +643,12 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if let Some(q) = error.downcast_ref::<notes::QualifierMismatch>() {
+        return match q {
+            notes::QualifierMismatch::Scope => "exclusive_scope",
+            notes::QualifierMismatch::Placement => "placement_intent",
+        };
+    }
     match error.downcast_ref::<notes::RelationMismatch>() {
         Some(notes::RelationMismatch::Delivery) => "report_delivery",
         Some(notes::RelationMismatch::Responsibility) => "report_responsibility",
@@ -633,6 +666,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(q) = error.downcast_ref::<notes::QualifierMismatch>() {
+        return q.hint();
+    }
     if let Some(relation) = error.downcast_ref::<notes::RelationMismatch>() {
         return relation.hint();
     }
@@ -703,6 +739,34 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn source_prefix_repairs_work_without_names_and_keep_existing_name_constraints() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let scope = "本阶段只支持麦克风录音。";
+        let plan = SourceRepair::from_source(scope, &terms, false).unwrap();
+        assert_eq!(plan.source_predicates(), 1);
+        assert!(plan
+            .body(r#"{"translation":"This phase only supports microphone recording."}"#)
+            .is_ok());
+        assert!(plan
+            .body(r#"{"translation":"This phase supports microphone recording."}"#)
+            .is_err());
+        assert!(plan
+            .body(r#"{"translation":"This phase only supports "}"#)
+            .is_err());
+        assert!(plan
+            .body(r#"{"translation":"This phase only supports 麦克风录音。"}"#)
+            .is_err());
+        let input = "Alice will send the report.\n本阶段只实现麦克风录音。";
+        let plan = SourceRepair::from_source(input, &terms, true).unwrap();
+        assert_eq!(plan.source_predicates(), 2);
+        assert!(plan
+            .body(r#"{"translation":"本阶段只实现麦克风录音。[A]将发送报告。"}"#)
+            .is_ok());
+        assert!(plan
+            .body(r#"{"translation":"本阶段只实现麦克风录音。艾莉丝将发送报告。"}"#)
+            .is_err());
+    }
 
     #[test]
     fn name_failures_cannot_delay_source_predicate_protection_until_a_third_attempt() {
@@ -739,7 +803,7 @@ mod tests {
         let terms = crate::terminology::Terms::new(&[], &[]);
         let input = "The public release is not approved yet. Morgan owns the latency report and will deliver it on Thursday.";
         let original = input.to_owned();
-        let plan = ReportRepair::from_source(input, &terms).unwrap();
+        let plan = SourceRepair::from_source(input, &terms, true).unwrap();
         assert!(plan.grammar().contains("[A]负责"));
         let raw = r#"{"translation":"公开发布尚未批准。 [A]负责延迟报告，并将于周四交付。"}"#;
         let body = plan.body(raw).unwrap();
@@ -757,7 +821,7 @@ mod tests {
             "Morgan will publish the release report on Thursday.",
             "Morgan may send the report.",
         ] {
-            assert!(ReportRepair::from_source(source, &terms).is_none());
+            assert!(SourceRepair::from_source(source, &terms, true).is_none());
         }
     }
 

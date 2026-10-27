@@ -7,7 +7,31 @@ use serde_json::json;
 use std::{collections::BTreeMap, ops::Range, sync::OnceLock};
 
 pub(super) struct Names(Vec<String>);
+fn json_grammar(orders: &str) -> String {
+    format!(
+        r#"root ::= "{{" space "\"translation\"" space ":" space "\"" translation "\"" space "}}" space
+translation ::= {orders}
+prose ::= ([^"\\\x00-\x1f\x5b\x5d] | [\\] (["\\/bfnrt] | "u" [0-9a-fA-F]{{4}}))*
+space ::= [ \t\r\n]*
+"#
+    )
+}
 impl Names {
+    pub fn repair_prefixed(&self, source: &str, prefix: &str) -> Option<Repair> {
+        let mut plan = if self.0.is_empty() && !source.contains(['[', ']']) {
+            Repair {
+                names: Vec::new(),
+                input: source.into(),
+                grammar: Some(json_grammar("prose")),
+                roles: String::new(),
+                predicates: BTreeMap::new(),
+                prefix: None,
+            }
+        } else {
+            self.repair(source)?
+        };
+        plan.prefix(prefix).then_some(plan)
+    }
     pub fn new(terms: &Terms, source: &str) -> Self {
         static LITERAL: OnceLock<Vec<Regex>> = OnceLock::new();
         let source = terms.normalize(source);
@@ -149,14 +173,7 @@ impl Names {
             // before the required ID, leaving sampling unable to finish.
             // Use an explicit JSON grammar: prose accepts valid escapes but
             // neither raw quotes/control bytes nor unaccounted name brackets.
-            Some(format!(
-                r#"root ::= "{{" space "\"translation\"" space ":" space "\"" translation "\"" space "}}" space
-translation ::= {}
-prose ::= ([^"\\\x00-\x1f\x5b\x5d] | [\\] (["\\/bfnrt] | "u" [0-9a-fA-F]{{4}}))*
-space ::= [ \t\r\n]*
-"#,
-                orders.join(" | ")
-            ))
+            Some(json_grammar(&orders.join(" | ")))
         } else {
             None
         };
@@ -185,6 +202,7 @@ space ::= [ \t\r\n]*
             grammar,
             roles: roles.join(", "),
             predicates: BTreeMap::new(),
+            prefix: None,
         })
     }
 }
@@ -194,10 +212,40 @@ pub(super) struct Repair {
     pub grammar: Option<String>,
     roles: String,
     predicates: BTreeMap<usize, String>,
+    prefix: Option<String>,
 }
 impl Repair {
+    pub fn has_names(&self) -> bool {
+        !self.names.is_empty()
+    }
+    fn prefix(&mut self, prefix: &str) -> bool {
+        let Some(grammar) = &mut self.grammar else {
+            return false;
+        };
+        let Some(line) = grammar
+            .lines()
+            .find(|l| l.starts_with("translation ::= "))
+            .map(str::to_owned)
+        else {
+            return false;
+        };
+        let rhs = line.strip_prefix("translation ::= ").unwrap();
+        // A source-level prefix may precede a formerly leading name clause.
+        let rhs = if rhs.starts_with("prose") {
+            rhs.to_owned()
+        } else {
+            format!("prose {rhs}")
+        };
+        let replacement = format!(
+            "translation ::= {} ({rhs})",
+            serde_json::to_string(prefix).expect("source prefix")
+        );
+        *grammar = grammar.replacen(&line, &replacement, 1);
+        self.prefix = Some(prefix.into());
+        true
+    }
     pub fn source_predicates(&self) -> usize {
-        self.predicates.len()
+        self.predicates.len() + usize::from(self.prefix.is_some())
     }
     /// Replace an already protected name terminal, not arbitrary prose. The
     /// predicate comes from a bounded source relation, never from model output.
@@ -220,6 +268,9 @@ impl Repair {
         true
     }
     pub fn system(&self, language: &str) -> String {
+        if self.names.is_empty() {
+            return super::SYSTEM_TEMPLATE.replace("{language}", language);
+        }
         format!("Translate the entire speech into {language}. Copy each name ID including BOTH brackets, e.g. [A], exactly once in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never add a currency or unit absent from the speech. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
     }
     pub fn body(&self, raw: &str) -> Result<String> {
@@ -230,6 +281,22 @@ impl Repair {
             translation: String,
         }
         let output: Output = serde_json::from_str(raw)?;
+        if self
+            .prefix
+            .as_ref()
+            .is_some_and(|p| !output.translation.starts_with(p))
+        {
+            bail!("译文遗漏来源中的范围或请求状态");
+        }
+        if let Some(prefix) = &self.prefix {
+            if !prefix.trim_end().ends_with("toolbar")
+                && !output.translation[prefix.len()..]
+                    .chars()
+                    .any(char::is_alphanumeric)
+            {
+                bail!("译文遗漏范围或请求所对应的内容");
+            }
+        }
         let mut body = output.translation;
         let mut prose = body.clone();
         let mut source_prose = self.input.clone();
@@ -256,6 +323,14 @@ impl Repair {
             body = body.replace(&marker, name);
             prose = prose.replace(&marker, "");
             source_prose = source_prose.replace(&marker, "");
+        }
+        if let Some(prefix) = &self.prefix {
+            let remaining = prose
+                .strip_prefix(prefix)
+                .context("Missing source prefix")?;
+            if remaining.chars().any(char::is_alphabetic) {
+                crate::notes::validate_output_language(remaining, !prefix.is_ascii())?;
+            }
         }
         if body.contains(['[', ']'])
             || prose.chars().all(|c| !c.is_alphanumeric())

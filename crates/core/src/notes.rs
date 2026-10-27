@@ -8,6 +8,8 @@ pub(crate) mod facts;
 pub(crate) mod incremental;
 mod language;
 mod lexical;
+mod qualifiers;
+pub(crate) use qualifiers::{prefix as qualifier_prefix, Mismatch as QualifierMismatch};
 mod relations;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
@@ -277,7 +279,7 @@ fn generate_inner(
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
-    let mut relation_repair: Option<crate::translation::ReportRepair> = None;
+    let mut relation_repair: Option<crate::translation::SourceRepair> = None;
     let terms = engine.terminology(meeting)?;
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
@@ -452,10 +454,10 @@ fn generate_inner(
             Err(error) if attempt == 0 => {
                 // The first validator failure may be a name or language error;
                 // protect the known source relationships in that same retry.
-                let source_plan = if writer::chinese(snapshot, &prefs.minutes_language)
-                    && (error.is::<RelationMismatch>()
-                        || error.to_string().contains("名称")
-                        || error.to_string().contains("输出语言"))
+                let source_plan = if error.is::<RelationMismatch>()
+                    || error.is::<QualifierMismatch>()
+                    || error.to_string().contains("名称")
+                    || error.to_string().contains("输出语言")
                 {
                     let (_, input) = writer::prompt_mode(
                         snapshot,
@@ -472,7 +474,11 @@ fn generate_inner(
                         .filter_map(|p| p["text"].as_str())
                         .collect::<Vec<_>>()
                         .join("\n");
-                    crate::translation::ReportRepair::from_source(&source, &terms)
+                    crate::translation::SourceRepair::from_source(
+                        &source,
+                        &terms,
+                        writer::chinese(snapshot, &prefs.minutes_language),
+                    )
                 } else {
                     None
                 };
@@ -519,7 +525,9 @@ fn generate_inner(
                     let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                     let name_hint = error.to_string();
                     let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
-                    let hint = if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
+                    let hint = if let Some(qualifier) = error.downcast_ref::<QualifierMismatch>() {
+                        qualifier.hint()
+                    } else if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
                         relation.hint()
                     } else if name_hint.contains("专有名称") {
                         &name_hint

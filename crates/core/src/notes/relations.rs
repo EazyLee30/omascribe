@@ -125,6 +125,10 @@ pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
             if QUALIFIED.get_or_init(|| Regex::new(r"(?i)\b(if|unless|provided|or|either|maybe|perhaps|possibly|probably)\b").unwrap()).is_match(tail) {
                 return None;
             }
+            static WEEKDAYS: OnceLock<Regex> = OnceLock::new();
+            if WEEKDAYS.get_or_init(|| Regex::new(r"(?i)\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b|(?:周|星期|礼拜)[一二三四五六日天]").unwrap()).find_iter(tail).count() > 1 {
+                return None;
+            }
             let modal = frame.name("modal").map(|s| s.as_str().to_ascii_lowercase());
             let verb = frame["verb"].to_ascii_lowercase();
             let predicate = match (mismatch, modal.as_deref(), verb.as_str()) {
@@ -315,6 +319,9 @@ mod tests {
             "Morgan will send the release report if approved.",
             "Morgan will send the release report on Thursday,if approved.",
             "Morgan will send the release report on Thursday or Friday.",
+            "Morgan will send the release report on Thursday/Friday.",
+            "Morgan will send the release report on Thursday-Friday.",
+            "Morgan will send the release report on Thursday and Friday.",
             "Morgan will send the release report on Thursday, probably.",
             "Morgan will send the report. Morgan will publish another report.",
             "Morgan will send the report. It was cancelled.",

@@ -670,6 +670,7 @@ fn validate_document(
             .collect::<Vec<_>>()
             .join(" ");
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
+        super::qualifiers::validate(body, &current_evidence)?;
         if require_prose {
             let raw_evidence = sources
                 .iter()
@@ -822,6 +823,20 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn source_qualifier_exclusive_scope_cannot_disappear() {
+        let mut source = data()[0].clone();
+        source.text = "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。".into();
+        let body = "This phase implements microphone recording and real-time transcription. System audio capture is postponed to the next version.";
+        assert!(validate_translation(body, &source, "m").is_err());
+    }
+    #[test]
+    fn source_qualifier_toolbar_request_cannot_become_an_existing_capability() {
+        let mut source = data()[0].clone();
+        source.text = "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。".into();
+        let body = "Real-time transcription and real-time subtitles, with the entry placed in the toolbar, not hidden in a secondary menu.";
+        assert!(validate_translation(body, &source, "m").is_err());
+    }
     #[test]
     fn report_relations_reject_the_retained_candidate6_semantic_failures() {
         for (input, body) in [
