@@ -39,6 +39,7 @@
         "required": [
           "Morgan",
           "周四|星期四",
+          "发送|提交|交付|送出|寄送",
           "未.*批准|尚未.*批准"
         ],
         "forbidden": [
@@ -276,6 +277,7 @@
       "离线",
       "Morgan",
       "周四|星期四",
+      "负责|责任",
       "未|待"
     ],
     "forbidden": [
@@ -283,7 +285,8 @@
       "公开发布已经批准",
       "公测",
       "公測",
-      "beta"
+      "beta",
+      "拥有[^。！？]*报告"
     ],
     "max_sections": 2,
     "merged_sources": true,
@@ -304,11 +307,53 @@
         "target": "zh",
         "required": [
           "Morgan",
-          "周四|星期四"
+          "周四|星期四",
+          "负责|责任"
         ],
         "forbidden": [
-          "莫根"
+          "莫根",
+          "拥有[^。！？]*报告"
         ]
+      }
+    ]
+  },
+  {
+    "name": "zh_actual_report_publication",
+    "focus": "**release report** **Morgan**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Morgan will publish the release report on Thursday."
+    ],
+    "required": ["Morgan", "周四|星期四", "发布|发表|出版"],
+    "forbidden": ["发送|寄送"],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": ["Morgan", "周四|星期四", "发布|发表|出版"],
+        "forbidden": ["发送|寄送"]
+      }
+    ]
+  },
+  {
+    "name": "zh_physical_report_ownership",
+    "focus": "**original report** **Morgan**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Morgan owns the original paper report and will deliver it on Thursday."
+    ],
+    "required": ["Morgan", "周四|星期四", "拥有|所有|持有"],
+    "forbidden": ["负责[^。！？]*报告"],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": ["Morgan", "周四|星期四", "拥有|所有|持有"],
+        "forbidden": ["负责[^。！？]*报告"]
       }
     ]
   },

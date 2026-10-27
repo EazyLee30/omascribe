@@ -669,6 +669,7 @@ fn validate_document(
             .map(|(_, s)| s.text.as_str())
             .collect::<Vec<_>>()
             .join(" ");
+        super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         if require_prose {
             let raw_evidence = sources
                 .iter()
@@ -821,6 +822,25 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn report_relations_reject_the_retained_candidate6_semantic_failures() {
+        for (input, body) in [
+            (
+                "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+                "Morgan 将于周四发布释放报告。我们尚未批准启动日期。",
+            ),
+            (
+                "Morgan owns the latency report and will deliver it on Thursday.",
+                "Morgan 拥有延迟报告，并将于周四交付。",
+            ),
+        ] {
+            let mut source = data()[0].clone();
+            source.text = input.into();
+            assert!(validate_translation(body, &source, "m").is_err(), "caption: {body}");
+            let draft = serde_json::json!({"sections":[{"title":"报告","body":body,"sources":[1]}]});
+            assert!(validate(&draft.to_string(), &[source], "m").is_err(), "minutes: {body}");
+        }
+    }
     #[test]
     fn literal_spoken_digits_support_the_same_number_without_supporting_a_changed_count() {
         let mut source = data()[0].clone();

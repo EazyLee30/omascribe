@@ -8,6 +8,8 @@ pub(crate) mod facts;
 pub(crate) mod incremental;
 mod language;
 mod lexical;
+mod relations;
+pub(crate) use relations::Mismatch as RelationMismatch;
 mod retrieval;
 pub(crate) mod stream;
 mod uncertainty;

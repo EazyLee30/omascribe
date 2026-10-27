@@ -221,10 +221,6 @@ fn run_inner(
         } else {
             "English"
         };
-        let mut system = SYSTEM_TEMPLATE.replace("{language}", language);
-        if let Some(hint) = repair {
-            system.push_str(hint);
-        }
         // Advance even if tokenization fails or this source cannot fit safely.
         engine.store.lock().unwrap().set_cache_dependency(
             meeting,
@@ -247,10 +243,7 @@ fn run_inner(
                 }
                 let names = names::Names::new(&terms, input);
                 let plan = repair.and_then(|_| names.repair(input));
-                let system = plan.as_ref().map_or_else(
-                    || format!("{system}{}", names.hint()),
-                    |p| p.system(language),
-                );
+                let system = system_prompt(language, &names, plan.as_ref(), repair);
                 let input = plan.as_ref().map_or(input, |p| p.input.as_str());
                 session.begin_request();
                 let tokens: Value = session
@@ -285,10 +278,7 @@ fn run_inner(
         let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
         let names = names::Names::new(&terms, &input);
         let name_repair = repair.and_then(|_| names.repair(&input));
-        system = name_repair.as_ref().map_or_else(
-            || format!("{system}{}", names.hint()),
-            |p| p.system(language),
-        );
+        let system = system_prompt(language, &names, name_repair.as_ref(), repair);
         let request_input = name_repair
             .as_ref()
             .map_or(input.as_str(), |p| p.input.as_str());
@@ -530,7 +520,34 @@ fn literal_caption(
     }
 }
 
+fn system_prompt(
+    language: &str,
+    names: &names::Names,
+    plan: Option<&names::Repair>,
+    repair: Option<&str>,
+) -> String {
+    let mut system = plan.map_or_else(
+        || {
+            format!(
+                "{}{}",
+                SYSTEM_TEMPLATE.replace("{language}", language),
+                names.hint()
+            )
+        },
+        |p| p.system(language),
+    );
+    // Name-constrained retries must retain the factual repair. This same
+    // prompt is used for token planning and generation so it fits the budget.
+    if let Some(hint) = repair {
+        system.push_str(hint);
+    }
+    system
+}
+
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(relation) = error.downcast_ref::<notes::RelationMismatch>() {
+        return relation.hint();
+    }
     let reason = format!("{error:#}");
     if reason.contains("名称") {
         " Copy the supplied source spellings exactly in the translation. Do not transliterate them, shorten them or substitute a guessed person, university or product. 名称名单逐字保留，不音译、不猜其他学校、人物或产品；其余句子正常翻译。"
@@ -598,6 +615,30 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn report_relation_repairs_keep_their_hint_with_name_constraints() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let input = "Morgan will send the release report on Thursday.";
+        let names = names::Names::new(&terms, input);
+        let plan = names.repair(input).expect("named subject repair");
+        for relation in [
+            notes::RelationMismatch::Delivery,
+            notes::RelationMismatch::Responsibility,
+        ] {
+            let error = anyhow::Error::new(relation).context("chunk_evidence_mismatch");
+            let hint = repair_hint(&error);
+            assert_eq!(hint, relation.hint());
+            for plan in [None, Some(&plan)] {
+                let prompt = system_prompt("简体中文", &names, plan, Some(hint));
+                assert_eq!(prompt.matches(hint).count(), 1);
+                if let Some(plan) = plan {
+                    assert!(prompt.contains("name ID"));
+                    assert!(plan.input.contains("[A]"));
+                }
+            }
+        }
+    }
 
     #[test]
     fn standalone_fragments_translate_without_completing_speech_or_overriding_names() {
