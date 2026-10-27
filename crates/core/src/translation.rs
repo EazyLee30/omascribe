@@ -179,19 +179,15 @@ fn run_inner(
         .unwrap()
         .cache_dependency(meeting, "translation-turn")?;
     rotate_after(&mut passages, &last);
-    let session = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
     let environment = crate::inference_cache::environment(
         engine,
         &engine.store.lock().unwrap(),
         &snapshot.meeting,
         &prefs,
     )?;
-    trace.event(
-        "worker",
-        json!({"reused":session.reused,"startup_ms":session.startup_ms,
-        "backend":session.backend.name(),"budget_mib":session.budget}),
-    );
+    let mut session: Option<crate::inference_worker::SessionLease> = None;
     let started = Instant::now();
+    let mut startup_elapsed = Duration::ZERO;
     let mut count = 0;
     let mut requests = 0;
     let mut deferred = 0;
@@ -207,7 +203,7 @@ fn run_inner(
         if requests >= chunks::MAX_REQUESTS
             || requests > 0
                 && snapshot.runtime.recording
-                && started.elapsed() > Duration::from_secs(8)
+                && started.elapsed().saturating_sub(startup_elapsed) > Duration::from_secs(8)
         {
             break;
         }
@@ -232,6 +228,19 @@ fn run_inner(
             &passage.id,
         )?;
         let literal = literal_caption(&passage.text, target, &terms);
+        if literal.is_none() && session.is_none() {
+            let opening = Instant::now();
+            let worker = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
+            // Preserve the existing post-startup recording work allowance while
+            // charging any preceding literal work to the same batch budget.
+            startup_elapsed = opening.elapsed();
+            trace.event(
+                "worker",
+                json!({"reused":worker.reused,"startup_ms":worker.startup_ms,
+                "backend":worker.backend.name(),"budget_mib":worker.budget}),
+            );
+            session = Some(worker);
+        }
         let input_budget = chunks::INPUT_TOKENS.min(
             (prefs.context_size as usize).saturating_sub(chunks::OUTPUT_TOKENS as usize + 256),
         );
@@ -245,6 +254,7 @@ fn run_inner(
                 if literal.is_some() {
                     return Ok(0);
                 }
+                let session = session.as_ref().context("Missing translation worker")?;
                 let names = names::Names::new(&terms, input);
                 let plan = repair.and_then(|_| names.repair(input));
                 let system = plan.as_ref().map_or_else(
@@ -298,6 +308,7 @@ fn run_inner(
             trace.event("literal_caption", json!({"source_bytes":input.len()}));
             json!({"translation":text}).to_string()
         } else {
+            let session = session.as_ref().context("Missing translation worker")?;
             let request_started = Instant::now();
             let mut first_token_ms = None;
             let mut draft = String::new();
@@ -368,8 +379,10 @@ fn run_inner(
             raw
         };
         if engine.note_cancel.load(Ordering::SeqCst)
-            || session.resource_stop.load(Ordering::SeqCst)
-            || session.timed_out.load(Ordering::SeqCst)
+            || session.as_ref().is_some_and(|session| {
+                session.resource_stop.load(Ordering::SeqCst)
+                    || session.timed_out.load(Ordering::SeqCst)
+            })
         {
             bail!("Translation paused to protect recording and system resources");
         }
@@ -753,6 +766,86 @@ mod tests {
         assert!(!minutes_can_follow(true, false, &runtime));
         assert!(!minutes_can_follow(true, true, &invalid));
         assert!(!minutes_can_follow(false, false, &valid));
+    }
+    #[test]
+    fn literal_batches_commit_without_a_model_worker_and_keep_revision_checks() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Literal-only captions")?;
+        let mut sources = Vec::new();
+        for (index, text) in ["嗯", "AND", "或"].into_iter().enumerate() {
+            let source = crate::Segment {
+                id: format!("literal-{index}"),
+                meeting_id: meeting.id.clone(),
+                run: 1,
+                seq: index as u32 + 1,
+                start_ms: index as u64 * 1000,
+                end_ms: (index as u64 + 1) * 1000,
+                text: text.into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            engine.store.lock().unwrap().save_segment(&source)?;
+            sources.push(source);
+        }
+        // No installed model/runtime exists in this disposable workspace. A
+        // worker startup must not be needed for already validated literal words.
+        assert_eq!(run(&engine, &meeting.id)?, 3);
+        let snapshot = engine.snapshot(&meeting.id)?;
+        for (source, translated) in sources.iter().zip(["Hmm", "和", "or"]) {
+            assert_eq!(snapshot.translations[&source.id].text, translated);
+            assert_eq!(snapshot.translations[&source.id].revision, source.revision);
+        }
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+
+        sources[0].text = "预算尚未批准。".into();
+        sources[0].revision += 1;
+        engine.store.lock().unwrap().save_segment(&sources[0])?;
+        // A substantive revision still needs inference and must never reuse the
+        // previous literal as if it translated the newly revised statement.
+        assert!(run(&engine, &meeting.id).is_err());
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(!snapshot.translations.contains_key(&sources[0].id));
+        assert_eq!(snapshot.segments[0].text, sources[0].text);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+    #[test]
+    fn cancelled_and_named_fragments_do_not_bypass_batch_guards() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Guarded fragments")?;
+        engine.store.lock().unwrap().save_segment(&crate::Segment {
+            id: "fragment".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "AND".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })?;
+        engine.note_cancel.store(true, Ordering::SeqCst);
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert!(engine.snapshot(&meeting.id)?.translations.is_empty());
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        engine.save_library_entry(crate::library::Entry {
+            kind: "term".into(),
+            title: "AND".into(),
+            ..Default::default()
+        })?;
+        // A configured name must use the normal guarded inference path; it
+        // cannot silently become the dictionary translation "和".
+        assert!(run(&engine, &meeting.id).is_err());
+        assert!(engine.snapshot(&meeting.id)?.translations.is_empty());
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
     }
     #[test]
     fn caption_batches_include_oldest_work_even_as_new_text_arrives() -> Result<()> {
