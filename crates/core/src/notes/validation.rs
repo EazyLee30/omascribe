@@ -348,6 +348,7 @@ pub(super) fn uncertain(s: &str) -> bool {
         "不确定",
         "not decided",
         "undecided",
+        "undetermined",
         "pending",
         "unconfirmed",
         "not approved",
@@ -362,6 +363,62 @@ pub(super) fn uncertain(s: &str) -> bool {
         || NEGATIVE_STATE.get_or_init(|| regex::Regex::new(
             r"\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}(?:approved|decided|confirmed|finalized)\b"
         ).unwrap()).is_match(&s)
+}
+
+/// Follow an explicit budget topic only across a local pronoun/time clause.
+/// An unrelated report or release must not inherit its pending review state.
+fn budget_clauses(text: &str) -> Vec<String> {
+    static BUDGET: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let budget = BUDGET.get_or_init(|| regex::Regex::new(r"\bbudget\b|预算").unwrap());
+    let mut active = false;
+    text.to_lowercase()
+        .split([',', '，', ';', '；', '.', '。', '?', '？', '!', '！'])
+        .filter_map(|clause| {
+            let clause = clause.trim();
+            let inherited = active
+                && [
+                    "it ", "this ", "we ", "next ", "tomorrow", "下周", "本周", "明天", "将", "再",
+                ]
+                .iter()
+                .any(|prefix| clause.starts_with(prefix));
+            active = budget.is_match(clause) || inherited;
+            active.then(|| clause.to_owned())
+        })
+        .collect()
+}
+
+fn unsupported_budget_commitment(body: &str, evidence: &str) -> bool {
+    static REVIEW: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    static DECISION: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let review = REVIEW.get_or_init(|| {
+        regex::Regex::new(r"再看|继续讨论|再议|\b(?:review|revisit|discuss)\b").unwrap()
+    });
+    let decision = DECISION.get_or_init(|| regex::Regex::new(
+        r"\bwill\s+(?:be\s+)?(?:decide[ds]?|determine[ds]?|finali[sz]e[ds]?|approve[ds]?)\b|(?:将|会|下周|本周|明天).{0,12}(?:确定|定下|敲定|批准|决定|定案)"
+    ).unwrap());
+    let source = budget_clauses(evidence);
+    let promises = |clauses: &[String]| {
+        clauses.iter().any(|clause| {
+            decision.is_match(clause)
+                && ![
+                    "not ",
+                    "是否",
+                    "可能",
+                    "也许",
+                    "不确定",
+                    "不会",
+                    "未必",
+                    "if ",
+                    "whether ",
+                ]
+                .iter()
+                .any(|cue| clause.contains(cue))
+        })
+    };
+    source.iter().any(|clause| uncertain(clause))
+        && source.iter().any(|clause| review.is_match(clause))
+        && !promises(&source)
+        && promises(&budget_clauses(body))
 }
 fn calendar_weekdays(text: &str) -> HashSet<String> {
     use chrono::Datelike;
@@ -625,6 +682,12 @@ fn validate_document(
                 index + 1
             );
         }
+        if let Some(currency) = super::amounts::added_currency(body, &evidence) {
+            bail!("文档增加了原话未给出的币种（{currency}），请保留未指定的单位；本轮未提交");
+        }
+        if unsupported_budget_commitment(body, &current_evidence) {
+            bail!("文档将预算复议写成了确定或批准的承诺，请保留待讨论状态；本轮未提交");
+        }
         let calendar_days = calendar_weekdays(&evidence);
         // An exact calendar date can support its actual weekday, never an arbitrary weekday.
         for time in [
@@ -703,6 +766,68 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn budget_review_is_not_a_promised_decision_even_with_a_pending_adjective() {
+        let mut source = data()[0].clone();
+        source.text = "张老师周五给测试结果，预算先不定，下周再看。".into();
+        for body in [
+            "Mr. Zhang will provide the test results on Friday. The budget remains undetermined and will be reviewed next week.",
+            "The budget is undetermined; we will revisit it next week.",
+            "预算仍未确定，下周继续讨论。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_ok(), "{body}");
+        }
+        for body in [
+            "Mr. Zhang will provide the test results on Friday, but the budget is still undetermined; it will be determined next week.",
+            "The budget remains undecided; we will approve it next week.",
+            "预算尚未确定，下周会敲定。",
+        ] {
+            let error = validate_translation(body, &source, "m").unwrap_err();
+            assert!(error.to_string().contains("复议"), "{body}: {error}");
+            let draft = serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]});
+            assert!(validate(&draft.to_string(), std::slice::from_ref(&source), "m").is_err());
+        }
+        // An independent report and an explicit future decision remain valid.
+        source.text = "The budget is undecided; we will review it next week. The report will be finalized next week.".into();
+        assert!(validate_translation(&source.text, &source, "m").is_ok());
+        source.text =
+            "The budget is undecided; we will review it and will decide next week.".into();
+        assert!(validate_translation(&source.text, &source, "m").is_ok());
+        assert!(!uncertain("The budget is determined and approved."));
+    }
+    #[test]
+    fn bare_amounts_do_not_support_an_invented_currency_or_different_number() {
+        let mut source = data()[0].clone();
+        source.text = "The Budget of 3000 is not approved.".into();
+        assert!(validate_translation("3000的预算尚未批准。", &source, "m").is_ok());
+        for body in [
+            "2000年预算未通过。",
+            "3000美元的预算未通过批准。",
+            "预算3000元尚未批准。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
+        for (input, body) in [
+            (
+                "The budget of 3000 dollars is not approved.",
+                "3000美元的预算未批准。",
+            ),
+            (
+                "预算3000元未批准。",
+                "The budget of 3000 yuan is not approved.",
+            ),
+            (
+                "预算三千美元未批准。",
+                "The budget of 3000 dollars is unapproved.",
+            ),
+        ] {
+            source.text = input.into();
+            assert!(
+                validate_translation(body, &source, "m").is_ok(),
+                "{input} -> {body}"
+            );
+        }
+    }
     #[test]
     fn spoken_money_does_not_allow_a_tenfold_translation_error() {
         let mut source = data();

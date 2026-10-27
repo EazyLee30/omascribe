@@ -129,6 +129,27 @@ pub(crate) fn normalize(text: &str) -> String {
     .into_owned()
 }
 
+/// A bare amount does not establish a currency. This is a targeted guard for
+/// supported currency spellings, not an exchange-rate or general unit parser.
+pub(super) fn added_currency(body: &str, evidence: &str) -> Option<&'static str> {
+    static UNITS: OnceLock<Vec<(&str, Regex)>> = OnceLock::new();
+    UNITS
+        .get_or_init(|| {
+            [
+                ("dollar", r"(?i)\b(?:usd|dollars?)\b|美元|美金|\$"),
+                ("yuan", r"(?i)\b(?:cny|rmb|yuan)\b|人民币|[0-9零〇一二两三四五六七八九十百千万亿]+\s*元"),
+                ("euro", r"(?i)\b(?:eur|euros?)\b|欧元|€"),
+                ("pound", r"(?i)\b(?:gbp|pounds?)\b|英镑|£"),
+            ]
+            .into_iter()
+            .map(|(name, pattern)| (name, Regex::new(pattern).unwrap()))
+            .collect()
+        })
+        .iter()
+        .find(|(_, unit)| unit.is_match(body) && !unit.is_match(evidence))
+        .map(|(name, _)| *name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
