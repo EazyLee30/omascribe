@@ -1,0 +1,122 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "cli_sha256": "8363d8ba008ae4fa31620357d15667eb359a8ffcc0d8e4a1b5d180fa22202507",
+  "asr_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "automatic_cases": [
+    {
+      "case": "bilingual_scope",
+      "exit_code": 0,
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "133369971b8801677acf975c783db865b1eca859908e17a4333615047137ef18"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "exit_code": 0,
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "d281604d5f9b806b2246bcf74908b3277cf93501f777399c4dc46b319dc4f447"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "exit_code": 0,
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "2cf303a4f417fbaddcecc9c4ab89e53db81435e0e3cc3cf0c6f349d5d45da415"
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "exit_code": 0,
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "81e582edc38b527da2ad7cb2bc4832c8c6678a522e88e799a61893959491e22d"
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "exit_code": 0,
+      "passed": true,
+      "pattern_passed": true,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "8d8f0fd2a42813d1b5b0cb34a628c8a78736fc0f7ba4051c10aef7cc2be673bb"
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "exit_code": 1,
+      "passed": false,
+      "pattern_passed": false,
+      "all_workers_cpu": true,
+      "worker_backends": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "phase_count": 1,
+      "evaluation_sha256": "65a030788b13f30b0a1863e5887b741d65fcee433dfe82e56a5229d9005a8636",
+      "failure": "Product settle returned nonzero after its 120-second budget; prior content retained. Timeout is not a passing semantic result."
+    }
+  ],
+  "automatic_cases_passed": 5,
+  "automatic_cases_total": 6,
+  "complex_controls": [
+    {
+      "language": "zh",
+      "passed": true,
+      "worker_backends": [
+        "cpu"
+      ],
+      "cursor": 3,
+      "sections": 1,
+      "citation_errors": [],
+      "snapshot_sha256": "30bfb1334908992fae283a0e2fc60752ebf07c6c24f460c208f4554b313e9827"
+    },
+    {
+      "language": "en",
+      "passed": true,
+      "worker_backends": [
+        "cpu"
+      ],
+      "cursor": 3,
+      "sections": 1,
+      "citation_errors": [],
+      "snapshot_sha256": "4ddf743c51fbb10502ee72ddf79a30e33084897a779ca05669af507b7de9bd94"
+    }
+  ],
+  "automatic_checks_passed": false,
+  "source_binary_catalog_unchanged": true,
+  "automatic_mode": "bilingual",
+  "complex_control_mode": "explicit generation, Chinese/English minutes, translation off, auto notes off",
+  "scope": "Fictional seeded text, isolated CPU-only workspaces; automatic pattern checks do not prove semantic correctness. Two complex controls use explicit generation and translation off. No user recording or real transcript is included. Not an installer or release test."
+}
