@@ -688,6 +688,10 @@ mod tests {
         )
         .is_ok());
         assert!(validate_text(&passage.text, &passage, "zh", &terms).is_err());
+        passage.text = "Morgan will publish the report.".into();
+        assert!(validate_text("摩根将发布报告。", &passage, "zh", &terms).is_err());
+        assert!(validate_text("Morgan将发布报告。", &passage, "zh", &terms).is_ok());
+        passage.text = "Alice will check the NVIDIA GTX1650 local model.".into();
         assert!(validate_text(
             "艾莉丝将检查NVIDIA GTX1650本地模型。",
             &passage,

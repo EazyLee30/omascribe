@@ -12,8 +12,8 @@ pub(crate) enum Mismatch {
 impl Mismatch {
     pub(crate) fn hint(self) -> &'static str {
         match self {
-            Self::Delivery => " Keep sending/delivering the report as 发送/交付/提交报告, not 发布报告. A release report is a report title, not a publishing action.",
-            Self::Responsibility => " In this task-and-delivery context, owns the report means 负责报告, not 拥有报告. Preserve the same owner, delivery action and deadline.",
+            Self::Delivery => " 该句的动作是发送：send 译作“发送”。报告名称与发送动作分开翻译，保留原期限。Keep the sending action and the report title separately.",
+            Self::Responsibility => " 该句是任务分工：owns the report 译作“负责报告”。保留同一负责人、报告名称、交付动作和期限。Use responsibility for this task-and-delivery context.",
         }
     }
 }

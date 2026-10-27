@@ -107,7 +107,7 @@ pub(crate) fn environment(
     } else {
         None
     };
-    let input = json!({"schema":"translation-cache-v13-report-relations","model":model.id,"assets":assets,
+    let input = json!({"schema":"translation-cache-v14-named-report-relations","model":model.id,"assets":assets,
         "runtime":engine.inference_fingerprints.file(&runtime),"component":component,
         "template":crate::translation::SYSTEM_TEMPLATE,"output_schema":crate::translation::OUTPUT_SCHEMA,
         "generation":{"seed":42,"temperature":0,"max_tokens":crate::translation::chunks::OUTPUT_TOKENS,"thinking":false,"input_budget":crate::translation::chunks::INPUT_TOKENS},

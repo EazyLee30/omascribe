@@ -703,7 +703,7 @@ fn source_owner_names(text: &str) -> Vec<String> {
     let mut names = Vec::new();
     // Title-case subjects with a stated future task are also name spellings.
     // Do not infer names from an all-caps ASR sentence ("BEEN APPROVED ALICE").
-    let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify)\b").unwrap());
+    let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify|publish)\b").unwrap());
     // A later correction can retain a named owner's deadline without repeating
     // "owns". This is an explicit task subject, never a name inferred from a
     // note or a bare title-cased word elsewhere in the sentence.

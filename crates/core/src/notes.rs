@@ -482,7 +482,9 @@ fn generate_inner(
                     let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                     let name_hint = error.to_string();
                     let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
-                    let hint = if name_hint.contains("专有名称") {
+                    let hint = if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
+                        relation.hint()
+                    } else if name_hint.contains("专有名称") {
                         &name_hint
                     } else if error.to_string().contains("历史来源") {
                         &history_hint
