@@ -143,7 +143,7 @@ fn clause_text(text: &str) -> &str {
         .trim()
 }
 fn cue(state: State, text: &str) -> bool {
-    let text = text.to_lowercase();
+    let text = super::validation::polarity_text(text);
     let has = |words: &[&str]| words.iter().any(|w| text.contains(w));
     match state {
         State::Reported => true,
@@ -161,6 +161,7 @@ fn cue(state: State, text: &str) -> bool {
             "尚未批准",
             "尚未获批",
             "not approved",
+            "not been approved",
             "unapproved",
             "unconfirmed",
             "not decided",
@@ -210,7 +211,9 @@ fn cue(state: State, text: &str) -> bool {
             "尚未实现",
             "还没有完成",
             "not completed",
+            "not been completed",
             "not finished",
+            "not been finished",
             "not yet",
             "still pending",
         ]),

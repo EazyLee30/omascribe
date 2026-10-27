@@ -178,8 +178,14 @@ fn normalize_clock_numbers(text: &str) -> String {
         })
         .into_owned()
 }
+/// Normalize only for polarity classification; original text/citations stay intact.
+pub(super) fn polarity_text(s: &str) -> String {
+    s.to_lowercase()
+        .replace("n't", " not")
+        .replace("n’t", " not")
+}
 fn uncertain(s: &str) -> bool {
-    let s = s.to_lowercase();
+    let s = polarity_text(s);
     [
         "未",
         "不定",
@@ -194,6 +200,7 @@ fn uncertain(s: &str) -> bool {
         "pending",
         "unconfirmed",
         "not approved",
+        "not been approved",
         "unapproved",
         "not yet",
         "deferred",
@@ -512,18 +519,37 @@ mod tests {
     #[test]
     fn english_approval_negation_is_preserved_and_synonyms_are_accepted() {
         let mut source = data()[0].clone();
-        for wording in ["not approved", "unapproved"] {
-            source.text = format!("The budget of 3000 is {wording}.");
+        for source_text in [
+            "The budget of 3000 is not approved.",
+            "The budget of 3000 remains unapproved.",
+            "The budget of 3000 has not been approved.",
+            "The budget of 3000 hasn't been approved.",
+            "The budget of 3000 hasn’t been approved.",
+            "The budget of 3000 isn't approved.",
+        ] {
+            source.text = source_text.into();
             for body in [
                 "The budget of 3000 is not approved.",
                 "The budget of 3000 remains unapproved.",
+                "The budget of 3000 has not been approved.",
+                "The budget of 3000 hasn't been approved.",
+                "The budget of 3000 isn’t approved.",
             ] {
                 let draft =
                     serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]});
-                assert!(validate(&draft.to_string(), std::slice::from_ref(&source), "m").is_ok());
+                assert!(
+                    validate(&draft.to_string(), std::slice::from_ref(&source), "m").is_ok(),
+                    "{source_text} -> {body}"
+                );
             }
-            let wrong = serde_json::json!({"sections":[{"title":"Budget","body":"The budget of 3000 is approved.","sources":[1]}]});
-            assert!(validate(&wrong.to_string(), std::slice::from_ref(&source), "m").is_err());
+            for affirmative in [
+                "The budget of 3000 is approved.",
+                "The budget of 3000 has been approved.",
+                "The budget of 3000 is not only approved but funded.",
+            ] {
+                let wrong = serde_json::json!({"sections":[{"title":"Budget","body":affirmative,"sources":[1]}]});
+                assert!(validate(&wrong.to_string(), std::slice::from_ref(&source), "m").is_err());
+            }
         }
     }
     #[test]

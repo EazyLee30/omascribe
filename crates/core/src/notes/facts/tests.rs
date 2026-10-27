@@ -426,3 +426,25 @@ fn historical_owner_withdrawal_cannot_become_an_unnamed_cancelled_proposal() -> 
         .any(|f| f["claim"] == "李明不再负责。" && f["required_names"] == json!(["李明"])));
     Ok(())
 }
+
+#[test]
+fn contracted_or_passive_negation_cannot_become_confirmation_or_completion() {
+    for text in [
+        "Budget hasn't been approved.",
+        "Budget isn’t approved.",
+        "Budget has not been approved.",
+    ] {
+        assert!(cue(State::Uncertain, text));
+        assert!(!cue(State::Confirmed, text));
+    }
+    for text in [
+        "Upload hasn't been completed.",
+        "Upload hasn’t finished.",
+        "Upload has not been completed.",
+    ] {
+        assert!(cue(State::Incomplete, text));
+        assert!(!cue(State::Completed, text));
+    }
+    assert!(cue(State::Confirmed, "Budget has been approved."));
+    assert!(cue(State::Completed, "Upload has been completed."));
+}
