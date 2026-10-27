@@ -166,7 +166,7 @@ pub fn fingerprint(notes: &[UserNote], segments: &[Segment], cursor: u32) -> Str
     };
     // Revisit automatic drafts once for source-state composition and spelling fixes.
     // Human paragraphs remain protected by the transactional document merge.
-    add(b"document-v11-corrected-task-owner-captions");
+    add(b"document-v12-mixed-script-source-owners");
     for note in document_notes(notes) {
         add(note.content.as_bytes());
         add(note.kind.as_bytes());
