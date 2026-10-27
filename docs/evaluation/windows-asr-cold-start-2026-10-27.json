@@ -224,7 +224,7 @@
       "max_lag_after_asr_started_ms": 2024,
       "max_lag_while_llm_leased_ms": 688,
       "hypothesis_units_match_candidate2": true,
-      "scope": "Additional classification only; full unchanged2500ms gate still fails. Peak occurs during ASR cold initialization before an LLM starts, so not attributed to CUDA contention or this source change. No controlled cache/thermal comparison."
+      "scope": "Additional classification only; the full unchanged2500ms sampled gate passed in this local run (maximum2432ms, margin68ms). The peak preceded the first LLM worker and any reported ASR processed progress; this does not attribute it to CUDA contention. No controlled cache/thermal comparison or universal cold-start guarantee."
     },
     "asr_config": {
       "decoder": "greedy_search",
