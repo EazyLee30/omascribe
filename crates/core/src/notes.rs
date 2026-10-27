@@ -450,7 +450,37 @@ fn generate_inner(
                 break;
             }
             Err(error) if attempt == 0 => {
-                if error.to_string().contains("输出语言") {
+                // The first validator failure may be a name or language error;
+                // protect the known source relationships in that same retry.
+                let source_plan = if writer::chinese(snapshot, &prefs.minutes_language)
+                    && (error.is::<RelationMismatch>()
+                        || error.to_string().contains("名称")
+                        || error.to_string().contains("输出语言"))
+                {
+                    let (_, input) = writer::prompt_mode(
+                        snapshot,
+                        &context,
+                        &json!({}),
+                        &prefs.minutes_language,
+                        false,
+                    );
+                    let original: Value = serde_json::from_str(&input)?;
+                    let source = original["transcript"]
+                        .as_array()
+                        .context("Missing source transcript")?
+                        .iter()
+                        .filter_map(|p| p["text"].as_str())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    crate::translation::ReportRepair::from_source(&source, &terms)
+                } else {
+                    None
+                };
+                if let Some(plan) = source_plan {
+                    trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates()}));
+                    messages = plan.messages.clone();
+                    relation_repair = Some(plan);
+                } else if error.to_string().contains("输出语言") {
                     let plan = language::repair_messages(
                         normalized.as_ref().map_err(|e| anyhow::anyhow!("{e}"))?,
                         checked_prose.as_deref().context("Missing checked prose")?,
@@ -524,24 +554,6 @@ fn generate_inner(
                         json!({"role":"system","content":format!("{repair_system} {hint}")}),
                         json!({"role":"user","content":serde_json::to_string(&repair)?}),
                     ];
-                    if writer::chinese(snapshot, &prefs.minutes_language) {
-                        if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
-                            let source = repair["transcript"]
-                                .as_array()
-                                .context("Missing source transcript")?
-                                .iter()
-                                .filter_map(|p| p["text"].as_str())
-                                .collect::<Vec<_>>()
-                                .join("\n");
-                            if let Some(plan) = crate::translation::ReportRepair::from_source(
-                                &source, &terms, *relation,
-                            ) {
-                                trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates()}));
-                                messages = plan.messages.clone();
-                                relation_repair = Some(plan);
-                            }
-                        }
-                    }
                 }
                 let repair_input = messages
                     .iter()
