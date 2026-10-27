@@ -295,9 +295,19 @@ fn historical(text: &str, at: usize) -> bool {
     static HISTORY: OnceLock<Regex> = OnceLock::new();
     let history=HISTORY.get_or_init(||Regex::new(r"(?i)\b(previous|previously|original|originally|initially|earlier)\b|原预算|此前|之前|原先|最初|当时").unwrap());
     let start = text[..at]
-        .rfind(boundary)
+        .rfind(|c| boundary(c) || c == ',')
         .map_or(0, |p| p + text[p..].chars().next().unwrap().len_utf8());
-    history.is_match(&text[start..at])
+    let prefix = &text[start..at];
+    let Some(past) = history.find_iter(prefix).last() else {
+        return false;
+    };
+    static CURRENT: OnceLock<Regex> = OnceLock::new();
+    let current = CURRENT.get_or_init(|| {
+        Regex::new(r"(?i)\b(current|currently|now|latest|final)\b|当前|现在|最新|最终").unwrap()
+    });
+    !current
+        .find_iter(prefix)
+        .any(|now| now.start() >= past.end())
 }
 impl BudgetView {
     pub(super) fn text(&self, index: usize, original: &str) -> String {
@@ -364,6 +374,12 @@ mod tests {
         assert!(view
             .validate("The amount of 3000 is not approved. Budget is corrected to 5000.")
             .is_err());
+        for stale in [
+            "The previous budget was 5000, but the current budget is 3000.",
+            "Previously the budget was 5000 but now the budget is 3000.",
+        ] {
+            assert!(view.validate(stale).is_err(), "{stale}");
+        }
         assert!(view
             .validate(
                 "The previous budget was 3000. The current budget is 5000, still not approved."
