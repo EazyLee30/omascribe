@@ -295,6 +295,8 @@ fn run_inner(
         trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.is_some()}));
         let request_started = Instant::now();
         let mut first_token_ms = None;
+        let diagnostics = std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1");
+        let mut draft = String::new();
         session.begin_request();
         let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
             "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
@@ -304,6 +306,16 @@ fn run_inner(
             notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
                 if !text.is_empty() {
                     first_token_ms.get_or_insert(request_started.elapsed().as_millis() as u64);
+                }
+                if diagnostics {
+                    draft.clear();
+                    // Local opt-in only. Keep bounded, valid UTF-8 even if a
+                    // constrained response never reaches a successful stop.
+                    let mut end = text.len().min(16_384);
+                    while !text.is_char_boundary(end) {
+                        end -= 1;
+                    }
+                    draft.push_str(&text[..end]);
                 }
             });
         requests += 1;
@@ -317,6 +329,15 @@ fn run_inner(
                 .unwrap_or(Value::Null),
             response.is_ok(),
         );
+        if let Err(error) = &response {
+            if diagnostics {
+                let _ = crate::preferences::atomic_json(
+                    &engine.root.join("translation-diagnostic.json"),
+                    &json!({"stage":"stream","input":input,"raw":draft,"error":format!("{error:#}"),
+                        "repair":repair.is_some(),"name_references":name_repair.is_some()}),
+                );
+            }
+        }
         let (raw, _) = response?;
         session.complete_request();
         if engine.note_cancel.load(Ordering::SeqCst)
@@ -337,10 +358,10 @@ fn run_inner(
         if let Err(error) = &validated {
             trace.event("validation_failed", json!({"reason":error.to_string()}));
             // Explicit local harness opt-in. Normal traces never contain speech or output.
-            if std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1") {
+            if diagnostics {
                 let _ = crate::preferences::atomic_json(
                     &engine.root.join("translation-diagnostic.json"),
-                    &json!({"input":input,"raw":raw,"error":format!("{error:#}")}),
+                    &json!({"stage":"validation","input":input,"raw":raw,"error":format!("{error:#}")}),
                 );
             }
             // Give other selected passages their first turn, then at most one
