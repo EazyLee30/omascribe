@@ -1,0 +1,156 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "execution": "automatic-scheduler",
+  "fixture_git_sha256": "948f28f0f72e3d4c8a01a31f3ebc4f68c2be7d0b26e4be011960431b49f35259",
+  "fixture_checkout_sha256": "6b50882ec3608c38ed92a0aef48eebba69824b593d38a713e3a5fc4f9dd8a3d1",
+  "fixture_note": "Windows CRLF checkout normalized byte-for-byte to the pinned LF Git blob.",
+  "cases": 33,
+  "phases": 44,
+  "case_pattern_results": [
+    {
+      "case": "zh_budget_guess",
+      "passed": true
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true
+    },
+    {
+      "case": "zh_correction",
+      "passed": true
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true
+    },
+    {
+      "case": "zh_calendar_citations",
+      "passed": true
+    },
+    {
+      "case": "zh_connected_minutes",
+      "passed": true
+    },
+    {
+      "case": "zh_product_spelling",
+      "passed": true
+    },
+    {
+      "case": "zh_empty_greetings",
+      "passed": true
+    },
+    {
+      "case": "zh_phased_correction",
+      "passed": true
+    },
+    {
+      "case": "zh_named_speakers",
+      "passed": true
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "passed": true
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true
+    },
+    {
+      "case": "zh_long_context_state",
+      "passed": true
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "passed": true
+    },
+    {
+      "case": "en_generic_note_name",
+      "passed": true
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "passed": true
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "passed": true
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "passed": true
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "passed": true
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "passed": true
+    },
+    {
+      "case": "en_incremental_completion",
+      "passed": true
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "passed": true
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "passed": true
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "passed": true
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "passed": true
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "passed": true
+    },
+    {
+      "case": "zh_incremental_completion",
+      "passed": true
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "passed": true
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "passed": true
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "passed": true
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "passed": true
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "passed": true
+    }
+  ],
+  "cli_sha256": "8363d8ba008ae4fa31620357d15667eb359a8ffcc0d8e4a1b5d180fa22202507",
+  "asr_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "worker_events": 94,
+  "all_worker_traces_cuda": true,
+  "gpu_offload_records": 44,
+  "all_observed_gpu_layers_full": true,
+  "source_binary_catalog_unchanged": true,
+  "incremental_enabled": false,
+  "catchup_enabled": false,
+  "automatic_checks_passed": true,
+  "manual_semantic_review": "in progress",
+  "limitations": "Synthetic seeded transcript, not physical recording or ASR accuracy. Automated patterns are not semantic acceptance. Copied signed component independently verified at the isolated path; download/install and formal release not tested."
+}
