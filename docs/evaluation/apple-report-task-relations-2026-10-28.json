@@ -409,5 +409,10 @@
     "Pattern controls and these targeted rejects do not establish semantic correctness across the wider corpus.",
     "The first direct diagnostic driver later gained an output-directory argument; raw results and compiled identities are retained separately.",
     "No microphone, ASR change, cross-platform runtime acceptance, native UI, installer or upgrade acceptance was run here."
-  ]
+  ],
+  "later_diagnosis": {
+    "summary": "The first caption failure was source-name loss. The former retry selected only name repair, so the report mismatch was discovered at the second attempt. A last-failure diagnostic did not prove that a report-specific prompt had been sent. Initial 9fa116b traces show zero protected source predicates; the regression unit fails at 0 versus 1. Known source relationships now survive name and language repair within the existing second attempt. A later bounded run also caught an unsupported last-Thursday modifier; an explicit unqualified weekday is now tied to its delivery predicate.",
+    "successor": "apple-source-report-predicates-2026-10-28.json",
+    "original_results_unchanged": true
+  }
 }

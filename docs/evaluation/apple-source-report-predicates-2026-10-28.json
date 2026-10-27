@@ -1,0 +1,892 @@
+{
+  "schema": 1,
+  "scope": "Affected production report-action/role repairs only. No new release candidate or general semantic acceptance.",
+  "targeted_gate_passed": true,
+  "release_accepted": false,
+  "source_revision": "cd24f6dba91774afea5fa60a80aa148b528f440a",
+  "cli_build": {
+    "profile": "debug",
+    "revision_at_compile": "cd24f6dba91774afea5fa60a80aa148b528f440a",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "schema": 1,
+    "source_sha256": "ac85b6b58b631e9cfadb98699c5b87a6442c67f3c77108883422f561f961074b",
+    "target": "aarch64-apple-darwin"
+  },
+  "cli_sha256": "ff9984c461bded5b60ea4250b9e8e0d214ca6fecb39809ad75cf76a7e91f3202",
+  "core_and_harness_source_sha256": "120749618722d670452f94de42538a53788b945e67ee1dddc881b96001d46bcd",
+  "inference_source_tree_dirty": false,
+  "fixture_case_count": 36,
+  "static_checks": {
+    "core_library": {
+      "passed": 185,
+      "ignored": 7,
+      "log_sha256": "6faf56187e99ebdb2b8ad3a033c3dd1e6c43efe98f6f9107c84a72e0d8c19955"
+    },
+    "core_all_targets_strict_clippy": {
+      "passed": true,
+      "log_sha256": "721b785d7d062493812174ae618663a3d010cfc53f7f692cdd3de246feb05bd1"
+    },
+    "python_harness": {
+      "passed": 22,
+      "log_sha256": "00821eb59bed0368c3bfb62b55a8d246b797b99ad431bbc2a6b4a1403a3d8461"
+    }
+  },
+  "automatic_cases": [
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 6.964,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan将于周四发送发布报告。我们尚未批准发布日期。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [
+        {
+          "input_tokens": 183,
+          "name_references": true,
+          "prompt_bytes": 90,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 90,
+          "source_predicates": 1
+        }
+      ],
+      "failure_kinds": [
+        "source_name"
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/en_owner_and_deadline.json",
+      "raw_sha256": "fc479bf6a99c5393ed03ee4fae4902cce98736693a2a13493e7da010b89deec0",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "seconds": 7.066,
+      "coverage": 2,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "revision": 1,
+          "seq": 2,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+        },
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [
+        {
+          "input_tokens": 177,
+          "name_references": true,
+          "prompt_bytes": 63,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 63,
+          "source_predicates": 1
+        }
+      ],
+      "failure_kinds": [
+        "source_name"
+      ],
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_minutes_from_en.json",
+      "raw_sha256": "cfab189dfc55a265260ac7b64b8a3d76e86bbe83679f0dc9b86ddee15979ce21",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": true,
+      "seconds": 6.872,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan will publish the release report on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan 将于周四发布发布报告。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan 将于周四发布报告。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [
+        "source_name"
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_actual_report_publication.json",
+      "raw_sha256": "2c6d296c40bb13be53e86b623528224b5d40c45fd3c60c9969e410c5490b977b",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "seconds": 6.918,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan owns the original paper report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan 拥有原始论文报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan 拥有原始论文报告，并将于周四交付。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [
+        "source_name"
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_physical_report_ownership.json",
+      "raw_sha256": "fe6eb60cdaddc42b97d1b37b136f4add16e6b40cc8664d61aa645e9382716522",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_report_delivery_variant",
+      "passed": true,
+      "seconds": 6.855,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Nora will deliver the latency report on Friday. The deployment date is not approved yet."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Nora将于周五交付延迟报告。部署日期尚未批准。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Nora将于周五交付延迟报告。部署日期尚未批准。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [
+        {
+          "input_tokens": 182,
+          "name_references": true,
+          "prompt_bytes": 88,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 88,
+          "source_predicates": 1
+        }
+      ],
+      "failure_kinds": [
+        "source_name"
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_report_delivery_variant.json",
+      "raw_sha256": "87673cd65207751a21a5924451fdd20c21ceada1d975f5c7d02fad4cc4caa8cd",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "passed": true,
+      "seconds": 7.28,
+      "coverage": 3,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "The budget amount is 3000, not approved yet."
+        },
+        {
+          "revision": 1,
+          "seq": 2,
+          "text": "An invoice for 3000 is awaiting review."
+        },
+        {
+          "revision": 1,
+          "seq": 3,
+          "text": "The budget amount is corrected to 5000, still not approved."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "预算金额为3000，尚未批准。"
+        },
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "3000的发票正在等待审核。"
+        },
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "预算金额已修正为5000，但仍未通过审批。"
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [
+        "content"
+      ],
+      "translation_batches": [
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/en_budget_invoice_same_amount.json",
+      "raw_sha256": "2dcd4cf5f8bd1ad323bb760c309fcf95c8c3c22255f3d73a971498f6e5dd1c05",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "passed": true,
+      "seconds": 6.884,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Alice负责检查显卡。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "Alice is responsible for checking the GPU."
+        }
+      ],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Alice负责检查显卡。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_mixed_script_task_owner.json",
+      "raw_sha256": "438eda7093668f1631262e78b3a1a3e006a4934e1613a1b7e7362af2bc9195fb",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "seconds": 11.277,
+      "coverage": 3,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "预算还没有确定，先等测试报告。"
+        },
+        {
+          "revision": 1,
+          "seq": 2,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        },
+        {
+          "revision": 1,
+          "seq": 3,
+          "text": "模型下载可以联网，会议录音不会上传。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "The budget has not yet been determined; wait for the test report."
+        },
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "Offline model download is responsible for Chen Ming, and download must obtain user consent."
+        },
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "Model download can be connected to the internet, meeting recordings will not be uploaded."
+        }
+      ],
+      "minutes": [
+        {
+          "status": "accepted",
+          "text": "人工确认：预算仍未确定，先等测试报告。"
+        },
+        {
+          "status": "pending",
+          "text": "预算尚未确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        },
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_human_paragraph_protected.json",
+      "raw_sha256": "ec0655f8778bb9e2340ecacae1209cefc499aa6d489e54b39a1ba172bb03e60f",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    }
+  ],
+  "translation_off_explicit_minutes": [
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 1.505,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-minutes-20261028/en_owner_and_deadline.json",
+      "raw_sha256": "4f934dade6516efefcbe184c18fa3980445e358179dee3fc3d933ce33464094a",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "seconds": 2.107,
+      "coverage": 2,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "revision": 1,
+          "seq": 2,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公共发布尚未批准。Morgan负责延迟报告，并将于周四交付。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": "该句是任务分工：owns the report 译作“负责报告”。保留同一负责人、报告名称、交付动作和期限。Use responsibility for this task-and-delivery context."
+        },
+        {
+          "attempt": 2,
+          "mode": "translate_source_relations",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_minutes_from_en.json",
+      "raw_sha256": "4119aba7e749e87ffcde58911cbd98d7913430ee28b9f22ed4d8a0543818bcdd",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": true,
+      "seconds": 1.327,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan will publish the release report on Thursday."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan 将于周四发布发布报告。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_actual_report_publication.json",
+      "raw_sha256": "47d4e33704229eddd39404cdc7f5f8ff97006bcf74a69cd566398815c6fb3333",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "seconds": 1.31,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Morgan owns the original paper report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Morgan 拥有原始纸质报告，并将在周四交付。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_physical_report_ownership.json",
+      "raw_sha256": "563c787ce4971e1ca8d2fcc703e622b0680f8927423c02ce04392edbbc4657ff",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    },
+    {
+      "case": "zh_report_delivery_variant",
+      "passed": true,
+      "seconds": 1.327,
+      "coverage": 1,
+      "source_segments": [
+        {
+          "revision": 1,
+          "seq": 1,
+          "text": "Nora will deliver the latency report on Friday. The deployment date is not approved yet."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "status": "pending",
+          "text": "Nora 将在周五交付延迟报告。部署日期尚未批准。"
+        }
+      ],
+      "errors": [],
+      "source_predicate_repairs": [],
+      "failure_kinds": [],
+      "translation_batches": [],
+      "minutes_attempts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "validation_error": null
+        }
+      ],
+      "raw_local_report": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_report_delivery_variant.json",
+      "raw_sha256": "cc7095fd8bf605371314e9bff0e57e70faf6b8e1fecdd305fdf2b4c0b9f8dfaa",
+      "fixture_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3"
+    }
+  ],
+  "original_failure_reference": "apple-report-task-relations-2026-10-28.json",
+  "diagnosis_correction": "The first caption failure was source-name loss. The former retry selected only name repair, so the report mismatch was discovered at the second attempt. A last-failure diagnostic did not prove that a report-specific prompt had been sent. Initial 9fa116b traces show zero protected source predicates; the regression unit fails at 0 versus 1. Known source relationships now survive name and language repair within the existing second attempt. A later bounded run also caught an unsupported last-Thursday modifier; an explicit unqualified weekday is now tied to its delivery predicate.",
+  "diagnosis_regression_log_sha256": "b67ba8b1ff401c4f419f125bd3fcb0e405b88e1f237e24abb8fb26d44f4f7ba3",
+  "assistant_review": {
+    "actor": "assistant, not human study",
+    "corrected_cases": [
+      "en_owner_and_deadline",
+      "zh_minutes_from_en",
+      "zh_report_delivery_variant"
+    ],
+    "findings": [
+      "Sending remains delivery and is bound to Thursday; the pending launch date remains pending.",
+      "Task responsibility stays with Morgan, alongside the Thursday delivery.",
+      "Nora delivering on Friday is preserved without changing it to sending/publishing."
+    ],
+    "limits": [
+      "Publication control still has awkward repeated wording in a caption.",
+      "Paper report has an ambiguous translation in the automatic control; the explicit minutes use paper/printed ownership. Controls passing patterns does not certify all wording.",
+      "The other three automatic controls verify amounts, names and protected human paragraphs; this is not a re-review of all their caption semantics."
+    ]
+  },
+  "bounds": {
+    "model": "qwen3-1.7b",
+    "backend": "metal",
+    "context_size": 2048,
+    "threads": 1,
+    "keep_alive_seconds": 0,
+    "translation_batch_requests": 8,
+    "per_chunk_repair_attempts": 1,
+    "live_translation_budget_seconds": 8,
+    "notes_generation_attempts": 2,
+    "automatic_settle_budget_seconds": 120,
+    "model_runtime_sdk_unchanged": true,
+    "base_installer_and_gpu_components_unchanged": true
+  },
+  "runtime_logs": [
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_report_delivery_variant.artifacts/zh_report_delivery_variant/phase-1/batch-1/llm-runtime.log",
+      "sha256": "bae644b0e826ea4b22ed790a2985bd3732ce79585535a064171cd8fa312217b9",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_actual_report_publication.artifacts/zh_actual_report_publication/phase-1/batch-1/llm-runtime.log",
+      "sha256": "792ba1f04d8b95a3b000932814898eeb9942c6df5599b484440cb3fec8b10f56",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/llm-runtime.log",
+      "sha256": "eea86ca5f6e08125ad3c2b66adad8d8ca7c1a534b54d2d031d07efc9b48b5b7b",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_human_paragraph_protected.artifacts/zh_human_paragraph_protected/phase-1/batch-1/llm-runtime.log",
+      "sha256": "4e587a2a248663167905caf14ab0577cbbec1535317fc65062277d9b347a342f",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_human_paragraph_protected.artifacts/zh_human_paragraph_protected/phase-2/batch-1/llm-runtime.log",
+      "sha256": "22ebcbbbfb8fc775d704d265a4f5a83e290df7f98cba527ef400b7cabb0e976c",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_minutes_from_en.artifacts/zh_minutes_from_en/phase-1/batch-1/llm-runtime.log",
+      "sha256": "2fff319ae9a1ba3be79c54bb3e959a5b8bf95896bf01eda645d6540d47e4095b",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/en_budget_invoice_same_amount.artifacts/en_budget_invoice_same_amount/phase-1/batch-1/llm-runtime.log",
+      "sha256": "ec18d643051d2d75e14f4b934d480f74cd14083fd528a4b97aea429fd2ad1f59",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/en_owner_and_deadline.artifacts/en_owner_and_deadline/phase-1/batch-1/llm-runtime.log",
+      "sha256": "d8912e44461735217ea9b27ed36e0f0b9a674ddeefa2591dfd24038e49ea4013",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-auto-20261028/zh_mixed_script_task_owner.artifacts/zh_mixed_script_task_owner/phase-1/batch-1/llm-runtime.log",
+      "sha256": "cd5bc60681f483b3cf7083b9d667554f881ae21faa9d2bd3d266ef20af1f8720",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_report_delivery_variant.artifacts/zh_report_delivery_variant/phase-1/batch-1/llm-runtime.log",
+      "sha256": "0323e5b3202e0f8819e294b0816b6d367156a111e7794a82bbb0bc7e5cef0643",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_actual_report_publication.artifacts/zh_actual_report_publication/phase-1/batch-1/llm-runtime.log",
+      "sha256": "bdbc3570986ad6be2d330072007b13a10e316370f1ab3222370e138d6c7ed777",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/llm-runtime.log",
+      "sha256": "a087d333f4bbbbcaabd58bfecc5899d04838b00925667847b1e7362feef689c3",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-minutes-20261028/zh_minutes_from_en.artifacts/zh_minutes_from_en/phase-1/batch-1/llm-runtime.log",
+      "sha256": "9e94dde722e62e3af836b3b0e0c50546b4a5b6ff05bfcd0e2829fcc8aec10e85",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    },
+    {
+      "path": "artifacts/benchmarks/report-predicate-final-minutes-20261028/en_owner_and_deadline.artifacts/en_owner_and_deadline/phase-1/batch-1/llm-runtime.log",
+      "sha256": "5a4b520c8862af09579668179b3d6ec4f6d9272a98c87bb56209e95b7de35af6",
+      "observed_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ]
+    }
+  ],
+  "cleanup": {
+    "expected_workspaces": 27,
+    "borrowed_model_directories_released": 27,
+    "source_models_retained": true
+  },
+  "performance_limits": "The formerly timed-out two fictional automatic cases now finish in about seven seconds. This is successful task completion under unchanged budgets, not a cold-start, ASR, energy or general speed benchmark.",
+  "still_open": [
+    "only/scope preservation",
+    "requirement versus existing capability",
+    "metric additions/confusion",
+    "other caption responsibility directions and citation relevance",
+    "wider corpus semantic review and natural audio quality",
+    "native UI, installed upgrade and remaining GPU/device/platform gates"
+  ]
+}
