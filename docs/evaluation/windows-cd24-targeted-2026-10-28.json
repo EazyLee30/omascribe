@@ -1,0 +1,98 @@
+{
+  "source_revision": "cd24f6dba91774afea5fa60a80aa148b528f440a",
+  "local_date": "2026-10-28",
+  "cli_sha256": "be4b4ffaedc8678df2fad2f2b6fb12da5b629c495f440d504c6e933089b45378",
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_sources_identical": true,
+  "fixture_git_sha256": "983a6ec92b6f27f320c6e4c00b93587300ee69ea57da4a3b3e73d7a946ca9cd3",
+  "fixture_cases": 36,
+  "fixture_phases": 47,
+  "windows_core": {
+    "passed": 184,
+    "ignored": 6,
+    "identifier_integration_passed": 7,
+    "strict_clippy": "passed"
+  },
+  "target_results": [
+    {
+      "run": "auto-en",
+      "case": "en_owner_and_deadline",
+      "mode": "bilingual-auto",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 17.468,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda",
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "3b937d6aaac93c51309e3274bfd9a4efb5e4133856675e008159ef6cbe21805e",
+      "snapshot_sha256": "6abb2ff404bff52604e8644a804a2fc5c9430ddc496bac325ed9437e73ff21e7",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    },
+    {
+      "run": "auto-zh",
+      "case": "zh_minutes_from_en",
+      "mode": "bilingual-auto",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 19.547,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda",
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "372a7fb935f27ac2d5e1a4b514461aa3f32c950e5587cceb45ce9f349e44ac97",
+      "snapshot_sha256": "c92ed1454c15a29896c712f255eb74c50d4a86fb60da92c4caff19eb7f43bb93",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    },
+    {
+      "run": "minutes-zh",
+      "case": "zh_minutes_from_en",
+      "mode": "chinese-minutes-only",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 12.672,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "6ca119315d09a3a353741d3d95d139a5248966f9b582370d2ffdbfd3172f25f6",
+      "snapshot_sha256": "a690b113f694174d9fe7810020d7f5809f7c3ce60e83ef06a76288fb111baf93",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    }
+  ],
+  "all_target_checks_passed": true,
+  "limitations": [
+    "Three selected fictional seeded-text controls; not full 36-case regression.",
+    "Semantic checks were performed by assistants, not a human reviewer.",
+    "ASR was not invoked; reused ASR worker is not a same-build release artifact.",
+    "Signed CUDA component copied and reverified, not freshly downloaded or installed.",
+    "No physical microphone, real ASR accuracy, or release acceptance.",
+    "Separate slash-separated alternate-date anchor unit probe fails at this source."
+  ]
+}
