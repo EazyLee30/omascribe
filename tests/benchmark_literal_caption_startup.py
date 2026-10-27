@@ -111,10 +111,13 @@ def main():
                     env = isolated_env(workspace)
                     write_json(workspace / "preferences.json", prefs)
                     mid = str(uuid.uuid4())
-                    seed(workspace, case, mid, False)
-                    append(workspace, mid, case["transcript"], 0)
                     row = dict(trial=trial, case=case["name"], variant=label, errors=[])
                     try:
+                        # Initialize the real schema before seeding fictional rows.
+                        # Preparation is recorded separately from measured work.
+                        command([candidates[label], "diagnose"], env, directory / "prepare")
+                        seed(workspace, case, mid, False)
+                        append(workspace, mid, case["transcript"], 0)
                         snapshot = command([candidates[label], "translate", mid], env, directory / "translate")
                         events = trace_events(workspace)
                         row.update(texts=translations(snapshot), errors=validate(case, snapshot),
@@ -156,8 +159,12 @@ def main():
     for label, cli in candidates.items():
         if sha256(cli) != identities[label]["cli_sha256"]:
             report["errors"].append(label + ": executable changed")
+    def median_wall(case, label):
+        values = [r["process"]["seconds"] for r in report["results"]
+                  if r["case"] == case and r["variant"] == label and r.get("process")]
+        return statistics.median(values) if values else None
     report["summary"] = {case["name"]: {label: dict(
-        median_wall_seconds=statistics.median(r["process"]["seconds"] for r in report["results"] if r["case"] == case["name"] and r["variant"] == label),
+        median_wall_seconds=median_wall(case["name"], label),
         worker_start_events=sum(len(r.get("workers", [])) for r in report["results"] if r["case"] == case["name"] and r["variant"] == label))
         for label in candidates} for case in CASES}
     report["passed"] = not report["errors"] and len(report["results"]) == 8 and all(r["passed"] for r in report["results"])
