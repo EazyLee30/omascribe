@@ -378,12 +378,21 @@ impl Terms {
 fn source_owner_names(text: &str) -> Vec<String> {
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static FUTURE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static RETAINED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
     let mut names = Vec::new();
     // Title-case subjects with a stated future task are also name spellings.
     // Do not infer names from an all-caps ASR sentence ("BEEN APPROVED ALICE").
     let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify)\b").unwrap());
-    for c in re.captures_iter(text).chain(future.captures_iter(text)) {
+    // A later correction can retain a named owner's deadline without repeating
+    // "owns". This is an explicit task subject, never a name inferred from a
+    // note or a bare title-cased word elsewhere in the sentence.
+    let retained=RETAINED.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+(?:keeps|retains)\s+(?:the\s+)?(?:[A-Z][a-z]+\s+)?deadline\b").unwrap());
+    for c in re
+        .captures_iter(text)
+        .chain(future.captures_iter(text))
+        .chain(retained.captures_iter(text))
+    {
         let name = &c["name"];
         if [
             "We",
@@ -663,6 +672,19 @@ mod tests {
             .spellings("THE BUDGET HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD")
             .is_empty());
         assert!(terms.spellings("We will check the recorder.").is_empty());
+        let source = "The budget is corrected to 5000. Morgan keeps the Thursday deadline.";
+        assert_eq!(terms.caption_spellings(source), ["Morgan"]);
+        assert!(preserves_owner_spelling(
+            source,
+            "5000，Morgan保留周四期限。"
+        ));
+        assert!(!preserves_owner_spelling(
+            source,
+            "5000，莫根保留周四期限。"
+        ));
+        assert!(terms
+            .spellings("The Budget keeps its current amount.")
+            .is_empty());
     }
     #[test]
     fn disabling_a_term_reverts_only_automatic_corrections() -> Result<()> {
