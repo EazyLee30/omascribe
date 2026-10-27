@@ -10,6 +10,7 @@ pub struct Terms {
     names: BTreeMap<String, String>,
     pub hotwords: Vec<String>,
     writer_names: Vec<String>,
+    caption_names: Vec<String>,
     approximate: Vec<String>,
 }
 impl Terms {
@@ -18,8 +19,13 @@ impl Terms {
         format!(
             "{:x}",
             Sha256::digest(
-                serde_json::to_vec(&("terms-v2", &self.names, &self.approximate))
-                    .expect("term signature")
+                serde_json::to_vec(&(
+                    "terms-v3",
+                    &self.names,
+                    &self.approximate,
+                    &self.caption_names
+                ))
+                .expect("term signature")
             )
         )
     }
@@ -28,6 +34,7 @@ impl Terms {
         let mut conflicts = HashSet::new();
         let mut hotwords = Vec::new();
         let mut writer_names = Vec::new();
+        let mut caption_names = Vec::new();
         let mut approximate = Vec::new();
         let explicit: HashSet<String> = entries
             .iter()
@@ -57,6 +64,7 @@ impl Terms {
         {
             hotwords.push(e.title.trim().to_owned());
             writer_names.push(e.title.trim().to_owned());
+            caption_names.push(e.title.trim().to_owned());
             approximate.push(e.title.trim().to_owned());
             add(&e.title, &e.title);
             for alias in e.aliases.split([',', '，', ';', '；', '\n', '|']) {
@@ -102,6 +110,15 @@ impl Terms {
                     // ordinary words must remain free to translate.
                     if named || n.kind == "term" {
                         writer_names.push(name.to_owned());
+                    }
+                    // A generic keyword such as Budget is still translatable.
+                    // Strong product identifiers and explicitly stored terms
+                    // supply caption spellings, never additional speech facts.
+                    if name.chars().skip(1).any(|c| c.is_ascii_uppercase())
+                        || name.chars().any(|c| c.is_ascii_digit())
+                        || n.kind == "term"
+                    {
+                        caption_names.push(name.to_owned());
                     }
                     approximate.push(name.to_owned());
                 }
@@ -150,6 +167,9 @@ impl Terms {
         writer_names.retain(|s| hotwords.contains(s) && names.get(&s.to_lowercase()) == Some(s));
         writer_names.sort();
         writer_names.dedup();
+        caption_names.retain(|s| hotwords.contains(s) && names.get(&s.to_lowercase()) == Some(s));
+        caption_names.sort();
+        caption_names.dedup();
         approximate.retain(|s| {
             (8..=40).contains(&s.len())
                 && s.chars().all(|c| c.is_ascii_alphabetic())
@@ -163,6 +183,7 @@ impl Terms {
             names,
             hotwords,
             writer_names,
+            caption_names,
             approximate,
         }
     }
@@ -307,6 +328,15 @@ impl Terms {
                 true
             })
             .take(12)
+            .collect()
+    }
+    pub(crate) fn caption_spellings(&self, transcript: &str) -> Vec<String> {
+        let normalized = self.normalize(transcript).to_lowercase();
+        self.caption_names
+            .iter()
+            .filter(|name| contains_name(&normalized, &name.to_lowercase()))
+            .cloned()
+            .chain(source_owner_names(transcript))
             .collect()
     }
     pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {

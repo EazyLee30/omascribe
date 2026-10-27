@@ -7,7 +7,7 @@ from contextlib import closing
 from harness_support import suite_passed, REPO, command, environment, isolated_env, read_json, sha256, write_json
 
 
-def assess(case, snapshot):
+def assess(case, snapshot, check_translations=False):
     sections = [s for s in snapshot["suggestions"] if s["status"] != "dismissed"]
     text = "\n".join(s.get("focus", "") + " " + s["text"] for s in sections)
     errors = []
@@ -23,6 +23,21 @@ def assess(case, snapshot):
         if not re.search(expression, transcript): errors.append("Transcript missing canonical name: " + expression)
     for expression in case.get("forbidden_transcript", []):
         if re.search(expression, transcript): errors.append("Uncorrected transcript: " + expression)
+    if check_translations:
+        for expected in case.get("translation_checks", []):
+            source = next((s for s in snapshot["segments"] if s["seq"] == expected["seq"]), None)
+            translated = snapshot.get("translations", {}).get(source["id"]) if source else None
+            if not translated:
+                errors.append(f"Missing translation for source {expected['seq']}")
+                continue
+            if translated["revision"] != source["revision"] or translated["target"] != expected["target"]:
+                errors.append(f"Wrong translation revision/target for source {expected['seq']}")
+            for expression in expected.get("required", []):
+                if not re.search(expression, translated["text"], re.I):
+                    errors.append(f"Translation {expected['seq']} missing: {expression}")
+            for expression in expected.get("forbidden", []):
+                if re.search(expression, translated["text"], re.I):
+                    errors.append(f"Translation {expected['seq']} unsupported: {expression}")
     if len(sections) > case.get("max_sections", len(sections)):
         errors.append("Related material fragmented into too many paragraphs")
     if case.get("max_body_words") and sum(len(s["text"].split()) for s in sections) > case["max_body_words"]:
@@ -130,9 +145,9 @@ def evaluate(args):
                         db.execute("UPDATE suggestions SET json=? WHERE id=?",(json.dumps(original),original["id"]))
                     protected.append(original)
                 if snapshot["meeting"]["notes_cursor"] < seq: errors.append(f"Phase {number}: uncovered transcript")
-                errors.extend(f"Phase {number}: {e}" for e in assess(phase.get("expect", {}), snapshot)
+                errors.extend(f"Phase {number}: {e}" for e in assess(phase.get("expect", {}), snapshot, automatic)
                     if "expect" in phase)
-            errors.extend(assess(case, snapshot))
+            errors.extend(assess(case, snapshot, automatic))
         except Exception as error:
             errors.append(f"{type(error).__name__}: {error}")
             try: snapshot = command([cli, "snapshot", mid], env, folder / "failure-snapshot", timeout=30)

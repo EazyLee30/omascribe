@@ -29,6 +29,7 @@ use std::{
 use uuid::Uuid;
 pub use validation::validate;
 pub(crate) use validation::validate_translation;
+pub(crate) use writer::validate_language as validate_output_language;
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {

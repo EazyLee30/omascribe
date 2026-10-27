@@ -116,10 +116,20 @@ fn boundary(text: &str, limit: usize) -> usize {
     end
 }
 /// The callback counts the actual runtime tokens, including the system instruction.
+#[cfg(test)]
 pub(super) fn next(
     source: &str,
     offset: usize,
     budget: usize,
+    mut count: impl FnMut(&str) -> Result<usize>,
+) -> Result<Option<Chunk>> {
+    next_protected(source, offset, budget, &[], &mut count)
+}
+pub(super) fn next_protected(
+    source: &str,
+    offset: usize,
+    budget: usize,
+    protected: &[std::ops::Range<usize>],
     mut count: impl FnMut(&str) -> Result<usize>,
 ) -> Result<Option<Chunk>> {
     if !source.is_char_boundary(offset) {
@@ -133,6 +143,14 @@ pub(super) fn next(
     }
     let mut end = boundary(remaining, MAX_INPUT_BYTES);
     loop {
+        // Never split a supplied compound spelling across independently
+        // translated chunks, including names written in Han characters.
+        while let Some(span) = protected
+            .iter()
+            .find(|s| s.start < start + end && start + end < s.end)
+        {
+            end = span.start.saturating_sub(start);
+        }
         if end == 0 {
             return Err(DoesNotFit.into());
         }
@@ -152,6 +170,32 @@ pub(super) fn next(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn compound_source_names_are_kept_inside_one_translation_chunk() -> Result<()> {
+        let source = format!("{}当迪大学的教授。", "中".repeat(212));
+        let start = source.find("当迪大学").unwrap();
+        let span = start..start + "当迪大学".len();
+        let first =
+            next_protected(&source, 0, 1000, std::slice::from_ref(&span), |_| Ok(1))?.unwrap();
+        assert_eq!(first.end, start);
+        let next = next_protected(
+            &source,
+            first.end,
+            1000,
+            std::slice::from_ref(&span),
+            |_| Ok(1),
+        )?
+        .unwrap();
+        assert!(source[next.start..next.end].starts_with("当迪大学"));
+        let whole = 0.."当迪大学".len();
+        assert!(
+            next_protected("当迪大学", 0, 1, std::slice::from_ref(&whole), |s| Ok(
+                s.chars().count()
+            ))
+            .is_err()
+        );
+        Ok(())
+    }
     #[test]
     fn token_limited_chunks_preserve_unicode_and_all_source_content() -> Result<()> {
         let source =

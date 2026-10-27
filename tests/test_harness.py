@@ -9,6 +9,19 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_caption_assertions_catch_wrong_names_language_and_revision_independently_of_minutes(self):
+        source = dict(id="s", seq=1, text="Alice will check the model.", revision=2)
+        snapshot = dict(suggestions=[], segments=[source], runtime=dict(notes_status=""), translations={})
+        case = dict(expect_empty=True, translation_checks=[dict(seq=1,target="zh",required=["Alice", "检查"],forbidden=["艾莉丝"])])
+        self.assertEqual(evaluate.assess(case, snapshot), [])  # Explicit minutes-only mode.
+        self.assertIn("Missing translation", evaluate.assess(case, snapshot, True)[0])
+        snapshot["translations"]["s"] = dict(target="zh",revision=2,text="Alice将检查模型。")
+        self.assertEqual(evaluate.assess(case, snapshot, True), [])
+        for text in ["艾莉丝将检查模型。", source["text"]]:
+            snapshot["translations"]["s"]["text"] = text
+            self.assertTrue(evaluate.assess(case, snapshot, True))
+        snapshot["translations"]["s"].update(text="Alice将检查模型。", revision=1)
+        self.assertIn("revision/target", evaluate.assess(case, snapshot, True)[0])
     def test_gpu_fact_gate_preserves_negation_and_types_while_accepting_weekday_case(self):
         from benchmark_windows_gpu import correct_facts
         valid = dict(day="thursday", rejected_day="friday", budget=3000, approved=False)

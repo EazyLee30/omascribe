@@ -856,7 +856,23 @@
       "本机|本地|电脑|计算机"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Alice",
+          "NVIDIA",
+          "GTX\\s*1650",
+          "3000",
+          "未|不.*批准"
+        ],
+        "forbidden": [
+          "艾莉丝|爱丽丝"
+        ]
+      }
+    ]
   },
   {
     "name": "en_windows_long_acceptance",
@@ -910,6 +926,58 @@
     "forbidden": [
       "三万美元",
       "30000"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "ILLMIS\\s+CRIBE",
+          "3000|三千",
+          "预算",
+          "未|不.*批准"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "LICE",
+          "ENVY A CARD",
+          "检查"
+        ],
+        "forbidden": [
+          "NVIDIA|嫉妒"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "周五|星期五",
+          "不|非",
+          "本机|本地|电脑|计算机"
+        ]
+      },
+      {
+        "seq": 4,
+        "target": "zh",
+        "required": [
+          "LLAS\\s+CRIBE",
+          "3000|三千",
+          "预算"
+        ]
+      },
+      {
+        "seq": 5,
+        "target": "zh",
+        "required": [
+          "ALICE",
+          "UN VIDEO CARD",
+          "检查",
+          "未|不.*批准"
+        ]
+      }
     ]
   },
   {
@@ -936,6 +1004,34 @@
       "(?:尽管|虽然)[^，。；,.;!?！？]{0,20}音乐已经结束"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "当迪大学",
+          "PAMELA\\s+FURGO森"
+        ],
+        "forbidden": [
+          "Denver|迪尔"
+        ]
+      },
+      {
+        "seq": 4,
+        "target": "en",
+        "required": [
+          "邓迪大学",
+          "潘\\s+MALE\\s+FERGUSON"
+        ]
+      },
+      {
+        "seq": 6,
+        "target": "en",
+        "required": [
+          "潘\\s+MALE\\s+FERGUSTON"
+        ]
+      }
+    ]
   }
 ]
