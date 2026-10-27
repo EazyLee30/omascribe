@@ -1,0 +1,13 @@
+{
+  "source_revision": "cd24f6dba91774afea5fa60a80aa148b528f440a",
+  "local_date": "2026-10-28",
+  "source_file_sha256": "cc740b7caaa6a88bc18b64969e960b8151da91a89cc74356da0b6f42bb552061",
+  "probe_source_sha256": "00a2309e0e8d42a4a5f4f74605b42f70ecf79ab2fddd7b06387d9b62246a157d",
+  "probe_executable_sha256": "0da13ba09e0ac76cf6a3cae820e9dcc6632b0881e329a78c9ce6d72539c7e6ba",
+  "tests_passed": 5,
+  "tests_failed": 1,
+  "exit_code": 101,
+  "synthetic_failure": "A slash-separated Thursday/Friday alternative produced a Thursday-only delivery anchor.",
+  "controls": "Certain Thursday anchor works; explicit or and comma-qualified if did not produce anchors.",
+  "scope": "Isolated Rust unit probe using an exact copied production module and fictional input. Does not establish an end-to-end model output or release acceptance."
+}
