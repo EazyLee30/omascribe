@@ -1,11 +1,14 @@
 """Packaging contracts, not GPU performance claims. All payloads are fictional."""
 import importlib.util
+import hashlib
+import io
 import json
 import pathlib
 import tarfile
 import tempfile
 import unittest
 import sys
+import zipfile
 from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -90,6 +93,52 @@ class AccelerationPackagingTests(unittest.TestCase):
             self.assertTrue(components.runtime_member("mtmd.dll"))
             for name in ["libmtmd-unpinned.so", "libarbitrary.so", "mtmd.exe", "libmtmd.so.debug"]:
                 self.assertFalse(components.runtime_member(name), name)
+
+    def test_static_windows_server_copies_actual_cuda_dependencies_without_drivers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); output=root/'runtime'; cuda=root/'cuda'
+            output.mkdir(); (cuda/'bin').mkdir(parents=True)
+            (output/'llama-server.exe').write_bytes(b'fictional executable, never run')
+            for name in ['cudart64_12.dll','cublas64_12.dll','nvcuda.dll']:
+                (cuda/'bin'/name).write_bytes(b'fictional dependency')
+            def deps(path, windows):
+                return ['cudart64_12.dll','cublas64_12.dll','nvcuda.dll'] if path.suffix=='.exe' else []
+            with patch.object(components,'dependencies',deps):
+                components.collect_cuda(output,cuda,True)
+            self.assertEqual({p.name for p in output.iterdir()}, {'llama-server.exe','cudart64_12.dll','cublas64_12.dll'})
+
+    def test_windows_version_probe_finds_copy_only_sdk_loader_without_packaging_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); sdk=root/'sdk'; output=root/'runtime'
+            loader=sdk/'Lib/VulkanLoader/bin';loader.mkdir(parents=True);output.mkdir()
+            pe=bytearray(128);pe[:2]=b'MZ';pe[60:64]=(64).to_bytes(4,'little');pe[64:70]=b'PE\0\0\x64\x86'
+            (loader/'vulkan-1.dll').write_bytes(pe)  # PE header fixture, never execute.
+            wrong=sdk/'Bin32';wrong.mkdir();pe[68:70]=b'\x4c\x01'
+            (wrong/'vulkan-1.dll').write_bytes(pe)
+            with patch.dict(components.os.environ,dict(VULKAN_SDK=str(sdk))):
+                env=components.runtime_environment(output,'vulkan',True)
+            self.assertIn(str(loader.resolve()),env['PATH'].split(components.os.pathsep))
+            self.assertNotIn(str(wrong.resolve()),env['PATH'].split(components.os.pathsep))
+            self.assertEqual(list(output.iterdir()),[])
+
+    def test_build_host_loader_archive_is_hash_checked_and_only_selects_x64(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder)
+            pe=bytearray(128);pe[:2]=b'MZ';pe[60:64]=(64).to_bytes(4,'little');pe[64:70]=b'PE\0\0\x64\x86'
+            archive=io.BytesIO()
+            with zipfile.ZipFile(archive,'w') as stream:
+                stream.writestr('x64/vulkan-1.dll',pe)
+                pe[68:70]=b'\x4c\x01'
+                stream.writestr('x86/vulkan-1.dll',pe)
+                stream.writestr('../unexpected.txt',b'never extract')
+            data=archive.getvalue()
+            with self.assertRaisesRegex(ValueError,'checksum'):
+                components.unpack_vulkan_probe(data,root/'bad')
+            self.assertFalse((root/'bad').exists())
+            with patch.object(components,'VULKAN_PROBE_SHA256',hashlib.sha256(data).hexdigest()):
+                loader=components.unpack_vulkan_probe(data,root/'probe')
+            self.assertTrue(components.windows_x64_library(loader))
+            self.assertEqual([p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()],['probe/vulkan-1.dll'])
 
     def test_bad_release_target_and_backend_rejected(self):
         for version, target, backend in [("../escape", "linux-x86_64", "vulkan"), ("v0.3.4", "linux-x86_64", "cuda"), ("acceleration-test-1", "macos-arm64", "cuda"), ("acceleration-test-1", "linux-x86_64", "unverified")]:

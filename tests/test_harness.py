@@ -9,6 +9,13 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_gpu_fact_gate_preserves_negation_and_types_while_accepting_weekday_case(self):
+        from benchmark_windows_gpu import correct_facts
+        valid = dict(day="thursday", rejected_day="friday", budget=3000, approved=False)
+        self.assertTrue(correct_facts(valid))
+        for change in [dict(rejected_day="Thursday"), dict(day="Friday"), dict(budget=3001),
+                       dict(approved=True), dict(approved=0), dict(budget="3000"), dict(extra="invented")]:
+            self.assertFalse(correct_facts({**valid, **change}))
     def test_apple_comparison_needs_per_command_offload_and_counts_shortcuts_separately(self):
         from compare_minutes_models import backend_evidence
         with tempfile.TemporaryDirectory() as folder:

@@ -156,7 +156,7 @@ def evaluate(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--cli", type=pathlib.Path, default=REPO / "target/debug/omascribe-cli")
+    p.add_argument("--cli", type=pathlib.Path, default=REPO / "target/debug" / ("omascribe-cli.exe" if os.name == "nt" else "omascribe-cli"))
     p.add_argument("--output", type=pathlib.Path, default=pathlib.Path("/tmp/omascribe-evaluation.json"))
     p.add_argument("--artifacts", type=pathlib.Path)
     p.add_argument("--case")

@@ -412,6 +412,29 @@
     "max_sections": 2
   },
   {
+    "name": "zh_windows_gpu_keyword_lines",
+    "focus": "omascribe\n\ngtx1650\n\nnvidia",
+    "transcript": [
+      "这个 OMA SCRIBE 的功能目前还没有正常运行。",
+      "gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。"
+    ],
+    "required": [
+      "OmaScribe",
+      "(?i)gtx1650",
+      "(?i)nvidia",
+      "未|没有"
+    ],
+    "forbidden": [
+      "已经完成|已经修复|已优化"
+    ],
+    "required_transcript": [
+      "OmaScribe"
+    ],
+    "forbidden_transcript": [
+      "OMA SCRIBE"
+    ]
+  },
+  {
     "name": "en_incremental_separate_topics",
     "focus": "**budget** **accessibility** **Riley**",
     "phases": [

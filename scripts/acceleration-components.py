@@ -6,6 +6,7 @@ index.payload bytes with the existing application release key and version.
 """
 import argparse
 import hashlib
+import io
 import json
 import os
 import pathlib
@@ -15,6 +16,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))["llama_cpp"]
@@ -24,6 +26,8 @@ LIMIT = 4 * 1024**3
 RESERVED = {"installed.json", "verified.json", "active.json", "component-index.json", "payload.tar.bz2"}
 CUDA_RUNTIME = re.compile(r"^(?:lib(?:cublas(?:Lt)?|cudart|nvrtc(?:-builtins)?)\.so(?:\.[0-9]+)*|(?:cublas(?:Lt)?|cudart|nvrtc(?:-builtins)?)64_[0-9_]+\.dll)$", re.I)
 DRIVER = re.compile(r"^(?:libcuda\.so|nvcuda\.dll|libnvidia|nvml|libamdhip|amdhip|libvulkan|vulkan-1)", re.I)
+VULKAN_PROBE_URL = "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanRT-X64-1.4.363.0-Components.zip"
+VULKAN_PROBE_SHA256 = "a25a927aa8b9f0371048f1861cf88ac3b9bc9b1fb332c42d897c8ab32695769a"
 
 
 def run(*argv, **kwargs):
@@ -153,6 +157,53 @@ def copy_flat(source, destination):
     shutil.copy2(source, destination, follow_symlinks=True)
 
 
+def windows_x64_library(path):
+    with path.open('rb') as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:2] != b'MZ':
+            return False
+        stream.seek(int.from_bytes(header[60:64], 'little'))
+        return stream.read(6) == b'PE\0\0\x64\x86'
+
+
+def unpack_vulkan_probe(data, output):
+    # The Windows development SDK no longer supplies the runtime loader. Use
+    # LunarG's pinned non-installer archive only for the GPU-less build probe.
+    # Never extract arbitrary paths or include these files in the component.
+    if hashlib.sha256(data).hexdigest() != VULKAN_PROBE_SHA256:
+        raise ValueError("Build-host Vulkan runtime checksum mismatch")
+    output.mkdir(parents=True, exist_ok=True)
+    loader = output / "vulkan-1.dll"
+    matches = []
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        for member in archive.infolist():
+            if pathlib.PurePosixPath(member.filename).name.lower() != "vulkan-1.dll" or member.file_size > 8 * 1024**2:
+                continue
+            candidate = archive.read(member)
+            if len(candidate) < 64 or candidate[:2] != b'MZ':
+                continue
+            offset = int.from_bytes(candidate[60:64], 'little')
+            if candidate[offset:offset + 6] == b'PE\0\0\x64\x86':
+                matches.append(candidate)
+    if len(matches) != 1:
+        raise ValueError("Expected exactly one x64 Vulkan build-host loader")
+    loader.write_bytes(matches[0])
+    return loader
+
+
+def runtime_environment(output, backend, windows):
+    env = dict(os.environ, LD_LIBRARY_PATH=str(output.resolve()), PATH=str(output.resolve()) + os.pathsep + os.environ["PATH"])
+    if windows and backend == "vulkan":
+        # A copy-only SDK on a GPU-less CI runner does not install the system
+        # loader. Static Vulkan executables need it even for --version. Use the
+        # SDK's loader for this build-host probe; never add it to the component.
+        sdk = pathlib.Path(os.environ["VULKAN_SDK"])
+        loader_dirs = sorted({str(p.parent.resolve()) for p in sdk.rglob("vulkan-1.dll") if p.is_file() and windows_x64_library(p)})
+        if loader_dirs:
+            env["PATH"] = os.pathsep.join(loader_dirs) + os.pathsep + env["PATH"]
+    return env
+
+
 def dependencies(path, windows):
     command = ["dumpbin", "/dependents", str(path)] if windows else ["readelf", "-d", str(path)]
     text = subprocess.check_output(command, text=True, errors="replace", timeout=30)
@@ -164,7 +215,7 @@ def collect_cuda(output, cuda, windows):
     # large Linux libraries under their development symlink/version/SONAME names.
     folders = [cuda / "bin", cuda / "lib64", cuda / "targets/x86_64-linux/lib"]
     candidates = {p.name.lower(): p for folder in folders if folder.is_dir() for p in folder.iterdir() if p.is_file() and CUDA_RUNTIME.fullmatch(p.name)}
-    queue = [p for p in output.iterdir() if p.suffix.lower() == ".dll" or ".so" in p.name]
+    queue = [p for p in output.iterdir() if p.suffix.lower() == ".dll" or ".so" in p.name or windows and p.suffix.lower() == ".exe"]
     visited, count = set(), 0
     while queue:
         path = queue.pop()
@@ -223,11 +274,21 @@ def build(backend, output):
              "-DLLAMA_BUILD_UI=OFF", "-DLLAMA_USE_PREBUILT_UI=OFF", "-DLLAMA_BUILD_SERVER=ON",
              "-DGGML_CUDA=" + ("ON" if backend == "cuda" else "OFF"), "-DGGML_VULKAN=" + ("ON" if backend == "vulkan" else "OFF")]
     if backend == "cuda":
-        flags += ["-DCMAKE_CUDA_ARCHITECTURES=75-virtual;80-virtual;86-real;89-real;90-virtual;120a-real", "-DGGML_CUDA_NCCL=OFF"]
+        # Ship native instructions for Turing/Ampere/Hopper as well. PTX-only
+        # builds require a driver new enough for the build SDK's PTX version,
+        # defeating CUDA 12 minor-version compatibility on older GPUs.
+        flags += ["-DCMAKE_CUDA_ARCHITECTURES=75-real;80-real;86-real;89-real;90-real;120a-real", "-DGGML_CUDA_NCCL=OFF"]
     else:
         flags += vulkan_flags(pathlib.Path(os.environ["VULKAN_SDK"]), os.name == "nt")
     if os.name == "nt":
-        flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+        # The optional Windows download is a self-contained executable. Keep
+        # static-CRT C++ objects inside one module instead of crossing several
+        # server/common/llama DLL boundaries (the shared build crashes on load).
+        flags += ["-DBUILD_SHARED_LIBS=OFF", "-DGGML_BACKEND_DL=OFF", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+        if backend == "cuda":
+            # VMM links nvcuda.dll directly. The build runner has no NVIDIA
+            # driver; use runtime allocation instead of importing that driver.
+            flags += ["-DGGML_CUDA_NO_VMM=ON"]
     run("cmake", "-S", source, "-B", cmake, *flags)
     run("cmake", "--build", cmake, "--config", "Release", "--target", "llama-server", "--parallel", "2" if backend == "cuda" else "3")
     output = pathlib.Path(output)
@@ -253,7 +314,12 @@ def build(backend, output):
         for path in output.iterdir():
             if path.name == entrypoint or ".so" in path.name:
                 run("patchelf", "--set-rpath", "$ORIGIN", path)
-    env = dict(os.environ, LD_LIBRARY_PATH=str(output.resolve()), PATH=str(output.resolve()) + os.pathsep + os.environ["PATH"])
+    env = runtime_environment(output, backend, os.name == "nt")
+    if os.name == "nt" and backend == "vulkan":
+        request = urllib.request.Request(VULKAN_PROBE_URL, headers={"User-Agent": "OmaScribe-component-build"})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            loader = unpack_vulkan_probe(response.read(25 * 1024**2), work / "version-probe")
+        env["PATH"] = str(loader.parent.resolve()) + os.pathsep + env["PATH"]
     version = subprocess.check_output([str((output / entrypoint).resolve()), "--version"], stderr=subprocess.STDOUT, env=env, timeout=30, text=True)
     if actual[:7] not in version:
         raise ValueError("Built executable revision mismatch")

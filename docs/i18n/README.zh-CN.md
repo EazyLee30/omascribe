@@ -100,7 +100,7 @@ scripts/bin/install     # 安装到当前用户及应用启动器
 Linux 默认数据位于 `~/.local/share/omascribe/`，遵循 `$XDG_DATA_HOME`；macOS 和 Windows 路径见上方安装说明。Linux/macOS 目录仅当前用户可访问，Windows 使用用户账户继承的访问权限；应用本身不加密文件。可用 `OMASCRIBE_DATA_DIR`、`OMASCRIBE_MODELS_DIR`、`OMASCRIBE_RUNTIME_DIR` 指定位置。CLI 提供 `diagnose`、`import`、`record`、`replay`、`append`、`files`、`retranscribe`、`snapshot`、`note`、`generate`、`translate`、`export`，输出 JSON。
 
 - 当前采集麦克风，尚未实现系统音频混录。可选本地说话人分离在转写结束后运行，单次最长两小时。
-- 小型 ASR 的人名、远场、重叠说话和中英混说准确率需要真实场景评估；关键词当前用于笔记检索，不做 ASR 热词偏置。
+- 小型 ASR 的人名、远场、重叠说话和中英混说准确率仍需真实场景评估。笔记名称和启用的专有名词可辅助本机识别、笔记检索与有依据的拼写校正；保留原始识别记录和人工修改，不把含混片段强行替换成笔记里的词。
 - RAG 使用会议内 BM25、中文字符／双字及精确词匹配，不常驻向量模型。
 - 本地翻译在录音和写作空闲后补上译文，从不改动原文；小模型译文仍需核对数字与否定语气。
 - Linux 浮窗吸附集成 Hyprland，屏幕字幕使用 Wayland layer-shell；macOS/Windows 使用原生置顶字幕窗口，全屏空间与多显示器行为仍需真机测试。

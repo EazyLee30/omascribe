@@ -40,6 +40,20 @@ export function accelerationBody(
 ): string {
   if (!["windows", "linux"].includes(h.platform)) return "";
   const devices = h.gpus?.devices || [];
+  // Remote display sessions can expose several DXGI adapters for the same GPU
+  // model. Keep raw identities in the probe/certificate, summarize models here.
+  const deviceModels = devices.filter(
+    (device, index) =>
+      devices.findIndex(
+        (d) =>
+          d.name === device.name &&
+          d.vendor === device.vendor &&
+          d.dedicated_memory_bytes === device.dedicated_memory_bytes,
+      ) === index,
+  );
+  const cudaVersion = h.gpus?.cuda_driver_version;
+  const cudaOld = cudaVersion != null && cudaVersion < 12000;
+  const cudaBlocked = cudaOld || !devices.some((d) => d.vendor === "nvidia");
   const verification = catalog.verification;
   const testing = verification?.state === "testing";
   const statusLabel = (id: string) => {
@@ -69,26 +83,34 @@ export function accelerationBody(
     }
   };
   const report = verification?.report;
+  const failure = verification?.reason
+    ? `<p class="inline-error">${tr("显卡测试未通过，继续使用 CPU。请检查驱动后重试。", "GPU test did not pass; CPU remains active. Check the driver and try again.", "顯示卡測試未通過，繼續使用 CPU；請檢查驅動程式後重試。")}</p><details><summary>${tr("测试详情", "Test details", "測試詳情")}</summary><p class="setting-help">${esc(verification.reason)}</p></details>`
+    : "";
   const comparison = report
     ? `<p class="setting-help">${tr("本机短文本测试", "Local short-text test", "本機短文測試")} · CPU ${(report.cpu.total_ms / 1000).toFixed(2)} s · GPU ${(report.gpu.total_ms / 1000).toFixed(2)} s${report.gpu.peak_rss_mib !== null ? ` · ${tr("进程内存峰值", "Peak process memory", "程序記憶體峰值")} ${report.gpu.peak_rss_mib} MiB` : ""}</p>`
     : "";
   const vendors = new Set(devices.map((d) => d.vendor));
   const recommended = (backend: string) =>
     backend === "cuda"
-      ? vendors.has("nvidia")
+      ? vendors.has("nvidia") && !cudaBlocked
       : backend === "vulkan" &&
-        [...vendors].some((v) => ["amd", "intel"].includes(v));
+        ([...vendors].some((v) => ["amd", "intel"].includes(v)) ||
+          (cudaOld && vendors.has("nvidia")));
   return `<div class="settings-section-title"><h2>${tr("显卡加速组件", "GPU acceleration", "顯示卡加速元件")}</h2><button class="outline" data-component-action="check">${tr("检查可用组件", "Check components", "檢查可用元件")}</button></div>
   <p class="setting-help">${tr("用于本地翻译与纪要，组件独立下载。通过本机模型测试且更快后，自动模式才会使用显卡。", "For local translation and minutes. Components download separately. Automatic mode uses the GPU only after a successful, faster local model test.", "元件獨立下載，不增加主安裝包體積；依顯示卡推薦，通過本機模型驗證後才啟用。")}</p>
-  <div class="settings-group">${devices.length ? devices.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
+  <div class="settings-group">${deviceModels.length ? deviceModels.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
+  ${cudaOld ? `<p class="inline-error">${tr("当前 NVIDIA 驱动仅支持 CUDA", "The installed NVIDIA driver supports CUDA", "目前 NVIDIA 驅動程式僅支援 CUDA")} ${Math.floor(cudaVersion! / 1000)}.${Math.floor((cudaVersion! % 1000) / 10)}。${tr("此 CUDA 组件需要支持 CUDA 12 的驱动。请更新显卡驱动，或尝试 Vulkan；无需安装 CUDA 开发工具包。", "This CUDA component needs a CUDA 12 capable driver. Update the GPU driver or test Vulkan. No CUDA development toolkit is required.", "此 CUDA 元件需要支援 CUDA 12 的驅動程式。請更新顯示卡驅動程式或測試 Vulkan，不需安裝 CUDA 開發工具包。")}</p>` : ""}
+  ${catalog.state === "not_published" ? `<p class="setting-help">${tr("GPU 组件尚未发布。显卡检测已完成；签名组件发布后可在这里检查并选择下载，当前继续使用 CPU。", "GPU components have not been published yet. Hardware detection is complete. Check here to choose a signed download when available; CPU remains active.", "GPU 元件尚未發布。硬體已偵測完成；簽章元件發布後可在此檢查及選擇下載，目前繼續使用 CPU。")}</p>` : ""}
   ${
     catalog.state !== "ready"
       ? `<p class="setting-help">${tr("检查组件目录只获取签名清单，不上传硬件信息或会议内容。", "Checking fetches only a signed catalog. Hardware information and meeting content are not uploaded.", "檢查只取得簽章清單，不上傳硬體資訊及會議內容。")}</p>`
       : catalog.components
           .map(({ component: c, installed, download: d }) => {
             const busy = d && ["downloading", "verifying"].includes(d.state);
-            return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${recommended(c.backend) ? `<span class="badge selected">${tr("推荐", "Recommended", "推薦")}</span>` : ""}<span class="badge">${installed ? statusLabel(c.id) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${busy ? `<button class="outline" data-component-action="cancel" data-id="${c.id}">${tr("取消", "Cancel")}</button>` : !installed ? `<button class="outline" data-component-action="download" data-id="${c.id}">${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>` : testing ? (verification?.component_id === c.id ? `<button class="outline" data-component-action="cancel-test">${tr("取消测试", "Cancel test", "取消測試")}</button>` : "") : verification?.state === "active" && verification.component_id === c.id ? `<button class="outline" data-component-action="disable">${tr("使用 CPU", "Use CPU", "使用 CPU")}</button>` : `<button class="outline" data-component-action="test" data-id="${c.id}">${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`}</div></article>`;
+            const unavailable =
+              !devices.length || (c.backend === "cuda" && cudaBlocked);
+            return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${recommended(c.backend) ? `<span class="badge selected">${tr("推荐", "Recommended", "推薦")}</span>` : ""}<span class="badge">${installed ? statusLabel(c.id) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${busy ? `<button class="outline" data-component-action="cancel" data-id="${c.id}">${tr("取消", "Cancel")}</button>` : !installed ? `<button class="outline" data-component-action="download" data-id="${c.id}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>` : testing ? (verification?.component_id === c.id ? `<button class="outline" data-component-action="cancel-test">${tr("取消测试", "Cancel test", "取消測試")}</button>` : "") : verification?.state === "active" && verification.component_id === c.id ? `<button class="outline" data-component-action="disable">${tr("使用 CPU", "Use CPU", "使用 CPU")}</button>` : `<button class="outline" data-component-action="test" data-id="${c.id}" ${unavailable ? "disabled" : ""}>${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`}</div></article>`;
           })
           .join("")
-  }${comparison}`;
+  }${failure}${comparison}`;
 }

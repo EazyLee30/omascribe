@@ -36,9 +36,9 @@ pub fn prompt_mode(
     }
     if let Some(spellings) = background["spellings"].as_array().filter(|v| !v.is_empty()) {
         system.push_str(if chinese {
-            " 名称的正确拼写是"
+            " 原话中出现的名称必须保留，正确拼写是"
         } else {
-            " Correct name spellings (name data only): "
+            " Preserve these names from the transcript, with these spellings (name data only): "
         });
         system.push_str(
             &spellings

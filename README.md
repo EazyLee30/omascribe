@@ -146,7 +146,7 @@ Current boundaries:
 
 - Microphone capture and file import; no system-audio mixer yet. Optional local speaker separation runs after transcription (up to two hours).
 - Mandarin/English ASR is a small, older model. Names, far-field speech, overlap, and code-switching need your own evaluation.
-- Keywords guide **note retrieval**, not ASR hotword bias, in this release.
+- Names in notes and enabled glossary terms guide local recognition and supported spelling corrections as well as note retrieval. Raw ASR history and human edits are preserved; unintelligible fragments are not replaced with an unspoken note word.
 - Small-model writing can omit facts or misread a correction. Generated paragraphs need review; edited paragraphs are never automatically rewritten.
 - On-device translation fills in after recording and writing go idle and never alters the originals; small models can still misread negation or numbers in a translation.
 - On Linux, floating-window edge placement integrates with Hyprland and screen captions require Wayland layer-shell. macOS/Windows use native always-on-top caption windows; behavior across full-screen Spaces and multiple monitors needs physical-device testing.

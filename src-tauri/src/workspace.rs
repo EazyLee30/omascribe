@@ -71,10 +71,13 @@ pub fn delete_model(engine: State<AppState>, id: String) -> Reply<()> {
     engine.delete_model(&id).map_err(err)
 }
 #[tauri::command]
-pub fn acceleration_components(
-    engine: State<AppState>,
-) -> omascribe_core::components::CatalogStatus {
-    engine.acceleration_components()
+pub async fn acceleration_components(
+    engine: State<'_, AppState>,
+) -> Reply<omascribe_core::components::CatalogStatus> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.acceleration_components())
+        .await
+        .map_err(err)
 }
 #[tauri::command]
 pub async fn check_acceleration_components(

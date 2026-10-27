@@ -9,7 +9,8 @@ import {
 } from "./views-client";
 import { uiIcon } from "./ui-icons";
 import { tr } from "./workspace-ui";
-import { translationSelect } from "./translation-ui";
+import { onLocaleChange } from "./i18n";
+import { translationChoices, translationSelect } from "./translation-ui";
 import { getPreferences, savePreferences } from "./preferences-client";
 import type { Snapshot } from "./types";
 const atlas = new URL(
@@ -107,6 +108,70 @@ function controls() {
       `${tr("OmaScribe 录音小助手", "OmaScribe recording companion", "OmaScribe 錄音小助手")} · ${root.querySelector("#pet-status")!.textContent} · ${tr("点击展开，拖动移动", "Click to open, drag to move", "點擊展開，拖曳移動")}`,
     );
   pose();
+}
+function localize() {
+  const button = (
+    selector: string,
+    text: string,
+    icon: Parameters<typeof uiIcon>[0] | "" = "",
+  ) => {
+    root.querySelector<HTMLElement>(selector)!.innerHTML =
+      (icon ? uiIcon(icon, 16) : "") + text;
+  };
+  root
+    .querySelector(".pet-panel")!
+    .setAttribute(
+      "aria-label",
+      tr("录音控制", "Recording controls", "錄音控制"),
+    );
+  root
+    .querySelector("[data-action='collapse']")!
+    .setAttribute("aria-label", tr("收起", "Collapse", "收起"));
+  root.querySelector(".pet-local")!.textContent = tr(
+    "录音、转写和整理均在本机",
+    "Recording, transcription and minutes stay local",
+    "錄音、轉寫及整理皆在本機",
+  );
+  button("#pet-start", tr("开始录音", "Start recording", "開始錄音"), "mic");
+  button("#pet-stop", tr("结束", "End", "結束"), "stop");
+  button(
+    "[data-action='transcript']",
+    tr("实时转写", "Transcript", "即時轉寫"),
+    "dock",
+  );
+  button("#pet-captions", tr("字幕", "Captions", "字幕"), "captions");
+  button(
+    "[data-action='main']",
+    tr("回到会议", "Open meeting", "開啟會議"),
+    "return",
+  );
+  button("#pet-new", tr("新建录音", "New recording", "新增錄音"));
+  button(
+    ".pet-panel-foot [data-action='hide']",
+    tr("隐藏助手", "Hide pet", "隱藏助手"),
+  );
+  button(".pet-hover-hide", tr("隐藏", "Hide", "隱藏"), "hide");
+  for (const [selector, label] of [
+    [".pet-hover-hide", tr("隐藏桌面助手", "Hide desktop pet", "隱藏桌面助手")],
+    ["#pet-grip", tr("拖动小助手", "Drag companion", "拖曳助手")],
+  ]) {
+    const element = root.querySelector<HTMLElement>(selector)!;
+    element.title = label;
+    element.setAttribute("aria-label", label);
+  }
+  const select = root.querySelector<HTMLSelectElement>("#pet-translation")!;
+  for (const [value, label] of translationChoices())
+    select.querySelector(`option[value='${value}']`)!.textContent = label;
+  select.setAttribute(
+    "aria-label",
+    tr("实时翻译模式", "Live translation mode", "即時翻譯模式"),
+  );
+  select.title = tr(
+    "本地翻译 · 原始转写保留",
+    "Local translation · Original transcript preserved",
+    "本機翻譯 · 保留原始轉寫",
+  );
+  controls();
 }
 async function refresh() {
   if (busy || !prefs?.companion_enabled) return;
@@ -214,6 +279,7 @@ async function init() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") expand(false).catch(showError);
   });
+  await onLocaleChange(localize);
   await refresh();
   setInterval(() => {
     step++;

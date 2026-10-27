@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "scope": "Explicit developer trial; no production component installation or activation",
+  "hardware": {
+    "os": "Windows 10 22H2 x64",
+    "cpu": "Intel Core i5-10300H",
+    "memory_gib": 16,
+    "gpu": "NVIDIA GeForce GTX 1650",
+    "vram_mib": 4096,
+    "driver": "522.06",
+    "driver_cuda_api": 11080
+  },
+  "runtime": {
+    "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "cuda_toolkit": "11.5.119",
+    "msvc": "19.44.35226",
+    "sha256": "48da85362718a3ed75af1197cd964dd27d6b083c753a8a85c6b96b64da7a4031",
+    "static": true,
+    "cuda_architectures": [
+      "75-real"
+    ],
+    "flash_attention": false,
+    "legacy_host_override": true,
+    "compatibility_limit": "The existing CUDA 11.5 and MSVC pairing requires an explicit unsupported-host override. This does not validate the formal CUDA 12.8 component."
+  },
+  "model": {
+    "id": "Qwen3-1.7B-Q4_K_M",
+    "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+  },
+  "direct_comparison": {
+    "order": [
+      "cpu",
+      "cuda"
+    ],
+    "threads": 2,
+    "context": 2048,
+    "inputs": "Two fixed fictional English/Chinese weekday, amount and negation extraction requests",
+    "trials": [
+      {
+        "passed": true,
+        "backend": "cpu",
+        "server_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+        "startup_ms": 2641,
+        "runs": [
+          {
+            "ms": 5828,
+            "facts": {
+              "day": "Thursday",
+              "rejected_day": "Friday",
+              "budget": 3000,
+              "approved": false
+            },
+            "usage": {
+              "completion_tokens": 34,
+              "prompt_tokens": 86,
+              "total_tokens": 120,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              }
+            },
+            "correct": true
+          },
+          {
+            "ms": 5765,
+            "facts": {
+              "day": "thursday",
+              "rejected_day": "friday",
+              "budget": 3000,
+              "approved": false
+            },
+            "usage": {
+              "completion_tokens": 36,
+              "prompt_tokens": 83,
+              "total_tokens": 119,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              }
+            },
+            "correct": true
+          }
+        ],
+        "total_ms": 14328,
+        "offloaded_layers": 0,
+        "peak_rss_mib": null,
+        "gpu_memory_mib": null
+      },
+      {
+        "passed": true,
+        "backend": "cuda",
+        "server_sha256": "48da85362718a3ed75af1197cd964dd27d6b083c753a8a85c6b96b64da7a4031",
+        "startup_ms": 1953,
+        "runs": [
+          {
+            "ms": 2360,
+            "facts": {
+              "day": "Thursday",
+              "rejected_day": "Friday",
+              "budget": 3000,
+              "approved": false
+            },
+            "usage": {
+              "completion_tokens": 28,
+              "prompt_tokens": 86,
+              "total_tokens": 114,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              }
+            },
+            "correct": true
+          },
+          {
+            "ms": 1031,
+            "facts": {
+              "day": "thursday",
+              "rejected_day": "friday",
+              "budget": 3000,
+              "approved": false
+            },
+            "usage": {
+              "completion_tokens": 36,
+              "prompt_tokens": 83,
+              "total_tokens": 119,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              }
+            },
+            "correct": true
+          }
+        ],
+        "total_ms": 5735,
+        "offloaded_layers": 29,
+        "peak_rss_mib": null,
+        "gpu_memory_mib": null
+      }
+    ],
+    "limitation": "Two fictional extraction requests, cold start; no warm throughput, ASR/minutes quality, power or broad compatibility claim. Resource samples unavailable."
+  },
+  "production_worker_admission": {
+    "backend": "cuda",
+    "build": {
+      "profile": "debug",
+      "revision_at_compile": "fb2e295c7e79262400ab9f46822df418b8426f46",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "7b1066d4baf964eddc646a3baa0c59225c0ec0c04feda21902468367cf740e81",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "context": 2048,
+    "error": null,
+    "kind": "explicit_developer_gpu_admission",
+    "limitation": "Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation.",
+    "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "offloaded": true,
+    "passed": true,
+    "runtime_sha256": "48da85362718a3ed75af1197cd964dd27d6b083c753a8a85c6b96b64da7a4031",
+    "schema": 1,
+    "threads": 1,
+    "trial": {
+      "peak_rss_mib": 2093,
+      "requests_ms": [
+        1763,
+        937
+      ],
+      "runtime_gpu_buffer_mib": 1300.43,
+      "startup_ms": 2864,
+      "total_ms": 5565
+    },
+    "tested_worktree": "fb2e295 plus the optional GPU --log-verbosity 4 change; source hash identifies the exact compiled inputs"
+  },
+  "limits": [
+    "One device and one ordered pair, no run-to-run confidence interval.",
+    "No full-meeting, warm throughput, ASR accuracy, power or broad compatibility claim.",
+    "The 2093 MiB sampled child RSS is a lower bound; 1300.43 MiB is a runtime-reported GPU buffer total, not physical peak VRAM.",
+    "Signed production catalog is not yet published; GPU remains an explicit install/test/enable choice.",
+    "Repeated one-thread admission took 9670 ms versus 5565 ms initially; do not treat the two-thread ordered pair as a stable speedup estimate."
+  ],
+  "production_worker_admission_clean_source_repeat": {
+    "backend": "cuda",
+    "build": {
+      "profile": "debug",
+      "revision_at_compile": "0dfe8a80bcdee1d729f696fc2e94e0ba88335742",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "dce98792b4bec5c67ac01b12425e2d99f60edd59b32c913d0b54439c4df46d81",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "context": 2048,
+    "error": null,
+    "kind": "explicit_developer_gpu_admission",
+    "limitation": "Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation.",
+    "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "offloaded": true,
+    "passed": true,
+    "runtime_sha256": "48da85362718a3ed75af1197cd964dd27d6b083c753a8a85c6b96b64da7a4031",
+    "schema": 1,
+    "threads": 1,
+    "trial": {
+      "peak_rss_mib": 2093,
+      "requests_ms": [
+        4117,
+        1042
+      ],
+      "runtime_gpu_buffer_mib": 1300.43,
+      "startup_ms": 4511,
+      "total_ms": 9670
+    },
+    "inference_source_tree_dirty": false,
+    "source_verification": "Working tree matches commit 0dfe8a8 after refreshing Git stat metadata for LF-normalized files. Exact compiled source hash retained."
+  },
+  "static_vulkan_component_trial": {
+    "workflow_run": 40345201430,
+    "artifact_id": 12662360520,
+    "archive_sha256": "7a4c86607325b605b5cab8aba2ac872f8b54a24279b91c9f8b62ad9d3683c459",
+    "all_archive_member_hashes_verified": true,
+    "archive_members": 3,
+    "default_system_loader_device_listing": [],
+    "process_driver_override": true,
+    "driver_manifest_sha256": "94b92283f5e2d464a8dce885091cb9a451f01137250226767b7f99727b0d5bc0",
+    "offloaded_layers": 29,
+    "production_worker_admission": {
+      "backend": "vulkan",
+      "build": {
+        "profile": "debug",
+        "revision_at_compile": "911d7866001691ff101c09f8a4b7d80f92898095",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "2ed5dbd52456013393cd5489758b99e9b3d6d160f488f7110d01e2a47b5c518b",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "context": 2048,
+      "error": null,
+      "kind": "explicit_developer_gpu_admission",
+      "limitation": "Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation.",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "offloaded": true,
+      "passed": true,
+      "runtime_sha256": "d0ace20f378a993728fb8e5aeb2ebba89cca055ce70d4d03fdb108c21eee0d08",
+      "schema": 1,
+      "threads": 1,
+      "trial": {
+        "peak_rss_mib": 1480,
+        "requests_ms": [
+          3485,
+          867
+        ],
+        "runtime_gpu_buffer_mib": 1287.93,
+        "startup_ms": 8962,
+        "total_ms": 13315
+      }
+    },
+    "limits": [
+      "The process-local VK_ICD_FILENAMES override is developer-only. No system/registry changes or production component activation.",
+      "Default driver discovery still returns no Vulkan device on this machine; this is conditional runtime correctness evidence, not out-of-box compatibility.",
+      "This confirms that the static candidate loads the same model without the old shared-runtime 0xc0000409 failure. It does not prove that all Windows machines are repaired.",
+      "Sampled child RSS is a lower bound; runtime GPU buffers are not physical peak VRAM. This cold admission trial is not a CPU/GPU speed comparison."
+    ]
+  }
+}

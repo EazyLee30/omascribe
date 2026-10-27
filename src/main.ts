@@ -811,7 +811,7 @@ async function navigate(
         await navigate("meetings");
       },
       language: async (l) => {
-        setLocale(l);
+        await setLocale(l);
         await pageHandle?.close();
         pageHandle = null;
         shell();

@@ -1,0 +1,400 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "windows_candidate_selector_integration",
+  "passed": true,
+  "source_commit": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+  "shared_head": "70a2d451d3849fdf7f275be75a450f8cb52d08e6",
+  "source_fix": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "82937664b51af871c412f32c7880105444e1418409ed20c36c9b5882bd7833cd",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "b945df303f0daf46285cca61afe22b6febd9e37394cb216f816c23cf45b1aa4b",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "c9c54fd4eba02d68bc90870616b33e32e12246451d1ccba320e5a23d91b91432",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_sha256": "93809b7032e43f41fa2533eb879851324586ecefcc091429333fe151ae680bb9",
+  "cases": [
+    {
+      "case": "zh_budget_guess",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_correction",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_calendar_citations",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_connected_minutes",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_product_spelling",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_empty_greetings",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_phased_correction",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_named_speakers",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_long_context_state",
+      "passed": true,
+      "coverage": 10,
+      "errors": []
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "coverage": 3,
+      "errors": []
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "en_generic_note_name",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    }
+  ],
+  "checks": {
+    "python_at_source_fix": 55,
+    "core_passed": 100,
+    "core_ignored_opt_in": 5,
+    "clippy_ui_test": "passed",
+    "remote_windows_core": "passed",
+    "remote_linux_ci": "passed"
+  },
+  "native_ui": {
+    "identity": {
+      "support_revision": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+      "app_sha256": "3725fe6d72e8f8a9fda7097914e60a45a674896da4cce9ce2eb0771b6f9a07df",
+      "fixture_sha256": "72a1d3c0e3fdec620587447a987ca1a52c0e9a6aaa00b4024c510cc7797fa366",
+      "app_version": "0.3.4",
+      "exit_code": 0,
+      "debugger_port": false,
+      "private_workspace": true,
+      "candidate_selector": "acceleration-ci-40367160891"
+    },
+    "passed": true,
+    "checks": [
+      "Open native companion/transcript follow five language changes and preserve expansion",
+      "Native hardware reaches settings while activation still requires component verification"
+    ],
+    "languages": [
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "en",
+          "start": "Start recording"
+        },
+        "locale": "en",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "Live captions",
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-CN",
+          "start": "开始录音"
+        },
+        "locale": "zh-CN",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "实时字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-TW",
+          "start": "開始錄音"
+        },
+        "locale": "zh-TW",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-TW",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "即時字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-TW",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "en",
+          "start": "Start recording"
+        },
+        "locale": "en",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "Live captions",
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-CN",
+          "start": "开始录音"
+        },
+        "locale": "zh-CN",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "实时字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        }
+      }
+    ],
+    "windows": [
+      {
+        "label": "companion",
+        "maximized": false,
+        "position": [
+          1540,
+          686
+        ],
+        "size": [
+          380,
+          340
+        ],
+        "visible": true
+      },
+      {
+        "label": "transcript",
+        "maximized": false,
+        "position": [
+          1364,
+          60
+        ],
+        "size": [
+          540,
+          420
+        ],
+        "visible": true
+      },
+      {
+        "label": "main",
+        "maximized": false,
+        "position": [
+          182,
+          182
+        ],
+        "size": [
+          1160,
+          780
+        ],
+        "visible": true
+      }
+    ],
+    "limits": [
+      "Functional native-window checks; screenshots are separate visual evidence.",
+      "No settings download/activation claim before a signed candidate catalog is available."
+    ]
+  },
+  "native_input_sha256": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852",
+  "original_vulkan_checkouts": {
+    "windows": {
+      "job_id": 121727976970,
+      "log_sha256": "ac9e06d1ffacc23e4c199915b5152dceb065424066d9e9aa30452140fca32e6d",
+      "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+      "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+      "parents": [
+        "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+        "164371e285a499e9261afa5239d1d563a1aadb57"
+      ]
+    },
+    "linux": {
+      "job_id": 121727976886,
+      "log_sha256": "1d21af471e7bb3d61bc7265a0dfca50436e2ec827333db2e7b1e0b21ae42e7ea",
+      "checkout": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+      "tree": "2dbae0bef49a2cd51d11d3f2fba8329f0f2a7c09",
+      "parents": [
+        "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+        "164371e285a499e9261afa5239d1d563a1aadb57"
+      ]
+    }
+  },
+  "prior_attempts": [
+    {
+      "report": "artifacts/benchmarks/windows-acceptance-20261027-candidate-selector-minutes.json",
+      "accepted": false,
+      "reason": "Signed fixture stat/filter metadata initially appeared dirty although disk/index/source bytes matched; run then failed on Windows atomic report replacement PermissionError after early passes. Retained. Fresh clean-source rerun passed all 19."
+    }
+  ],
+  "pending": [
+    "Original Windows/Linux CUDA 12.8.1 builds and their original checkout proof",
+    "Full four-way artifact/catalog success and signed immutable candidate publication",
+    "Actual settings download/install/test-enable/restart/CPU switching/fault fallback/concurrent recording and generation"
+  ],
+  "limits": [
+    "No private audio or microphone capture in native UI fixture.",
+    "Only two completed Vulkan checkout proofs currently observed; not proof of the pending CUDA checkouts.",
+    "No tag, signing label, stable catalog promotion or standalone installer publication in this checkpoint."
+  ],
+  "prior_windows_provenance_helper": {
+    "revision": "5d0f0b1bbb89db66699543ced9cc0de50da11276",
+    "python_tests": 57,
+    "scope": "Delivery-only helper/tests; no native compiler/SDK/package or application core change after source_fix. Four original successful native checkout records required before reuse."
+  },
+  "current_shared_sync": {
+    "source_commit": "54e4be4a1d48bbd41da15c900fa064e5616f61de",
+    "shared_head": "4edafb0478c271766cdad5f15d67ac70c9cd56b7",
+    "bounded_reader_checks": {
+      "121727976970": "523f87535ed60017a2be73fd4fe34109ed9223f6",
+      "121727976886": "523f87535ed60017a2be73fd4fe34109ed9223f6"
+    },
+    "native_fingerprints": {
+      "164371e": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852",
+      "HEAD": "b436647fcbdf05a4c6e64f22e814dfe9c9f17bcddd5fcee05b95e702bcaa1852"
+    },
+    "python_tests": 56,
+    "pending": "Two CUDA builds/checkouts, full catalog and signed candidate lifecycle",
+    "application_sources_unchanged_from": "44c6f2104dcbed1aa91b7a5e55bb2deda913d887",
+    "implementation": "Canonical shared bounded-log/immutable-input checker; replaces separate Windows helper 5d0f0b1."
+  }
+}

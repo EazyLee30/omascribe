@@ -31,6 +31,9 @@ def invoke(argv, env, directory, timeout=120):
                 raise
         else:
             try: child.wait(timeout=timeout)
+            except subprocess.TimeoutExpired as error:
+                child.kill(); child.wait()
+                raise TimeoutError('Worker benchmark timed out') from error
             except BaseException: child.kill(); child.wait(); raise
     if child.returncode: raise RuntimeError(f'Worker exited {child.returncode}; see {directory}')
     result = json.loads((directory/'stdout.json').read_text(encoding='utf-8'))

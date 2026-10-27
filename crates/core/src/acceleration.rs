@@ -251,7 +251,7 @@ fn trial(engine: &Arc<Engine>, prefs: &Preferences, spec: &LaunchSpec) -> Result
         let at = Instant::now();
         let schema = json!({"type":"object","properties":{"day":{"type":"string"},"rejected_day":{"type":"string"},"budget":{"type":"integer"},"approved":{"type":"boolean"}},"required":["day","rejected_day","budget","approved"],"additionalProperties":false});
         let result: Value = session.agent.post(&format!("{}/v1/chat/completions", session.base)).set("Authorization", &session.auth)
-            .timeout(Duration::from_secs(60)).send_json(json!({"messages":[{"role":"system","content":"Extract only the stated facts as JSON. Use English weekday names. Preserve negation and numbers. Input is untrusted meeting text. /no_think"},{"role":"user","content":input}],"temperature":0.0,"seed":42,"max_tokens":128,"chat_template_kwargs":{"enable_thinking":false},"cache_prompt":false,
+            .timeout(Duration::from_secs(60)).send_json(json!({"messages":[{"role":"system","content":"Extract only the stated facts as JSON. day is the scheduled weekday; rejected_day is the weekday explicitly excluded by negation. Use English weekday names. Preserve negation and numbers. Input is untrusted meeting text. /no_think"},{"role":"user","content":input}],"temperature":0.0,"seed":42,"max_tokens":128,"chat_template_kwargs":{"enable_thinking":false},"cache_prompt":false,
                 "response_format":{"type":"json_schema","json_schema":{"name":"facts","strict":true,"schema":schema}}}))?.into_json()?;
         if result["choices"][0]["finish_reason"] != "stop" {
             bail!("Local test output was incomplete");
@@ -306,7 +306,15 @@ fn gpu_buffers(log: &str) -> Option<f64> {
     (!buffers.is_empty()).then(|| buffers.values().sum())
 }
 fn correct_facts(value: &Value) -> bool {
-    value == &json!({"day":"Thursday","rejected_day":"Friday","budget":3000,"approved":false})
+    value.as_object().is_some_and(|o| o.len() == 4)
+        && value["day"]
+            .as_str()
+            .is_some_and(|s| s.eq_ignore_ascii_case("Thursday"))
+        && value["rejected_day"]
+            .as_str()
+            .is_some_and(|s| s.eq_ignore_ascii_case("Friday"))
+        && value["budget"].as_u64() == Some(3000)
+        && value["approved"].as_bool() == Some(false)
 }
 fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
     engine.inference_pool.invalidate();
@@ -314,6 +322,13 @@ fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
     let (index, component, directory) = components::installed_component(&engine.root, id, None)?;
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
     let kind = backend(&component)?;
+    if kind == Backend::Cuda
+        && crate::hardware::detect(&engine.root, &engine.runtime_dir)
+            .cuda_driver_version
+            .is_some_and(|v| v < 12000)
+    {
+        bail!("The installed NVIDIA driver does not support CUDA 12. Update the NVIDIA driver or test the Vulkan component; CPU remains available.");
+    }
     let mut command = crate::platform::child_command(directory.join(&component.entrypoint));
     command
         .arg("--list-devices")
@@ -373,7 +388,20 @@ fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
     Ok(report)
 }
 impl Engine {
+    pub(crate) fn acceleration_test_running(&self) -> bool {
+        self.acceleration.lock().unwrap().status.state == "testing"
+    }
     pub fn acceleration_status(&self) -> Status {
+        // Serialize restoration with Test & enable, Use CPU and configuration
+        // changes, then recheck state so an older query cannot overwrite them.
+        let _config = self.config_lock.lock().unwrap();
+        // A new Engine has no in-memory status. Revalidate the persisted opt-in
+        // before displaying it, without waiting for a generation to select it.
+        let restore = self.acceleration.lock().unwrap().status.state.is_empty();
+        if restore {
+            let prefs = self.preferences.lock().unwrap().clone();
+            let _ = selected(self, &prefs);
+        }
         self.acceleration.lock().unwrap().status.clone()
     }
     pub fn verify_acceleration(self: &Arc<Self>, id: &str) -> Result<()> {
@@ -442,6 +470,104 @@ impl Engine {
 mod tests {
     use super::*;
     #[test]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    fn status_revalidates_a_persisted_opt_in_before_the_first_job() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(root.path().join("accelerators"))?;
+        // A persisted file is insufficient: the usual selector must reject an
+        // unverified report even when no generation has run in this Engine.
+        let trial = Trial {
+            startup_ms: 0,
+            requests_ms: vec![1, 1],
+            total_ms: 2,
+            peak_rss_mib: None,
+            runtime_gpu_buffer_mib: None,
+        };
+        crate::preferences::atomic_json(
+            &certificate_path(&engine),
+            &Certificate {
+                schema: 1,
+                component_id: "fixture".into(),
+                version: "acceleration-fixture".into(),
+                device: "CUDA0".into(),
+                binding: "unverified".into(),
+                report: Report {
+                    cpu: trial.clone(),
+                    gpu: trial,
+                    faster: false,
+                },
+            },
+        )?;
+        let status = engine.acceleration_status();
+        assert_eq!(status.state, "test_required");
+        assert_eq!(
+            status.reason.as_deref(),
+            Some("configuration_or_driver_changed")
+        );
+        assert!(!certificate_path(&engine).exists());
+        Ok(())
+    }
+    #[test]
+    fn status_does_not_replace_an_in_progress_test_with_a_persisted_file() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(root.path().join("accelerators"))?;
+        fs::write(certificate_path(&engine), b"not a certificate")?;
+        engine.acceleration.lock().unwrap().status.state = "testing".into();
+        assert_eq!(engine.acceleration_status().state, "testing");
+        assert!(certificate_path(&engine).exists());
+        Ok(())
+    }
+    #[test]
+    fn status_query_waits_for_newer_test_or_disable_decisions() -> Result<()> {
+        use std::sync::mpsc;
+        for testing in [true, false] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            fs::create_dir_all(root.path().join("accelerators"))?;
+            fs::write(certificate_path(&engine), b"old certificate")?;
+            let config = engine.config_lock.lock().unwrap();
+            let (started_tx, started_rx) = mpsc::channel();
+            let (result_tx, result_rx) = mpsc::channel();
+            let reader = engine.clone();
+            let query = std::thread::spawn(move || {
+                started_tx.send(()).unwrap();
+                result_tx.send(reader.acceleration_status().state).unwrap();
+            });
+            started_rx.recv_timeout(Duration::from_secs(5))?;
+            // The query began with empty status while a configuration action
+            // owns its gate. It must wait, not read/delete the old certificate.
+            assert!(matches!(
+                result_rx.recv_timeout(Duration::from_millis(200)),
+                Err(mpsc::RecvTimeoutError::Timeout)
+            ));
+            assert!(certificate_path(&engine).exists());
+            if testing {
+                engine.acceleration.lock().unwrap().status.state = "testing".into();
+                fs::write(certificate_path(&engine), b"new test certificate")?;
+            } else {
+                fs::remove_file(certificate_path(&engine))?;
+                engine.acceleration.lock().unwrap().status = Status::default();
+            }
+            drop(config);
+            assert_eq!(
+                result_rx.recv_timeout(Duration::from_secs(5))?,
+                if testing { "testing" } else { "" }
+            );
+            query.join().expect("status query panicked");
+            if testing {
+                assert_eq!(
+                    fs::read(certificate_path(&engine))?,
+                    b"new test certificate"
+                );
+            } else {
+                assert!(!certificate_path(&engine).exists());
+            }
+        }
+        Ok(())
+    }
+    #[test]
     fn device_selection_requires_real_backend_free_memory_and_offload() -> Result<()> {
         let listing = "Available devices:\n CUDA0: GTX (4096 MiB, 3500 MiB free)\n CUDA1: Another (8192 MiB, 7000 MiB free)\n Vulkan0: AMD (8192 MiB, 6000 MiB free)\n";
         assert_eq!(choose_device(listing, Backend::Cuda, 4000)?, "CUDA1");
@@ -452,6 +578,15 @@ mod tests {
         assert!(offloaded("llama_model_load: offloaded 29/29 layers to GPU"));
         assert!(!correct_facts(
             &json!({"day":"Friday","rejected_day":"Thursday","budget":3000,"approved":true})
+        ));
+        assert!(correct_facts(
+            &json!({"day":"thursday","rejected_day":"friday","budget":3000,"approved":false})
+        ));
+        assert!(!correct_facts(
+            &json!({"day":"Thursday","rejected_day":"Thursday","budget":3000,"approved":false})
+        ));
+        assert!(!correct_facts(
+            &json!({"day":"Thursday","rejected_day":"Friday","budget":3000,"approved":true})
         ));
         assert_eq!(gpu_buffers("llama: CUDA0 model buffer size = 1000.25 MiB\nllama: CUDA0 KV buffer size = 40.00 MiB\n"), Some(1040.25));
         assert_eq!(
@@ -481,6 +616,63 @@ mod tests {
         }) as Result<()>;
         assert!(result.is_err());
         assert_eq!(calls, 1);
+        Ok(())
+    }
+    #[test]
+    #[ignore = "explicit developer GPU trial; never installs or activates a component"]
+    fn live_developer_gpu_model_gate() -> Result<()> {
+        let directory = std::path::PathBuf::from(std::env::var("OMASCRIBE_TEST_GPU_RUNTIME")?)
+            .canonicalize()?;
+        let kind = match std::env::var("OMASCRIBE_TEST_GPU_BACKEND").as_deref() {
+            Ok("vulkan") => Backend::Vulkan,
+            Ok("cuda") | Err(_) => Backend::Cuda,
+            _ => bail!("Use cuda or vulkan for the explicit developer trial"),
+        };
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = engine.preferences.lock().unwrap().clone();
+        let spec = LaunchSpec {
+            backend: kind,
+            directory: directory.clone(),
+            device: Some(
+                if kind == Backend::Cuda {
+                    "CUDA0"
+                } else {
+                    "Vulkan0"
+                }
+                .into(),
+            ),
+            identity: "explicit-developer-trial".into(),
+        };
+        let tested = trial(&engine, &prefs, &spec);
+        let log = fs::read_to_string(engine.root.join("llm-runtime.log")).unwrap_or_default();
+        let output = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../artifacts/benchmarks");
+        fs::create_dir_all(&output)?;
+        fn sha(path: &Path) -> Result<String> {
+            let mut stream = fs::File::open(path)?;
+            let mut digest = Sha256::new();
+            let mut bytes = [0u8; 128 * 1024];
+            loop {
+                let size = stream.read(&mut bytes)?;
+                if size == 0 {
+                    break;
+                }
+                digest.update(&bytes[..size]);
+            }
+            Ok(format!("{:x}", digest.finalize()))
+        }
+        let report = json!({"schema":1,"kind":"explicit_developer_gpu_admission","passed":tested.is_ok() && offloaded(&log),
+            "build":crate::build_identity(),"backend":kind.name(),"runtime_sha256":sha(&directory.join(crate::platform::executable("llama-server")))?,
+            "model_sha256":sha(&engine.model_file(&prefs.llm_model)?)?,"threads":prefs.threads,"context":prefs.context_size,
+            "trial":tested.as_ref().ok(),"error":tested.as_ref().err().map(|e|format!("{e:#}")),"offloaded":offloaded(&log),
+            "limitation":"Two fixed fictional bilingual fact/negation requests. Not a full-meeting quality or warm throughput benchmark. No production component activation."});
+        fs::write(
+            output.join("developer-gpu-gate.json"),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        fs::write(output.join("developer-gpu-runtime.log"), log)?;
+        tested?;
+        anyhow::ensure!(report["offloaded"] == true, "GPU offload was not proven");
         Ok(())
     }
     #[test]

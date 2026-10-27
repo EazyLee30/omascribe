@@ -9,6 +9,7 @@ pub struct Terms {
     matcher: Option<Regex>,
     names: BTreeMap<String, String>,
     pub hotwords: Vec<String>,
+    writer_names: Vec<String>,
     approximate: Vec<String>,
 }
 impl Terms {
@@ -26,6 +27,7 @@ impl Terms {
         let mut names = BTreeMap::new();
         let mut conflicts = HashSet::new();
         let mut hotwords = Vec::new();
+        let mut writer_names = Vec::new();
         let mut approximate = Vec::new();
         let explicit: HashSet<String> = entries
             .iter()
@@ -54,6 +56,7 @@ impl Terms {
             .take(80)
         {
             hotwords.push(e.title.trim().to_owned());
+            writer_names.push(e.title.trim().to_owned());
             approximate.push(e.title.trim().to_owned());
             add(&e.title, &e.title);
             for alias in e.aliases.split([',', '，', ';', '；', '\n', '|']) {
@@ -72,7 +75,14 @@ impl Terms {
                 if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
                     continue;
                 }
-                let named = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
+                // A standalone keyword line is an explicit spelling hint even
+                // when typed in lowercase (for example gtx1650 or nvidia).
+                let keyword_line = n
+                    .content
+                    .lines()
+                    .any(|line| line.trim().trim_matches(['*', '-', '#', ' ']) == word);
+                let named = keyword_line
+                    || word.chars().skip(1).any(|c| c.is_ascii_uppercase())
                     || word.eq_ignore_ascii_case("omascribe")
                     || word.starts_with(char::is_uppercase)
                         && n.content.contains(&format!("**{word}**"));
@@ -87,6 +97,12 @@ impl Terms {
                 if !explicit.contains(&word.to_lowercase()) {
                     add(word, name);
                     hotwords.push(name.to_owned());
+                    // Mixed-language notes also supply ordinary ASR words.
+                    // Only names explicitly marked as such constrain minutes;
+                    // ordinary words must remain free to translate.
+                    if named || n.kind == "term" {
+                        writer_names.push(name.to_owned());
+                    }
                     approximate.push(name.to_owned());
                 }
             }
@@ -131,6 +147,9 @@ impl Terms {
         hotwords.sort();
         hotwords.dedup();
         hotwords.truncate(80);
+        writer_names.retain(|s| hotwords.contains(s) && names.get(&s.to_lowercase()) == Some(s));
+        writer_names.sort();
+        writer_names.dedup();
         approximate.retain(|s| {
             (8..=40).contains(&s.len())
                 && s.chars().all(|c| c.is_ascii_alphabetic())
@@ -143,6 +162,7 @@ impl Terms {
             matcher,
             names,
             hotwords,
+            writer_names,
             approximate,
         }
     }
@@ -268,8 +288,10 @@ impl Terms {
     /// A small spelling-only vocabulary survives context trimming and repair attempts.
     pub fn spellings(&self, transcript: &str) -> Vec<String> {
         let normalized = self.normalize(transcript).to_lowercase();
-        let mut names = self.hotwords.clone();
-        names.sort_by_key(|n| (!normalized.contains(&n.to_lowercase()), n.len()));
+        let mut names = self.writer_names.clone();
+        // Unspoken note words must not become invented meeting subjects.
+        names.retain(|n| contains_name(&normalized, &n.to_lowercase()));
+        names.sort_by_key(|n| n.len());
         let mut budget = 240;
         names
             .into_iter()
@@ -284,6 +306,18 @@ impl Terms {
             .take(12)
             .collect()
     }
+    pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {
+        let body = body.to_lowercase();
+        let missing: Vec<_> = self
+            .spellings(transcript)
+            .into_iter()
+            .filter(|name| !contains_name(&body, &name.to_lowercase()))
+            .collect();
+        if !missing.is_empty() {
+            anyhow::bail!("纪要遗漏原话中的专有名称：{}。保留这些名称和对应原话的状态，不新增事实。Preserve these source names and their stated status.", missing.join(", "));
+        }
+        Ok(())
+    }
     pub fn normalize_draft(&self, draft: &str) -> Result<String> {
         let mut value: serde_json::Value = serde_json::from_str(draft)?;
         if let Some(sections) = value["sections"].as_array_mut() {
@@ -297,6 +331,18 @@ impl Terms {
         }
         Ok(serde_json::to_string(&value)?)
     }
+}
+fn contains_name(text: &str, name: &str) -> bool {
+    text.match_indices(name).any(|(start, value)| {
+        !text[..start]
+            .chars()
+            .next_back()
+            .is_some_and(|c| c.is_ascii_alphanumeric())
+            && !text[start + value.len()..]
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_alphanumeric())
+    })
 }
 fn edit_distance(a: &[u8], b: &[u8]) -> usize {
     let mut row: Vec<_> = (0..=b.len()).collect();
@@ -712,6 +758,45 @@ mod tests {
                 .text,
             s.text
         );
+    }
+    #[test]
+    fn lowercase_keyword_lines_guide_names_without_inventing_missing_subjects() {
+        let terms = Terms::new(&[note("omascribe\n\ngtx1650\n\nnvidia")], &[]);
+        assert_eq!(terms.hotwords, ["OmaScribe", "gtx1650", "nvidia"]);
+        assert!(Terms::new(&[note("we can review the budget")], &[])
+            .hotwords
+            .is_empty());
+        assert!(terms
+            .spellings("今天只讨论麦克风权限，预算未确定。")
+            .is_empty());
+        assert!(terms.spellings("MYOMASCRIBER").is_empty());
+        assert!(terms
+            .validate_writer_names("OmaScribe 尚未修复。", "功能尚未修复。")
+            .is_err());
+        assert!(terms
+            .validate_writer_names("OmaScribe 尚未修复。", "OmaScribe 功能尚未修复。")
+            .is_ok());
+        assert!(terms
+            .validate_writer_names("M二的功能尚未运行。", "功能尚未运行。")
+            .is_ok());
+    }
+    #[test]
+    fn mixed_language_asr_words_may_translate_without_becoming_required_names() {
+        let terms = Terms::new(
+            &[note(
+                "**录音** **offline transcription** **系统音频** OmaScribe",
+            )],
+            &[],
+        );
+        let source = "OmaScribe offline transcription is ready for review.";
+        assert!(terms.hotwords.contains(&"offline".to_owned()));
+        assert_eq!(terms.spellings(source), ["OmaScribe"]);
+        assert!(terms
+            .validate_writer_names(source, "OmaScribe 离线转写原型已可评审。")
+            .is_ok());
+        assert!(terms
+            .validate_writer_names(source, "离线转写原型已可评审。")
+            .is_err());
     }
     #[test]
     fn writer_receives_note_spelling_without_opt_in_knowledge_or_memory() {

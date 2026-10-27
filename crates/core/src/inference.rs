@@ -250,6 +250,13 @@ pub(crate) fn server_command_with_spec(
         } else if let Some(device) = &spec.device {
             c.args(["--device", device]);
         }
+        if backend.optional_gpu() {
+            // The pinned runtime maps model/backend INFO (including the layer
+            // offload proof) to verbosity 4. Default 3 hides it and causes a
+            // false CPU-fallback verdict. Level 5 also logs request contents;
+            // keep production diagnostics below that level.
+            c.args(["--log-verbosity", "4"]);
+        }
         c
     };
     command
