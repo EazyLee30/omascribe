@@ -1,0 +1,74 @@
+{
+  "source_revision": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+  "local_date": "2026-10-28",
+  "cli_sha256": "1fd5efc4695f20f35abc5abe7836e7b602eef4e10718685877594b59f3878b07",
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_sources_identical": true,
+  "asr_identity_scope": "crates/asr/src and core/types.rs unchanged; core/lib.rs adds private task_roles module",
+  "fixture_git_sha256": "bdde50fb805136f7af36dc0ff643cc9f57381ae0ca3a0a42530c96979a17dca8",
+  "fixture_cases": 45,
+  "fixture_phases": 56,
+  "windows_core": {
+    "passed": 199,
+    "ignored": 6,
+    "identifier_integration_passed": 7,
+    "strict_clippy": "passed"
+  },
+  "target_results": [
+    {
+      "run": "minutes-owner",
+      "case": "en_named_download_owner",
+      "mode": "english-minutes-only",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 11.266,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "b4bd92830b809a7fc2aaef84ee69649772448adccb338ffc4d33be3c92989989",
+      "snapshot_sha256": "edd68dd2d849d3129a7992f8c72ad275e980e1517593ccc752f45ee8596cfdd7",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    },
+    {
+      "run": "auto-future",
+      "case": "en_future_named_task_owner",
+      "mode": "bilingual-auto",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 17.422,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda",
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "7d61e871ed387c7b4875a1e86eb7cccc73fd88799c94ac3138b15d3b4ca268d0",
+      "snapshot_sha256": "eb1dac4e0586c202022306afc0c39fd55c537dd6ec5b30ebf194927f9ffb1c78",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    }
+  ],
+  "all_target_checks_passed": true,
+  "limitations": [
+    "Two selected fictional seeded-text controls; not full 45-case regression.",
+    "Semantic checks were performed by assistants, not a human reviewer.",
+    "ASR was not invoked; reused ASR worker is not a same-build release artifact.",
+    "Signed CUDA component copied and reverified, not freshly downloaded or installed.",
+    "No physical microphone, real ASR accuracy, or release acceptance."
+  ]
+}
