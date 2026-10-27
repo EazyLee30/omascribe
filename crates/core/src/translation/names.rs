@@ -1,10 +1,10 @@
 //! Source spellings for captions, not an entity resolver. Never infer a real
 //! identity/university from an ambiguous ASR spelling or an unspoken note name.
 use crate::terminology::Terms;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use regex::{Regex, RegexBuilder};
 use serde_json::json;
-use std::{ops::Range, sync::OnceLock};
+use std::{collections::BTreeMap, ops::Range, sync::OnceLock};
 
 pub(super) struct Names(Vec<String>);
 impl Names {
@@ -184,6 +184,7 @@ space ::= [ \t\r\n]*
             input,
             grammar,
             roles: roles.join(", "),
+            predicates: BTreeMap::new(),
         })
     }
 }
@@ -192,8 +193,32 @@ pub(super) struct Repair {
     pub input: String,
     pub grammar: Option<String>,
     roles: String,
+    predicates: BTreeMap<usize, &'static str>,
 }
 impl Repair {
+    pub fn source_predicates(&self) -> usize {
+        self.predicates.len()
+    }
+    /// Replace an already protected name terminal, not arbitrary prose. The
+    /// predicate comes from a bounded source relation, never from model output.
+    pub fn anchor_predicate(&mut self, actor: &str, predicate: &'static str) -> bool {
+        let Some(index) = self.names.iter().position(|name| name == actor) else {
+            return false;
+        };
+        let Some(grammar) = &mut self.grammar else {
+            return false;
+        };
+        let marker = format!("[{}]", char::from(b'A' + index as u8));
+        let terminal = serde_json::to_string(&marker).expect("marker");
+        let anchored = serde_json::to_string(&format!("{marker}{predicate}")).expect("predicate");
+        let needle = format!("{terminal} prose");
+        if !grammar.contains(&needle) {
+            return false;
+        }
+        *grammar = grammar.replace(&needle, &format!("{anchored} prose"));
+        self.predicates.insert(index, predicate);
+        true
+    }
     pub fn system(&self, language: &str) -> String {
         format!("Translate the entire speech into {language}. Copy each name ID including BOTH brackets, e.g. [A], exactly once in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never add a currency or unit absent from the speech. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
     }
@@ -210,6 +235,21 @@ impl Repair {
         let mut source_prose = self.input.clone();
         for (i, name) in self.names.iter().enumerate() {
             let marker = format!("[{}]", char::from(b'A' + i as u8));
+            if let Some(predicate) = self.predicates.get(&i) {
+                let start = format!("{marker}{predicate}");
+                let suffix = body
+                    .split_once(&start)
+                    .context("译文遗漏来源中的报告动作或责任")?
+                    .1;
+                if !suffix
+                    .split(['。', '.', '!', '！', '?', '？', '['])
+                    .next()
+                    .unwrap_or("")
+                    .contains("报告")
+                {
+                    bail!("译文遗漏该负责人所对应的报告对象");
+                }
+            }
             if body.matches(&marker).count() != 1 || contains(&body, name) {
                 bail!("Translation omitted, repeated or rewrote a source name reference");
             }

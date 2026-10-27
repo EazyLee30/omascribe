@@ -9,6 +9,7 @@ pub(crate) mod incremental;
 mod language;
 mod lexical;
 mod relations;
+pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
 mod retrieval;
 pub(crate) mod stream;
@@ -276,6 +277,7 @@ fn generate_inner(
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
+    let mut relation_repair: Option<crate::translation::ReportRepair> = None;
     let terms = engine.terminology(meeting)?;
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
@@ -293,7 +295,10 @@ fn generate_inner(
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
         });
-        if let Some(plan) = &translation_repair {
+        if let Some(plan) = &relation_repair {
+            request["temperature"] = json!(0.0);
+            request["grammar"] = plan.grammar().into();
+        } else if let Some(plan) = &translation_repair {
             request["temperature"] = json!(0.0);
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"translation","strict":true,"schema":plan.schema()}});
@@ -363,7 +368,9 @@ fn generate_inner(
                 error
             }
         })?;
-        let prose = if let Some(plan) = &translation_repair {
+        let prose = if let Some(plan) = &relation_repair {
+            plan.body(&raw_body)
+        } else if let Some(plan) = &translation_repair {
             plan.body(&raw_body)
         } else {
             writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
@@ -420,7 +427,7 @@ fn generate_inner(
             });
         attempts.push(json!({
             "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
-            "mode":if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
+            "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
@@ -517,6 +524,24 @@ fn generate_inner(
                         json!({"role":"system","content":format!("{repair_system} {hint}")}),
                         json!({"role":"user","content":serde_json::to_string(&repair)?}),
                     ];
+                    if writer::chinese(snapshot, &prefs.minutes_language) {
+                        if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
+                            let source = repair["transcript"]
+                                .as_array()
+                                .context("Missing source transcript")?
+                                .iter()
+                                .filter_map(|p| p["text"].as_str())
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            if let Some(plan) = crate::translation::ReportRepair::from_source(
+                                &source, &terms, *relation,
+                            ) {
+                                trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates()}));
+                                messages = plan.messages.clone();
+                                relation_repair = Some(plan);
+                            }
+                        }
+                    }
                 }
                 let repair_input = messages
                     .iter()

@@ -36,7 +36,7 @@ fn english_frames() -> &'static Regex {
     static FRAMES: OnceLock<Regex> = OnceLock::new();
     FRAMES.get_or_init(|| Regex::new(concat!(
         r"(?i)(?:^|[.;!?。！？；\n])\s*(?P<actor>[a-z][a-z'’-]{1,29})\s+",
-        r"(?:(?:will|would|shall|can|could|must|should)\s+)?",
+        r"(?:(?P<modal>will|would|shall|can|could|must|should)\s+)?",
         r"(?P<verb>sends?|sent|delivers?|delivered|submits?|submitted|owns?|publishes|publish|published|releases?|released|possesses|possess|possessed)\s+",
         r"(?:(?:the|a|an)\s+)?(?P<task>(?:[a-z0-9-]+\s+){0,6}reports?)\b",
     )).expect("report task frames"))
@@ -73,6 +73,91 @@ fn task_delivery(tail: &str) -> bool {
     DELIVERY.get_or_init(|| Regex::new(
         r"(?i)^\s+and\s+(?:(?:will|shall|must|should)\s+)?(?:deliver|submit|send)\s+(?:it|the\s+report)\b"
     ).unwrap()).is_match(&tail)
+}
+
+pub(crate) struct Anchor {
+    pub actor: String,
+    pub predicate: &'static str,
+}
+
+/// A repair may constrain an explicit source predicate, never infer a role
+/// from an ambiguous name, physical possession, conditional or revised task.
+pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
+    let lower = source.to_ascii_lowercase();
+    if [
+        "no longer",
+        "cancel",
+        "withdraw",
+        "instead",
+        "not send",
+        "not deliver",
+        "not submit",
+        "撤回",
+        "取消",
+        "改为",
+    ]
+    .iter()
+    .any(|word| lower.contains(word))
+    {
+        return Vec::new();
+    }
+    let frames: Vec<_> = english_frames().captures_iter(source).collect();
+    frames
+        .iter()
+        .filter_map(|frame| {
+            let actor = &frame["actor"];
+            let task = frame["task"].to_ascii_lowercase();
+            if !named_actor(&actor.to_ascii_lowercase())
+                || !report_task(&task)
+                || frames
+                    .iter()
+                    .filter(|f| f["actor"].eq_ignore_ascii_case(actor))
+                    .count()
+                    != 1
+            {
+                return None;
+            }
+            let tail = source[frame.get(0)?.end()..]
+                .split(['.', ';', '!', '?', '\n'])
+                .next()
+                .unwrap_or("");
+            if tail
+                .split_whitespace()
+                .any(|w| ["if", "unless", "provided"].contains(&w.to_ascii_lowercase().as_str()))
+            {
+                return None;
+            }
+            let modal = frame.name("modal").map(|s| s.as_str().to_ascii_lowercase());
+            let verb = frame["verb"].to_ascii_lowercase();
+            let predicate = match (mismatch, modal.as_deref(), verb.as_str()) {
+                (Mismatch::Delivery, Some("will"), "send") => "将发送",
+                (Mismatch::Delivery, Some("will"), "deliver") => "将交付",
+                (Mismatch::Delivery, Some("will"), "submit") => "将提交",
+                (Mismatch::Responsibility, None, "owns")
+                    if !task.split_whitespace().any(|w| {
+                        [
+                            "copy",
+                            "copies",
+                            "copyright",
+                            "rights",
+                            "original",
+                            "signed",
+                            "printed",
+                            "paper",
+                        ]
+                        .contains(&w)
+                    }) && task_delivery(&source[frame.get(0)?.end()..]) =>
+                {
+                    "负责"
+                }
+                _ => return None,
+            };
+            Some(Anchor {
+                actor: actor.into(),
+                predicate,
+            })
+        })
+        .collect()
 }
 
 pub(super) fn validate<'a>(body: &str, sources: impl Iterator<Item = &'a str>) -> Result<()> {
@@ -178,6 +263,56 @@ pub(super) fn validate<'a>(body: &str, sources: impl Iterator<Item = &'a str>) -
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_predicates_preserve_action_and_modality_without_coercing_ambiguous_roles() {
+        for (source, reason, actor, predicate) in [
+            (
+                "Morgan will send the release report on Thursday.",
+                Mismatch::Delivery,
+                "Morgan",
+                "将发送",
+            ),
+            (
+                "Taylor will submit the budget report on Monday.",
+                Mismatch::Delivery,
+                "Taylor",
+                "将提交",
+            ),
+            (
+                "Nora will deliver the technical report on Friday.",
+                Mismatch::Delivery,
+                "Nora",
+                "将交付",
+            ),
+            (
+                "Riley owns the latency report and will deliver it on Thursday.",
+                Mismatch::Responsibility,
+                "Riley",
+                "负责",
+            ),
+        ] {
+            let found = anchors(source, reason);
+            assert_eq!(found.len(), 1, "{source}");
+            assert_eq!(found[0].actor, actor);
+            assert_eq!(found[0].predicate, predicate);
+        }
+        for source in [
+            "Morgan may send the release report.",
+            "Morgan should send the release report.",
+            "Morgan will send the release report if approved.",
+            "Morgan will send the report. Morgan will publish another report.",
+            "Morgan will send the report. It was cancelled.",
+            "Morgan owns the original paper report and will deliver it on Thursday.",
+            "Morgan owns a car and will deliver the report.",
+            "Morgan owns the report and Alice will deliver it.",
+            "Ann Morgan will send the report. Ben Morgan will publish it.",
+        ] {
+            for reason in [Mismatch::Delivery, Mismatch::Responsibility] {
+                assert!(anchors(source, reason).is_empty(), "{source}");
+            }
+        }
+    }
 
     #[test]
     fn delivery_and_publication_are_bound_to_the_named_subject() {
