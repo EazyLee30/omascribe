@@ -121,10 +121,8 @@ pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
                 .split(['.', ';', '!', '?', '\n'])
                 .next()
                 .unwrap_or("");
-            if tail
-                .split_whitespace()
-                .any(|w| ["if", "unless", "provided"].contains(&w.to_ascii_lowercase().as_str()))
-            {
+            static QUALIFIED: OnceLock<Regex> = OnceLock::new();
+            if QUALIFIED.get_or_init(|| Regex::new(r"(?i)\b(if|unless|provided|or|either|maybe|perhaps|possibly|probably)\b").unwrap()).is_match(tail) {
                 return None;
             }
             let modal = frame.name("modal").map(|s| s.as_str().to_ascii_lowercase());
@@ -315,6 +313,9 @@ mod tests {
             "Morgan may send the release report.",
             "Morgan should send the release report.",
             "Morgan will send the release report if approved.",
+            "Morgan will send the release report on Thursday,if approved.",
+            "Morgan will send the release report on Thursday or Friday.",
+            "Morgan will send the release report on Thursday, probably.",
             "Morgan will send the report. Morgan will publish another report.",
             "Morgan will send the report. It was cancelled.",
             "Morgan owns the original paper report and will deliver it on Thursday.",
