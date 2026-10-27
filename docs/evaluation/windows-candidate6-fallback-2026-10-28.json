@@ -1,0 +1,45 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "cli_sha256": "8363d8ba008ae4fa31620357d15667eb359a8ffcc0d8e4a1b5d180fa22202507",
+  "asr_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "cuda_fault": {
+    "passed": true,
+    "worker_backends": [
+      "cuda",
+      "cpu"
+    ],
+    "verified_owned_cuda_child_terminated": true,
+    "active_certificate_after": false,
+    "counts": {
+      "segments": 3,
+      "notes_cursor": 3,
+      "sections": 1
+    },
+    "remaining_owned_children": 0
+  },
+  "manual_engine_disable": {
+    "passed": true,
+    "disabled": true,
+    "active_certificate_after": false
+  },
+  "subsequent_cpu_generation": {
+    "passed": true,
+    "worker_backends": [
+      "cpu"
+    ],
+    "counts": {
+      "segments": 3,
+      "notes_cursor": 3,
+      "sections": 1
+    },
+    "remaining_owned_children": 0
+  },
+  "raw_reports_sha256": {
+    "fallback-fault-report.json": "5cad660a6f5fa1a4b87dd93bd9fed9d22096e3d12f1b2cc0a31495d244e6b12c",
+    "manual-disable.json": "ba52a5980d80ed5be2d807994fccaded43ddc133e6b12424198f503236f58822",
+    "manual-cpu-report.json": "41e872b342c9b07e518d45b43569febc19b0fb2f4367ec4434f6384138bd21ff"
+  },
+  "harness_sha256": "ea08044144a6628b078caec11bb9fa9f2a5fbe21f2f201a66c4ddb3885196b29",
+  "limitations": "Fictional inputs and separately verified isolated roots. CLI/engine test does not prove a native settings click, full install/download, real allocation OOM, physical capture or release acceptance."
+}
