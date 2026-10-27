@@ -94,14 +94,17 @@ impl MicrophoneMonitor {
                         .stdout
                         .take()
                         .context("Cannot read microphone preview")?;
-                    let capture_stop = capture.stop.clone();
+                    let capture = Arc::new(Mutex::new(capture));
+                    let watchdog_capture = capture.clone();
                     let watchdog_stop = cancelled.clone();
                     let began = Instant::now();
                     let watchdog = thread::spawn(move || {
                         while !watchdog_stop.load(Ordering::SeqCst) && began.elapsed() < limit {
                             thread::sleep(Duration::from_millis(20));
                         }
-                        capture_stop.store(true, Ordering::SeqCst);
+                        // Native streams use the stop flag; process-backed inputs
+                        // also need their owned process handle terminated.
+                        let _ = watchdog_capture.lock().unwrap().kill();
                     });
                     {
                         let mut state = level.lock().unwrap();
@@ -141,7 +144,7 @@ impl MicrophoneMonitor {
                     })();
                     cancelled.store(true, Ordering::SeqCst);
                     let _ = watchdog.join();
-                    let finished = capture.wait();
+                    let finished = capture.lock().unwrap().wait();
                     sampled?;
                     finished?;
                     Ok(())
@@ -205,7 +208,7 @@ mod tests {
         monitor
             .start_with("Realtek".into(), Duration::from_millis(250), open)
             .unwrap();
-        thread::sleep(Duration::from_millis(400));
+        thread::sleep(Duration::from_millis(900));
         let level = monitor.status();
         assert!(!level.active && level.error.is_none());
         assert_eq!(level.device, "Realtek");
@@ -230,5 +233,27 @@ mod tests {
             .error
             .unwrap()
             .contains("Device disconnected"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn deadline_terminates_a_process_backed_input() {
+        use std::process::{Command, Stdio};
+        let monitor = MicrophoneMonitor::default();
+        monitor
+            .start_with("process".into(), Duration::from_millis(100), |_| {
+                let child = Command::new("sh")
+                    .args(["-c", "while :; do printf '\\000\\100'; sleep 0.01; done"])
+                    .stdout(Stdio::piped())
+                    .spawn()?;
+                Ok(("process".into(), Capture::process(child)?))
+            })
+            .unwrap();
+        let end = Instant::now() + Duration::from_secs(3);
+        while monitor.status().active && Instant::now() < end {
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(!monitor.status().active);
+        monitor.stop();
     }
 }

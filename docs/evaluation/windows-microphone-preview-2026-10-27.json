@@ -119,5 +119,21 @@
     "windows-microphone-preview-native-clippy.log": "ee6e224e9158f78f385b2155871b16651d1773857dbb64cbb807e360a87e715a",
     "windows-microphone-preview-frontend.log": "aba77480924f19e1bab981092ebeb1e2647bf142c1227e124219ce40a5924980",
     "windows-microphone-preview-native-build.log": "f9d344165a1b55f7ba0d9ef3f7f8cf57d1a69c61d1617c6292aa0b31ef43d3d1"
+  },
+  "follow_up": {
+    "windows_hardware_checkpoint_commit": "db6fb4a947e9034e7a0b8ea8dcab5cfa165c4b4a",
+    "change": "Controller now terminates owned process-backed captures too, rather than only setting the native-stream stop flag. Added a Unix process-lifecycle test; Windows native-reader tests and strict clippy/build pass.",
+    "native_polling_clarification": "The physical fixture paused test-driver status calls during35s, but the production widget could continue its150ms status interval. The earlier raw checklist wording no UI polling refers only to the test driver. A separate core unit starts the preview and makes no status call until after its deadline; that unit verifies independence from UI polling.",
+    "source_sha256": {
+      "crates/core/src/microphone.rs": "4a42c15b0b7e85d5e882a185b723e0ff0afed1b1994a306589b52faec0122988",
+      "tests/native-microphone-preview.js": "d81c30593f39eb08582a8a9633d5ed6e943cbb0761ab739f913788162fbd9add"
+    },
+    "checks": "Current Windows microphone unit2/core+native all-targets clippy/native build pass. Unix process-backed test awaits exact-head Linux CI.",
+    "log_sha256": {
+      "windows-microphone-preview-unit-followup.log": "4bf168b7c104917aa62357d211284f702b62c0291c2cbc75ccb7453dd3b4d6d7",
+      "windows-microphone-preview-core-clippy-followup.log": "65c10112a8df7846263fac7edc1629742d9698831f408fb0901c361db1492b87",
+      "windows-microphone-preview-native-clippy-followup.log": "415f74328d8f0fbe00d3ea19304af78116c6a255f90cf6ad9cb3938cab5e7d49",
+      "windows-microphone-preview-native-build-followup.log": "8cc484764e85053ea0e3e3893a5bce5793ff423ebfc4660e433749e810d0d6a4"
+    }
   }
 }

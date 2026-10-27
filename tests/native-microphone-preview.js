@@ -85,7 +85,7 @@
       "Realtek input selected and persisted; actual input envelope updates without replacing controls",
     );
     evidence.checks.push(
-      "Native30s deadline stops capture without a UI stop command or UI polling",
+      "Native30s deadline stops without a test-driver Stop command; widget status polling may continue",
     );
     await invoke("show_main_window");
     await until(
