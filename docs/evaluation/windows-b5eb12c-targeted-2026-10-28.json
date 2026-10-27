@@ -1,0 +1,73 @@
+{
+  "source_revision": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+  "local_date": "2026-10-28",
+  "cli_sha256": "2aa7178dbbc572765d5df47b3059af2c4e9769a1a6b7d52e099a83971b6ca57d",
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_sources_identical": true,
+  "fixture_git_sha256": "ba79f0024d13703ef9c7e4a729d2b1f5a5d2e5a8860b5c0d043983373b130f2e",
+  "fixture_cases": 41,
+  "fixture_phases": 52,
+  "windows_core": {
+    "passed": 193,
+    "ignored": 6,
+    "identifier_integration_passed": 7,
+    "strict_clippy": "passed"
+  },
+  "target_results": [
+    {
+      "run": "auto-scope",
+      "case": "en_compound_scope_and_request",
+      "mode": "bilingual-auto",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 19.782,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda",
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "4bd73a99e92b2b3017cc3e2c026006c5aad2e73ee1978763985d6908452ff55d",
+      "snapshot_sha256": "846307b8ed8d5aee588ca3f5ec42ef88215ae2f5129fb22919cd71bfd9668589",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    },
+    {
+      "run": "minutes-toolbar",
+      "case": "en_toolbar_existing_state",
+      "mode": "english-minutes-only",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 11.765,
+      "budget_seconds": 120,
+      "worker_backends": [
+        "cuda"
+      ],
+      "all_workers_cuda": true,
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "e9633ac9bfc6bc4443dcab0fdace71e2eb11ae6d15c29debb5873a215453f134",
+      "snapshot_sha256": "70dd2c5e1492963731e1ae553c9b19d80de994ab10b29791e84e5f761cf5f921",
+      "assistant_semantic_and_citation_review": "pass",
+      "human_review": "not performed"
+    }
+  ],
+  "all_target_checks_passed": true,
+  "limitations": [
+    "Two selected fictional seeded-text controls; not full 41-case regression.",
+    "Semantic checks were performed by assistants, not a human reviewer.",
+    "ASR was not invoked; reused ASR worker is not a same-build release artifact.",
+    "Signed CUDA component copied and reverified, not freshly downloaded or installed.",
+    "No physical microphone, real ASR accuracy, or release acceptance."
+  ]
+}
