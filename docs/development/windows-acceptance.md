@@ -6,6 +6,30 @@ evidence. Corrected paced-file replay now passes the original backlog gate;
 automatic post-stop completion and release quality remain unaccepted. CPU stays in the base installer;
 CUDA/Vulkan use the existing four-component build and signed catalog pipeline.
 
+## Latest shared validation sync
+
+Windows `8bcc1f7` cleanly merges shared `cc10b6e`. This delta adds production
+approval-polarity handling for passive/contracted English, plus test-only facts
+coverage; it does not touch replay, UI or component packaging. Core130 passed,
+6 opt-in ignored, real FFmpeg pacing test and all-targets clippy passed.
+
+Three real1.7B CPU examples (`has not been approved`, `hasn't been approved`,
+`isn’t approved`) pass narrow amount/polarity/citation checks with both experiments
+off. Manual full-summary review passes only1/3: two outputs invent meeting
+conclusion, action, topic or consensus assertions. Overall quality remains
+**false**. No pre-change control attributes these claims to the new fix.
+
+The initial harness also failed all3 exact-byte source assertions: the existing
+terminology step applies the `Budget` note's capitalization, changing only
+`budget` to `Budget` at revision2. Those raw failures are retained separately;
+polarity/digits/contractions remain intact and exact citations bind revision2.
+The narrow re-assessment uses the same immutable outputs, without a model retry.
+Exact source/binary/model hashes, unchanged before/after source fields, raw
+failure explanation and manual evidence:
+[passive/contracted negation](../evaluation/windows-passive-negation-2026-10-27.json).
+Native UI/GPU were not repeated for this validation-only delta; replay evidence
+below remains bound to83d3287. No full22-case or release pass is implied.
+
 ## Replay pacing correction and current CUDA evidence
 
 Frozen application `83d3287`, shared base `9fb00e5`, changes only paced-file
