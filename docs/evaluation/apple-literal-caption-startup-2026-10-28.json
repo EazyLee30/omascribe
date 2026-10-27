@@ -850,5 +850,15 @@
     "No general memory/energy or whole-meeting speedup claim: process-tree RSS may double-count shared pages and CPU is a sampled lower bound.",
     "The frozen candidate6 branch and its verified binaries remain unchanged; optimized CLI stored separately and original primary CLI restored.",
     "Current C6 semantic failures are not repaired by worker laziness. Shared action/role/scope fixes take priority; this change remains independent."
-  ]
+  ],
+  "test_fixture_isolation_followup": {
+    "scope": "Only cfg(test) fixture paths changed after the measured production source08ad622; no production behavior or benchmark rerun claim.",
+    "reason": "Prevent tests from consulting host-bundled models/runtime, without changing global environment variables.",
+    "translation_tests_passed": 8,
+    "core_all_targets_strict_clippy": true,
+    "logs": {
+      "isolated-tests.log": "c9ecc8abcc6ca54894b9f3b318194e7cecac1b39af8005c16b80de154fe3d30e",
+      "isolated-clippy.log": "65acd602e0223f1488c280b9f96446c07c2c7d71a5c7ee3cdcc2a1d150781b3b"
+    }
+  }
 }

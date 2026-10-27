@@ -770,7 +770,10 @@ mod tests {
     #[test]
     fn literal_batches_commit_without_a_model_worker_and_keep_revision_checks() -> Result<()> {
         let root = tempfile::tempdir()?;
-        let engine = Engine::open(root.path().into())?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
         engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
         let meeting = engine.create_meeting("Literal-only captions")?;
         let mut sources = Vec::new();
@@ -816,7 +819,10 @@ mod tests {
     #[test]
     fn cancelled_and_named_fragments_do_not_bypass_batch_guards() -> Result<()> {
         let root = tempfile::tempdir()?;
-        let engine = Engine::open(root.path().into())?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
         engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
         let meeting = engine.create_meeting("Guarded fragments")?;
         engine.store.lock().unwrap().save_segment(&crate::Segment {
