@@ -1,0 +1,101 @@
+{
+  "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "local_date": "2026-10-28",
+  "app_sha256": "86ee08401c57b9aa2b53cd289b130961169939ef53d8e2f815700b414e87ab79",
+  "app_kind": "Source-built debug ui-test application, isolated application identifier and data",
+  "stages": [
+    {
+      "stage": "smoke",
+      "passed": true,
+      "checks": [
+        "Native settings displayed the normally detected NVIDIA device and installed component",
+        "Hardware detection alone did not activate CUDA"
+      ],
+      "seconds": 8.188,
+      "report_sha256": "ed0c192755d5070861629d7fde1d0c0552a5122ff39a1c2d473f84940b2962f1",
+      "identity_sha256": "e674cf6cad3592563d0d5e4295d5c14507a21337f9fb82403951776ef158447d"
+    },
+    {
+      "stage": "enable",
+      "passed": true,
+      "checks": [
+        "Native settings displayed the normally detected NVIDIA device and installed component",
+        "Settings test activated the copied component after local CPU/GPU verification"
+      ],
+      "seconds": 73.75,
+      "report_sha256": "e623475597334271aa78028b3cf9ac7262a0cbcf1a92db3cf048183e6f7cbad4",
+      "identity_sha256": "22a2f889c34c769c3af33d2455f58e4c5b5463e83ed1097007894264dec2cb3c",
+      "verification": {
+        "cpu": {
+          "peak_rss_mib": 1997,
+          "requests_ms": [
+            5870,
+            6117
+          ],
+          "runtime_gpu_buffer_mib": null,
+          "startup_ms": 3518,
+          "total_ms": 15506
+        },
+        "faster": true,
+        "gpu": {
+          "peak_rss_mib": 1439,
+          "requests_ms": [
+            863,
+            869
+          ],
+          "runtime_gpu_buffer_mib": 1287.93,
+          "startup_ms": 2163,
+          "total_ms": 3896
+        }
+      }
+    },
+    {
+      "stage": "restart",
+      "passed": true,
+      "checks": [
+        "Native settings displayed the normally detected NVIDIA device and installed component",
+        "New native app process restored the same verified activation"
+      ],
+      "seconds": 5.484,
+      "report_sha256": "5ebb05fdeba84cf01236061f874a7a2d3e082fda9f022f7a07cc93d39da149e9",
+      "identity_sha256": "ebe26ea12471d5c3fdb0e252d67547f30d0b1c5c52671d15701c14102ee7e161"
+    },
+    {
+      "stage": "cpu",
+      "passed": true,
+      "checks": [
+        "Native settings displayed the normally detected NVIDIA device and installed component",
+        "Settings Use CPU cleared the active certificate; actual CPU inference was not exercised"
+      ],
+      "seconds": 5.391,
+      "report_sha256": "b21a015b3f2340c4b6bb4f6620426b6d211972f2c102fc42cae12df5fc1b7d10",
+      "identity_sha256": "a98782544f244f0438eda7fe0c92d28dd8463ef6fc953096eb05426d063ce56a"
+    },
+    {
+      "stage": "memory",
+      "passed": true,
+      "checks": [
+        "Native settings displayed the normally detected NVIDIA device and installed component",
+        "Real device admission rejected the 4B/8192 configuration before loading; this is not an allocation OOM test"
+      ],
+      "seconds": 51.844,
+      "report_sha256": "3ee9dd685c1dccd65da6a48a4a250469076e97b97f11f64d6b7c8aae9d81e81b",
+      "identity_sha256": "989cde2d74506042a4e78c9b1699dcabe1c63d4acbfe09e4c7e559e113bc90f3",
+      "memory_reason": "No compatible GPU with enough free memory; CPU remains available"
+    }
+  ],
+  "passed": true,
+  "screenshot": {
+    "attempted": true,
+    "passed": false,
+    "error": "window capture timed out: timed out waiting on channel",
+    "attempts": 2
+  },
+  "limitations": [
+    "Programmatic native WebView2 DOM and command assertions; screenshot capture failed twice.",
+    "Signed installed component was copied and verified at a new path; fresh download and installation were not exercised.",
+    "Memory check is admission before model loading, not actual allocation OOM.",
+    "No physical microphone, Vulkan, installer upgrade, driver DLL audit, or release acceptance.",
+    "Deep-link schemes disabled in isolated QA config; this does not test deep-link registration."
+  ]
+}
