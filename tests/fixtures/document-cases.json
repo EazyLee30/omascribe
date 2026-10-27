@@ -557,7 +557,8 @@
             "陈老师",
             "5000",
             "下周三",
-            "未|待"
+            "未|待",
+            "撤回|取消|不再"
           ],
           "forbidden": [
             "页面已经完成",
@@ -571,7 +572,8 @@
       "陈老师",
       "5000",
       "下周三",
-      "未|待"
+      "未|待",
+      "撤回|取消|不再"
     ],
     "forbidden": [
       "页面已经完成",
@@ -621,8 +623,97 @@
     "forbidden": [
       "still pending",
       "remains incomplete",
-      "not yet completed"
+      "not yet completed",
+      "verification is not completed"
     ],
     "max_sections": 2
+  },
+  {
+    "name": "en_sparse_unapproved",
+    "focus": "Budget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget of 3000 is not approved."
+    ],
+    "required": [
+      "3000",
+      "not|unapproved|hasn.t|isn.t"
+    ],
+    "forbidden": [
+      "meeting.{0,20}(?:concluded|ended)",
+      "no (?:further )?action",
+      "other topics",
+      "no changes",
+      "no corrections"
+    ],
+    "max_body_words": 22,
+    "max_sections": 1
+  },
+  {
+    "name": "en_sparse_unapproved_passive",
+    "focus": "Budget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget of 3000 hasn't been approved."
+    ],
+    "required": [
+      "3000",
+      "not|unapproved|hasn.t|isn.t"
+    ],
+    "forbidden": [
+      "meeting.{0,20}(?:concluded|ended)",
+      "no (?:further )?action",
+      "other topics",
+      "no changes",
+      "no corrections"
+    ],
+    "max_body_words": 22,
+    "max_sections": 1
+  },
+  {
+    "name": "en_explicit_meeting_closure",
+    "focus": "Meeting closure",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The meeting has ended. No further action has been taken."
+    ],
+    "required": [
+      "meeting.{0,20}(?:ended|concluded)",
+      "no.{0,20}action.{0,30}taken"
+    ],
+    "max_body_words": 28,
+    "max_sections": 1
+  },
+  {
+    "name": "en_budget_invoice_same_amount",
+    "focus": "Budget and invoice",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget amount is 3000, not approved yet.",
+      "An invoice for 3000 is awaiting review.",
+      "The budget amount is corrected to 5000, still not approved."
+    ],
+    "required": [
+      "5000",
+      "invoice.{0,40}3000",
+      "not|unapproved|pending"
+    ],
+    "forbidden": [
+      "budget(?: amount)? (?:is |of |remains )?3000",
+      "no (?:indication|mention|evidence) of.{0,20}deadline",
+      "source passage",
+      "superseded",
+      "current_budget"
+    ],
+    "max_sections": 2,
+    "max_body_words": 45
   }
 ]

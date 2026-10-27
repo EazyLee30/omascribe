@@ -4,6 +4,48 @@ use anyhow::{bail, Context, Result};
 use serde::Deserialize;
 use std::collections::HashSet;
 
+/// Targeted guards for meeting-wide assertions that short excerpts do not prove.
+/// These are not a general semantic-entailment classifier.
+fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str> {
+    static RULES: std::sync::OnceLock<Vec<(&str, regex::Regex)>> = std::sync::OnceLock::new();
+    let rules=RULES.get_or_init(||[
+        ("会议结束结论",r"(?i)\bmeeting\s+(?:(?:has|had)\s+)?(?:ended|concluded|finished)\b|会议(?:已经|已)结束|会议结束了|已经散会"),
+        ("未采取行动",r"(?i)\bno\s+(?:further\s+)?actions?\s+(?:(?:has|have|had|was|were)\s+)?(?:been\s+)?taken\b|(?:没有|未)采取(?:任何|后续|进一步)*行动"),
+        ("不需要后续行动",r"(?i)\bno\s+(?:further\s+)?actions?\s+(?:is|are)\s+(?:needed|required)\b|(?:无需|不需要)(?:采取)?(?:任何|后续|进一步)*行动"),
+        ("未讨论其他议题",r"(?i)(?:did\s+not|didn['’]t)\s+(?:discuss|cover|address)\s+(?:any\s+)?other\s+topics|\bno\s+other\s+topics\s+(?:were|have\s+been|had\s+been)\s+(?:discussed|covered|addressed)|(?:没有|未)讨论(?:任何)?其他(?:议题|话题)"),
+        ("期限缺乏信息的推断",r"(?i)no\s+(?:indication|mention|evidence)\s+of\s+(?:a\s+|the\s+)?deadline|没有(?:提及|提供)(?:审批)?期限"),
+        ("未发生修改或更正",r"(?i)\bno\s+(?:changes?|corrections?)\s+(?:(?:or|and)\s+(?:changes?|corrections?)\s+)?(?:were|was|have\s+been|had\s+been)\s+(?:made|applied)\b|(?:没有|未)(?:进行|做出|作出)?(?:任何)?(?:修改|更改|更正)"),
+    ].into_iter().map(|(name,pattern)|(name,regex::Regex::new(pattern).unwrap())).collect());
+    let assertions = |text: &str| {
+        text.split_inclusive(['.', '。', '?', '？', '!', '！', ';', '；', '\n'])
+            .filter(|sentence| {
+                let sentence = sentence.trim().to_lowercase();
+                !sentence.ends_with(['?', '？'])
+                    && ![
+                        "if ",
+                        "when ",
+                        "once ",
+                        "unless ",
+                        "after ",
+                        "如果",
+                        "假如",
+                        "待会议",
+                        "等会议",
+                    ]
+                    .iter()
+                    .any(|prefix| sentence.starts_with(prefix))
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let body = assertions(body);
+    let evidence = assertions(evidence);
+    rules
+        .iter()
+        .find(|(_, rule)| rule.is_match(&body) && !rule.is_match(&evidence))
+        .map(|(name, _)| *name)
+}
+
 fn causal_language(text: &str) -> bool {
     let text = text.to_lowercase();
     [
@@ -184,7 +226,7 @@ pub(super) fn polarity_text(s: &str) -> String {
         .replace("n't", " not")
         .replace("n’t", " not")
 }
-fn uncertain(s: &str) -> bool {
+pub(super) fn uncertain(s: &str) -> bool {
     let s = polarity_text(s);
     [
         "未",
@@ -392,6 +434,16 @@ fn validate_document(
             .map(|s| format!("{} {}", s.speaker_name.as_deref().unwrap_or(""), s.quote))
             .collect::<Vec<_>>()
             .join(" ");
+        if require_prose {
+            let raw_evidence = sources
+                .iter()
+                .map(|s| s.quote.as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
+            if let Some(claim) = unsupported_summary_claim(body, &raw_evidence) {
+                bail!("纪要含有无依据补写（{claim}），请仅保留原话支持的内容；本轮未提交");
+            }
+        }
         if causal_language(body) && !causal_language(&evidence) {
             bail!("纪要增加了原话未明确说明的因果关系，请分别记录事实和疑问");
         }
@@ -516,6 +568,53 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn excerpt_does_not_prove_meeting_wide_absence_or_closure() {
+        let mut source = data()[0].clone();
+        let fact = "The budget of 3000 is not approved.";
+        for claim in [
+            "The meeting concluded.",
+            "No further action has been taken.",
+            "No further action is required.",
+            "There is no indication of a deadline for approval.",
+            "The meeting did not discuss any other topics.",
+            "No changes or corrections were made to the original data.",
+        ] {
+            let body = format!("{fact} {claim}");
+            let draft =
+                serde_json::json!({"sections":[{"title":"Budget","body":body,"sources":[1]}]})
+                    .to_string();
+            source.text = fact.into();
+            assert!(
+                validate(&draft, std::slice::from_ref(&source), "m").is_err(),
+                "{claim}"
+            );
+            source.text = body;
+            assert!(
+                validate(&draft, std::slice::from_ref(&source), "m").is_ok(),
+                "{claim}"
+            );
+        }
+        assert!(
+            unsupported_summary_claim("The meeting has ended.", "Has the meeting ended?").is_some()
+        );
+        assert!(unsupported_summary_claim(
+            "The meeting has ended.",
+            "When the meeting has ended, save the audio."
+        )
+        .is_some());
+        assert!(
+            unsupported_summary_claim("No changes were made.", "No changes should be made.")
+                .is_some()
+        );
+        assert!(unsupported_summary_claim(
+            "If the meeting has ended, save the audio.",
+            "Save the audio."
+        )
+        .is_none());
+        assert!(unsupported_summary_claim("会议已结束。", "预算尚未批准。").is_some());
+        assert!(unsupported_summary_claim("会议已结束。", "会议已经结束。").is_none());
+    }
     #[test]
     fn english_approval_negation_is_preserved_and_synonyms_are_accepted() {
         let mut source = data()[0].clone();

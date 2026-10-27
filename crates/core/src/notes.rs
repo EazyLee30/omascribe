@@ -1,4 +1,5 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+mod corrections;
 #[cfg(test)]
 pub(crate) mod facts;
 pub(crate) mod incremental;
@@ -450,6 +451,10 @@ fn generate_inner(
                     } else {
                         "Translate draft_for_translation completely into English minutes prose, preserving every topic, technical qualifier, date and unfinished status. Keep proper names in their original spelling. Check against transcript and remove unsupported claims."
                     }
+                } else if error.to_string().contains("预算最新更正") {
+                    "采用current_budget中已由原文明确更正的最新金额，不输出被替换的旧金额；保留其他议题、负责人、期限和否定状态。Use the current_budget value and omit superseded amounts, retaining unrelated topics, owners, deadlines and negative status."
+                } else if error.to_string().contains("无依据补写") {
+                    "原话没有提供会议是否结束、有无其他议题、有无行动或修改的证据。只写已说出的内容，不补会议层面的结论和缺席信息。Do not add meeting conclusions or claims about absent actions, topics or changes. Restate only the explicit excerpt."
                 } else if error.to_string().contains("因果关系") {
                     "原话没有明确说明因果关系。不要用因为、导致等词补充解释，分别记录已说出的事实和疑问。The evidence does not explicitly state causation. Record the stated facts and questions separately without adding explanations such as because or caused by."
                 } else if error.to_string().contains("未完成") {
