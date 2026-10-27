@@ -1,0 +1,90 @@
+{
+  "source_revision": "76176e3331322ec80ae3526b5714628d0f47d2d5",
+  "base": "merge of proper-names branch with shared a3074e7",
+  "local_date": "2026-10-28",
+  "local_windows_core": {
+    "passed": 175,
+    "ignored": 6,
+    "identifier_tests_passed": 6,
+    "strict_clippy": "passed"
+  },
+  "ci": {
+    "linux": "passed",
+    "windows_core": "passed",
+    "optional_component_build": "skipped",
+    "catalog": "skipped"
+  },
+  "cli_sha256": "9003a0fdf7e0bdabd443610a7312d63d507268b35466bb07e653c8637b565431",
+  "worker": {
+    "source_revision": "3d68f7c8b834a3ed9e1c13f796c22db9e50286ce",
+    "sha256": "2cf29c865fb3b1c42bd5f7f136ce105d0b2d451cdec86ad5615a1e1b7ca5454e",
+    "asr_sources_equal": true
+  },
+  "model_small_sha256": {
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "model_quality_sha256": {
+    "decoder-epoch-99-avg-1.onnx": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+    "encoder-epoch-99-avg-1.int8.onnx": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+    "joiner-epoch-99-avg-1.int8.onnx": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "private_recording": {
+    "duration_ms": 34400,
+    "network": "disabled",
+    "accuracy_reference": "Prompted text not independently verified verbatim",
+    "results": {
+      "small-old-hints": {
+        "name_detected": {
+          "omascribe": false,
+          "alice": false,
+          "nvidia": false,
+          "gtx1650": false
+        },
+        "segments": 3,
+        "encoder_oov_error": false
+      },
+      "small-full-hints": {
+        "name_detected": {
+          "omascribe": false,
+          "alice": false,
+          "nvidia": false,
+          "gtx1650": false
+        },
+        "segments": 3,
+        "encoder_oov_error": false
+      },
+      "quality-old-hints": {
+        "name_detected": {
+          "omascribe": false,
+          "alice": true,
+          "nvidia": false,
+          "gtx1650": false
+        },
+        "segments": 2,
+        "encoder_oov_error": false
+      },
+      "quality-full-hints": {
+        "name_detected": {
+          "omascribe": false,
+          "alice": true,
+          "nvidia": false,
+          "gtx1650": false
+        },
+        "segments": 2,
+        "encoder_oov_error": false
+      }
+    }
+  },
+  "synthetic_controls": {
+    "quality_1650_matched": true,
+    "quality_1660_complete_retained": true,
+    "quality_1660_not_replaced_by_1650": true,
+    "quality_silence_segments": 0
+  },
+  "limitations": "One private recording and limited synthetic controls, not release acceptance or broad accuracy. The worker is an earlier build with identical ASR source, not a same-build release binary. The optional quality model was used only in an isolated workspace. User speech and transcriptions are omitted."
+}
