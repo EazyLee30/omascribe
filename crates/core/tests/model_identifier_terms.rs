@@ -143,6 +143,11 @@ fn explicit_glossary_wins_and_conflicting_aliases_are_not_guessed() {
         .normalize("GTX 一六五零"),
         "Order"
     );
+    let product_alias = Terms::new(
+        &[note("OmaScribe")],
+        &[glossary_term("Other Product", "奥马斯")],
+    );
+    assert_eq!(product_alias.normalize("奥马斯"), "Other Product");
     let several_models = [glossary_term("Graphics", "GTX1650, RTX3060")];
     let hints = Terms::new(&[], &several_models).recognition_hotwords();
     assert!(hints.iter().any(|s| s.eq_ignore_ascii_case("GTX 一六五零")));
@@ -167,6 +172,12 @@ fn unrelated_models_extra_digits_amounts_and_missing_context_stay_unchanged() {
         "GTX 一六五零点五",
         "GTX 一六五零 点五",
         "GTX 一 六 五 零 点 五",
+        "GTX 一六五零点\t五",
+        "GTX 一六五零. 5",
+        "GTX 一六五零． 五",
+        "GTX 一六五零.５",
+        "GTX 一六五零５",
+        "GTX 一六五零 ５",
         "GTX 一六五零 .5",
         "GTX 一六五零件",
         "GTX 一六五零公斤",
@@ -182,6 +193,12 @@ fn unrelated_models_extra_digits_amounts_and_missing_context_stay_unchanged() {
     ] {
         assert_eq!(terms.normalize(text), text, "unexpected rewrite of {text}");
     }
+    assert_eq!(terms.normalize("GTX 一 六 五 零 的功能"), "GTX 1650 的功能");
+    assert_eq!(terms.normalize("GTX 一六五零 点我"), "GTX 1650 点我");
+    assert_eq!(
+        terms.normalize("GTX ONE ſIX FIVE ZERO"),
+        "GTX ONE ſIX FIVE ZERO"
+    );
 
     let no_model_note = Terms::new(&[note("讨论预算和进度")], &[]);
     assert_eq!(no_model_note.normalize("GTX 一六五零"), "GTX 一六五零");

@@ -95,16 +95,20 @@ fn model_spellings(name: &str) -> Option<Vec<String>> {
 }
 
 fn model_continuation(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_' || "零〇一二三四五六七八九十百千万亿两幺点%％".contains(c)
+    c.is_ascii_alphanumeric()
+        || c.is_numeric()
+        || c == '_'
+        || "零〇一二三四五六七八九十百千万亿两幺点%％".contains(c)
 }
 
 fn model_has_continuation(text: &str) -> bool {
     let trimmed = text.trim_start_matches([' ', '\t']);
     if trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点') {
-        if trimmed
+        if trimmed[trimmed.chars().next().unwrap().len_utf8()..]
+            .trim_start_matches([' ', '\t'])
             .chars()
-            .nth(1)
-            .is_some_and(|c| c.is_ascii_digit() || "零〇一二三四五六七八九".contains(c))
+            .next()
+            .is_some_and(|c| c.is_numeric() || "零〇一二三四五六七八九".contains(c))
         {
             return true;
         }
@@ -151,12 +155,13 @@ fn model_has_continuation(text: &str) -> bool {
     }
     let mut chars = rest.chars();
     let first = chars.next();
-    if first.is_some_and(|c| c.is_ascii_digit() || "元个张台年月日次份块".contains(c)) {
+    if first.is_some_and(|c| c.is_numeric() || "元个张台年月日次份块".contains(c)) {
         return true;
     }
     if first.is_some_and(|c| "零〇一二三四五六七八九十百千万亿两幺".contains(c))
         && chars.next().is_none_or(|c| {
             c.is_ascii_alphanumeric()
+                || c.is_numeric()
                 || c.is_ascii_whitespace()
                 || c.is_ascii_punctuation()
                 || "零〇一二三四五六七八九十百千万亿两幺元个张台年月日次份块".contains(c)
@@ -383,7 +388,9 @@ impl Terms {
                 "奥马（OMA）的SCRIB",
                 "奥马 (OMA) 的 SCRIB",
             ] {
-                add(alias, "OmaScribe");
+                if !explicit.contains(&alias.to_lowercase()) {
+                    add(alias, "OmaScribe");
+                }
             }
         }
         for key in conflicts {
@@ -447,6 +454,11 @@ impl Terms {
         let mut cursor = 0;
         for hit in matcher.find_iter(text) {
             let value = hit.as_str();
+            let Some(name) = self.names.get(&value.to_lowercase()) else {
+                // Regex Unicode case folding can match characters whose lowercase
+                // spelling differs from the stored key. Leave those unchanged.
+                continue;
+            };
             let first = value.chars().next().unwrap();
             let last = value.chars().last().unwrap();
             if self.model_aliases.contains(&value.to_lowercase())
@@ -472,7 +484,7 @@ impl Terms {
                 continue;
             }
             result.push_str(&text[cursor..hit.start()]);
-            result.push_str(&self.names[&value.to_lowercase()]);
+            result.push_str(name);
             cursor = hit.end();
         }
         result.push_str(&text[cursor..]);
