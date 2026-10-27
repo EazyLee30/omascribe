@@ -231,6 +231,7 @@ fn run_inner(
             "translation-turn",
             &passage.id,
         )?;
+        let literal = literal_caption(&passage.text, target, &terms);
         let input_budget = chunks::INPUT_TOKENS.min(
             (prefs.context_size as usize).saturating_sub(chunks::OUTPUT_TOKENS as usize + 256),
         );
@@ -241,6 +242,9 @@ fn run_inner(
             input_budget,
             &protected,
             |input| {
+                if literal.is_some() {
+                    return Ok(0);
+                }
                 let names = names::Names::new(&terms, input);
                 let plan = repair.and_then(|_| names.repair(input));
                 let system = plan.as_ref().map_or_else(
@@ -288,37 +292,81 @@ fn run_inner(
         let request_input = name_repair
             .as_ref()
             .map_or(input.as_str(), |p| p.input.as_str());
-        let output_schema = name_repair.as_ref().map_or_else(
-            || serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema"),
-            |p| p.schema.clone(),
-        );
         trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.is_some()}));
-        let request_started = Instant::now();
-        let mut first_token_ms = None;
-        session.begin_request();
-        let response=session.agent.post(&format!("{}/v1/chat/completions",session.base)).set("Authorization",&session.auth).send_json(json!({
-            "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
-            "response_format":{"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":output_schema}}
-        }))?;
-        let response =
-            notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
-                if !text.is_empty() {
-                    first_token_ms.get_or_insert(request_started.elapsed().as_millis() as u64);
-                }
+        let diagnostics = std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1");
+        let raw = if let Some(text) = literal {
+            trace.event("literal_caption", json!({"source_bytes":input.len()}));
+            json!({"translation":text}).to_string()
+        } else {
+            let request_started = Instant::now();
+            let mut first_token_ms = None;
+            let mut draft = String::new();
+            session.begin_request();
+            let mut request = json!({
+                "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
             });
-        requests += 1;
-        trace.generation(
-            requests,
-            request_started.elapsed().as_millis() as u64,
-            first_token_ms,
-            &response
+            if let Some(grammar) = name_repair.as_ref().and_then(|p| p.grammar.as_ref()) {
+                request["grammar"] = grammar.clone().into();
+            } else {
+                request["response_format"] = json!({"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema")}});
+            }
+            let response = session
+                .agent
+                .post(&format!("{}/v1/chat/completions", session.base))
+                .set("Authorization", &session.auth)
+                .send_json(request)?;
+            let response =
+                notes::stream::read_observed(BufReader::new(response.into_reader()), |text| {
+                    if !text.is_empty() {
+                        first_token_ms.get_or_insert(request_started.elapsed().as_millis() as u64);
+                    }
+                    if diagnostics {
+                        draft.clear();
+                        // Local opt-in only. Keep bounded, valid UTF-8 even if a
+                        // constrained response never reaches a successful stop.
+                        let mut end = text.len().min(16_384);
+                        while !text.is_char_boundary(end) {
+                            end -= 1;
+                        }
+                        draft.push_str(&text[..end]);
+                    }
+                });
+            requests += 1;
+            trace.generation(
+                requests,
+                request_started.elapsed().as_millis() as u64,
+                first_token_ms,
+                &response
+                    .as_ref()
+                    .map(|(_, usage)| usage.clone())
+                    .unwrap_or(Value::Null),
+                response.is_ok(),
+            );
+            if let Err(error) = &response {
+                if diagnostics {
+                    let _ = crate::preferences::atomic_json(
+                        &engine.root.join("translation-diagnostic.json"),
+                        &json!({"stage":"stream","input":input,"raw":draft,"error":format!("{error:#}"),
+                        "repair":repair.is_some(),"name_references":name_repair.is_some()}),
+                    );
+                }
+            }
+            if response
                 .as_ref()
-                .map(|(_, usage)| usage.clone())
-                .unwrap_or(Value::Null),
-            response.is_ok(),
-        );
-        let (raw, _) = response?;
-        session.complete_request();
+                .is_err_and(|e| e.is::<notes::stream::OutputLimit>())
+            {
+                // The server completed its output budget; this is content failure,
+                // not a broken GPU transport. Yield this passage without committing
+                // a draft or re-running the whole batch on CPU.
+                session.complete_request();
+                trace.event("validation_failed", json!({"reason":"output_budget"}));
+                deferred += 1;
+                continue;
+            }
+            let (raw, _) = response?;
+            session.complete_request();
+            raw
+        };
         if engine.note_cancel.load(Ordering::SeqCst)
             || session.resource_stop.load(Ordering::SeqCst)
             || session.timed_out.load(Ordering::SeqCst)
@@ -337,10 +385,10 @@ fn run_inner(
         if let Err(error) = &validated {
             trace.event("validation_failed", json!({"reason":error.to_string()}));
             // Explicit local harness opt-in. Normal traces never contain speech or output.
-            if std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1") {
+            if diagnostics {
                 let _ = crate::preferences::atomic_json(
                     &engine.root.join("translation-diagnostic.json"),
-                    &json!({"input":input,"raw":raw,"error":format!("{error:#}")}),
+                    &json!({"stage":"validation","input":input,"raw":raw,"error":format!("{error:#}")}),
                 );
             }
             // Give other selected passages their first turn, then at most one
@@ -459,12 +507,35 @@ fn checked_progress(
     Ok(next)
 }
 
+/// Closed-class, whole-fragment translations. Never interpret a sentence,
+/// complete a fragment, or override an explicit glossary/name binding.
+fn literal_caption(
+    source: &str,
+    target: &str,
+    terms: &crate::terminology::Terms,
+) -> Option<&'static str> {
+    if !names::Names::new(terms, source).hint().is_empty() {
+        return None;
+    }
+    match (target, source.trim().to_ascii_lowercase().as_str()) {
+        ("zh", "and") => Some("和"),
+        ("zh", "or") => Some("或"),
+        ("zh", "but") => Some("但是"),
+        ("en", "和") => Some("and"),
+        ("en", "或") => Some("or"),
+        ("en", "但是" | "但") => Some("but"),
+        ("en", "嗯") => Some("Hmm"),
+        ("en", "呃") => Some("Uh"),
+        _ => None,
+    }
+}
+
 fn repair_hint(error: &anyhow::Error) -> &'static str {
     let reason = format!("{error:#}");
     if reason.contains("名称") {
         " Copy the supplied source spellings exactly in the translation. Do not transliterate them, shorten them or substitute a guessed person, university or product. 名称名单逐字保留，不音译、不猜其他学校、人物或产品；其余句子正常翻译。"
     } else if reason.contains("输出语言") {
-        " Translate every grammatical clause into the requested target language; do not copy the original English sentence. Preserve only the supplied name spellings as literals. 必须完整翻译为要求的目标语言，只保留指定名称的原始拼写。"
+        " Translate every clause into the requested target language; do not copy the original English. Standalone function words and unfinished fragments also need short translations, without completing or explaining them. Preserve only the supplied name spellings as literals. 单独的词也须翻译，不补全句子；只保留指定名称的原始拼写。"
     } else if reason.contains("币种") {
         " The previous answer added an unsupported currency. Translate the ORIGINAL input again, preserving its stated currency. If none is specified, keep the amount unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文注明币种就保留，未注明则不要添加元或美元。"
     } else if reason.contains("数字或日期") {
@@ -527,6 +598,32 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn standalone_fragments_translate_without_completing_speech_or_overriding_names() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        assert_eq!(super::literal_caption("AND", "zh", &terms), Some("和"));
+        assert_eq!(super::literal_caption("嗯", "en", &terms), Some("Hmm"));
+        for source in [
+            "AND YET",
+            "and?",
+            "No",
+            "预算尚未批准",
+            "Morgan keeps the deadline.",
+        ] {
+            assert_eq!(super::literal_caption(source, "zh", &terms), None);
+        }
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "AND".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        assert_eq!(super::literal_caption("AND", "zh", &terms), None);
+    }
     #[test]
     fn caption_language_is_checked_around_preserved_names() {
         let terms = crate::terminology::Terms::new(&[], &[]);

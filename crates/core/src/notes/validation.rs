@@ -302,11 +302,52 @@ fn normalize_date_numbers(text: &str) -> String {
     result
 }
 fn numbers(s: &str) -> HashSet<String> {
-    normalize_clock_numbers(&normalize_date_numbers(&super::amounts::normalize(s)))
-        .split(|c: char| !c.is_ascii_digit() && c != '.')
-        .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
-        .map(|s| s.trim_matches('.').to_owned())
-        .collect()
+    normalize_digit_words(&normalize_clock_numbers(&normalize_date_numbers(
+        &super::amounts::normalize(s),
+    )))
+    .split(|c: char| !c.is_ascii_digit() && c != '.')
+    .filter(|s| s.chars().any(|c| c.is_ascii_digit()))
+    .map(|s| s.trim_matches('.').to_owned())
+    .collect()
+}
+fn normalize_digit_words(text: &str) -> String {
+    // Literal digit-by-digit readings (e.g. a mic check or a spoken ID) are
+    // equivalent to the same Arabic digits. Do not reinterpret approximate
+    // counts, ordinary Han words, dates or magnitude-bearing amounts.
+    static DIGITS: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    DIGITS
+        .get_or_init(|| regex::Regex::new(r"[零〇一二三四五六七八九]{2,8}").unwrap())
+        .replace_all(text, |c: &regex::Captures<'_>| {
+            let m = c.get(0).unwrap();
+            if text[..m.start()]
+                .chars()
+                .next_back()
+                .is_some_and(char::is_alphanumeric)
+                || text[m.end()..]
+                    .chars()
+                    .next()
+                    .is_some_and(char::is_alphanumeric)
+            {
+                return m.as_str().to_owned();
+            }
+            m.as_str()
+                .chars()
+                .map(|c| match c {
+                    '零' | '〇' => '0',
+                    '一' => '1',
+                    '二' => '2',
+                    '三' => '3',
+                    '四' => '4',
+                    '五' => '5',
+                    '六' => '6',
+                    '七' => '7',
+                    '八' => '8',
+                    '九' => '9',
+                    _ => unreachable!(),
+                })
+                .collect()
+        })
+        .into_owned()
 }
 fn normalize_clock_numbers(text: &str) -> String {
     // Only reinterpret a complete hour/minute expression, never unrelated
@@ -503,7 +544,14 @@ pub fn validate_with_speakers(
 }
 pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
     static UNAPPROVED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过").unwrap());
+    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(concat!(
+        r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b",
+        r"|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)",
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过",
+        // A subjectless continuation retains the explicit approval topic.
+        // A new noun (e.g. “但测试未通过”) must not inherit that state.
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,40}[,，]\s*(?:但|不过|而)?\s*(?:仍|还|依然|目前|暂时|尚)?(?:未|没)(?:被|获|能)?通过"
+    )).unwrap());
     if unapproved.is_match(&polarity_text(&source.text))
         && !unapproved.is_match(&polarity_text(text))
     {
@@ -774,6 +822,33 @@ fn validate_document(
 mod tests {
     use super::*;
     #[test]
+    fn literal_spoken_digits_support_the_same_number_without_supporting_a_changed_count() {
+        let mut source = data()[0].clone();
+        source.text = "一二三，测试麦克风。谢谢，再见。".into();
+        assert!(
+            validate_translation("123, test microphone. Thank you, goodbye.", &source, "m").is_ok()
+        );
+        for body in [
+            "321, test microphone.",
+            "124, test microphone.",
+            "3000, test microphone.",
+            "123 yuan, test microphone.",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
+        for text in [
+            "一二月",
+            "一二人",
+            "两三",
+            "三千",
+            "预算一二",
+            "一二三四五六七八九",
+        ] {
+            assert_eq!(normalize_digit_words(text), text);
+        }
+        assert_eq!(normalize_digit_words("编号：〇一二三。"), "编号：0123。");
+    }
+    #[test]
     fn caption_approval_negation_cannot_disappear_when_the_subject_is_a_pronoun() {
         let mut source = data()[0].clone();
         source.text = "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD".into();
@@ -783,6 +858,24 @@ mod tests {
         assert!(validate_translation("已获批准，Alice将检查模型。", &source, "m").is_ok());
         source.text = "测试尚未通过。".into();
         assert!(validate_translation("The test has not passed yet.", &source, "m").is_ok());
+    }
+    #[test]
+    fn approval_continuations_do_not_borrow_an_unrelated_failed_test() {
+        let mut source = data()[0].clone();
+        source.text="The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.".into();
+        for body in [
+            "预算金额已修正为5000，但仍未通过。Morgan仍保持周四的截止日期。",
+            "预算金额改为5000，尚未通过。Morgan保留周四期限。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_ok(), "{body}");
+        }
+        for body in [
+            "预算金额改为5000，但测试未通过。Morgan保留周四期限。",
+            "预算金额改为5000，但仍已通过。Morgan保留周四期限。",
+            "预算金额改为5000，报告未通过。Morgan保留周四期限。",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
     }
     #[test]
     fn budget_review_is_not_a_promised_decision_even_with_a_pending_adjective() {

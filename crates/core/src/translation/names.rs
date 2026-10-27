@@ -3,7 +3,7 @@
 use crate::terminology::Terms;
 use anyhow::{bail, Result};
 use regex::{Regex, RegexBuilder};
-use serde_json::{json, Value};
+use serde_json::json;
 use std::{ops::Range, sync::OnceLock};
 
 pub(super) struct Names(Vec<String>);
@@ -119,9 +119,7 @@ impl Names {
         for (i, name) in self.0.iter().enumerate() {
             input = input.replace(name, &format!("[{}]", char::from(b'A' + i as u8)));
         }
-        let mut schema: Value =
-            serde_json::from_str(crate::translation::OUTPUT_SCHEMA).expect("schema");
-        if self.0.len() <= 4 {
+        let grammar = if self.0.len() <= 4 {
             fn permutations(prefix: String, rest: &str, output: &mut Vec<String>) {
                 if rest.is_empty() {
                     output.push(prefix);
@@ -129,7 +127,7 @@ impl Names {
                 }
                 for (i, c) in rest.char_indices() {
                     permutations(
-                        format!("{prefix}\\[{c}\\][^\\[\\]]*"),
+                        format!(r#"{prefix} "[{c}]" prose"#),
                         &format!("{}{}", &rest[..i], &rest[i + 1..]),
                         output,
                     );
@@ -139,10 +137,29 @@ impl Names {
                 .map(|i| char::from(b'A' + i as u8))
                 .collect();
             let mut orders = Vec::new();
-            permutations(String::new(), &ids, &mut orders);
-            schema["properties"]["translation"]["pattern"] =
-                format!("^[^\\[\\]]*({})$", orders.join("|")).into();
-        }
+            permutations("prose".into(), &ids, &mut orders);
+            // A single leading subject already has a natural position in
+            // both caption languages. Do not let the model omit that ID and
+            // satisfy it much later in an explanation of the instructions.
+            if self.0.len() == 1 && input.trim_start().starts_with("[A]") {
+                orders = vec![r#""[A]" prose"#.into()];
+            }
+            // JSON-schema pattern conversion operates on encoded string
+            // characters. A bare negated class can consume its closing quote
+            // before the required ID, leaving sampling unable to finish.
+            // Use an explicit JSON grammar: prose accepts valid escapes but
+            // neither raw quotes/control bytes nor unaccounted name brackets.
+            Some(format!(
+                r#"root ::= "{{" space "\"translation\"" space ":" space "\"" translation "\"" space "}}" space
+translation ::= {}
+prose ::= ([^"\\\x00-\x1f\x5b\x5d] | [\\] (["\\/bfnrt] | "u" [0-9a-fA-F]{{4}}))*
+space ::= [ \t\r\n]*
+"#,
+                orders.join(" | ")
+            ))
+        } else {
+            None
+        };
         let roles: Vec<_> = self
             .0
             .iter()
@@ -165,7 +182,7 @@ impl Names {
         Some(Repair {
             names: self.0.clone(),
             input,
-            schema,
+            grammar,
             roles: roles.join(", "),
         })
     }
@@ -173,12 +190,12 @@ impl Names {
 pub(super) struct Repair {
     names: Vec<String>,
     pub input: String,
-    pub schema: Value,
+    pub grammar: Option<String>,
     roles: String,
 }
 impl Repair {
     pub fn system(&self, language: &str) -> String {
-        format!("Translate the entire speech into {language}. Keep each bracketed name ID exactly once, in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
+        format!("Translate the entire speech into {language}. Copy each name ID including BOTH brackets, e.g. [A], exactly once in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never add a currency or unit absent from the speech. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
     }
     pub fn body(&self, raw: &str) -> Result<String> {
         use serde::Deserialize;
@@ -231,6 +248,7 @@ fn contains(body: &str, name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
     #[test]
     fn structured_repair_reorders_prose_without_generating_or_losing_source_names() {
         let terms = Terms::new(&[], &[]);
@@ -238,17 +256,6 @@ mod tests {
         let repair = names
             .repair("当迪大学的 PAMELA FURGO森教授说这似乎有风险。")
             .unwrap();
-        let pattern = Regex::new(
-            repair.schema["properties"]["translation"]["pattern"]
-                .as_str()
-                .unwrap(),
-        )
-        .unwrap();
-        assert!(pattern.is_match("Professor [A] of [B] says this may be risky."));
-        assert!(pattern.is_match("[B]'s professor [A] says this may be risky."));
-        assert!(!pattern.is_match("Professor [A] says this may be risky."));
-        assert!(!pattern.is_match("[A] [B] [A]"));
-        assert!(!pattern.is_match("[A] [B] [C]"));
         let raw = r#"{"translation":"Professor [A] of [B] says this may be risky."}"#;
         let value: Value = serde_json::from_str(&repair.body(raw).unwrap()).unwrap();
         assert_eq!(
@@ -264,6 +271,11 @@ mod tests {
         ] {
             assert!(repair.body(raw).is_err());
         }
+        // Quoted speech, paths and escaped newlines remain valid prose; the
+        // JSON-safe grammar must not require dropping or rewriting them.
+        let raw = json!({"translation":"[B]'s professor [A] said \"not approved\". Path C:\\test\nStill pending."}).to_string();
+        let restored: Value = serde_json::from_str(&repair.body(&raw).unwrap()).unwrap();
+        assert_eq!(restored["translation"], "当迪大学's professor PAMELA FURGO森 said \"not approved\". Path C:\\test\nStill pending.");
     }
 
     #[test]
