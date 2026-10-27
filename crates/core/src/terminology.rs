@@ -659,6 +659,7 @@ impl Terms {
             .collect()
     }
     pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {
+        crate::task_roles::validate(&self.normalize(transcript), &self.normalize_exact(body))?;
         let body = self.normalize_exact(body).to_lowercase();
         let owners = source_owner_names(transcript);
         // A sole explicit owner is a source spelling, not a guessed translation.
@@ -700,7 +701,7 @@ fn source_owner_names(text: &str) -> Vec<String> {
     static RETAINED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static MIXED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
-    let mut names = Vec::new();
+    let mut names = crate::task_roles::actors(text);
     // Title-case subjects with a stated future task are also name spellings.
     // Do not infer names from an all-caps ASR sentence ("BEEN APPROVED ALICE").
     let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify|publish)\b").unwrap());

@@ -404,7 +404,15 @@ fn generate_inner(
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
         let validation = normalized
             .as_ref()
-            .map_err(|e| anyhow::anyhow!("{e}"))
+            .map_err(|e| {
+                // Keep the semantic category from the spelling/normalization
+                // stage so the same bounded retry uses ORIGINAL source roles.
+                if e.is::<crate::task_roles::Mismatch>() {
+                    crate::task_roles::Mismatch.into()
+                } else {
+                    anyhow::anyhow!("{e}")
+                }
+            })
             .and_then(|draft| {
                 let sections = validation::validate_with_speakers(
                     draft,
@@ -458,6 +466,7 @@ fn generate_inner(
                 // protect the known source relationships in that same retry.
                 let source_plan = if error.is::<RelationMismatch>()
                     || error.is::<QualifierMismatch>()
+                    || error.is::<crate::task_roles::Mismatch>()
                     || error.to_string().contains("名称")
                     || error.to_string().contains("输出语言")
                 {
@@ -527,7 +536,11 @@ fn generate_inner(
                     let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                     let name_hint = error.to_string();
                     let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
-                    let hint = if let Some(qualifier) = error.downcast_ref::<QualifierMismatch>() {
+                    let hint = if let Some(role) =
+                        error.downcast_ref::<crate::task_roles::Mismatch>()
+                    {
+                        role.hint()
+                    } else if let Some(qualifier) = error.downcast_ref::<QualifierMismatch>() {
                         qualifier.hint()
                     } else if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
                         relation.hint()

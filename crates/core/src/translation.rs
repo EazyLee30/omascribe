@@ -29,6 +29,10 @@ fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::R
                 plan.anchor_predicate(&anchor.actor, &anchor.predicate);
             }
         }
+    } else {
+        for assignment in crate::task_roles::assignments(input) {
+            plan.anchor_assignment(&assignment.actor);
+        }
     }
     Some(plan)
 }
@@ -113,7 +117,12 @@ impl SourceRepair {
         })
         .collect();
         let prefix = notes::qualifier_prefix(input, chinese);
-        if anchors.is_empty() && prefix.is_none() {
+        let assignments = if chinese {
+            Vec::new()
+        } else {
+            crate::task_roles::assignments(input)
+        };
+        if anchors.is_empty() && assignments.is_empty() && prefix.is_none() {
             return None;
         }
         let names = names::Names::new(terms, input);
@@ -128,14 +137,20 @@ impl SourceRepair {
         {
             return None;
         }
-        let hint = anchors.first().map(|anchor| {
-            if anchor.predicate == "负责" {
-                notes::RelationMismatch::Responsibility
-            } else {
-                notes::RelationMismatch::Delivery
-            }
-            .hint()
-        });
+        if !assignments.iter().all(|a| plan.anchor_assignment(&a.actor)) {
+            return None;
+        }
+        let hint = anchors
+            .first()
+            .map(|anchor| {
+                if anchor.predicate == "负责" {
+                    notes::RelationMismatch::Responsibility
+                } else {
+                    notes::RelationMismatch::Delivery
+                }
+                .hint()
+            })
+            .or_else(|| (!assignments.is_empty()).then(|| crate::task_roles::Mismatch.hint()));
         let system = system_prompt(
             if chinese { "简体中文" } else { "English" },
             &names,
@@ -746,6 +761,9 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if error.is::<crate::task_roles::Mismatch>() {
+        return "task_responsibility";
+    }
     if let Some(q) = error.downcast_ref::<notes::QualifierMismatch>() {
         return match q {
             notes::QualifierMismatch::Scope => "exclusive_scope",
@@ -769,6 +787,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(role) = error.downcast_ref::<crate::task_roles::Mismatch>() {
+        return role.hint();
+    }
     if let Some(q) = error.downcast_ref::<notes::QualifierMismatch>() {
         return q.hint();
     }
@@ -801,6 +822,7 @@ fn validate_text(
     // Unsupported numbers/dates cannot enter either private chunks or visible translations.
     notes::validate_translation(text, passage, &passage.meeting_id)?;
     let prose = names::Names::new(terms, &passage.text).validate(text)?;
+    crate::task_roles::validate(&terms.normalize(&passage.text), text)?;
     notes::validate_output_language(&prose, target == "zh")
 }
 pub(crate) fn preserves_source_spellings(source: &str, translated: &str) -> bool {
@@ -842,6 +864,45 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn original_task_owner_is_bound_before_english_task_prose_in_the_existing_retry() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let source = "离线模型下载由陈明负责，下载必须获得用户同意。";
+        let plan = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert_eq!(plan.source_predicates(), 1);
+        assert_eq!(plan.source_slots(), 1);
+        assert!(plan.body(r#"{"translation":"[A] is responsible for offline model download; user consent is required."}"#).unwrap().starts_with("陈明 is responsible for"));
+        assert!(plan
+            .body(r#"{"translation":"Offline model download is responsible for [A]."}"#)
+            .is_err());
+        assert!(plan
+            .body(r#"{"translation":"[A] is responsible for "}"#)
+            .is_err());
+        assert!(SourceRepair::from_source("下载将由陈明负责。", &terms, false).is_none());
+    }
+    #[test]
+    fn chinese_task_owner_cannot_become_the_object_of_responsibility() {
+        let source = crate::Segment {
+            id: "source".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+            text: "离线模型下载由陈明负责，下载必须获得用户同意。".into(),
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        for wrong in [
+            "Offline model download is responsible for Chen Ming, and download must obtain user consent.",
+            "Offline model download is responsible for 陈明, and download must obtain user consent.",
+        ] {
+            assert!(validate_text(wrong, &source, "en", &terms).is_err(), "{wrong}");
+        }
+        assert!(validate_text("陈明 is responsible for offline model download, and downloading requires user consent.", &source, "en", &terms).is_ok());
+    }
     #[test]
     fn compound_source_repair_keeps_scope_and_requested_features_in_their_own_items() {
         let source = "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。";

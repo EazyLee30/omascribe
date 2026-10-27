@@ -512,7 +512,22 @@
       "下载"
     ],
     "forbidden": [],
-    "max_sections": 3
+    "max_sections": 3,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "responsible for|handled by|manages|handles",
+          "consent|permission|approv"
+        ],
+        "forbidden": [
+          "responsible for (?:Chen Ming|陈明)"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_note_name_spelling",
@@ -1475,6 +1490,144 @@
     ],
     "forbidden": [
       "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+    ]
+  },
+  {
+    "name": "en_named_download_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "离线模型下载由陈明负责，下载必须获得用户同意。"
+    ],
+    "required": [
+      "陈明",
+      "download",
+      "responsible for|handled by|manages|handles",
+      "consent|permission|approv"
+    ],
+    "forbidden": [
+      "responsible for (?:Chen Ming|陈明)"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "responsible for|handled by|manages|handles",
+          "consent|permission|approv"
+        ],
+        "forbidden": [
+          "responsible for (?:Chen Ming|陈明)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_other_named_task_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "构建检查由李华负责，完成前不能发布。"
+    ],
+    "required": [
+      "李华",
+      "build",
+      "responsible for|handled by|manages|handles",
+      "not|cannot|before|until"
+    ],
+    "forbidden": [
+      "responsible for (?:Li Hua|李华)"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "李华",
+          "build",
+          "responsible for|handled by|manages|handles",
+          "not|cannot|before|until"
+        ],
+        "forbidden": [
+          "responsible for (?:Li Hua|李华)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_future_named_task_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "模型下载将由陈明负责，目前尚未获得用户同意。"
+    ],
+    "required": [
+      "陈明",
+      "download",
+      "will|going to",
+      "not yet|not.*obtained|pending"
+    ],
+    "forbidden": [
+      "陈明 is responsible for"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "will|going to",
+          "not yet|not.*obtained|pending"
+        ],
+        "forbidden": [
+          "陈明 is responsible for"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_generic_task_actor",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "构建任务由服务器负责，人工不需要介入。"
+    ],
+    "required": [
+      "server",
+      "build",
+      "responsible|handl|manag",
+      "not|no "
+    ],
+    "forbidden": [
+      "陈明",
+      "李华"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "server",
+          "build",
+          "responsible|handl|manag",
+          "not|no "
+        ],
+        "forbidden": [
+          "陈明",
+          "李华"
+        ]
+      }
     ]
   }
 ]

@@ -211,8 +211,12 @@ pub(super) struct Repair {
     pub input: String,
     pub grammar: Option<String>,
     roles: String,
-    predicates: BTreeMap<usize, String>,
+    predicates: BTreeMap<usize, Predicate>,
     prefix: Option<String>,
+}
+struct Predicate {
+    text: String,
+    object: Option<&'static str>,
 }
 impl Repair {
     pub fn roles(&self) -> &str {
@@ -253,6 +257,18 @@ impl Repair {
     /// Replace an already protected name terminal, not arbitrary prose. The
     /// predicate comes from a bounded source relation, never from model output.
     pub fn anchor_predicate(&mut self, actor: &str, predicate: &str) -> bool {
+        self.anchor(actor, predicate, Some("报告"), false)
+    }
+    pub fn anchor_assignment(&mut self, actor: &str) -> bool {
+        self.anchor(actor, " is responsible for ", None, true)
+    }
+    fn anchor(
+        &mut self,
+        actor: &str,
+        predicate: &str,
+        object: Option<&'static str>,
+        lead: bool,
+    ) -> bool {
         let Some(index) = self.names.iter().position(|name| name == actor) else {
             return false;
         };
@@ -267,7 +283,16 @@ impl Repair {
             return false;
         }
         *grammar = grammar.replace(&needle, &format!("{anchored} prose"));
-        self.predicates.insert(index, predicate.into());
+        if lead && self.names.len() == 1 && self.prefix.is_none() {
+            *grammar = grammar.replacen("translation ::= prose ", "translation ::= ", 1);
+        }
+        self.predicates.insert(
+            index,
+            Predicate {
+                text: predicate.into(),
+                object,
+            },
+        );
         true
     }
     pub fn system(&self, language: &str) -> String {
@@ -306,18 +331,21 @@ impl Repair {
         for (i, name) in self.names.iter().enumerate() {
             let marker = format!("[{}]", char::from(b'A' + i as u8));
             if let Some(predicate) = self.predicates.get(&i) {
-                let start = format!("{marker}{predicate}");
+                let start = format!("{marker}{}", predicate.text);
                 let suffix = body
                     .split_once(&start)
-                    .context("译文遗漏来源中的报告动作或责任")?
+                    .context("译文遗漏来源中的动作或责任")?
                     .1;
-                if !suffix
+                let clause = suffix
                     .split(['。', '.', '!', '！', '?', '？', '['])
                     .next()
-                    .unwrap_or("")
-                    .contains("报告")
+                    .unwrap_or("");
+                if predicate
+                    .object
+                    .is_some_and(|object| !clause.contains(object))
+                    || !clause.chars().any(char::is_alphanumeric)
                 {
-                    bail!("译文遗漏该负责人所对应的报告对象");
+                    bail!("译文遗漏该负责人所对应的任务对象");
                 }
             }
             if body.matches(&marker).count() != 1 || contains(&body, name) {
