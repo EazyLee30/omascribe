@@ -53,6 +53,30 @@ pub(crate) use week_qualifiers::{
 };
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
+fn source_repair(
+    error: &anyhow::Error,
+    source: &str,
+    terms: &crate::terminology::Terms,
+    chinese: bool,
+) -> Option<crate::translation::SourceRepair> {
+    let factual = error.is::<RelationMismatch>()
+        || error.is::<RecordingRetentionMismatch>()
+        || error.is::<QualifierMismatch>()
+        || error.is::<crate::task_roles::Mismatch>()
+        || error.is::<MetricMismatch>()
+        || error.is::<SubmissionMismatch>()
+        || error.to_string().contains("名称");
+    // A copied English draft can reach the language gate before its retention
+    // relationship is translated. Use the original identified frame in the
+    // same second attempt instead of freely translating that draft.
+    let identified_retention =
+        error.to_string().contains("输出语言") && retention_anchor(source, chinese).is_some();
+    if !factual && !identified_retention {
+        return None;
+    }
+    crate::translation::SourceRepair::from_source(source, terms, chinese)
+}
+
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     let started = Instant::now();
     let job = Uuid::new_v4().to_string();
@@ -518,14 +542,7 @@ fn generate_inner(
             Err(error) if attempt == 0 => {
                 // Semantic failures protect ORIGINAL source relationships.
                 // A language-only failure below edits the checked spans instead.
-                let source_plan = if error.is::<RelationMismatch>()
-                    || error.is::<RecordingRetentionMismatch>()
-                    || error.is::<QualifierMismatch>()
-                    || error.is::<crate::task_roles::Mismatch>()
-                    || error.is::<MetricMismatch>()
-                    || error.is::<SubmissionMismatch>()
-                    || error.to_string().contains("名称")
-                {
+                let source_plan = {
                     let (_, input) = writer::prompt_mode(
                         snapshot,
                         &context,
@@ -541,13 +558,12 @@ fn generate_inner(
                         .filter_map(|p| p["text"].as_str())
                         .collect::<Vec<_>>()
                         .join("\n");
-                    crate::translation::SourceRepair::from_source(
+                    source_repair(
+                        &error,
                         &source,
                         &terms,
                         writer::chinese(snapshot, &prefs.minutes_language),
                     )
-                } else {
-                    None
                 };
                 if let Some(plan) = source_plan {
                     trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates(),"source_slots":plan.source_slots()}));
@@ -679,4 +695,34 @@ fn generate_inner(
         engine.note_cancel.load(Ordering::SeqCst),
         state_environment,
     )
+}
+
+#[cfg(test)]
+mod source_repair_tests {
+    use super::*;
+
+    #[test]
+    fn copied_retention_draft_uses_original_fields_in_the_existing_language_repair() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let error = anyhow::anyhow!("纪要输出语言与选择不符，原话仍待整理");
+        let source =
+            "Friday is not the deadline. Recording in meeting notes should stay on this computer.";
+        let plan = source_repair(&error, source, &terms, true).unwrap();
+        assert_eq!(plan.source_slots(), 2);
+        assert!(plan
+            .grammar()
+            .contains("会议笔记中的录音应保留在这台电脑上。"));
+        assert_eq!(
+            plan.body(r#"[{"translation":"星期五不是截止日期。"},{"translation":"会议笔记中的录音应保留在这台电脑上。"}]"#).unwrap(),
+            "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。"
+        );
+        assert!(plan.body(r#"[{"translation":"星期五不是截止日期。"},{"translation":"会议笔记的录音应保持在本计算机上。"}]"#).is_err());
+        for other_source in [
+            "Meeting notes should stay on this computer.",
+            "If approved, recording in meeting notes should stay on this computer.",
+            "Recording in meeting notes should move to an external drive.",
+        ] {
+            assert!(source_repair(&error, other_source, &terms, true).is_none());
+        }
+    }
 }
