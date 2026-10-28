@@ -666,12 +666,27 @@ fn run_inner(
         let validated = restored.and_then(|text| {
             let mut output: Value = serde_json::from_str(&text)?;
             if let Some(body) = output["translation"].as_str() {
-                let repaired = notes::repair_unitless_yuan(body, &input);
-                if repaired != body {
+                let unitless = notes::repair_unitless_yuan(body, &input);
+                if unitless != body {
                     trace.event(
                         "source_unit_repair",
                         json!({"removed_unsupported_yuan":true}),
                     );
+                }
+                let repaired = notes::repair_week_qualifiers(
+                    &unitless,
+                    &input,
+                    &names.mask(&unitless),
+                    &names.mask(&input),
+                )
+                .map_or(unitless, |repair| {
+                    trace.event(
+                        "source_week_repair",
+                        json!({"removed_qualifiers":repair.removed_qualifiers}),
+                    );
+                    repair.text
+                });
+                if repaired != body {
                     output["translation"] = Value::String(repaired);
                 }
             }
@@ -861,6 +876,12 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if error.is::<notes::RecordingRetentionMismatch>() {
+        return "recording_retention";
+    }
+    if error.is::<notes::WeekQualifierMismatch>() {
+        return "source_week_qualifier";
+    }
     if error.is::<named_actions::Mismatch>() {
         return "named_action_direction";
     }
@@ -896,6 +917,12 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(retention) = error.downcast_ref::<notes::RecordingRetentionMismatch>() {
+        return retention.hint();
+    }
+    if let Some(week) = error.downcast_ref::<notes::WeekQualifierMismatch>() {
+        return week.hint();
+    }
     if let Some(action) = error.downcast_ref::<named_actions::Mismatch>() {
         return action.hint();
     }
@@ -921,6 +948,8 @@ fn repair_hint(error: &anyhow::Error) -> &'static str {
         " Translate every clause into the requested target language; do not copy the original English. Standalone function words and unfinished fragments also need short translations, without completing or explaining them. Preserve only the supplied name spellings as literals. 单独的词也须翻译，不补全句子；只保留指定名称的原始拼写。"
     } else if reason.contains("币种") {
         " The previous answer added an unsupported currency. Translate the ORIGINAL input again, preserving its stated currency. If none is specified, keep the amount unitless: no 元, 美元, dollars or yuan. Do not infer currency from a budget or invoice. 原文注明币种就保留，未注明则不要添加元或美元。"
+    } else if reason.contains("相对日期") {
+        " Preserve only the source's stated weekday, relative week and exact date. A bare Tuesday does not establish this/next/last Tuesday. Keep the original date and weekday; do not choose a week."
     } else if reason.contains("数字或日期") {
         " The previous answer changed a number or date. Translate the ORIGINAL input again, copying every digit exactly without adding a year or inventing a unit. 原文数字照写，不要改成其他数字或年份。"
     } else if reason.contains("复议") || reason.contains("待确认") || reason.contains("未批准")
@@ -937,9 +966,15 @@ fn validate_text(
     target: &str,
     terms: &crate::terminology::Terms,
 ) -> Result<()> {
+    let names = names::Names::new(terms, &passage.text);
+    notes::validate_week_qualifiers(
+        text,
+        &passage.text,
+        &names.mask(text),
+        &names.mask(&passage.text),
+    )?;
     // Unsupported numbers/dates cannot enter either private chunks or visible translations.
     notes::validate_translation(text, passage, &passage.meeting_id)?;
-    let names = names::Names::new(terms, &passage.text);
     names.validate(text)?;
     named_actions::validate(&passage.text, text, names.spellings(), target)?;
     crate::task_roles::validate(&terms.normalize(&passage.text), text)?;

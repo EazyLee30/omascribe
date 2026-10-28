@@ -811,7 +811,8 @@
           "未|没有|尚"
         ],
         "forbidden": [
-          "莱利"
+          "莱利",
+          "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)(?:二|2)"
         ]
       },
       {
@@ -1288,7 +1289,8 @@
       "(?<![A-Za-z0-9])LICE(?![A-Za-z0-9])",
       "ENVY A CARD",
       "ALICE",
-      "UN VIDEO CARD"
+      "UN VIDEO CARD",
+      "录音|音频|录制"
     ],
     "max_sections": 2,
     "merged_sources": true,
@@ -1312,6 +1314,18 @@
           "UN VIDEO CARD[^。！？；;\\n]{0,24}(?:检查|核对|检验)[^。！？；;\\n]{0,24}ALICE",
           "它尚未批准"
         ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机",
+          "周五|星期五",
+          "不是|并非|不.*截止"
+        ],
+        "forbidden": []
       }
     ]
   },
@@ -2055,6 +2069,207 @@
         ],
         "forbidden": [
           "page is to be sent"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_explicit_this_weekday",
+    "focus": "**Riley** **test**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "(?:本|这(?:个)?)(?:周|星期|礼拜)二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:下|上)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "(?:本|这(?:个)?)(?:周|星期|礼拜)二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:下|上)(?:周|星期|礼拜)二",
+          "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_explicit_next_weekday",
+    "focus": "**Riley** **test**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility next Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "下(?:个)?(?:周|星期|礼拜)二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:本|这(?:个)?|上)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "下(?:个)?(?:周|星期|礼拜)二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:本|这(?:个)?|上)(?:周|星期|礼拜)二",
+          "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_absolute_weekday_scope",
+    "focus": "**date**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "The meeting date is Tuesday, 2024-5-7."
+    ],
+    "required": [
+      "2024",
+      "5月|五月",
+      "7日|七日",
+      "周二|星期二"
+    ],
+    "forbidden": [
+      "(?:本|这|下|上)(?:周|星期|礼拜)"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "2024",
+          "5月|五月",
+          "7日|七日",
+          "周二|星期二"
+        ],
+        "forbidden": [
+          "(?:本|这|下|上)(?:周|星期|礼拜)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_recording_retention_local",
+    "focus": "",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+    ],
+    "required": [
+      "录音|音频|录制",
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机",
+      "周五|星期五",
+      "不是|并非|不.*截止"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": []
+      }
+    ]
+  },
+  {
+    "name": "zh_notes_only_retention",
+    "focus": "",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Meeting notes should stay on this computer."
+    ],
+    "required": [
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机"
+    ],
+    "forbidden": [
+      "录音|音频|录制"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "录音|音频|录制"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_unqualified_weekday",
+    "focus": "**Riley**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "周二|星期二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周二|星期二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)二",
+          "莱利"
         ]
       }
     ]

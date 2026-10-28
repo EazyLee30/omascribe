@@ -16,7 +16,9 @@ pub(crate) use metrics::{prefix as metric_prefix, Mismatch as MetricMismatch};
 pub(crate) use qualifiers::{
     boundary as qualifier_boundary, prefix as qualifier_prefix, Mismatch as QualifierMismatch,
 };
+mod recording_retention;
 mod relations;
+pub(crate) use recording_retention::Mismatch as RecordingRetentionMismatch;
 mod submission;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
@@ -25,6 +27,7 @@ mod retrieval;
 pub(crate) mod stream;
 mod uncertainty;
 mod validation;
+mod week_qualifiers;
 mod writer;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
@@ -42,6 +45,10 @@ use std::{
 use uuid::Uuid;
 pub use validation::validate;
 pub(crate) use validation::validate_translation;
+pub(crate) use week_qualifiers::{
+    repair as repair_week_qualifiers, validate as validate_week_qualifiers,
+    Mismatch as WeekQualifierMismatch,
+};
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
@@ -303,6 +310,8 @@ fn generate_inner(
             .map(|s| s.text.as_str()),
         snapshot.meeting.speaker_names.values().map(String::as_str),
     );
+    let source_name_mask =
+        crate::translation::source_name_mask(&selected_source, &selected_source, &terms);
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
@@ -401,6 +410,7 @@ fn generate_inner(
         };
         let mut checked_prose = None;
         let mut unitless_yuan_corrections = 0;
+        let mut week_qualifier_corrections = 0;
         let normalized = prose
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -410,6 +420,16 @@ fn generate_inner(
                     .chars()
                     .count()
                     .saturating_sub(repaired.chars().count());
+                let repaired = week_qualifiers::repair(
+                    &repaired,
+                    &selected_source,
+                    &crate::translation::source_name_mask(&repaired, &selected_source, &terms),
+                    &source_name_mask,
+                )
+                .map_or(repaired, |repair| {
+                    week_qualifier_corrections = repair.removed_qualifiers;
+                    repair.text
+                });
                 let body = uncertainty::restore(&terms.normalize(&repaired), &context.segments);
                 terms.validate_writer_names(
                     &context
@@ -468,6 +488,7 @@ fn generate_inner(
             });
         attempts.push(json!({
             "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
+            "week_qualifier_corrections":week_qualifier_corrections,
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "unitless_yuan_repaired":unitless_yuan_corrections > 0,
@@ -571,7 +592,13 @@ fn generate_inner(
                     let history_hint = format!("{error}。保留这些历史来源中尚未被更正的事实和未完成事项，不要忽略旧议题。Preserve facts and unresolved items from these missing historical passages.");
                     let name_hint = error.to_string();
                     let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
-                    let hint = if let Some(metric) = error.downcast_ref::<MetricMismatch>() {
+                    let hint = if let Some(retention) =
+                        error.downcast_ref::<RecordingRetentionMismatch>()
+                    {
+                        retention.hint()
+                    } else if let Some(week) = error.downcast_ref::<WeekQualifierMismatch>() {
+                        week.hint()
+                    } else if let Some(metric) = error.downcast_ref::<MetricMismatch>() {
                         metric.hint()
                     } else if let Some(submission) = error.downcast_ref::<SubmissionMismatch>() {
                         submission.hint()

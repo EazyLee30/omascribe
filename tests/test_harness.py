@@ -9,12 +9,38 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_retention_assertions_do_not_count_notes_alone_as_recording(self):
+        cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
+        case=next(c for c in cases if c['name']=='zh_windows_uppercase_asr')
+        check=next(c for c in case['translation_checks'] if c['seq']==3)
+        source=dict(id='s',seq=3,revision=1,text=case['transcript'][2])
+        snapshot=dict(segments=[source],suggestions=[],runtime=dict(notes_status=''),translations={'s':dict(target='zh',revision=1,text='')})
+        narrowed=dict(expect_empty=True,translation_checks=[check])
+        snapshot['translations']['s']['text']='星期五不是截止日期，会议笔记中的录音应留在此电脑上。'
+        self.assertEqual(evaluate.assess(narrowed,snapshot,True),[])
+        snapshot['translations']['s']['text']='星期五不是截止日期，会议记录应留在此电脑上。'
+        self.assertTrue(evaluate.assess(narrowed,snapshot,True))
+
+    def test_weekday_caption_does_not_add_an_unspoken_week(self):
+        cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
+        case=next(c for c in cases if c['name']=='en_incremental_separate_topics')
+        check=next(c for c in case['translation_checks'] if c['seq']==2)
+        source=dict(id='s',seq=2,revision=1,text=case['phases'][1]['transcript'][0])
+        snapshot=dict(segments=[source],suggestions=[],runtime=dict(notes_status=''),translations={'s':dict(target='zh',revision=1,text='')})
+        narrowed=dict(expect_empty=True,translation_checks=[check])
+        for weekday in ['周二','星期二']:
+            snapshot['translations']['s']['text']=f'Riley将在{weekday}测试键盘可访问性，尚未完成任何测试。'
+            self.assertEqual(evaluate.assess(narrowed,snapshot,True),[])
+        for weekday in ['本周二','这个星期二','下周二']:
+            snapshot['translations']['s']['text']=f'Riley在{weekday}将测试键盘可访问性，尚未完成任何测试。'
+            self.assertTrue(evaluate.assess(narrowed,snapshot,True))
+
     def test_uppercase_caption_assertions_reject_reversed_actor_object(self):
         cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
         case=next(c for c in cases if c['name']=='zh_windows_uppercase_asr')
         source=dict(id='s',seq=5,revision=1,text=case['transcript'][4])
         snapshot=dict(segments=[source],suggestions=[],runtime=dict(notes_status=''),translations={'s':dict(target='zh',revision=1,text='')})
-        check=dict(expect_empty=True,translation_checks=case['translation_checks'])
+        check=dict(expect_empty=True,translation_checks=[c for c in case['translation_checks'] if c['seq']==5])
         for text in ['尚未获批。ALICE将检查UN VIDEO CARD。','尚未获批。UN VIDEO CARD将由ALICE检查。']:
             snapshot['translations']['s']['text']=text
             self.assertEqual(evaluate.assess(check,snapshot,True),[])

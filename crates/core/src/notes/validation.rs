@@ -497,7 +497,7 @@ fn calendar_weekdays(text: &str) -> HashSet<String> {
     }
     days
 }
-fn normalized_time(text: &str) -> String {
+pub(super) fn normalized_time(text: &str) -> String {
     let mut text = text
         .to_lowercase()
         .replace("这周", "本周")
@@ -514,9 +514,8 @@ fn normalized_time(text: &str) -> String {
     ] {
         text = text.replace(&format!("next {english}"), &format!("下周{chinese}"));
         text = text.replace(&format!("last {english}"), &format!("上周{chinese}"));
-        text = text.replace(&format!("this {english}"), &format!("周{chinese}"));
+        text = text.replace(&format!("this {english}"), &format!("本周{chinese}"));
         text = text.replace(english, &format!("周{chinese}"));
-        text = text.replace(&format!("本周{chinese}"), &format!("周{chinese}"));
         text = text.replace(&format!("星期{chinese}"), &format!("周{chinese}"));
     }
     for (english, chinese) in [
@@ -704,6 +703,7 @@ fn validate_document(
             .collect::<Vec<_>>()
             .join(" ");
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
+        super::recording_retention::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         super::submission::validate(body, &current_evidence, !require_prose)?;
         if require_prose {
             let raw_evidence = sources
@@ -1359,6 +1359,48 @@ mod tests {
         }
         let other = r#"{"sections":[{"title":"交付","body":"字幕下周不能交付，时间未定。","sources":[1]}]}"#;
         assert!(validate(other, &passages, "m").is_err());
+    }
+    #[test]
+    fn unqualified_weekday_does_not_establish_this_week() {
+        let mut source = data().remove(0);
+        source.text = "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.".into();
+        assert!(validate_translation(
+            "Riley将在周二测试键盘可访问性，尚未完成任何测试。",
+            &source,
+            "m"
+        )
+        .is_ok());
+        for body in [
+            "Riley本周二将测试键盘可访问性，目前尚未完成任何测试。",
+            "Riley这个星期二将测试键盘可访问性，目前尚未完成任何测试。",
+            "Riley will test keyboard accessibility this Tuesday. No test has been completed yet.",
+        ] {
+            assert!(validate_translation(body, &source, "m").is_err(), "{body}");
+        }
+        source.text = "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet.".into();
+        assert!(validate_translation(
+            "Riley本周二将测试键盘可访问性，目前尚未完成任何测试。",
+            &source,
+            "m"
+        )
+        .is_ok());
+    }
+    #[test]
+    fn recording_retention_cannot_be_replaced_by_meeting_notes_alone() {
+        let mut source = data().remove(0);
+        source.text =
+            "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+                .into();
+        assert!(
+            validate_translation("星期五不是截止日期，会议记录应留在此电脑上。", &source, "m")
+                .is_err()
+        );
+        assert!(validate_translation(
+            "星期五不是截止日期，会议笔记中的录音应留在此电脑上。",
+            &source,
+            "m"
+        )
+        .is_ok());
     }
     #[test]
     fn unstated_causal_explanations_are_rephrased_instead_of_committed() {
