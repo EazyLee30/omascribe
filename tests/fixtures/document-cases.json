@@ -1821,5 +1821,39 @@
         ]
       }
     ]
+  },
+  {
+    "name": "en_metric_with_following_fact",
+    "focus": "**report** **metrics** **cache**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率。缓存保存在本机。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER",
+      "cache",
+      "local|device|computer|machine"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "cache",
+          "local|device|computer|machine"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
   }
 ]

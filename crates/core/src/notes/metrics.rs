@@ -86,6 +86,15 @@ pub(super) fn validate(body: &str, source: &str, literal: bool) -> Result<()> {
 }
 pub(crate) fn prefix(source: &str, chinese: bool) -> Option<String> {
     let frame = request(source)?;
+    // A closed list does not represent later independent facts. Leave a
+    // multi-sentence source to the original-evidence repair instead of allowing
+    // its constrained first sentence to finish the whole translation.
+    if source[frame.get(0)?.end()..]
+        .chars()
+        .any(char::is_alphanumeric)
+    {
+        return None;
+    }
     // Constrain report-leading Chinese lists without moving earlier facts or
     // duplicating protected acronyms. Other forms still undergo validation.
     if frame.get(0)?.start() != 0 || !source.trim_start().starts_with(&frame["subject"]) {
@@ -178,6 +187,7 @@ mod tests {
         assert!(prefix("测试报告要包括词错率或句错率。", false).is_none());
         assert!(prefix("测试报告要包括字错率吗？", false).is_none());
         assert!(prefix("会议尚未结束。测试报告要包括字错率。", false).is_none());
+        assert!(prefix("测试报告要包括字错率、词错率。缓存保存在本机。", false).is_none());
     }
     #[test]
     fn a_closed_request_can_finish_without_inventing_more_prose() {
