@@ -1,0 +1,47 @@
+{
+  "source_revision": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "local_date": "2026-10-29",
+  "control": "User reports reading the displayed prompt in full; its full text was supplied as a manual human revision of the single transcript segment in an isolated copy using Engine::edit_segment. Not automatic recognition or correction.",
+  "edit": {
+    "before_revision": 2,
+    "after_revision": 3,
+    "human_origin_recorded": true,
+    "prior_revision_preserved": true,
+    "original_history_rows_before": 1,
+    "original_history_rows_after": 2,
+    "no_audio_copied": true
+  },
+  "minutes_exact_target_matches": {
+    "omascribe": true,
+    "alice": true,
+    "nvidia": true,
+    "gtx1650": true
+  },
+  "fact_lexical_probes": {
+    "local_meeting_record_tool_same_clause": true,
+    "alice_testing_nvidia_gtx1650_same_clause": true,
+    "recording_and_meeting_notes_local_same_clause": true
+  },
+  "citation_count": 1,
+  "all_citations_match_revised_id_revision_time_quote": true,
+  "generation_seconds": 9.094,
+  "cuda_verification_seconds": 52.047,
+  "cuda_offload_observed": [
+    [
+      29,
+      29
+    ]
+  ],
+  "cuda_component": "acceleration-ci-40367160891",
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "cli_sha256": "104b181b889f705efca9b928c7db9cd8f07a99ca720cd2eece5a667ea2975195",
+  "asr_worker_sha256": "a66906cc194644144b427c855b8f9ce16e4e36ff19a27fb95b80b560abfeb429",
+  "limits": [
+    "Manual full-prompt revision was inserted only in an isolated copy based on user confirmation; it does not demonstrate model correction or exact time alignment.",
+    "Lexical same-clause checks are not a complete semantic or citation-entailment review.",
+    "Not an actual UI click; the product core edit API was called from a same-source isolated test driver.",
+    "Signed CUDA payload was reused and reverified; no audio copied or ASR invoked.",
+    "Real audio, prior transcription, full manual prompt, generated minutes, and hashes of those private contents remain local."
+  ],
+  "initial_test_driver_attempt": "Aborted before generation because a byte-for-byte assertion compared CRLF with LF; manual edit and preserved history already existed in the isolated copy. Continuation normalized line endings, revalidated the copy and generated minutes. Original failure retained locally."
+}
