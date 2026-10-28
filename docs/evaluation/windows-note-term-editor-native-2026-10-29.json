@@ -1,0 +1,45 @@
+{
+  "source_revision": "a396ad417b1087cc801ab8f3c5fa0d05677a36e0",
+  "local_date": "2026-10-29",
+  "first_attempt": {
+    "source_revision": "a396ad417b1087cc801ab8f3c5fa0d05677a36e0",
+    "app_sha256": "5e3133496366d7c56a800a91cde384aac650cfda23938bfde50be26e0559d3a3",
+    "script_sha256": "7b98bb1800fd183df94688b1f3f286e9776196b6a2896f72ed98e593118f6bcf",
+    "exit_code": 0,
+    "seconds": 5.031,
+    "passed": false,
+    "checks": [],
+    "error": "TypeError: Cannot read properties of null (reading 'editor')",
+    "limits": [],
+    "removed_environment_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ]
+  },
+  "final_independent_attempt": {
+    "source_revision": "a396ad417b1087cc801ab8f3c5fa0d05677a36e0",
+    "app_sha256": "5e3133496366d7c56a800a91cde384aac650cfda23938bfde50be26e0559d3a3",
+    "script_sha256": "6ce7f2a82b1842d902579897ddf530129d5ba0c0e290729fe22255f7612920e3",
+    "exit_code": 0,
+    "seconds": 7.547,
+    "passed": true,
+    "checks": [
+      "Four candidates appear while the current notebook draft is still unpersisted",
+      "Candidate replaces selection only in unsaved editor",
+      "Listen button obtains synthetic local audio and opens player",
+      "Save commits manual edit with advanced source revision",
+      "Stale revision cannot overwrite concurrent manual edit"
+    ],
+    "error": null,
+    "limits": [
+      "Programmatic WebView2 events; not physical mouse or screenshot.",
+      "Synthetic note, transcript and audio; no microphone, models or automatic correction.",
+      "Player source verified; no claim that the user heard audio."
+    ],
+    "removed_environment_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ]
+  },
+  "scope": "Synthetic data; no microphone, automatic model correction or real minutes. Between attempts the external test driver was adjusted to wait for the editor. The original failure is not overwritten."
+}
