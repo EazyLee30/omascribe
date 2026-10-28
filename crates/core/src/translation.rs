@@ -899,6 +899,17 @@ mod tests {
         assert!(repair.body(r#"{"translation":"The test report should include word error rate and sentence error rate."}"#).is_err());
     }
     #[test]
+    fn metric_repair_retains_later_original_facts_and_requires_continuation() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let source = "测试报告要包括字错率、词错率。缓存保存在本机。";
+        let repair = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert_eq!(repair.source_slots(), 1);
+        assert_eq!(repair.source_predicates(), 1);
+        assert_eq!(repair.messages[1]["content"], source);
+        assert!(repair.body(r#"{"translation":"The test report should include character error rate and word error rate. "}"#).is_err());
+        assert!(repair.body(r#"{"translation":"The test report should include character error rate and word error rate. The cache is stored on this device."}"#).is_ok());
+    }
+    #[test]
     fn original_task_owner_is_bound_before_english_task_prose_in_the_existing_retry() {
         let terms = crate::terminology::Terms::new(&[], &[]);
         let source = "离线模型下载由陈明负责，下载必须获得用户同意。";

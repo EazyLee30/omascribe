@@ -86,15 +86,12 @@ pub(super) fn validate(body: &str, source: &str, literal: bool) -> Result<()> {
 }
 pub(crate) fn prefix(source: &str, chinese: bool) -> Option<String> {
     let frame = request(source)?;
-    // A closed list does not represent later independent facts. Leave a
-    // multi-sentence source to the original-evidence repair instead of allowing
-    // its constrained first sentence to finish the whole translation.
-    if source[frame.get(0)?.end()..]
+    // A closed list does not represent later independent facts. Keep the
+    // original source in the repair and require prose after this prefix when
+    // another sentence remains, rather than allowing the list to end it.
+    let following = source[frame.get(0)?.end()..]
         .chars()
-        .any(char::is_alphanumeric)
-    {
-        return None;
-    }
+        .any(char::is_alphanumeric);
     // Constrain report-leading Chinese lists without moving earlier facts or
     // duplicating protected acronyms. Other forms still undergo validation.
     if frame.get(0)?.start() != 0 || !source.trim_start().starts_with(&frame["subject"]) {
@@ -152,6 +149,9 @@ pub(crate) fn prefix(source: &str, chinese: bool) -> Option<String> {
     };
     if complete {
         prefix.push(if chinese { '。' } else { '.' });
+        if following {
+            prefix.push(' ');
+        }
     } else {
         prefix.push(' ');
     }
@@ -187,7 +187,6 @@ mod tests {
         assert!(prefix("测试报告要包括词错率或句错率。", false).is_none());
         assert!(prefix("测试报告要包括字错率吗？", false).is_none());
         assert!(prefix("会议尚未结束。测试报告要包括字错率。", false).is_none());
-        assert!(prefix("测试报告要包括字错率、词错率。缓存保存在本机。", false).is_none());
     }
     #[test]
     fn a_closed_request_can_finish_without_inventing_more_prose() {
@@ -205,5 +204,12 @@ mod tests {
         )
         .unwrap()
         .ends_with(' '));
+    }
+    #[test]
+    fn closed_list_with_later_facts_requires_continuation() {
+        assert_eq!(
+            prefix("测试报告要包括字错率、词错率。缓存保存在本机。", false).as_deref(),
+            Some("The test report should include character error rate and word error rate. ")
+        );
     }
 }
