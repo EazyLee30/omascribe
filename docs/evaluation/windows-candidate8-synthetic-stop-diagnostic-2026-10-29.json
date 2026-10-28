@@ -1,0 +1,36 @@
+{
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "passed": true,
+  "fixture_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+  "driver_sha256": "06b0ae67c05a4205ca4fbb58f1010a12bea8b2a6c657dad5b6dd8f126aca17db",
+  "driver_source_sha256": "6197c82e8da232f03a6d1ba59a990895aa04a4da518e6bec8caff1e65257f2ad",
+  "core_rlib_sha256": "cfb2048fbd5bfb84dd6d5f325b40a1a7e0a3372f951bd5828c29322c3064d7dd",
+  "core_build": {
+    "profile": "debug",
+    "revision_at_compile": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "6045cecd5c89ded68c14703bd6f4b42214ba39896ec712f1667adbb49a2fb5ad",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "asr_worker_sha256": "4395cc494212acf20457f706d0dfdc1d019716a980f90d4ab8bcb7b176bfbd28",
+  "metrics": {
+    "native_stop_requested_ms": 5000,
+    "final_capture_ms": 5056,
+    "final_processed_ms": 5056,
+    "final_segments": 1
+  },
+  "wav_duration_ms": 5056.0,
+  "exit_code": 0,
+  "seconds": 5.828,
+  "removed_environment_overrides": [
+    "CUDA_PATH",
+    "CUDA_PATH_V11_5"
+  ],
+  "limitations": [
+    "Synthetic paced WAV; no microphone or real user speech.",
+    "External harness calls same-source core APIs; not UI stop button.",
+    "No GPU inference, installer or release acceptance.",
+    "All locally saved audio in this isolated test derives from the public synthetic fixture."
+  ]
+}

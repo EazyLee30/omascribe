@@ -1,0 +1,343 @@
+{
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "diagnostic_run_gate_passed": true,
+  "prior_independent_run_gate_passed": false,
+  "prior_run_captured_ms": 4480,
+  "gate_minimum_captured_ms": 4500,
+  "replay_call_start_ms": 0,
+  "replay_call_return_ms": 560,
+  "first_nonzero_capture_observation": {
+    "wall_ms": 581,
+    "captured_ms": 576
+  },
+  "stop_request_wall_ms": 5000,
+  "stop_return_wall_ms": 5107,
+  "drain_complete_wall_ms": 5204,
+  "final_capture_ms": 5056,
+  "final_processed_ms": 5056,
+  "exact_fixture_prefix": true,
+  "captured_synthetic_pcm_sha256": "7de3ed620f73824da19fe4a767e31defc4a40565750700a41256f837f4d96cb2",
+  "samples": [
+    {
+      "wall_ms": 560,
+      "captured_ms": 0,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 665,
+      "captured_ms": 640,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 770,
+      "captured_ms": 768,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 874,
+      "captured_ms": 832,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 979,
+      "captured_ms": 960,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1084,
+      "captured_ms": 1088,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1189,
+      "captured_ms": 1152,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1293,
+      "captured_ms": 1280,
+      "processed_ms": 0,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1398,
+      "captured_ms": 1344,
+      "processed_ms": 400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1502,
+      "captured_ms": 1472,
+      "processed_ms": 1400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1607,
+      "captured_ms": 1600,
+      "processed_ms": 1400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1712,
+      "captured_ms": 1664,
+      "processed_ms": 1400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1816,
+      "captured_ms": 1792,
+      "processed_ms": 1400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 1921,
+      "captured_ms": 1920,
+      "processed_ms": 1800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2026,
+      "captured_ms": 1984,
+      "processed_ms": 1800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2130,
+      "captured_ms": 2112,
+      "processed_ms": 2000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2235,
+      "captured_ms": 2240,
+      "processed_ms": 2000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2340,
+      "captured_ms": 2304,
+      "processed_ms": 2200,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2444,
+      "captured_ms": 2432,
+      "processed_ms": 2200,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2549,
+      "captured_ms": 2496,
+      "processed_ms": 2400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2654,
+      "captured_ms": 2624,
+      "processed_ms": 2600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2758,
+      "captured_ms": 2752,
+      "processed_ms": 2600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2861,
+      "captured_ms": 2816,
+      "processed_ms": 2800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 2967,
+      "captured_ms": 2944,
+      "processed_ms": 2800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3071,
+      "captured_ms": 3072,
+      "processed_ms": 3000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3176,
+      "captured_ms": 3136,
+      "processed_ms": 3000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3279,
+      "captured_ms": 3264,
+      "processed_ms": 3000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3384,
+      "captured_ms": 3392,
+      "processed_ms": 3000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3489,
+      "captured_ms": 3456,
+      "processed_ms": 3400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3594,
+      "captured_ms": 3520,
+      "processed_ms": 3400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3699,
+      "captured_ms": 3648,
+      "processed_ms": 3600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3803,
+      "captured_ms": 3776,
+      "processed_ms": 3600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 3907,
+      "captured_ms": 3840,
+      "processed_ms": 3800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4010,
+      "captured_ms": 3968,
+      "processed_ms": 3800,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4115,
+      "captured_ms": 4096,
+      "processed_ms": 4000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4220,
+      "captured_ms": 4160,
+      "processed_ms": 4000,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4325,
+      "captured_ms": 4288,
+      "processed_ms": 4200,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4429,
+      "captured_ms": 4416,
+      "processed_ms": 4200,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4534,
+      "captured_ms": 4480,
+      "processed_ms": 4400,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4639,
+      "captured_ms": 4608,
+      "processed_ms": 4600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4743,
+      "captured_ms": 4736,
+      "processed_ms": 4600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4848,
+      "captured_ms": 4800,
+      "processed_ms": 4600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 4953,
+      "captured_ms": 4928,
+      "processed_ms": 4600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 5057,
+      "captured_ms": 5056,
+      "processed_ms": 4600,
+      "recording": true,
+      "transcribing": true
+    },
+    {
+      "wall_ms": 5162,
+      "captured_ms": 5056,
+      "processed_ms": 5000,
+      "recording": false,
+      "transcribing": true
+    }
+  ],
+  "limits": [
+    "The first nonzero sample time is first observed through polling, not the time samples were produced.",
+    "The capture snapshot before and after stop does not measure samples available inside FFmpeg at the stop instant.",
+    "External harness adds polling and logs and can affect timing; no causal attribution of prior failure.",
+    "One diagnostic run does not replace the original failure or establish reliability; file replay is not native physical microphone capture."
+  ]
+}
