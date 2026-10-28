@@ -177,7 +177,7 @@ pub(crate) fn anchor(source: &str, chinese: bool) -> Option<Anchor> {
     static PRE: OnceLock<regex::Regex> = OnceLock::new();
     static ZH: OnceLock<regex::Regex> = OnceLock::new();
     static CONTEXT_EXCLUSION: OnceLock<regex::Regex> = OnceLock::new();
-    if source.contains(['"', '\'', '“', '”', '‘', '’', '`'])
+    if source.contains(['"', '\'', '“', '”', '‘', '’', '`', '?', '？'])
         || abstains(source)
         || re(&CONTEXT_EXCLUSION, r"(?i)\b(?:if|unless|provided|conditional|hypothetically|instead|cloud|moved?|switched?|changed?|cancelled?|canceled?|remote\s+(?:server|storage)|external\s+(?:drive|storage)|usb|another\s+(?:computer|device))\b|\b(?:after|once)\s+(?:approval|approved)\b|如果|假如|若|获批后|批准后|改为|改存|转存|迁移|撤回|取消|云端|雲端")
             .is_match(source)
@@ -471,6 +471,19 @@ pub(crate) fn validate<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn questions_cannot_be_consumed_as_closed_retention_statements() {
+        for source in [
+            "Recording in meeting notes should stay on this computer?",
+            "Recording in meeting notes should stay on this computer.?",
+            "Recording in meeting notes should stay on this computer.？",
+            "? Recording in meeting notes should stay on this computer.",
+        ] {
+            assert!(anchor(source, true).is_none(), "{source}");
+            assert!(anchor(source, false).is_none(), "{source}");
+        }
+    }
 
     const MALFORMED: &str =
         "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER";
