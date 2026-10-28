@@ -24,6 +24,7 @@
 | Q8 | 提示词或无依据限制写入 | 主线程/共享生成 | 候选9未再出现c6模板/复制禁令。完整来源字段严格消费、原子提交；未知内容回模型，保留原validation和revision/cancel guard。长空白跨640字节模型chunk已红→绿，避免给部分来源附整段译文。 |
 | Q9 | 真实语音专名识别 | Windows/ASR，主线程协作 | 候选8同源码 CLI/ASR worker 对34.4秒 Realtek 录音重转写，Small目标词0/4、Bilingual仅Alice 1/4；词汇笔记不能证明每个目标词实际说出。原结果保留，未被候选9的合成文本通过覆盖。[本端报告与边界](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6474420928)。 |
 | Q10 | 停录时序与完整收尾 | Windows/输入停止 | 候选8合成回放首次5000ms请求停止仅捕获4480ms，低于原4500ms门槛，保持失败。另一轮5056ms不解释首次差异，也不证明实体麦克风/UI停录可靠；保持原门槛，由Windows定位。[补充时序](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6474488061)。 |
+| G1-R | 损坏组件无法恢复 | 主线程/共享组件；Windows/Linux验收 | 开发提交f946f64增加精确版本的确认移除、对应授权撤销和重装后重测；忙任务/租约/链接保护及296核心回归通过，8项模拟页面交互通过。候选9不移动；新源码Windows目录链接CI和真实签名组件恢复仍待验收。[范围与证据](../evaluation/component-recovery-2026-10-29.json)。 |
 
 “微检”、paper→“论文”、重复噪音文章的精炼继续登记为已知词义/可读性问题，不另开提示词调参矩阵。完整引用只证明出处匹配，不能证明正文保留了每个事实。
 

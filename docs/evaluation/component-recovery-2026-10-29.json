@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "date_timezone": "Asia/Shanghai",
+  "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+  "frozen_semantic_candidate_unchanged": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "scope": "Development component recovery; no new semantic candidate, installer, model or GPU payload promotion.",
+  "release_accepted": false,
+  "implemented": [
+    "Explicit confirmed removal of the current signed catalog component id/version, including corrupt or incomplete installations.",
+    "Available/idle/configuration, active job-map, test and worker-lease gates precede removal; cancel=true is not task completion.",
+    "Only matching component-version authorization/state is cleared; idle worker retirement precedes deleting the managed directory.",
+    "Three managed directory levels reject links; Windows additionally rejects reparse attributes. Child symlinks are not followed.",
+    "Verification worker and public status bind the actual tested version; UI activation and confirmation use id plus version.",
+    "Existing download, member verification and local activation testing remain required after removal."
+  ],
+  "source_files": [
+    {
+      "path": "crates/core/src/acceleration.rs",
+      "bytes": 35691,
+      "sha256": "209eacb340d1ff0e26161cbcb22bdae98712aac895840a169cfeef118528d97a"
+    },
+    {
+      "path": "crates/core/src/components.rs",
+      "bytes": 44038,
+      "sha256": "6bbed04822e4dd235d0d07ab68364da4479dfb1454c2e43d10f0e9a09ad9358a"
+    },
+    {
+      "path": "crates/core/src/inference_worker.rs",
+      "bytes": 40956,
+      "sha256": "d4556a1b90a33d4bab70e932fe0d36bc19b56586d97a8a927c4603764c942e9f"
+    },
+    {
+      "path": "src-tauri/src/main.rs",
+      "bytes": 17572,
+      "sha256": "c50f9557621cf834cf40678723bbabadec5224a07cff34fd58c20f13e43dea95"
+    },
+    {
+      "path": "src-tauri/src/workspace.rs",
+      "bytes": 9197,
+      "sha256": "daa435658e92680bf12f852b0612153a3496e2d37d4f3d65a38b6e4ee4c5ba4f"
+    },
+    {
+      "path": "src/acceleration-ui.ts",
+      "bytes": 10262,
+      "sha256": "c377aa20af3449d520f6c812a41766b3cef5c31652acdf58953448e674306963"
+    },
+    {
+      "path": "src/settings.ts",
+      "bytes": 58179,
+      "sha256": "ab32d946e8e547309fcffbabf37b0e90f082d1dfb331c9bc2e39af6565d03be7"
+    }
+  ],
+  "checks": {
+    "core": {
+      "command": "cargo test -p omascribe-core --lib --locked",
+      "passed": 296,
+      "failed": 0,
+      "ignored": 7,
+      "log": {
+        "path": "artifacts/component-recovery-core-final-tests.log",
+        "bytes": 30245,
+        "sha256": "2bd2be6c0b1d489f4c42bfe4862632870d8a8cd0f17ae288037cfb95138e97bf"
+      }
+    },
+    "clippy": {
+      "command": "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "exit_code": 0,
+      "log": {
+        "path": "artifacts/component-recovery-clippy.log",
+        "bytes": 291,
+        "sha256": "7c7af7de11a4e5e464bb6d21a1538604f437ef975402b75cd617efe6a75cd893"
+      }
+    },
+    "format": {
+      "command": "cargo fmt --all -- --check; prettier --check src/acceleration-ui.ts src/settings.ts",
+      "passed": true
+    },
+    "frontend": {
+      "command": "npm run build",
+      "exit_code": 0,
+      "terminal_session": 96422,
+      "scope": "TypeScript and production frontend build; no installer or native SDK build."
+    }
+  },
+  "core_fixtures": [
+    "Same-size corrupt, wrong-size, missing file, invalid/missing marker can be removed.",
+    "Signed-loader public entry rejects unsigned catalog; helper fixtures inject a fictional catalog without downloading or executing it.",
+    "Repeated removal/missing directory is idempotent and clears matching stale authorization.",
+    "Recreated hash-correct fixture is installed but has no active certificate.",
+    "Recording/transcription/writing/maintenance/active and cancelled-but-not-finished component jobs refuse deletion.",
+    "Wrong id/version and traversal refuse deletion; other versions and their authorization are preserved.",
+    "Unix parent and child link controls pass. Windows junction test is included, awaiting Windows CI.",
+    "Existing worker lease fixture refuses removal and preserves lease, epoch and child PID."
+  ],
+  "browser_fixture": {
+    "tool": "cua_repl, in-app browser, DOM interaction with actual mountSettings module and mocked Tauri IPC",
+    "fixture": {
+      "path": "output/playwright/component-recovery.html",
+      "bytes": 5283,
+      "sha256": "1b7742286e7fe2836f1fcb18dc5d42dd55c4067cc88e373abbb1250fb8873541"
+    },
+    "checks": [
+      {
+        "case": "Incomplete installation",
+        "result": "Remove visible; dead-end Download button absent."
+      },
+      {
+        "case": "Cancel confirmation",
+        "result": "No remove IPC; component remains present."
+      },
+      {
+        "case": "Accept confirmation",
+        "result": "Exactly rendered id/version sent; Download becomes available."
+      },
+      {
+        "case": "Recreate fixture installation",
+        "result": "Test & enable required; not automatically authorized."
+      },
+      {
+        "case": "Test running",
+        "result": "Remove disabled."
+      },
+      {
+        "case": "Download running",
+        "result": "Cancel shown; Remove absent."
+      },
+      {
+        "case": "Different version active",
+        "result": "Current row requires a new test; no Use CPU/verified label for old authorization."
+      },
+      {
+        "case": "Catalog changes while dialog open",
+        "result": "IPC retains original version; fixture backend refuses stale version; component remains present and error shown."
+      }
+    ],
+    "limits": "Fictional Windows hardware and in-memory IPC only. No actual native removal, signed payload download, GPU execution or microphone test."
+  },
+  "ci": {
+    "status": "pending_at_recording",
+    "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f"
+  },
+  "remaining": [
+    "Physical Windows/Linux Settings remove-download-test lifecycle.",
+    "Windows junction fixture CI and native filesystem behavior.",
+    "Existing-model same-size integrity/repair, historical component versions and crash-stage cleanup.",
+    "Linux userspace driver identity and broader hardware/resource/fault gates.",
+    "Actual ASR/name accuracy, recording/stop, native Mac windows and final installer/upgrade acceptance."
+  ]
+}
