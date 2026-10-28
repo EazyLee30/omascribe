@@ -528,6 +528,17 @@
           "Lin Yuejian|Lin Yue|Lin Yu",
           "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
         ]
+      },
+      {
+        "seq": 9,
+        "target": "en",
+        "required": [
+          "system",
+          "audio|sound",
+          "\\b(?:not|incomplete|unfinished|uncompleted)\\b",
+          "release date|launch date"
+        ],
+        "forbidden": []
       }
     ]
   },
@@ -911,6 +922,28 @@
         ],
         "forbidden": [
           "page.{0,40}(?:released|published)"
+        ]
+      },
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "刘老师",
+          "arrang|set(?:ting)?\\s*up|prepar|decorat|layout"
+        ],
+        "forbidden": [
+          "\\b(?:Mr|Mrs|Ms|Miss)\\.?\\s*(?:Liu|刘)"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "刘老师",
+          "arrang|set(?:ting)?\\s*up|prepar|decorat|layout"
+        ],
+        "forbidden": [
+          "\\b(?:Mr|Mrs|Ms|Miss)\\.?\\s*(?:Liu|刘)"
         ]
       }
     ]
@@ -2270,6 +2303,42 @@
         "forbidden": [
           "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)二",
           "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_unspoken_honorific_note",
+    "focus": "**刘老师** **录音**",
+    "transcript": [
+      "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+    ],
+    "required": [
+      "周五|星期五",
+      "不是|并非|不.*截止",
+      "录音|音频",
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机"
+    ],
+    "forbidden": [
+      "刘老师",
+      "\\bLiu\\b"
+    ],
+    "max_sections": 1,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "周五|星期五",
+          "不是|并非|不.*截止",
+          "录音|音频",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "刘老师",
+          "\\bLiu\\b"
         ]
       }
     ]

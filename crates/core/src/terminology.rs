@@ -181,6 +181,49 @@ fn model_has_continuation(text: &str) -> bool {
     .iter()
     .any(|suffix| word.eq_ignore_ascii_case(suffix))
 }
+
+/// A marked/standalone name with a Chinese honorific is an opaque spelling,
+/// not evidence of gender or an English identity. Do not mine arbitrary prose
+/// for surnames, or turn generic teaching/qualification roles into names.
+fn note_honorific_spellings(content: &str) -> Vec<&str> {
+    static LABEL: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static MARKED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let label = LABEL.get_or_init(|| {
+        Regex::new(r"^(?P<stem>[\p{Han}]{1,4})(?:老师|老師|讲师|講師|教授|博士)$").unwrap()
+    });
+    let marked = MARKED.get_or_init(|| Regex::new(r"\*\*(?P<label>[\p{Han}]{3,6})\*\*").unwrap());
+    let mut names = Vec::new();
+    for value in marked
+        .captures_iter(content)
+        .filter_map(|c| c.name("label").map(|m| m.as_str()))
+        .chain(
+            content
+                .lines()
+                .map(|line| line.trim().trim_matches(['*', '-', '#', ' '])),
+        )
+    {
+        let Some(parts) = label.captures(value) else {
+            continue;
+        };
+        let stem = &parts["stem"];
+        if [
+            "各位", "所有", "这位", "那位", "一位", "某位", "几位", "多位", "任何", "任课", "授课",
+            "指导", "助理", "副", "资深", "高级", "男", "女", "学校", "大学", "学院", "数学",
+            "物理", "化学", "历史", "文学", "教育", "医学", "哲学", "在读", "应届",
+        ]
+        .contains(&stem)
+            || stem.chars().count() > 1 && stem.contains(['和', '或', '与', '及', '、'])
+            || names.contains(&value)
+        {
+            continue;
+        }
+        names.push(value);
+        if names.len() == 80 {
+            break;
+        }
+    }
+    names
+}
 impl Terms {
     pub fn fingerprint(&self) -> String {
         use sha2::{Digest, Sha256};
@@ -275,9 +318,17 @@ impl Terms {
                 }
             }
         }
-        // User-written Latin names supply spelling/casing, never facts or inferred aliases.
+        // User-written names supply spelling/casing, never facts or inferred aliases.
         let latin = Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap();
         for n in crate::notes::document_notes(notes) {
+            for name in note_honorific_spellings(&n.content) {
+                if !explicit.contains(&name.to_lowercase()) {
+                    add(name, name);
+                    hotwords.push(name.to_owned());
+                    writer_names.push(name.to_owned());
+                    caption_names.push(name.to_owned());
+                }
+            }
             for line in n.content.lines() {
                 let name = line.trim().trim_matches(['*', '-', '#', ' ']);
                 let Some((prefix, digits)) = model_identifier(name) else {
@@ -1532,6 +1583,100 @@ mod tests {
         let terms = Terms::new(&notes, &[]);
         assert!(terms.validate_writer_names(source, body).is_ok());
         assert_eq!(notes[0].content, "**date**");
+    }
+    #[test]
+    fn focused_chinese_honorifics_preserve_the_complete_spoken_spelling() {
+        assert_ne!(
+            Terms::new(&[note("**展览** **预算** **刘老师**")], &[]).fingerprint(),
+            Terms::new(&[note("**展览** **预算**")], &[]).fingerprint()
+        );
+        for (content, name) in [
+            ("**展览** **预算** **刘老师**", "刘老师"),
+            ("布置由 **欧阳讲师** 跟进", "欧阳讲师"),
+            ("- 赵教授", "赵教授"),
+            ("# 李博士", "李博士"),
+            ("**劉老師**", "劉老師"),
+            ("**張講師**", "張講師"),
+            ("**和老师**", "和老师"),
+        ] {
+            let terms = Terms::new(&[note(content)], &[]);
+            let source = format!("{name}继续负责布置。");
+            assert_eq!(terms.normalize(&source), source);
+            assert_eq!(terms.spellings(&source), [name]);
+            assert_eq!(terms.caption_spellings(&source), [name]);
+            assert!(terms.hotwords.contains(&name.to_owned()));
+            assert!(terms.validate_writer_names(&source, &source).is_ok());
+            assert!(terms
+                .validate_writer_names(
+                    &source,
+                    "Mr. Liu continues to be responsible for assigning."
+                )
+                .is_err());
+        }
+    }
+    #[test]
+    fn honorific_focus_does_not_inject_unspoken_names_or_freeze_generic_roles() {
+        let terms = Terms::new(&[note("**刘老师**")], &[]);
+        for source in [
+            "王老师继续负责布置。",
+            "刘教授继续负责布置。",
+            "布置还没有完成。",
+        ] {
+            assert!(terms.spellings(source).is_empty(), "{source}");
+            assert!(terms.caption_spellings(source).is_empty(), "{source}");
+            assert_eq!(terms.normalize(source), source);
+        }
+        for content in [
+            "老师",
+            "**老师**",
+            "**各位老师**",
+            "**任课老师**",
+            "**大学教授**",
+            "**数学博士**",
+            "**一位讲师**",
+            "刘老师继续负责布置。",
+            "**王或刘老师**",
+        ] {
+            let terms = Terms::new(&[note(content)], &[]);
+            assert!(terms.hotwords.is_empty(), "{content}");
+            assert!(terms.caption_spellings(content).is_empty(), "{content}");
+        }
+    }
+    #[test]
+    fn explicit_terms_override_implicit_honorific_hints_and_concept_filters() {
+        let entries = [Entry {
+            kind: "term".into(),
+            title: "Teacher Liu".into(),
+            aliases: "刘老师".into(),
+            ..Default::default()
+        }];
+        let terms = Terms::new(&[note("**刘老师** **date** **test** **budget**")], &entries);
+        assert_eq!(
+            terms.normalize("刘老师继续负责布置。"),
+            "Teacher Liu继续负责布置。"
+        );
+        assert_eq!(
+            terms.caption_spellings("刘老师继续负责布置。"),
+            ["Teacher Liu"]
+        );
+        assert!(terms
+            .validate_writer_names(
+                "刘老师继续负责布置。",
+                "Teacher Liu continues to be responsible for assigning."
+            )
+            .is_ok());
+        for word in ["date", "test", "budget"] {
+            assert!(terms.hotwords.contains(&word.to_owned()));
+            assert!(terms.caption_spellings(word).is_empty());
+            let entries = [Entry {
+                kind: "term".into(),
+                title: word.into(),
+                ..Default::default()
+            }];
+            let terms = Terms::new(&[note(&format!("**{word}** **刘老师**"))], &entries);
+            assert_eq!(terms.caption_spellings(word), [word]);
+            assert!(terms.validate_writer_names(word, "概念").is_err());
+        }
     }
     #[test]
     fn implicit_concept_keywords_remain_asr_focus_without_literal_spelling_obligations() {

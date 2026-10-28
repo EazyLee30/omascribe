@@ -38,11 +38,12 @@ fn closed_source_plan(text: &str, names: &names::Names) -> Option<names::Repair>
     plan.anchor_source_clause(text).then_some(plan)
 }
 
-fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<names::Repair> {
+fn closed_retention_text(input: &str, names: &names::Names, chinese: bool) -> Option<String> {
     let anchor = notes::retention_anchor(input, chinese)?;
     // Explicit glossary/name bindings take precedence over a generic audio
     // noun. Never consume a protected spelling into a translated source atom.
-    if !anchor.text.contains(anchor.required_object_phrase)
+    if !names.spellings().is_empty()
+        || !anchor.text.contains(anchor.required_object_phrase)
         || names
             .spans(input)
             .iter()
@@ -64,7 +65,11 @@ fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<na
     // small models can fill that tail with instructions or invented policy.
     // Every original field must be fully identified, or ordinary translation
     // retains the full original speech and its existing validation guards.
-    closed_source_plan(&fields.join(" "), names)
+    Some(fields.join(" "))
+}
+
+fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<names::Repair> {
+    closed_source_plan(&closed_retention_text(input, names, chinese)?, names)
 }
 
 fn name_plan(
@@ -625,7 +630,11 @@ fn run_inner(
             "translation-turn",
             &pending.0.id,
         )?;
-        let literal = literal_caption(&pending.0.text, pending.1, &terms);
+        let literal = if pending.3.end == 0 {
+            literal_caption(&pending.0.text, pending.1, &terms)
+        } else {
+            None
+        };
         if literal.is_none() && session.is_none() {
             let opening = Instant::now();
             let worker = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
@@ -660,24 +669,32 @@ fn run_inner(
         let protected = names::Names::new(&terms, &passage.text).spans(&passage.text);
         let source_end = source_boundary(&passage.text[progress.end..], target == "zh")
             .map_or(passage.text.len(), |end| progress.end + end);
-        let planned = chunks::next_protected(
-            &passage.text[..source_end],
-            progress.end,
-            input_budget,
-            &protected,
-            |input| {
-                if literal.is_some() {
-                    return Ok(0);
-                }
-                let session = session.as_ref().context("Missing translation worker")?;
-                let names = names::Names::new(&terms, input);
-                let plan = retention_plan(input, &names, target == "zh").or_else(|| {
-                    repair.and_then(|_| name_plan(input, &names, target, terms.actor_spellings()))
-                });
-                let system = system_prompt(language, &names, plan.as_ref(), repair);
-                let input = plan.as_ref().map_or(input, |p| p.input.as_str());
-                session.begin_request();
-                let tokens: Value = session
+        let planned = if literal.is_some() {
+            // Closed fields cover the WHOLE original source. They have no
+            // model context budget, and must never be attached to one partial
+            // chunk or appended to an earlier generated partial result.
+            Ok(Some(chunks::Chunk {
+                start: 0,
+                end: passage.text.len(),
+                tokens: 0,
+            }))
+        } else {
+            chunks::next_protected(
+                &passage.text[..source_end],
+                progress.end,
+                input_budget,
+                &protected,
+                |input| {
+                    let session = session.as_ref().context("Missing translation worker")?;
+                    let names = names::Names::new(&terms, input);
+                    let plan = retention_plan(input, &names, target == "zh").or_else(|| {
+                        repair
+                            .and_then(|_| name_plan(input, &names, target, terms.actor_spellings()))
+                    });
+                    let system = system_prompt(language, &names, plan.as_ref(), repair);
+                    let input = plan.as_ref().map_or(input, |p| p.input.as_str());
+                    session.begin_request();
+                    let tokens: Value = session
                     .agent
                     .post(&format!("{}/tokenize", session.base))
                     .set("Authorization", &session.auth)
@@ -685,14 +702,15 @@ fn run_inner(
                         json!({"content":format!("{system}\n{}", notes::normalize_money(input))}),
                     )?
                     .into_json()?;
-                let count = tokens["tokens"]
-                    .as_array()
-                    .context("Invalid tokenizer response")?
-                    .len();
-                session.complete_request();
-                Ok(count)
-            },
-        );
+                    let count = tokens["tokens"]
+                        .as_array()
+                        .context("Invalid tokenizer response")?
+                        .len();
+                    session.complete_request();
+                    Ok(count)
+                },
+            )
+        };
         let chunk = match planned {
             Ok(Some(chunk)) => chunk,
             Ok(None) => {
@@ -969,15 +987,25 @@ fn checked_progress(
     Ok(next)
 }
 
-/// Closed-class, whole-fragment translations. Never interpret a sentence,
-/// complete a fragment, or override an explicit glossary/name binding.
+/// Whole fragments and completely decoded source fields need no model lease.
+/// Unknown context and explicit glossary/name bindings retain normal inference.
 fn literal_caption(
     source: &str,
     target: &str,
     terms: &crate::terminology::Terms,
-) -> Option<&'static str> {
-    if !names::Names::new(terms, source).hint().is_empty() {
+) -> Option<String> {
+    let names = names::Names::new(terms, source);
+    if !names.hint().is_empty() {
         return None;
+    }
+    if let Some(chinese) = match target {
+        "zh" => Some(true),
+        "en" => Some(false),
+        _ => None,
+    } {
+        if let Some(text) = closed_retention_text(source, &names, chinese) {
+            return Some(text);
+        }
     }
     match (target, source.trim().to_ascii_lowercase().as_str()) {
         ("zh", "and") => Some("和"),
@@ -990,6 +1018,7 @@ fn literal_caption(
         ("en", "呃") => Some("Uh"),
         _ => None,
     }
+    .map(str::to_owned)
 }
 
 fn system_prompt(
@@ -1769,14 +1798,23 @@ mod tests {
     #[test]
     fn standalone_fragments_translate_without_completing_speech_or_overriding_names() {
         let terms = crate::terminology::Terms::new(&[], &[]);
-        assert_eq!(super::literal_caption("AND", "zh", &terms), Some("和"));
-        assert_eq!(super::literal_caption("嗯", "en", &terms), Some("Hmm"));
+        assert_eq!(
+            super::literal_caption("AND", "zh", &terms),
+            Some("和".into())
+        );
+        assert_eq!(
+            super::literal_caption("嗯", "en", &terms),
+            Some("Hmm".into())
+        );
         for source in [
             "AND YET",
             "and?",
             "No",
             "预算尚未批准",
             "Morgan keeps the deadline.",
+            "Recording in meeting notes should stay on this computer.?",
+            "If approved, recording in meeting notes should stay on this computer.",
+            "Recording in meeting notes should stay on this computer. The budget is pending.",
         ] {
             assert_eq!(super::literal_caption(source, "zh", &terms), None);
         }
@@ -1790,6 +1828,23 @@ mod tests {
             }],
         );
         assert_eq!(super::literal_caption("AND", "zh", &terms), None);
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "Recording".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        assert_eq!(
+            literal_caption(
+                "Recording in meeting notes should stay on this computer.",
+                "zh",
+                &terms
+            ),
+            None
+        );
     }
     #[test]
     fn caption_language_is_checked_around_preserved_names() {
@@ -1926,6 +1981,45 @@ mod tests {
         assert!(!minutes_can_follow(false, false, &valid));
     }
     #[test]
+    fn a_closed_source_longer_than_a_model_chunk_commits_atomically_without_a_worker() -> Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Closed fields across model chunk boundaries")?;
+        let source = format!(
+            "Friday is not the deadline.{}Recording in meeting notes should stay on this computer.",
+            " ".repeat(700)
+        );
+        let segment = crate::Segment {
+            id: "closed-long".into(),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.clone(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&segment)?;
+        assert_eq!(run(&engine, &meeting.id)?, 1);
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(snapshot.segments[0].text, source);
+        assert_eq!(
+            snapshot.translations[&segment.id].text,
+            "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。"
+        );
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
     fn literal_batches_commit_without_a_model_worker_and_keep_revision_checks() -> Result<()> {
         let root = tempfile::tempdir()?;
         let mut engine = Engine::open(root.path().into())?;
@@ -1935,7 +2029,16 @@ mod tests {
         engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
         let meeting = engine.create_meeting("Literal-only captions")?;
         let mut sources = Vec::new();
-        for (index, text) in ["嗯", "AND", "或"].into_iter().enumerate() {
+        for (index, text) in [
+            "嗯",
+            "AND",
+            "或",
+            "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "Recording and meeting notes should stay on this computer.",
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let source = crate::Segment {
                 id: format!("literal-{index}"),
                 meeting_id: meeting.id.clone(),
@@ -1952,10 +2055,18 @@ mod tests {
             sources.push(source);
         }
         // No installed model/runtime exists in this disposable workspace. A
-        // worker startup must not be needed for already validated literal words.
-        assert_eq!(run(&engine, &meeting.id)?, 3);
+        // worker startup must not be needed for fully decoded fields or literal words.
+        // Keep the existing four-passage batch bound, even with no worker.
+        assert_eq!(run(&engine, &meeting.id)?, 4);
+        assert_eq!(run(&engine, &meeting.id)?, 1);
         let snapshot = engine.snapshot(&meeting.id)?;
-        for (source, translated) in sources.iter().zip(["Hmm", "和", "or"]) {
+        for (source, translated) in sources.iter().zip([
+            "Hmm",
+            "和",
+            "or",
+            "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "录音和会议笔记应保留在这台电脑上。",
+        ]) {
             assert_eq!(snapshot.translations[&source.id].text, translated);
             assert_eq!(snapshot.translations[&source.id].revision, source.revision);
         }

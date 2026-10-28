@@ -31,6 +31,35 @@ fn normalize(text: &str) -> String {
 pub(super) fn unfinished(text: &str) -> bool {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"(?i)未完成|还没有完成|还没完成|待完成|\bnot(?:\s+(?:yet|been)){0,2}\s+(?:completed?|finished)\b|\bhasn['’]t\s+been\s+(?:completed|finished)\b|\b(?:still\s+pending|incomplete|unfinished)\b").unwrap()).is_match(text)
+        || bare_unfinished_assertion(text)
+}
+fn bare_unfinished_assertion(text: &str) -> bool {
+    if !text.contains("没有完成") {
+        return false;
+    }
+    static CONDITIONAL: OnceLock<Regex> = OnceLock::new();
+    let conditional = CONDITIONAL.get_or_init(|| {
+        Regex::new(r"(?i)\b(?:if|unless|when|once|before|until|provided)\b|如果|假如|倘若|除非|只要|只有|一旦|要是|即使|即便|是否|能否").unwrap()
+    });
+    // This admits only an explicit local assertion, not a new general task
+    // parser. Keep preceding conditional context in the same sentence: a comma
+    // or semicolon after 如果 does not turn its consequence into a current fact.
+    text.split_inclusive(['。', '.', '!', '！', '?', '？', '\n'])
+        .any(|sentence| {
+            if sentence.contains(['?', '？']) || conditional.is_match(sentence) {
+                return false;
+            }
+            sentence.split([',', '，', ';', '；']).any(|clause| {
+                let Some(object) = clause.trim().strip_prefix("没有完成") else {
+                    return false;
+                };
+                let object = object.trim_end_matches(['。', '.', '!', '！', '\n']).trim();
+                object.chars().any(char::is_alphanumeric)
+                    && !object.contains(['就', '前', '才'])
+                    && !object.contains("的话")
+                    && !object.ends_with(['吗', '么', '呢'])
+            })
+        })
 }
 fn pending(text: &str) -> Option<String> {
     static RE: OnceLock<Regex> = OnceLock::new();
@@ -176,6 +205,37 @@ mod tests {
             speaker: None,
             speaker_manual: false,
         }
+    }
+    #[test]
+    fn bare_unfinished_requires_an_assertive_local_clause() {
+        for text in [
+            "没有完成系统音频采集。",
+            "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+            "周五不是截止日期，没有完成库存复核。",
+            "是否继续测试？没有完成库存复核。",
+        ] {
+            assert!(unfinished(text), "{text}");
+        }
+        for text in [
+            "没有完成。",
+            "没有完成——。",
+            "没有完成系统音频采集就不能发布。",
+            "没有完成系统音频采集前先不要发布。",
+            "没有完成系统音频采集才继续测试。",
+            "没有完成系统音频采集的话先不要发布。",
+            "如果预算不批，没有完成系统音频采集，也不要发布。",
+            "假如预算不批；没有完成系统音频采集也不要发布。",
+            "If the budget is rejected，没有完成系统音频采集就不要发布。",
+            "没有完成系统音频采集吗？",
+            "没有完成系统音频采集吗。",
+            "系统音频采集没有完成。",
+            "不是没有完成系统音频采集。",
+        ] {
+            assert!(!unfinished(text), "{text}");
+        }
+        // New bare-form admission does not narrow any existing pattern.
+        assert!(unfinished("如果上传还没有完成，就不要发布。"));
+        assert!(unfinished("The invoice review is not yet completed."));
     }
     #[test]
     fn only_a_later_explicit_same_task_completion_retires_the_old_state_and_plan() {

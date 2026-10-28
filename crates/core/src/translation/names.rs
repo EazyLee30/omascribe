@@ -573,6 +573,46 @@ fn contains(body: &str, name: &str) -> bool {
 mod tests {
     use super::*;
     use serde_json::Value;
+    fn focused_terms(content: &str) -> Terms {
+        Terms::new(
+            &[crate::UserNote {
+                id: "focus".into(),
+                meeting_id: "meeting".into(),
+                kind: "document".into(),
+                content: content.into(),
+                anchor_ms: 0,
+                updated_at: String::new(),
+            }],
+            &[],
+        )
+    }
+    #[test]
+    fn actual_withdrawal_caption_preserves_focused_teacher_spelling_without_gender_guess() {
+        let terms = focused_terms("**展览** **预算** **刘老师**");
+        let source =
+            "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。";
+        let names = Names::new(&terms, source);
+        // Actual C8 phase 2 caption: test the spelling error independently of
+        // its action wording, which must not be guessed by a name repair.
+        let observed = "The schedule for Friday is canceled, the new date has not been decided, Mr. Liu continues to be responsible for assigning, and the budget has been changed to 5000 yuan but has not been confirmed.";
+        assert_eq!(names.spellings(), &["刘老师"]);
+        assert!(names.validate(observed).is_err());
+        assert!(names
+            .validate(&observed.replace("Mr. Liu", "王老师"))
+            .is_err());
+        assert!(names
+            .validate(&observed.replace("Mr. Liu", "刘老师"))
+            .is_ok());
+        let repair = names.repair(source).unwrap();
+        assert!(repair.input.contains("[A]继续负责布置"));
+        assert!(!repair.input.contains("刘老师"));
+        let raw = json!({"translation": observed.replace("Mr. Liu", "[A]")}).to_string();
+        let restored: Value = serde_json::from_str(&repair.body(&raw).unwrap()).unwrap();
+        assert_eq!(
+            restored["translation"],
+            observed.replace("Mr. Liu", "刘老师")
+        );
+    }
     #[test]
     fn structured_repair_reorders_prose_without_generating_or_losing_source_names() {
         let terms = Terms::new(&[], &[]);

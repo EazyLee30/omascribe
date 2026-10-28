@@ -1150,6 +1150,44 @@ mod tests {
         ));
     }
     #[test]
+    fn bare_unfinished_assertions_keep_their_status() {
+        let mut source = data()[0].clone();
+        source.text =
+            "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。".into();
+        let actual = "Today, only these acceptance requirements will be discussed, without completing the system audio capture, and without determining the release date of the new version.";
+        assert!(validate_translation(actual, &source, "m").is_err());
+        assert!(validate_translation(
+            "Today we are only discussing these acceptance requirements. System audio capture has not yet been completed, and the new version release date is still undecided.",
+            &source,
+            "m"
+        )
+        .is_ok());
+    }
+    #[test]
+    fn conditional_bare_completion_keeps_valid_without_translation() {
+        let mut source = data()[0].clone();
+        for (original, translated) in [
+            (
+                "没有完成系统音频采集就不能发布。",
+                "Do not release without completing system audio capture.",
+            ),
+            (
+                "如果预算不批，没有完成系统音频采集就不要发布。",
+                "If the budget is not approved, do not release without completing system audio capture.",
+            ),
+            (
+                "没有完成系统音频采集前，先不要公开发布。",
+                "Do not publicly release before completing system audio capture.",
+            ),
+        ] {
+            source.text = original.into();
+            assert!(
+                validate_translation(translated, &source, "m").is_ok(),
+                "{original}"
+            );
+        }
+    }
+    #[test]
     fn actual_completion_updates_only_that_task_and_does_not_weaken_translations() {
         let mut segments = vec![data()[0].clone(); 3];
         for (i, (s, text)) in segments.iter_mut().zip([
