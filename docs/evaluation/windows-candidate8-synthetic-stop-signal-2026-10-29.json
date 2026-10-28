@@ -1,0 +1,15 @@
+{
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "first_run_gate": "fail: 4480 ms capture was below the preset 4500 ms minimum",
+  "stop_request_wall_ms": 5000,
+  "capture_ms": 4480,
+  "asr_processed_ms": 4480,
+  "capture_is_exact_fixture_prefix": true,
+  "fixture_duration_ms": 23000,
+  "fixture_format": "mono PCM16, 16000 Hz",
+  "nonzero_samples": 50283,
+  "absolute_peak": 25452,
+  "captured_synthetic_pcm_sha256": "97f637a3365fc714e66bc85b9f17b395136a797a1639f90a90cf7eacf3fb8a06",
+  "timing_scope": "The harness starts wall time before calling replay_audio, then requests stop at 5000 ms. The 520 ms difference between request wall time and captured sample duration can include startup and stream/block timing; these factors were not independently measured.",
+  "limitations": "Synthetic file replay and same-source native core APIs, not physical microphone, UI stop or real-speech accuracy. The original failed minimum and evidence are unchanged."
+}
