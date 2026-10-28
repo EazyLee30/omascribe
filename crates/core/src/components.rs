@@ -109,6 +109,8 @@ pub struct Component {
 #[derive(Serialize)]
 pub struct Status {
     pub component: Component,
+    pub version: String,
+    pub present: bool,
     pub installed: bool,
     pub download: Option<Download>,
 }
@@ -375,6 +377,8 @@ impl Engine {
                 .filter(|c| c.target == target())
                 .map(|c| Status {
                     component: c.clone(),
+                    version: index.version.clone(),
+                    present: fs::symlink_metadata(location(&self.root, &index, c)).is_ok(),
                     installed: installed(&self.root, &index, c),
                     download: downloads.get(&c.id).cloned(),
                 })
@@ -492,6 +496,90 @@ impl Engine {
             cancel.store(true, Ordering::SeqCst);
         }
     }
+    /// Local, explicit removal; a damaged installation need not pass its own
+    /// completeness or hash checks before it can be removed and downloaded again.
+    pub fn remove_acceleration_component(&self, id: &str, version: &str) -> Result<()> {
+        remove_component(self, id, version, || {
+            cached_index(&self.root).map(|(_, index)| index)
+        })
+    }
+}
+
+fn remove_component(
+    engine: &Engine,
+    id: &str,
+    version: &str,
+    catalog: impl FnOnce() -> Result<Index>,
+) -> Result<()> {
+    if !basename(id) || !basename(version) {
+        bail!("Invalid component identity");
+    }
+    let _gate = engine.config_lock.lock().unwrap();
+    engine.require_available()?;
+    engine.configuration_idle()?;
+    if engine.note_busy.load(Ordering::SeqCst)
+        || engine.acceleration_test_running()
+        || engine.inference_pool.status().leased
+    {
+        bail!("Wait for local inference and component testing to finish");
+    }
+    // Cancellation only signals the installer. Its job remains registered
+    // until extraction/publication and stage cleanup have actually finished.
+    if engine
+        .component_downloads
+        .cancel
+        .lock()
+        .unwrap()
+        .contains_key(id)
+    {
+        bail!("Cancel the component download and wait for it to finish");
+    }
+    let index = catalog()?;
+    if index.version != version {
+        bail!("Component catalog changed; refresh before removing this version");
+    }
+    let component = index
+        .components
+        .iter()
+        .find(|c| c.id == id && c.target == target())
+        .context("Unknown component for this platform")?;
+    let path = location(&engine.root, &index, component);
+    for directory in [
+        engine.root.join("accelerators"),
+        engine.root.join("accelerators").join(id),
+        path.clone(),
+    ] {
+        match fs::symlink_metadata(directory) {
+            Ok(metadata) if !plain_directory(&metadata) => {
+                bail!("Refusing to remove a linked or non-directory component path")
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    engine.inference_pool.invalidate();
+    crate::acceleration::forget_component(engine, id, version)?;
+    if path.exists() {
+        fs::remove_dir_all(path)?;
+    }
+    engine.component_downloads.status.lock().unwrap().remove(id);
+    Ok(())
+}
+
+fn plain_directory(metadata: &fs::Metadata) -> bool {
+    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
+        return false;
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        // Junctions and other reparse directories must not become delete roots.
+        if metadata.file_attributes() & 0x400 != 0 {
+            return false;
+        }
+    }
+    true
 }
 
 fn install(
@@ -649,6 +737,253 @@ fn extract(archive: &Path, stage: &Path, files: &[Asset], cancel: &AtomicBool) -
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn removal_fixture() -> Result<(tempfile::TempDir, Arc<Engine>, Index, PathBuf)> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let component = Component {
+            id: "fixture-gpu".into(),
+            name: "Fictional GPU component".into(),
+            backend: "vulkan".into(),
+            target: target(),
+            entrypoint: "llama-server".into(),
+            license: "fixture".into(),
+            archive: file("archive.tar.bz2", b"archive"),
+            files: vec![file("llama-server", b"good")],
+        };
+        let index = Index {
+            schema: 1,
+            version: "acceleration-fixture-1".into(),
+            runtime_revision: "fixture".into(),
+            components: vec![component],
+        };
+        let path = location(root.path(), &index, &index.components[0]);
+        Ok((root, engine, index, path))
+    }
+    fn fixture_marker(path: &Path, index: &Index) -> Result<()> {
+        fs::write(
+            path.join("installed.json"),
+            serde_json::to_vec(&serde_json::json!({
+                "archive_sha256":index.components[0].archive.sha256
+            }))?,
+        )?;
+        Ok(())
+    }
+    fn fixture_certificate(index: &Index) -> Result<Vec<u8>> {
+        let trial = serde_json::json!({"startup_ms":1,"requests_ms":[1],"total_ms":2,
+            "peak_rss_mib":null,"runtime_gpu_buffer_mib":null});
+        Ok(serde_json::to_vec(&serde_json::json!({
+            "schema":1,"component_id":index.components[0].id,"version":index.version,
+            "device":"fixture-device","binding":"fixture-binding",
+            "report":{"cpu":trial,"gpu":trial,"faster":true}
+        }))?)
+    }
+    #[test]
+    fn damaged_and_partial_versions_can_be_removed_before_verified_reinstallation() -> Result<()> {
+        for damage in [
+            "same_size",
+            "wrong_size",
+            "missing_file",
+            "bad_marker",
+            "missing_marker",
+        ] {
+            let (root, engine, index, path) = removal_fixture()?;
+            fs::create_dir_all(&path)?;
+            fixture_marker(&path, &index)?;
+            if damage != "missing_file" {
+                fs::write(path.join("llama-server"), b"evil")?;
+            }
+            if damage == "bad_marker" {
+                fs::write(path.join("installed.json"), b"invalid")?;
+            } else if damage == "missing_marker" {
+                fs::remove_file(path.join("installed.json"))?;
+            } else if damage == "wrong_size" {
+                fs::write(path.join("llama-server"), b"bad")?;
+            }
+            let certificate = root.path().join("accelerators/active.json");
+            fs::write(&certificate, fixture_certificate(&index)?)?;
+            let component = &index.components[0];
+            assert_eq!(
+                installed(root.path(), &index, component),
+                damage == "same_size"
+            );
+            assert!(verify_component_files(component, &path, &AtomicBool::new(false)).is_err());
+            let other = path.parent().unwrap().join("acceleration-older");
+            fs::create_dir(&other)?;
+            fs::write(other.join("keep"), b"other version")?;
+            engine.component_downloads.status.lock().unwrap().insert(
+                component.id.clone(),
+                Download {
+                    state: "failed".into(),
+                    ..Default::default()
+                },
+            );
+            // Production supplies this index only through the signed loader;
+            // a pure fixture exercises removal without downloading/executing it.
+            remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+            assert!(!path.exists());
+            assert!(!certificate.exists());
+            assert!(other.join("keep").exists());
+            assert!(!engine
+                .component_downloads
+                .status
+                .lock()
+                .unwrap()
+                .contains_key(&component.id));
+            // Missing-directory removal also revokes a matching stale opt-in;
+            // a repeated removal remains harmless.
+            fs::write(&certificate, fixture_certificate(&index)?)?;
+            remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+            assert!(!certificate.exists());
+            remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+            fs::create_dir(&path)?;
+            fs::write(path.join("llama-server"), b"good")?;
+            fixture_marker(&path, &index)?;
+            verify_component_files(component, &path, &AtomicBool::new(false))?;
+            assert!(installed(root.path(), &index, component));
+            assert!(
+                !root.path().join("accelerators/active.json").exists(),
+                "Reinstallation alone must not authorize acceleration"
+            );
+        }
+        Ok(())
+    }
+    #[test]
+    fn removal_rejects_busy_jobs_cancelled_installers_and_stale_identity() -> Result<()> {
+        for busy in [
+            "recording",
+            "paused",
+            "transcribing",
+            "notes",
+            "translation",
+            "diarization",
+            "note_busy",
+            "maintenance",
+            "download",
+            "cancelled_download",
+        ] {
+            let (_root, engine, index, path) = removal_fixture()?;
+            fs::create_dir_all(&path)?;
+            fs::write(path.join("keep"), b"not removed")?;
+            let certificate = engine.root.join("accelerators/active.json");
+            let original_certificate = fixture_certificate(&index)?;
+            fs::write(&certificate, &original_certificate)?;
+            {
+                let mut status = engine.status.lock().unwrap();
+                match busy {
+                    "recording" => status.recording = true,
+                    "paused" => status.paused = true,
+                    "transcribing" => status.transcribing = true,
+                    "notes" => status.notes_busy = true,
+                    "translation" => status.translation_busy = true,
+                    "diarization" => status.diarization_busy = true,
+                    "note_busy" => engine.note_busy.store(true, Ordering::SeqCst),
+                    "maintenance" => engine.maintenance.store(true, Ordering::SeqCst),
+                    _ => {
+                        engine.component_downloads.cancel.lock().unwrap().insert(
+                            index.components[0].id.clone(),
+                            Arc::new(AtomicBool::new(busy == "cancelled_download")),
+                        );
+                    }
+                }
+            }
+            assert!(
+                remove_component(&engine, &index.components[0].id, &index.version, || Ok(
+                    index.clone()
+                ))
+                .is_err(),
+                "{busy}"
+            );
+            assert!(path.join("keep").exists(), "{busy}");
+            assert_eq!(fs::read(certificate)?, original_certificate, "{busy}");
+        }
+        let (_root, engine, index, path) = removal_fixture()?;
+        fs::create_dir_all(&path)?;
+        for (id, version) in [
+            ("fixture-gpu", "acceleration-stale"),
+            ("unknown", index.version.as_str()),
+            ("../escape", index.version.as_str()),
+            ("fixture-gpu", "../escape"),
+        ] {
+            assert!(remove_component(&engine, id, version, || Ok(index.clone())).is_err());
+            assert!(path.exists());
+        }
+        // The public entry point never trusts an unsigned cached catalog.
+        fs::write(engine.root.join("acceleration-index.json"), b"{}")?;
+        assert!(engine
+            .remove_acceleration_component("fixture-gpu", &index.version)
+            .is_err());
+        assert!(path.exists());
+        Ok(())
+    }
+    #[test]
+    #[cfg(unix)]
+    fn removal_refuses_linked_parents_and_unlinks_only_owned_child_links() -> Result<()> {
+        use std::os::unix::fs::symlink;
+        for parent in 0..3 {
+            let (_root, engine, index, path) = removal_fixture()?;
+            let outside = tempfile::tempdir()?;
+            fs::write(outside.path().join("keep"), b"external")?;
+            let linked = match parent {
+                0 => engine.root.join("accelerators"),
+                1 => path.parent().unwrap().to_path_buf(),
+                _ => path.clone(),
+            };
+            fs::create_dir_all(linked.parent().unwrap())?;
+            symlink(outside.path(), &linked)?;
+            assert!(
+                remove_component(&engine, &index.components[0].id, &index.version, || Ok(
+                    index.clone()
+                ))
+                .is_err()
+            );
+            assert_eq!(fs::read(outside.path().join("keep"))?, b"external");
+        }
+        let (_root, engine, index, path) = removal_fixture()?;
+        let outside = tempfile::tempdir()?;
+        fs::write(outside.path().join("keep"), b"external")?;
+        fs::create_dir_all(&path)?;
+        symlink(outside.path(), path.join("child-link"))?;
+        remove_component(&engine, &index.components[0].id, &index.version, || {
+            Ok(index.clone())
+        })?;
+        assert!(!path.exists());
+        assert!(outside.path().join("keep").exists());
+        Ok(())
+    }
+    #[test]
+    #[cfg(windows)]
+    fn removal_refuses_windows_junction_roots() -> Result<()> {
+        for parent in 0..3 {
+            let (_root, engine, index, path) = removal_fixture()?;
+            let outside = tempfile::tempdir()?;
+            fs::write(outside.path().join("keep"), b"external")?;
+            let linked = match parent {
+                0 => engine.root.join("accelerators"),
+                1 => path.parent().unwrap().to_path_buf(),
+                _ => path.clone(),
+            };
+            fs::create_dir_all(linked.parent().unwrap())?;
+            let made = crate::platform::child_command("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(&linked)
+                .arg(outside.path())
+                .output()?;
+            assert!(
+                made.status.success(),
+                "Could not create fixture junction: {made:?}"
+            );
+            assert!(!plain_directory(&fs::symlink_metadata(&linked)?));
+            assert!(
+                remove_component(&engine, &index.components[0].id, &index.version, || {
+                    Ok(index.clone())
+                })
+                .is_err()
+            );
+            assert_eq!(fs::read(outside.path().join("keep"))?, b"external");
+            fs::remove_dir(linked)?;
+        }
+        Ok(())
+    }
     fn file(name: &str, bytes: &[u8]) -> Asset {
         Asset {
             name: name.into(),

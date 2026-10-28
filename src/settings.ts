@@ -509,6 +509,32 @@ export async function mountSettings(
           await invoke("cancel_acceleration_download", {
             id: button.dataset.id,
           });
+        } else if (kind === "remove") {
+          // Bind confirmation to the exact rendered version, even if polling
+          // refreshes the catalog while the dialog is open.
+          const id = button.dataset.id;
+          const version = button.dataset.version;
+          const selected = acceleration.components.find(
+            (entry) => entry.component.id === id && entry.version === version,
+          );
+          if (!selected) {
+            await pollModels();
+            return;
+          }
+          if (
+            !(await confirmDelete(
+              `${tr("移除组件", "Remove component", "移除元件")} · ${selected.component.name}`,
+              tr(
+                "移除后需要重新下载和测试才能再次使用。模型与会议内容会保留。",
+                "Download and test it again to use it after removal. Models and meetings will be kept.",
+                "移除後需要重新下載及測試才能再次使用。模型與會議內容會保留。",
+              ),
+              tr("移除", "Remove", "移除"),
+            ))
+          )
+            return;
+          if (!alive) return;
+          await invoke("remove_acceleration_component", { id, version });
         } else if (kind === "test") {
           await invoke("verify_acceleration", { id: button.dataset.id });
         } else if (kind === "disable") {
@@ -519,11 +545,17 @@ export async function mountSettings(
         await pollModels();
       } catch (e) {
         options.toast(
-          tr(
-            "暂时无法取得或安装组件。CPU 仍可使用，请稍后重试。",
-            "Components could not be fetched or installed. CPU remains available; try again later.",
-            "暫時無法取得或安裝元件，CPU 仍可使用，請稍後再試。",
-          ),
+          button.dataset.componentAction === "remove"
+            ? tr(
+                "组件正在使用或状态已变化，请结束当前任务并刷新后重试。",
+                "The component is in use or has changed. Finish current tasks, refresh, and try again.",
+                "元件正在使用或狀態已變更，請結束目前任務並重新整理後再試。",
+              )
+            : tr(
+                "暂时无法取得或安装组件。CPU 仍可使用，请稍后重试。",
+                "Components could not be fetched or installed. CPU remains available; try again later.",
+                "暫時無法取得或安裝元件，CPU 仍可使用，請稍後再試。",
+              ),
           true,
         );
       } finally {

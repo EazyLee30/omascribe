@@ -28,6 +28,7 @@ pub(crate) struct State {
 pub struct Status {
     pub state: String,
     pub component_id: Option<String>,
+    pub version: Option<String>,
     pub reason: Option<String>,
     pub report: Option<Report>,
 }
@@ -57,6 +58,39 @@ struct Certificate {
 }
 fn certificate_path(engine: &Engine) -> std::path::PathBuf {
     engine.root.join("accelerators/active.json")
+}
+/// Caller owns config_lock and has excluded tests/leases. This helper never
+/// reacquires that gate or discards another installed version's authorization.
+pub(crate) fn forget_component(engine: &Engine, id: &str, version: &str) -> Result<()> {
+    let path = certificate_path(engine);
+    let certificate = (|| -> Result<Certificate> {
+        if !fs::symlink_metadata(&path)?.file_type().is_file() {
+            bail!("Acceleration certificate is not a regular file");
+        }
+        let mut bytes = Vec::new();
+        fs::File::open(&path)?
+            .take(16_385)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() > 16_384 {
+            bail!("Invalid acceleration certificate");
+        }
+        Ok(serde_json::from_slice(&bytes)?)
+    })()
+    .ok();
+    let matching = certificate
+        .as_ref()
+        .is_some_and(|c| c.component_id == id && c.version == version);
+    if matching {
+        fs::remove_file(path)?;
+    }
+    let mut state = engine.acceleration.lock().unwrap();
+    if state.status.component_id.as_deref() == Some(id)
+        && (state.status.version.as_deref() == Some(version)
+            || state.status.version.is_none() && matching)
+    {
+        state.status = Status::default();
+    }
+    Ok(())
 }
 fn hash(value: &impl Serialize) -> Result<String> {
     Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(value)?)))
@@ -165,6 +199,7 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
             bail!("Acceleration configuration changed; test again");
         }
         let mut state = engine.acceleration.lock().unwrap();
+        state.status.version = Some(cert.version);
         state.status.state = "active".into();
         state.status.component_id = Some(cert.component_id);
         state.status.report = Some(cert.report);
@@ -316,10 +351,11 @@ fn correct_facts(value: &Value) -> bool {
         && value["budget"].as_u64() == Some(3000)
         && value["approved"].as_bool() == Some(false)
 }
-fn verify(engine: &Arc<Engine>, id: &str) -> Result<Report> {
+fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     engine.inference_pool.invalidate();
     let prefs = engine.preferences.lock().unwrap().clone();
-    let (index, component, directory) = components::installed_component(&engine.root, id, None)?;
+    let (index, component, directory) =
+        components::installed_component(&engine.root, id, Some(version))?;
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
     let kind = backend(&component)?;
     if kind == Backend::Cuda
@@ -411,22 +447,26 @@ impl Engine {
         if self.preferences.lock().unwrap().inference_backend != "auto" {
             bail!("Choose Automatic inference before testing optional acceleration");
         }
-        components::installed_component(&self.root, id, None)?;
+        let (index, _, _) = components::installed_component(&self.root, id, None)?;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("Wait for local inference to finish");
         }
         self.note_cancel.store(false, Ordering::SeqCst);
-        self.acceleration.lock().unwrap().status = Status {
+        let mut state = self.acceleration.lock().unwrap();
+        let version = index.version;
+        state.status = Status {
             state: "testing".into(),
             component_id: Some(id.into()),
+            version: Some(version.clone()),
             ..Default::default()
         };
+        drop(state);
         self.status.lock().unwrap().notes_busy = true;
         drop(gate);
         let engine = self.clone();
         let id = id.to_owned();
         std::thread::spawn(move || {
-            let result = verify(&engine, &id);
+            let result = verify(&engine, &id, &version);
             let mut state = engine.acceleration.lock().unwrap();
             state.status = match result {
                 Ok(report) => Status {
@@ -437,6 +477,7 @@ impl Engine {
                     }
                     .into(),
                     component_id: Some(id),
+                    version: Some(version),
                     report: Some(report),
                     reason: None,
                 },
@@ -445,6 +486,7 @@ impl Engine {
                     Status {
                         state: "test_failed".into(),
                         component_id: Some(id),
+                        version: Some(version),
                         reason: Some(format!("{error:#}")),
                         report: None,
                     }
@@ -469,6 +511,83 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn component_removal_clears_only_the_exact_authorized_version() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(root.path().join("accelerators"))?;
+        let trial = Trial {
+            startup_ms: 1,
+            requests_ms: vec![1],
+            total_ms: 2,
+            peak_rss_mib: None,
+            runtime_gpu_buffer_mib: None,
+        };
+        let report = Report {
+            cpu: trial.clone(),
+            gpu: trial,
+            faster: true,
+        };
+        crate::preferences::atomic_json(
+            &certificate_path(&engine),
+            &Certificate {
+                schema: 1,
+                component_id: "fixture".into(),
+                version: "acceleration-v2".into(),
+                device: "fixture-device".into(),
+                binding: "fixture-binding".into(),
+                report: report.clone(),
+            },
+        )?;
+        engine.acceleration.lock().unwrap().status = Status {
+            state: "active".into(),
+            component_id: Some("fixture".into()),
+            version: Some("acceleration-v2".into()),
+            report: Some(report),
+            reason: None,
+        };
+        let original = fs::read(certificate_path(&engine))?;
+        for (id, version) in [("other", "acceleration-v2"), ("fixture", "acceleration-v1")] {
+            forget_component(&engine, id, version)?;
+            assert_eq!(fs::read(certificate_path(&engine))?, original);
+            let state = engine.acceleration.lock().unwrap();
+            assert_eq!(state.status.state, "active");
+            assert_eq!(state.status.version.as_deref(), Some("acceleration-v2"));
+        }
+        forget_component(&engine, "fixture", "acceleration-v2")?;
+        assert!(!certificate_path(&engine).exists());
+        let state = engine.acceleration.lock().unwrap();
+        assert!(state.status.state.is_empty());
+        assert!(state.status.component_id.is_none());
+        assert!(state.status.version.is_none());
+        assert!(state.status.report.is_none());
+        Ok(())
+    }
+    #[test]
+    fn removal_rejects_a_test_and_clears_matching_failed_state_without_certificate() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.acceleration.lock().unwrap().status = Status {
+            state: "testing".into(),
+            component_id: Some("fixture".into()),
+            version: Some("acceleration-v1".into()),
+            ..Default::default()
+        };
+        let error = engine
+            .remove_acceleration_component("fixture", "acceleration-v1")
+            .unwrap_err();
+        assert!(error.to_string().contains("testing to finish"));
+        assert_eq!(engine.acceleration.lock().unwrap().status.state, "testing");
+        engine.acceleration.lock().unwrap().status.state = "test_failed".into();
+        forget_component(&engine, "fixture", "acceleration-v2")?;
+        assert_eq!(
+            engine.acceleration.lock().unwrap().status.state,
+            "test_failed"
+        );
+        forget_component(&engine, "fixture", "acceleration-v1")?;
+        assert!(engine.acceleration.lock().unwrap().status.state.is_empty());
+        Ok(())
+    }
     #[test]
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn status_revalidates_a_persisted_opt_in_before_the_first_job() -> Result<()> {

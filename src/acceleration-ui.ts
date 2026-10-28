@@ -6,6 +6,7 @@ export interface ComponentCatalog {
   verification?: {
     state: string;
     component_id: string | null;
+    version: string | null;
     reason: string | null;
     report: {
       cpu: { total_ms: number; peak_rss_mib: number | null };
@@ -25,6 +26,8 @@ export interface ComponentCatalog {
       archive: { bytes: number };
       license: string;
     };
+    version: string;
+    present: boolean;
     installed: boolean;
     download: {
       state: string;
@@ -56,14 +59,16 @@ export function accelerationBody(
   const cudaBlocked = cudaOld || !devices.some((d) => d.vendor === "nvidia");
   const verification = catalog.verification;
   const testing = verification?.state === "testing";
-  const statusLabel = (id: string) => {
-    if (verification?.component_id !== id)
+  const matchesVerification = (id: string, version: string) =>
+    verification?.component_id === id && verification.version === version;
+  const statusLabel = (id: string, version: string) => {
+    if (!matchesVerification(id, version))
       return tr(
         "已下载 · 待验证",
         "Downloaded · test required",
         "已下載 · 待驗證",
       );
-    switch (verification.state) {
+    switch (verification?.state) {
       case "active":
         return tr(
           "已验证 · 自动启用",
@@ -105,11 +110,33 @@ export function accelerationBody(
     catalog.state !== "ready"
       ? `<p class="setting-help">${tr("检查组件目录只获取签名清单，不上传硬件信息或会议内容。", "Checking fetches only a signed catalog. Hardware information and meeting content are not uploaded.", "檢查只取得簽章清單，不上傳硬體資訊及會議內容。")}</p>`
       : catalog.components
-          .map(({ component: c, installed, download: d }) => {
+          .map(({ component: c, version, present, installed, download: d }) => {
             const busy = d && ["downloading", "verifying"].includes(d.state);
             const unavailable =
               !devices.length || (c.backend === "cuda" && cudaBlocked);
-            return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${recommended(c.backend) ? `<span class="badge selected">${tr("推荐", "Recommended", "推薦")}</span>` : ""}<span class="badge">${installed ? statusLabel(c.id) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${busy ? `<button class="outline" data-component-action="cancel" data-id="${c.id}">${tr("取消", "Cancel")}</button>` : !installed ? `<button class="outline" data-component-action="download" data-id="${c.id}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>` : testing ? (verification?.component_id === c.id ? `<button class="outline" data-component-action="cancel-test">${tr("取消测试", "Cancel test", "取消測試")}</button>` : "") : verification?.state === "active" && verification.component_id === c.id ? `<button class="outline" data-component-action="disable">${tr("使用 CPU", "Use CPU", "使用 CPU")}</button>` : `<button class="outline" data-component-action="test" data-id="${c.id}" ${unavailable ? "disabled" : ""}>${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`}</div></article>`;
+            const incomplete = present && !installed && !busy;
+            const remove =
+              (present || installed) && !busy
+                ? `<button class="subtle" data-component-action="remove" data-id="${esc(c.id)}" data-version="${esc(version)}" ${testing ? "disabled" : ""}>${glyph("trash")}${tr("移除", "Remove", "移除")}</button>`
+                : "";
+            const action = busy
+              ? `<button class="outline" data-component-action="cancel" data-id="${esc(c.id)}">${tr("取消", "Cancel")}</button>`
+              : incomplete
+                ? ""
+                : !installed
+                  ? `<button class="outline" data-component-action="download" data-id="${esc(c.id)}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>`
+                  : testing
+                    ? matchesVerification(c.id, version)
+                      ? `<button class="outline" data-component-action="cancel-test">${tr("取消测试", "Cancel test", "取消測試")}</button>`
+                      : ""
+                    : verification?.state === "active" &&
+                        matchesVerification(c.id, version)
+                      ? `<button class="outline" data-component-action="disable">${tr("使用 CPU", "Use CPU", "使用 CPU")}</button>`
+                      : `<button class="outline" data-component-action="test" data-id="${esc(c.id)}" ${unavailable ? "disabled" : ""}>${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`;
+            const incompleteHint = incomplete
+              ? `<p class="inline-error">${tr("安装不完整，请移除后重新下载。", "Installation is incomplete. Remove it, then download again.", "安裝不完整，請移除後重新下載。")}</p>`
+              : "";
+            return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${recommended(c.backend) ? `<span class="badge selected">${tr("推荐", "Recommended", "推薦")}</span>` : ""}<span class="badge">${installed ? statusLabel(c.id, version) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${incompleteHint}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${action}${remove}</div></article>`;
           })
           .join("")
   }${failure}${comparison}`;

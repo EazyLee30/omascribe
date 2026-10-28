@@ -353,6 +353,7 @@ fn main() {
         acceleration_components,
         check_acceleration_components,
         download_acceleration_component,
+        remove_acceleration_component,
         cancel_acceleration_download,
         verify_acceleration,
         disable_acceleration,

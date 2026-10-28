@@ -918,6 +918,14 @@ mod tests {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let first = lease(&engine, "model", 30)?;
+        let epoch = engine.inference_pool.0.lock().unwrap().epoch;
+        let error = engine
+            .remove_acceleration_component("fixture-gpu", "acceleration-fixture")
+            .unwrap_err();
+        assert!(error.to_string().contains("local inference"));
+        assert!(engine.inference_pool.status().leased);
+        assert_eq!(engine.inference_pool.0.lock().unwrap().epoch, epoch);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), first.server.0.id());
         engine.inference_pool.invalidate();
         drop(first);
         assert!(engine.inference_pool.status().idle_pid.is_none());

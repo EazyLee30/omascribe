@@ -97,6 +97,18 @@ pub fn download_acceleration_component(engine: State<AppState>, id: String) -> R
         .map_err(err)
 }
 #[tauri::command]
+pub async fn remove_acceleration_component(
+    engine: State<'_, AppState>,
+    id: String,
+    version: String,
+) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.remove_acceleration_component(&id, &version))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+#[tauri::command]
 pub fn verify_acceleration(engine: State<AppState>, id: String) -> Reply<()> {
     engine.inner().verify_acceleration(&id).map_err(err)
 }
