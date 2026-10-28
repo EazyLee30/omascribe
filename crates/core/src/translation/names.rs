@@ -27,7 +27,7 @@ impl Names {
                 predicates: BTreeMap::new(),
                 prefix: None,
                 extra_clause: None,
-                named_action: None,
+                fixed_translation: None,
             })
         } else {
             self.repair(source)
@@ -233,7 +233,7 @@ impl Names {
             predicates: BTreeMap::new(),
             prefix: None,
             extra_clause: None,
-            named_action: None,
+            fixed_translation: None,
         })
     }
 }
@@ -245,7 +245,7 @@ pub(super) struct Repair {
     predicates: BTreeMap<usize, Predicate>,
     prefix: Option<String>,
     extra_clause: Option<(String, bool)>,
-    named_action: Option<String>,
+    fixed_translation: Option<String>,
 }
 struct Predicate {
     text: String,
@@ -290,7 +290,7 @@ impl Repair {
         self.predicates.len()
             + usize::from(self.prefix.is_some())
             + usize::from(self.extra_clause.is_some())
-            + usize::from(self.named_action.is_some())
+            + usize::from(self.fixed_translation.is_some())
     }
     /// Only a whole-source, two-label action may use this atomic relation.
     /// Keep actor, predicate and object together; name permutations alone do
@@ -300,7 +300,7 @@ impl Repair {
             || !self.predicates.is_empty()
             || self.prefix.is_some()
             || self.extra_clause.is_some()
-            || self.named_action.is_some()
+            || self.fixed_translation.is_some()
         {
             return false;
         }
@@ -323,7 +323,7 @@ impl Repair {
         self.grammar = Some(json_grammar(
             &serde_json::to_string(&clause).expect("action"),
         ));
-        self.named_action = Some(clause);
+        self.fixed_translation = Some(clause);
         true
     }
     /// Replace an already protected name terminal, not arbitrary prose. The
@@ -375,6 +375,26 @@ impl Repair {
         );
         *grammar = grammar.replacen(&line, &replacement, 1);
         self.extra_clause = Some((clause.into(), require_context));
+        true
+    }
+    /// A decoded source field covers its original span completely. Only the
+    /// remaining original speech may be generated after that fixed sentence.
+    pub fn anchor_source_clause(&mut self, clause: &str, has_remaining: bool) -> bool {
+        if has_remaining {
+            return self.anchor_clause(clause, true);
+        }
+        if !self.names.is_empty()
+            || !self.predicates.is_empty()
+            || self.prefix.is_some()
+            || self.extra_clause.is_some()
+            || self.fixed_translation.is_some()
+        {
+            return false;
+        }
+        self.grammar = Some(json_grammar(
+            &serde_json::to_string(clause).expect("source clause"),
+        ));
+        self.fixed_translation = Some(clause.into());
         true
     }
     fn anchor(
@@ -434,11 +454,11 @@ impl Repair {
         }
         let output: Output = serde_json::from_str(raw)?;
         if self
-            .named_action
+            .fixed_translation
             .as_ref()
             .is_some_and(|clause| &output.translation != clause)
         {
-            bail!("译文改写来源中的人物、动作或对象关系");
+            bail!("译文改写来源中已确认的完整语句");
         }
         if self
             .prefix

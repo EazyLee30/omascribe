@@ -18,7 +18,9 @@ pub(crate) use qualifiers::{
 };
 mod recording_retention;
 mod relations;
-pub(crate) use recording_retention::Mismatch as RecordingRetentionMismatch;
+pub(crate) use recording_retention::{
+    anchor as retention_anchor, Mismatch as RecordingRetentionMismatch,
+};
 mod submission;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
@@ -517,6 +519,7 @@ fn generate_inner(
                 // Semantic failures protect ORIGINAL source relationships.
                 // A language-only failure below edits the checked spans instead.
                 let source_plan = if error.is::<RelationMismatch>()
+                    || error.is::<RecordingRetentionMismatch>()
                     || error.is::<QualifierMismatch>()
                     || error.is::<crate::task_roles::Mismatch>()
                     || error.is::<MetricMismatch>()

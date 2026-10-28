@@ -108,7 +108,7 @@ pub(crate) fn environment(
         None
     };
     let actor_context = crate::source_context::digest(db, meeting)?;
-    let input = json!({"schema":"translation-cache-v23-source-week-retention","model":model.id,"assets":assets,
+    let input = json!({"schema":"translation-cache-v24-source-retention-fields","model":model.id,"assets":assets,
         "runtime":engine.inference_fingerprints.file(&runtime),"component":component,
         "template":crate::translation::SYSTEM_TEMPLATE,"output_schema":crate::translation::OUTPUT_SCHEMA,
         "generation":{"seed":42,"temperature":0,"max_tokens":crate::translation::chunks::OUTPUT_TOKENS,"thinking":false,"input_budget":crate::translation::chunks::INPUT_TOKENS},

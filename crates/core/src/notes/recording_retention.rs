@@ -46,6 +46,229 @@ enum Relation {
     Ambiguous,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct Anchor {
+    pub text: String,
+    pub required_object_phrase: &'static str,
+    pub source_span: std::ops::Range<usize>,
+    pub remaining_source: String,
+    pub has_other_context: bool,
+}
+
+#[derive(Clone, Copy)]
+enum Modality {
+    Should,
+    Must,
+    Shall,
+    Need,
+    Command,
+}
+
+#[derive(Clone, Copy)]
+enum Destination {
+    Computer,
+    Device,
+    Machine,
+    Local,
+}
+
+fn copular_context(text: &str) -> bool {
+    // Only this bounded complete copular prefix is admitted without a source
+    // sentence boundary. An arbitrary adjective before "recording" is not
+    // consumed or mistaken for an independent statement.
+    static COPULAR: OnceLock<regex::Regex> = OnceLock::new();
+    re(&COPULAR, r"(?i)^[a-z][a-z0-9 -]{0,60}\s+(?:is|are|was|were)\s+not\s+(?:the|a|an)\s+(?:deadline|due\s+date|release\s+date|owner|budget)[,:]?$")
+        .is_match(text)
+}
+
+fn independent_prefix(prefix: &str) -> bool {
+    let trimmed = prefix.trim_end();
+    trimmed.is_empty()
+        || prefix.ends_with('\n')
+        || trimmed.ends_with(['.', ';', '。', '；', '?', '？', '!', '！'])
+        || copular_context(
+            trimmed
+                .rsplit(['.', ';', '。', '；', '?', '？', '!', '！', '\n'])
+                .next()
+                .unwrap_or("")
+                .trim(),
+        )
+}
+
+fn independent_suffix(suffix: &str) -> bool {
+    // A source boundary remains meaningful after horizontal whitespace.
+    // trim_start() would erase the newline before testing that boundary.
+    let text = suffix.trim_start_matches([' ', '\t', '\r']);
+    if text.is_empty() || text.starts_with(['.', ';', '。', '；', '\n']) {
+        return true;
+    }
+    let remaining = text
+        .strip_prefix(',')
+        .or_else(|| text.strip_prefix('，'))
+        .or_else(|| text.strip_prefix("and "))
+        .or_else(|| text.strip_prefix("AND "));
+    remaining.is_some_and(|s| copular_context(s.trim().trim_end_matches(['.', '。'])))
+}
+
+fn object_phrase(relation: Relation, chinese: bool, audio: bool, plural: bool) -> &'static str {
+    if chinese {
+        return match relation {
+            Relation::InNotes => "会议笔记中的录音",
+            Relation::AndNotes => "录音和会议笔记",
+            _ => "录音",
+        };
+    }
+    match (relation, audio, plural) {
+        (Relation::InNotes, true, true) => "audio recordings in meeting notes",
+        (Relation::InNotes, true, false) => "audio recording in meeting notes",
+        (Relation::InNotes, false, true) => "recordings in meeting notes",
+        (Relation::InNotes, false, false) => "recording in meeting notes",
+        (Relation::AndNotes, true, true) => "audio recordings and meeting notes",
+        (Relation::AndNotes, true, false) => "audio recording and meeting notes",
+        (Relation::AndNotes, false, true) => "recordings and meeting notes",
+        (Relation::AndNotes, false, false) => "recording and meeting notes",
+        (_, true, true) => "audio recordings",
+        (_, true, false) => "audio recording",
+        (_, false, true) => "recordings",
+        (_, false, false) => "recording",
+    }
+}
+
+/// Consume only a completely identified source frame. The parent translates
+/// the exact before/after slices separately, never a draft of the fixed frame.
+pub(crate) fn anchor(source: &str, chinese: bool) -> Option<Anchor> {
+    static POST: OnceLock<regex::Regex> = OnceLock::new();
+    static PRE: OnceLock<regex::Regex> = OnceLock::new();
+    static ZH: OnceLock<regex::Regex> = OnceLock::new();
+    static CONTEXT_EXCLUSION: OnceLock<regex::Regex> = OnceLock::new();
+    if source.contains(['"', '\'', '“', '”', '‘', '’', '`'])
+        || abstains(source)
+        || re(&CONTEXT_EXCLUSION, r"(?i)\b(?:if|unless|provided|conditional|hypothetically|instead|cloud|moved?|switched?|changed?|cancelled?|canceled?|remote\s+(?:server|storage)|external\s+(?:drive|storage)|usb|another\s+(?:computer|device))\b|\b(?:after|once)\s+(?:approval|approved)\b|如果|假如|若|获批后|批准后|改为|改存|转存|迁移|撤回|取消|云端|雲端")
+            .is_match(source)
+    {
+        return None;
+    }
+    let patterns = [
+        re(
+            &POST,
+            r"(?i)\b(?:the\s+)?(?P<object>(?:audio\s+)?recordings?)(?:\s+(?:in|within|inside|and|&)\s+(?:the\s+)?meeting\s+notes)?\s+(?P<modality>should|must|shall)\s+(?:stay|remain|be\s+(?:kept|stored|saved|retained))\s+(?P<destination>on\s+this\s+(?:computer|device|machine)|locally)\b",
+        ),
+        re(
+            &PRE,
+            r"(?i)\b(?:(?P<modality>should|must|shall)\s+)?(?:keep|store|save|retain)\s+(?:the\s+)?(?P<object>(?:audio\s+)?recordings?)(?:\s+(?:in|within|inside|and|&)\s+(?:the\s+)?meeting\s+notes)?\s+(?P<destination>on\s+this\s+(?:computer|device|machine)|locally)\b",
+        ),
+        re(
+            &ZH,
+            r"(?P<object>(?:(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡)的)?录音(?:在(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡)|(?:和|与|與|以及|及)(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要))?)(?P<modality>应该|应|必须|需要|需|须)(?:保留|保持|保存|存储|留存|存放)(?:在|于)(?P<destination>本计算机|本計算機|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備|此设备|此設備|本机|本機|本地)(?:上)?",
+        ),
+    ];
+    let mut candidates = patterns.iter().flat_map(|p| p.captures_iter(source));
+    let captures = candidates.next()?;
+    if candidates.next().is_some() {
+        return None;
+    }
+    let matched = captures.get(0)?;
+    let relation = frame(matched.as_str(), true)?;
+    if relation == Relation::Ambiguous
+        || !independent_prefix(&source[..matched.start()])
+        || !independent_suffix(&source[matched.end()..])
+    {
+        return None;
+    }
+    let object = captures.name("object")?.as_str().to_lowercase();
+    let modality = match captures.name("modality").map(|m| m.as_str().to_lowercase()) {
+        Some(s) if s == "should" || s == "应" || s == "应该" => Modality::Should,
+        Some(s) if s == "must" || s == "必须" || s == "须" => Modality::Must,
+        Some(s) if s == "shall" => Modality::Shall,
+        Some(s) if s == "需要" || s == "需" => Modality::Need,
+        None => Modality::Command,
+        _ => return None,
+    };
+    let destination = captures.name("destination")?.as_str().to_lowercase();
+    let destination = if destination.ends_with("computer")
+        || destination.contains("电脑")
+        || destination.contains("電腦")
+        || destination.contains("计算机")
+        || destination.contains("計算機")
+    {
+        Destination::Computer
+    } else if destination.ends_with("device")
+        || destination.contains("设备")
+        || destination.contains("設備")
+    {
+        Destination::Device
+    } else if destination.ends_with("machine") || destination == "本机" || destination == "本機"
+    {
+        Destination::Machine
+    } else if destination == "locally" || destination == "本地" {
+        Destination::Local
+    } else {
+        return None;
+    };
+    let required_object_phrase = object_phrase(
+        relation,
+        chinese,
+        object.starts_with("audio"),
+        object.ends_with("recordings"),
+    );
+    let text = if chinese {
+        let destination = match destination {
+            Destination::Computer => "这台电脑上",
+            Destination::Device => "此设备上",
+            Destination::Machine => "本机",
+            Destination::Local => "本地",
+        };
+        let modality = match modality {
+            Modality::Should => "应",
+            Modality::Must | Modality::Shall => "必须",
+            Modality::Need => "需要",
+            Modality::Command => "",
+        };
+        if captures.name("modality").is_none() {
+            format!("请将{required_object_phrase}保留在{destination}。")
+        } else {
+            format!("{required_object_phrase}{modality}保留在{destination}。")
+        }
+    } else {
+        let destination = match destination {
+            Destination::Computer => "on this computer",
+            Destination::Device => "on this device",
+            Destination::Machine => "on this machine",
+            Destination::Local => "locally",
+        };
+        let modality = match modality {
+            Modality::Should => "should",
+            Modality::Must => "must",
+            Modality::Shall => "shall",
+            Modality::Need => "needs to",
+            Modality::Command => "",
+        };
+        if modality.is_empty() {
+            format!("Keep the {required_object_phrase} {destination}.")
+        } else {
+            format!("The {required_object_phrase} {modality} remain {destination}.")
+        }
+    };
+    let mut source_span = matched.range();
+    let mut remaining_source = format!(
+        "{}{}",
+        &source[..source_span.start],
+        &source[source_span.end..]
+    );
+    let has_other_context = remaining_source.chars().any(char::is_alphanumeric);
+    if !has_other_context {
+        source_span = 0..source.len();
+        remaining_source.clear();
+    }
+    Some(Anchor {
+        text,
+        required_object_phrase,
+        source_span,
+        remaining_source,
+        has_other_context,
+    })
+}
+
 fn re(cell: &'static OnceLock<regex::Regex>, pattern: &str) -> &'static regex::Regex {
     cell.get_or_init(|| regex::Regex::new(pattern).unwrap())
 }
@@ -102,7 +325,7 @@ fn abstains(source: &str) -> bool {
         if non_audio_label(clause, audio) {
             return false;
         }
-        re(&NEGATED, r"(?i)\b(?:not|never|no\s+longer|don't|mustn't|shouldn't)\s+(?:be\s+)?(?:stay|remain|keep|kept|store|stored|save|saved|retain|retained)\b|\bno\s+(?:audio\s+)?recordings?\b|\bnot\s+(?:on\s+this\s+(?:computer|device)|locally)\b|(?:不再|不能|不得|无需|不应|不要|不)(?:在(?:本机|本地))?(?:保留|保存|存储|留存|存放|留)")
+        re(&NEGATED, r"(?i)\b(?:not|never|no\s+longer|don't|mustn't|shouldn't)\s+(?:be\s+)?(?:stay|remain|keep|kept|store|stored|save|saved|retain|retained)\b|\bno\s+(?:audio\s+)?recordings?\b|\bnot\s+(?:on\s+this\s+(?:computer|device)|locally)\b|(?:不再|不能|不得|无需|不应|不要|不)(?:在(?:本机|本地))?(?:保留|保持|保存|存储|留存|存放|留)")
             .is_match(clause)
             || re(&CONDITIONAL, r"(?i)\b(?:if|unless|provided|conditional|hypothetically)\b|\b(?:after|once)\s+(?:approval|approved)\b|如果|假如|若|获批后|批准后|只有.*才")
                 .is_match(clause)
@@ -113,7 +336,7 @@ fn abstains(source: &str) -> bool {
 
 fn local_action(text: &str) -> Option<regex::Match<'_>> {
     static ACTION: OnceLock<regex::Regex> = OnceLock::new();
-    re(&ACTION, r"(?i)\b(?:stay|remain|keep|kept|store|stored|save|saved|retain|retained)\b[^,;.!?。\n，；！？]{0,80}(?:\bon\s+this\s+(?:computer|device|machine)\b|\blocally\b|\bon[- ]device\b)|\b(?:locally|on[- ]device)\s+(?:keep|kept|store|stored|save|saved|retain|retained)\b|(?:保留|保存|存储|儲存|留存|存放|留)[^,;.!?。\n，；！？]{0,40}(?:在|于)(?:本机|本機|本地|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備|此设备|此設備)|(?:在)?(?:本机|本機|本地|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?\s*(?:保留|保存|存储|儲存|留存|存放)")
+    re(&ACTION, r"(?i)\b(?:stay|remain|keep|kept|store|stored|save|saved|retain|retained)\b[^,;.!?。\n，；！？]{0,80}(?:\bon\s+this\s+(?:computer|device|machine)\b|\blocally\b|\bon[- ]device\b)|\b(?:locally|on[- ]device)\s+(?:keep|kept|store|stored|save|saved|retain|retained)\b|(?:保留|保持|保存|存储|儲存|留存|存放|留)[^,;.!?。\n，；！？]{0,40}(?:在|于)(?:本机|本機|本地|本计算机|本計算機|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備|此设备|此設備)|(?:在)?(?:本机|本機|本地|本计算机|本計算機|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?\s*(?:保留|保持|保存|存储|儲存|留存|存放)")
         .find(text)
 }
 
@@ -122,7 +345,7 @@ fn relation(text: &str) -> Relation {
     static AND: OnceLock<regex::Regex> = OnceLock::new();
     let inside = re(&IN, r"(?i)\brecordings?\s+(?:in|within|inside)\s+(?:the\s+)?meeting\s+notes\b|(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡)(?:的)?录音|录音[^,;.!?。\n，；！？]{0,35}在[^,;.!?。\n，；！？]{0,20}(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡)")
         .is_match(text);
-    let coordinated = re(&AND, r"(?i)\brecordings?\s+(?:and|&)\s+(?:the\s+)?meeting\s+notes\b|\bmeeting\s+notes\s+(?:and|&)\s+(?:the\s+)?recordings?\b|录音(?:和|与|與|及|、)(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)|(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:和|与|與|及|、)录音")
+    let coordinated = re(&AND, r"(?i)\brecordings?\s+(?:and|&)\s+(?:the\s+)?meeting\s+notes\b|\bmeeting\s+notes\s+(?:and|&)\s+(?:the\s+)?recordings?\b|录音(?:和|与|與|以及|及|、)(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)|(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:和|与|與|以及|及|、)录音")
         .is_match(text);
     match (inside, coordinated) {
         (true, false) => Relation::InNotes,
@@ -147,14 +370,14 @@ fn frame(clause: &str, source: bool) -> Option<Relation> {
     static BEFORE_OBJECT: OnceLock<regex::Regex> = OnceLock::new();
     if action.start() >= audio.end() {
         let bridge = &clause[audio.end()..action.start()];
-        if !re(&AFTER_OBJECT, r"(?ix)^\s*(?:(?:(?:in|within|inside|and|&)\s+(?:the\s+)?meeting\s+notes\s+)?(?:(?:should|must|shall|will|needs?\s+to|ought\s+to)\s+)?(?:be\s+)?|(?:(?:在(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡))|(?:(?:和|与|與|及|、)(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)))?(?:应|应该|必须|须|需|需要|只|仅|仍|继续|将|会|要|被|\s)*)$")
+        if !re(&AFTER_OBJECT, r"(?ix)^\s*(?:(?:(?:in|within|inside|and|&)\s+(?:the\s+)?meeting\s+notes\s+)?(?:(?:should|must|shall|will|needs?\s+to|ought\s+to)\s+)?(?:be\s+)?|(?:(?:在(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)(?:中|内|內|里|裡))|(?:(?:和|与|與|以及|及|、)(?:会议|會議)(?:笔记|筆記|记录|記錄|纪要|紀要)))?(?:应|应该|必须|须|需|需要|只|仅|仍|继续|将|会|要|被|\s)*)$")
             .is_match(bridge)
         {
             return None;
         }
     } else {
         let bridge = &clause[action.start()..audio.start()];
-        if !re(&BEFORE_OBJECT, r"(?ix)^(?:(?:(?:locally|on[- ]device)\s+)?(?:keep|kept|store|stored|save|saved|retain|retained)\s+(?:(?:the|this|these|original)\s+)*|(?:(?:在)?(?:本机|本機|本地|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?\s*)?(?:保留|保存|存储|儲存|留存|存放|留)(?:(?:在|于)(?:本机|本機|本地|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?)?(?:的)?\s*)$")
+        if !re(&BEFORE_OBJECT, r"(?ix)^(?:(?:(?:locally|on[- ]device)\s+)?(?:keep|kept|store|stored|save|saved|retain|retained)\s+(?:(?:the|this|these|original)\s+)*|(?:(?:在)?(?:本机|本機|本地|本计算机|本計算機|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?\s*)?(?:保留|保持|保存|存储|儲存|留存|存放|留)(?:(?:在|于)(?:本机|本機|本地|本计算机|本計算機|这台电脑|這台電腦|此电脑|此電腦|这台设备|這台設備)(?:上)?)?(?:的)?\s*)$")
             .is_match(bridge)
         {
             return None;
@@ -190,7 +413,16 @@ pub(crate) fn validate<'a>(
     if actual.is_empty() {
         return Err(Mismatch::RecordingOrLocalDestination);
     }
-    if required[0] != Relation::Unspecified && !actual.contains(&required[0]) {
+    // A correct fixed frame must not hide a second contradictory relation.
+    let conflicting = clauses(body).any(|clause| {
+        let relation = relation(clause);
+        match required[0] {
+            Relation::InNotes => matches!(relation, Relation::AndNotes | Relation::Ambiguous),
+            Relation::AndNotes => matches!(relation, Relation::InNotes | Relation::Ambiguous),
+            _ => false,
+        }
+    });
+    if conflicting || required[0] != Relation::Unspecified && !actual.contains(&required[0]) {
         return Err(if required[0] == Relation::AndNotes {
             Mismatch::CoordinatedNotesRelation
         } else {
@@ -347,5 +579,140 @@ mod tests {
             ]
         )
         .is_ok());
+    }
+
+    #[test]
+    fn observed_keep_computer_words_are_valid_but_bare_possessive_is_not_in() {
+        assert!(validate(
+            "录音应保持在本计算机上。",
+            ["The recording should stay on this computer."]
+        )
+        .is_ok());
+        assert!(validate(
+            "星期五不是截止日期。会议笔记中的录音应保持在本计算机上。",
+            [MALFORMED]
+        )
+        .is_ok());
+        assert_eq!(
+            validate(
+                "星期五不是截止日期。会议笔记的录音应保持在本计算机上。",
+                [MALFORMED]
+            ),
+            Err(Mismatch::InNotesRelation)
+        );
+    }
+
+    #[test]
+    fn a_fixed_in_clause_does_not_hide_an_extra_and_relation() {
+        for extra in [
+            "录音和会议笔记应保留在本机。",
+            "录音以及会议笔记应保留在本机。",
+            "录音和会议笔记是两个项目。",
+            "Recordings and meeting notes should stay on this computer.",
+        ] {
+            let body = format!("会议笔记中的录音应保留在本机。{extra}");
+            assert_eq!(validate(&body, [MALFORMED]), Err(Mismatch::InNotesRelation));
+        }
+    }
+
+    #[test]
+    fn source_anchor_consumes_only_the_complete_retention_frame() {
+        let fixed = anchor(MALFORMED, true).unwrap();
+        assert_eq!(fixed.text, "会议笔记中的录音应保留在这台电脑上。");
+        assert_eq!(fixed.required_object_phrase, "会议笔记中的录音");
+        assert_eq!(
+            &MALFORMED[fixed.source_span.clone()],
+            "RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        );
+        assert_eq!(fixed.remaining_source, "FRIDAY IS NOT THE DEADLINE ");
+        assert!(fixed.has_other_context);
+        assert!(validate(&fixed.text, [MALFORMED]).is_ok());
+
+        let english = anchor(MALFORMED, false).unwrap();
+        assert_eq!(
+            english.text,
+            "The recording in meeting notes should remain on this computer."
+        );
+        assert!(validate(&english.text, [MALFORMED]).is_ok());
+    }
+
+    #[test]
+    fn standalone_anchor_preserves_modality_destination_and_coordination() {
+        for (source, english, chinese) in [
+            (
+                "Audio recordings and meeting notes must be kept on this device.",
+                "The audio recordings and meeting notes must remain on this device.",
+                "录音和会议笔记必须保留在此设备上。",
+            ),
+            (
+                "The recording should stay on this computer.",
+                "The recording should remain on this computer.",
+                "录音应保留在这台电脑上。",
+            ),
+            (
+                "Keep the recording locally.",
+                "Keep the recording locally.",
+                "请将录音保留在本地。",
+            ),
+            (
+                "会议笔记中的录音应保持在本计算机上。",
+                "The recording in meeting notes should remain on this computer.",
+                "会议笔记中的录音应保留在这台电脑上。",
+            ),
+        ] {
+            for (target, expected) in [(false, english), (true, chinese)] {
+                let a = anchor(source, target).unwrap();
+                assert_eq!(a.text, expected);
+                assert_eq!(a.source_span, 0..source.len());
+                assert!(!a.has_other_context);
+                assert!(a.remaining_source.is_empty());
+                assert!(validate(&a.text, [source]).is_ok());
+            }
+        }
+    }
+
+    #[test]
+    fn later_source_context_remains_exact_original_text() {
+        let source = "The recording should stay on this computer. The budget is not approved.";
+        let a = anchor(source, true).unwrap();
+        assert!(a.has_other_context);
+        assert_eq!(a.remaining_source, ". The budget is not approved.");
+        assert_eq!(
+            format!(
+                "{}{}",
+                &source[..a.source_span.start],
+                &source[a.source_span.end..]
+            ),
+            a.remaining_source
+        );
+        assert!(!source[a.source_span].contains("budget"));
+    }
+
+    #[test]
+    fn anchors_abstain_on_unknown_modifiers_names_conditions_and_other_destinations() {
+        for source in [
+            "The confidential recording should stay on this computer.",
+            "The original recording should stay on this computer.",
+            "The recording should stay only on this computer.",
+            "The recording should stay on this computer temporarily.",
+            "The recording should stay on this computer and an external drive.",
+            "The recording should stay on this computer. It must also be copied to an external drive.",
+            "If approved, the recording should stay on this computer.",
+            "If approved. The recording should stay on this computer.",
+            "The recording should not stay on this computer.",
+            "The recording should stay on this computer instead of cloud storage.",
+            "The recording should stay on this computer. It was moved to cloud storage.",
+            "Project Recording should stay on this computer.",
+            "\"Recording\" should stay on this computer.",
+            "The recording was saved on this computer.",
+            "Recording decisions in meeting notes should stay on this computer.",
+            "The recording should stay on this computer?",
+            "The recording should stay on this computer. The recording must stay on this device.",
+            "会议笔记的录音应保持在本计算机上。",
+            "机密录音应保存在本机。",
+        ] {
+            assert!(anchor(source, true).is_none(), "{source}");
+            assert!(anchor(source, false).is_none(), "{source}");
+        }
     }
 }

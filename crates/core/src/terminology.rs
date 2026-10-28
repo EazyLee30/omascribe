@@ -188,17 +188,19 @@ impl Terms {
         model_aliases.sort_unstable();
         let payload = if model_aliases.is_empty() {
             serde_json::to_vec(&(
-                "terms-v3",
+                "terms-v5-writer-names",
                 &self.names,
                 &self.approximate,
                 &self.caption_names,
+                &self.writer_names,
             ))
         } else {
             serde_json::to_vec(&(
-                "terms-v4-models",
+                "terms-v6-models-writer-names",
                 &self.names,
                 &self.approximate,
                 &self.caption_names,
+                &self.writer_names,
                 &model_aliases,
             ))
         };
@@ -335,18 +337,29 @@ impl Terms {
                 if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
                     continue;
                 }
-                // A standalone keyword line is an explicit spelling hint even
-                // when typed in lowercase (for example gtx1650 or nvidia).
+                // A standalone keyword line may supply a spelling even in
+                // lowercase (gtx1650/nvidia); concept headings remain separate.
                 let keyword_line = n
                     .content
                     .lines()
                     .any(|line| line.trim().trim_matches(['*', '-', '#', ' ']) == word);
-                let named = keyword_line
-                    || word.chars().skip(1).any(|c| c.is_ascii_uppercase())
-                    || word.eq_ignore_ascii_case("omascribe")
-                    || word.starts_with(char::is_uppercase)
-                        && n.content.contains(&format!("**{word}**"));
-                if n.kind != "term" && !chinese_context && !named {
+                let identifier = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
+                    || word.chars().any(|c| c.is_ascii_digit())
+                    || word.eq_ignore_ascii_case("omascribe");
+                // A few ordinary concept headings are useful focus/ASR words,
+                // not literal names. Explicit terms and strong identifiers
+                // retain their spelling rules, including DATE as an acronym.
+                let concept = n.kind != "term"
+                    && !identifier
+                    && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
+                let named = identifier
+                    || !concept
+                        && (keyword_line
+                            || word.starts_with(char::is_uppercase)
+                                && n.content.contains(&format!("**{word}**")));
+                let usable_asr_word =
+                    n.kind == "term" || chinese_context || named || concept && keyword_line;
+                if !usable_asr_word {
                     continue;
                 }
                 let name = if word.eq_ignore_ascii_case("omascribe") {
@@ -1510,6 +1523,157 @@ mod tests {
                 .text,
             s.text
         );
+    }
+    #[test]
+    fn implicit_date_focus_can_translate_the_actual_calendar_draft() {
+        let notes = [note("**date**")];
+        let source = "The meeting date is Tuesday, 2024-5-7.";
+        let body = "会议日期是2024年5月7日星期二。";
+        let terms = Terms::new(&notes, &[]);
+        assert!(terms.validate_writer_names(source, body).is_ok());
+        assert_eq!(notes[0].content, "**date**");
+    }
+    #[test]
+    fn implicit_concept_keywords_remain_asr_focus_without_literal_spelling_obligations() {
+        for (word, source, body) in [
+            (
+                "date",
+                "The meeting date is Tuesday, 2024-5-7.",
+                "会议日期是2024年5月7日星期二。",
+            ),
+            ("Date", "The meeting date is Tuesday.", "会议日期是星期二。"),
+            ("test", "The test is not complete.", "测试尚未完成。"),
+            ("Test", "The test is not complete.", "测试尚未完成。"),
+            (
+                "budget",
+                "The budget has not been approved.",
+                "预算尚未批准。",
+            ),
+            (
+                "Budget",
+                "The budget has not been approved.",
+                "预算尚未批准。",
+            ),
+        ] {
+            let content = format!("**{word}**");
+            let notes = [note(&content)];
+            let terms = Terms::new(&notes, &[]);
+            assert!(terms.hotwords.contains(&word.to_owned()), "{word}");
+            assert!(terms.spellings(source).is_empty(), "{word}");
+            assert!(terms.caption_spellings(source).is_empty(), "{word}");
+            assert!(terms.validate_writer_names(source, body).is_ok(), "{word}");
+            assert_eq!(notes[0].content, content);
+        }
+        let terms = Terms::new(&[note("关键词 **Budget** 和 **date**")], &[]);
+        assert!(terms.hotwords.contains(&"Budget".to_owned()));
+        assert!(terms
+            .validate_writer_names("The budget date is pending.", "预算日期待定。")
+            .is_ok());
+    }
+    #[test]
+    fn literal_identifiers_names_and_explicit_terms_keep_exact_spelling_requirements() {
+        for word in [
+            "OmaScribe",
+            "omascribe",
+            "meetingDate",
+            "date2024",
+            "DATE",
+            "CUDA",
+            "Alice",
+        ] {
+            let terms = Terms::new(&[note(&format!("**{word}**"))], &[]);
+            let source = format!("The {word} feature is not ready.");
+            assert!(
+                terms
+                    .validate_writer_names(&source, "功能尚未就绪。")
+                    .is_err(),
+                "{word}"
+            );
+            let canonical = if word.eq_ignore_ascii_case("omascribe") {
+                "OmaScribe"
+            } else {
+                word
+            };
+            assert!(
+                terms
+                    .validate_writer_names(&source, &format!("{canonical}功能尚未就绪。"))
+                    .is_ok(),
+                "{word}"
+            );
+            if word != "Alice" {
+                assert!(
+                    terms
+                        .caption_spellings(&source)
+                        .contains(&canonical.to_owned()),
+                    "{word}"
+                );
+            }
+        }
+        let terms = Terms::new(&[note("**date**\n\n**林悦**")], &[]);
+        let source = "离线转写工具由林悦负责测试。";
+        assert!(terms
+            .validate_writer_names(source, "离线转写工具由林悦负责测试。")
+            .is_ok());
+        assert!(terms
+            .validate_writer_names(source, "离线转写工具需要测试。")
+            .is_err());
+        for word in ["date", "test", "budget"] {
+            let mut explicit_note = note(&format!("**{word}**"));
+            explicit_note.kind = "term".into();
+            let from_note = Terms::new(&[explicit_note], &[]);
+            let entries = [Entry {
+                kind: "term".into(),
+                title: word.into(),
+                ..Default::default()
+            }];
+            let from_entry = Terms::new(&[note(&format!("**{word}**"))], &entries);
+            let source = format!("The {word} feature is not ready.");
+            for terms in [&from_note, &from_entry] {
+                assert!(
+                    terms
+                        .validate_writer_names(&source, "功能尚未就绪。")
+                        .is_err(),
+                    "{word}"
+                );
+                assert!(
+                    terms
+                        .validate_writer_names(&source, &format!("{word}功能尚未就绪。"))
+                        .is_ok(),
+                    "{word}"
+                );
+                assert!(
+                    terms.caption_spellings(&source).contains(&word.to_owned()),
+                    "{word}"
+                );
+            }
+        }
+        let entries = [Entry {
+            kind: "term".into(),
+            title: "CalendarDate".into(),
+            aliases: "date".into(),
+            ..Default::default()
+        }];
+        let terms = Terms::new(&[note("**date**")], &entries);
+        assert_eq!(terms.normalize("date"), "CalendarDate");
+        assert!(terms
+            .validate_writer_names("The date field is pending.", "日期字段待定。")
+            .is_err());
+        assert!(terms
+            .validate_writer_names("The date field is pending.", "CalendarDate字段待定。")
+            .is_ok());
+    }
+    #[test]
+    fn writer_name_classification_changes_identity_without_changing_asr_words() {
+        let mut terms = Terms::new(&[note("**date**")], &[]);
+        let old_identity = terms.fingerprint();
+        let hotwords = terms.hotwords.clone();
+        let normalized = terms.normalize("The meeting date is Tuesday.");
+        // The old classification imposed this obligation with the same ASR
+        // mappings. Cache identity must distinguish that semantic contract.
+        terms.writer_names.push("date".into());
+        assert_ne!(terms.fingerprint(), old_identity);
+        assert_eq!(terms.hotwords, hotwords);
+        assert_eq!(terms.normalize("The meeting date is Tuesday."), normalized);
     }
     #[test]
     fn lowercase_keyword_lines_guide_names_without_inventing_missing_subjects() {

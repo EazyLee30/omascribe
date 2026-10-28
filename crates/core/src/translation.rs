@@ -30,12 +30,32 @@ fn source_prefix(input: &str, chinese: bool) -> Option<String> {
         })
 }
 
+fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<names::Repair> {
+    let anchor = notes::retention_anchor(input, chinese)?;
+    // Explicit glossary/name bindings take precedence over a generic audio
+    // noun. Never consume a protected spelling into a translated source atom.
+    if !anchor.text.contains(anchor.required_object_phrase)
+        || names
+            .spans(input)
+            .iter()
+            .any(|span| span.start < anchor.source_span.end && anchor.source_span.start < span.end)
+    {
+        return None;
+    }
+    let mut plan = names.repair_source(anchor.remaining_source.trim())?;
+    plan.anchor_source_clause(&anchor.text, anchor.has_other_context)
+        .then_some(plan)
+}
+
 fn name_plan(
     input: &str,
     names: &names::Names,
     target: &str,
     known: &[String],
 ) -> Option<names::Repair> {
+    if let Some(plan) = retention_plan(input, names, target == "zh") {
+        return Some(plan);
+    }
     if let Some(action) = named_actions::action(input, names.spellings(), target == "zh") {
         let mut plan = names.repair_source(input)?;
         return plan.anchor_named_action(&action).then_some(plan);
@@ -99,16 +119,39 @@ impl SourceRepair {
         terms: &crate::terminology::Terms,
         chinese: bool,
     ) -> Option<Self> {
+        let names = names::Names::new(terms, input);
+        let mut groups = vec![input];
+        if let Some(anchor) = notes::retention_anchor(input, chinese) {
+            if !names.spans(input).iter().any(|span| {
+                span.start < anchor.source_span.end && anchor.source_span.start < span.end
+            }) {
+                groups = vec![
+                    &input[..anchor.source_span.start],
+                    &input[anchor.source_span.clone()],
+                    &input[anchor.source_span.end..],
+                ];
+            }
+        }
         let mut parts = Vec::new();
-        let mut remaining = input;
-        while let Some(end) = source_boundary(remaining, chinese) {
-            parts.push(&remaining[..end]);
-            remaining = &remaining[end..];
-            if parts.len() >= 3 {
+        for group in groups
+            .into_iter()
+            .filter(|s| s.chars().any(char::is_alphanumeric))
+        {
+            let mut remaining = group;
+            while let Some(end) = source_boundary(remaining, chinese) {
+                parts.push(&remaining[..end]);
+                remaining = &remaining[end..];
+                if parts.len() >= 3 {
+                    return None;
+                }
+            }
+            if remaining.chars().any(char::is_alphanumeric) {
+                parts.push(remaining);
+            }
+            if parts.len() > 3 {
                 return None;
             }
         }
-        parts.push(remaining);
         let mut plans = Vec::new();
         let mut systems = Vec::new();
         for part in parts {
@@ -156,6 +199,16 @@ impl SourceRepair {
         terms: &crate::terminology::Terms,
         chinese: bool,
     ) -> Option<(names::Repair, String)> {
+        let names = names::Names::new(terms, input);
+        if let Some(plan) = retention_plan(input, &names, chinese) {
+            let system = system_prompt(
+                if chinese { "简体中文" } else { "English" },
+                &names,
+                Some(&plan),
+                None,
+            );
+            return Some((plan, system));
+        }
         let anchors: Vec<_> = [
             notes::RelationMismatch::Delivery,
             notes::RelationMismatch::Responsibility,
@@ -175,7 +228,6 @@ impl SourceRepair {
         } else {
             crate::task_roles::assignments(input)
         };
-        let names = names::Names::new(terms, input);
         if let Some(action) = named_actions::action(input, names.spellings(), chinese) {
             let mut plan = names.repair_source(input)?;
             if !plan.anchor_named_action(&action) {
@@ -536,8 +588,9 @@ fn run_inner(
                     return Ok(0);
                 }
                 let names = names::Names::new(&terms, input);
-                let plan =
-                    repair.and_then(|_| name_plan(input, &names, target, terms.actor_spellings()));
+                let plan = retention_plan(input, &names, target == "zh").or_else(|| {
+                    repair.and_then(|_| name_plan(input, &names, target, terms.actor_spellings()))
+                });
                 let system = system_prompt(language, &names, plan.as_ref(), repair);
                 let input = plan.as_ref().map_or(input, |p| p.input.as_str());
                 session.begin_request();
@@ -572,13 +625,14 @@ fn run_inner(
         };
         let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
         let names = names::Names::new(&terms, &input);
-        let name_repair =
-            repair.and_then(|_| name_plan(&input, &names, target, terms.actor_spellings()));
+        let name_repair = retention_plan(&input, &names, target == "zh").or_else(|| {
+            repair.and_then(|_| name_plan(&input, &names, target, terms.actor_spellings()))
+        });
         let system = system_prompt(language, &names, name_repair.as_ref(), repair);
         let request_input = name_repair
             .as_ref()
             .map_or(input.as_str(), |p| p.input.as_str());
-        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.as_ref().is_some_and(|p|p.has_names()),"source_predicates":name_repair.as_ref().map_or(0, |p| p.source_predicates())}));
+        trace.event("chunk", json!({"source_bytes":chunk.end-chunk.start,"prompt_bytes":request_input.len(),"input_tokens":chunk.tokens,"resumed":progress.end>0,"repair":repair.is_some(),"name_references":name_repair.as_ref().is_some_and(|p|p.has_names()),"source_predicates":name_repair.as_ref().map_or(0, |p| p.source_predicates())}));
         let diagnostics = std::env::var("OMASCRIBE_TRANSLATION_DIAGNOSTICS").as_deref() == Ok("1");
         let raw = if let Some(text) = literal {
             trace.event("literal_caption", json!({"source_bytes":input.len()}));
@@ -1026,6 +1080,108 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn retention_source_fields_consume_only_their_frame_and_require_other_facts() {
+        let source =
+            "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER";
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let names = names::Names::new(&terms, source);
+        let plan = name_plan(source, &names, "zh", terms.actor_spellings()).unwrap();
+        assert_eq!(plan.input, "FRIDAY IS NOT THE DEADLINE");
+        let fixed = "会议笔记中的录音应保留在这台电脑上。";
+        let raw = json!({"translation":format!("{fixed} 星期五不是截止日期。")}).to_string();
+        let restored: Value = serde_json::from_str(&plan.body(&raw).unwrap()).unwrap();
+        assert_eq!(
+            restored["translation"],
+            format!("{fixed} 星期五不是截止日期。")
+        );
+        assert!(plan
+            .body(&json!({"translation":fixed}).to_string())
+            .is_err());
+        assert!(plan
+            .body(r#"{"translation":"星期五不是截止日期，会议记录应留在此电脑上。"}"#)
+            .is_err());
+        assert!(plan
+            .body(r#"{"translation":"录音和会议笔记应保留在本机。星期五不是截止日期。"}"#)
+            .is_err());
+        let original = SourceRepair::from_source(source, &terms, true).unwrap();
+        assert_eq!(original.source_slots(), 2);
+        assert_eq!(original.source_predicates(), 1);
+        assert_eq!(original.plans[0].input.trim(), "FRIDAY IS NOT THE DEADLINE");
+        assert!(original.plans[1].input.is_empty());
+        let raw = json!([{"translation":"星期五不是截止日期。"},{"translation":fixed}]);
+        assert_eq!(
+            original.body(&raw.to_string()).unwrap(),
+            format!("星期五不是截止日期。 {fixed}")
+        );
+        let bad = json!([{"translation":"星期五不是截止日期。"},{"translation":format!("{fixed} 录音和会议笔记也在本机。") }]);
+        assert!(original.body(&bad.to_string()).is_err());
+    }
+    #[test]
+    fn standalone_retention_has_no_free_tail_and_protected_names_are_not_consumed() {
+        let source = "Recording in meeting notes should stay on this computer.";
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let plan = SourceRepair::from_source(source, &terms, true).unwrap();
+        let fixed = "会议笔记中的录音应保留在这台电脑上。";
+        assert_eq!(plan.source_slots(), 1);
+        assert!(plan.plans[0].input.is_empty());
+        assert_eq!(
+            plan.body(&json!({"translation":fixed}).to_string())
+                .unwrap(),
+            fixed
+        );
+        assert!(plan
+            .body(&json!({"translation":format!("{fixed} 其他事实。")}).to_string())
+            .is_err());
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "Recording".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        let names = names::Names::new(&terms, source);
+        assert!(retention_plan(source, &names, true).is_none());
+        assert!(SourceRepair::from_source(
+            "Meeting notes should stay on this computer.",
+            &terms,
+            true
+        )
+        .is_none());
+    }
+    #[test]
+    fn whole_uppercase_source_keeps_the_existing_three_slot_bound() {
+        let cases: Value =
+            serde_json::from_str(include_str!("../../../tests/fixtures/document-cases.json"))
+                .unwrap();
+        let case = cases
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["name"] == "zh_windows_uppercase_asr")
+            .unwrap();
+        let source = case["transcript"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let plan = SourceRepair::from_source(&source, &terms, true).unwrap();
+        assert_eq!(plan.source_slots(), 3);
+        assert!(plan.plans[0]
+            .input
+            .to_ascii_lowercase()
+            .contains("friday is not the deadline"));
+        assert!(plan.plans[1].input.is_empty());
+        assert!(plan.plans[2]
+            .input
+            .to_ascii_lowercase()
+            .contains("will check"));
+    }
     #[test]
     fn whole_named_action_keeps_direction_in_caption_and_original_source_repair() {
         let source = "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD";
