@@ -1,0 +1,1389 @@
+{
+  "schema": 1,
+  "scope": "Source-bound CER/WER/SER type preservation and missing/unmentioned metric checks; not general numeric association, semantic, ASR or release acceptance.",
+  "targeted_metric_gate_passed": true,
+  "full_semantic_acceptance": false,
+  "release_accepted": false,
+  "source_revision": "b17a4704afb3c1efda1df85efcb7bfd3ae743c8d",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "b17a4704afb3c1efda1df85efcb7bfd3ae743c8d",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "c7bbc16cb5e43c36cc9a20146d61a8538192759be40554729d2b2bbe6b52e6cd",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "74ee984102a155c11c4daf4b54d5be2e8bde4f262f10dad47ff230663417013b",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "d59966769338e2b212fb0cf805f0d7dba46fa1c91d1b46eb78e454f30916a641",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "b17a4704afb3c1efda1df85efcb7bfd3ae743c8d",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_case_count": 50,
+  "static_checks": {
+    "core_library": {
+      "passed": 205,
+      "ignored": 7,
+      "log_sha256": "311c070d621556cf4a01588243599d53ed7bce74a668db3592dae561bedf0a45"
+    },
+    "strict_core_all_targets_clippy": {
+      "passed": true,
+      "log_sha256": "daaaa08b3180915f23e4034f08db6a6db6496b65311149ccfdd553cd5356078a"
+    },
+    "python_harness": {
+      "passed": 23,
+      "log_sha256": "933331ccfe289b8cb84d56922b64d30bc037e2b4274e28eaf01bbcd4ea933091"
+    }
+  },
+  "original_failure": {
+    "source_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+    "original_automatic_pass_retained": true,
+    "source": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+    "caption": "The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.",
+    "snapshot_sha256": "da3d327dc5963d50b1f02e1ff64c54c7992299fb6edc87e1109adfa50f32e111",
+    "independent_saved_output_countercheck": {
+      "original_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+      "old_automatic_pattern_pass_retained": true,
+      "saved_snapshot_sha256": "da3d327dc5963d50b1f02e1ff64c54c7992299fb6edc87e1109adfa50f32e111",
+      "new_independent_assessment_errors": [
+        "Translation 8 missing: character error rate|CER",
+        "Translation 8 unsupported: sentence error rate|\\bSER\\b"
+      ],
+      "constructed_correct_caption_passes": true,
+      "constructed_legitimate_sentence_metric_passes": true,
+      "note": "Saved output is reassessed without model inference or modifying the original report; constructed controls test the assertions, not model quality."
+    },
+    "countercheck_sha256": "b490a1d10892ef2615eb5fb89adfe07992c54b06ff89392da5cfa994302e01ea",
+    "red_validator_unit_base_revision": "e2a5675c1c3809b9db26415ed59a3ea6e5979efa",
+    "red_validator_test_only_edit": true,
+    "red_validator_log_sha256": "96155a934a78d2dc8f3755f80b00f8cff5f646fb4691811e9ec01df8613cd97e"
+  },
+  "owner_name_bound": {
+    "before": 13,
+    "after_maximum": 12,
+    "red_unit_log_sha256": "c145cace08d9962434cce7b5697eb52350bb9151028b33425cd6507b0e38c97a",
+    "scope": "Combined Chinese and English owner-frame spelling extraction; does not establish a measured memory or speed percentage."
+  },
+  "final_results": [
+    {
+      "mode": "automatic",
+      "case": "en_closed_metric_request",
+      "passed": true,
+      "seconds": 6.8,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括字错率、词错率。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "d898b2a5-5450-4a40-900e-b04e252dcf93",
+          "kind": "section",
+          "meeting_id": "96b85ada-ca63-46d6-bd34-074da2303e55",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。",
+              "revision": 1,
+              "segment_id": "96b85ada-ca63-46d6-bd34-074da2303e55:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 115,
+          "name_references": false,
+          "prompt_bytes": 45,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 45,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 181,
+          "name_references": false,
+          "prompt_bytes": 45,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 45,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/en_closed_metric_request.json",
+      "report_sha256": "10dddad405e6e75d43ec210e02a608dc01eb480930a8edad66941761afea3624",
+      "final_snapshot_sha256": "f8dd0fc53e09ca251d014f47844e7cedee0fa56bf246a2f5ab6237c26c5b2a4a"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_metric_report_requirements",
+      "passed": true,
+      "seconds": 6.989,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "859cd157-5d87-49d1-bfb4-6283d364784f",
+          "kind": "section",
+          "meeting_id": "d6caaf12-5370-4f6b-adb2-9d0b444fc792",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "d6caaf12-5370-4f6b-adb2-9d0b444fc792:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 125,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 191,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/en_metric_report_requirements.json",
+      "report_sha256": "e864e3122629126f71a5711b50765fc3013dd694597c8954d9e01b7818b99041",
+      "final_snapshot_sha256": "aca51c26f185f356073c0555a3b65b98d4f04b525e8fd69470cb30c697050b7b"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_sentence_metric_allowed",
+      "passed": true,
+      "seconds": 6.977,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括句错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The test report should include sentence error rate and transcription delay, and should not only mention successful processing."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "191b121b-9577-4f43-9df9-76fab4e0e6da",
+          "kind": "section",
+          "meeting_id": "87eeb55e-7e17-441c-ace5-d43d6e7e0bf8",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括句错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "87eeb55e-7e17-441c-ace5-d43d6e7e0bf8:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include sentence error rate and transcription delay, and should not only mention successful processing."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 121,
+          "name_references": false,
+          "prompt_bytes": 75,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 75,
+          "source_predicates": 0
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/en_sentence_metric_allowed.json",
+      "report_sha256": "733a38f6af0ebfc033f400b6802f4003a0cfcdfb00655dbff8db76f151508677",
+      "final_snapshot_sha256": "31dc22876833d93879284b2acb1ebd7ba9342012bb2dc08a3acd507be748e92c"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_word_metric_only",
+      "passed": true,
+      "seconds": 7.006,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "报告必须包括词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The report must include word error rate and transcription delay, and must not only state that processing was successful."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "8097afcf-abc9-44fd-a774-6f48972a9f47",
+          "kind": "section",
+          "meeting_id": "0e5e5b85-16e6-44a5-95c8-168c0d76a89e",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "报告必须包括词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "0e5e5b85-16e6-44a5-95c8-168c0d76a89e:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The report must include word error rate and transcription delay, and must not only state that processing was successful."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 120,
+          "name_references": false,
+          "prompt_bytes": 72,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 72,
+          "source_predicates": 0
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/en_word_metric_only.json",
+      "report_sha256": "ed39cbd28bfdc6af7deb3f67045f1c01560dee0bb7bc0b8d014e60bdc9d4c24a",
+      "final_snapshot_sha256": "2ddb7b74543c59c22f4183645df534b84fea25e877ac52c1d4532ff1d03481bc"
+    },
+    {
+      "mode": "automatic",
+      "case": "zh_long_context_state",
+      "passed": true,
+      "seconds": 18.931,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。"
+        },
+        {
+          "seq": 3,
+          "revision": 1,
+          "text": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。"
+        },
+        {
+          "seq": 4,
+          "revision": 1,
+          "text": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。"
+        },
+        {
+          "seq": 5,
+          "revision": 1,
+          "text": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。"
+        },
+        {
+          "seq": 6,
+          "revision": 1,
+          "text": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。"
+        },
+        {
+          "seq": 7,
+          "revision": 1,
+          "text": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。"
+        },
+        {
+          "seq": 8,
+          "revision": 1,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        },
+        {
+          "seq": 9,
+          "revision": 1,
+          "text": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。"
+        },
+        {
+          "seq": 10,
+          "revision": 1,
+          "text": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Offline transcription tool is being tested by Lin Yue, and is currently only for internal validation; public release has not yet been approved."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Final confirmation: Public release has not been approved, and Lin Yuejian submitted the test report on Thursday."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "To save each segment of the original recording, the modified transcription cannot be automatically overwritten by the output result."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The audio boundaries should be preserved when the recording is paused, and the timestamp after resuming the recording must be continuous."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Noise scenario: first measure fan and keyboard sounds, do not convert quiet periods into text."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "English and Chinese should both be tested, and English product names should be spelled correctly when mixed speech occurs."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The subtitle interface should clearly display the original text and translation, using a local model for the translation."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Model download requires internet, recording and note processing are completely offline, and no sharing of meeting content is allowed."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+        },
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Today, only these acceptance requirements will be discussed, without completing the system audio capture, and without determining the release date of the new version."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "32beb19b-ae05-4b7a-8404-ee2dd5c62b0a",
+          "kind": "section",
+          "meeting_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d",
+          "sources": [
+            {
+              "end_ms": 90000,
+              "quote": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:9",
+              "speaker_name": null,
+              "start_ms": 80000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 70000,
+              "quote": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:7",
+              "speaker_name": null,
+              "start_ms": 60000
+            },
+            {
+              "end_ms": 50000,
+              "quote": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 100000,
+              "quote": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:10",
+              "speaker_name": null,
+              "start_ms": 90000
+            },
+            {
+              "end_ms": 60000,
+              "quote": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:6",
+              "speaker_name": null,
+              "start_ms": 50000
+            },
+            {
+              "end_ms": 80000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "e0deee2f-64c6-44e7-a6c3-470a9fe5582d:1:8",
+              "speaker_name": null,
+              "start_ms": 70000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 118,
+          "name_references": false,
+          "prompt_bytes": 75,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 75,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 122,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 123,
+          "name_references": false,
+          "prompt_bytes": 108,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 108,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 121,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 125,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 191,
+          "name_references": false,
+          "prompt_bytes": 87,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 87,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/zh_long_context_state.json",
+      "report_sha256": "667c3dc2b6694f4871b6979d8b21e13e8dbf682c7e162289cea38d02d5bcbba8",
+      "final_snapshot_sha256": "c74536022a1f5c35ea3cd4ca7e0af41edeebc668b326ed8ae0b6a5552f3f8d0a"
+    },
+    {
+      "mode": "automatic",
+      "case": "zh_metric_acronyms",
+      "passed": true,
+      "seconds": 6.995,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The test report must include CER and WER and transcription latency, not only successful processing."
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "测试报告必须包含CER和WER以及转录延迟，不仅包括成功处理的内容。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "b586047b-1fba-4c26-b95d-e50c14d35b8c",
+          "kind": "section",
+          "meeting_id": "a3a72e93-4e8f-4883-bb1c-d81a38e7bab6",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The test report must include CER and WER and transcription latency, not only successful processing.",
+              "revision": 1,
+              "segment_id": "a3a72e93-4e8f-4883-bb1c-d81a38e7bab6:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "测试报告必须包含CER和WER以及转录延迟，不仅包括成功处理的内容。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 150,
+          "name_references": false,
+          "prompt_bytes": 99,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 99,
+          "source_predicates": 0
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-auto-20261028/zh_metric_acronyms.json",
+      "report_sha256": "f11793c436874d6b2de2f2cb611d879809fc962069d53849ed9771967627318f",
+      "final_snapshot_sha256": "8f5ed259bf952cde81c63b9fb26fb0c54053f0d2138d6aaf2d592d9c51ad3271"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_compound_scope_and_request",
+      "passed": true,
+      "seconds": 7.313,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "eef4ef1b-277a-4ec6-9ded-34a7aeebc122",
+          "kind": "section",
+          "meeting_id": "3dbc4d2b-ed67-4e29-99ce-a61ac900d22b",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。",
+              "revision": 1,
+              "segment_id": "3dbc4d2b-ed67-4e29-99ce-a61ac900d22b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 115,
+          "name_references": false,
+          "prompt_bytes": 51,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 51,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 145,
+          "name_references": false,
+          "prompt_bytes": 51,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 51,
+          "source_predicates": 1
+        },
+        {
+          "input_tokens": 129,
+          "name_references": false,
+          "prompt_bytes": 117,
+          "repair": false,
+          "resumed": true,
+          "source_bytes": 117,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 159,
+          "name_references": false,
+          "prompt_bytes": 117,
+          "repair": true,
+          "resumed": true,
+          "source_bytes": 117,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-controls-20261028/en_compound_scope_and_request.json",
+      "report_sha256": "0877e185f1173bde3edfdfc604bc959030471291df3ae9f6a2b032b170ee1ac7",
+      "final_snapshot_sha256": "18f9bc31bf40ac88659530bd5863f547836a3f665022476dedafd46e80b3df99"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_future_named_task_owner",
+      "passed": true,
+      "seconds": 7.11,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "模型下载将由陈明负责，目前尚未获得用户同意。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "48868f6d-f7a2-49f4-ba0c-fec6f6aac483",
+          "kind": "section",
+          "meeting_id": "1ed384ac-4f0f-445f-a8e3-dd5b67e7cd90",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "模型下载将由陈明负责，目前尚未获得用户同意。",
+              "revision": 1,
+              "segment_id": "1ed384ac-4f0f-445f-a8e3-dd5b67e7cd90:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 139,
+          "name_references": false,
+          "prompt_bytes": 66,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 66,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 174,
+          "name_references": true,
+          "prompt_bytes": 66,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 66,
+          "source_predicates": 0
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-controls-20261028/en_future_named_task_owner.json",
+      "report_sha256": "1dbaa8e12b2ca7994aca3f53687c1ae48dbe81a30740e9f61701a567dff58c02",
+      "final_snapshot_sha256": "3a2650b5e9b7dab31ef3766a271c12e545094096960d852a823b134f87ae107b"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_named_download_owner",
+      "passed": true,
+      "seconds": 7.546,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        }
+      ],
+      "captions": [
+        {
+          "target": "en",
+          "revision": 1,
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "12eb1d75-18a2-4cd0-94c1-ab18af8f253a",
+          "kind": "section",
+          "meeting_id": "513a9df3-fc53-4178-af93-66b0607897cb",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+              "revision": 1,
+              "segment_id": "513a9df3-fc53-4178-af93-66b0607897cb:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_chunks": [
+        {
+          "input_tokens": 140,
+          "name_references": false,
+          "prompt_bytes": 69,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 69,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 175,
+          "name_references": true,
+          "prompt_bytes": 69,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 69,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-controls-20261028/en_named_download_owner.json",
+      "report_sha256": "ab524447e9dfd34373765ad5f027c7bcf004ffe74510c73607d7182e796bc15d",
+      "final_snapshot_sha256": "a9202d0ed4ddeba4d44db5e698cde55a02b46b3891b6508c54abd38e567d7da5"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 7.115,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "Morgan将于周四发送发布报告。我们尚未批准发布日期。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "acaaffc1-a987-407f-8fd3-43e937d7851f",
+          "kind": "section",
+          "meeting_id": "f49e76df-a60e-470e-9ed5-a4fa694b4f89",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+              "revision": 1,
+              "segment_id": "f49e76df-a60e-470e-9ed5-a4fa694b4f89:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 148,
+          "name_references": false,
+          "prompt_bytes": 90,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 90,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 183,
+          "name_references": true,
+          "prompt_bytes": 90,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 90,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-controls-20261028/en_owner_and_deadline.json",
+      "report_sha256": "4fb83bede921cba9389cf46d1701cd3575ab5e498d25b7be01f66a1056a522e8",
+      "final_snapshot_sha256": "d60b8f93d75ba385ba4870bfb25709eff8d2778fb9636451d6296b9efa071641"
+    },
+    {
+      "mode": "automatic",
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "seconds": 7.124,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+        },
+        {
+          "target": "zh",
+          "revision": 1,
+          "text": "Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "e80466b4-28c2-460d-bd48-43fccd799f3e",
+          "kind": "section",
+          "meeting_id": "da02bcff-b9fe-44aa-86c9-1108101271f8",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "da02bcff-b9fe-44aa-86c9-1108101271f8:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+              "revision": 1,
+              "segment_id": "da02bcff-b9fe-44aa-86c9-1108101271f8:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [
+        {
+          "input_tokens": 124,
+          "name_references": false,
+          "prompt_bytes": 91,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 91,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 142,
+          "name_references": false,
+          "prompt_bytes": 63,
+          "repair": false,
+          "resumed": false,
+          "source_bytes": 63,
+          "source_predicates": 0
+        },
+        {
+          "input_tokens": 177,
+          "name_references": true,
+          "prompt_bytes": 63,
+          "repair": true,
+          "resumed": false,
+          "source_bytes": 63,
+          "source_predicates": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/source-metric-controls-20261028/zh_minutes_from_en.json",
+      "report_sha256": "b5b83703939a951d0b904c667510c64a140d8d6bc14fffe001294898e8f52ffc",
+      "final_snapshot_sha256": "572b3d110ae9ec73478949eebd4a4f2bf96ddb64936d202fabfa2693b3c5e782"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_closed_metric_request",
+      "passed": true,
+      "seconds": 1.699,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括字错率、词错率。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "edf2de44-9f95-4faf-b373-643eb1ff37d5",
+          "kind": "section",
+          "meeting_id": "53599f56-9074-48f7-9cd6-8f210023852e",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。",
+              "revision": 1,
+              "segment_id": "53599f56-9074-48f7-9cd6-8f210023852e:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_chunks": [],
+      "raw_report": "artifacts/benchmarks/source-metric-minutes-20261028/en_closed_metric_request.json",
+      "report_sha256": "2088f62e6dc2bef4e94673556c6719e8ae2e1a77da8d1fe27b07a268f97475ee",
+      "final_snapshot_sha256": "556af54b9db29370f97d3df02d9fdb8aa88590f0af6d75a2112ff4cc0adc57ab"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_metric_report_requirements",
+      "passed": true,
+      "seconds": 2.514,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "5915d83c-9d9e-4bc6-919e-0091cd45ce13",
+          "kind": "section",
+          "meeting_id": "1d933ff3-93b9-4d3e-bdc2-77b517730883",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "1d933ff3-93b9-4d3e-bdc2-77b517730883:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_chunks": [],
+      "raw_report": "artifacts/benchmarks/source-metric-minutes-20261028/en_metric_report_requirements.json",
+      "report_sha256": "ae56469d4e34a992877952230d70ab56ad0c0da7872c5b6ac0abeefb6fd13155",
+      "final_snapshot_sha256": "3aae0b327b6ff6e8302ce5bce1f066e8a622e00678cb7a365c249e026c118492"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_sentence_metric_allowed",
+      "passed": true,
+      "seconds": 1.498,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "测试报告要包括句错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "2d51bae7-70fb-4416-baaa-9f562043c15d",
+          "kind": "section",
+          "meeting_id": "75fb056f-134e-4da8-ac13-ce2f92f82f36",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括句错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "75fb056f-134e-4da8-ac13-ce2f92f82f36:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include sentence error rate and transcription delay, and should not only mention successful processing."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [],
+      "raw_report": "artifacts/benchmarks/source-metric-minutes-20261028/en_sentence_metric_allowed.json",
+      "report_sha256": "dc54f4fb79642a2cf8667dc19614f0ea5795c57c880a6a2b5caf78e503d3a2e1",
+      "final_snapshot_sha256": "6782722b9ce11f4b676821853351c161e857014586130459a2da2dd0864e34cc"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_word_metric_only",
+      "passed": true,
+      "seconds": 1.479,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "报告必须包括词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "6f6f011e-4198-4f98-9db2-34d5c6045d60",
+          "kind": "section",
+          "meeting_id": "e71f27ee-937c-4688-88f7-62edaf112197",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "报告必须包括词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "e71f27ee-937c-4688-88f7-62edaf112197:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The report must include word error rate and transcription delay, and cannot only state processing success."
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [],
+      "raw_report": "artifacts/benchmarks/source-metric-minutes-20261028/en_word_metric_only.json",
+      "report_sha256": "58b97975cda6d615f79cb975118eccd2c0ae04d8360b74ea68744d33e78c76f6",
+      "final_snapshot_sha256": "35ead4856787f4e8b3cfea38082e58afee9569b553565020c694162deb3a5755"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "zh_metric_acronyms",
+      "passed": true,
+      "seconds": 1.469,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The test report must include CER and WER and transcription latency, not only successful processing."
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "8e9f0af1-ef4c-48ee-8683-f335fd74df89",
+          "kind": "section",
+          "meeting_id": "c090be34-2eb2-4f9c-9897-15a6716b453a",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The test report must include CER and WER and transcription latency, not only successful processing.",
+              "revision": 1,
+              "segment_id": "c090be34-2eb2-4f9c-9897-15a6716b453a:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "测试报告必须包括CER和WER以及转录延迟，不仅包括成功处理。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_chunks": [],
+      "raw_report": "artifacts/benchmarks/source-metric-minutes-20261028/zh_metric_acronyms.json",
+      "report_sha256": "f558ee4f8416869f0ae345c12325955b8dd69a38e8042adc01a42fd5c5f36c36",
+      "final_snapshot_sha256": "b440d5f7b5b9934408c5bb0aff2a6857d2a6ca06819383d0760accb8cedeb56e"
+    }
+  ],
+  "runtime_logs": [
+    {
+      "case": "en_closed_metric_request",
+      "mode": "automatic",
+      "sha256": "807da7b2dc8b17086127ac27ea1d3c8673fdd993c297683a52485fd57cfa9cda",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "mode": "automatic",
+      "sha256": "83e879fa092644e9b7f4923fcbcdb6e700bfdf36d29ee68940966ff6fdb193de",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_sentence_metric_allowed",
+      "mode": "automatic",
+      "sha256": "a9b3c2b6805d68a593bd543013c5029e27687a3e8a26de13c732baddee962b68",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_word_metric_only",
+      "mode": "automatic",
+      "sha256": "07c051822fb7ff22faefa556b44d8492d2afed804062638ceaf4e2130b486771",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_long_context_state",
+      "mode": "automatic",
+      "sha256": "c6f2397f59686e20aa50c3e15047f444869223bfe07fe1503bec5f8a1d9246bf",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_metric_acronyms",
+      "mode": "automatic",
+      "sha256": "47438a92b563cd59e0aa91471d567e4771c73d7d187d15cd354803711fd19593",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "mode": "automatic",
+      "sha256": "2c1afd5244ca6cdf9c840c5e56601b9798f1f55d38294c602edc7de900b1d956",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "mode": "automatic",
+      "sha256": "16569aae9913fd5d4cee83a6613d0d12d81b9ee4c1a5197fc4219e4f4a624a7b",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_named_download_owner",
+      "mode": "automatic",
+      "sha256": "e7b2f1a62e5bd8bb7fa42cb67abc9bb35e895809e6bad459d7ec45cb7f22c466",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "mode": "automatic",
+      "sha256": "2ed9bf7fdee99d932e7538fd6fca03592b5ec83c6917524b21988bf15a0486aa",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "mode": "automatic",
+      "sha256": "9cb2c12edd09030ffd1201ecc34b89ad8c7859a03888eaa42f5fb8817e8e251c",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_closed_metric_request",
+      "mode": "explicit_minutes",
+      "sha256": "331079047c998b1b3227ecf22f3202647479cf4b99af6e65374a8c546c75292b",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "mode": "explicit_minutes",
+      "sha256": "bd14dc1d2d2166c28d6c3ca16120fa749ddd531249cb2bbc7532394335f45339",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_sentence_metric_allowed",
+      "mode": "explicit_minutes",
+      "sha256": "68d6d8b92d5bdecbd66e0c74946ec3bfe100bd2ac8bb4f85159d74ed6fc0c441",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_word_metric_only",
+      "mode": "explicit_minutes",
+      "sha256": "095536e62489e85c23c9b81c05b3caf2caef963fbb80ed4fd528169d8aa574e0",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_metric_acronyms",
+      "mode": "explicit_minutes",
+      "sha256": "5e0bf5739bc9a0edb1f802c8126042303352df5b8994aa5df9ac5cfec4a12969",
+      "m5_metal_29_of_29": true
+    }
+  ],
+  "cleanup": {
+    "model_directories": 16,
+    "released": 16,
+    "source_model_store_retained": true,
+    "note": "Borrowed model links/copies released; logical file bytes are not measured reclaimed disk space. Raw evaluation evidence retained."
+  },
+  "resource_configuration": {
+    "backend": "metal",
+    "model": "qwen3-1.7b",
+    "threads": 1,
+    "context_size": 2048,
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "automatic_translation": "bilingual",
+    "explicit_translation": "off",
+    "incremental_minutes": false,
+    "minutes_catchup": false
+  },
+  "bounds": {
+    "translation_requests_per_batch": 8,
+    "retries_per_chunk": 1,
+    "recording_translation_seconds": 8,
+    "minutes_attempts": 2,
+    "minutes_output_tokens": 440,
+    "automatic_settle_seconds": 120,
+    "changed": false
+  },
+  "assistant_review": {
+    "review_kind": "Assistant inspection of final seeded outputs and citation/source fields, not human review.",
+    "confirmed": [
+      "Original long-context caption preserves character error rate and word error rate, adds no sentence error rate, and retains transcription latency plus the report requirement.",
+      "A sentence error rate explicitly requested by source remains allowed; word-only source adds no character or sentence metric.",
+      "Closed metric-only request stops without adding a new sentence; CER/WER adjacent to Chinese remain valid.",
+      "Translation-off minutes confirm that the repair does not rely on cached subtitles; prior owner, scope and report-action controls remain passing."
+    ],
+    "limits": [
+      "This guard does not establish value-to-metric binding, arbitrary acronym disambiguation or general negation/alternative handling. Those broader checks remain unverified.",
+      "English uses repetitive conjunctions; natural prose quality and broader role/citation semantics remain open."
+    ]
+  },
+  "still_open": [
+    "Candidate6 remains rejected; no new candidate frozen or released.",
+    "Full same-source regression, natural recording, native physical input and install/upgrade/model retention gates remain pending.",
+    "Citation-marker mistranslation, other role/condition errors, numerical metric binding and real ASR proper names remain open.",
+    "Full P0-P3/G1-G2 plan retained; no new GPU backend, AMD hardware, model, SDK or installer/component promotion."
+  ],
+  "performance_limits": [
+    "Actual M5 Metal execution is observed in retained runtime logs; these are fictional text functional tests, not a paired speed/energy/VRAM benchmark.",
+    "No model/runtime/GPU component download or rebuild; existing signed components remain outside the base installer."
+  ]
+}
