@@ -321,6 +321,7 @@ impl Repair {
         }
         if let Some(prefix) = &self.prefix {
             if !prefix.trim_end().ends_with("toolbar")
+                && !prefix.ends_with(['.', '。'])
                 && !output.translation[prefix.len()..]
                     .chars()
                     .any(char::is_alphanumeric)

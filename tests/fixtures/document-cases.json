@@ -487,7 +487,21 @@
       "公开发布已经批准",
       "系统音频采集已完成"
     ],
-    "max_sections": 4
+    "max_sections": 4,
+    "translation_checks": [
+      {
+        "seq": 8,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "latency|delay"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_human_paragraph_protected",
@@ -1640,6 +1654,170 @@
           "李华",
           "responsible for (?:the )?server",
           "[（(]\\s*[A-L]\\s*[)）]"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_metric_report_requirements",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_word_metric_only",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "报告必须包括词错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "word error rate|WER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "character error rate|\\bCER\\b",
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "word error rate|WER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "character error rate|\\bCER\\b",
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_sentence_metric_allowed",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括句错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "sentence error rate|SER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "character error rate|\\bCER\\b",
+      "word error rate|\\bWER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "sentence error rate|SER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "character error rate|\\bCER\\b",
+          "word error rate|\\bWER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_closed_metric_request",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_metric_acronyms",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "The test report must include CER and WER and transcription latency, not only successful processing."
+    ],
+    "required": [
+      "字错率|字符错误率|CER",
+      "词错率|单词错误率|WER",
+      "延迟"
+    ],
+    "forbidden": [
+      "句错率|sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "字错率|字符错误率|CER",
+          "词错率|单词错误率|WER",
+          "延迟"
+        ],
+        "forbidden": [
+          "句错率|sentence error rate|\\bSER\\b"
         ]
       }
     ]

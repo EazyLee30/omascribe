@@ -619,6 +619,22 @@ fn validate_document(
     if draft.sections.len() > 3 {
         bail!("文档超过本轮段落预算");
     }
+    super::metrics::validate(
+        &draft
+            .sections
+            .iter()
+            .map(|s| s.body.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        &segments
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !completed.retired(*i))
+            .map(|(_, s)| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        !require_prose,
+    )?;
     // A source qualifier may live in a different paragraph than its citation.
     // Check the current article once, while per-paragraph source/fact checks
     // below still reject unsupported content and stale source revisions.
@@ -840,6 +856,16 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn source_metric_types_cannot_change_or_appear_without_evidence() {
+        let mut source = data()[0].clone();
+        source.text = "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。".into();
+        let wrong="The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.";
+        assert!(validate_translation(wrong, &source, "m").is_err());
+        assert!(validate_translation("The test report should include character error rate, word error rate and transcription latency, not just successful processing.",&source,"m").is_ok());
+        source.text = "测试报告要包括句错率和转写延迟，不能只写处理成功。".into();
+        assert!(validate_translation("The test report should include sentence error rate and transcription latency, not just successful processing.",&source,"m").is_ok());
+    }
     #[test]
     fn source_qualifier_exclusive_scope_cannot_disappear() {
         let mut source = data()[0].clone();

@@ -16,14 +16,20 @@ pub(crate) const OUTPUT_SCHEMA: &str = r#"{"type":"object","properties":{"transl
 fn source_boundary(source: &str, chinese: bool) -> Option<usize> {
     notes::qualifier_boundary(source, chinese)
 }
+fn source_prefix(input: &str, chinese: bool) -> Option<String> {
+    notes::qualifier_prefix(input, chinese)
+        .or_else(|| notes::metric_prefix(input, chinese))
+        .or_else(|| {
+            if chinese {
+                None
+            } else {
+                crate::task_roles::repair_prefix(input).map(str::to_owned)
+            }
+        })
+}
 
 fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::Repair> {
-    let prefix = notes::qualifier_prefix(input, target == "zh").or_else(|| {
-        (target == "en")
-            .then(|| crate::task_roles::repair_prefix(input))
-            .flatten()
-            .map(str::to_owned)
-    });
+    let prefix = source_prefix(input, target == "zh");
     let mut plan = if let Some(prefix) = prefix {
         names.repair_prefixed(input, &prefix)?
     } else {
@@ -129,12 +135,7 @@ impl SourceRepair {
             }
         })
         .collect();
-        let prefix = notes::qualifier_prefix(input, chinese).or_else(|| {
-            (!chinese)
-                .then(|| crate::task_roles::repair_prefix(input))
-                .flatten()
-                .map(str::to_owned)
-        });
+        let prefix = source_prefix(input, chinese);
         let assignments = if chinese {
             Vec::new()
         } else {
@@ -779,6 +780,9 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if error.is::<notes::MetricMismatch>() {
+        return "metric_types";
+    }
     if error.is::<crate::task_roles::Mismatch>() {
         return "task_responsibility";
     }
@@ -805,6 +809,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(metric) = error.downcast_ref::<notes::MetricMismatch>() {
+        return metric.hint();
+    }
     if let Some(role) = error.downcast_ref::<crate::task_roles::Mismatch>() {
         return role.hint();
     }
@@ -882,6 +889,15 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn metric_only_source_repair_finishes_without_appending_invented_prose() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let source = "测试报告要包括字错率、词错率。";
+        let repair = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert_eq!(repair.source_predicates(), 1);
+        assert!(repair.body(r#"{"translation":"The test report should include character error rate and word error rate."}"#).is_ok());
+        assert!(repair.body(r#"{"translation":"The test report should include word error rate and sentence error rate."}"#).is_err());
+    }
     #[test]
     fn original_task_owner_is_bound_before_english_task_prose_in_the_existing_retry() {
         let terms = crate::terminology::Terms::new(&[], &[]);

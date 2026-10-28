@@ -719,6 +719,9 @@ fn source_owner_names(text: &str) -> Vec<String> {
         .chain(retained.captures_iter(text))
         .chain(mixed.captures_iter(text))
     {
+        if names.len() >= 12 {
+            break;
+        }
         let name = &c["name"];
         if [
             "We",
@@ -871,6 +874,14 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn combined_chinese_and_english_task_frames_keep_the_twelve_name_bound() {
+        let mut text = (b'A'..=b'L')
+            .map(|c| format!("任务由Actor{}负责。", char::from(c)))
+            .collect::<String>();
+        text.push_str(" Nora will check the model.");
+        assert_eq!(source_owner_names(&text).len(), 12);
+    }
     #[test]
     fn mixed_script_responsibility_preserves_only_stated_current_names() {
         let terms = Terms::new(&[note("Alice负责检查")], &[]);
