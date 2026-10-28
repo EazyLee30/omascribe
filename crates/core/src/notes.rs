@@ -19,7 +19,7 @@ pub(crate) use qualifiers::{
 mod recording_retention;
 mod relations;
 pub(crate) use recording_retention::{
-    anchor as retention_anchor, Mismatch as RecordingRetentionMismatch,
+    anchor as retention_anchor, negative_deadline, Mismatch as RecordingRetentionMismatch,
 };
 mod submission;
 pub(crate) use relations::anchors as report_anchors;

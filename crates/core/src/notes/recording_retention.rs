@@ -134,6 +134,42 @@ fn object_phrase(relation: Relation, chinese: bool, audio: bool, plural: bool) -
     }
 }
 
+/// Decode only a complete original weekday exclusion, never an arbitrary tail.
+pub(crate) fn negative_deadline(source: &str, chinese: bool) -> Option<String> {
+    static DEADLINE: OnceLock<regex::Regex> = OnceLock::new();
+    let captures = re(
+        &DEADLINE,
+        r"(?i)^(?:(?P<week>this|next)[ \t]+)?(?P<day>monday|tuesday|wednesday|thursday|friday|saturday|sunday)[ \t]+is[ \t]+not[ \t]+the[ \t]+deadline[ \t]*[.。]?$",
+    )
+    .captures(source.trim())?;
+    let days = [
+        ("Monday", "一"),
+        ("Tuesday", "二"),
+        ("Wednesday", "三"),
+        ("Thursday", "四"),
+        ("Friday", "五"),
+        ("Saturday", "六"),
+        ("Sunday", "日"),
+    ];
+    let (english, day) = days
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case(&captures["day"]))?;
+    let week = captures
+        .name("week")
+        .map(|m| m.as_str().to_ascii_lowercase());
+    let (zh_prefix, en_prefix) = match week.as_deref() {
+        None => ("星期", ""),
+        Some("this") => ("本周", "This "),
+        Some("next") => ("下周", "Next "),
+        _ => return None,
+    };
+    Some(if chinese {
+        format!("{zh_prefix}{day}不是截止日期。")
+    } else {
+        format!("{en_prefix}{english} is not the deadline.")
+    })
+}
+
 /// Consume only a completely identified source frame. The parent translates
 /// the exact before/after slices separately, never a draft of the fixed frame.
 pub(crate) fn anchor(source: &str, chinese: bool) -> Option<Anchor> {
@@ -438,6 +474,68 @@ mod tests {
 
     const MALFORMED: &str =
         "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER";
+
+    #[test]
+    fn negative_deadline_preserves_every_weekday_and_only_explicit_week_scope() {
+        for (day, unqualified, this_week, next_week) in [
+            ("Monday", "星期一", "本周一", "下周一"),
+            ("Tuesday", "星期二", "本周二", "下周二"),
+            ("Wednesday", "星期三", "本周三", "下周三"),
+            ("Thursday", "星期四", "本周四", "下周四"),
+            ("Friday", "星期五", "本周五", "下周五"),
+            ("Saturday", "星期六", "本周六", "下周六"),
+            ("Sunday", "星期日", "本周日", "下周日"),
+        ] {
+            for (scope, expected) in [
+                ("", unqualified),
+                ("This ", this_week),
+                ("Next ", next_week),
+            ] {
+                let source = format!("{scope}{day} is not the deadline.");
+                assert_eq!(
+                    negative_deadline(&source, true),
+                    Some(format!("{expected}不是截止日期。"))
+                );
+                assert_eq!(
+                    negative_deadline(&source.to_ascii_uppercase(), false),
+                    Some(source)
+                );
+            }
+        }
+        assert_eq!(
+            negative_deadline("  FRIDAY IS NOT THE DEADLINE \t", true),
+            Some("星期五不是截止日期。".into())
+        );
+        assert_eq!(
+            negative_deadline("Next\tFriday IS NOT THE DEADLINE。", false),
+            Some("Next Friday is not the deadline.".into())
+        );
+    }
+
+    #[test]
+    fn negative_deadline_does_not_consume_ambiguous_or_additional_source_speech() {
+        for source in [
+            MALFORMED,
+            "Friday was not the deadline.",
+            "If approved, Friday is not the deadline.",
+            "Friday is not the deadline if approved.",
+            "\"Friday is not the deadline.\"",
+            "'Friday is not the deadline.'",
+            "Friday is the deadline.",
+            "Friday is not only the deadline.",
+            "Friday is not the deadline, Saturday is.",
+            "Friday is not the deadline. Keep the recording locally.",
+            "Friday is not the",
+            "Friday is not the deadline for testing.",
+            "Last Friday is not the deadline.",
+            "Upcoming Friday is not the deadline.",
+            "Friday next week is not the deadline.",
+            "This or next Friday is not the deadline.",
+        ] {
+            assert_eq!(negative_deadline(source, true), None, "{source}");
+            assert_eq!(negative_deadline(source, false), None, "{source}");
+        }
+    }
 
     #[test]
     fn original_missing_recording_outputs_are_rejected_despite_unrelated_not() {

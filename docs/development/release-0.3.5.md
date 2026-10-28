@@ -6,7 +6,7 @@
 
 0.3.5 优先解决预算更正、否定/撤回、人物与动作对象、无依据补写、字幕收尾，以及实际阻塞安装、启动、录音、停止或升级的问题。差分更新、完整说话人重构、二次ASR/VAD、新模型和新后端继续研究，不把全部研究塞进本次小版本。
 
-最近完成实际检查的源码：`be3f20dfa4ae238a3d02521b60b0a9c9d22fc3e6`，已推送并整合PR #9。**不是发布候选，不放行发布。** 275核心/7忽略、27 harness及严格Clippy通过；同一干净CLI/核心/harness/模型身份完成5项自动双语和3项独立中文纪要，原结果5通过/3失败，运行前后身份相同。绝对日期两模式已通过，三个录音路径仍失败；后续仅修空续写语法和语言错误的来源修复路由，尚待新源码实际检查。[本批结果](../evaluation/apple-retention-source-fields-2026-10-28.json)。
+最近完成实际检查的源码：`c6b2f074bce8257a68fa16e224b34121a110d6bd`，已推送且**拒绝作为候选，不放行发布**。278核心/7忽略及严格Clippy通过；固定5项实际检查3通过/2失败，身份前后一致。独立中文纪要已正确保留Friday否定和录音IN关系，但自动路径提交了提示词文字或未说过的复制禁令，且遗漏Friday。原错误输出全部保留。下一修复撤销自由续写，只对原文所有字段均可完整确定的内容使用闭合约束；其他原话继续普通受校验翻译，尚待实际检查。[本批拒绝依据](../evaluation/apple-retention-context-rejection-2026-10-28.json)，[be3原5/8结果](../evaluation/apple-retention-source-fields-2026-10-28.json)。
 
 下一候选尚未冻结；候选7固定分支 `codex/release-0.3.5-candidate-7` 和源码 `3a6b38f0e546419c6c55c58c36dded630a7d8b4d` 保持不变，仍为拒绝。其50/51原pattern通过并非整体语义通过，不重跑或改写旧结果。只有当前共享阻塞收敛后，才冻结下一SHA并跑完整61项、录音和必要平台/安装验收。
 
@@ -17,10 +17,11 @@
 | Q1 | 预算更正与未批准 | 主线程/共享纪要 | c57预算完整4阶段保留3000→5000、无新增币种、未批准、Morgan周四和独立Riley待办；噪音未改变正文。仅此受影响范围通过，仍待新候选完整回归。 |
 | Q2 | 计划/完成、人物与动作对象 | 主线程/共享字幕和纪要 | 841/a8修复无依据已提交、林悦/Morgan/Riley拼写及测试链接/页面对象。a8真实已提交、实际页面发布反例通过；Windows a8链接独立纪要复核通过。更广主体/条件关系未宣称完成。 |
 | Q3 | 星期擅加周次 | 主线程/共享验证 | c57原预算用例、未限定周的中译及独立中文纪要、本周/下周控制均保留各自范围；只删除有来源证明多加的周前缀，原文不变。绝对日期字幕正确，纪要管线因Q7失败；跨任务周绑定未全面验证。 |
-| Q4/T1 | 录音对象、本机保留与源内关系 | 主线程/共享验证和生成 | be3固定录音句保留对象、IN与本机，但字幕续写允许空尾导致Friday否定遗漏；纪要语言错误走草稿翻译，未进入原文关系约束，仍生成裸“的”。自动两项/独立一项失败且无正文，notes-only两模式不添录音。下一步仅收紧非空续写与原文路由，保持原预算。 |
+| Q4/T1 | 录音对象、本机保留与源内关系 | 主线程/共享验证和生成 | c6独立中文纪要原第二次source-relations修复完整保留Friday否定、录音IN和本机；notes-only两模式不添录音。自动路径仍失败并发生Q8误提交，窄项通过不代表已解决。下一步闭合所有已确定原文字段，未确定的前后文不进入固定句自由尾。 |
 | Q5 | CER/WER/SER类型与后续独立事实 | 主线程/共享字幕和纪要 | c8c1171的既有定向Mac/Windows证据保留，指标、缓存后文和否定窄项通过。数值绑定与更广语义仍待验证；不追加完整CPU×GPU矩阵。 |
-| Q6 | 大写字幕收尾成本 | 主线程/共享调度与harness | be3 seq5 ALICE检查UN VIDEO CARD仍正确，seq3因遗漏Friday否定被拒，120.602秒整例失败。已整合PR #9的literal延迟启动、冷启动计时及CPU回退身份刷新；不把静态/局部正确当整例通过。 |
+| Q6 | 大写字幕收尾成本 | 主线程/共享调度与harness | c6实际120.662秒失败，无正文；seq3错误模板文字已存入字幕，不能称安全拒绝。PR #9的literal延迟启动/冷启动预算/CPU回退身份均已整合，其静态通过不抵消共享语义失败。 |
 | Q7 | 焦点关键词被误当专名 | 主线程/术语与纪要 | be3保留原fixture **date**，绝对日期字幕、自动纪要和独立纪要均为2024年5月7日星期二，未多加周次。概念词分类窄项通过；实际名称与显式词表保护仍保留，待新候选完整回归。 |
+| Q8 | 提示词或无依据限制写入字幕/纪要 | 主线程/共享生成 | c6强制非空尾仍可用系统指令或“其他设备禁止复制”充数，实际字幕和自动纪要误提交，已明确拒绝。撤销该非空续写实现；仅从完整识别的原文闭合生成，未知前后文不强制续写。不得靠增token、重试或措辞试验放行。 |
 
 “微检”、paper→“论文”、重复噪音文章的精炼继续登记为已知词义/可读性问题，不另开提示词调参矩阵。完整引用只证明出处匹配，不能证明正文保留了每个事实。
 
@@ -28,7 +29,7 @@
 
 | 平台/门 | 现有证据 | 尚未证明的范围 |
 | --- | --- | --- |
-| Mac/M系列 | be3 8项同源文本检查5通过/3失败；9份实际M5 Metal日志29/29。275核心及严格Clippy通过。 | 录音生成仍有3个管线失败；完整候选语料、真实麦克风、物理窗口和安装升级未通过新验收；桌面工具仍报告锁屏。 |
+| Mac/M系列 | c6固定5项3通过/2失败；M5 Metal实际29/29。278核心及严格Clippy通过；be3日期/链接窄项证据独立保留。 | Q4/Q6/Q8仍阻塞；完整候选语料、真实麦克风、物理窗口和安装升级未通过新验收，桌面工具仍报告锁屏。 |
 | Windows | GTX1650/621.01在a8指定两项复用签名CUDA；ALICE关系/链接纪要窄项正确，录音遗漏失败，29/29 offload；core243/6忽略、标识符7及Clippy通过。 | 共享新源码未完成硬件复测、完整语料或安装发布验收；本轮未调用的旧ASR worker不算同构建证据。 |
 | Linux/Omarchy | 共享源码CI和GPU组件隔离测试已有证据；CUDA/Vulkan组件保持独立。 | 实际GPU/音频/原生窗口和候选安装升级仍待本端验收，不能由编译通过代替。 |
 | 组件与模型复用 | 签名/hash/原子安装/回滚路径及组件污染负例已有代码与CI；基础包禁CUDA/Vulkan/HIP依赖。 | 新候选安装包及升级保留模型/组件流程仍需实测。没有为了本批语义修复重编SDK/组件或安装包。 |
@@ -44,7 +45,7 @@
 
 ## 原始证据
 
-- [be3来源字段检查与原失败](../evaluation/apple-retention-source-fields-2026-10-28.json)，[c57受影响检查](../evaluation/apple-week-retention-2026-10-28.json)，[a8录音遗漏更正](../evaluation/a8-recording-retention-correction-2026-10-28.json)。历史错误通过解释不再作为通过依据，原文件不改写。
+- [c6自动路径误提交与拒绝](../evaluation/apple-retention-context-rejection-2026-10-28.json)，[be3来源字段原失败](../evaluation/apple-retention-source-fields-2026-10-28.json)，[c57原检查](../evaluation/apple-week-retention-2026-10-28.json)，[a8录音遗漏更正](../evaluation/a8-recording-retention-correction-2026-10-28.json)。历史错误解释不作为通过依据，原文件不改写。
 - [a8 8项自动+3项独立纪要](../evaluation/apple-source-action-language-2026-10-28.json)，[841中间18项](../evaluation/apple-source-task-submission-trial-2026-10-28.json)。各来源分开，不拼接为同源总数。
 - [Windows a8原报告](https://github.com/EazyLee30/omascribe/blob/7c33bb233cce830da0d7856bfad5f541842b473e/docs/evaluation/windows-a8f1058-targeted-2026-10-28.json)，[前一c8定向报告](https://github.com/EazyLee30/omascribe/blob/d5aa285a400f9fb867e2d74588ac7794bd58a021/docs/evaluation/windows-c8c1171-targeted-2026-10-28.json)。
 - [候选7完整51项](../evaluation/apple-candidate7-quality-2026-10-28.json)，[候选6语义失败](../evaluation/candidate6-semantic-failures-2026-10-28.json)，[候选6回放](../evaluation/apple-candidate6-recording-2026-10-28.json)，[候选6公开ASR](../evaluation/apple-candidate6-asr-public-2026-10-28.json)。

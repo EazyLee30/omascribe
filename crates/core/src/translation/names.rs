@@ -377,26 +377,9 @@ impl Repair {
         self.extra_clause = Some((clause.into(), require_context));
         true
     }
-    /// A decoded source field covers its original span completely. Only the
-    /// remaining original speech may be generated after that fixed sentence.
-    pub fn anchor_source_clause(&mut self, clause: &str, has_remaining: bool) -> bool {
-        if has_remaining {
-            let simple_prose = self.names.is_empty()
-                && self.predicates.is_empty()
-                && self.grammar.as_ref().is_some_and(|grammar| {
-                    grammar.lines().any(|line| line == "translation ::= prose")
-                });
-            if !self.anchor_clause(clause, true) {
-                return false;
-            }
-            if simple_prose {
-                let grammar = self.grammar.as_mut().expect("anchored source grammar");
-                // Keep this inline: array_grammar only copies prose/space rules.
-                *grammar =
-                    grammar.replacen("(prose)", r"(prose [A-Za-z0-9\u3400-\u9fff] prose)", 1);
-            }
-            return true;
-        }
+    /// A decoded source field covers its entire original span. No free tail
+    /// may replace unidentified surrounding speech or invent another policy.
+    pub fn anchor_source_clause(&mut self, clause: &str) -> bool {
         if !self.names.is_empty()
             || !self.predicates.is_empty()
             || self.prefix.is_some()
@@ -590,81 +573,6 @@ fn contains(body: &str, name: &str) -> bool {
 mod tests {
     use super::*;
     use serde_json::Value;
-
-    #[test]
-    fn source_clause_requires_decoded_context_after_the_retention_sentence() {
-        let terms = Terms::new(&[], &[]);
-        let source =
-            "Friday is not the deadline. Recording in meeting notes should stay on this computer.";
-        let fixed = "会议笔记中的录音应保留在这台电脑上。";
-        let actual_rejected = r#"{"translation": "会议笔记中的录音应保留在这台电脑上。 "}"#;
-        let names = Names::new(&terms, source);
-        assert!(names.spellings().is_empty());
-
-        let mut old = names.repair_source(source).unwrap();
-        assert!(old.anchor_clause(fixed, true));
-        let old_grammar = old.grammar.as_ref().unwrap();
-        assert!(old_grammar
-            .lines()
-            .any(|line| { line == format!("translation ::= {} \" \" (prose)", json!(fixed)) }));
-        // Nullable prose made the actual fixed-sentence-plus-space response
-        // legal to decode, although the existing body guard rejected it.
-        assert!(old_grammar
-            .lines()
-            .any(|line| { line.starts_with("prose ::= ") && line.ends_with(")*") }));
-        assert!(old.body(actual_rejected).is_err());
-
-        let mut repair = names.repair_source(source).unwrap();
-        assert!(repair.anchor_source_clause(fixed, true));
-        let grammar = repair.grammar.as_ref().unwrap();
-        assert!(grammar.lines().any(|line| {
-            line == format!(
-                r#"translation ::= {} " " (prose [A-Za-z0-9\u3400-\u9fff] prose)"#,
-                json!(fixed)
-            )
-        }));
-        // No extra named rule is needed by SourceRepair's copied RHS.
-        assert_eq!(grammar.lines().count(), old_grammar.lines().count());
-        for suffix in ["", " ", "   。！？"] {
-            let raw = json!({"translation":format!("{fixed}{suffix}")}).to_string();
-            assert!(repair.body(&raw).is_err(), "{raw}");
-        }
-        assert!(repair.body(actual_rejected).is_err());
-        let complete = format!("{fixed} 星期五不是截止日期。");
-        let raw = json!({"translation":complete}).to_string();
-        let value: Value = serde_json::from_str(&repair.body(&raw).unwrap()).unwrap();
-        assert_eq!(value["translation"], complete);
-
-        let retention_only = "Recording in meeting notes should stay on this computer.";
-        let mut whole = Names::new(&terms, retention_only)
-            .repair_source(retention_only)
-            .unwrap();
-        assert!(whole.anchor_source_clause(fixed, false));
-        assert!(whole
-            .body(&json!({"translation":fixed}).to_string())
-            .is_ok());
-    }
-
-    #[test]
-    fn source_clause_keeps_existing_name_and_predicate_grammars() {
-        let terms = Terms::new(&[], &[]);
-        let source = "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE REPORT";
-        let names = Names::new(&terms, source);
-        assert_eq!(names.spellings(), &["ALICE"]);
-        for predicate in [false, true] {
-            let mut expected = names.repair_source(source).unwrap();
-            let mut actual = names.repair_source(source).unwrap();
-            if predicate {
-                for plan in [&mut expected, &mut actual] {
-                    assert!(plan.anchor_statement("ALICE", "将检查报告。", false));
-                }
-            }
-            assert!(expected.anchor_clause("尚未获批。", true));
-            assert!(actual.anchor_source_clause("尚未获批。", true));
-            assert_eq!(actual.grammar, expected.grammar);
-        }
-    }
-
     #[test]
     fn structured_repair_reorders_prose_without_generating_or_losing_source_names() {
         let terms = Terms::new(&[], &[]);

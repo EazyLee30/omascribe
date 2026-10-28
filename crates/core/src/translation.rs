@@ -30,6 +30,14 @@ fn source_prefix(input: &str, chinese: bool) -> Option<String> {
         })
 }
 
+fn closed_source_plan(text: &str, names: &names::Names) -> Option<names::Repair> {
+    if !names.spellings().is_empty() {
+        return None;
+    }
+    let mut plan = names.repair_source("")?;
+    plan.anchor_source_clause(text).then_some(plan)
+}
+
 fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<names::Repair> {
     let anchor = notes::retention_anchor(input, chinese)?;
     // Explicit glossary/name bindings take precedence over a generic audio
@@ -42,9 +50,21 @@ fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<na
     {
         return None;
     }
-    let mut plan = names.repair_source(anchor.remaining_source.trim())?;
-    plan.anchor_source_clause(&anchor.text, anchor.has_other_context)
-        .then_some(plan)
+    let mut fields = Vec::new();
+    let before = &input[..anchor.source_span.start];
+    let after = &input[anchor.source_span.end..];
+    for (source, fixed) in [(before, None), ("", Some(anchor.text)), (after, None)] {
+        if let Some(fixed) = fixed {
+            fields.push(fixed);
+        } else if source.chars().any(char::is_alphanumeric) {
+            fields.push(notes::negative_deadline(source, chinese)?);
+        }
+    }
+    // Do not force a long leading sentence followed by unconstrained prose:
+    // small models can fill that tail with instructions or invented policy.
+    // Every original field must be fully identified, or ordinary translation
+    // retains the full original speech and its existing validation guards.
+    closed_source_plan(&fields.join(" "), names)
 }
 
 fn name_plan(
@@ -201,6 +221,17 @@ impl SourceRepair {
     ) -> Option<(names::Repair, String)> {
         let names = names::Names::new(terms, input);
         if let Some(plan) = retention_plan(input, &names, chinese) {
+            let system = system_prompt(
+                if chinese { "简体中文" } else { "English" },
+                &names,
+                Some(&plan),
+                None,
+            );
+            return Some((plan, system));
+        }
+        if let Some(plan) = notes::negative_deadline(input, chinese)
+            .and_then(|text| closed_source_plan(&text, &names))
+        {
             let system = system_prompt(
                 if chinese { "简体中文" } else { "English" },
                 &names,
@@ -1143,13 +1174,13 @@ mod tests {
         let terms = crate::terminology::Terms::new(&[], &[]);
         let names = names::Names::new(&terms, source);
         let plan = name_plan(source, &names, "zh", terms.actor_spellings()).unwrap();
-        assert_eq!(plan.input, "FRIDAY IS NOT THE DEADLINE");
+        assert!(plan.input.is_empty());
         let fixed = "会议笔记中的录音应保留在这台电脑上。";
-        let raw = json!({"translation":format!("{fixed} 星期五不是截止日期。")}).to_string();
+        let raw = json!({"translation":format!("星期五不是截止日期。 {fixed}")}).to_string();
         let restored: Value = serde_json::from_str(&plan.body(&raw).unwrap()).unwrap();
         assert_eq!(
             restored["translation"],
-            format!("{fixed} 星期五不是截止日期。")
+            format!("星期五不是截止日期。 {fixed}")
         );
         assert!(plan
             .body(&json!({"translation":fixed}).to_string())
@@ -1160,10 +1191,16 @@ mod tests {
         assert!(plan
             .body(r#"{"translation":"录音和会议笔记应保留在本机。星期五不是截止日期。"}"#)
             .is_err());
+        for rejected in [
+            "会议笔记中的录音应保留在这台电脑上。请勿在任何其他设备上复制或存储该录音。",
+            "会议笔记中的录音应保留在这台电脑上。请勿在会议笔记中添加任何货币、单位或年份。仅返回包含翻译字符串的JSON。",
+        ] {
+            assert!(plan.body(&json!({"translation":rejected}).to_string()).is_err());
+        }
         let original = SourceRepair::from_source(source, &terms, true).unwrap();
         assert_eq!(original.source_slots(), 2);
-        assert_eq!(original.source_predicates(), 1);
-        assert_eq!(original.plans[0].input.trim(), "FRIDAY IS NOT THE DEADLINE");
+        assert_eq!(original.source_predicates(), 2);
+        assert!(original.plans[0].input.is_empty());
         assert!(original.plans[1].input.is_empty());
         let raw = json!([{"translation":"星期五不是截止日期。"},{"translation":fixed}]);
         assert_eq!(
@@ -1172,6 +1209,13 @@ mod tests {
         );
         let bad = json!([{"translation":"星期五不是截止日期。"},{"translation":format!("{fixed} 录音和会议笔记也在本机。") }]);
         assert!(original.body(&bad.to_string()).is_err());
+        for source in [
+            "Recording in meeting notes should stay on this computer. Morgan will check the report.",
+            "Friday is not the deadline. Recording in meeting notes should stay on this computer. The budget is pending.",
+        ] {
+            let names = names::Names::new(&terms, source);
+            assert!(retention_plan(source, &names, true).is_none());
+        }
     }
     #[test]
     fn standalone_retention_has_no_free_tail_and_protected_names_are_not_consumed() {
