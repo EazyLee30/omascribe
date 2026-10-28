@@ -369,6 +369,38 @@ fn minutes_can_follow(requested: bool, cancelled: bool, result: &Result<usize>) 
         && !cancelled
         && (result.is_ok() || result.as_ref().is_err_and(|e| e.is::<ValidationDeferred>()))
 }
+
+fn batch_work_elapsed(elapsed: Duration, startup_elapsed: Duration) -> Duration {
+    elapsed.saturating_sub(startup_elapsed)
+}
+
+type PendingTranslation = (
+    crate::Segment,
+    &'static str,
+    String,
+    chunks::Progress,
+    Option<&'static str>,
+);
+
+fn refresh_opened_environment<'a>(
+    db: &Store,
+    environment: &mut String,
+    opened_environment: String,
+    pending: impl Iterator<Item = &'a mut PendingTranslation>,
+) -> Result<()> {
+    if *environment == opened_environment {
+        return Ok(());
+    }
+    // A rejected component may have fallen back to CPU while opening the lease.
+    // Reload every pending cursor under that new identity, never its old repair.
+    for (passage, target, key, progress, repair) in pending {
+        *key = crate::inference_cache::translation_key(&opened_environment, passage, target);
+        *progress = chunks::Progress::load(db, passage, key)?;
+        *repair = None;
+    }
+    *environment = opened_environment;
+    Ok(())
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Translation {
     pub segment_id: String,
@@ -523,23 +555,19 @@ fn run_inner(
         .unwrap()
         .cache_dependency(meeting, "translation-turn")?;
     rotate_after(&mut passages, &last);
-    let session = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
-    let environment = crate::inference_cache::environment(
+    let mut environment = crate::inference_cache::environment(
         engine,
         &engine.store.lock().unwrap(),
         &snapshot.meeting,
         &prefs,
     )?;
-    trace.event(
-        "worker",
-        json!({"reused":session.reused,"startup_ms":session.startup_ms,
-        "backend":session.backend.name(),"budget_mib":session.budget}),
-    );
+    let mut session: Option<crate::inference_worker::SessionLease> = None;
     let started = Instant::now();
+    let mut startup_elapsed = Duration::ZERO;
     let mut count = 0;
     let mut requests = 0;
     let mut deferred = 0;
-    let mut queue = VecDeque::new();
+    let mut queue: VecDeque<PendingTranslation> = VecDeque::new();
     for passage in passages {
         let target = target_language(&prefs.translation_mode, &passage.text).unwrap();
         let key = crate::inference_cache::translation_key(&environment, &passage, target);
@@ -547,11 +575,11 @@ fn run_inner(
         queue.push_back((passage, target, key, progress, None::<&str>));
     }
     // Each selected passage gets one turn before a long passage gets its next chunk.
-    while let Some((passage, target, key, mut progress, repair)) = queue.pop_front() {
+    while let Some(mut pending) = queue.pop_front() {
         if requests >= chunks::MAX_REQUESTS
             || requests > 0
                 && snapshot.runtime.recording
-                && started.elapsed() > Duration::from_secs(8)
+                && batch_work_elapsed(started.elapsed(), startup_elapsed) > Duration::from_secs(8)
         {
             break;
         }
@@ -560,18 +588,41 @@ fn run_inner(
         {
             break;
         }
+        // Advance even if tokenization fails or this source cannot fit safely.
+        engine.store.lock().unwrap().set_cache_dependency(
+            meeting,
+            "translation-turn",
+            &pending.0.id,
+        )?;
+        let literal = literal_caption(&pending.0.text, pending.1, &terms);
+        if literal.is_none() && session.is_none() {
+            let opening = Instant::now();
+            let worker = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
+            // Preserve the existing post-startup recording work allowance while
+            // charging any preceding literal work to the same batch budget.
+            startup_elapsed = opening.elapsed();
+            trace.event(
+                "worker",
+                json!({"reused":worker.reused,"startup_ms":worker.startup_ms,
+                "backend":worker.backend.name(),"budget_mib":worker.budget}),
+            );
+            session = Some(worker);
+            let db = engine.store.lock().unwrap();
+            let opened_environment =
+                crate::inference_cache::environment(engine, &db, &snapshot.meeting, &prefs)?;
+            refresh_opened_environment(
+                &db,
+                &mut environment,
+                opened_environment,
+                std::iter::once(&mut pending).chain(queue.iter_mut()),
+            )?;
+        }
+        let (passage, target, key, mut progress, repair) = pending;
         let language = if target == "zh" {
             "简体中文"
         } else {
             "English"
         };
-        // Advance even if tokenization fails or this source cannot fit safely.
-        engine.store.lock().unwrap().set_cache_dependency(
-            meeting,
-            "translation-turn",
-            &passage.id,
-        )?;
-        let literal = literal_caption(&passage.text, target, &terms);
         let input_budget = chunks::INPUT_TOKENS.min(
             (prefs.context_size as usize).saturating_sub(chunks::OUTPUT_TOKENS as usize + 256),
         );
@@ -587,6 +638,7 @@ fn run_inner(
                 if literal.is_some() {
                     return Ok(0);
                 }
+                let session = session.as_ref().context("Missing translation worker")?;
                 let names = names::Names::new(&terms, input);
                 let plan = retention_plan(input, &names, target == "zh").or_else(|| {
                     repair.and_then(|_| name_plan(input, &names, target, terms.actor_spellings()))
@@ -638,6 +690,7 @@ fn run_inner(
             trace.event("literal_caption", json!({"source_bytes":input.len()}));
             json!({"translation":text}).to_string()
         } else {
+            let session = session.as_ref().context("Missing translation worker")?;
             let request_started = Instant::now();
             let mut first_token_ms = None;
             let mut draft = String::new();
@@ -708,8 +761,10 @@ fn run_inner(
             raw
         };
         if engine.note_cancel.load(Ordering::SeqCst)
-            || session.resource_stop.load(Ordering::SeqCst)
-            || session.timed_out.load(Ordering::SeqCst)
+            || session.as_ref().is_some_and(|session| {
+                session.resource_stop.load(Ordering::SeqCst)
+                    || session.timed_out.load(Ordering::SeqCst)
+            })
         {
             bail!("Translation paused to protect recording and system resources");
         }
@@ -836,7 +891,8 @@ fn run_inner(
             tx.commit()?;
         }
         if requests >= chunks::MAX_REQUESTS
-            || snapshot.runtime.recording && started.elapsed() > Duration::from_secs(8)
+            || snapshot.runtime.recording
+                && batch_work_elapsed(started.elapsed(), startup_elapsed) > Duration::from_secs(8)
         {
             break;
         }
@@ -1462,6 +1518,211 @@ mod tests {
     }
 
     #[test]
+    fn component_fallback_rekeys_pending_work_before_the_first_commit() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
+        let prefs = {
+            let mut prefs = engine.preferences.lock().unwrap();
+            prefs.inference_backend = "auto".into();
+            prefs.translation_mode = "bilingual".into();
+            prefs.clone()
+        };
+        let meeting = engine.create_meeting("Simulated component fallback")?;
+        let active = root.path().join("accelerators/active.json");
+        std::fs::create_dir_all(active.parent().unwrap())?;
+        // Only the fingerprint input is simulated; no certificate or worker is used.
+        std::fs::write(&active, json!({"binding":"a".repeat(64)}).to_string())?;
+        let db = engine.store.lock().unwrap();
+        let mut sources = Vec::new();
+        for (index, text) in [
+            "Alice will check the report on Thursday.",
+            "Morgan will review the budget on Tuesday.",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let source = crate::Segment {
+                id: format!("pending-{index}"),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: index as u32 + 1,
+                start_ms: index as u64 * 1000,
+                end_ms: (index as u64 + 1) * 1000,
+                text: text.into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            db.save_segment(&source)?;
+            sources.push(source);
+        }
+        let literal_source = crate::Segment {
+            id: "earlier-literal".into(),
+            seq: 3,
+            text: "AND".into(),
+            ..sources[0].clone()
+        };
+        db.save_segment(&literal_source)?;
+        // Source actors participate in the identity; freeze it after seeding.
+        let mut environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+        let mut queue = VecDeque::new();
+        for source in sources {
+            let key = crate::inference_cache::translation_key(&environment, &source, "zh");
+            let progress = chunks::Progress {
+                end: 6,
+                text: "旧GPU片段".into(),
+            };
+            db.conn.execute(
+                "INSERT INTO translation_parts VALUES(?1,?2,?3)",
+                rusqlite::params![source.id, key, serde_json::to_string(&progress)?],
+            )?;
+            queue.push_back((source, "zh", key, progress, Some("old environment repair")));
+        }
+        let mut current = queue.pop_front().unwrap();
+        let literal = Translation {
+            segment_id: literal_source.id.clone(),
+            revision: 1,
+            target: "zh".into(),
+            model: prefs.llm_model.clone(),
+            text: "和".into(),
+            cache_key: crate::inference_cache::translation_key(&environment, &literal_source, "zh"),
+        };
+        db.conn.execute(
+            "INSERT INTO translations VALUES(?1,?2,?3,?4,?5)",
+            rusqlite::params![
+                literal.segment_id,
+                1,
+                "zh",
+                prefs.llm_model,
+                serde_json::to_string(&literal)?
+            ],
+        )?;
+        assert!(cached(&engine, &db, &meeting, &prefs)?.contains_key(&literal_source.id));
+        let unchanged = environment.clone();
+        refresh_opened_environment(
+            &db,
+            &mut environment,
+            unchanged,
+            std::iter::once(&mut current).chain(queue.iter_mut()),
+        )?;
+        assert_eq!(current.3.text, "旧GPU片段");
+        assert_eq!(current.4, Some("old environment repair"));
+
+        // Startup rejection removes the active component before a CPU lease succeeds.
+        std::fs::remove_file(active)?;
+        let cpu_environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+        assert_ne!(environment, cpu_environment);
+        let old_keys = [current.2.clone(), queue[0].2.clone()];
+        let cpu_partial = chunks::Progress {
+            end: 7,
+            text: "Morgan".into(),
+        };
+        db.conn.execute(
+            "INSERT OR REPLACE INTO translation_parts VALUES(?1,?2,?3)",
+            rusqlite::params![
+                queue[0].0.id,
+                crate::inference_cache::translation_key(&cpu_environment, &queue[0].0, "zh"),
+                serde_json::to_string(&cpu_partial)?
+            ],
+        )?;
+        refresh_opened_environment(
+            &db,
+            &mut environment,
+            cpu_environment.clone(),
+            std::iter::once(&mut current).chain(queue.iter_mut()),
+        )?;
+        assert_eq!(environment, cpu_environment);
+        for (pending, old_key) in std::iter::once(&current).chain(queue.iter()).zip(old_keys) {
+            assert_ne!(pending.2, old_key);
+            assert_eq!(
+                pending.2,
+                crate::inference_cache::translation_key(&environment, &pending.0, "zh")
+            );
+            assert_eq!(pending.4, None);
+        }
+        assert_eq!(current.3.end, 0);
+        assert!(current.3.text.is_empty());
+        assert_eq!(queue[0].3.end, cpu_partial.end);
+        assert_eq!(queue[0].3.text, cpu_partial.text);
+        // Earlier literal rows remain stored, but the new snapshot identity rejects them.
+        assert!(!cached(&engine, &db, &meeting, &prefs)?.contains_key(&literal_source.id));
+
+        let next = checked_progress(
+            r#"{"translation":"Alice将在周四检查报告。"}"#,
+            &current.0.text,
+            &current.3,
+            &current.0,
+            current.0.text.len(),
+            "zh",
+            &crate::terminology::Terms::new(&[], &[]),
+        )?;
+        // The existing environment/key guards can accept the first fresh result.
+        assert_eq!(
+            environment,
+            crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?
+        );
+        let translated = Translation {
+            segment_id: current.0.id.clone(),
+            revision: current.0.revision,
+            target: "zh".into(),
+            model: prefs.llm_model.clone(),
+            text: next.text,
+            cache_key: current.2,
+        };
+        db.conn.execute(
+            "INSERT INTO translations VALUES(?1,?2,?3,?4,?5)",
+            rusqlite::params![
+                translated.segment_id,
+                translated.revision,
+                translated.target,
+                translated.model,
+                serde_json::to_string(&translated)?
+            ],
+        )?;
+        assert_eq!(
+            cached(&engine, &db, &meeting, &prefs)?[&current.0.id].text,
+            "Alice将在周四检查报告。"
+        );
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn cold_worker_startup_does_not_consume_the_recording_work_allowance() {
+        let startup = Duration::from_secs(13);
+        let allowance = Duration::from_secs(8);
+        for work in [Duration::from_secs(1), allowance] {
+            assert!(batch_work_elapsed(startup + work, startup) <= allowance);
+        }
+        assert!(
+            batch_work_elapsed(startup + allowance + Duration::from_millis(1), startup) > allowance
+        );
+    }
+
+    #[test]
+    fn literal_work_before_startup_still_counts_toward_the_recording_allowance() {
+        let literal = Duration::from_secs(3);
+        let startup = Duration::from_secs(13);
+        let work = Duration::from_secs(5);
+        let allowance = Duration::from_secs(8);
+        assert_eq!(
+            batch_work_elapsed(literal + startup + work, startup),
+            allowance
+        );
+        assert!(
+            batch_work_elapsed(literal + startup + work + Duration::from_millis(1), startup)
+                > allowance
+        );
+        assert_eq!(
+            batch_work_elapsed(Duration::from_secs(9), Duration::ZERO),
+            Duration::from_secs(9)
+        );
+    }
+
+    #[test]
     fn standalone_fragments_translate_without_completing_speech_or_overriding_names() {
         let terms = crate::terminology::Terms::new(&[], &[]);
         assert_eq!(super::literal_caption("AND", "zh", &terms), Some("和"));
@@ -1619,6 +1880,92 @@ mod tests {
         assert!(!minutes_can_follow(true, false, &runtime));
         assert!(!minutes_can_follow(true, true, &invalid));
         assert!(!minutes_can_follow(false, false, &valid));
+    }
+    #[test]
+    fn literal_batches_commit_without_a_model_worker_and_keep_revision_checks() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Literal-only captions")?;
+        let mut sources = Vec::new();
+        for (index, text) in ["嗯", "AND", "或"].into_iter().enumerate() {
+            let source = crate::Segment {
+                id: format!("literal-{index}"),
+                meeting_id: meeting.id.clone(),
+                run: 1,
+                seq: index as u32 + 1,
+                start_ms: index as u64 * 1000,
+                end_ms: (index as u64 + 1) * 1000,
+                text: text.into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            engine.store.lock().unwrap().save_segment(&source)?;
+            sources.push(source);
+        }
+        // No installed model/runtime exists in this disposable workspace. A
+        // worker startup must not be needed for already validated literal words.
+        assert_eq!(run(&engine, &meeting.id)?, 3);
+        let snapshot = engine.snapshot(&meeting.id)?;
+        for (source, translated) in sources.iter().zip(["Hmm", "和", "or"]) {
+            assert_eq!(snapshot.translations[&source.id].text, translated);
+            assert_eq!(snapshot.translations[&source.id].revision, source.revision);
+        }
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+
+        sources[0].text = "预算尚未批准。".into();
+        sources[0].revision += 1;
+        engine.store.lock().unwrap().save_segment(&sources[0])?;
+        // A substantive revision still needs inference and must never reuse the
+        // previous literal as if it translated the newly revised statement.
+        assert!(run(&engine, &meeting.id).is_err());
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(!snapshot.translations.contains_key(&sources[0].id));
+        assert_eq!(snapshot.segments[0].text, sources[0].text);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+    #[test]
+    fn cancelled_and_named_fragments_do_not_bypass_batch_guards() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Guarded fragments")?;
+        engine.store.lock().unwrap().save_segment(&crate::Segment {
+            id: "fragment".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "AND".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })?;
+        engine.note_cancel.store(true, Ordering::SeqCst);
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert!(engine.snapshot(&meeting.id)?.translations.is_empty());
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        engine.save_library_entry(crate::library::Entry {
+            kind: "term".into(),
+            title: "AND".into(),
+            ..Default::default()
+        })?;
+        // A configured name must use the normal guarded inference path; it
+        // cannot silently become the dictionary translation "和".
+        assert!(run(&engine, &meeting.id).is_err());
+        assert!(engine.snapshot(&meeting.id)?.translations.is_empty());
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
     }
     #[test]
     fn caption_batches_include_oldest_work_even_as_new_text_arrives() -> Result<()> {
