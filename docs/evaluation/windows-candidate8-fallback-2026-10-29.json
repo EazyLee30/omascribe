@@ -1,0 +1,72 @@
+{
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "local_date": "2026-10-29",
+  "local_times": {
+    "fault_finished": "00:02:50 +08:00",
+    "manual_disable_finished": "00:03:56 +08:00",
+    "manual_cpu_finished": "00:04:12 +08:00"
+  },
+  "platform": "Windows x86_64, NVIDIA GeForce GTX 1650, driver 621.01",
+  "cli_sha256": "2a4f2df3140fc44d4fbbd638b18558bb13c81644799c5a0724ffdcbb3e6f7c5f",
+  "asr_worker_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_identity_scope": "cross-build worker not invoked; seeded fictional text only",
+  "signed_catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "component_reverified_in_two_fresh_isolated_directories": [
+    true,
+    true
+  ],
+  "cuda_fault": {
+    "passed": true,
+    "worker_backends": [
+      "cuda",
+      "cpu"
+    ],
+    "owned_cuda_child_verified_then_terminated": true,
+    "active_certificate_after": false,
+    "source_counts": {
+      "segments": 3,
+      "notes_cursor": 3,
+      "sections": 1
+    },
+    "remaining_owned_children": 0,
+    "cuda_module_names": [
+      "cublas64_12.dll",
+      "cublaslt64_12.dll",
+      "cudart64_12.dll",
+      "nvcuda.dll"
+    ]
+  },
+  "manual_engine_disable": {
+    "passed": true,
+    "disabled": true,
+    "active_certificate_after": false
+  },
+  "subsequent_cpu_generation": {
+    "passed": true,
+    "worker_backends": [
+      "cpu"
+    ],
+    "source_counts": {
+      "segments": 3,
+      "notes_cursor": 3,
+      "sections": 1
+    },
+    "remaining_owned_children": 0
+  },
+  "raw_reports_sha256": {
+    "fallback-fault-report.json": "c00b2e6beaab323547f5271d50dcc2726e20451a3848a6f16992cbc85a0b2ff4",
+    "manual-disable.json": "82e59c4c662aaf796a7b01d0cb1cc2a9017d8832ec36ad8c81d81003b9454c00",
+    "manual-cpu-report.json": "e03f90cea6ef5646a1b048ab5b87bb491bb90b54bb8ccaf94cd7c16f610c5c91"
+  },
+  "harness_sha256": "a5d74159be8c195482d77a3661a014263074bb14550116b154a814807d390e90",
+  "setup_sha256": "b8484e39a45fe875282f0f1e50dbe1f1dfa1d95ada23eebf5fdfc0ff9607bded",
+  "legacy_process_enumeration_helper_sha256": "41623d056489c8b4c50556a6b1bf96d27a165d9ff1537ecc8783c8c7c63da2e8",
+  "limitations": [
+    "Fictional seeded text CLI/engine checks; no ASR or physical microphone.",
+    "Controlled child termination is not an actual GPU memory allocation failure.",
+    "Product disable command is not a native UI click.",
+    "Previously signed CUDA component copied and reverified, not freshly downloaded or installed.",
+    "No installer or release acceptance."
+  ]
+}

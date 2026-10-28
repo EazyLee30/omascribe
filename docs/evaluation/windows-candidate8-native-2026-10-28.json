@@ -1,0 +1,40 @@
+{
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "platform": "Windows x86_64; NVIDIA GeForce GTX 1650; driver 621.01",
+  "app_sha256": "b4dd4908c098428579c6557df8547d241afdf97a02ef0fdb23ad9168a7af94b2",
+  "application": "isolated debug ui-test",
+  "frontend": "verified candidate6 build assets; no frontend source changes between candidate6 and candidate8",
+  "microphone": {
+    "pass": true,
+    "device": "Realtek microphone",
+    "script_sha256": "c493c29771a183abe864cbcb501b23a73dde60d4ebd852f483ee8eb8ac33a761",
+    "report_sha256": "716d7d21f275e62699864d36d706d0e864d7a0c90c9c4bb646fec38d28233fe8",
+    "seconds": 42.688,
+    "native_deadline_elapsed_ms": 30072,
+    "observed_initial_peak": 0,
+    "observed_initial_rms": 0,
+    "samples": 7,
+    "checks": [
+      "Realtek input selected and persisted; actual input envelope updates without replacing controls",
+      "Native30s deadline stops without a test-driver Stop command; widget status polling may continue",
+      "Leaving settings releases capture; input choice survives four language changes; no meeting created"
+    ],
+    "audio_files_saved": 0
+  },
+  "windows": {
+    "pass": true,
+    "script_sha256": "ad759e19311f1c8717c97fcefcecf5b1e2970535ed6d2e953ab609bbf1353e6c",
+    "report_sha256": "e3740d894903fa5b33b33463b15371bf0d72909ae5c57a00d57c5c59be568717",
+    "seconds": 6.953,
+    "checks": [
+      "Open native companion/transcript follow five language changes and preserve expansion",
+      "Native hardware reaches settings while activation still requires component verification"
+    ]
+  },
+  "limits": [
+    "Native UI test uses DOM and invoke probes, not screenshot or physical mouse verification.",
+    "Microphone test is level-only preview: no speaking, no persisted PCM/WAV, no physical speech accuracy or meeting-recording stop tested.",
+    "No GPU inference, signed component installation, installer, update or release acceptance tested.",
+    "Deep-link schemes disabled in the isolated QA build; deep links not tested."
+  ]
+}
