@@ -1,6 +1,7 @@
 //! Optional on-device translation. Source passages are immutable; revisions invalidate cached text.
 pub(crate) mod chunks;
 mod names;
+mod repair_case;
 use crate::{notes, preferences::Preferences, store::Store, Engine, Meeting};
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -28,10 +29,20 @@ fn source_prefix(input: &str, chinese: bool) -> Option<String> {
         })
 }
 
-fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::Repair> {
+fn name_plan(
+    input: &str,
+    names: &names::Names,
+    target: &str,
+    known: &[String],
+) -> Option<names::Repair> {
     let prefix = source_prefix(input, target == "zh");
+    let submission = (target == "en")
+        .then(|| notes::submission_anchor(input, known))
+        .flatten();
     let mut plan = if let Some(prefix) = prefix {
         names.repair_prefixed(input, &prefix)?
+    } else if submission.is_some() {
+        names.repair_source(input)?
     } else {
         names.repair(input)?
     };
@@ -41,12 +52,30 @@ fn name_plan(input: &str, names: &names::Names, target: &str) -> Option<names::R
             notes::RelationMismatch::Responsibility,
         ] {
             for anchor in notes::report_anchors(input, relation) {
-                plan.anchor_predicate(&anchor.actor, &anchor.predicate);
+                plan.anchor_predicate_with_objects(
+                    &anchor.actor,
+                    &anchor.predicate,
+                    anchor.objects,
+                );
             }
         }
     } else {
         for assignment in crate::task_roles::assignments(input) {
-            plan.anchor_assignment(&assignment.actor, assignment.english_predicate());
+            plan.anchor_assignment(
+                &assignment.actor,
+                assignment.english_predicate(),
+                assignment.english_objects(),
+            );
+        }
+    }
+    if let Some(anchor) = submission {
+        let ok = if let Some(actor) = anchor.actor {
+            plan.anchor_statement(&actor, &anchor.text, anchor.require_context)
+        } else {
+            plan.anchor_clause(&anchor.text, anchor.require_context)
+        };
+        if !ok {
+            return None;
         }
     }
     Some(plan)
@@ -149,13 +178,25 @@ impl SourceRepair {
         };
         if !anchors
             .iter()
-            .all(|a| plan.anchor_predicate(&a.actor, &a.predicate))
+            .all(|a| plan.anchor_predicate_with_objects(&a.actor, &a.predicate, a.objects))
         {
             return None;
         }
+        if !chinese {
+            if let Some(anchor) = notes::submission_anchor(input, terms.actor_spellings()) {
+                let ok = if let Some(actor) = anchor.actor {
+                    plan.anchor_statement(&actor, &anchor.text, anchor.require_context)
+                } else {
+                    plan.anchor_clause(&anchor.text, anchor.require_context)
+                };
+                if !ok {
+                    return None;
+                }
+            }
+        }
         if !assignments
             .iter()
-            .all(|a| plan.anchor_assignment(&a.actor, a.english_predicate()))
+            .all(|a| plan.anchor_assignment(&a.actor, a.english_predicate(), a.english_objects()))
         {
             return None;
         }
@@ -398,7 +439,10 @@ fn run_inner(
 ) -> Result<usize> {
     let prefs = engine.preferences.lock().unwrap().clone();
     let snapshot = engine.snapshot(meeting)?;
-    let terms = engine.terminology(meeting)?;
+    let terms = engine.terminology(meeting)?.with_actor_spellings(
+        snapshot.segments.iter().map(|s| s.text.as_str()),
+        snapshot.meeting.speaker_names.values().map(String::as_str),
+    );
     let mut passages = select_pending(&snapshot);
     if passages.is_empty() {
         return Ok(0);
@@ -474,7 +518,8 @@ fn run_inner(
                     return Ok(0);
                 }
                 let names = names::Names::new(&terms, input);
-                let plan = repair.and_then(|_| name_plan(input, &names, target));
+                let plan =
+                    repair.and_then(|_| name_plan(input, &names, target, terms.actor_spellings()));
                 let system = system_prompt(language, &names, plan.as_ref(), repair);
                 let input = plan.as_ref().map_or(input, |p| p.input.as_str());
                 session.begin_request();
@@ -509,7 +554,8 @@ fn run_inner(
         };
         let input = notes::normalize_money(&passage.text[chunk.start..chunk.end]);
         let names = names::Names::new(&terms, &input);
-        let name_repair = repair.and_then(|_| name_plan(&input, &names, target));
+        let name_repair =
+            repair.and_then(|_| name_plan(&input, &names, target, terms.actor_spellings()));
         let system = system_prompt(language, &names, name_repair.as_ref(), repair);
         let request_input = name_repair
             .as_ref()
@@ -780,6 +826,9 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if error.is::<notes::SubmissionMismatch>() {
+        return "submission_state_object";
+    }
     if error.is::<notes::MetricMismatch>() {
         return "metric_types";
     }
@@ -809,6 +858,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(submission) = error.downcast_ref::<notes::SubmissionMismatch>() {
+        return submission.hint();
+    }
     if let Some(metric) = error.downcast_ref::<notes::MetricMismatch>() {
         return metric.hint();
     }
@@ -889,6 +941,39 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn submission_repairs_keep_the_original_context_and_require_its_continuation() {
+        let source = "实时转写的延迟测试由我负责，结果周四提交。";
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let plan = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert_eq!(plan.source_slots(), 1);
+        assert_eq!(plan.source_predicates(), 1);
+        assert_eq!(plan.messages[1]["content"], source);
+        assert!(plan
+            .body(r#"{"translation":"The results are to be submitted on Thursday."}"#)
+            .is_err());
+        assert!(plan.body(r#"{"translation":"The results are to be submitted on Thursday. I am responsible for the real-time transcription latency test."}"#).is_ok());
+        let source = "林悦先在周四提交测试报告。";
+        let terms =
+            terms.with_actor_spellings(["工具由林悦负责测试。", source], std::iter::empty());
+        let plan = SourceRepair::from_source(source, &terms, false).unwrap();
+        let restored = plan
+            .body(r#"{"translation":"[A] is to submit the test report on Thursday."}"#)
+            .unwrap();
+        assert!(restored.contains("林悦"));
+        assert!(plan
+            .body(r#"{"translation":"[A] submitted the test report on Thursday."}"#)
+            .is_err());
+    }
+    #[test]
+    fn standalone_schedule_cannot_become_another_actors_task_object() {
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let source = "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。";
+        let plan = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert!(plan.body(r#"{"translation":"[A] is responsible for The test link is to be sent on Wednesday next week. The page is unfinished."}"#).is_err());
+        assert!(plan.body(r#"{"translation":"The test link is to be sent on Wednesday next week. [A] is responsible for sending the test link. The page is unfinished."}"#).is_err());
+        assert!(plan.body(r#"{"translation":"The test link is to be sent on Wednesday next week. [A] is responsible for the tour reservation page, which is unfinished."}"#).is_ok());
+    }
     #[test]
     fn metric_only_source_repair_finishes_without_appending_invented_prose() {
         let terms = crate::terminology::Terms::new(&[], &[]);
@@ -1034,7 +1119,7 @@ mod tests {
         assert!(format!("{error:#}").contains("名称"));
         let names = names::Names::new(&terms, source);
         assert_eq!(validation_kind(&error), "source_name");
-        let plan = name_plan(source, &names, "zh").unwrap();
+        let plan = name_plan(source, &names, "zh", terms.actor_spellings()).unwrap();
         assert_eq!(plan.source_predicates(), 1);
     }
 

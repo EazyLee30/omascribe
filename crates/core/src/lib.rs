@@ -28,6 +28,7 @@ pub mod inference_trace;
 mod inference_worker;
 mod minutes_schedule;
 mod probe;
+mod source_context;
 mod task_roles;
 pub use inference_worker::WorkerStatus;
 pub mod library;

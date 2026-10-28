@@ -1,5 +1,5 @@
-//! Bounded contrasts for explicit, named report tasks. These checks do not
-//! resolve ambiguous ownership or establish general semantic entailment.
+//! Bounded contrasts for explicit, named report and review tasks. These checks
+//! do not resolve ambiguous ownership or establish general semantic entailment.
 use anyhow::Result;
 use regex::Regex;
 use std::{collections::BTreeMap, sync::OnceLock};
@@ -13,7 +13,7 @@ impl Mismatch {
     pub(crate) fn hint(self) -> &'static str {
         match self {
             Self::Delivery => " 报告是送交事项：按原文保留send、deliver或submit的动作、报告名称和期限。Keep the stated delivery action separate from the report title.",
-            Self::Responsibility => " 该句是任务分工：owns the report 译作“负责报告”。保留同一负责人、报告名称、交付动作和期限。Use responsibility for this task-and-delivery context.",
+            Self::Responsibility => " 该句是任务分工：owns a task 表示负责该任务，不是拥有物品、版权或审批权。保留同一负责人、原任务对象、动作和期限。Use responsibility for the stated task, without inventing ownership or approval rights.",
         }
     }
 }
@@ -78,6 +78,141 @@ fn task_delivery(tail: &str) -> bool {
 pub(crate) struct Anchor {
     pub actor: String,
     pub predicate: String,
+    pub objects: &'static [&'static str],
+}
+
+const REVIEW_OBJECTS: &[&str] = &["审核", "审查", "评审", "复核"];
+struct Review {
+    actor: String,
+    object: &'static str,
+    rights: bool,
+}
+fn review_frames(source: &str) -> Vec<Review> {
+    // These are activity objects, not titles of arbitrary works called Review.
+    // Extra modifiers, physical copies, rights and hypothetical/revised owners
+    // are deliberately outside the responsibility anchor.
+    static FRAME: OnceLock<Regex> = OnceLock::new();
+    static UNCERTAIN: OnceLock<Regex> = OnceLock::new();
+    if source.contains(['?', '？']) || UNCERTAIN.get_or_init(|| Regex::new(r"(?i)\b(?:if|unless|provided|either|or|maybe|perhaps|possibly|probably|cancel\w*|withdraw\w*|reassign\w*|transfer\w*|instead)\b|no longer|not responsible").unwrap()).is_match(source) {
+        return Vec::new();
+    }
+    let frame = FRAME.get_or_init(|| Regex::new(concat!(
+        r"(?i)(?:^|[.;!?。！？；\n])\s*(?P<actor>[a-z][a-z'’-]{1,29})\s+owns\s+",
+        r"(?:(?:the|a|an)\s+)?(?P<object>budget|invoice|code|design|security|accessibility|quality|release|test|performance)\s+review\b",
+    )).unwrap());
+    let mut reviews = Vec::new();
+    for c in frame.captures_iter(source).take(12) {
+        let actor = &c["actor"];
+        if !named_actor(&actor.to_ascii_lowercase())
+            || c["object"] != c["object"].to_ascii_lowercase()
+            || [
+                "team",
+                "staff",
+                "management",
+                "server",
+                "system",
+                "department",
+            ]
+            .contains(&actor.to_ascii_lowercase().as_str())
+        {
+            continue;
+        }
+        let tail = source[c.get(0).unwrap().end()..]
+            .split(['.', ';', '!', '?', '。', '；', '！', '？', '\n'])
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_ascii_lowercase();
+        let rights = ["rights", "copyright"].contains(&tail.as_str());
+        // A trailing clause could assign another owner, change the object or
+        // qualify this role. Do not constrain it from a partial first phrase.
+        if !tail.is_empty() && !rights {
+            continue;
+        }
+        let object = match c["object"].to_ascii_lowercase().as_str() {
+            "budget" => "budget",
+            "invoice" => "invoice",
+            "code" => "code",
+            "design" => "design",
+            "security" => "security",
+            "accessibility" => "accessibility",
+            "quality" => "quality",
+            "release" => "release",
+            "test" => "test",
+            _ => "performance",
+        };
+        reviews.push(Review {
+            actor: actor.into(),
+            object,
+            rights,
+        });
+    }
+    reviews
+}
+fn review_object(clause: &str, object: &str) -> bool {
+    let aliases: &[&str] = match object {
+        "budget" => &["budget", "预算"],
+        "invoice" => &["invoice", "发票", "账单"],
+        "code" => &["code", "代码", "程式"],
+        "design" => &["design", "设计"],
+        "security" => &["security", "安全"],
+        "accessibility" => &["accessibility", "无障碍", "可访问性"],
+        "quality" => &["quality", "质量", "品质"],
+        "release" => &["release", "发布", "发行"],
+        "test" => &["test", "测试"],
+        _ => &["performance", "性能", "效能"],
+    };
+    aliases.iter().any(|word| clause.contains(word))
+        && REVIEW_OBJECTS
+            .iter()
+            .chain(["review"].iter())
+            .any(|word| clause.contains(word))
+}
+fn validate_review_ownership(body: &str, reviews: &[Review]) -> Result<()> {
+    static POSSESSION: OnceLock<Regex> = OnceLock::new();
+    let possession = POSSESSION.get_or_init(|| Regex::new(r"(?i)^\s*(?:(?:(?:currently|now|still)\s+)?(?:possesses?\b|(?:has|holds|owns)\s+(?:the\s+)?(?:approval\s+)?(?:rights?|authority|copyright)\b|(?:has|holds|owns)\b[^.;。；,，\n]{0,80}\breview\s+(?:rights?|authority|copyright)\b)|(?:现在|目前|已经|已)?(?:拥有|擁有|持有))").unwrap());
+    let lower = body.to_ascii_lowercase();
+    for review in reviews.iter().filter(|r| !r.rights) {
+        if reviews.iter().any(|r| {
+            r.rights && r.actor.eq_ignore_ascii_case(&review.actor) && r.object == review.object
+        }) {
+            continue;
+        }
+        let actor = review.actor.to_ascii_lowercase();
+        for (at, _) in lower.match_indices(&actor) {
+            let end = at + actor.len();
+            if lower[..at]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric())
+                || lower[end..]
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_alphanumeric())
+            {
+                continue;
+            }
+            let start = lower[..at]
+                .rfind(['.', ';', '!', '?', '。', '；', '！', '？', ',', '，', '\n'])
+                .map_or(0, |i| i + lower[i..].chars().next().unwrap().len_utf8());
+            let tail = lower[end..]
+                .split(['.', ';', '!', '?', '。', '；', '！', '？', ',', '，', '\n'])
+                .next()
+                .unwrap_or("");
+            let clause = &lower[start..end + tail.len()];
+            if review_object(clause, review.object)
+                && (possession.is_match(tail)
+                    || tail.trim_start().starts_with("具有")
+                        && ["审核权", "审查权", "评审权", "审批权"]
+                            .iter()
+                            .any(|word| tail.contains(word))
+                    || tail.trim_start().starts_with('是') && tail.contains("所有者"))
+            {
+                return Err(Mismatch::Responsibility.into());
+            }
+        }
+    }
+    Ok(())
 }
 
 /// A repair may constrain an explicit source predicate, never infer a role
@@ -102,7 +237,7 @@ pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
         return Vec::new();
     }
     let frames: Vec<_> = english_frames().captures_iter(source).collect();
-    frames
+    let mut anchors: Vec<_> = frames
         .iter()
         .filter_map(|frame| {
             let actor = &frame["actor"];
@@ -171,14 +306,41 @@ pub(crate) fn anchors(source: &str, mismatch: Mismatch) -> Vec<Anchor> {
             Some(Anchor {
                 actor: actor.into(),
                 predicate,
+                objects: &["报告"],
             })
         })
-        .collect()
+        .collect();
+    if mismatch == Mismatch::Responsibility {
+        let reviews = review_frames(source);
+        for review in reviews.iter().filter(|r| !r.rights) {
+            // An additional role or explicit rights for the same actor/object
+            // needs richer source binding than a single actor terminal.
+            if reviews
+                .iter()
+                .filter(|r| r.actor.eq_ignore_ascii_case(&review.actor))
+                .count()
+                != 1
+                || frames
+                    .iter()
+                    .any(|f| f["actor"].eq_ignore_ascii_case(&review.actor))
+            {
+                continue;
+            }
+            anchors.push(Anchor {
+                actor: review.actor.clone(),
+                predicate: "负责".into(),
+                objects: REVIEW_OBJECTS,
+            });
+        }
+    }
+    anchors
 }
 
 pub(super) fn validate<'a>(body: &str, sources: impl Iterator<Item = &'a str>) -> Result<()> {
     let mut evidence: BTreeMap<String, Evidence> = BTreeMap::new();
+    let mut reviews = Vec::new();
     for source in sources {
+        reviews.extend(review_frames(source));
         for frame in english_frames().captures_iter(source) {
             let actor = frame["actor"].to_ascii_lowercase();
             let task = frame["task"].to_ascii_lowercase();
@@ -216,6 +378,7 @@ pub(super) fn validate<'a>(body: &str, sources: impl Iterator<Item = &'a str>) -
             }
         }
     }
+    validate_review_ownership(body, &reviews)?;
     if evidence.is_empty() {
         return Ok(());
     }
@@ -279,6 +442,108 @@ pub(super) fn validate<'a>(body: &str, sources: impl Iterator<Item = &'a str>) -
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn review_task_responsibility_is_not_an_approval_right() {
+        let source = "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.";
+        let original = "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。";
+        let error = validate(original, [source].into_iter()).unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<Mismatch>(),
+            Some(&Mismatch::Responsibility)
+        );
+        for body in [
+            "Morgan负责预算审核。3000尚未批准，审核截止日期为周四。",
+            "预算审核由Morgan负责，3000尚未批准，截止日期为周四。",
+            source,
+        ] {
+            assert!(validate(body, [source].into_iter()).is_ok(), "{body}");
+        }
+    }
+
+    #[test]
+    fn review_anchors_preserve_activity_without_report_or_rights() {
+        for source in [
+            "Morgan owns the budget review.",
+            "Riley owns the security review. The review deadline is Monday.",
+            "Nora owns the code review.",
+        ] {
+            let found = anchors(source, Mismatch::Responsibility);
+            assert_eq!(found.len(), 1, "{source}");
+            assert_eq!(found[0].predicate, "负责");
+            assert_eq!(found[0].objects, REVIEW_OBJECTS);
+            assert!(anchors(source, Mismatch::Delivery).is_empty());
+        }
+        for source in [
+            "Morgan owns the original paper report and will deliver it on Thursday.",
+            "Morgan owns the original budget review.",
+            "Morgan owns the budget review document.",
+            "Morgan owns the budget review rights.",
+            "Morgan owns the Budget Review.",
+            "Morgan owns the budget review if approved.",
+            "Morgan owns the budget review?",
+            "Morgan will own the budget review.",
+            "Morgan no longer owns the budget review.",
+            "Morgan owns the budget review. It was reassigned to Riley.",
+            "Morgan owns the budget review or the code review.",
+            "Team owns the budget review.",
+            "Ann Morgan owns the budget review.",
+        ] {
+            assert!(
+                anchors(source, Mismatch::Responsibility).is_empty(),
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn review_possession_checks_bind_actor_and_activity_and_allow_actual_rights() {
+        let source = "Morgan owns the budget review. Riley owns the code review.";
+        // Unrelated actor/object claims are outside this contrast; do not
+        // borrow Riley's code-review role to constrain Morgan's other claims.
+        for body in [
+            "Morgan负责预算审核。Riley负责代码评审。",
+            "Morgan possesses the code review.",
+            "Alice拥有预算审核权。",
+        ] {
+            assert!(validate(body, [source].into_iter()).is_ok(), "{body}");
+        }
+        for body in [
+            "Morgan拥有预算审核权。Riley负责代码评审。",
+            "预算审核由Morgan拥有。",
+            "Morgan owns the budget review rights.",
+            "Morgan has approval authority over the budget review.",
+            "Riley possesses the code review.",
+        ] {
+            let error = validate(body, [source].into_iter()).unwrap_err();
+            assert_eq!(
+                error.downcast_ref::<Mismatch>(),
+                Some(&Mismatch::Responsibility)
+            );
+        }
+        for source in [
+            "Morgan owns the budget review rights.",
+            "Morgan owns the original budget review.",
+            "Morgan owns the budget review document.",
+            "Morgan owns the Budget Review.",
+            "Morgan owns the budget review if approved.",
+        ] {
+            assert!(
+                validate("Morgan拥有预算审核权。", [source].into_iter()).is_ok(),
+                "{source}"
+            );
+        }
+        let sources = [
+            "Morgan owns the budget review.",
+            "Morgan owns the budget review rights.",
+        ];
+        assert!(validate("Morgan拥有预算审核权。", sources.into_iter()).is_ok());
+        let sources = [
+            "Morgan owns the budget review.",
+            "Alice owns the budget review rights.",
+        ];
+        assert!(validate("Morgan拥有预算审核权。", sources.into_iter()).is_err());
+    }
 
     #[test]
     fn source_predicates_preserve_action_and_modality_without_coercing_ambiguous_roles() {

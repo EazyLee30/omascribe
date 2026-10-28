@@ -15,8 +15,10 @@ pub(crate) use qualifiers::{
     boundary as qualifier_boundary, prefix as qualifier_prefix, Mismatch as QualifierMismatch,
 };
 mod relations;
+mod submission;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
+pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionMismatch};
 mod retrieval;
 pub(crate) mod stream;
 mod uncertainty;
@@ -284,7 +286,10 @@ fn generate_inner(
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
-    let terms = engine.terminology(meeting)?;
+    let terms = engine.terminology(meeting)?.with_actor_spellings(
+        snapshot.segments.iter().map(|s| s.text.as_str()),
+        snapshot.meeting.speaker_names.values().map(String::as_str),
+    );
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
     for attempt in 0..2 {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
@@ -470,6 +475,7 @@ fn generate_inner(
                     || error.is::<QualifierMismatch>()
                     || error.is::<crate::task_roles::Mismatch>()
                     || error.is::<MetricMismatch>()
+                    || error.is::<SubmissionMismatch>()
                     || error.to_string().contains("名称")
                     || error.to_string().contains("输出语言")
                 {
@@ -541,6 +547,8 @@ fn generate_inner(
                     let unsupported_hint = format!("{error}。只保留原话支持的事实与限定。State only supported facts and qualifiers; omit the unsupported claim named above, in the selected output language.");
                     let hint = if let Some(metric) = error.downcast_ref::<MetricMismatch>() {
                         metric.hint()
+                    } else if let Some(submission) = error.downcast_ref::<SubmissionMismatch>() {
+                        submission.hint()
                     } else if let Some(role) = error.downcast_ref::<crate::task_roles::Mismatch>() {
                         role.hint()
                     } else if let Some(qualifier) = error.downcast_ref::<QualifierMismatch>() {

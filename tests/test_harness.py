@@ -9,6 +9,18 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_submission_caption_assertions_reject_completion_without_rejecting_future_passive(self):
+        cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
+        case=next(c for c in cases if c['name']=='zh_named_speakers')
+        source=dict(id='s',seq=1,revision=1,text=case['transcript'][0]['text'])
+        snapshot=dict(segments=[source],suggestions=[],runtime=dict(notes_status=''),translations={'s':dict(target='en',revision=1,text='')})
+        check=dict(expect_empty=True,translation_checks=case['translation_checks'])
+        wrong='The real-time transcription delay test I am responsible for was submitted on Thursday.'
+        snapshot['translations']['s']['text']=wrong
+        self.assertTrue(evaluate.assess(check,snapshot,True))
+        for passive in ['will be submitted','are to be submitted']:
+            snapshot['translations']['s']['text']='I am responsible for the latency test. The results '+passive+' on Thursday.'
+            self.assertEqual(evaluate.assess(check,snapshot,True),[])
     def test_future_owner_consent_assertion_accepts_equivalent_negation_but_not_obtained_consent(self):
         cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
         case=next(c for c in cases if c['name']=='en_future_named_task_owner')

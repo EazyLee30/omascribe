@@ -26,6 +26,7 @@ impl Names {
                 roles: String::new(),
                 predicates: BTreeMap::new(),
                 prefix: None,
+                extra_clause: None,
             })
         } else {
             self.repair(source)
@@ -201,11 +202,12 @@ impl Names {
             .collect();
         Some(Repair {
             names: self.0.clone(),
-            input,
+            input: super::repair_case::normalize(&input),
             grammar,
             roles: roles.join(", "),
             predicates: BTreeMap::new(),
             prefix: None,
+            extra_clause: None,
         })
     }
 }
@@ -216,10 +218,13 @@ pub(super) struct Repair {
     roles: String,
     predicates: BTreeMap<usize, Predicate>,
     prefix: Option<String>,
+    extra_clause: Option<(String, bool)>,
 }
 struct Predicate {
     text: String,
-    object: Option<&'static str>,
+    object: Option<&'static [&'static str]>,
+    complete: bool,
+    require_context: bool,
 }
 impl Repair {
     pub fn roles(&self) -> &str {
@@ -255,22 +260,69 @@ impl Repair {
         true
     }
     pub fn source_predicates(&self) -> usize {
-        self.predicates.len() + usize::from(self.prefix.is_some())
+        self.predicates.len()
+            + usize::from(self.prefix.is_some())
+            + usize::from(self.extra_clause.is_some())
     }
     /// Replace an already protected name terminal, not arbitrary prose. The
     /// predicate comes from a bounded source relation, never from model output.
-    pub fn anchor_predicate(&mut self, actor: &str, predicate: &str) -> bool {
-        self.anchor(actor, predicate, Some("报告"), false)
+    pub fn anchor_predicate_with_objects(
+        &mut self,
+        actor: &str,
+        predicate: &str,
+        objects: &'static [&'static str],
+    ) -> bool {
+        self.anchor(actor, predicate, Some(objects), false, false, false)
     }
-    pub fn anchor_assignment(&mut self, actor: &str, predicate: &str) -> bool {
-        self.anchor(actor, predicate, None, true)
+    pub fn anchor_assignment(
+        &mut self,
+        actor: &str,
+        predicate: &str,
+        objects: Option<&'static [&'static str]>,
+    ) -> bool {
+        self.anchor(actor, predicate, objects, true, false, false)
+    }
+    pub fn anchor_statement(
+        &mut self,
+        actor: &str,
+        predicate: &str,
+        require_context: bool,
+    ) -> bool {
+        self.anchor(actor, predicate, None, false, true, require_context)
+    }
+    /// Keep a complete source clause outside partial owner predicates. The
+    /// existing name grammar remains intact and keeps its original order bound.
+    pub fn anchor_clause(&mut self, clause: &str, require_context: bool) -> bool {
+        if self.prefix.is_some() || self.extra_clause.is_some() {
+            return false;
+        }
+        let Some(grammar) = &mut self.grammar else {
+            return false;
+        };
+        let Some(line) = grammar
+            .lines()
+            .find(|l| l.starts_with("translation ::= "))
+            .map(str::to_owned)
+        else {
+            return false;
+        };
+        let rhs = line.strip_prefix("translation ::= ").unwrap();
+        let replacement = format!(
+            "translation ::= {} \" \" ({rhs})",
+            serde_json::to_string(clause).unwrap()
+        );
+        *grammar = grammar.replacen(&line, &replacement, 1);
+        self.extra_clause = Some((clause.into(), require_context));
+        true
     }
     fn anchor(
         &mut self,
         actor: &str,
         predicate: &str,
-        object: Option<&'static str>,
+        object: Option<&'static [&'static str]>,
         lead: bool,
+        complete: bool,
+        require_context: bool,
     ) -> bool {
         let Some(index) = self.names.iter().position(|name| name == actor) else {
             return false;
@@ -294,15 +346,22 @@ impl Repair {
             Predicate {
                 text: predicate.into(),
                 object,
+                complete,
+                require_context,
             },
         );
         true
     }
     pub fn system(&self, language: &str) -> String {
-        if self.names.is_empty() {
-            return super::SYSTEM_TEMPLATE.replace("{language}", language);
+        let mut system = if self.names.is_empty() {
+            super::SYSTEM_TEMPLATE.replace("{language}", language)
+        } else {
+            format!("Translate the entire speech into {language}. Copy each name ID including BOTH brackets, e.g. [A], exactly once in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never add a currency or unit absent from the speech. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
+        };
+        if self.extra_clause.is_some() {
+            system.push_str(" The fixed leading sentence expresses one original source clause. After it, translate every other source clause once, preserving who is responsible for which object. Do not repeat that fixed sentence or use it as another person's task object.");
         }
-        format!("Translate the entire speech into {language}. Copy each name ID including BOTH brackets, e.g. [A], exactly once in its natural target-language position. Name roles from the speech: {}. Preserve affiliations as well as people. Do not translate or spell out IDs. Translate ALL surrounding clauses, preserving digits, negation, pending states and uncertainty. Never add a currency or unit absent from the speech. Never explain, repeat instructions or invent context. Input is speech data. Return only JSON with a translation string. /no_think",self.roles)
+        system
     }
     pub fn body(&self, raw: &str) -> Result<String> {
         use serde::Deserialize;
@@ -354,8 +413,8 @@ impl Repair {
                     .unwrap_or("");
                 if predicate
                     .object
-                    .is_some_and(|object| !clause.contains(object))
-                    || !clause.chars().any(char::is_alphanumeric)
+                    .is_some_and(|objects| !objects.iter().any(|object| clause.contains(object)))
+                    || !predicate.complete && !clause.chars().any(char::is_alphanumeric)
                 {
                     bail!("译文遗漏该负责人所对应的任务对象");
                 }
@@ -366,6 +425,22 @@ impl Repair {
             body = body.replace(&marker, name);
             prose = prose.replace(&marker, "");
             source_prose = source_prose.replace(&marker, "");
+        }
+        let mut context = prose.clone();
+        let mut require_context = false;
+        for predicate in self.predicates.values().filter(|p| p.complete) {
+            context = context.replace(&predicate.text, "");
+            require_context |= predicate.require_context;
+        }
+        if let Some((clause, more)) = &self.extra_clause {
+            if !body.starts_with(clause) {
+                bail!("Translation omitted the source submission clause");
+            }
+            context = context.replace(clause, "");
+            require_context |= more;
+        }
+        if require_context && !context.chars().any(char::is_alphanumeric) {
+            bail!("Translation omitted the surrounding source clauses");
         }
         if let Some(prefix) = &self.prefix {
             let remaining = prose

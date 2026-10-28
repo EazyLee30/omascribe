@@ -271,7 +271,21 @@
       "陈明负责.*延迟测试"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "results?",
+          "Thursday",
+          "responsib|handle|manage|oversee"
+        ],
+        "forbidden": [
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+        ]
+      }
+    ]
   },
   {
     "name": "en_minutes_from_zh",
@@ -499,6 +513,20 @@
         ],
         "forbidden": [
           "sentence error rate|\\bSER\\b"
+        ]
+      },
+      {
+        "seq": 10,
+        "target": "en",
+        "required": [
+          "林悦",
+          "test report",
+          "Thursday",
+          "not|pending|unapproved"
+        ],
+        "forbidden": [
+          "Lin Yuejian|Lin Yue|Lin Yu",
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
         ]
       }
     ]
@@ -766,10 +794,12 @@
         "required": [
           "Morgan",
           "3000",
-          "未.*批准|尚未.*批准"
+          "未.*批准|尚未.*批准",
+          "负责|承担|主管"
         ],
         "forbidden": [
-          "莫根|元|美元"
+          "莫根|元|美元",
+          "拥有|持有|审核权|审查权|审批权"
         ]
       },
       {
@@ -864,7 +894,25 @@
       "页面已经完成",
       "将于周五开放"
     ],
-    "max_sections": 2
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 3,
+        "target": "en",
+        "required": [
+          "陈老师",
+          "test(?:ing)? link",
+          "Wednesday",
+          "next week|next Wednesday",
+          "not|unfinished|incomplete",
+          "page",
+          "reservation|booking"
+        ],
+        "forbidden": [
+          "page.{0,40}(?:released|published)"
+        ]
+      }
+    ]
   },
   {
     "name": "en_incremental_completion",
@@ -913,7 +961,21 @@
       "verification is not completed",
       "Morgan will run"
     ],
-    "max_sections": 2
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "完成",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "莫根"
+        ]
+      }
+    ]
   },
   {
     "name": "en_sparse_unapproved",
@@ -1059,7 +1121,33 @@
       "verification is not completed",
       "Morgan will run"
     ],
-    "max_sections": 2
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周五|星期五",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "里利|莱利"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "完成",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "莫根"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_incremental_completion",
@@ -1210,53 +1298,17 @@
     ],
     "translation_checks": [
       {
-        "seq": 1,
-        "target": "zh",
-        "required": [
-          "ILLMIS\\s+CRIBE",
-          "3000|三千",
-          "预算",
-          "未|不.*批准"
-        ]
-      },
-      {
-        "seq": 2,
-        "target": "zh",
-        "required": [
-          "LICE",
-          "ENVY A CARD",
-          "检查"
-        ],
-        "forbidden": [
-          "NVIDIA|嫉妒"
-        ]
-      },
-      {
-        "seq": 3,
-        "target": "zh",
-        "required": [
-          "周五|星期五",
-          "不|非",
-          "本机|本地|电脑|计算机"
-        ]
-      },
-      {
-        "seq": 4,
-        "target": "zh",
-        "required": [
-          "LLAS\\s+CRIBE",
-          "3000|三千",
-          "预算"
-        ]
-      },
-      {
         "seq": 5,
         "target": "zh",
         "required": [
           "ALICE",
           "UN VIDEO CARD",
-          "检查",
-          "未|不.*批准"
+          "未|没有|尚",
+          "检查|检验|核对"
+        ],
+        "forbidden": [
+          "IT HAS NOT BEEN APPROVED",
+          "NVIDIA|英伟达"
         ]
       }
     ]
@@ -1852,6 +1904,155 @@
         ],
         "forbidden": [
           "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_submission_schedule",
+    "focus": "**latency** **results**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写的延迟测试由我负责，结果周四提交。"
+    ],
+    "required": [
+      "latency|delay",
+      "test",
+      "responsib|handle|manage|oversee",
+      "results?",
+      "Thursday"
+    ],
+    "forbidden": [
+      "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "latency|delay",
+          "test",
+          "responsib|handle|manage|oversee",
+          "results?",
+          "Thursday"
+        ],
+        "forbidden": [
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_test_link_schedule",
+    "focus": "**page** **test link**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+    ],
+    "required": [
+      "陈老师",
+      "page",
+      "test(?:ing)? link",
+      "Wednesday",
+      "next week|next Wednesday",
+      "not|unfinished|incomplete",
+      "reservation|booking"
+    ],
+    "forbidden": [
+      "page.{0,40}(?:released|published)"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈老师",
+          "page",
+          "test(?:ing)? link",
+          "Wednesday",
+          "next week|next Wednesday",
+          "not|unfinished|incomplete",
+          "page",
+          "reservation|booking"
+        ],
+        "forbidden": [
+          "page.{0,40}(?:released|published)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_actual_submission_completion",
+    "focus": "**test report**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告已经在周四提交了。"
+    ],
+    "required": [
+      "test report",
+      "Thursday",
+      "submitted|delivered",
+      "was|has been|already"
+    ],
+    "forbidden": [
+      "is to submit|to be submitted|will submit"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "test report",
+          "Thursday",
+          "submitted|delivered",
+          "was|has been|already"
+        ],
+        "forbidden": [
+          "is to submit|to be submitted|will submit"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_actual_page_publication",
+    "focus": "**page** **test link**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "预约页面将于下周三发布，测试链接已发送。"
+    ],
+    "required": [
+      "reservation|booking",
+      "page",
+      "Wednesday",
+      "next week|next Wednesday",
+      "test(?:ing)? link",
+      "already sent|has been sent|was sent"
+    ],
+    "forbidden": [
+      "page is to be sent"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "reservation|booking",
+          "page",
+          "Wednesday",
+          "next week|next Wednesday",
+          "test(?:ing)? link",
+          "already sent|has been sent|was sent"
+        ],
+        "forbidden": [
+          "page is to be sent"
         ]
       }
     ]

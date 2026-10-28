@@ -34,6 +34,16 @@ impl Store {
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS term_checks(segment_id TEXT PRIMARY KEY,run INTEGER NOT NULL,revision INTEGER NOT NULL,terms_key TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS cache_dependencies(meeting_id TEXT NOT NULL,kind TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(meeting_id,kind));
+            CREATE TRIGGER IF NOT EXISTS actor_source_insert AFTER INSERT ON segments BEGIN
+              INSERT INTO cache_dependencies SELECT NEW.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=NEW.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
+            CREATE TRIGGER IF NOT EXISTS actor_source_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id OR OLD.seq!=NEW.seq BEGIN
+              INSERT INTO cache_dependencies SELECT OLD.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=OLD.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+              INSERT INTO cache_dependencies SELECT NEW.meeting_id,'source-generation','1' WHERE NEW.meeting_id!=OLD.meeting_id AND NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=NEW.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
+            CREATE TRIGGER IF NOT EXISTS actor_source_delete AFTER DELETE ON segments BEGIN
+              INSERT INTO cache_dependencies SELECT OLD.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=OLD.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
             CREATE TABLE IF NOT EXISTS term_queue(segment_id TEXT PRIMARY KEY,meeting_id TEXT NOT NULL,run INTEGER NOT NULL,seq INTEGER NOT NULL,revision INTEGER NOT NULL);
             CREATE INDEX IF NOT EXISTS term_queue_scope ON term_queue(meeting_id,run,seq,segment_id);
             CREATE TRIGGER IF NOT EXISTS term_source_insert AFTER INSERT ON segments BEGIN
@@ -46,7 +56,7 @@ impl Store {
               DELETE FROM term_queue WHERE segment_id=OLD.id;
               DELETE FROM term_checks WHERE segment_id=OLD.id;
             END;
-            PRAGMA user_version=7;")?;
+            PRAGMA user_version=8;")?;
         if previous_version < 6 {
             conn.execute("INSERT OR IGNORE INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s JOIN meetings m ON m.id=s.meeting_id WHERE s.run=json_extract(m.json,'$.run')", [])?;
         }
@@ -287,12 +297,23 @@ impl Store {
         let mut current = self.meeting(&before.meeting.id)?;
         let now = self.segments(&current)?;
         let notes = self.notes(&current.id)?;
+        // Derive spelling context once at commit, not on every UI fingerprint
+        // query. A changed supporting source must not seal an old name repair.
+        let actors = |segments: &[Segment], meeting: &Meeting| {
+            crate::terminology::Terms::new(&[], &[])
+                .with_actor_spellings(
+                    segments.iter().map(|s| s.text.as_str()),
+                    meeting.speaker_names.values().map(String::as_str),
+                )
+                .actor_spellings_digest()
+        };
         if current.run != before.meeting.run
             || selected
                 .iter()
                 .any(|s| !now.iter().any(|n| n.id == s.id && n.revision == s.revision))
             || crate::notes::fingerprint(&notes, &now, 0)
                 != crate::notes::fingerprint(&before.notes, &before.segments, 0)
+            || actors(&now, &current) != actors(&before.segments, &before.meeting)
         {
             bail!("原文或关键词已更新，稍后自动重新整理");
         }
@@ -532,6 +553,72 @@ mod tests {
 #[cfg(test)]
 mod document_tests {
     use super::*;
+    #[test]
+    fn source_actor_context_is_checked_once_at_commit_without_rejecting_unrelated_text(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let m = engine.create_meeting("Actor context fixture")?;
+        let source = |id: &str, seq, text: &str| Segment {
+            id: id.into(),
+            meeting_id: m.id.clone(),
+            run: 1,
+            seq,
+            start_ms: 0,
+            end_ms: 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let provider = source("actor", 1, "工具由林悦负责测试。");
+        let date = source("date", 2, "林悦先在周四提交报告。");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&provider)?;
+            db.save_segment(&date)?;
+        }
+        let before = engine.snapshot(&m.id)?;
+        let section = Suggestion {
+            id: String::new(),
+            meeting_id: m.id.clone(),
+            kind: "section".into(),
+            focus: "提交安排".into(),
+            text: "林悦将在周四提交报告。".into(),
+            sources: vec![Source {
+                segment_id: date.id.clone(),
+                revision: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                quote: date.text.clone(),
+                speaker_name: None,
+            }],
+            status: "pending".into(),
+            stale: false,
+        };
+        let mut db = engine.store.lock().unwrap();
+        db.edit_segment(&provider.id, "工具由陈明负责测试。", 1)?;
+        assert!(db
+            .commit_document(
+                &before,
+                std::slice::from_ref(&date),
+                2,
+                vec![section.clone()],
+                false
+            )
+            .is_err());
+        assert!(db.suggestions(&m.id)?.is_empty());
+        db.edit_segment(&provider.id, "工具由林悦负责测试。", 2)?;
+        drop(db);
+        let before = engine.snapshot(&m.id)?;
+        let mut db = engine.store.lock().unwrap();
+        db.save_segment(&source("cache", 3, "缓存保存在本机。"))?;
+        assert_eq!(
+            db.commit_document(&before, &[date], 2, vec![section], false)?,
+            1
+        );
+        Ok(())
+    }
     #[test]
     fn document_commit_is_atomic_and_rejects_midflight_edits() -> Result<()> {
         let root = tempfile::tempdir()?;

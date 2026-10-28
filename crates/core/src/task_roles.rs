@@ -23,6 +23,9 @@ pub(crate) struct Assignment {
     task: String,
 }
 impl Assignment {
+    pub(crate) fn english_objects(&self) -> Option<&'static [&'static str]> {
+        self.task.contains("页面").then_some(&["page", "页面"][..])
+    }
     pub(crate) fn english_predicate(&self) -> &'static str {
         if self.task.contains("构建") {
             " is responsible for build "
@@ -70,52 +73,79 @@ fn frames(source: &str) -> Vec<Assignment> {
         .take(12)
         .collect()
 }
+fn literal_actor(actor: &str) -> bool {
+    // Pronouns, generic staff/device roles and alternatives are not name
+    // spellings. An unknown label stays literal; no person role is inferred.
+    ![
+        "我们",
+        "你们",
+        "他们",
+        "她们",
+        "用户",
+        "客服",
+        "客服团队",
+        "团队",
+        "小组",
+        "同事",
+        "部门",
+        "系统",
+        "服务器",
+        "程序",
+        "工程师",
+        "负责人",
+        "We",
+        "They",
+        "Team",
+        "Someone",
+    ]
+    .iter()
+    .any(|v| actor.eq_ignore_ascii_case(v))
+        && !actor.contains(['和', '或', '与', '及', '、'])
+}
 fn references(source: &str) -> Vec<Assignment> {
     frames(source)
         .into_iter()
-        .filter(|a| {
-            let actor = a.actor.as_str();
-            // Pronouns, generic staff/device roles and alternatives are not name
-            // spellings. An unknown label stays literal; no person role is inferred.
-            if [
-                "我们",
-                "你们",
-                "他们",
-                "她们",
-                "用户",
-                "客服",
-                "客服团队",
-                "团队",
-                "小组",
-                "同事",
-                "部门",
-                "系统",
-                "服务器",
-                "程序",
-                "工程师",
-                "负责人",
-                "We",
-                "They",
-                "Team",
-                "Someone",
-            ]
-            .iter()
-            .any(|v| actor.eq_ignore_ascii_case(v))
-                || actor.contains(['和', '或', '与', '及', '、'])
-            {
-                return false;
-            }
-            true
+        .filter(|a| literal_actor(&a.actor))
+        .collect()
+}
+/// These explicit task-by-actor clauses supply spellings only. The activity
+/// after 负责 does not fit the bare responsibility grammar, so it must not
+/// become a present-tense Assignment or a repair predicate by implication.
+fn activity_actor_spellings(source: &str) -> Vec<String> {
+    static ACTIVITY: OnceLock<Regex> = OnceLock::new();
+    ACTIVITY.get_or_init(|| Regex::new(concat!(
+        r"(?:^|[。.!?！？；;，,\n])\s*[^。.!?！？；;，,\n]{2,64}?由\s*",
+        r"(?P<actor>[\p{Han}]{2,6}|[A-Z][A-Za-z'’-]{1,39}(?:[ \t]+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s*负责\s*",
+        r"(?:测试|检查|核对|验证|审查|复核|执行|布置)"
+    )).unwrap())
+        .captures_iter(source)
+        .map(|c| c["actor"].to_owned())
+        .filter(|actor| {
+            literal_actor(actor)
+                && !["测试", "结果", "预算", "任务", "项目", "页面", "模型", "工具"]
+                    .contains(&actor.as_str())
         })
+        .take(12)
         .collect()
 }
 pub(crate) fn has_frame(source: &str) -> bool {
     !frames(source).is_empty()
 }
 pub(crate) fn actors(source: &str) -> Vec<String> {
-    let mut names: Vec<_> = references(source).into_iter().map(|a| a.actor).collect();
+    let mut names = Vec::new();
+    for actor in references(source)
+        .into_iter()
+        .map(|a| a.actor)
+        .chain(activity_actor_spellings(source))
+    {
+        if !names.contains(&actor) {
+            names.push(actor);
+        }
+        if names.len() == 12 {
+            break;
+        }
+    }
     names.sort();
-    names.dedup();
     names
 }
 fn current(source: &str) -> bool {
@@ -246,6 +276,28 @@ mod tests {
         )
         .is_err());
         assert!(repair_prefix("构建任务将由服务器负责。").is_none());
+    }
+    #[test]
+    fn activity_clauses_protect_labels_without_creating_current_assignments() {
+        for source in [
+            "离线转写工具由林悦负责测试，目前只是内部验证。",
+            "如果离线转写工具由林悦负责测试，先确认安排。",
+            "离线转写工具将由林悦负责检查。",
+            "离线转写工具不再由林悦负责检查。",
+        ] {
+            assert_eq!(actors(source), ["林悦"], "{source}");
+            assert!(assignments(source).is_empty(), "{source}");
+            assert!(!has_frame(source), "{source}");
+        }
+        assert_eq!(actors("离线转写工具由张敬先负责测试。"), ["张敬先"]);
+        for actor in ["我们", "用户", "服务器", "客服团队", "陈明或李华", "结果"]
+        {
+            assert!(actors(&format!("测试任务由{actor}负责检查。")).is_empty());
+        }
+        // A date clause alone cannot disambiguate a name ending in 先 from an
+        // adverb. Preserve it only after another source/manual label corroborates it.
+        assert!(actors("张敬先在周四提交报告。").is_empty());
+        assert!(actors("林悦先在周四提交测试报告。").is_empty());
     }
     #[test]
     fn task_qualifiers_survive_for_named_and_generic_actors() {

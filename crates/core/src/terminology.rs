@@ -12,6 +12,7 @@ pub struct Terms {
     pub hotwords: Vec<String>,
     writer_names: Vec<String>,
     caption_names: Vec<String>,
+    actor_spellings: Vec<String>,
     approximate: Vec<String>,
 }
 
@@ -439,8 +440,70 @@ impl Terms {
             hotwords,
             writer_names,
             caption_names,
+            actor_spellings: Vec::new(),
             approximate,
         }
+    }
+    /// Corroborate source spellings without inventing aliases or changing ASR
+    /// hotwords. Callers supply current-run sources and explicitly known manual
+    /// labels. An anchor is admitted only when its exact spelling occurs in
+    /// those sources; a bare date clause never guesses a name boundary.
+    ///
+    /// This context does not affect the normalizer fingerprint. Translation and
+    /// minutes callers must bind actor_spellings_digest to their own identities.
+    pub(crate) fn with_actor_spellings<'a>(
+        mut self,
+        sources: impl IntoIterator<Item = &'a str>,
+        anchors: impl IntoIterator<Item = &'a str>,
+    ) -> Self {
+        fn add(names: &mut Vec<String>, value: &str) {
+            if names.len() < 12
+                && (2..=80).contains(&value.chars().count())
+                && value
+                    .chars()
+                    .all(|c| c.is_alphanumeric() || " '-’".contains(c))
+                && !names.iter().any(|s| s.eq_ignore_ascii_case(value))
+                && names.iter().map(|s| s.chars().count()).sum::<usize>() + value.chars().count()
+                    <= 240
+            {
+                names.push(value.to_owned());
+            }
+        }
+        let mut manual = Vec::new();
+        for label in anchors {
+            add(&mut manual, label.trim());
+        }
+        let mut names = Vec::new();
+        for source in sources {
+            for label in &manual {
+                if contains_name(source, label) {
+                    add(&mut names, label);
+                }
+            }
+            for actor in source_owner_names(source) {
+                add(&mut names, &actor);
+            }
+            if names.len() == 12 || names.iter().map(|s| s.chars().count()).sum::<usize>() >= 239 {
+                break;
+            }
+        }
+        // Longer exact labels win at the matching site, e.g. a corroborated
+        // three-character name ending in 先 must not be split at that character.
+        names.sort_by(|a, b| b.chars().count().cmp(&a.chars().count()).then(a.cmp(b)));
+        self.actor_spellings = names;
+        self
+    }
+    pub(crate) fn actor_spellings(&self) -> &[String] {
+        &self.actor_spellings
+    }
+    pub(crate) fn actor_spellings_digest(&self) -> String {
+        use sha2::{Digest, Sha256};
+        let mut names = self.actor_spellings.clone();
+        names.sort();
+        format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&("source-actor-spellings-v1", names)).unwrap())
+        )
     }
     pub fn normalize(&self, text: &str) -> String {
         self.normalize_near_names(&self.normalize_exact(text))
@@ -653,6 +716,7 @@ impl Terms {
         let normalized = self.normalize(transcript).to_lowercase();
         self.caption_names
             .iter()
+            .chain(&self.actor_spellings)
             .filter(|name| contains_name(&normalized, &name.to_lowercase()))
             .cloned()
             .chain(source_owner_names(transcript))
@@ -700,11 +764,12 @@ fn source_owner_names(text: &str) -> Vec<String> {
     static FUTURE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static RETAINED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static MIXED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static REPORTED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re=RE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:\s+[A-Z][A-Za-z'’-]{1,39}){0,2})\s+(?:owns\b|is responsible for\b)").unwrap());
     let mut names = crate::task_roles::actors(text);
     // Title-case subjects with a stated future task are also name spellings.
     // Do not infer names from an all-caps ASR sentence ("BEEN APPROVED ALICE").
-    let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify|publish)\b").unwrap());
+    let future=FUTURE.get_or_init(||Regex::new(r"\b(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:\s+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+will\s+(?:check|send|test|deliver|review|verify|publish|run|perform|complete|finish)\b").unwrap());
     // A later correction can retain a named owner's deadline without repeating
     // "owns". This is an explicit task subject, never a name inferred from a
     // note or a bare title-cased word elsewhere in the sentence.
@@ -713,11 +778,16 @@ fn source_owner_names(text: &str) -> Vec<String> {
     // explicit responsibility predicate and a full ASCII token; notes alone
     // never create an owner or an alias for a different name in the source.
     let mixed=MIXED.get_or_init(||Regex::new(r"(?:^|[^A-Za-z0-9_])(?P<name>[A-Z][A-Za-z'’-]{1,39}(?:[ \t]+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})[ \t]*(?:将[ \t]*)?负责").unwrap());
+    // A reporting subject is a spelling, not proof of the reported claim or a
+    // current assignment. Require a title-case, clause-leading label instead
+    // of guessing a name inside an all-caps or unpunctuated ASR fragment.
+    let reported=REPORTED.get_or_init(||Regex::new(r"(?:^|[.!?。！？；;\n])\s*(?P<name>[A-Z][a-z][A-Za-z'’-]{0,38}(?:[ \t]+[A-Z][a-z][A-Za-z'’-]{0,38}){0,2})\s+(?:confirms|confirmed|reports|reported)\s+\S").unwrap());
     for c in re
         .captures_iter(text)
         .chain(future.captures_iter(text))
         .chain(retained.captures_iter(text))
         .chain(mixed.captures_iter(text))
+        .chain(reported.captures_iter(text))
     {
         if names.len() >= 12 {
             break;
@@ -739,9 +809,31 @@ fn source_owner_names(text: &str) -> Vec<String> {
             "Nobody",
             "Everybody",
             "Management",
+            "System",
+            "Server",
+            "Model",
+            "Application",
+            "Device",
+            "User",
+            "Engineer",
+            "Department",
+            "The System",
+            "The Server",
+            "The Model",
+            "The Application",
+            "The Device",
+            "The User",
+            "The Department",
         ]
         .iter()
         .any(|word| word.eq_ignore_ascii_case(name))
+            || name.split_whitespace().any(|word| {
+                [
+                    "If", "When", "Unless", "Maybe", "Perhaps", "On", "At", "By", "Before", "After",
+                ]
+                .iter()
+                .any(|cue| cue.eq_ignore_ascii_case(word))
+            })
         {
             continue;
         }
@@ -881,6 +973,116 @@ mod tests {
             .collect::<String>();
         text.push_str(" Nora will check the model.");
         assert_eq!(source_owner_names(&text).len(), 12);
+    }
+    #[test]
+    fn reporting_and_executable_task_actors_preserve_observed_spellings_only() {
+        let terms = Terms::new(&[], &[]);
+        for (source, actor) in [
+            ("Riley will run the invoice review on Friday.", "Riley"),
+            ("Riley will perform the invoice review on Friday.", "Riley"),
+            ("Nora will complete the model check.", "Nora"),
+            ("Nora will finish the model check.", "Nora"),
+            (
+                "Morgan confirms the upload verification has now been completed.",
+                "Morgan",
+            ),
+            (
+                "Morgan reported that the upload verification is still pending.",
+                "Morgan",
+            ),
+            ("离线转写工具由林悦负责测试。", "林悦"),
+        ] {
+            assert_eq!(terms.caption_spellings(source), [actor], "{source}");
+            assert!(
+                !preserves_owner_spelling(source, "任务仍待处理。"),
+                "{source}"
+            );
+            assert_eq!(terms.normalize(source), source);
+        }
+        for source in [
+            "We will run the check.",
+            "The Team will perform the check.",
+            "System confirms the upload is complete.",
+            "The Model reports the result.",
+            "RILEY WILL RUN THE INVOICE REVIEW.",
+            "MORGAN CONFIRMS THE UPLOAD IS COMPLETE.",
+            "If Morgan confirms the upload, continue.",
+            "On Thursday Riley will run the check.",
+            "The model will run the check.",
+        ] {
+            assert!(terms.caption_spellings(source).is_empty(), "{source}");
+        }
+    }
+    #[test]
+    fn corroborated_actor_context_keeps_exact_long_names_without_date_guessing() {
+        let first = "离线转写工具由张敬先负责测试。";
+        let date = "张敬先在周四提交报告。";
+        let plain = Terms::new(&[], &[]);
+        assert!(plain.caption_spellings(date).is_empty());
+        let fingerprint = plain.fingerprint();
+        let empty_digest = plain.actor_spellings_digest();
+        let terms = plain.with_actor_spellings([first, date], std::iter::empty());
+        assert_eq!(terms.actor_spellings(), ["张敬先"]);
+        assert_eq!(terms.caption_spellings(date), ["张敬先"]);
+        assert_eq!(terms.normalize(date), date);
+        assert_eq!(terms.fingerprint(), fingerprint);
+        assert_ne!(terms.actor_spellings_digest(), empty_digest);
+        let reverse = Terms::new(&[], &[]).with_actor_spellings([date, first], std::iter::empty());
+        assert_eq!(
+            terms.actor_spellings_digest(),
+            reverse.actor_spellings_digest()
+        );
+
+        let terms = Terms::new(&[], &[])
+            .with_actor_spellings(["林悦先在周四提交测试报告。"], ["林悦", "NotSpoken"]);
+        assert_eq!(terms.actor_spellings(), ["林悦"]);
+        assert_eq!(
+            terms.caption_spellings("林悦先在周四提交测试报告。"),
+            ["林悦"]
+        );
+        assert!(terms.caption_spellings("这次只讨论测试报告。").is_empty());
+        assert_eq!(terms.normalize("Lin Yuejian"), "Lin Yuejian");
+    }
+    #[test]
+    fn actor_context_stays_bounded_and_does_not_revive_an_old_owner() {
+        let source = (b'A'..=b'Z')
+            .map(|c| format!("测试任务由Actor{}负责检查。", char::from(c)))
+            .collect::<Vec<_>>();
+        let terms = Terms::new(&[], &[])
+            .with_actor_spellings(source.iter().map(String::as_str), std::iter::empty());
+        assert_eq!(terms.actor_spellings().len(), 12);
+        assert!(
+            terms
+                .actor_spellings()
+                .iter()
+                .map(|s| s.chars().count())
+                .sum::<usize>()
+                <= 240
+        );
+        let labels: Vec<_> = (0..12)
+            .map(|i| format!("Person{i:02}{}", "x".repeat(72)))
+            .collect();
+        let terms = Terms::new(&[], &[]).with_actor_spellings(
+            labels.iter().map(String::as_str),
+            labels.iter().map(String::as_str),
+        );
+        assert!(terms.actor_spellings().len() <= 3);
+        assert!(
+            terms
+                .actor_spellings()
+                .iter()
+                .map(|s| s.chars().count())
+                .sum::<usize>()
+                <= 240
+        );
+
+        let old = "模型下载由李明负责检查。";
+        let new = "模型下载由王华负责检查，李明不再负责。";
+        let terms = Terms::new(&[], &[]).with_actor_spellings([old, new], std::iter::empty());
+        assert_eq!(terms.caption_spellings("王华负责检查。"), ["王华"]);
+        assert!(terms
+            .validate_writer_names(&format!("{old}{new}"), "王华负责检查。")
+            .is_ok());
     }
     #[test]
     fn mixed_script_responsibility_preserves_only_stated_current_names() {

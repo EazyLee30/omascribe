@@ -107,13 +107,14 @@ pub(crate) fn environment(
     } else {
         None
     };
-    let input = json!({"schema":"translation-cache-v20-metric-source-continuation","model":model.id,"assets":assets,
+    let actor_context = crate::source_context::digest(db, meeting)?;
+    let input = json!({"schema":"translation-cache-v21-source-task-actors","model":model.id,"assets":assets,
         "runtime":engine.inference_fingerprints.file(&runtime),"component":component,
         "template":crate::translation::SYSTEM_TEMPLATE,"output_schema":crate::translation::OUTPUT_SCHEMA,
         "generation":{"seed":42,"temperature":0,"max_tokens":crate::translation::chunks::OUTPUT_TOKENS,"thinking":false,"input_budget":crate::translation::chunks::INPUT_TOKENS},
         "configuration":{"context":prefs.context_size,"threads":prefs.threads,"backend":prefs.inference_backend,"mode":prefs.resource_mode,"memory_budget":prefs.memory_budget_mib},
         "permissions":{"knowledge":prefs.use_knowledge,"memory":prefs.use_memory},
-        "scope":{"meeting":meeting.id,"run":meeting.run,"terms":db.cache_dependency(&meeting.id,"terms")?,"speakers":meeting.speaker_names}});
+        "scope":{"meeting":meeting.id,"run":meeting.run,"terms":db.cache_dependency(&meeting.id,"terms")?,"speakers":meeting.speaker_names,"actors":actor_context}});
     Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(&input)?)))
 }
 pub(crate) fn translation_key(environment: &str, source: &crate::Segment, target: &str) -> String {

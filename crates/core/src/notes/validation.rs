@@ -704,6 +704,7 @@ fn validate_document(
             .collect::<Vec<_>>()
             .join(" ");
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
+        super::submission::validate(body, &current_evidence, !require_prose)?;
         if require_prose {
             let raw_evidence = sources
                 .iter()
@@ -856,6 +857,17 @@ fn validate_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn submission_schedule_cannot_be_completed_or_change_its_object() {
+        for (input, wrong) in [
+            ("实时转写的延迟测试由我负责，结果周四提交。", "The real-time transcription delay test I am responsible for was submitted on Thursday."),
+            ("参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。", "陈老师 is responsible for the tour reservation page, which will be released on Wednesday next week, and the page is still not completed."),
+        ] {
+            let mut source = data()[0].clone();
+            source.text = input.into();
+            assert!(validate_translation(wrong, &source, "m").is_err(), "{wrong}");
+        }
+    }
     #[test]
     fn source_metric_types_cannot_change_or_appear_without_evidence() {
         let mut source = data()[0].clone();
