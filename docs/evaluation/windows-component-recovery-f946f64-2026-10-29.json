@@ -1,0 +1,53 @@
+{
+  "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+  "local_date": "2026-10-29",
+  "platform": "Windows x86_64; NVIDIA GTX 1650",
+  "test_artifact": "source-built isolated debug ui-test",
+  "app_sha256": "34d2ec3f46ec17f546376b81005262e2eb2f9e0514b5a1948d88163892063a55",
+  "helper_sha256": "8120da5acb5a35244cd51ce83fb44b6b0b2a8e4cf3590e464e512117e48d441c",
+  "component_id": "vulkan-windows-x86_64",
+  "component_version": "acceleration-ci-40367160891",
+  "signed_catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "signed_archive_sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+  "archive_bytes": 12674455,
+  "initial_setup": "Copied previously installed signed candidate component into fresh isolated data directory and deliberately invalidated only the copied installed marker.",
+  "first_run": {
+    "cancel_kept_component": true,
+    "confirm_removed_exact_id_version": true,
+    "overall_passed": false,
+    "error": "Download button wait timed out because isolated runtime omitted hardware probe helper.",
+    "report_sha256": "b9a254dcfe9e944a73717a3497ee71726961ad1823d122d40a7a010a0823c2c7"
+  },
+  "diagnostic": {
+    "helper_missing_confirmed": true,
+    "same_source_helper_added": true,
+    "helper_revision_at_compile": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+    "hardware_detected_and_download_button_enabled": true
+  },
+  "continuation": {
+    "overall_passed": true,
+    "product_downloaded_bytes": 12674455,
+    "product_download_state": "installed",
+    "download_then_activation_state": "",
+    "post_download_files_match_signed_expected": true,
+    "local_test_activated_id": "vulkan-windows-x86_64",
+    "local_test_activated_version": "acceleration-ci-40367160891",
+    "local_test_faster": true,
+    "cpu_total_ms": 10530,
+    "gpu_total_ms": 3202,
+    "gpu_buffer_mib": 1287.93,
+    "runtime_device": "Vulkan0 NVIDIA GeForce GTX 1650",
+    "offloaded_layers": "29/29",
+    "report_sha256": "dc3c97cecfe34973a39e5c24ed10070ac77bd52bc6733ec1fd33c05ec105c961"
+  },
+  "source_component_unchanged": true,
+  "isolated_models_unchanged": true,
+  "limitations": [
+    "The first run failed because the isolated harness omitted the hardware helper; it is retained and the continuation uses the same data after a same-source helper was added.",
+    "Signed prerelease candidate catalog and archive, not the unpublished stable acceleration-v1 catalog.",
+    "Native ui-test exercises WebView DOM/invoke; screenshots and physical mouse were not verified.",
+    "No active certificate existed before removal and no other installed version was seeded; revocation and cross-version isolation are not physically exercised.",
+    "No microphone, formal installation/upgrade, runtime crash recovery, concurrent recording, or actual allocation OOM.",
+    "Vulkan0 is a runtime enumeration index; log shows the device name for this run but it is not a stable physical identity."
+  ]
+}
