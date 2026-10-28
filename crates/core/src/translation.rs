@@ -1,5 +1,6 @@
 //! Optional on-device translation. Source passages are immutable; revisions invalidate cached text.
 pub(crate) mod chunks;
+mod closed_state;
 mod named_actions;
 mod names;
 mod repair_case;
@@ -1004,6 +1005,11 @@ fn literal_caption(
         _ => None,
     } {
         if let Some(text) = closed_retention_text(source, &names, chinese) {
+            return Some(text);
+        }
+    }
+    if target == "en" {
+        if let Some(text) = closed_state::english(source) {
             return Some(text);
         }
     }
@@ -2016,6 +2022,55 @@ mod tests {
         );
         assert_eq!(run(&engine, &meeting.id)?, 0);
         assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn closed_current_states_need_no_worker_and_unknown_revisions_do() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh test engine must be unique")?;
+        isolated.models = root.path().join("no-bundled-models");
+        isolated.runtime_dir = root.path().join("no-runtime");
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let meeting = engine.create_meeting("Closed current states")?;
+        let mut source = crate::Segment {
+            id: "closed-state".into(),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        assert_eq!(run(&engine, &meeting.id)?, 1);
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(snapshot.segments[0].text, source.text);
+        assert_eq!(snapshot.translations[&source.id].text, "Today's discussion is limited to these acceptance requirements. System audio capture has not been completed. The release date of the new version has not been determined.");
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        source.text.push_str("预算5000元仍未确定。");
+        source.revision += 1;
+        engine.store.lock().unwrap().save_segment(&source)?;
+        assert!(run(&engine, &meeting.id).is_err());
+        assert!(!engine
+            .snapshot(&meeting.id)?
+            .translations
+            .contains_key(&source.id));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "系统音频采集".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        assert!(literal_caption("没有完成系统音频采集。", "en", &terms).is_none());
         Ok(())
     }
 

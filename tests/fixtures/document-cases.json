@@ -2341,6 +2341,9 @@
           "\\bLiu\\b"
         ]
       }
-    ]
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    }
   }
 ]
