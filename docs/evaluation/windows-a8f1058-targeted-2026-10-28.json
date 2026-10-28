@@ -1,0 +1,148 @@
+{
+  "source_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+  "local_date": "2026-10-28",
+  "platform": "Windows x86_64; NVIDIA GeForce GTX 1650; driver 621.01",
+  "cli_sha256": "541c897c7f61eb4af6796351b06e017df2c66006477efc27791fafe9bad3edfc",
+  "asr_worker_sha256": "adc37bbe8a4918b18d70c3c7f2742bfe7f1b001df191defea8231bfed3ff97e6",
+  "asr_worker_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "asr_identity_scope": "crates/asr/src and core/types.rs unchanged; core/lib.rs differs; worker is cross-build and was not invoked",
+  "model": "qwen3-1.7b Q4_K_M",
+  "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+  "signed_catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "fixture_git_sha256": "6129a4ec1a3ecdc37be8d79bc8e83dc6117f2c0095593d26a412096800adc6e1",
+  "fixture_checkout_sha256": "64eadbf39dddba5fb235ef3ea2d1824c107c170cf01ff719d30f8b1247ddaa47",
+  "fixture_cases": 55,
+  "fixture_phases": 66,
+  "windows_core": {
+    "passed": 243,
+    "ignored": 6,
+    "identifier_integration_passed": 7,
+    "strict_clippy": "passed"
+  },
+  "target_results": [
+    {
+      "case": "zh_windows_uppercase_asr",
+      "mode": "bilingual-auto",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 19.719,
+      "budget_seconds": 120,
+      "fictional_source": [
+        "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+        "LICE WILL CHECK THE ENVY A CARD",
+        "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+        "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+        "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+      ],
+      "generated_minutes": [
+        {
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期，会议纪要应留在此电脑上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试 Windows 版本。预算为 3000 美元 尚未获批。 ALICE将检查UN VIDEO CARD",
+          "citation_quotes": [
+            "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+            "LICE WILL CHECK THE ENVY A CARD",
+            "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+            "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+            "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+          ],
+          "all_citations_exact_fixture_lines": true
+        }
+      ],
+      "committed_translations": [
+        {
+          "source_seq": 1,
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。"
+        },
+        {
+          "source_seq": 2,
+          "target": "zh",
+          "text": "LICE 将检查 ENVY A CARD"
+        },
+        {
+          "source_seq": 3,
+          "target": "zh",
+          "text": "星期五不是截止日期，会议纪要应留在此电脑上"
+        },
+        {
+          "source_seq": 4,
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试 Windows 版本。预算为 3000 美元。"
+        },
+        {
+          "source_seq": 5,
+          "target": "zh",
+          "text": "尚未获批。 ALICE将检查UN VIDEO CARD。"
+        }
+      ],
+      "worker_backends": [
+        "cuda",
+        "cuda",
+        "cuda"
+      ],
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "166d3f58a977520cf84ef2e9456d98357de3c5a4928181342a0bc279e15de342",
+      "component_verification": "passed, active certificate bound to fresh isolated directory",
+      "assistant_semantic_and_citation_review": "fail: subtitle and minutes omit RECORDING from third source segment; ALICE checks UN VIDEO CARD with correct subject/object; all five source citations are exact.",
+      "human_review": "not performed",
+      "assistant_review_details": {
+        "requested_alice_gpu_approval_check": "pass: ALICE is the actor checking UN VIDEO CARD; approval remains pending",
+        "citation_integrity": "pass: five original fictional source segments are cited",
+        "semantic_failure": "segment 3 contains RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER; committed caption and final minutes mention only meeting notes remaining on this computer, omitting recording",
+        "readability": "repeats project and budget facts; prose remains awkward"
+      }
+    },
+    {
+      "case": "en_test_link_schedule",
+      "mode": "english-minutes-only",
+      "automatic_checks_passed": true,
+      "elapsed_seconds": 9.735,
+      "budget_seconds": 120,
+      "fictional_source": [
+        "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+      ],
+      "generated_minutes": [
+        {
+          "text": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed.",
+          "citation_quotes": [
+            "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+          ],
+          "all_citations_exact_fixture_lines": true
+        }
+      ],
+      "committed_translations": [],
+      "worker_backends": [
+        "cuda"
+      ],
+      "offload_records": [
+        [
+          29,
+          29
+        ]
+      ],
+      "source_binary_catalog_unchanged": true,
+      "evaluation_sha256": "8c4249c2aa0d59cd5524ffce55956731dc6fd6696c4df1097fca42b963fa253b",
+      "component_verification": "passed, active certificate bound to fresh isolated directory",
+      "assistant_semantic_and_citation_review": "pass: final minutes preserve page owner, next Wednesday test link and incomplete page; exact citation. Source does not explicitly assign a sender to the test link.",
+      "human_review": "not performed",
+      "assistant_review_details": {
+        "content": "page owner 陈老师, next Wednesday test link and unfinished page retained",
+        "citation_integrity": "pass: original fictional source quoted",
+        "actor_scope": "source does not explicitly name the test-link sender; passive output preserves that uncertainty"
+      }
+    }
+  ],
+  "all_target_automatic_checks_passed": true,
+  "limitations": [
+    "Two selected fictional seeded-text controls, not full 55-case regression.",
+    "Semantic and citation reviews were performed by assistants; human review not performed.",
+    "ASR was not invoked; reused ASR worker is not a same-build release artifact.",
+    "Previously signed CUDA component copied and reverified, not freshly downloaded or installed.",
+    "No physical microphone, real ASR accuracy, or release acceptance."
+  ],
+  "all_target_assistant_semantic_checks_passed": false
+}
