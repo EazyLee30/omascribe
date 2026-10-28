@@ -1,0 +1,40 @@
+{
+  "source_revision": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "local_date": "2026-10-29",
+  "test": "Single selected Realtek hardware input; native timed stop, isolated CPU ASR",
+  "first_attempt": {
+    "completed": false,
+    "cause": "External diagnostic driver incorrectly compared elapsed milliseconds to a seconds-valued threshold; failed before reading prompt. Corrected driver watchdog was tested independently.",
+    "audio_remains_local": true
+  },
+  "second_attempt": {
+    "capture_call_return_ms": 951,
+    "first_capture_observed_wall_ms": 973,
+    "first_capture_observed_ms": 551,
+    "stop_requested_ms": 25010,
+    "stop_returned_ms": 25010,
+    "drain_complete_wall_ms": 25139,
+    "capture_ms": 24620,
+    "processed_ms": 24620,
+    "segments": 1,
+    "signal_nonzero": true,
+    "stop_reason": "timer",
+    "runtime_error": false,
+    "driver_sha256": "2a804bb42d4b4c8b8ea9dcfa8fc56dbf09502dd68feedef712053e0cb9dd0010",
+    "asr_worker_sha256": "a66906cc194644144b427c855b8f9ce16e4e36ff19a27fb95b80b560abfeb429",
+    "user_reports_reading_full_prompt": true,
+    "case_insensitive_exact_target_matches": {
+      "omascribe": false,
+      "alice": false,
+      "nvidia": false,
+      "gtx1650": true
+    }
+  },
+  "limitations": [
+    "First observed audio is a polling observation, not an exact first-frame timestamp.",
+    "User self-reported reading the complete prompt including all four terms; timing/alignment and broad ASR accuracy were not independently established.",
+    "No actual recording, actual transcription or hashes of those private contents are in this report; all stay local.",
+    "External native core harness, not product UI stop button, concurrent LLM, GPU or installer acceptance.",
+    "Prior candidate8 4480 ms synthetic threshold failure is separate and remains unchanged."
+  ]
+}

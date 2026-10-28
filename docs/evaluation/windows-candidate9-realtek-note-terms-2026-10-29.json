@@ -1,0 +1,96 @@
+{
+  "source_revision": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "local_date": "2026-10-29",
+  "input": "User-confirmed full read of four target terms on isolated Realtek test; same 24.620s recording as baseline",
+  "baseline": {
+    "model": "zipformer-small",
+    "exact_target_matches": {
+      "omascribe": false,
+      "alice": false,
+      "nvidia": false,
+      "gtx1650": true
+    },
+    "processed_ms": 24620,
+    "mode": "live capture, not offline retranscription"
+  },
+  "comparison": {
+    "model": "zipformer-bilingual",
+    "exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": false,
+      "gtx1650": true
+    },
+    "segments": 1,
+    "processed_ms": 24620,
+    "offline_retranscribe_wall_seconds": 6.562,
+    "decoder": "modified_beam_search",
+    "threads": 2,
+    "hotword_count": 6,
+    "hotword_fallback": null
+  },
+  "source_build": {
+    "cli_sha256": "104b181b889f705efca9b928c7db9cd8f07a99ca720cd2eece5a667ea2975195",
+    "cli_build_info": {
+      "profile": "debug",
+      "revision_at_compile": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "3e508959282d71c9e65419e8fcee71c5ea619438213e45d29ded0e8183750688",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "worker_sha256": "a66906cc194644144b427c855b8f9ce16e4e36ff19a27fb95b80b560abfeb429",
+    "worker_same_source_build": true
+  },
+  "model_file_sha256": {
+    "decoder-epoch-99-avg-1.onnx": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+    "encoder-epoch-99-avg-1.int8.onnx": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+    "joiner-epoch-99-avg-1.int8.onnx": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "limits": [
+    "Same notes and decoder configuration, but baseline is live capture and comparison is offline replay, so timing/mode differs.",
+    "One private recording and user-confirmed full read; per-word timestamps/alignment not independently verified.",
+    "No private audio, actual transcripts or hashes of private inputs/outputs included.",
+    "No model replacement, GPU, fresh download, installer or release acceptance."
+  ],
+  "terminology_correction_aggregate": {
+    "small_live": {
+      "segments": 1,
+      "earliest_asr_matches": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false
+      },
+      "final_committed_matches": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": true
+      },
+      "text_edits_by_origin": {
+        "terminology": 1
+      }
+    },
+    "bilingual_replay": {
+      "segments": 1,
+      "earliest_asr_matches": {
+        "omascribe": false,
+        "alice": true,
+        "nvidia": false,
+        "gtx1650": false
+      },
+      "final_committed_matches": {
+        "omascribe": false,
+        "alice": true,
+        "nvidia": false,
+        "gtx1650": true
+      },
+      "text_edits_by_origin": {
+        "terminology": 1
+      }
+    },
+    "scope": "Exact target matches before versus after product terminology correction. Counts do not expose source speech or transcription and do not establish all corrections were appropriate."
+  }
+}
