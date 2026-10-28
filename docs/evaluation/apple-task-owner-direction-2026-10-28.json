@@ -1347,5 +1347,29 @@
   "performance_limits": [
     "The previously timed-out build cases complete on this source, but no general speed/energy/VRAM claim follows from these fictional text cases.",
     "Runtime, model and signed optional GPU components are reused; no installer or SDK was rebuilt."
-  ]
+  ],
+  "windows_current_source_targeted": {
+    "source_revision": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+    "passed": 2,
+    "cases": [
+      {
+        "case": "en_named_download_owner",
+        "mode": "translation-off explicit English minutes",
+        "seconds": 11.266
+      },
+      {
+        "case": "en_future_named_task_owner",
+        "mode": "automatic bilingual",
+        "seconds": 17.422
+      }
+    ],
+    "actual_cuda_and_29_of_29_offload_reported": true,
+    "core_passed": 199,
+    "core_ignored": 6,
+    "identifier_passed": 7,
+    "strict_clippy_passed": true,
+    "comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6455405944",
+    "peer_evidence": "https://github.com/EazyLee30/omascribe/blob/f25489e61ed5ca008cd50f52fb08dd57bc898002/docs/evaluation/windows-b63a8eb-targeted-2026-10-28.json",
+    "limits": "Verified peer PR report, not an independent rerun. Seeded text only, not full 45-case, physical microphone, install or release acceptance. Unused ASR worker came from 9b, not a same-build release artifact."
+  }
 }
