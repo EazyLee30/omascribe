@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "scope": "Isolated fictional-data native development workbench/editor checks only, not full candidate, microphone, installer or release acceptance.",
+  "source_revision_at_build": "f8378466a826fd108639097173923dbb70c113a8",
+  "product_inference_source": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+  "build_command": "cargo build -p omascribe --features ui-test --locked",
+  "binary_sha256": "eee6f5ec67a55c9f12a7ed01f63da3a83664466429ef3a918910eea84b0a6c2f",
+  "build_log_sha256": "f6146305467aad57ebd75014a5caee19929135c5c45563c4c83e14bc529d9256",
+  "isolated_workspace": "artifacts/native-task-owner-20261028/workspace",
+  "production_user_workspace_used": false,
+  "physical_microphone_started": false,
+  "models_or_gpu_components_downloaded": false,
+  "workbench": {
+    "checks": [
+      "Quiet title, browser-style meeting tab, compact chrome, direct recording/transcript/caption console",
+      "One click opens a separate OS transcript window; docking restores the main panel and language choices",
+      "Named layout save, focus preset and full layout restoration retain panels",
+      "Meeting tabs switch independently; closing a tab keeps the meeting",
+      "740 × 560 viewport keeps every live control visible",
+      "Desktop pet has a separate transparent surface; controls expand, hover/focus reveals Show or Hide, and the sidebar toggles visibility",
+      "Titlebar double click maximizes/restores; all eight edge grips exist and a corner pointer gesture changes the native window size"
+    ],
+    "passed": true
+  },
+  "workbench_script_sha256": "90ae1146e73748a281afa7b3a96ecf3f45284c3285ec7142f26c3abbd1cf488f",
+  "editor": {
+    "checks": [
+      "Search/Enter, block shortcut, reorder, duplicate, confirmed delete, cancel and independent undo",
+      "Literal slash, Chinese composition and Markdown autosave through native IPC",
+      "Explicit column hide/restore preserves notes; continuous resizing groups narrow columns into tabs and restores the wide layout",
+      "Block handle follows document scrolling; editor scrollbar inherits the current appearance"
+    ],
+    "passed": true
+  },
+  "editor_script_sha256": "a59196d9108a6ab20dc0c9de086ebcd449617c2d34973d05af2cf581e3ef954d",
+  "physical_pointer_check": {
+    "verified": false,
+    "blocked_by": "Computer-use input reported windowNotFoundAtPosition while AX/screenshot observations worked; the next app observation reported the Mac locked. No pointer movement is claimed as passed.",
+    "attempted_focus_methods": [
+      "Native Window menu and AX Raise",
+      "Existing show_main_window app command in isolated test startup"
+    ],
+    "lock_observed": true
+  },
+  "cleanup": {
+    "owned_process_terminated": true,
+    "temporary_app_removed": true,
+    "temporary_binary_logical_bytes": 56082096,
+    "raw_check_reports_retained": true,
+    "note": "Logical file length is not measured reclaimed disk space. Installed app, user data, models and signed components retained."
+  },
+  "release_accepted": false,
+  "limitations": [
+    "Scripted WebView checks and native-window property checks do not replace successful physical cursor drag/resize.",
+    "No physical microphone, install/upgrade or new frozen candidate acceptance.",
+    "Published inference evidence remains tied to its own b63a8eb CLI; this debug ui-test app is not an installer."
+  ]
+}
