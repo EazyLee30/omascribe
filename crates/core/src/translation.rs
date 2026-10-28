@@ -28,6 +28,10 @@ fn minutes_can_follow(requested: bool, cancelled: bool, result: &Result<usize>) 
         && !cancelled
         && (result.is_ok() || result.as_ref().is_err_and(|e| e.is::<ValidationDeferred>()))
 }
+
+fn batch_work_elapsed(elapsed: Duration, startup_elapsed: Duration) -> Duration {
+    elapsed.saturating_sub(startup_elapsed)
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Translation {
     pub segment_id: String,
@@ -203,7 +207,7 @@ fn run_inner(
         if requests >= chunks::MAX_REQUESTS
             || requests > 0
                 && snapshot.runtime.recording
-                && started.elapsed().saturating_sub(startup_elapsed) > Duration::from_secs(8)
+                && batch_work_elapsed(started.elapsed(), startup_elapsed) > Duration::from_secs(8)
         {
             break;
         }
@@ -474,7 +478,8 @@ fn run_inner(
             tx.commit()?;
         }
         if requests >= chunks::MAX_REQUESTS
-            || snapshot.runtime.recording && started.elapsed() > Duration::from_secs(8)
+            || snapshot.runtime.recording
+                && batch_work_elapsed(started.elapsed(), startup_elapsed) > Duration::from_secs(8)
         {
             break;
         }
@@ -611,6 +616,38 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cold_worker_startup_does_not_consume_the_recording_work_allowance() {
+        let startup = Duration::from_secs(13);
+        let allowance = Duration::from_secs(8);
+        for work in [Duration::from_secs(1), allowance] {
+            assert!(batch_work_elapsed(startup + work, startup) <= allowance);
+        }
+        assert!(
+            batch_work_elapsed(startup + allowance + Duration::from_millis(1), startup) > allowance
+        );
+    }
+
+    #[test]
+    fn literal_work_before_startup_still_counts_toward_the_recording_allowance() {
+        let literal = Duration::from_secs(3);
+        let startup = Duration::from_secs(13);
+        let work = Duration::from_secs(5);
+        let allowance = Duration::from_secs(8);
+        assert_eq!(
+            batch_work_elapsed(literal + startup + work, startup),
+            allowance
+        );
+        assert!(
+            batch_work_elapsed(literal + startup + work + Duration::from_millis(1), startup)
+                > allowance
+        );
+        assert_eq!(
+            batch_work_elapsed(Duration::from_secs(9), Duration::ZERO),
+            Duration::from_secs(9)
+        );
+    }
 
     #[test]
     fn standalone_fragments_translate_without_completing_speech_or_overriding_names() {
