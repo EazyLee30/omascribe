@@ -1,5 +1,6 @@
 //! Optional on-device translation. Source passages are immutable; revisions invalidate cached text.
 pub(crate) mod chunks;
+mod named_actions;
 mod names;
 mod repair_case;
 use crate::{notes, preferences::Preferences, store::Store, Engine, Meeting};
@@ -35,6 +36,10 @@ fn name_plan(
     target: &str,
     known: &[String],
 ) -> Option<names::Repair> {
+    if let Some(action) = named_actions::action(input, names.spellings(), target == "zh") {
+        let mut plan = names.repair_source(input)?;
+        return plan.anchor_named_action(&action).then_some(plan);
+    }
     let prefix = source_prefix(input, target == "zh");
     let submission = (target == "en")
         .then(|| notes::submission_anchor(input, known))
@@ -171,6 +176,19 @@ impl SourceRepair {
             crate::task_roles::assignments(input)
         };
         let names = names::Names::new(terms, input);
+        if let Some(action) = named_actions::action(input, names.spellings(), chinese) {
+            let mut plan = names.repair_source(input)?;
+            if !plan.anchor_named_action(&action) {
+                return None;
+            }
+            let system = system_prompt(
+                "简体中文",
+                &names,
+                Some(&plan),
+                Some(named_actions::Mismatch.hint()),
+            );
+            return Some((plan, system));
+        }
         let mut plan = if let Some(prefix) = prefix {
             names.repair_prefixed(input, &prefix)?
         } else {
@@ -179,6 +197,12 @@ impl SourceRepair {
         if !anchors
             .iter()
             .all(|a| plan.anchor_predicate_with_objects(&a.actor, &a.predicate, a.objects))
+        {
+            return None;
+        }
+        if !assignments
+            .iter()
+            .all(|a| plan.anchor_assignment(&a.actor, a.english_predicate(), a.english_objects()))
         {
             return None;
         }
@@ -193,12 +217,6 @@ impl SourceRepair {
                     return None;
                 }
             }
-        }
-        if !assignments
-            .iter()
-            .all(|a| plan.anchor_assignment(&a.actor, a.english_predicate(), a.english_objects()))
-        {
-            return None;
         }
         let hint = anchors
             .first()
@@ -646,8 +664,25 @@ fn run_inner(
             .as_ref()
             .map_or_else(|| Ok(raw.clone()), |p| p.body(&raw));
         let validated = restored.and_then(|text| {
+            let mut output: Value = serde_json::from_str(&text)?;
+            if let Some(body) = output["translation"].as_str() {
+                let repaired = notes::repair_unitless_yuan(body, &input);
+                if repaired != body {
+                    trace.event(
+                        "source_unit_repair",
+                        json!({"removed_unsupported_yuan":true}),
+                    );
+                    output["translation"] = Value::String(repaired);
+                }
+            }
             checked_progress(
-                &text, &input, &progress, &passage, chunk.end, target, &terms,
+                &output.to_string(),
+                &input,
+                &progress,
+                &passage,
+                chunk.end,
+                target,
+                &terms,
             )
         });
         if let Err(error) = &validated {
@@ -826,6 +861,9 @@ fn system_prompt(
 }
 
 fn validation_kind(error: &anyhow::Error) -> &'static str {
+    if error.is::<named_actions::Mismatch>() {
+        return "named_action_direction";
+    }
     if error.is::<notes::SubmissionMismatch>() {
         return "submission_state_object";
     }
@@ -858,6 +896,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(action) = error.downcast_ref::<named_actions::Mismatch>() {
+        return action.hint();
+    }
     if let Some(submission) = error.downcast_ref::<notes::SubmissionMismatch>() {
         return submission.hint();
     }
@@ -898,9 +939,18 @@ fn validate_text(
 ) -> Result<()> {
     // Unsupported numbers/dates cannot enter either private chunks or visible translations.
     notes::validate_translation(text, passage, &passage.meeting_id)?;
-    let prose = names::Names::new(terms, &passage.text).validate(text)?;
+    let names = names::Names::new(terms, &passage.text);
+    names.validate(text)?;
+    named_actions::validate(&passage.text, text, names.spellings(), target)?;
     crate::task_roles::validate(&terms.normalize(&passage.text), text)?;
-    notes::validate_output_language(&prose, target == "zh")
+    notes::validate_language_with_source(text, &names.mask(text), &passage.text, target == "zh")
+}
+pub(crate) fn source_name_mask(
+    body: &str,
+    source: &str,
+    terms: &crate::terminology::Terms,
+) -> String {
+    names::Names::new(terms, source).mask(body)
 }
 pub(crate) fn preserves_source_spellings(source: &str, translated: &str) -> bool {
     names::Names::new(&crate::terminology::Terms::new(&[], &[]), source)
@@ -941,6 +991,52 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn whole_named_action_keeps_direction_in_caption_and_original_source_repair() {
+        let source = "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD";
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let names = names::Names::new(&terms, source);
+        let caption = name_plan(source, &names, "zh", terms.actor_spellings()).unwrap();
+        let article = SourceRepair::from_source(source, &terms, true).unwrap();
+        assert_eq!(caption.grammar.as_ref().unwrap(), &article.grammar);
+        let output = r#"{"translation":"尚未获批。 [B]将检查[A]。"}"#;
+        let restored = caption.body(output).unwrap();
+        assert!(restored.contains("ALICE将检查UN VIDEO CARD"));
+        assert_eq!(
+            article.body(output).unwrap(),
+            "尚未获批。 ALICE将检查UN VIDEO CARD。"
+        );
+        assert!(caption
+            .body(r#"{"translation":"它尚未批准[A]将检查[B]"}"#)
+            .is_err());
+    }
+    #[test]
+    fn standalone_submission_and_assignment_use_identical_constraints_in_both_entries() {
+        let source = "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。";
+        let terms = crate::terminology::Terms::new(&[], &[])
+            .with_actor_spellings([source], std::iter::empty());
+        let names = names::Names::new(&terms, source);
+        let caption = name_plan(source, &names, "en", terms.actor_spellings()).unwrap();
+        let article = SourceRepair::from_source(source, &terms, false).unwrap();
+        assert_eq!(caption.grammar.as_ref().unwrap(), &article.grammar);
+        assert!(!article.grammar.contains("prose \"[A] is responsible for\""));
+        assert!(article.body(r#"{"translation":"The test link is to be sent on Wednesday next week. [A] is responsible for the reservation page, which has not yet been completed."}"#).is_ok());
+    }
+    #[test]
+    fn source_name_mask_keeps_offsets_and_does_not_require_unused_historical_names() {
+        let source = "当迪大学的 PAMELA FURGO 森教授说似乎有风险。离线转写工具由林悦负责测试。";
+        let terms = crate::terminology::Terms::new(&[], &[])
+            .with_actor_spellings([source], std::iter::empty());
+        let body = "林悦 and PAMELA FURGO 森 of 当迪大学 will test the 预约页面. XALICEY remains.";
+        let mask = source_name_mask(body, source, &terms);
+        assert_eq!(body.len(), mask.len());
+        assert!(!mask.contains("林悦"));
+        assert!(!mask.contains("森"));
+        assert!(!mask.contains("当迪大学"));
+        assert!(mask.contains("预约页面"));
+        assert!(mask.contains("XALICEY"));
+        assert!(source_name_mask("The report is pending.", source, &terms).contains("pending"));
+    }
     #[test]
     fn submission_repairs_keep_the_original_context_and_require_its_continuation() {
         let source = "实时转写的延迟测试由我负责，结果周四提交。";

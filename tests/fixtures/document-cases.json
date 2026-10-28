@@ -906,7 +906,7 @@
           "next week|next Wednesday",
           "not|unfinished|incomplete",
           "page",
-          "reservation|booking"
+          "reservation|booking|appointment"
         ],
         "forbidden": [
           "page.{0,40}(?:released|published)"
@@ -1308,7 +1308,9 @@
         ],
         "forbidden": [
           "IT HAS NOT BEEN APPROVED",
-          "NVIDIA|英伟达"
+          "NVIDIA|英伟达",
+          "UN VIDEO CARD[^。！？；;\\n]{0,24}(?:检查|核对|检验)[^。！？；;\\n]{0,24}ALICE",
+          "它尚未批准"
         ]
       }
     ]
@@ -1960,7 +1962,7 @@
       "Wednesday",
       "next week|next Wednesday",
       "not|unfinished|incomplete",
-      "reservation|booking"
+      "reservation|booking|appointment"
     ],
     "forbidden": [
       "page.{0,40}(?:released|published)"
@@ -1977,7 +1979,7 @@
           "next week|next Wednesday",
           "not|unfinished|incomplete",
           "page",
-          "reservation|booking"
+          "reservation|booking|appointment"
         ],
         "forbidden": [
           "page.{0,40}(?:released|published)"
@@ -2029,7 +2031,7 @@
       "预约页面将于下周三发布，测试链接已发送。"
     ],
     "required": [
-      "reservation|booking",
+      "reservation|booking|appointment",
       "page",
       "Wednesday",
       "next week|next Wednesday",
@@ -2044,7 +2046,7 @@
         "seq": 1,
         "target": "en",
         "required": [
-          "reservation|booking",
+          "reservation|booking|appointment",
           "page",
           "Wednesday",
           "next week|next Wednesday",

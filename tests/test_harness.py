@@ -9,6 +9,18 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_uppercase_caption_assertions_reject_reversed_actor_object(self):
+        cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
+        case=next(c for c in cases if c['name']=='zh_windows_uppercase_asr')
+        source=dict(id='s',seq=5,revision=1,text=case['transcript'][4])
+        snapshot=dict(segments=[source],suggestions=[],runtime=dict(notes_status=''),translations={'s':dict(target='zh',revision=1,text='')})
+        check=dict(expect_empty=True,translation_checks=case['translation_checks'])
+        for text in ['尚未获批。ALICE将检查UN VIDEO CARD。','尚未获批。UN VIDEO CARD将由ALICE检查。']:
+            snapshot['translations']['s']['text']=text
+            self.assertEqual(evaluate.assess(check,snapshot,True),[])
+        snapshot['translations']['s']['text']='它尚未批准UN VIDEO CARD将检查ALICE'
+        self.assertTrue(evaluate.assess(check,snapshot,True))
+
     def test_submission_caption_assertions_reject_completion_without_rejecting_future_passive(self):
         cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
         case=next(c for c in cases if c['name']=='zh_named_speakers')

@@ -131,23 +131,154 @@ pub(crate) fn normalize(text: &str) -> String {
 
 /// A bare amount does not establish a currency. This is a targeted guard for
 /// supported currency spellings, not an exchange-rate or general unit parser.
-pub(super) fn added_currency(body: &str, evidence: &str) -> Option<&'static str> {
+fn currency_units() -> &'static [(&'static str, Regex)] {
     static UNITS: OnceLock<Vec<(&str, Regex)>> = OnceLock::new();
-    UNITS
-        .get_or_init(|| {
-            [
-                ("dollar", r"(?i)\b(?:usd|dollars?)\b|美元|美金|\$"),
-                ("yuan", r"(?i)\b(?:cny|rmb|yuan)\b|人民币|[0-9零〇一二两三四五六七八九十百千万亿]+\s*元"),
-                ("euro", r"(?i)\b(?:eur|euros?)\b|欧元|€"),
-                ("pound", r"(?i)\b(?:gbp|pounds?)\b|英镑|£"),
-            ]
-            .into_iter()
-            .map(|(name, pattern)| (name, Regex::new(pattern).unwrap()))
-            .collect()
-        })
+    UNITS.get_or_init(|| {
+        [
+            ("dollar", r"(?i)\b(?:usd|dollars?)\b|美元|美金|\$"),
+            (
+                "yuan",
+                r"(?i)\b(?:cny|rmb|yuan)\b|人民币|[0-9零〇一二两三四五六七八九十百千万亿]+\s*元",
+            ),
+            ("euro", r"(?i)\b(?:eur|euros?)\b|欧元|€"),
+            ("pound", r"(?i)\b(?:gbp|pounds?)\b|英镑|£"),
+        ]
+        .into_iter()
+        .map(|(name, pattern)| (name, Regex::new(pattern).unwrap()))
+        .collect()
+    })
+}
+pub(super) fn added_currency(body: &str, evidence: &str) -> Option<&'static str> {
+    currency_units()
         .iter()
         .find(|(_, unit)| unit.is_match(body) && !unit.is_match(evidence))
         .map(|(name, _)| *name)
+}
+
+fn currency_evidence(text: &str) -> bool {
+    static OTHER: OnceLock<Regex> = OnceLock::new();
+    currency_units().iter().any(|(_, unit)| unit.is_match(text))
+        || text.contains(['¥', '￥', '₹', '₽', '₩', '¢'])
+        || OTHER.get_or_init(|| Regex::new(r"(?i)\b(?:jpy|yen|hkd|cad|aud|chf|inr|krw|rub|currency|denominated|payable|kroner|krona|francs?|rupees?|rubles?)\b|日元|港元|港币|港幣|台币|臺幣|韩元|韓元|澳元|加元|法郎|卢布|卢比|币种|幣種|结算|結算").unwrap()).is_match(text)
+}
+fn plain_scalar(text: &str, generated: bool) -> Option<&str> {
+    static DIGITS: OnceLock<Regex> = OnceLock::new();
+    static COMPLEX: OnceLock<Regex> = OnceLock::new();
+    if COMPLEX.get_or_init(|| Regex::new(r"(?i)\b(?:between|about|around|approximately|hundred|thousand|million|billion|year|date|month|version|build|id|number)\b|\b(?:up\s+to|at\s+least|at\s+most|more\s+than|less\s+than)\b|至少|最多|最少|不超过|不低于|以上|以下|左右|大约|约为|区间|范围|[≤≥<>]|[0-9]\s*[:：]\s*[0-9]").unwrap()).is_match(text) {
+        return None;
+    }
+    let mut scalar = None;
+    for m in DIGITS
+        .get_or_init(|| Regex::new(r"[0-9]+").unwrap())
+        .find_iter(text)
+    {
+        let value = m.as_str();
+        if value.starts_with('0')
+            || value.parse::<u64>().ok().is_none_or(|n| n == 0)
+            || scalar.is_some_and(|n| n != value)
+        {
+            return None;
+        }
+        let before = &text[..m.start()];
+        let after = &text[m.end()..];
+        if before
+            .chars()
+            .next_back()
+            .is_some_and(|c| c.is_ascii_alphanumeric() || ".+-−±~～–—*/^×÷=".contains(c))
+            || before.trim_end().ends_with([
+                '-', '+', '−', '±', '~', '～', '–', '—', '*', '/', '^', '×', '÷', '=',
+            ])
+            || before
+                .strip_suffix(',')
+                .is_some_and(|s| s.ends_with(|c: char| c.is_ascii_digit()))
+            || after.starts_with('.') && after[1..].starts_with(|c: char| c.is_ascii_digit())
+            || after.starts_with(',') && after[1..].starts_with(|c: char| c.is_ascii_digit())
+        {
+            return None;
+        }
+        let mut rest = after.trim_start();
+        if generated && rest.starts_with('元') {
+            rest = &rest['元'.len_utf8()..];
+        }
+        let tail = rest.trim_start();
+        if tail.starts_with(|c: char| {
+            "万千百亿年月日号天时分秒个条次人%‰+-−±~～–—*/^×÷=:：".contains(c)
+        }) {
+            return None;
+        }
+        if tail.starts_with(|c: char| c.is_alphanumeric())
+            && ![
+                "尚未", "未", "还没", "没有", "仍", "已", "不", "待", "的", "是", "为",
+            ]
+            .iter()
+            .any(|s| tail.starts_with(s))
+            && ![
+                "is",
+                "was",
+                "has",
+                "have",
+                "had",
+                "still",
+                "remains",
+                "not",
+                "unapproved",
+                "pending",
+                "and",
+                "but",
+                "yet",
+            ]
+            .contains(
+                &tail
+                    .split(|c: char| !c.is_ascii_alphabetic())
+                    .next()
+                    .unwrap_or("")
+                    .to_ascii_lowercase()
+                    .as_str(),
+            )
+        {
+            return None;
+        }
+        scalar = Some(value);
+    }
+    scalar
+}
+/// Remove only a generated yuan suffix when one exact, plainly unitless money
+/// value is known. This never supplies a currency or repairs a different value;
+/// ambiguous output stays unchanged for the ordinary validators to reject.
+pub(crate) fn repair_unitless_yuan(body: &str, source: &str) -> String {
+    static MONEY: OnceLock<Regex> = OnceLock::new();
+    static NONMONEY: OnceLock<Regex> = OnceLock::new();
+    if !MONEY.get_or_init(|| Regex::new(r"(?i)(?:\b(?:budget(?:\s+amount)?|money|amount|cost|price)\b|预算(?:金额)?|金额|款项|价钱|价格|费用|钱款)\s*[:：]?\s*(?:(?:is|was|of|at|remains|still|set|to|为|是|按|先按|暂按|仍为|仍是|改为|调整为)\s*){0,8}[0-9]").unwrap()).is_match(source)
+        || NONMONEY.get_or_init(|| Regex::new(r"(?i)\b(?:memory|ram|vram|tokens?|cpu|gpu|latency|time|storage|disk)\s+(?:budget|cost|amount)\b|(?:内存|显存|存储|时长|时间|延迟|令牌|调用次数|请求次数|字数)(?:预算|金额|开销|成本)").unwrap()).is_match(source)
+        || currency_evidence(source)
+    {
+        return body.into();
+    }
+    let Some(value) = plain_scalar(source, false) else {
+        return body.into();
+    };
+    if plain_scalar(body, true) != Some(value) {
+        return body.into();
+    }
+    // The shared currency parser identifies numeric 元. Delete that character
+    // only; surrounding digits, whitespace, punctuation and status are intact.
+    let mut result = String::new();
+    let mut copied = 0;
+    for (at, _) in body.match_indices(value) {
+        let end = at + value.len();
+        let rest = &body[end..];
+        let unit = end + rest.len() - rest.trim_start().len();
+        if body[unit..].starts_with('元') {
+            result.push_str(&body[copied..unit]);
+            copied = unit + '元'.len_utf8();
+        }
+    }
+    result.push_str(&body[copied..]);
+    if currency_evidence(&result) {
+        body.into()
+    } else {
+        result
+    }
 }
 
 #[cfg(test)]
@@ -173,5 +304,123 @@ mod tests {
         ] {
             assert_eq!(normalize(text), text);
         }
+    }
+    #[test]
+    fn unsupported_yuan_is_removed_only_from_one_explicit_unitless_money_value() {
+        let source = "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.";
+        let body = "Morgan负责预算审核。3000元尚未批准。审核截止日期为周四。";
+        let fixed = repair_unitless_yuan(body, source);
+        assert_eq!(
+            fixed,
+            "Morgan负责预算审核。3000尚未批准。审核截止日期为周四。"
+        );
+        assert_eq!(added_currency(body, source), Some("yuan"));
+        assert_eq!(added_currency(&fixed, source), None);
+        assert_eq!(
+            repair_unitless_yuan(
+                "预算为3000 元，仍未批准。",
+                "预算为3000，金额仍是3000，尚未批准。"
+            ),
+            "预算为3000 ，仍未批准。"
+        );
+        assert_eq!(
+            repair_unitless_yuan("预算3000元。金额仍为3000元。", "预算3000。金额仍为3000。"),
+            "预算3000。金额仍为3000。"
+        );
+    }
+    #[test]
+    fn ambiguous_or_nonmoney_values_keep_the_original_currency_guard() {
+        let body = "预算3000元尚未批准。";
+        for source in [
+            "预算3000元尚未批准。",
+            "The budget is 3000 yuan.",
+            "The budget is 3000 USD.",
+            "The budget is 3000USD.",
+            "The budget is ¥3000.",
+            "预算3000，以日元结算。",
+            "预算3000，发票4000。",
+            "The budget is 3000. The invoice is 4000.",
+            "预算3000.5。",
+            "预算3,000。",
+            "预算3000万。",
+            "预算3 thousand。",
+            "预算3000到4000。",
+            "The budget is between 3000 and 3000.",
+            "预算至少3000。",
+            "The budget is zero.",
+            "预算0。",
+            "预算03000。",
+            "预算-3000。",
+            "会议日期为3000年。",
+            "预算会议日期为3000年。",
+            "The budget review meets in room 3000.",
+            "内存预算3000。",
+            "The memory budget is 3000.",
+            "The token amount is 3000.",
+            "The amount of 3000 samples is recorded.",
+            "测试3000个单元。",
+        ] {
+            assert_eq!(repair_unitless_yuan(body, source), body, "{source}");
+        }
+        for body in [
+            "预算4000元。",
+            "预算3000元及4000元。",
+            "预算3000.5元。",
+            "预算3,000元。",
+            "预算3000万元。",
+            "预算3000元至3000元。",
+            "预算约为3000元。",
+            "预算3000元和USD。",
+            "预算3000元和yuan。",
+            "预算3000元，日期为3000年。",
+            "3000元数据待处理。",
+            "3000元件待检查。",
+            "单元测试与元数据。",
+            "元。",
+        ] {
+            assert_eq!(repair_unitless_yuan(body, "预算3000。"), body, "{body}");
+        }
+        assert_eq!(added_currency("预算4000元。", "预算3000。"), Some("yuan"));
+        assert_eq!(
+            added_currency("预算3000美元。", "预算3000。"),
+            Some("dollar")
+        );
+    }
+    #[test]
+    fn arithmetic_ratios_and_clocks_are_not_plain_money_scalars() {
+        for source in [
+            "The budget is 3*3.",
+            "The budget is 3 × 3.",
+            "The budget is 3000/3000.",
+            "预算3000 ÷ 3000。",
+            "预算3^3。",
+            "预算3=3。",
+            "预算3000:3000。",
+            "预算3000：3000。",
+            "预算3000，时钟为30:30。",
+        ] {
+            let body = if source.contains("3000") {
+                "预算3000元。"
+            } else {
+                "预算3元。"
+            };
+            assert_eq!(repair_unitless_yuan(body, source), body, "{source}");
+        }
+        for body in [
+            "预算3000元/3000元。",
+            "预算3000元 : 3000元。",
+            "预算3000元×3000元。",
+            "预算3000元=3000元。",
+        ] {
+            assert_eq!(repair_unitless_yuan(body, "预算3000。"), body, "{body}");
+        }
+        assert_eq!(
+            repair_unitless_yuan("预算3000元，尚未批准。", "budget:3000, not approved."),
+            "预算3000，尚未批准。"
+        );
+        assert_eq!(
+            repair_unitless_yuan("预算3000元。", "预算：3000。"),
+            "预算3000。"
+        );
     }
 }

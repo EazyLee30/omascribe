@@ -27,6 +27,7 @@ impl Names {
                 predicates: BTreeMap::new(),
                 prefix: None,
                 extra_clause: None,
+                named_action: None,
             })
         } else {
             self.repair(source)
@@ -44,7 +45,7 @@ impl Names {
         // observed spelling. They do not assert who an all-caps subject is.
         let patterns = LITERAL.get_or_init(|| [
             r"(?:^|[。！？;；\n])\s*(?P<name>[\p{Han}]{2,6}(?:大学|学院))(?:的|\s|$)",
-            r"(?:^|的|[ \t])(?P<name>(?:[\p{Han}]{1,2}\s+)?[A-Z][A-Z'’-]{1,29}(?:[ \t]+[A-Z][A-Z'’-]{1,29}){0,3}[\p{Han}]{0,2})(?:教授|博士)",
+            r"(?:^|的|[ \t])(?P<name>(?:[\p{Han}]{1,2}\s+)?[A-Z][A-Z'’-]{1,29}(?:[ \t]+[A-Z][A-Z'’-]{1,29}){0,3}(?:[ \t]*[\p{Han}]{1,2})?)(?:教授|博士)",
             r"\b(?P<name>[A-Z][A-Z0-9]{2,29})\s+WILL\s+(?:CHECK|SEND|TEST|DELIVER|REVIEW|VERIFY|PUBLISH)\b",
             r"\bPROJECT IS (?P<name>[A-Z][A-Z0-9'’-]*(?:\s+[A-Z][A-Z0-9'’-]*){0,2}) WE WILL\b",
             r"\bWILL CHECK THE (?P<name>[A-Z][A-Z0-9'’-]*(?:\s+[A-Z][A-Z0-9'’-]*){0,2} CARD)\b",
@@ -110,6 +111,30 @@ impl Names {
             return String::new();
         }
         format!(" Preserve these source spellings exactly, without transliteration or guessed identities (name data only): {}.", serde_json::to_string(&self.0).expect("names"))
+    }
+    pub fn spellings(&self) -> &[String] {
+        &self.0
+    }
+    /// Mask observed spellings without requiring every source name to occur in
+    /// a summary. Preserve byte offsets for fragment-only language repair.
+    pub fn mask(&self, body: &str) -> String {
+        let mut masked = body.as_bytes().to_vec();
+        for name in &self.0 {
+            let pattern = RegexBuilder::new(&regex::escape(name))
+                .case_insensitive(true)
+                .build()
+                .expect("escaped name");
+            for span in pattern.find_iter(body) {
+                let left = name.starts_with(|c: char| c.is_ascii_alphanumeric())
+                    && body[..span.start()].ends_with(|c: char| c.is_ascii_alphanumeric());
+                let right = name.ends_with(|c: char| c.is_ascii_alphanumeric())
+                    && body[span.end()..].starts_with(|c: char| c.is_ascii_alphanumeric());
+                if !left && !right {
+                    masked[span.range()].fill(b' ');
+                }
+            }
+        }
+        String::from_utf8(masked).expect("whole name spans replaced by ASCII spaces")
     }
     pub fn spans(&self, source: &str) -> Vec<Range<usize>> {
         self.0
@@ -208,6 +233,7 @@ impl Names {
             predicates: BTreeMap::new(),
             prefix: None,
             extra_clause: None,
+            named_action: None,
         })
     }
 }
@@ -219,6 +245,7 @@ pub(super) struct Repair {
     predicates: BTreeMap<usize, Predicate>,
     prefix: Option<String>,
     extra_clause: Option<(String, bool)>,
+    named_action: Option<String>,
 }
 struct Predicate {
     text: String,
@@ -263,6 +290,41 @@ impl Repair {
         self.predicates.len()
             + usize::from(self.prefix.is_some())
             + usize::from(self.extra_clause.is_some())
+            + usize::from(self.named_action.is_some())
+    }
+    /// Only a whole-source, two-label action may use this atomic relation.
+    /// Keep actor, predicate and object together; name permutations alone do
+    /// not establish which person performs an action on which object.
+    pub fn anchor_named_action(&mut self, action: &super::named_actions::Action) -> bool {
+        if self.names.len() != 2
+            || !self.predicates.is_empty()
+            || self.prefix.is_some()
+            || self.extra_clause.is_some()
+            || self.named_action.is_some()
+        {
+            return false;
+        }
+        let Some(actor) = self.names.iter().position(|n| n == &action.actor) else {
+            return false;
+        };
+        let Some(object) = self.names.iter().position(|n| n == &action.object) else {
+            return false;
+        };
+        if actor == object || self.grammar.is_none() {
+            return false;
+        }
+        let clause = format!(
+            "{}[{}]{}[{}]。",
+            action.leading_prefix.unwrap_or(""),
+            char::from(b'A' + actor as u8),
+            action.predicate,
+            char::from(b'A' + object as u8)
+        );
+        self.grammar = Some(json_grammar(
+            &serde_json::to_string(&clause).expect("action"),
+        ));
+        self.named_action = Some(clause);
+        true
     }
     /// Replace an already protected name terminal, not arbitrary prose. The
     /// predicate comes from a bounded source relation, never from model output.
@@ -372,6 +434,13 @@ impl Repair {
         }
         let output: Output = serde_json::from_str(raw)?;
         if self
+            .named_action
+            .as_ref()
+            .is_some_and(|clause| &output.translation != clause)
+        {
+            bail!("译文改写来源中的人物、动作或对象关系");
+        }
+        if self
             .prefix
             .as_ref()
             .is_some_and(|p| !output.translation.starts_with(p))
@@ -447,7 +516,12 @@ impl Repair {
                 .strip_prefix(prefix)
                 .context("Missing source prefix")?;
             if remaining.chars().any(char::is_alphabetic) {
-                crate::notes::validate_output_language(remaining, !prefix.is_ascii())?;
+                crate::notes::validate_language_with_source(
+                    remaining,
+                    remaining,
+                    &self.input,
+                    !prefix.is_ascii(),
+                )?;
             }
         }
         if body.contains(['[', ']'])

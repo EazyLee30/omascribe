@@ -1,12 +1,14 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
 mod amounts;
 pub(crate) use amounts::normalize as normalize_money;
+pub(crate) use amounts::repair_unitless_yuan;
 mod completion;
 mod corrections;
 #[cfg(test)]
 pub(crate) mod facts;
 pub(crate) mod incremental;
 mod language;
+pub(crate) use language::validate_with_source as validate_language_with_source;
 mod lexical;
 mod metrics;
 mod qualifiers;
@@ -40,7 +42,6 @@ use std::{
 use uuid::Uuid;
 pub use validation::validate;
 pub(crate) use validation::validate_translation;
-pub(crate) use writer::validate_language as validate_output_language;
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
@@ -286,8 +287,20 @@ fn generate_inner(
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
+    // Keep original selected evidence separate from translated prompt passages
+    // and generated prose. Names, quotations and cleanup must be source-backed.
+    let selected_source = context
+        .segments
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
     let terms = engine.terminology(meeting)?.with_actor_spellings(
-        snapshot.segments.iter().map(|s| s.text.as_str()),
+        snapshot
+            .segments
+            .iter()
+            .filter(|s| s.meeting_id == snapshot.meeting.id && s.run == snapshot.meeting.run)
+            .map(|s| s.text.as_str()),
         snapshot.meeting.speaker_names.values().map(String::as_str),
     );
     // One evidence-guided repair, inside the same overall deadline. Never relax validation.
@@ -387,11 +400,17 @@ fn generate_inner(
             writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
         };
         let mut checked_prose = None;
+        let mut unitless_yuan_corrections = 0;
         let normalized = prose
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
             .and_then(|body| {
-                let body = uncertainty::restore(&terms.normalize(body), &context.segments);
+                let repaired = amounts::repair_unitless_yuan(body, &selected_source);
+                unitless_yuan_corrections = body
+                    .chars()
+                    .count()
+                    .saturating_sub(repaired.chars().count());
+                let body = uncertainty::restore(&terms.normalize(&repaired), &context.segments);
                 terms.validate_writer_names(
                     &context
                         .segments
@@ -434,12 +453,15 @@ fn generate_inner(
                 )?;
                 // A language-only repair may translate this checked prose; it
                 // must never be used to launder an unsupported first draft.
-                writer::validate_language(
-                    &sections
-                        .iter()
-                        .map(|s| s.text.as_str())
-                        .collect::<Vec<_>>()
-                        .join("\n\n"),
+                let body = sections
+                    .iter()
+                    .map(|s| s.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+                language::validate_with_source(
+                    &body,
+                    &crate::translation::source_name_mask(&body, &selected_source, &terms),
+                    &selected_source,
                     writer::chinese(snapshot, &prefs.minutes_language),
                 )?;
                 Ok(sections)
@@ -448,6 +470,8 @@ fn generate_inner(
             "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
+            "unitless_yuan_repaired":unitless_yuan_corrections > 0,
+            "unitless_yuan_corrections":unitless_yuan_corrections,
             "validation_error":validation.as_ref().err().map(|e|format!("{e:#}")),
             "elapsed_ms":generation_started.elapsed().as_millis() as u64, "first_token_ms":first_token_ms,
             "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
@@ -469,15 +493,14 @@ fn generate_inner(
                 break;
             }
             Err(error) if attempt == 0 => {
-                // The first validator failure may be a name or language error;
-                // protect the known source relationships in that same retry.
+                // Semantic failures protect ORIGINAL source relationships.
+                // A language-only failure below edits the checked spans instead.
                 let source_plan = if error.is::<RelationMismatch>()
                     || error.is::<QualifierMismatch>()
                     || error.is::<crate::task_roles::Mismatch>()
                     || error.is::<MetricMismatch>()
                     || error.is::<SubmissionMismatch>()
                     || error.to_string().contains("名称")
-                    || error.to_string().contains("输出语言")
                 {
                     let (_, input) = writer::prompt_mode(
                         snapshot,
@@ -507,9 +530,12 @@ fn generate_inner(
                     messages = plan.messages.clone();
                     relation_repair = Some(plan);
                 } else if error.to_string().contains("输出语言") {
-                    let plan = language::repair_messages(
+                    let prose = checked_prose.as_deref().context("Missing checked prose")?;
+                    let plan = language::repair_messages_with_source(
                         normalized.as_ref().map_err(|e| anyhow::anyhow!("{e}"))?,
-                        checked_prose.as_deref().context("Missing checked prose")?,
+                        prose,
+                        &crate::translation::source_name_mask(prose, &selected_source, &terms),
+                        &selected_source,
                         writer::chinese(snapshot, &prefs.minutes_language),
                     )?;
                     messages = plan.messages.clone();
