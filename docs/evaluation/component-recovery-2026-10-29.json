@@ -90,7 +90,7 @@
     "Recreated hash-correct fixture is installed but has no active certificate.",
     "Recording/transcription/writing/maintenance/active and cancelled-but-not-finished component jobs refuse deletion.",
     "Wrong id/version and traversal refuse deletion; other versions and their authorization are preserved.",
-    "Unix parent and child link controls pass. Windows junction test is included, awaiting Windows CI.",
+    "Unix parent and child link controls pass. Windows junction test also passed in the exact-source Windows CI.",
     "Existing worker lease fixture refuses removal and preserves lease, epoch and child PID."
   ],
   "browser_fixture": {
@@ -137,12 +137,34 @@
     "limits": "Fictional Windows hardware and in-memory IPC only. No actual native removal, signed payload download, GPU execution or microphone test."
   },
   "ci": {
-    "status": "pending_at_recording",
-    "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f"
+    "status": "passed",
+    "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+    "windows_core": {
+      "job_id": 123012401696,
+      "conclusion": "success",
+      "core_passed": 295,
+      "core_ignored": 6,
+      "junction_fixture": "passed",
+      "log": {
+        "path": "artifacts/component-recovery-windows-ci.log",
+        "bytes": 93184,
+        "sha256": "26e43b6ddd1d3341a3c20a277a71f5ed7a0cc9cc5f4e71cd6460bcec3a149c8f"
+      }
+    },
+    "workflow_summary": {
+      "path": "artifacts/component-recovery-ci.json",
+      "bytes": 5265,
+      "sha256": "aab16c6a24385e692b1474b0532df9a9c11b5e0c885af83bd487c0a896bf71eb"
+    },
+    "linux": "success",
+    "prepare": "success",
+    "validate": "success",
+    "build": "skipped",
+    "catalog": "skipped",
+    "limits": "Hosted Windows junction fixture and source CI, not physical GPU or installed-app acceptance."
   },
   "remaining": [
     "Physical Windows/Linux Settings remove-download-test lifecycle.",
-    "Windows junction fixture CI and native filesystem behavior.",
     "Existing-model same-size integrity/repair, historical component versions and crash-stage cleanup.",
     "Linux userspace driver identity and broader hardware/resource/fault gates.",
     "Actual ASR/name accuracy, recording/stop, native Mac windows and final installer/upgrade acceptance."
