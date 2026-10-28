@@ -1,5 +1,7 @@
 # Core inference implementation status
 
+Latest source checkpoint: `a8f10580b9840e87d5e82a543d443822fbc0ba64` is pushed; 244 core tests (7 ignored), strict core all-target Clippy and 25 harness tests pass. Eight affected automatic runs plus three translation-off minutes runs share one clean CLI/core/harness/model identity and actual M5 Metal execution. Four preceding task/unit/language failures close within that narrow scope; a newly reviewed unsupported “this week” caption qualifier remains open. This is not a release, full-corpus, natural-ASR or physical-window acceptance. [Evidence](../evaluation/apple-source-action-language-2026-10-28.json), [single blocking list](release-0.3.5.md). All P0/P1/P2/P3/G1/G2 work below remains active; optional GPU components stay outside base installers.
+
 Objective: implement the audio efficiency research plan, with optional hardware-specific acceleration components downloaded after local hardware detection. CUDA/HIP/other optional GPU dependencies must not enter the base installer.
 
 Reference: `docs/research/audio-efficiency-2026-10-26/PLAN.zh-CN.md` and `REPORT.zh-CN.md`. Preserve unrelated private research and user data. No model/default promotion or release based only on compilation.

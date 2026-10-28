@@ -1,0 +1,3045 @@
+{
+  "schema": 1,
+  "scope": "Affected source-action/target-language repairs on 11 public or fictional seeded-text cases: 8 automatic bilingual-caption/auto-notes plus 3 translation-off explicit minutes. Not ASR audio evaluation, full candidate regression, native installation/upgrade acceptance or release approval.",
+  "source_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+  "release_accepted": false,
+  "full_semantic_acceptance": false,
+  "four_identified_841_defects_closed_in_affected_cases": true,
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "011cd2cd5bbf5391c0351f410ef2f36e47825a86bfd4b32f11a92339c799f6ed",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "5299bb4ef005cbf48e36bed6ae1dd83a8942eae34eefe6902af880e6375a21bf",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "9626789ecb68f82e4d6958a3666e38528723682bf5505dc8ce2142f0c1b0a98b",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "identity": {
+    "frozen_before": {
+      "path": "artifacts/source-action-frozen-source.json",
+      "sha256": "bfbb22a1f7c92313d2466d50376323e927f85f8643bb178b2e4d0615881f5ed3"
+    },
+    "source_after": {
+      "path": "artifacts/source-action-source-after.json",
+      "sha256": "bfbb22a1f7c92313d2466d50376323e927f85f8643bb178b2e4d0615881f5ed3"
+    },
+    "before_after_bytes_equal": true,
+    "all_11_report_environments_match": true,
+    "fixture_count": 55,
+    "fixture_sha256": "6129a4ec1a3ecdc37be8d79bc8e83dc6117f2c0095593d26a412096800adc6e1",
+    "fixture_origin": "git show a8f10580b9840e87d5e82a543d443822fbc0ba64:tests/fixtures/document-cases.json",
+    "all_11_case_inputs_match_frozen_fixture": true
+  },
+  "static_checks": {
+    "core_library": {
+      "passed": 244,
+      "failed": 0,
+      "ignored": 7,
+      "seconds": 3.38,
+      "artifact": {
+        "path": "artifacts/source-action-core-final-tests.log",
+        "sha256": "3e7bee9f1c9e8ecba745b558ebbfd9908303745f578570c158568afe105703c4"
+      }
+    },
+    "python_harness": {
+      "passed": 25,
+      "seconds": 1.131,
+      "artifact": {
+        "path": "artifacts/source-action-harness-tests.log",
+        "sha256": "0b56c3faa7b93a61cacab9b45e4fd400c3df7e52ed42a52e7935a6bde5692794"
+      }
+    },
+    "strict_core_all_targets_clippy": {
+      "passed": true,
+      "seconds": 4.25,
+      "artifact": {
+        "path": "artifacts/source-action-clippy.log",
+        "sha256": "806841e4aee04bb3b802d3aee177c81f46be58b378557754715841042a5d6197"
+      }
+    },
+    "exact_debug_cli_build": {
+      "passed": true,
+      "seconds": 6.62,
+      "artifact": {
+        "path": "artifacts/source-action-cli-build-final.log",
+        "sha256": "39ebc7b64013c83000a36fe1804f617b39815603cc1474b8e17b464dba6e44a9"
+      }
+    }
+  },
+  "preferences": {
+    "common": {
+      "inference_backend": "metal",
+      "threads": 1,
+      "context_size": 2048,
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "llm_model": "qwen3-1.7b",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false
+    },
+    "automatic": {
+      "auto_notes": true,
+      "translation_mode": "bilingual"
+    },
+    "explicit_minutes": {
+      "auto_notes": false,
+      "translation_mode": "off"
+    },
+    "language_note": "Per-case minutes_language_preference is null where the fixture leaves it unspecified; observed final output is retained without inferring an explicit preference."
+  },
+  "automated": {
+    "automatic": {
+      "cases": 8,
+      "passed": 8,
+      "failed": 0,
+      "results": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/results.json",
+        "sha256": "792baa0a19b84c4e398ba18d4d319f5a8468b3192383e03e19c151a3e89c9d90"
+      }
+    },
+    "translation_off_explicit_minutes": {
+      "cases": 3,
+      "passed": 3,
+      "failed": 0,
+      "results": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/results.json",
+        "sha256": "492598b93c7598cc968eeaaf177726ca53fc955eaae5f4939a3f64382297878d"
+      }
+    },
+    "interpretation": "Original pattern PASS is preserved. 8+3 PASS does not equal full semantic acceptance; unsupported caption week qualifier remains open."
+  },
+  "semantic_review": {
+    "method": "Read complete final source/caption/article text for every case, all budget phases, rejected drafts and exact citation bindings. Separately check actor/object direction, scheduled versus completed actions, independent tasks, revisions, dates and generic target-language prose. No inference/build/test was run to generate this report.",
+    "independent_reviews": [
+      {
+        "artifact": {
+          "path": "artifacts/source-action-uppercase-review.json",
+          "sha256": "66316086f89a7e81e4eb1b877259057c57cd686e5de965aa31992c078e3bf318"
+        },
+        "scope": "Independent assistant inspection of one completed fictional seeded-text case; not human, natural-ASR or release acceptance.",
+        "targeted_semantic_review_passed": true,
+        "confirmed": [
+          "All5 source texts remain intact; observed ALICE, UN VIDEO CARD, LICE, ENVY A CARD, ILLMIS CRIBE and LLAS CRIBE are retained without guessed identities.",
+          "Final seq5 and article express passive not-approved state and ALICE as future checker of UN VIDEO CARD, not the reverse.",
+          "3000 dollars, Thursday Windows-version test, Friday-not-deadline and local record retention remain; no check date is invented for ALICE."
+        ],
+        "diagnostic_limit": "The current translation-diagnostic.json records the INITIAL rejected 未批准 ALICE 将检查 UN 视频卡 response. It is not the final accepted caption; snapshot is authoritative."
+      },
+      {
+        "artifact": {
+          "path": "artifacts/source-action-roles-language-review.json",
+          "sha256": "4e68b9d57d2bc54fa44f3c5cde317b4b91fbe636a92e001ca929b94e6ce71827"
+        },
+        "assessment": "Final minutes/action/state/citation checks pass for these three cases; an unsupported this-week qualifier remains in one cached Chinese caption. This is not full-corpus or release acceptance.",
+        "findings": [
+          {
+            "case": "en_incremental_separate_topics",
+            "surface": "Chinese caption seq 2, phases 2-4",
+            "kind": "unsupported_temporal_qualifier",
+            "source": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.",
+            "output": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。",
+            "finding": "本周 adds this week although the source only says Tuesday. The final English minutes retain on Tuesday correctly. Automatic required/forbidden assertions did not detect this qualifier."
+          },
+          {
+            "case": "en_incremental_separate_topics",
+            "surface": "Chinese caption seq 4, phase 4",
+            "kind": "lexical_weakness_non_substantive",
+            "source": "Mic check. Hello. Thank you.",
+            "output": "微检。你好。谢谢。",
+            "finding": "微检 is an awkward rendering of Mic check; it is not added to the minutes and does not change the retained task or budget facts."
+          }
+        ],
+        "checks": {
+          "snapshot_count": 6,
+          "source_reference_count": 11,
+          "all_citations_match_retained_segment_identity_revision_quote_times_scope_and_speaker": true,
+          "all_caption_ids_and_revisions_match_retained_segments": true,
+          "all_reports_same_clean_revision_and_source_identity": true,
+          "four_budget_phases_completed": true,
+          "noise_phase_preserves_final_minutes_body_exactly": true
+        },
+        "case_assessments": {
+          "en_incremental_separate_topics": {
+            "minutes_semantics": "Pass. Phases 1/2 retain 3000 unapproved, Morgan/Thursday and independent Riley/Tuesday incomplete work. Phases 3/4 use corrected 5000, remain unapproved, retain both owners/deadlines and no completed accessibility claim. Old 3000 remains only in its historical source/caption, not current minutes. Noise does not become a topic. Repetition of Morgan/Thursday is editorial, not factual drift.",
+            "caption_semantics": "Core amount/owner/pending state correct and no invented currency; source seq2 adds unsupported 本周 and seq4 has 微检 lexical weakness.",
+            "old_841": "Stopped after phase1 due to caption currency validation despite accepted phase1 minutes; it did not establish phases2-4. New 22.582s full-case runtime is not a like-for-like speed comparison to that 120s failed run."
+          },
+          "en_test_link_schedule": {
+            "minutes_semantics": "Pass. 陈老师 is responsible for the tour reservation page; the test link, not the page, is scheduled to be sent on Wednesday next week; the page remains incomplete. No page publication or completion is invented. Only body Han is the exact source-backed 陈老师 spelling.",
+            "repair": "Attempt1 role reversal is rejected; attempt2 original-source relation repair succeeds within two attempts.",
+            "old_841": "Rejected both attempts; second attempt omitted proper task object. Old failure retained."
+          },
+          "en_actual_page_publication": {
+            "minutes_semantics": "Pass. Appointment Page is an acceptable lexical rendering of 预约页面; page publication remains future next Wednesday while test-link sending is complete. No Han remains in body and no object/state swap. Capitalization is editorial only.",
+            "repair": "Attempt1 The预约页面... is rejected for output language. Attempt2 translates one residual slot and preserves every existing English character/claim; only the Han fragment and required boundary space change.",
+            "fixture_note": "Current required regex accepts reservation|booking|appointment; old fixture accepted only reservation|booking. This lexical expansion alone cannot establish semantic correctness; the retained full body and source were reviewed above.",
+            "old_841": "Committed mixed-language The预约页面... without repair; old failure retained."
+          }
+        }
+      }
+    ],
+    "source_bindings": {
+      "snapshots": 14,
+      "citation_records": 24,
+      "caption_records": 22,
+      "all_exact_citation_checks_match": true,
+      "all_caption_ids_and_revisions_match": true,
+      "limit": "Counts include all14 saved phase snapshots, with repeated historical records per phase. Exact provenance is not semantic entailment. Mic-check source is intentionally not promoted into task minutes."
+    },
+    "closures_against_841": [
+      {
+        "case": "zh_windows_uppercase_asr",
+        "result": "ALICE checks UN VIDEO CARD; passive not-approved state; no actor/object reversal or guessed name survives accepted output."
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "result": "Budget-review responsibility and unitless amounts preserved; unsupported generated 元 removed; no deferred caption and all4 phases complete. Article retains current5000/unapproved, Morgan/Thursday and independent Riley/Tuesday. New caption qualifier drift stays separate and OPEN."
+      },
+      {
+        "case": "en_test_link_schedule",
+        "mode": "explicit minutes",
+        "result": "Reversed-owner prefix is absent from accepted repair; 陈老师 responsible for reservation page, test link next Wednesday, page incomplete."
+      },
+      {
+        "case": "en_actual_page_publication",
+        "mode": "explicit minutes",
+        "result": "Generic Han 预约页面 rejected, checked-prose repair yields Appointment Page; future page publication and already-sent link remain distinct."
+      }
+    ]
+  },
+  "automatic_cases": [
+    {
+      "case": "zh_windows_uppercase_asr",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 8.749,
+      "coverage": 5,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.json",
+        "sha256": "e376c473c8900df8b5285cd6f43ed77f4662f909e9f22a06d19f633ec245ff32"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/input.json",
+        "sha256": "591fec0148d7d1aa51a7d2e9377aa90768f25f60c42fa444c4985c3024d1166f"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "zh",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stdout.txt",
+        "sha256": "de7591ed4a3b7babb927088ac7d9753d8767be4130c6a359a1395936dd9ae71d"
+      },
+      "notes_cursor": 5,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:1",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A"
+        },
+        {
+          "end_ms": 20000,
+          "id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:2",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 10000,
+          "text": "LICE WILL CHECK THE ENVY A CARD"
+        },
+        {
+          "end_ms": 30000,
+          "id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:3",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "revision": 1,
+          "run": 1,
+          "seq": 3,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 20000,
+          "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "end_ms": 40000,
+          "id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:4",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "revision": 1,
+          "run": 1,
+          "seq": 4,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 30000,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN"
+        },
+        {
+          "end_ms": 50000,
+          "id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:5",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "revision": 1,
+          "run": 1,
+          "seq": 5,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 40000,
+          "text": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "a7c3db5f81e454b841f06cae55e65c4e46eb604eb3f083cabff6cab20f336a57",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:1",
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。"
+        },
+        {
+          "cache_key": "8fe603f4fd345bac129e99f78f6418de05d331c5284fb2144f670acba5506ba5",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:2",
+          "target": "zh",
+          "text": "LICE 将检查 ENVY A CARD"
+        },
+        {
+          "cache_key": "3b6efb94b644bf3da6597bc1031718a1b15d142d740779e285c432d52f2e22a4",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:3",
+          "target": "zh",
+          "text": "星期五不是截止日期，会议记录应留在此电脑上"
+        },
+        {
+          "cache_key": "e78eec4d40068dd10fe9db35db5418a7c4de4af1a4157cbfc6903be10b892651",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:4",
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元"
+        },
+        {
+          "cache_key": "458f173544fa26c5a70de2b64d099bd6fb2cfb29bf210168749744f9ba06b544",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:5",
+          "target": "zh",
+          "text": "尚未获批。 ALICE将检查UN VIDEO CARD。"
+        }
+      ],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "ef1ee116-7965-4066-b760-daad720192fb",
+          "kind": "section",
+          "meeting_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+          "sources": [
+            {
+              "end_ms": 50000,
+              "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "LICE WILL CHECK THE ENVY A CARD",
+              "revision": 1,
+              "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+              "revision": 1,
+              "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+              "revision": 1,
+              "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期，会议记录应留在此电脑上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 尚未获批。 ALICE将检查UN VIDEO CARD"
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 5,
+        "caption_count": 5,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          5,
+          2,
+          4,
+          1,
+          3
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a634ef5f-5f43-4794-9906-b4f443c4ba3b",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 8.737,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 33,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.748054584,
+              "peak_tree_rss_mib": 1527.984375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4489,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 1524,
+              "first_token_ms": 163,
+              "input_tokens": 331,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 5,
+            "caption_count": 5,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              5,
+              2,
+              4,
+              1,
+              3
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stdout.txt",
+              "sha256": "de7591ed4a3b7babb927088ac7d9753d8767be4130c6a359a1395936dd9ae71d"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/last-generation.json",
+              "sha256": "fb8d5c6542e939b900238325594d7bd60006fe040a7f1789757aa7f2046e0c4b"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "7b03801fdd774bb5f3797d68a4bb99ab8e129e4fe8ccec3fd27508ad0a56d014"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/process.json",
+              "sha256": "ff9430ab29750d65779111d9e7c384979e05dd0bdd8c452280268267a7be921e"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS identified role/approval repair: seq5 and article say passive 尚未获批 and ALICE checks UN VIDEO CARD, with no guessed name or check date. Thursday Windows test, 3000 dollars, Friday-not-deadline and local retention remain. Article still repeats noisy fragments.",
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "2698d44c9645a2bb0ba2c3a5be947b0927a3a498b80d072cb0f920c8711d6db5"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+          "raw": "{\n  \"translation\": \"未批准 ALICE 将检查 UN 视频卡\"\n}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 22.582,
+      "coverage": 4,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.json",
+        "sha256": "6216214a10adfb100753f75fcff551355a586df1d2709a185602129bd460a07d"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/input.json",
+        "sha256": "711d6a28432d6d56732b74dcb38bed4b5405dc5ba6f13553d5e6bef1db137f6b"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": null,
+      "executed_phases": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "planned_phases": 4,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/stdout.txt",
+        "sha256": "f7be48e91d93c87bc686614a3ee420373ec308dc68c526ed9ed2ef0283cdfabd"
+      },
+      "notes_cursor": 4,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:1",
+          "meeting_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+        },
+        {
+          "end_ms": 20000,
+          "id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:2",
+          "meeting_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 10000,
+          "text": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        },
+        {
+          "end_ms": 30000,
+          "id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:3",
+          "meeting_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+          "revision": 1,
+          "run": 1,
+          "seq": 3,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 20000,
+          "text": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline."
+        },
+        {
+          "end_ms": 40000,
+          "id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:4",
+          "meeting_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+          "revision": 1,
+          "run": 1,
+          "seq": 4,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 30000,
+          "text": "Mic check. Hello. Thank you."
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "51603700980ca2d3f7a68d5cb74c7fc2ac152b8c68efa8c652acbfba0a42ef36",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:1",
+          "target": "zh",
+          "text": "Morgan负责预算审核。3000尚未批准。审核截止日期为周四。"
+        },
+        {
+          "cache_key": "85ea6b0e714abdf742f4f528144d2f52aa7f64f15dd3f882874a6b6631d1a271",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:2",
+          "target": "zh",
+          "text": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+        },
+        {
+          "cache_key": "7068e6cbd1f3d10857f9d92f852314b35ccaaee9d6f01000e0ad307fedabec85",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:3",
+          "target": "zh",
+          "text": "预算金额修正为5000，仍未通过。Morgan 保持周四的截止日期。"
+        },
+        {
+          "cache_key": "07d9b9ccdb9fd137733547d1d00f257aa3da90c707724e3c03c4c26f632116f5",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:4",
+          "target": "zh",
+          "text": "微检。你好。谢谢。"
+        }
+      ],
+      "article": [
+        {
+          "focus": "Meeting minutes",
+          "id": "8cc94202-0322-4052-9a27-1a8b593454e6",
+          "kind": "section",
+          "meeting_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.",
+              "revision": 1,
+              "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.",
+              "revision": 1,
+              "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.",
+              "revision": 1,
+              "segment_id": "9b22e8a2-4c49-4a19-ad58-773b133197c4:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 3,
+        "caption_count": 4,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          2,
+          3,
+          1
+        ],
+        "uncited_sequences": [
+          4
+        ]
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.138,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.609578846,
+              "peak_tree_rss_mib": 1486.3125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4278,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 469,
+              "first_token_ms": 91,
+              "input_tokens": 142,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-1/batch-1/stdout.txt",
+              "sha256": "f9dea3683f9350e70c1e4308fa9c19cdf599f9db3294f34ccd44541a2c9cadad"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-1/batch-1/last-generation.json",
+              "sha256": "c85d2389d9d3d9c927cfbbd3b972bf569ef98fef88d38936725fa900abe11efe"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "b6ac02203fcfd025b6ba1a7fbedff11fc45686844ba6dbd49cd83eeb682fc0f4"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-1/batch-1/process.json",
+              "sha256": "efcf7324f3d8f11fb225a030bc2147e0a709f0243ae5709aaf1dfc151f4cfe2b"
+            }
+          }
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.934,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 22,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.51436454,
+              "peak_tree_rss_mib": 1489.15625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4558,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 667,
+              "first_token_ms": 100,
+              "input_tokens": 169,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 2,
+            "caption_count": 2,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1,
+              2
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-2/batch-1/stdout.txt",
+              "sha256": "f07798e410249041e878caa1220f939425066b4ae0aef825d906ca4bcf188642"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-2/batch-1/last-generation.json",
+              "sha256": "3fc02c7c2b2fbbc41c90b50745dab241ec3d36f45acccf1468bd25df9c6444a3"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-2/batch-1/inference-trace.jsonl",
+              "sha256": "dea6bbfd002864e41af5b6ecacca08a1055ac00805823a3a35aaf5168ce08e95"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-2/batch-1/process.json",
+              "sha256": "24657744cf74dc794a4440ecf6f1904f50eaf70b0e34521490889e9d9cde532f"
+            }
+          }
+        },
+        {
+          "phase": 3,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.054,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 19,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.3454708480000002,
+              "peak_tree_rss_mib": 1489.609375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4639,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 963,
+              "first_token_ms": 147,
+              "input_tokens": 276,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 3,
+            "caption_count": 3,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              2,
+              3,
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-3/batch-1/stdout.txt",
+              "sha256": "7f4d27b82027f1189f3b6ff49266e7ff3a2731ca182e7e00330d63fc135c3dd0"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-3/batch-1/last-generation.json",
+              "sha256": "6c9f3261133599f3d113e5f00cf5d83c0211b90083ba65ae74598b61eedfa712"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-3/batch-1/inference-trace.jsonl",
+              "sha256": "58f0b3a765ff9b962e5a6d5c22eb29017b2850a47601d38c0e686d7331ccf8cd"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-3/batch-1/process.json",
+              "sha256": "4609f9c34de616fedf9f23ad54de02c9862ebfb5b571f0ba27d0934ac8302ddb"
+            }
+          }
+        },
+        {
+          "phase": 4,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 4,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "9b22e8a2-4c49-4a19-ad58-773b133197c4",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.432,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 17,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.187880728,
+              "peak_tree_rss_mib": 1490.078125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4563,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 940,
+              "first_token_ms": 144,
+              "input_tokens": 276,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 3,
+            "caption_count": 4,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              2,
+              3,
+              1
+            ],
+            "uncited_sequences": [
+              4
+            ]
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/stdout.txt",
+              "sha256": "f7be48e91d93c87bc686614a3ee420373ec308dc68c526ed9ed2ef0283cdfabd"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/last-generation.json",
+              "sha256": "6ee7dc188adc25c976d6e57a17df5bca6070bfd16e28379ebbb6deaf0e74ba2e"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/inference-trace.jsonl",
+              "sha256": "8440e91c4729d9e0790427f5e3cc689b420d0d8f1d4ccc67c16adf3388a3e7e7"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/process.json",
+              "sha256": "b04d583a2b344e23d2ec60e4ff5b4579d2668f5ba96b1041a44f9fe1e3ad62e7"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS old role/currency/settlement defect across all four phases, with OPEN caption drift. Unitless 3000 remains unapproved; Morgan owns budget review/Thursday and Riley accessibility/Tuesday remain separate. Article replaces 3000 with unapproved unitless 5000 and excludes greetings. Cached seq2 adds unsupported 本周; seq4 微检 is a lexical weakness. No complete-caption semantic pass is claimed.",
+      "incremental_article_bodies": [
+        {
+          "phase": 1,
+          "article_text": [
+            "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+          ]
+        },
+        {
+          "phase": 2,
+          "article_text": [
+            "Morgan owns the budget review, the amount of 3000 is not approved yet, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, and no accessibility test has been completed yet."
+          ]
+        },
+        {
+          "phase": 3,
+          "article_text": [
+            "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+          ]
+        },
+        {
+          "phase": 4,
+          "article_text": [
+            "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+          ]
+        }
+      ],
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "c46d7188f54cb70a5d1c56aab8898e801671b989a91167ad0947101f56b0cf84"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.",
+          "raw": "{\"translation\": \"预算金额已修正为5000，但仍未批准。莫根坚持周四的截止日期。\"}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    },
+    {
+      "case": "zh_named_speakers",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 7.131,
+      "coverage": 2,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.json",
+        "sha256": "3fe5f698c2c1bf90b9e9a6b33b36f493b4ef1bfec0682daf559e1f3ae8fa245e"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/input.json",
+        "sha256": "f2633f20b208d33c7c3cd275593961f0a43bd60afded785eae17d65dfb3eb2fd"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": null,
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/stdout.txt",
+        "sha256": "b75fa71536576f092a43c74c4f134086224d35e59f5c28d91c5cef022ab29f45"
+      },
+      "notes_cursor": 2,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:1",
+          "meeting_id": "a75d0749-818c-4a3c-9875-64805e3876dd",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": "speaker-1",
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "实时转写的延迟测试由我负责，结果周四提交。"
+        },
+        {
+          "end_ms": 20000,
+          "id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:2",
+          "meeting_id": "a75d0749-818c-4a3c-9875-64805e3876dd",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": "speaker-2",
+          "speaker_manual": false,
+          "start_ms": 10000,
+          "text": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "21261be4eae12dae39e07f1a282d47d07715e002610cbb3bc32cc8698666e060",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:1",
+          "target": "en",
+          "text": "The results are to be submitted on Thursday. The delay test for real-time transcription is my responsibility."
+        },
+        {
+          "cache_key": "019bf572f0236e5937c9f6df00a53123fed6b0a229ec970cbc177afa664397f8",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:2",
+          "target": "en",
+          "text": "I am responsible for the bilingual subtitle interface, which cannot be delivered this week, and the delivery date has not yet been determined."
+        }
+      ],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "0af4574f-2090-448d-ad76-d467bde2d247",
+          "kind": "section",
+          "meeting_id": "a75d0749-818c-4a3c-9875-64805e3876dd",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。",
+              "revision": 1,
+              "segment_id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:2",
+              "speaker_name": "陈明",
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "实时转写的延迟测试由我负责，结果周四提交。",
+              "revision": 1,
+              "segment_id": "a75d0749-818c-4a3c-9875-64805e3876dd:1:1",
+              "speaker_name": "林悦",
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "林悦负责实时转写的延迟测试，结果周四提交。陈明负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 2,
+        "caption_count": 2,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          2,
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a75d0749-818c-4a3c-9875-64805e3876dd",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.123,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.9307388799999998,
+              "peak_tree_rss_mib": 1510.203125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4572,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 555,
+              "first_token_ms": 103,
+              "input_tokens": 168,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 2,
+            "caption_count": 2,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              2,
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/stdout.txt",
+              "sha256": "b75fa71536576f092a43c74c4f134086224d35e59f5c28d91c5cef022ab29f45"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/last-generation.json",
+              "sha256": "09862bdf55121587d71462367fc71cc35c66dc1cfa22c38e2e985bbe3e8f3c8d"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "6023ac806e6314a90c74f5a829160a5df7b904830dfdb6055d1b4c3d244d3984"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/process.json",
+              "sha256": "534aec90c21b95067e241921ad4e9bd43a04c35c4f16d2042f8a0a67d5c805b9"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: results submission remains prospective on Thursday; 林悦 retains latency-test responsibility and 陈明 the bilingual interface, unavailable this week with delivery date undetermined.",
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "9cc18274a64c1df8f141cc224ac7eccef95017263db74c44ad60cace6f651564"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: Preserve the stated submission/sending object and weekday. An unmarked schedule is not evidence that delivery already happened. Keep test links separate from releasing a page, and keep all other source clauses.",
+          "input": "实时转写的延迟测试由我负责，结果周四提交。",
+          "raw": "{\"translation\": \"The real-time transcription delay test I am responsible for was submitted on Thursday.\"}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 6.92,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.json",
+        "sha256": "0b852e3ed8d6ef6d0cc0b4368604946ba4723e554fd359131aa2d11e045c30f3"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/input.json",
+        "sha256": "b3273f6b7bb76c973774c10c9b32c70f55d77ceccfea47b2f92736be7a4ebdd1"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/stdout.txt",
+        "sha256": "097eaa5bd51505688a392b2220a02a1bb952e72bfd4069a1a3e96a75f2a58518"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "1df79035-4398-4bd1-b742-d87e727474b7:1:1",
+          "meeting_id": "1df79035-4398-4bd1-b742-d87e727474b7",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "模型下载将由陈明负责，目前尚未获得用户同意。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "313f5f22d427d3fd4d91f86644dc4b700951d3c594b064d3f0de5ad7c951d5d4",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "1df79035-4398-4bd1-b742-d87e727474b7:1:1",
+          "target": "en",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "d03e15ef-19c1-49c4-b0cf-e77a2a0f4a24",
+          "kind": "section",
+          "meeting_id": "1df79035-4398-4bd1-b742-d87e727474b7",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "模型下载将由陈明负责，目前尚未获得用户同意。",
+              "revision": 1,
+              "segment_id": "1df79035-4398-4bd1-b742-d87e727474b7:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 1,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "1df79035-4398-4bd1-b742-d87e727474b7",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.913,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.458452254,
+              "peak_tree_rss_mib": 1487.3125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4180,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 361,
+              "first_token_ms": 100,
+              "input_tokens": 137,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/stdout.txt",
+              "sha256": "097eaa5bd51505688a392b2220a02a1bb952e72bfd4069a1a3e96a75f2a58518"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/last-generation.json",
+              "sha256": "eb3209fedbed851e16d98cc8543f7c5115c0d234a16fdb63c6e2562bba1fee68"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "51288c30752c95373e8b81d76096be89fc32ba36eacdf4fa66b435fdaee3fa2d"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/process.json",
+              "sha256": "bb07dcc923550f75502b99398f05086cf900324c488e0fb214edada3084c04bb"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: future model-download responsibility stays with 陈明, and user consent has not yet been obtained. Neither completed download nor consent granted is asserted.",
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "68c1a7500db835e2d88a68513279fcebcc19407db70c810b1045040605afc9dd"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "模型下载将由陈明负责，目前尚未获得用户同意。",
+          "raw": "{\"translation\": \"The model download will be responsible for Chen Ming, and currently has not obtained user consent.\"}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    },
+    {
+      "case": "en_test_link_schedule",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 7.139,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.json",
+        "sha256": "e486813b201951440fce2aa850acf15d4d9da33d0dda8c3dc655b8d0f4cedf2e"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/input.json",
+        "sha256": "2d54ef0fb2b9c1cfc3cea31a1bfa216bd2b8f1f95059d6c8f797551c7e3d6282"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/stdout.txt",
+        "sha256": "592fc866c42c263631882135413e2c6b7e6fca14d263020cb70592cb2b08fbfe"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "ae915574-29bf-4b72-ab06-2bff955e4bd5:1:1",
+          "meeting_id": "ae915574-29bf-4b72-ab06-2bff955e4bd5",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "848acb6540510d8864af9747091aae00feee67c922d0139cdfa47cdf893b5698",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ae915574-29bf-4b72-ab06-2bff955e4bd5:1:1",
+          "target": "en",
+          "text": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed."
+        }
+      ],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "01f88b5a-7d91-40a0-ab0b-bcd30ac065d0",
+          "kind": "section",
+          "meeting_id": "ae915574-29bf-4b72-ab06-2bff955e4bd5",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+              "revision": 1,
+              "segment_id": "ae915574-29bf-4b72-ab06-2bff955e4bd5:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 1,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ae915574-29bf-4b72-ab06-2bff955e4bd5",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.132,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.7912767240000003,
+              "peak_tree_rss_mib": 1489.75,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4468,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 508,
+              "first_token_ms": 101,
+              "input_tokens": 148,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/stdout.txt",
+              "sha256": "592fc866c42c263631882135413e2c6b7e6fca14d263020cb70592cb2b08fbfe"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/last-generation.json",
+              "sha256": "d96fdacc31451d96cd067024656559b3414eb2e305b25ea055c51ebbdf14a2fa"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "15103904345c9154c4efa550195b083bd8747a73200adc957b52dda425e646fe"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/process.json",
+              "sha256": "377fc037d209dda62f31528a62d90a328504de346afd2ff0815f92910ca7dc0d"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: 陈老师 is responsible for the reservation page, the test link is to be sent Wednesday next week, and the page is incomplete. No page-publication substitution or absolute date is invented.",
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "4a8423ddb822661e7b683ac7aea4b4e5ca4658822d71d22e061c8ab58f0bcaef"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+          "raw": "{\"translation\": \"The visit reservation page is responsible for Mr. Chen, and a test link will be sent on Wednesday next week. The page is not yet completed.\"}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    },
+    {
+      "case": "en_actual_page_publication",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 6.906,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.json",
+        "sha256": "c7fe0738e8f09fd23e4afb910d6851c01395cd3f309006c35d7496287dcb887e"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/input.json",
+        "sha256": "c19396b6cd39f017fa58b115001c556b6846db7b16eef30e95e734d8c0334518"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/stdout.txt",
+        "sha256": "c29c5fc892dcdc665bd5fe280aebb03948ee297b9d7c7e2c721ae1730082c12a"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "75e097a4-d01b-40a5-9022-9c4cda71e841:1:1",
+          "meeting_id": "75e097a4-d01b-40a5-9022-9c4cda71e841",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "预约页面将于下周三发布，测试链接已发送。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "46af29df152334dfb5b55c627bcdd77f30e52d00e832b0ff3124ce3da2c7ce58",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "75e097a4-d01b-40a5-9022-9c4cda71e841:1:1",
+          "target": "en",
+          "text": "The reservation page will be released next Wednesday, and the test link has been sent."
+        }
+      ],
+      "article": [
+        {
+          "focus": "Meeting minutes",
+          "id": "e4ed7790-14cc-457d-9686-fc99e491fe68",
+          "kind": "section",
+          "meeting_id": "75e097a4-d01b-40a5-9022-9c4cda71e841",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "预约页面将于下周三发布，测试链接已发送。",
+              "revision": 1,
+              "segment_id": "75e097a4-d01b-40a5-9022-9c4cda71e841:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The reservation page will be released next Wednesday, and the test link has been sent."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 1,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "75e097a4-d01b-40a5-9022-9c4cda71e841",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.899,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.31706039,
+              "peak_tree_rss_mib": 1463.25,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4407,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 319,
+              "first_token_ms": 72,
+              "input_tokens": 115,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/stdout.txt",
+              "sha256": "c29c5fc892dcdc665bd5fe280aebb03948ee297b9d7c7e2c721ae1730082c12a"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/last-generation.json",
+              "sha256": "3679f39d188e700d9559f50e8bb4987b6a9cdbcdcf9e03b566753bd73d4223ed"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "0353fc6fefd0dd886a02cb526b1602eddcce95f30b2f1654331c65ed148c367b"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/process.json",
+              "sha256": "2935d8ad51c084c0d796d05b5babc03f1c55aa841bfd18b9e0990f7bfa3c8ee7"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS actual-publication control: reservation page will be released next Wednesday and test link has already been sent, preserving both source actions and states."
+    },
+    {
+      "case": "en_actual_submission_completion",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 6.708,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.json",
+        "sha256": "70e7adc26e1e44cf390ea2d29dad45aaaa4cbb0598aa8562d6db8ca53715335f"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/input.json",
+        "sha256": "7d59b40be2422cddb81e43fa4cdf64fc1967955b2f3f58fb03feebcaf50a3943"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/stdout.txt",
+        "sha256": "193d2686982b33f597fe67b76d63893bb51c51e68f36cee1ee31d4940cbcce5b"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "08c3fbb3-8bdb-4de3-bb89-d2777be8832d:1:1",
+          "meeting_id": "08c3fbb3-8bdb-4de3-bb89-d2777be8832d",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告已经在周四提交了。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "8d26a42ad9c659125ff7b47a74615642f08a14b459d2fed5a06c47eed2fc8fb6",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "08c3fbb3-8bdb-4de3-bb89-d2777be8832d:1:1",
+          "target": "en",
+          "text": "The test report was submitted on Thursday."
+        }
+      ],
+      "article": [
+        {
+          "focus": "Meeting minutes",
+          "id": "53b3e117-aff3-45d2-a4eb-deac2221e3d7",
+          "kind": "section",
+          "meeting_id": "08c3fbb3-8bdb-4de3-bb89-d2777be8832d",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告已经在周四提交了。",
+              "revision": 1,
+              "segment_id": "08c3fbb3-8bdb-4de3-bb89-d2777be8832d:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report was submitted on Thursday."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 1,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "08c3fbb3-8bdb-4de3-bb89-d2777be8832d",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.702,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 25,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.22306969,
+              "peak_tree_rss_mib": 1456.609375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4482,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 190,
+              "first_token_ms": 62,
+              "input_tokens": 106,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/stdout.txt",
+              "sha256": "193d2686982b33f597fe67b76d63893bb51c51e68f36cee1ee31d4940cbcce5b"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/last-generation.json",
+              "sha256": "dd7f3f4f68b050cc2fdedf1336df2f81a23caa4a2db67bbccfa28612db8fca27"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "47b4804bc64a07c6ce9c76578f22f07db9ecf5d068ae58ab1a7447a2ca503923"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/process.json",
+              "sha256": "b21643d40f89fb3f09803f014a9b40e48c68484c561831ea899a7aa31c53a3f7"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS actual-completion control: source 已经...提交了 remains The test report was submitted on Thursday, rather than being forced into a future schedule."
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 6.928,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.json",
+        "sha256": "97fe69ff16f4970ec021a09f30335f21430ac95069cbd9f20796108d6af90418"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/input.json",
+        "sha256": "1f6076d9750b7198eba4f4e384436f4afeb9bb46bf6c651b5645b05f082240d4"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "zh",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/stdout.txt",
+        "sha256": "6d597d096d3c2ddb09105ca6a6f4bcbb4408395d9aa229172b7c5ac4904a43f9"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "1bd34302-b151-4755-95c2-2b5fd3f9d5c0:1:1",
+          "meeting_id": "1bd34302-b151-4755-95c2-2b5fd3f9d5c0",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Morgan owns the original paper report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "d88f2d88cccda1073d914f48de730006f5ef70b23f98434ebdafaeca94d5d198",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "1bd34302-b151-4755-95c2-2b5fd3f9d5c0:1:1",
+          "target": "zh",
+          "text": "Morgan 拥有原始论文报告，并将于周四交付。"
+        }
+      ],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "66aa69b9-6bb8-40e5-9ca3-dbc4b9d5e8a2",
+          "kind": "section",
+          "meeting_id": "1bd34302-b151-4755-95c2-2b5fd3f9d5c0",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan owns the original paper report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "1bd34302-b151-4755-95c2-2b5fd3f9d5c0:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan 拥有原始论文报告，并将于周四交付。"
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 1,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "1bd34302-b151-4755-95c2-2b5fd3f9d5c0",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.918,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.4483807679999998,
+              "peak_tree_rss_mib": 1486.6875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4536,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 298,
+              "first_token_ms": 101,
+              "input_tokens": 151,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 1,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/stdout.txt",
+              "sha256": "6d597d096d3c2ddb09105ca6a6f4bcbb4408395d9aa229172b7c5ac4904a43f9"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/last-generation.json",
+              "sha256": "e5c13024c03ec37cf76ef5b7f4dd4ef58ae8c5539e52fb44d7ad33ef6b433cba"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "b2ebc31d39ea9b11aa58ca03f14c1a97add9176006bf750802584386c00bb517"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/process.json",
+              "sha256": "e53a5b15c0f57cb251bb76ec1f9b0074d62c72d2e76fb383d45789414274b374"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS ownership contrast only: Morgan retains ownership and prospective Thursday delivery. OPEN lexical issue: original paper report is still 原始论文报告 rather than the intended physical 纸质 report.",
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "1bf031f0d8faf8a956fc77475daf9b22b64cb565033632caf74ddceaf75f7a0b"
+        },
+        "data": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "Morgan owns the original paper report and will deliver it on Thursday.",
+          "raw": "{\"translation\": \"莫根拥有原始纸质报告，并将于周四交付。\"}",
+          "stage": "validation"
+        },
+        "limit": "Last rejected response, not final caption. Final saved snapshot is authoritative."
+      }
+    }
+  ],
+  "translation_off_explicit_minutes": [
+    {
+      "case": "en_test_link_schedule",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 2.322,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.json",
+        "sha256": "80a70e9bfeef96275e2f1e7466277c1962130e15e699980a276400864286db5d"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/input.json",
+        "sha256": "2d54ef0fb2b9c1cfc3cea31a1bfa216bd2b8f1f95059d6c8f797551c7e3d6282"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/stdout.txt",
+        "sha256": "63c47e3b235f04c417b4ac9104f8d074df0d88c654bd0df45d937262e8696b3e"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "88ea2d9c-b9b5-40db-97c8-5aafcc7067a7:1:1",
+          "meeting_id": "88ea2d9c-b9b5-40db-97c8-5aafcc7067a7",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        }
+      ],
+      "captions": [],
+      "article": [
+        {
+          "focus": "会议纪要",
+          "id": "68785f5b-c7ee-4687-a923-3328fb1b4461",
+          "kind": "section",
+          "meeting_id": "88ea2d9c-b9b5-40db-97c8-5aafcc7067a7",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+              "revision": 1,
+              "segment_id": "88ea2d9c-b9b5-40db-97c8-5aafcc7067a7:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 0,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "generate",
+              "88ea2d9c-b9b5-40db-97c8-5aafcc7067a7"
+            ],
+            "code": 0,
+            "seconds": 2.317,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 9,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.177846465,
+              "peak_tree_rss_mib": 1482.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4601,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 440,
+              "first_token_ms": 100,
+              "input_tokens": 136,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": "Preserve the stated task owner and direction: in 任务由姓名负责, the named actor is responsible for the task, not the reverse. Copy the supplied actor spelling; preserve all other clauses and consent conditions."
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_source_relations",
+              "elapsed_ms": 822,
+              "first_token_ms": 102,
+              "input_tokens": 210,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 0,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/stdout.txt",
+              "sha256": "63c47e3b235f04c417b4ac9104f8d074df0d88c654bd0df45d937262e8696b3e"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/last-generation.json",
+              "sha256": "e61e034769993917f839828797abcb06f3065a376fab543401f413aaf027d034"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "54d1957e536549cdc970d9ef40d9d193bf78fefb6de2277e1ef183b74a7590b8"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/process.json",
+              "sha256": "4d3a473ac477f8d8470d5ddffaf60ba721f68a9310899cebe8c5dfad92e21f90"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: reversed page/actor compose draft is rejected; source-relations repair commits 陈老师 as person responsible for the tour reservation page, scheduled next-Wednesday test-link sending and incomplete page. The reversed-owner prefix does not survive. Remaining Han text is supplied person name 陈老师.",
+      "repair_drafts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "body_draft": "The visit reservation page is responsible for Chen Teacher, and the test link will be released next Wednesday. The page is still not completed.",
+          "prose_body": "The visit reservation page is responsible for Chen Teacher, and the test link will be released next Wednesday. The page is still not completed.",
+          "validation_error": "Preserve the stated task owner and direction: in 任务由姓名负责, the named actor is responsible for the task, not the reverse. Copy the supplied actor spelling; preserve all other clauses and consent conditions."
+        },
+        {
+          "attempt": 2,
+          "mode": "translate_source_relations",
+          "body_draft": "{\n  \"translation\": \"The test link is to be sent on Wednesday next week. [A] is responsible for the tour reservation page, which has not yet been completed.\"\n}",
+          "prose_body": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed.",
+          "validation_error": null
+        }
+      ]
+    },
+    {
+      "case": "en_actual_page_publication",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 1.497,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.json",
+        "sha256": "d7cb3ff499bce8856ed5cab938e8c63021e92c2395c667bd0185b29c4db096b6"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/input.json",
+        "sha256": "c19396b6cd39f017fa58b115001c556b6846db7b16eef30e95e734d8c0334518"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/stdout.txt",
+        "sha256": "8f7853aa85c1ae1fa0395d5e8c3f267daf70611d93032a320def762203d436df"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "d3c6beaa-d583-4754-886c-a393c13e5b79:1:1",
+          "meeting_id": "d3c6beaa-d583-4754-886c-a393c13e5b79",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "预约页面将于下周三发布，测试链接已发送。"
+        }
+      ],
+      "captions": [],
+      "article": [
+        {
+          "focus": "Meeting minutes",
+          "id": "7301a032-379a-403b-87d6-e76b80aa8cc4",
+          "kind": "section",
+          "meeting_id": "d3c6beaa-d583-4754-886c-a393c13e5b79",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "预约页面将于下周三发布，测试链接已发送。",
+              "revision": 1,
+              "segment_id": "d3c6beaa-d583-4754-886c-a393c13e5b79:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The Appointment Page will be released next Wednesday, and the test link has been sent."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 0,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "generate",
+              "d3c6beaa-d583-4754-886c-a393c13e5b79"
+            ],
+            "code": 0,
+            "seconds": 1.492,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 6,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.892587241,
+              "peak_tree_rss_mib": 1461.984375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4496,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 381,
+              "first_token_ms": 63,
+              "input_tokens": 110,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": "纪要输出语言与选择不符，原话仍待整理"
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_checked_prose",
+              "elapsed_ms": 143,
+              "first_token_ms": 59,
+              "input_tokens": 66,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 0,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/stdout.txt",
+              "sha256": "8f7853aa85c1ae1fa0395d5e8c3f267daf70611d93032a320def762203d436df"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/last-generation.json",
+              "sha256": "1d7b498e6e5b81177f8eaa8246f31ad86f3b9e1b3e29bcfdd3c773d76e3cc406"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "fbfb8afa2a17ec690ed68bf1414b5815b4c0e5de280edf81de4b7c0be35cebe6"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/process.json",
+              "sha256": "0e3c99f0452b75f1d33bdeb491d19623a36e2ee487c2b544fcb91ca1072004f5"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: generic Han 预约页面 in initial English draft is rejected and checked-prose repair commits Appointment Page, future next-Wednesday page release and already-sent link. Appointment Page is an acceptable contextual rendering; the fixture synonym expansion is disclosed and is not the sole semantic evidence.",
+      "repair_drafts": [
+        {
+          "attempt": 1,
+          "mode": "compose",
+          "body_draft": "The预约页面 will be released next Wednesday, and the test link has been sent.",
+          "prose_body": "The预约页面 will be released next Wednesday, and the test link has been sent.",
+          "validation_error": "纪要输出语言与选择不符，原话仍待整理"
+        },
+        {
+          "attempt": 2,
+          "mode": "translate_checked_prose",
+          "body_draft": "{\"A\":\"Appointment Page\"}",
+          "prose_body": "The Appointment Page will be released next Wednesday, and the test link has been sent.",
+          "validation_error": null
+        }
+      ]
+    },
+    {
+      "case": "en_actual_submission_completion",
+      "original_automated_pass": true,
+      "errors": [],
+      "seconds": 1.28,
+      "coverage": 1,
+      "raw_report": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.json",
+        "sha256": "176d670dd953caf8e80f6d4fbf7c7bee3c967cef034745279292c408cc1102d8"
+      },
+      "fixture_input": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/input.json",
+        "sha256": "7d59b40be2422cddb81e43fa4cdf64fc1967955b2f3f58fb03feebcaf50a3943"
+      },
+      "identity_matches_freeze": true,
+      "minutes_language_preference": "en",
+      "executed_phases": [
+        1
+      ],
+      "planned_phases": 1,
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/stdout.txt",
+        "sha256": "1610ca0dfd885a1763d12cc8fad8fabf13f958e432785ee9370861e57364b5d9"
+      },
+      "notes_cursor": 1,
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "8630fdcc-171f-4bc8-badc-c038603e8d58:1:1",
+          "meeting_id": "8630fdcc-171f-4bc8-badc-c038603e8d58",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告已经在周四提交了。"
+        }
+      ],
+      "captions": [],
+      "article": [
+        {
+          "focus": "Meeting minutes",
+          "id": "a4996d83-6bbc-492e-affa-26e89fec4543",
+          "kind": "section",
+          "meeting_id": "8630fdcc-171f-4bc8-badc-c038603e8d58",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告已经在周四提交了。",
+              "revision": 1,
+              "segment_id": "8630fdcc-171f-4bc8-badc-c038603e8d58:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report was submitted on Thursday."
+        }
+      ],
+      "final_source_binding_review": {
+        "citation_count": 1,
+        "caption_count": 0,
+        "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+        "all_caption_source_ids_and_revisions_match": true,
+        "cited_sequences": [
+          1
+        ],
+        "uncited_sequences": []
+      },
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "generate",
+              "8630fdcc-171f-4bc8-badc-c038603e8d58"
+            ],
+            "code": 0,
+            "seconds": 1.275,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 5,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.781025385,
+              "peak_tree_rss_mib": 1454.21875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "writer_resource": {
+            "available_before_mib": 4486,
+            "backend": "metal",
+            "budget_mib": 4096
+          },
+          "minutes_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 264,
+              "first_token_ms": 62,
+              "input_tokens": 105,
+              "unitless_yuan_repaired": false,
+              "unitless_yuan_corrections": 0,
+              "validation_error": null
+            }
+          ],
+          "source_binding_review": {
+            "citation_count": 1,
+            "caption_count": 0,
+            "all_id_revision_quote_timing_speaker_meeting_run_checks_match": true,
+            "all_caption_source_ids_and_revisions_match": true,
+            "cited_sequences": [
+              1
+            ],
+            "uncited_sequences": []
+          },
+          "raw_artifacts": {
+            "stdout.txt": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/stdout.txt",
+              "sha256": "1610ca0dfd885a1763d12cc8fad8fabf13f958e432785ee9370861e57364b5d9"
+            },
+            "last-generation.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/last-generation.json",
+              "sha256": "e0ddd829069f2ea584d0a32bc5532b7d32307ba99ef7b2ad2f8f022ee5fd89d0"
+            },
+            "inference-trace.jsonl": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "f1351be42255931926b38b44c56515e30d9f31a263268e7189cd8a40c51e7fc4"
+            },
+            "process.json": {
+              "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/process.json",
+              "sha256": "b54fe6fe95bf4b968c70fa0bbe61349c1ff9d05b815c2a5948533b0ecb1351c7"
+            }
+          }
+        }
+      ],
+      "assistant_review": "PASS: translation-off article preserves actual completed Thursday test-report submission; captions are intentionally absent."
+    }
+  ],
+  "previous_rejected_trial": {
+    "source_revision": "841ede326e8f4de0bd944a074479d5bd3fc07efd",
+    "public_report": {
+      "path": "docs/evaluation/apple-source-task-submission-trial-2026-10-28.json",
+      "sha256": "f72d63a2566e0acafc02ab1a9b5b3987f5b648392a241cb883a0eaf3fb2b16cb"
+    },
+    "original_pattern_pass": 15,
+    "original_pattern_fail": 3,
+    "uppercase_semantic_failure_retained": true,
+    "limit": "Prior failures, diagnostics and costs remain in their separate report; no841 outputs are pooled into a8 results or overwritten."
+  },
+  "cost_observations": {
+    "automatic_case_seconds_total": 73.063,
+    "explicit_case_seconds_total": 5.099,
+    "process_windows": 14,
+    "process_seconds_total": 78.066,
+    "sampled_cpu_seconds_sum": 20.425787343,
+    "largest_sampled_tree_rss_mib": 1527.984375,
+    "pss_mib": null,
+    "gpu_memory_mib": null,
+    "energy_joules": null,
+    "unique_retained_trace_summary": {
+      "minutes": {
+        "unique_jobs": 14,
+        "generation_events": 16,
+        "validation_failed_events": 0,
+        "generation_usage_sum": {
+          "cached_tokens": 18,
+          "decode_ms": 6515.946,
+          "input_tokens": 2917,
+          "output_tokens": 511,
+          "prefill_ms": 1558.676
+        }
+      },
+      "translation": {
+        "unique_jobs": 12,
+        "generation_events": 25,
+        "validation_failed_events": 8,
+        "generation_usage_sum": {
+          "cached_tokens": 762,
+          "decode_ms": 9202.77,
+          "input_tokens": 4342,
+          "output_tokens": 658,
+          "prefill_ms": 2758.9300000000003
+        }
+      }
+    },
+    "unitless_yuan_normalization_events": [
+      {
+        "task": "translation",
+        "phase": "source_unit_repair",
+        "metrics": {
+          "removed_unsupported_yuan": true
+        }
+      },
+      {
+        "task": "translation",
+        "phase": "source_unit_repair",
+        "metrics": {
+          "removed_unsupported_yuan": true
+        }
+      }
+    ],
+    "limit": "All per-case/process costs and rejected minutes attempts remain above. Summary deduplicates complete trace JSON events. Sampled CPU is a lower bound; summed RSS may double-count shared pages. No paired speed/resource-savings/energy/ASR claim. A formerly blocked settle now finishing closes that failure path only."
+  },
+  "runtime_logs": [
+    {
+      "case": "zh_windows_uppercase_asr",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/llm-runtime.log",
+        "sha256": "1dce2c53a00bd94c3e49c17eeb59c218f47dbb14e85c3453fd36a9fc7b453e45"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-1/batch-1/llm-runtime.log",
+        "sha256": "ef0eb46d6c28a71e2defb66936ae4b5bacf097dac1b48f452f5812929b07c1fa"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "mode": "auto",
+      "phase": 2,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-2/batch-1/llm-runtime.log",
+        "sha256": "b726fa6a8308f7039bc94d1fec8aea55d2eb5748c4ba4b34ad820338fe32a2e1"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "mode": "auto",
+      "phase": 3,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-3/batch-1/llm-runtime.log",
+        "sha256": "3f8c3e180ad988b827ed15b8f6f6cb2bbde43848d7d35b7428450de7f430cfd3"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "mode": "auto",
+      "phase": 4,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/en_incremental_separate_topics/phase-4/batch-1/llm-runtime.log",
+        "sha256": "992969919bb54aed62c9e2a766a92b54bdd0d0898a2387d4ef44e1f80eedc604"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "zh_named_speakers",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/zh_named_speakers/phase-1/batch-1/llm-runtime.log",
+        "sha256": "19ffc541617a07899ea023497c50fc67e11e3fb34d782015906325ff30418691"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/en_future_named_task_owner/phase-1/batch-1/llm-runtime.log",
+        "sha256": "b52ef4a3f4eae4cd1825f8e5f8271e55b6f977e21b61954f668aff4fa10c060a"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_test_link_schedule",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/llm-runtime.log",
+        "sha256": "77a715e5a0f849c6e16389558bdcfe29cd2e6725925bf97c521f5ec9bc116b26"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_actual_page_publication",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/llm-runtime.log",
+        "sha256": "83671ee4102b39ed9a114013c00e27f6a90fc83ba206d58770c8d30d27140b40"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_actual_submission_completion",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/llm-runtime.log",
+        "sha256": "8fc52ed94a8a64a5ff76b7bfd922feb8fb3d4f1bb0e96357e8407f5e4b67674c"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "mode": "auto",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/zh_physical_report_ownership/phase-1/batch-1/llm-runtime.log",
+        "sha256": "82a3b0f4c64a180b1dae07750414d5effc7cdbf245042ad9a7ef216759af7a92"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_test_link_schedule",
+      "mode": "minutes",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/en_test_link_schedule/phase-1/batch-1/llm-runtime.log",
+        "sha256": "893954f87db67ba80c06b80c6bc553eaceeff3becbca520d70e138e0b0c76aad"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_actual_page_publication",
+      "mode": "minutes",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/en_actual_page_publication/phase-1/batch-1/llm-runtime.log",
+        "sha256": "39452539f993ccc40282c29e55da8f8252db7fae24cced25e4d1554222174bdf"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    },
+    {
+      "case": "en_actual_submission_completion",
+      "mode": "minutes",
+      "phase": 1,
+      "log": {
+        "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/en_actual_submission_completion/phase-1/batch-1/llm-runtime.log",
+        "sha256": "77957ce4892b8e36cd0c1e7ad96e5ff01e13e679e35889be4c4a0bc70993a6db"
+      },
+      "apple_m5_mtl0_observed": true,
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ]
+    }
+  ],
+  "cleanup": {
+    "workspaces": 11,
+    "borrowed_model_directories_released": 11,
+    "receipts": [
+      {
+        "case": "zh_windows_uppercase_asr",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_incremental_separate_topics.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "zh_named_speakers",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_named_speakers.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_future_named_task_owner",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_future_named_task_owner.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_test_link_schedule",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_test_link_schedule.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_actual_page_publication",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_page_publication.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_actual_submission_completion",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/en_actual_submission_completion.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "zh_physical_report_ownership",
+        "mode": "auto",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_physical_report_ownership.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_test_link_schedule",
+        "mode": "minutes",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-minutes-20261028/en_test_link_schedule.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_actual_page_publication",
+        "mode": "minutes",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_page_publication.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      },
+      {
+        "case": "en_actual_submission_completion",
+        "mode": "minutes",
+        "receipt": {
+          "path": "artifacts/benchmarks/source-action-minutes-20261028/en_actual_submission_completion.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true
+      }
+    ],
+    "limit": "Borrowed copies/links only; source model store retained. Logical bytes are not unique physical disk reclaimed. No source model/runtime/SDK/installer or retained failure evidence was deleted by this report."
+  },
+  "still_open": [
+    {
+      "kind": "caption_calendar_qualifier_drift",
+      "case": "en_incremental_separate_topics",
+      "source": "on Tuesday",
+      "accepted_caption": "本周二",
+      "surface": "seq2 cached caption, phases2–4",
+      "status": "OPEN",
+      "note": "Source supplies no week. Final English article retains on Tuesday correctly; regex PASS is not complete semantic acceptance."
+    },
+    {
+      "kind": "non_substantive_caption_lexical_weakness",
+      "case": "en_incremental_separate_topics",
+      "source": "Mic check",
+      "accepted_caption": "微检",
+      "status": "OPEN",
+      "note": "Not added to task minutes."
+    },
+    {
+      "kind": "physical_paper_object_lexical_drift",
+      "case": "zh_physical_report_ownership",
+      "source": "original paper report",
+      "accepted_caption_and_article": "原始论文报告",
+      "status": "OPEN",
+      "note": "Ownership preserved, physical-paper object type not fully correct."
+    },
+    {
+      "kind": "article_readability",
+      "case": "zh_windows_uppercase_asr",
+      "status": "OPEN",
+      "note": "Repeated noisy source fragments remain; bounded factual repair is not polished-minutes acceptance."
+    },
+    {
+      "kind": "release_validation",
+      "status": "NOT_RUN",
+      "note": "Affected fictional text only. Full frozen candidate corpus, ASR/audio, recording lifecycle, native UI, installation and upgrade acceptance remain outside this batch. Release not approved."
+    }
+  ]
+}
