@@ -164,9 +164,55 @@
     "limits": "Hosted Windows junction fixture and source CI, not physical GPU or installed-app acceptance."
   },
   "remaining": [
-    "Physical Windows/Linux Settings remove-download-test lifecycle.",
+    "Physical mouse/visual Windows and Linux Settings recovery; active authorization revocation and cross-version isolation on actual installed components remain unverified. The Windows isolated native DOM/invoke failure plus continuation is recorded separately.",
     "Existing-model same-size integrity/repair, historical component versions and crash-stage cleanup.",
     "Linux userspace driver identity and broader hardware/resource/fault gates.",
     "Actual ASR/name accuracy, recording/stop, native Mac windows and final installer/upgrade acceptance."
-  ]
+  ],
+  "windows_peer_followup": {
+    "report_url": "https://github.com/EazyLee30/omascribe/blob/6b25743eb1740f296e55c006fb57b16673a13830/docs/evaluation/windows-component-recovery-f946f64-2026-10-29.json",
+    "comment_url": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6477515802",
+    "report_bytes": 2978,
+    "report_sha256": "bd795ae1a3afc9fb797484a24bded49c1d9228e0471422ebf35dc01b7b50b12e",
+    "report_commit": "6b25743eb1740f296e55c006fb57b16673a13830",
+    "source_revision": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+    "root_verification": "Fetched immutable GitHub file as base64, verified original SHA-256 bytes and source; component archive id/size/hash matches the previously recorded signed candidate. Root did not rerun Windows.",
+    "platform": "Windows x86_64; NVIDIA GTX 1650",
+    "artifact": "source-built isolated debug ui-test",
+    "component_id": "vulkan-windows-x86_64",
+    "component_version": "acceleration-ci-40367160891",
+    "archive_bytes": 12674455,
+    "archive_sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+    "reported_first_run": {
+      "cancel_kept_component": true,
+      "confirm_removed_exact_id_version": true,
+      "overall_passed": false,
+      "error": "Download button wait timed out because isolated runtime omitted hardware probe helper.",
+      "report_sha256": "b9a254dcfe9e944a73717a3497ee71726961ad1823d122d40a7a010a0823c2c7"
+    },
+    "reported_diagnostic": {
+      "helper_missing_confirmed": true,
+      "same_source_helper_added": true,
+      "helper_revision_at_compile": "f946f640ff749424f8a3cd2fa52c907fac00760f",
+      "hardware_detected_and_download_button_enabled": true
+    },
+    "reported_continuation": {
+      "overall_passed": true,
+      "product_downloaded_bytes": 12674455,
+      "post_download_files_match_signed_expected": true,
+      "download_then_activation_state": "",
+      "local_test_activated_id": "vulkan-windows-x86_64",
+      "local_test_activated_version": "acceleration-ci-40367160891",
+      "offloaded_layers": "29/29"
+    },
+    "retained_limits": [
+      "The first run failed because the isolated harness omitted the hardware helper; it is retained and the continuation uses the same data after a same-source helper was added.",
+      "Signed prerelease candidate catalog and archive, not the unpublished stable acceleration-v1 catalog.",
+      "Native ui-test exercises WebView DOM/invoke; screenshots and physical mouse were not verified.",
+      "No active certificate existed before removal and no other installed version was seeded; revocation and cross-version isolation are not physically exercised.",
+      "No microphone, formal installation/upgrade, runtime crash recovery, concurrent recording, or actual allocation OOM.",
+      "Vulkan0 is a runtime enumeration index; log shows the device name for this run but it is not a stable physical identity."
+    ],
+    "cancel_scope": "Cancellation of removal confirmation, not cancellation of a component download."
+  }
 }
