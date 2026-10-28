@@ -43,18 +43,16 @@ pub(super) fn english(source: &str) -> Option<String> {
                 _ => return None,
             };
             format!("{task} has not been completed.")
-        } else if let Some(field) = clause
-            .strip_prefix("没有确定")
-            .or_else(|| clause.strip_suffix("尚未确定"))
-        {
+        } else {
+            let field = clause
+                .strip_prefix("没有确定")
+                .or_else(|| clause.strip_suffix("尚未确定"))?;
             let field = match field.trim() {
                 "新版本发布日期" => "The release date of the new version",
                 "发布日期" => "The release date",
                 _ => return None,
             };
             format!("{field} has not been determined.")
-        } else {
-            return None;
         };
         sentences.push(sentence);
     }
