@@ -28,6 +28,7 @@ import {
 import { tr, glyph, navItems, type PageHandle } from "./workspace-ui";
 import { speakerDialog, speakerName } from "./speaker-ui";
 import { NotebookEditor } from "./editor";
+import { noteCandidates, renderNoteCandidates } from "./note-candidates";
 import {
   getViewSettings,
   setViewSettings,
@@ -1020,11 +1021,41 @@ async function play(start: number, end?: number) {
 async function editTranscript(id: string) {
   const s = snap?.segments.find((s) => s.id === id);
   if (!s) return;
+  const note = snap?.notes.find((n) => n.kind === "document");
+  const content = note
+    ? ((noteSignature === note.id
+        ? notebookEditor?.getMarkdown()
+        : undefined) ??
+      drafts.get(note.id)?.content ??
+      note.content)
+    : "";
   modal(
     t("editTranscript"),
-    `<textarea id="edit-text" class="modal-text" rows="6">${esc(s.text)}</textarea>`,
-    `<button class="primary" id="save-edit">${t("save")}</button>`,
+    `<textarea id="edit-text" class="modal-text" rows="6">${esc(s.text)}</textarea><div id="edit-note-terms" class="edit-note-terms" hidden></div>`,
+    `<button class="outline" id="listen-edit">${tr("回听本段", "Listen to passage", "回聽本段")}</button><button class="primary" id="save-edit">${t("save")}</button>`,
   );
+  const input = $<HTMLTextAreaElement>("#edit-text");
+  const terms = $("#edit-note-terms");
+  const renderTerms = (values: string[]) => {
+    if (!terms.isConnected || !$<HTMLDialogElement>("#modal").open) return;
+    const candidates = noteCandidates(content, values);
+    renderNoteCandidates(
+      terms,
+      input,
+      candidates,
+      tr(
+        "笔记中的词：选择转写中的错误文字后点击替换；未选择时插入光标位置。请先回听核对。",
+        "Words from your notes: select transcript text to replace, or insert at the cursor. Listen and check first.",
+        "筆記中的詞：選取轉寫中的錯誤文字後點擊替換；未選取時插入游標位置。請先回聽核對。",
+      ),
+    );
+  };
+  renderTerms([]);
+  if (content)
+    void invoke<string[]>("extract_focus_terms", { content })
+      .then(renderTerms)
+      .catch(() => {});
+  $("#listen-edit").onclick = () => guard(() => play(s.start_ms, s.end_ms));
   $("#save-edit").onclick = () =>
     guard(async () => {
       await invoke("edit_segment", {
