@@ -1,0 +1,95 @@
+{
+  "source_revision": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "local_date": "2026-10-29",
+  "input": "Isolated copy of bilingual final transcript and original meeting note from the user-confirmed candidate9 Realtek recording; no manual edits; no audio copied",
+  "input_exact_target_matches": {
+    "omascribe": false,
+    "alice": true,
+    "nvidia": false,
+    "gtx1650": true
+  },
+  "minutes_exact_target_matches": {
+    "omascribe": false,
+    "alice": true,
+    "nvidia": true,
+    "gtx1650": true
+  },
+  "generation_seconds": 8.469,
+  "generation_budget_seconds": 120,
+  "suggestion_count": 1,
+  "citation_count": 1,
+  "citations_match_source_identity_revision_time_quote": true,
+  "term_text_edit_counts": {
+    "terminology": 1
+  },
+  "cuda_component": "acceleration-ci-40367160891",
+  "cuda_reverification_seconds": 51.578,
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "component_file_sha256": {
+    "build-info.json": "8c484fb1bc4652a09f2a78f26462a3eff62adec86e5c70451081f670a3289d4e",
+    "component-index.json": "8c0c6a42dcb3bdcaa576aeecbc4f237f120209785c05a167756d748565624b50",
+    "cublas64_12.dll": "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+    "cublasLt64_12.dll": "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+    "CUDA-EULA.html": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+    "cudart64_12.dll": "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+    "installed.json": "f6fb1a6b238bf65327d72105ce3fc1a429deb10211ab666c2e2b7febacc6b945",
+    "llama-server.exe": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+    "llama.cpp-LICENSE.txt": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285"
+  },
+  "cuda_offload_observed": [
+    [
+      29,
+      29
+    ]
+  ],
+  "cli_sha256": "104b181b889f705efca9b928c7db9cd8f07a99ca720cd2eece5a667ea2975195",
+  "asr_worker_sha256": "a66906cc194644144b427c855b8f9ce16e4e36ff19a27fb95b80b560abfeb429",
+  "limits": [
+    "One private bilingual transcript, original user note and one explicit Chinese minutes generation; not a full semantic review.",
+    "No manual correction; note is contextual spelling information, not proof that any word was spoken.",
+    "Final exact matches and citation identity/quote are aggregate checks, not proof all facts are correct or cited entailment.",
+    "Copied signed CUDA component reverified, not freshly downloaded/installed; no ASR worker invoked during minutes.",
+    "Recording, transcript, generated text and hashes of these private contents remain local."
+  ],
+  "nvidia_evidence_probe": {
+    "canonical_english": false,
+    "canonical_chinese": false,
+    "chinese_prefix": false,
+    "separated_latin_letters": false,
+    "pinyin": false,
+    "stock_ticker": false,
+    "vendor_acronym": false,
+    "generic_graphics_card": true
+  },
+  "nvidia_evidence_probe_scope": "Only the listed spelling checks; generic graphics card is not vendor evidence. Citation quote and identity match does not establish that the generated vendor name follows from source. User reported saying NVIDIA, but its inclusion in minutes is not proven by the transcript.",
+  "semantic_review": "NVIDIA is present in the minutes and matches the user-reported spoken prompt; its support in the transcript and causal source are not established by these spelling checks. OmaScribe absent from final transcript and minutes. Exact matches do not constitute complete human transcription or semantic review.",
+  "requested_fact_probes": {
+    "transcript": {
+      "alice_test_card_ordered_same_clause": true,
+      "recording_and_local_same_clause": true,
+      "recording_local_clause_simple_negation": false,
+      "alice_test_card_clause_simple_negation": false,
+      "meeting_note_record_terms_present": false,
+      "local_meeting_and_tool_terms_all_present": true
+    },
+    "minutes": {
+      "alice_test_card_ordered_same_clause": true,
+      "recording_and_local_same_clause": true,
+      "recording_local_clause_simple_negation": false,
+      "alice_test_card_clause_simple_negation": false,
+      "meeting_note_record_terms_present": false,
+      "local_meeting_and_tool_terms_all_present": true
+    },
+    "cited_quotes": [
+      {
+        "alice_test_card_ordered_same_clause": true,
+        "recording_and_local_same_clause": true,
+        "recording_local_clause_simple_negation": false,
+        "alice_test_card_clause_simple_negation": false,
+        "meeting_note_record_terms_present": false,
+        "local_meeting_and_tool_terms_all_present": true
+      }
+    ],
+    "scope": "Restricted lexical and simple-negation probes only; these are not full semantic review or proof of citation entailment. Local, meeting and tool terms merely co-occur; their relationship is not established. No meeting-record term matched."
+  }
+}
