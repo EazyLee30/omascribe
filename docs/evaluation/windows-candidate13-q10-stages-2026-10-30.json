@@ -1,0 +1,57 @@
+{
+  "base_revision": "67e04649189020438cdc4e7c393124f359a6dea1",
+  "local_date": "2026-10-30",
+  "build_kind": "candidate13 source with diagnostic-only timestamp patch; debug core, original candidate13 ASR worker",
+  "instrumentation_patch_sha256": "b5b605acdcea292cbf301b05d4b481a73bd36bf27560b8918845fd19da8b6e05",
+  "instrumented_core_source_sha256": "67efe0b30256cda980314771f8364308232f443034db5a7dc2fbc0a6d23e7435",
+  "driver_sha256": "8842c6edc5438884cedf6a0463272ea0289d66009709b0c589b5d5509ba4157b",
+  "asr_worker_sha256": "6d14a474efc2bc9a673629a2d6b9d6fb23d7cac0213f26ea50573d3dbeb1a840",
+  "fixture_synthetic_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+  "model_source": "copied from previous isolated test model, no user model path",
+  "model_files": {
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+  },
+  "model_copy_verified_before_after": true,
+  "stages_elapsed_ms": {
+    "start_capture_enter": 0,
+    "verify_begin": 0,
+    "verify_end": 2585,
+    "capture_spawn_begin": 2592,
+    "capture_spawn_end": 2598,
+    "asr_spawn_begin": 2598,
+    "asr_spawn_return": 3166,
+    "start_capture_return": 3166,
+    "asr_ready_observed": 3866
+  },
+  "verification_call_elapsed_ms": 2585,
+  "ffmpeg_spawn_call_elapsed_ms": 6,
+  "asr_spawn_function_elapsed_ms": 568,
+  "replay_call_return_ms": 3166,
+  "first_capture_observed": {
+    "wall_ms": 3187,
+    "captured_ms": 576
+  },
+  "stop_request_ms": 5000,
+  "stop_return_ms": 5123,
+  "drain_complete_ms": 5178,
+  "final_capture_ms": 2496,
+  "final_processed_ms": 2496,
+  "synthetic_pcm_is_exact_fixture_prefix": true,
+  "gate_minimum_ms": 4500,
+  "gate_passed": false,
+  "hotword_input_status": "accepted",
+  "asr_initial_load_ms": 670,
+  "limitations": [
+    "Instrumented test code and debug build can alter timing; not a release binary measurement.",
+    "Verification call timing includes all work in verified_asr_model, not only raw hashing.",
+    "ASR spawn function includes setup and process start; Ready is an event-thread observation, not an exact internal load-completion instant.",
+    "First capture is first observed through polling; FFmpeg internal buffers at stop are not measured.",
+    "One run with a copied model and uncontrolled OS caches/load cannot establish cold-start performance or causally explain the earlier uninstrumented timing.",
+    "Synthetic file replay is not native physical microphone capture, product UI stop, GPU, or installer acceptance.",
+    "Original candidate13 2176ms and candidate8 4480ms failures remain unchanged."
+  ]
+}
