@@ -118,6 +118,80 @@ pub(super) fn incomplete_transcription_covers(source_mask: &str, target_mask: &s
     )
 }
 
+/// One explicitly uncertain past completion can cover one locally hedged
+/// Chinese completion. This does not infer subjects or authorize other states.
+/// Callers restrict this exception to a single-source translation.
+pub(super) fn hedged_completion_covers(source_mask: &str, target_mask: &str) -> bool {
+    static MODAL: OnceLock<Regex> = OnceLock::new();
+    static COMPLETION: OnceLock<Regex> = OnceLock::new();
+    static TARGET: OnceLock<Regex> = OnceLock::new();
+    static OTHER_TARGET: OnceLock<Regex> = OnceLock::new();
+    static BLOCKED: OnceLock<Regex> = OnceLock::new();
+    if source_mask.len() > 16_384
+        || target_mask.len() > 16_384
+        || [source_mask, target_mask].iter().any(|text| {
+            text.contains([
+                '#', '?', '？', '"', '\'', '“', '”', '‘', '’', '「', '」', '『', '』', '`',
+            ])
+        })
+    {
+        return false;
+    }
+    let blocked = BLOCKED.get_or_init(|| {
+        Regex::new(concat!(
+            r"(?i)\b(?:if|unless|when|once|whether|assuming|suppose|supposing|provided|not|no|never)\b",
+            r"|\bin\s+case\b|如果|假如|倘若|除非|要是|假设|一旦|只要|只有|是否|能否|不|没|未|无|并非"
+        ))
+        .unwrap()
+    });
+    if blocked.is_match(source_mask) || blocked.is_match(target_mask) {
+        return false;
+    }
+    let modal = MODAL.get_or_init(|| {
+        Regex::new(r"(?i)\b(?:may|might)\s+have\s+(?:been\s+)?(?:finished|finish|completed)\b")
+            .unwrap()
+    });
+    let Some(source_state) = modal.find(source_mask) else {
+        return false;
+    };
+    let completion = COMPLETION
+        .get_or_init(|| Regex::new(r"(?i)\b(?:finish(?:ed)?|complete(?:d)?|ended)\b").unwrap());
+    let mut predicates = completion.find_iter(source_mask);
+    let Some(predicate) = predicates.next() else {
+        return false;
+    };
+    if predicates.next().is_some()
+        || predicate.start() < source_state.start()
+        || predicate.end() > source_state.end()
+        || target_mask.matches("完成").count() != 1
+        || OTHER_TARGET
+            .get_or_init(|| {
+                Regex::new(r"结束|完毕|(?i:\b(?:finish(?:ed)?|complete(?:d)?|ended)\b)").unwrap()
+            })
+            .is_match(target_mask)
+    {
+        return false;
+    }
+    let target = TARGET.get_or_init(|| {
+        Regex::new(
+            r"(?:可能|或许|也许)[ \t]*(?:已经|已)[ \t]*完成(?:了)?[ \t]*(?:$|[，,。.;；!！\r\n])",
+        )
+        .unwrap()
+    });
+    let Some(target_state) = target.find(target_mask) else {
+        return false;
+    };
+    // A bare status or a hedge carried over a clause boundary is insufficient.
+    let has_subject = |prefix: &str| {
+        prefix
+            .rsplit(['.', '。', ',', '，', ';', '；', '!', '！', '\n'])
+            .next()
+            .is_some_and(|clause| clause.chars().any(char::is_alphanumeric))
+    };
+    has_subject(&source_mask[..source_state.start()])
+        && has_subject(&target_mask[..target_state.start()])
+}
+
 fn bare_unfinished_assertion(text: &str) -> bool {
     if !text.contains("没有完成") {
         return false;

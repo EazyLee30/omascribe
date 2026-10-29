@@ -20,7 +20,7 @@ import tempfile
 import process_resources
 
 from benchmark_recording_contention import fixture, settlement_summary, telemetry_summary
-from compare_minutes_models import runtime_inventory
+from compare_minutes_models import repair_request, runtime_inventory
 from evaluate_asr import asset_identity, error_counts, percentile, units
 from harness_support import (REPO, command, environment, isolated_env, read_json,
                              release_borrowed_models, sha256, write_json)
@@ -208,8 +208,9 @@ def inference_summary(events):
         results[task] = dict(attempted_requests=len(starts), observed_responses=len(generated),
             completed_responses=len(completed), incomplete_or_missing_responses=len(starts)-len(completed),
             validation_failures=sum(row["phase"] == "validation_failed" for row in rows),
-            repaired_requests=sum(type(row["metrics"].get("attempt")) is int
-                                  and row["metrics"]["attempt"] > 1 for row in starts) if task == "minutes" else None,
+            repaired_requests=sum(repair_request(row["metrics"]) if "stage" in row["metrics"] else
+                                  type(row["metrics"].get("attempt")) is int and row["metrics"]["attempt"] > 1
+                                  for row in starts) if task == "minutes" else None,
             literal_captions=sum(row["phase"] == "literal_caption" for row in rows),
             batch_requests=[row["metrics"].get("requests") for row in rows if row["phase"] == "batch"],
             committed_jobs=len(committed),

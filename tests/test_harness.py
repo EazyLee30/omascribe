@@ -155,6 +155,36 @@ class HarnessTests(unittest.TestCase):
         self.assertIsNone(result["input_tokens"])
         self.assertEqual(result["passed_cases"], 1)
 
+    def test_model_comparison_planned_source_stages_are_paid_requests_not_repairs(self):
+        from compare_minutes_models import summarize
+        attempts = [dict(attempt=1, stage="prepare_sources", elapsed_ms=1000,
+                         usage=dict(prompt_tokens=10, completion_tokens=3)),
+                    dict(attempt=2, stage="compose_prepared_sources", elapsed_ms=2000,
+                         usage=dict(prompt_tokens=20, completion_tokens=4))]
+        report = dict(cases=[dict(passed=True, seconds=4., runs=[dict(generation=dict(attempts=attempts),
+                      process=dict(seconds=3.5, resources={}))])])
+        result = summarize(report)
+        self.assertEqual((result["attempts"], result["repairs"]), (2, 0))
+        self.assertEqual((result["attempt_seconds"], result["input_tokens"], result["output_tokens"]), (3., 30, 7))
+
+    def test_model_comparison_stage_overrides_attempt_and_legacy_keeps_its_meaning(self):
+        from compare_minutes_models import summarize
+        for stage, number, expected in (("prepare_sources", 2, 0), ("compose", 2, 0),
+                                        ("compose_prepared_sources", 2, 0), ("repair", 1, 1),
+                                        (None, 2, 1)):
+            with self.subTest(stage=stage):
+                attempt = dict(attempt=number, elapsed_ms=1000, failure="fixture",
+                               usage=dict(prompt_tokens=10, completion_tokens=3))
+                if stage is not None:
+                    attempt["stage"] = stage
+                report = dict(cases=[dict(passed=False, seconds=1., runs=[dict(generation=dict(attempts=[attempt]), process={})])])
+                result = summarize(report)
+                self.assertEqual(result["repairs"], expected)
+                self.assertEqual((result["attempts"], result["rejected_attempts"], result["attempt_seconds"]), (1, 1, 1.))
+        attempt["stage"] = "unknown_stage"
+        with self.assertRaises(ValueError):
+            summarize(report)
+
     def test_model_comparison_refuses_partial_cases_and_different_settings(self):
         import copy
         from compare_minutes_models import MODELS, PREFERENCES, validate_pair

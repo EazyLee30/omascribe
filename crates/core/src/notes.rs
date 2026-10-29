@@ -6,6 +6,7 @@ mod completion;
 mod corrections;
 #[cfg(test)]
 pub(crate) mod facts;
+mod generation;
 pub(crate) mod incremental;
 mod language;
 pub(crate) use language::validate_with_source as validate_language_with_source;
@@ -26,6 +27,7 @@ pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
 pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionMismatch};
 mod retrieval;
+mod source_language;
 pub(crate) mod stream;
 mod uncertainty;
 mod validation;
@@ -52,6 +54,61 @@ pub(crate) use week_qualifiers::{
     Mismatch as WeekQualifierMismatch,
 };
 pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
+
+struct Generation<'a> {
+    trace: &'a crate::inference_trace::TaskTrace,
+    scope: &'a generation::Scope,
+    requests: &'a generation::Budget,
+    context_revision: u64,
+}
+impl Generation<'_> {
+    fn ready(
+        &self,
+        engine: &Engine,
+        selected: &[crate::Segment],
+        resource_stop: bool,
+        budget_stop: bool,
+        timed_out: bool,
+        budget: u64,
+    ) -> Result<()> {
+        if engine.note_cancel.load(Ordering::SeqCst) || engine.maintenance.load(Ordering::SeqCst) {
+            bail!("已优先处理录音与字幕，纪要稍后自动继续");
+        }
+        if resource_stop {
+            if budget_stop {
+                bail!("writer:resource-budget-hit:{budget}");
+            }
+            bail!("writer:resource-pressure");
+        }
+        if timed_out {
+            bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
+        }
+        self.requests.ensure_remaining()?;
+        self.scope.check(engine, selected)
+    }
+}
+
+fn message_tokens(
+    agent: &ureq::Agent,
+    base: &str,
+    auth: &str,
+    messages: &[Value],
+) -> Result<usize> {
+    let input = messages
+        .iter()
+        .filter_map(|message| message["content"].as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let tokens: Value = agent
+        .post(&format!("{base}/tokenize"))
+        .set("Authorization", auth)
+        .send_json(json!({"content":input}))?
+        .into_json()?;
+    Ok(tokens["tokens"]
+        .as_array()
+        .context("Invalid tokenizer response")?
+        .len())
+}
 
 fn source_repair(
     error: &anyhow::Error,
@@ -81,6 +138,7 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     let started = Instant::now();
     let job = Uuid::new_v4().to_string();
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
+    let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let snapshot = engine.snapshot(meeting)?;
     if !needs_update(&snapshot) {
         bail!("纪要已与当前关键词和转写同步");
@@ -101,6 +159,14 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
         bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
     }
     let prefs = engine.preferences.lock().unwrap().clone();
+    let scope = generation::Scope::new(engine, &snapshot, &prefs, context_revision)?;
+    let requests = generation::Budget::default();
+    let work = Generation {
+        trace: &trace,
+        scope: &scope,
+        requests: &requests,
+        context_revision,
+    };
     let state_environment = if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1")
     {
         Some(incremental::scope(engine, &snapshot, &prefs)?)
@@ -127,13 +193,14 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     );
     engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
     let result = crate::acceleration::with_cpu_fallback(engine, || {
+        requests.ensure_remaining()?;
         generate_inner(
             engine,
             meeting,
             &snapshot,
             context.clone(),
             &prefs,
-            &trace,
+            &work,
             (delta.clone(), state_environment.as_deref()),
         )
     });
@@ -155,9 +222,10 @@ fn generate_inner(
     snapshot: &crate::Snapshot,
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
-    trace: &crate::inference_trace::TaskTrace,
+    work: &Generation<'_>,
     article: (Option<incremental::Delta>, Option<&str>),
 ) -> Result<usize> {
+    let trace = work.trace;
     let (mut delta, state_environment) = article;
     trace.event(
         "article_state",
@@ -232,7 +300,6 @@ fn generate_inner(
         timed_out,
         ..
     } = &*session;
-    let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let mut background = engine.writer_context(
         &snapshot.notes,
         &context
@@ -307,19 +374,16 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
-    trace.event(
-        "article_prompt",
-        json!({"mode":if delta.is_some(){"delta"}else{"full"},"input_tokens":prompt_tokens,
-        "reused_translation_passages":language::reused_count(&content, &context.segments, snapshot)}),
-    );
-    let mut messages = vec![
+    let compose_messages = vec![
         json!({"role":"system","content":system}),
         json!({"role":"user","content":content}),
     ];
+    let mut messages = compose_messages.clone();
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
+    let mut prepared_sources: Option<Value> = None;
     // Keep original selected evidence separate from translated prompt passages
     // and generated prose. Names, quotations and cleanup must be source-backed.
     let selected_source = context
@@ -338,7 +402,34 @@ fn generate_inner(
     );
     let source_name_mask =
         crate::translation::source_name_mask(&selected_source, &selected_source, &terms);
-    // One evidence-guided repair, inside the same overall deadline. Never relax validation.
+    // A full manual recomposition has no caption cache to supply the selected
+    // output language. Prepare only its missing representations, keeping each
+    // translation bound to its original source. The existing two-call budget
+    // includes this stage; it does not add another repair attempt.
+    let mut source_plan = if delta.is_none() {
+        source_language::Plan::new(
+            &content,
+            &context.segments,
+            writer::chinese(snapshot, &prefs.minutes_language),
+            &terms,
+        )?
+    } else {
+        None
+    };
+    if let Some(plan) = &source_plan {
+        messages = plan.messages.clone();
+        prompt_tokens = message_tokens(agent, base, auth, &messages)?;
+        if prompt_tokens > prefs.context_size as usize - 1148 {
+            bail!("来源语言准备超出上下文预算，待处理内容已保留");
+        }
+    }
+    trace.event(
+        "article_prompt",
+        json!({"mode":if source_plan.is_some(){"prepare_sources"}else if delta.is_some(){"delta"}else{"full"},
+        "input_tokens":prompt_tokens,"source_preparation":source_plan.as_ref().map(|plan|plan.metrics()),
+        "reused_translation_passages":language::reused_count(&content, &context.segments, snapshot)}),
+    );
+    // Preparation, composition, repair and CPU fallback share two chat sends.
     for attempt in 0..2 {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
             "writer:reading"
@@ -349,12 +440,35 @@ fn generate_inner(
         let generation_started = Instant::now();
         let mut first_token_ms = None;
         let mut partial_draft = String::new();
+        work.ready(
+            engine,
+            &context.segments,
+            resource_stop.load(Ordering::SeqCst),
+            budget_stop.load(Ordering::SeqCst),
+            timed_out.load(Ordering::SeqCst),
+            *budget,
+        )?;
+        session.check_model()?;
+        let request_attempt = work.requests.take()?;
         session.begin_request()?;
+        let request_stage = if source_plan.is_some() {
+            "prepare_sources"
+        } else if prepared_sources.is_some() {
+            "compose_prepared_sources"
+        } else if attempt == 0 {
+            "compose"
+        } else {
+            "repair"
+        };
         let mut request = json!({
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
         });
-        if let Some(plan) = &relation_repair {
+        if let Some(plan) = &source_plan {
+            request["temperature"] = json!(0.0);
+            request["response_format"] = json!({"type":"json_schema","json_schema":{
+                "name":"source_languages","strict":true,"schema":plan.schema()}});
+        } else if let Some(plan) = &relation_repair {
             request["temperature"] = json!(0.0);
             request["grammar"] = plan.grammar().into();
         } else if let Some(plan) = &translation_repair {
@@ -364,7 +478,7 @@ fn generate_inner(
         }
         trace.event(
             "request_started",
-            json!({"attempt":attempt+1,"endpoint":"chat"}),
+            json!({"attempt":request_attempt,"endpoint":"chat","stage":request_stage}),
         );
         let response = agent
             .post(&format!("{base}/v1/chat/completions"))
@@ -381,7 +495,7 @@ fn generate_inner(
             })
         });
         trace.generation(
-            attempt + 1,
+            request_attempt,
             generation_started.elapsed().as_millis() as u64,
             first_token_ms,
             &generated
@@ -398,13 +512,13 @@ fn generate_inner(
             session.complete_request()?;
         }
         if generated.is_err() {
-            attempts.push(json!({"attempt":attempt+1,"draft":partial_draft,"failure":"incomplete_local_response",
+            attempts.push(json!({"attempt":request_attempt,"stage":request_stage,"draft":partial_draft,"failure":"incomplete_local_response",
                 "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms}));
             std::fs::write(
                 engine.root.join("last-generation.json"),
                 serde_json::to_vec_pretty(&json!({
                     "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
-                    "attempt":attempt+1,"attempts":attempts,"draft":partial_draft,"committed":false,
+                    "attempt":request_attempt,"attempts":attempts,"draft":partial_draft,"committed":false,
                 }))?,
             )?;
         }
@@ -431,6 +545,54 @@ fn generate_inner(
                 error
             }
         })?;
+        if let Some(plan) = source_plan.take() {
+            let preparation = plan.prepare(&raw_body, &context.segments, &terms);
+            let metrics = plan.metrics();
+            attempts.push(json!({
+                "attempt":request_attempt,"stage":request_stage,"draft":raw_body,"body_draft":raw_body,
+                "mode":"prepare_sources","source_preparation":metrics,"usage":usage,
+                "input_tokens":prompt_tokens,"context_size":prefs.context_size,
+                "validation_error":preparation.as_ref().err().map(|error|format!("{error:#}")),
+                "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms,
+                "selected":context.segments.iter().map(|s|json!({"id":s.id,"seq":s.seq,"revision":s.revision})).collect::<Vec<_>>(),
+            }));
+            std::fs::write(
+                engine.root.join("last-generation.json"),
+                serde_json::to_vec_pretty(&json!({
+                    "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
+                    "attempt":request_attempt,"attempts":attempts,"draft":raw_body,
+                    "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":snapshot.meeting.notes_cursor,
+                    "stage":"source_preparation","committed":false,
+                }))?,
+            )?;
+            let prepared = preparation?;
+            // Do not spend the second request on stale representations or
+            // silently trim away a translated source that no longer fits.
+            work.ready(
+                engine,
+                &context.segments,
+                resource_stop.load(Ordering::SeqCst),
+                budget_stop.load(Ordering::SeqCst),
+                timed_out.load(Ordering::SeqCst),
+                *budget,
+            )?;
+            session.check_model()?;
+            let prepared_content = prepared.apply(&content, &context.segments)?;
+            messages = compose_messages.clone();
+            messages[1]["content"] = prepared_content.into();
+            prompt_tokens = message_tokens(agent, base, auth, &messages)?;
+            if prompt_tokens > prefs.context_size as usize - 1148 {
+                bail!("译后来源超出纪要上下文预算，待处理内容已保留");
+            }
+            trace.event(
+                "article_prompt",
+                json!({"mode":"compose_prepared_sources","input_tokens":prompt_tokens,
+                    "source_preparation":metrics,
+                    "reused_translation_passages":language::reused_count(&content,&context.segments,snapshot)}),
+            );
+            prepared_sources = Some(metrics);
+            continue;
+        }
         let prose = if let Some(plan) = &relation_repair {
             plan.body(&raw_body)
         } else if let Some(plan) = &translation_repair {
@@ -518,9 +680,10 @@ fn generate_inner(
                 Ok(sections)
             });
         attempts.push(json!({
-            "attempt":attempt+1, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
+            "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "week_qualifier_corrections":week_qualifier_corrections,
-            "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else {"compose"},
+            "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
+            "source_preparation":prepared_sources,
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "unitless_yuan_repaired":unitless_yuan_corrections > 0,
             "unitless_yuan_corrections":unitless_yuan_corrections,
@@ -534,7 +697,7 @@ fn generate_inner(
             serde_json::to_vec_pretty(&json!({
                 "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
                 "resource_mode":prefs.resource_mode,"memory_budget_mib":budget,"draft":text,
-                "usage":usage,"attempt":attempt+1,"attempts":attempts,
+                "usage":usage,"attempt":request_attempt,"attempts":attempts,
                 "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":context.cursor,
                 "trimmed_background":trimmed_background,"trimmed_passages":trimmed_passages,
             }))?,
@@ -688,8 +851,11 @@ fn generate_inner(
         }
     }
     let sections = verified.context("纪要复核未完成，待处理内容已保留")?;
+    work.scope.check(engine, &context.segments)?;
+    session.check_model()?;
     let mut db = engine.store.lock().unwrap();
-    if context_revision != engine.context_revision.load(Ordering::SeqCst) {
+    work.scope.check_store(&db, &context.segments)?;
+    if work.context_revision != engine.context_revision.load(Ordering::SeqCst) {
         bail!("辅助背景已更新，将使用新配置重新整理");
     }
     db.commit_document_with_state(
@@ -729,5 +895,108 @@ mod source_repair_tests {
         ] {
             assert!(source_repair(&error, other_source, &terms, true).is_none());
         }
+    }
+
+    #[test]
+    fn second_stage_is_not_dispatched_after_input_or_resource_changes() -> Result<()> {
+        for mutation in [
+            "cancel",
+            "maintenance",
+            "source",
+            "note",
+            "terms",
+            "speaker",
+            "preferences",
+            "background",
+            "pressure",
+            "budget",
+            "timeout",
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let meeting = engine.create_meeting("Fictional two-stage preparation")?;
+            let source = crate::Segment {
+                id: format!("{}:1:1", meeting.id),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "缓存仍应保存在本机。".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            engine.store.lock().unwrap().save_segment(&source)?;
+            let snapshot = engine.snapshot(&meeting.id)?;
+            let prefs = engine.preferences.lock().unwrap().clone();
+            let revision = engine.context_revision.load(Ordering::SeqCst);
+            let scope = generation::Scope::new(&engine, &snapshot, &prefs, revision)?;
+            let requests = generation::Budget::default();
+            let trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", "stages");
+            let work = Generation {
+                trace: &trace,
+                scope: &scope,
+                requests: &requests,
+                context_revision: revision,
+            };
+            let mut dispatched = 0;
+            work.ready(&engine, &snapshot.segments, false, false, false, 4096)?;
+            assert_eq!(requests.take()?, 1);
+            assert!(engine.store.try_lock().is_ok());
+            assert!(engine.preferences.try_lock().is_ok());
+            assert!(engine.config_lock.try_lock().is_ok());
+            dispatched += 1;
+            match mutation {
+                "cancel" => engine.note_cancel.store(true, Ordering::SeqCst),
+                "maintenance" => engine.maintenance.store(true, Ordering::SeqCst),
+                "source" => {
+                    let mut changed = source.clone();
+                    changed.text = "缓存将上传到服务器。".into();
+                    engine.store.lock().unwrap().save_segment(&changed)?;
+                }
+                "note" => {
+                    engine.save_note(&meeting.id, None, "新的整理重点", "note", 0)?;
+                }
+                "terms" => engine.store.lock().unwrap().set_cache_dependency(
+                    &meeting.id,
+                    "terms",
+                    "changed",
+                )?,
+                "speaker" => {
+                    let mut changed = meeting.clone();
+                    changed
+                        .speaker_names
+                        .insert("speaker-1".into(), "林悦".into());
+                    engine.store.lock().unwrap().save_meeting(&changed)?;
+                }
+                "preferences" => engine.preferences.lock().unwrap().minutes_language = "en".into(),
+                "background" => engine.invalidate_background()?,
+                "pressure" | "budget" | "timeout" => {}
+                _ => unreachable!(),
+            }
+            if work
+                .ready(
+                    &engine,
+                    &snapshot.segments,
+                    matches!(mutation, "pressure" | "budget"),
+                    mutation == "budget",
+                    mutation == "timeout",
+                    4096,
+                )
+                .is_ok()
+            {
+                dispatched += 1;
+            }
+            assert_eq!(dispatched, 1, "{mutation}");
+            assert_eq!(engine.snapshot(&meeting.id)?.meeting.notes_cursor, 0);
+            assert_eq!(
+                requests.take()?,
+                2,
+                "a rejected dispatch must not consume quota"
+            );
+            assert!(requests.take().is_err());
+        }
+        Ok(())
     }
 }

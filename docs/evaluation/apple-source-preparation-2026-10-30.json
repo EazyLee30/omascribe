@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "FAIL; Q16 and release 0.3.5 remain open",
+  "stable_release": "v0.3.4",
+  "source": "a12b9083e61c710974c943ffc4a913bccd7b2788",
+  "source_preparation_commit": "597a7382fc3d9e299eb7587124ccc81ccf5b6e7f",
+  "scope": "Original explicit-generation zh_recorded_mixed_prose_fidelity case, unchanged fixture and default preferences plus original fixture language override. Existing local qwen3-1.7b and installed Metal runtime. No installer, SDK, model or GPU-component rebuild.",
+  "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+  "source_checks": {
+    "core_passed": 407,
+    "core_ignored": 8,
+    "rustfmt": "PASS",
+    "strict_workspace_clippy": "PASS",
+    "diff_check": "PASS",
+    "ci": [
+      {
+        "run": 40941357867,
+        "name": "CI",
+        "result": "success"
+      },
+      {
+        "run": 40941357770,
+        "name": "Linux compatibility",
+        "result": "success"
+      },
+      {
+        "run": 40941357973,
+        "name": "Optional acceleration components",
+        "result": "success; Windows-core passed, GPU build/catalog skipped"
+      },
+      {
+        "run": 40941357844,
+        "name": "Website validation",
+        "result": "success"
+      }
+    ]
+  },
+  "manual_trials": [
+    {
+      "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+      "result": "PASS locally; did not reproduce the three original native failures",
+      "seconds": 9.18,
+      "requests": 4,
+      "input_tokens": 1335,
+      "output_tokens": 471,
+      "report_sha256": "3af8f3fad4fc10d001871095824ffbe2b0c0f8adaab4d1db942f3d9bb6fbc922"
+    },
+    {
+      "source": "597a7382fc3d9e299eb7587124ccc81ccf5b6e7f",
+      "result": "FAIL; valid uncertain-past translation rejected before composition",
+      "seconds": 4.274,
+      "requests": 2,
+      "input_tokens": 580,
+      "output_tokens": 148,
+      "report_sha256": "edd82cba71dd3c00d216ccc1edef5b9f2f1ae6bd52ac312286defd204cf3fbf2"
+    },
+    {
+      "source": "a12b9083e61c710974c943ffc4a913bccd7b2788",
+      "result": "FAIL; prepared translations now pass, but composed prose repeats five input passages and hits the unchanged prose completion guard",
+      "seconds": 8.393,
+      "requests": 4,
+      "input_tokens": 1324,
+      "output_tokens": 430,
+      "report_sha256": "9ddb56285f7d29a334abdfdd60c2b268c81851f9eabb73ad19453e14400ee57a"
+    }
+  ],
+  "current_trial": {
+    "backend": "metal",
+    "stages_each_batch": [
+      "prepare_sources",
+      "compose_prepared_sources"
+    ],
+    "batches": 2,
+    "selected_each_batch": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "draft_sources_each_batch": [
+      4,
+      2,
+      1,
+      3,
+      5
+    ],
+    "prepared_translation_validation": "PASS, including the actual possible-completion slot B",
+    "article_validation": "FAIL: 文档可能将计划写成了已完成事项，本轮未提交",
+    "actual_database": {
+      "notes_cursor": 0,
+      "suggestions": 0,
+      "document_history": 0,
+      "translations": 0,
+      "translation_parts": 0,
+      "raw_segments_equal_fixture": true,
+      "all_raw_revisions": 1,
+      "jobs": "both deferred"
+    },
+    "gpu_memory_mib": null,
+    "energy_joules": null
+  },
+  "implementation_boundary": "Narrow single-source translation exception preserves one explicitly hedged past completion; conditional, negated, quoted, mixed completion and opaque name cases remain rejected. No exemption for final multi-source minutes.",
+  "next_blocker": "Source preparation is not sufficient: fix actual composition quality without loosening fact checks, original fixture/assertions or the two-request budget. Then original manual history transition and complete fixed-candidate regression remain required.",
+  "limitations": [
+    "No current committed article; this run cannot evaluate historical theme retention at cursor5 to6.",
+    "The earlier candidate14 native FAIL remains FAIL, immutable branch unchanged.",
+    "Do not compare failed/accepted trials as speed or energy improvements.",
+    "No general semantic coverage or real ASR improvement is established by these checks."
+  ],
+  "raw_artifacts": "artifacts/q16-source-prepare-2026-10-30; original before/after and after-guard reports retained separately",
+  "asset_integrity": "Original model metadata and SHA256 plus installed runtime hashes matched before/after; six marked task-owned model clones and each evaluator borrowed store released after all trials. Logical bytes are not guaranteed physical disk reclamation.",
+  "preflight_note": "A checker initially looked for build-info at runtime root; corrected to runtime/llama before any evaluator or model request. Saved after-guard-preflight-error.json."
+}

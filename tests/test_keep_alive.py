@@ -178,6 +178,45 @@ class KeepAliveTests(unittest.TestCase):
                 cleanup.assert_called_once_with(pathlib.Path("owned"))
                 self.assertTrue(result["model_cleanup"]["released"])
                 self.assertTrue(result["errors"])
+    def test_planned_source_stages_do_not_count_as_repairs_but_keep_all_costs(self):
+        events = self.events()
+        index = next(i for i, row in enumerate(events)
+                     if row["task"] == "minutes" and row["phase"] == "request_started")
+        events[index]["metrics"]["stage"] = "prepare_sources"
+        request, generation = copy.deepcopy(events[index]), copy.deepcopy(events[index+1])
+        request["metrics"].update(attempt=2, stage="compose_prepared_sources")
+        generation["metrics"]["attempt"] = 2
+        events[index+2:index+2] = [request, generation]
+        result = inference_summary(events)
+        minutes = result["tasks"]["minutes"]
+        self.assertEqual((result["attempted_requests"], minutes["attempted_requests"], minutes["repaired_requests"]), (3, 2, 0))
+        self.assertEqual((minutes["request_ms"], minutes["input_tokens"], minutes["output_tokens"]), (400, 60, 20))
+        self.assertEqual(incurred_inference_costs(events)["request_ms"], 600)
+
+    def test_request_stage_overrides_attempt_and_legacy_keeps_its_meaning(self):
+        for stage, number, expected in (("prepare_sources", 2, 0), ("compose", 2, 0),
+                                        ("compose_prepared_sources", 2, 0), ("repair", 1, 1),
+                                        (None, 2, 1)):
+            with self.subTest(stage=stage):
+                events = self.events()
+                index = next(i for i, row in enumerate(events)
+                             if row["task"] == "minutes" and row["phase"] == "request_started")
+                if number == 2:
+                    # Lifecycle evidence requires a real sequential first call,
+                    # even when the second call is planned rather than a repair.
+                    request, generated = copy.deepcopy(events[index]), copy.deepcopy(events[index+1])
+                    request["metrics"]["attempt"] = generated["metrics"]["attempt"] = 2
+                    events[index+2:index+2] = [request, generated]
+                else:
+                    request = events[index]
+                if stage is not None:
+                    request["metrics"]["stage"] = stage
+                result = inference_summary(events)["tasks"]["minutes"]
+                self.assertEqual(result["repaired_requests"], expected)
+                self.assertEqual((result["attempted_requests"], result["request_ms"]), (number, number*200))
+        request["metrics"]["stage"] = "unknown_stage"
+        with self.assertRaises(ValueError):
+            inference_summary(events)
 
     def test_same_idle_horizon_reaps_all_ttls_and_refuses_latent_work(self):
         for ttl in (0, 10, 30):
