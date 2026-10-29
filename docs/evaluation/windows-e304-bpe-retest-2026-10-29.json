@@ -1,0 +1,35 @@
+{
+  "source_revision": "e30460a95362cfaa10207b61c1dc1aeb9180110b",
+  "local_date": "2026-10-29 Asia/Shanghai",
+  "platform": "Windows x86_64",
+  "source_worktree_clean": true,
+  "isolated_actual_function_probe": {
+    "method": "Copied exact pinned crates/asr/src/hotwords.rs into an independent Rust wrapper. Fictional primary/shared/audio directories contain minimal fictional BPE models and equal synthetic inventories. Held primary directory open with FILE_SHARE_READ and the production open flags, then created a new primary BPE.",
+    "pinned_hotwords_rs_sha256": "f3f483b943c260ba8e80b65f4e93832717ce05168702519fcaa7c3835426a5ac",
+    "wrapper_sha256": "db8c716d046a733f5f86fc7edc1346d813b07ab4d8ee0a56c0e90d40b9fb290c",
+    "binary_sha256": "9696a92ff80b15d57345fb00db1bb05d66eb039c8d0dd9e49228eab758e42157",
+    "command": "cargo +1.99.0 run --offline",
+    "result": "pass",
+    "explicit_shared_selected_before_and_after_local_creation": true,
+    "without_shared_local_selected": true,
+    "missing_empty_mismatched_or_oversized_shared_inventory_rejected": true,
+    "missing_empty_malformed_or_oversized_shared_bpe_rejected": true,
+    "failure_does_not_fallback_or_modify_previous_export": true,
+    "synthetic_fixture_cleaned": true
+  },
+  "actual_asr_crate_tests": {
+    "command": "cargo +1.99.0 test -p omascribe-asr --locked --offline hotwords::tests -- --test-threads=1",
+    "target": "independent local Cargo target, existing Sherpa SDK, static CRT",
+    "test_binary_sha256": "37a980fcee42848c00a937570a3e56190ad9e58837a48fbbbe057474f661bf12",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 7,
+    "result": "pass"
+  },
+  "limits": [
+    "The wrapper tests the pinned vocabulary function with equivalent directory open flags; it is not a product receipt or live worker process race test.",
+    "The crate tests are deterministic fictional input tests, not neural inference, real ASR quality, model admission, GPU or release acceptance.",
+    "No user model, microphone, recording, network download or GPU was used."
+  ]
+}
