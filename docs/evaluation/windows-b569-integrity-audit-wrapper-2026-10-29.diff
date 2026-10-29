@@ -1,0 +1,56 @@
+diff --git a/crates/core/src/model_integrity.rs b/crates/core/src/model_integrity.rs
+index de87982..3af749e 100644
+--- a/crates/core/src/model_integrity.rs
++++ b/crates/core/src/model_integrity.rs
+@@ -831,6 +831,51 @@ mod tests {
+         cache.invalidate(directory);
+     }
+ 
++    // Local Windows-only audit wrapper. This is not production code.
++    #[cfg(windows)]
++    #[test]
++    fn windows_audit_multiple_assets_and_clones_survive_cache_clear() {
++        let (_temp, directory, spec) =
++            fixture(&[("weights.gguf", b"good"), ("config.json", b"data")]);
++        let cache = Cache::default();
++        let receipt = cache.verify(&directory, &spec).unwrap();
++        let first_clone = receipt.clone();
++        let second_clone = receipt.clone();
++        let primary = directory.join("weights.gguf");
++        let secondary = directory.join("config.json");
++        cache.clear();
++        drop(receipt);
++        assert_sharing_denied(fs::write(&primary, b"evil").unwrap_err());
++        assert_sharing_denied(fs::write(&secondary, b"fake").unwrap_err());
++        drop(first_clone);
++        assert_sharing_denied(fs::write(&secondary, b"fake").unwrap_err());
++        second_clone.check_current().unwrap();
++        drop(second_clone);
++        // No sleep: the previously undetectable same-size write is immediate.
++        fs::write(&secondary, b"fake").unwrap();
++        assert_integrity(cache.verify(&directory, &spec));
++    }
++
++    #[cfg(windows)]
++    #[test]
++    fn windows_audit_existing_writer_then_release_and_immediate_corruption() {
++        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
++        let cache = Cache::default();
++        let path = directory.join("weights.gguf");
++        // The writer exists before admission and is not used to modify content.
++        let writer = File::options().write(true).open(&path).unwrap();
++        assert_integrity(cache.verify(&directory, &spec));
++        assert!(cache.current(&directory, &spec).unwrap().is_none());
++        drop(writer);
++        let receipt = cache.verify(&directory, &spec).unwrap();
++        assert_sharing_denied(File::options().write(true).open(&path).unwrap_err());
++        cache.clear();
++        drop(receipt);
++        // No sleep and same file size; cold verification must hash and reject.
++        fs::write(&path, b"evil").unwrap();
++        assert_integrity(cache.verify(&directory, &spec));
++    }
++
+     #[test]
+     fn cached_receipt_rechecks_without_reading_contents() {
+         let (_temp, directory, spec) = fixture(&[("weights.gguf", b"pinned weights")]);

@@ -1,0 +1,43 @@
+{
+  "source_revision": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+  "local_date": "2026-10-29",
+  "platform": "Windows 10 Pro 10.0.19045 build 19045; x86_64; Rust 1.99.0",
+  "original_source_run": {
+    "source_worktree_clean_before_run": true,
+    "command": "cargo +1.99.0 test -p omascribe-core --lib --locked model_integrity::tests",
+    "tests_passed": 19,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "includes_original_windows_ci_failed_tests": [
+      "detects_secondary_change_after_it_was_hashed",
+      "same_size_corruption_invalidates_cached_receipt",
+      "secondary_asset_change_invalidates_whole_model"
+    ],
+    "additional_existing_windows_coverage": ["existing writer", "receipt clone", "cache clear", "directory replacement", "same-size file mutation", "mtime restoration"],
+    "default_test_parallelism": true,
+    "log_sha256": "8d58ee2c07cf162d3a692e6909e28e0d9777e99c202e49fee0b5b3fde8a318fe"
+  },
+  "test_only_wrapper_run": {
+    "command": "cargo +1.99.0 test -p omascribe-core --lib --locked windows_audit_",
+    "tests_passed": 2,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "test_only_diff_sha256": "ef46915e2467162a62a9bee515eab8c34c4dae558d4a6b0709dfaabb210d3152",
+    "instrumented_test_binary_sha256": "7655d92cf8a5840405a260f2d0bd71f4bc6003bde17ce186a30e82a91efc8426",
+    "log_sha256": "b81fc3b969f3723bab93af2edb5c475783f614e96b459ca29a61fc772b8aa6a5",
+    "checks": [
+      "Existing writer was opened before admission; verification failed closed, then succeeded after writer release.",
+      "After successful admission, opening another writer was denied until both cache and receipt owners released handles.",
+      "For two model assets, clearing cache and dropping the original receipt did not release protections held by two clones; dropping one clone still blocked modification.",
+      "Immediately after the final clone was released, same-length corruption of a secondary asset succeeded, and a fresh SHA-based admission rejected it.",
+      "After clearing the cache and releasing the only receipt, an immediate same-length primary asset modification was rejected by fresh admission."
+    ]
+  },
+  "limits": [
+    "The first run is the unmodified fixed-source model_integrity unit test subset, not the entire Windows CI job.",
+    "The second run appends test-only functions in a separate local worktree; production logic was not modified or committed.",
+    "Synthetic temporary files only; no user model, audio or private contents were accessed.",
+    "No GPU component, SDK, installer, real model loading, external mmap/native reopen path, or release acceptance was tested.",
+    "Windows-only observations do not establish Linux or macOS behavior."
+  ]
+}

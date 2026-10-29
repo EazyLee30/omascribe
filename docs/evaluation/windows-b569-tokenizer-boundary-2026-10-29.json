@@ -1,0 +1,29 @@
+{
+  "source_revision": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+  "local_date": "2026-10-29",
+  "platform": "Windows x86_64",
+  "production_code_path": "crates/asr/src/hotwords.rs",
+  "production_code_sha256": "60ec53f9793fafc6d1588c92e319cdd400f6e7825efb19f181f16a3bff0aed88",
+  "isolated_harness_sha256": "4c1eed4adfd9afb5bed7b44c43f7805839c0eeed37a1d14288c4a79db141157f",
+  "isolated_binary_sha256": "7cbeb4e350afdb77ae626a0d5fda540bd3650de50be3f3576ad2200fac50c4d9",
+  "function_probe": {
+    "method": "Independent offline Rust program copies exact pinned hotwords.rs, creates fictional model/shared/audio directories and minimal fictional BPE data, holds a Windows directory handle with FILE_SHARE_READ and the same open flags, calls actual vocabulary function before and after creating model/bpe.model.",
+    "initial_shared_vocabulary_selected": true,
+    "local_file_creation_succeeded_while_directory_handle_retained": true,
+    "later_local_vocabulary_selected": true,
+    "command": "cargo +1.99.0 run --offline",
+    "result": "pass",
+    "fixture_cleanup": true,
+    "preparation_note": "First Cargo invocation stopped before compiling because its temporary crate was nested under another workspace. An independent workspace declaration was added and the probe then passed."
+  },
+  "directory_metadata_probes": [
+    {"trials": 100, "unchanged_last_write_and_change_times": 68, "other_identity_fields_compared": false},
+    {"trials": 100, "unchanged_volume_file_id_directory_size_last_write_and_change_times": 44, "all_product_directory_identity_fields_compared": true}
+  ],
+  "limits": [
+    "Separate synthetic directory trials on one machine; counts are not a cross-system failure rate.",
+    "The isolated program exercises the exact hotwords vocabulary function and equivalent native directory-open flags, not the complete product receipt or worker lifecycle.",
+    "It establishes local child creation and vocabulary selection drift but does not show a real worker loading a tampered user model or any actual exploitation.",
+    "No user model, microphone, recording, GPU, or network data was used."
+  ]
+}
