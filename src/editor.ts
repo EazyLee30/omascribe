@@ -224,6 +224,9 @@ export class NotebookEditor {
     this.updateToolbar();
     this.slash?.update(this.composing);
   }
+  getMarkdown(): string {
+    return this.sourceMode ? this.source.value : this.editor.getMarkdown();
+  }
   private count(markdown: string) {
     this.host.querySelector(".editor-count")!.textContent =
       `${[...markdown].length.toLocaleString()} ${t("characters")}`;
