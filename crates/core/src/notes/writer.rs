@@ -317,8 +317,9 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
 }
 
 /// Normalize a model's complete sequential presentation list into prose. Only
-/// ordinal prefixes are removed; amounts, dates and other numbers stay intact
-/// for factual validation. Wrapped/mixed/nonsequential lines are left alone.
+/// ordinal prefixes are removed; independent items retain sentence boundaries.
+/// Amounts, dates and other numbers stay intact for factual validation.
+/// Wrapped/mixed/nonsequential lines are left alone.
 fn without_sequential_labels(text: &str) -> String {
     let lines: Vec<_> = text
         .lines()
@@ -336,7 +337,26 @@ fn without_sequential_labels(text: &str) -> String {
                 .map(str::trim)
         })
         .collect();
-    prose.map_or_else(|| text.to_owned(), |lines| lines.join(" "))
+    prose.map_or_else(
+        || text.to_owned(),
+        |lines| {
+            lines
+                .into_iter()
+                .map(|line| {
+                    if line.is_empty()
+                        || line.ends_with(['.', '。', '!', '！', '?', '？', ';', '；'])
+                    {
+                        line.to_owned()
+                    } else if line.chars().any(|c| ('\u{3400}'..='\u{9fff}').contains(&c)) {
+                        format!("{line}。")
+                    } else {
+                        format!("{line}.")
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        },
+    )
 }
 
 fn fragmented(segments: &[crate::Segment]) -> bool {
@@ -472,6 +492,16 @@ mod tests {
         ] {
             assert_eq!(super::without_sequential_labels(body), body);
         }
+        assert_eq!(
+            super::without_sequential_labels("1. 不是\n2. 预算3000元尚未批准"),
+            "不是。 预算3000元尚未批准。"
+        );
+        assert_eq!(
+            super::without_sequential_labels(
+                "1. The Node.js 1.4 check is pending\n2. Alice will review it"
+            ),
+            "The Node.js 1.4 check is pending. Alice will review it."
+        );
     }
     #[test]
     fn source_line_wrapping_becomes_article_paragraphs_without_touching_code() {

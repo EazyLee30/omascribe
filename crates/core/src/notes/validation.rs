@@ -207,6 +207,136 @@ pub fn preserve_replaced_sources(
     }
     Ok(())
 }
+#[cfg(test)]
+mod conditional_role_replay_tests {
+    use super::*;
+
+    fn original_sources() -> Vec<Segment> {
+        let cases: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/fixtures/document-cases.json"
+        )))
+        .unwrap();
+        cases
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == "zh_recorded_mixed_prose_fidelity")
+            .unwrap()["transcript"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+            .map(|(i, text)| Segment {
+                id: format!("m:1:{}", i + 1),
+                meeting_id: "m".into(),
+                run: 1,
+                seq: i as u32 + 1,
+                start_ms: i as u64 * 10_000,
+                end_ms: (i as u64 + 1) * 10_000,
+                text: text.as_str().unwrap().into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })
+            .collect()
+    }
+
+    fn draft(body: &str, sources: &[usize]) -> String {
+        serde_json::json!({"sections":[{
+            "title":"会议纪要", "body":body, "sources":sources
+        }]})
+        .to_string()
+    }
+
+    // These are the actual two committed raw prose responses from the rejected
+    // 8da0767 trial, not model output manufactured to match the new guard.
+    #[test]
+    fn captured_article_cannot_promote_a_conditional_participant_into_a_speaker() {
+        let sources = original_sources();
+        for (body, cited, selected) in [
+            (
+                "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性时，记者表示对此有疑问。随后，有人指出即使主舞台的音乐可能已经结束，嘉年华的某些部分仍可能继续演奏音乐直到深夜。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+                &[4, 2, 1, 3, 5][..],
+                &sources[..5],
+            ),
+            (
+                "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性时，记者表示将根据情况决定是否公布。同时，有人指出即使主舞台的音乐可能已经结束，嘉年华的某些部分仍可能继续演奏音乐直到深夜。大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+                &[2, 4, 6, 1, 3, 5][..],
+                &sources[..],
+            ),
+        ] {
+            let error = validate(&draft(body, cited), selected, "m").unwrap_err();
+            assert!(
+                error
+                    .downcast_ref::<super::super::attribution_roles::Mismatch>()
+                    .is_some(),
+                "unexpected rejection: {error:#}"
+            );
+        }
+    }
+
+    #[test]
+    fn captured_sources_can_still_be_summarized_without_inventing_a_response() {
+        let sources = original_sources();
+        let body = "当迪大学的 PAMELA FURGO森教授与邓迪大学的潘 MALE FERGUSON教授均指出，记者如果公布嫌疑人的照片等信息，似乎确实存在危害性。即使主舞台的音乐可能已经结束，嘉年华的某些部分仍可能继续演奏音乐直到深夜。";
+        let sections = validate(&draft(body, &[1, 2, 3, 4, 5, 6]), &sources, "m")
+            .expect("the original conditional risk claim is still valid");
+        assert_eq!(sections[0].sources.len(), 6);
+        for quote in &sections[0].sources {
+            let source = sources.iter().find(|s| s.id == quote.segment_id).unwrap();
+            assert_eq!(
+                (quote.revision, &quote.quote),
+                (source.revision, &source.text)
+            );
+        }
+    }
+
+    #[test]
+    fn a_bound_speaker_can_report_their_complete_source_but_cannot_invent_a_response() {
+        let mut source = original_sources().remove(1);
+        source.speaker = Some("bound-voice".into());
+        source.speaker_manual = true;
+        let names = [("bound-voice".to_owned(), "记者".to_owned())]
+            .into_iter()
+            .collect();
+        let faithful = format!("记者表示，{}。", source.text);
+        validate_with_speakers(
+            &draft(&faithful, &[1]),
+            std::slice::from_ref(&source),
+            "m",
+            &names,
+        )
+        .expect("manual voice identity supports attribution of its complete original speech");
+        for body in ["记者表示对此有疑问。", "记者表示将根据情况决定是否公布。"]
+        {
+            assert!(validate_with_speakers(
+                &draft(body, &[1]),
+                std::slice::from_ref(&source),
+                "m",
+                &names,
+            )
+            .is_err());
+        }
+    }
+
+    #[test]
+    fn presentation_items_keep_other_actors_outside_a_conditional_participants_clause() {
+        let mut sources = original_sources();
+        sources.truncate(2);
+        sources[0].text = "审计员指出承包商如果上传日志可能泄露信息".into();
+        sources[1].text = "工程师表示缓存需要复核".into();
+        let raw = "1. 审计员指出承包商如果上传日志可能泄露信息\n2. 工程师表示缓存需要复核";
+        let body = super::super::writer::body_text(raw, "{}").unwrap();
+        assert_eq!(
+            body,
+            "审计员指出承包商如果上传日志可能泄露信息。 工程师表示缓存需要复核。"
+        );
+        validate(&draft(&body, &[1, 2]), &sources, "m")
+            .expect("presentation normalization must preserve independent statements");
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Draft {
@@ -1225,6 +1355,20 @@ fn validate_document(
             .collect::<Vec<_>>()
             .join(" ");
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
+        let quoted_sources = sources.iter().map(|s| s.quote.as_str()).collect::<Vec<_>>();
+        if sources.iter().all(|s| s.speaker_name.is_none()) {
+            super::attribution_roles::validate(body, &quoted_sources, terms)?;
+        } else {
+            super::attribution_roles::validate_with_authors(
+                body,
+                &quoted_sources,
+                &sources
+                    .iter()
+                    .map(|s| s.speaker_name.as_deref())
+                    .collect::<Vec<_>>(),
+                terms,
+            )?;
+        }
         super::recording_retention::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         super::submission::validate(body, &current_evidence, !require_prose)?;
         if require_prose {

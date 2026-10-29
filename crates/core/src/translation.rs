@@ -1084,6 +1084,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
     if error.is::<crate::task_roles::Mismatch>() {
         return "task_responsibility";
     }
+    if error.is::<notes::AttributionMismatch>() {
+        return "conditional_attribution";
+    }
     if let Some(q) = error.downcast_ref::<notes::QualifierMismatch>() {
         return match q {
             notes::QualifierMismatch::Scope => "exclusive_scope",
@@ -1113,6 +1116,9 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
 }
 
 fn repair_hint(error: &anyhow::Error) -> &'static str {
+    if let Some(attribution) = error.downcast_ref::<notes::AttributionMismatch>() {
+        return attribution.hint();
+    }
     if let Some(retention) = error.downcast_ref::<notes::RecordingRetentionMismatch>() {
         return retention.hint();
     }
@@ -1222,6 +1228,39 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn conditional_role_failures_share_the_minutes_veto_and_private_repair_category() {
+        let passage = crate::Segment {
+            id: "role-source".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "审计员指出承包商如果上传日志可能泄露信息。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        for body in ["承包商表示日志存在风险。", "承包商决定是否上传日志。"]
+        {
+            let error = validate_text(body, &passage, "zh", &terms).unwrap_err();
+            assert!(error.is::<notes::AttributionMismatch>());
+            assert_eq!(validation_kind(&error), "conditional_attribution");
+            assert_eq!(repair_hint(&error), notes::AttributionMismatch.hint());
+            assert!(!repair_hint(&error).contains("承包商"));
+            assert!(!repair_hint(&error).contains("上传日志"));
+        }
+        validate_text(
+            "审计员指出，如果承包商上传日志，可能泄露信息。",
+            &passage,
+            "zh",
+            &terms,
+        )
+        .unwrap();
+    }
     #[test]
     fn explicit_approval_wording_keeps_the_original_approval_predicate() {
         let source =

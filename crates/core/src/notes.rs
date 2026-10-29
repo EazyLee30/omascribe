@@ -1,7 +1,9 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
 mod amounts;
+mod attribution_roles;
 pub(crate) use amounts::normalize as normalize_money;
 pub(crate) use amounts::repair_unitless_yuan;
+pub(crate) use attribution_roles::Mismatch as AttributionMismatch;
 mod completion;
 mod corrections;
 #[cfg(test)]
@@ -795,6 +797,10 @@ fn generate_inner(
                         qualifier.hint()
                     } else if let Some(relation) = error.downcast_ref::<RelationMismatch>() {
                         relation.hint()
+                    } else if let Some(attribution) =
+                        error.downcast_ref::<attribution_roles::Mismatch>()
+                    {
+                        attribution.hint()
                     } else if name_hint.contains("专有名称") {
                         &name_hint
                     } else if error.to_string().contains("历史来源") {
