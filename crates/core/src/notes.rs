@@ -428,11 +428,10 @@ fn generate_inner(
     );
     let source_name_mask =
         crate::translation::source_name_mask(&selected_source, &selected_source, &terms);
-    // A full manual recomposition has no caption cache to supply the selected
-    // output language. Prepare only its missing representations, keeping each
-    // translation bound to its original source. The existing two-call budget
-    // includes this stage; it does not add another repair attempt.
-    let mut source_plan = if delta.is_none() {
+    // Default to the existing writer and its bounded factual/language repair.
+    // Source preparation remains an explicit experiment: it spends one of the
+    // same two requests before composition and has not passed the manual gate.
+    let mut source_plan = if source_language::configured() && delta.is_none() {
         source_language::Plan::new(
             &content,
             &context.segments,

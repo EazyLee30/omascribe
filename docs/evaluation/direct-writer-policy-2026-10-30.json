@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "parent": "33fe011",
+  "status": "Direct writer restored by gating unproven source preparation; one unchanged manual model trial pending",
+  "scope": "Only OMASCRIBE_PREPARE_SOURCES=1 builds/runs source-language preparation. Default begins with the existing unchanged writer and retains its factual/language repair within the same two-send budget. No prompt, fixture, output/context limit, canonical spelling, citation or final guard relaxed.",
+  "cache": "Incremental state template identity now includes notes/source_language source bytes and the source-preparation bool. Valid caption translations are not purged; existing synced articles are not silently recomputed. The test uses a fresh workspace.",
+  "historical_evidence": "49d8 local original manual pattern PASS is not semantic acceptance: repeated music, weakened uncertainty and name spacing/transliteration remain. Native candidate14 manual Mac/Intel/Windows failures still stand. Auto candidate14 used9 caption requests plus2 minutes requests with3 prepared cache passages, not the manual2-send budget.",
+  "default_source_preparation": false,
+  "experimental_opt_in": "OMASCRIBE_PREPARE_SOURCES=1",
+  "limits": {
+    "chat_sends_per_task": 2,
+    "max_output_tokens": 440,
+    "original_q16_context": 2048
+  },
+  "checks": {
+    "core_passed": 454,
+    "core_ignored": 9,
+    "cli_passed": 2,
+    "integration_passed": 26,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "diff_check": "PASS",
+    "independent_static_review": "No introduced blocker"
+  },
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "8769868bfc9ed9f588aaba282a59bf917818b1efafc1d5054a78524259f14b6e",
+    "crates/core/src/notes/source_language.rs": "f42da1f5e6fa0412698c24a4a9cdf498f1068f371d5b372699d8350b4403f62b",
+    "crates/core/src/notes/incremental.rs": "32ff31868c88d4fa2ee5f42eb45634e30c0a0140850007581537421f0e990fed"
+  },
+  "trial": "One original manual zh_recorded_mixed_prose_fidelity/default preferences+existing fixture zh/no auto-schedule, same installed weights/runtime. Full raw/final/topic/name/state/citation review, failure and cost retained; no prompt sweep or another protocol.",
+  "release": "Original Q16 remains open until actual verification;0.3.5 unpublished, stable0.3.4. No installer/SDK/model/runtime/GPU component rebuild."
+}

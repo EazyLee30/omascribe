@@ -13,6 +13,12 @@ const MAX_SOURCE_BYTES: usize = 120_000;
 const MAX_SLOTS: usize = 26;
 const MAX_VALUE_CHARS: usize = 4000;
 
+/// Experimental request-local translation preparation. Its extra request has
+/// not passed the manual composition quality gate, so it is not the default.
+pub(super) fn configured() -> bool {
+    std::env::var("OMASCRIBE_PREPARE_SOURCES").as_deref() == Ok("1")
+}
+
 #[derive(Clone)]
 struct Binding {
     passage: usize,

@@ -53,11 +53,13 @@ pub(crate) fn scope(
             include_str!("writer.rs"),
             include_str!("validation.rs"),
             include_str!("incremental.rs"),
+            include_str!("source_language.rs"),
+            include_str!("../notes.rs"),
         ))
     });
     Ok(digest(
         &json!({"schema":KEY,"environment":crate::inference_cache::environment(engine,&engine.store.lock().unwrap(),&snapshot.meeting,prefs)?,
-        "template":template,"language":prefs.minutes_language,"generation":{"temperature":0.1,"seed":42,"output_tokens":440,"repairs":1}}),
+        "template":template,"language":prefs.minutes_language,"generation":{"temperature":0.1,"seed":42,"output_tokens":440,"repairs":1,"source_preparation":super::source_language::configured()}}),
     ))
 }
 /// Metadata only, pointing to the actual committed document and current original sources.
