@@ -1,0 +1,125 @@
+{
+  "platform": "Windows x86_64, CPU ASR",
+  "audio": "previously authorized Realtek tail test; private audio, transcript and their hashes excluded",
+  "model": "zipformer-small",
+  "model_files": {
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+  },
+  "model_verified_before_and_after": true,
+  "threads": 2,
+  "same_note_and_settings": true,
+  "pcm_copies_equal_original": true,
+  "hotword_wires_equal": true,
+  "each_wire_equal_to_live": [
+    true,
+    true
+  ],
+  "binary_identities": [
+    {
+      "source": "17380f64783c26ce77def7dd13429699958f5259",
+      "cli_sha256": "eada0dc86a98a0a062e95762eda0b76d539990ab6f474db655beb9f7e1852857",
+      "worker_sha256": "94877004fc0b34c6665b5724a9c2c4bd69163e77b194b2a0424e088cebbc384a",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "17380f64783c26ce77def7dd13429699958f5259",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "f02a869b05e85db43060ad67500b09a0546d4ab2417e34f216e492251294ddf8",
+        "target": "x86_64-pc-windows-msvc"
+      }
+    },
+    {
+      "source": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+      "cli_sha256": "7fc6e72972327e5ab874676dcb39283302333e7dd0e99d0e0d411c9494d7e036",
+      "worker_sha256": "fe9c54f542f7e82ce99b6889262f29be340b240cc4755f50396e9b455c3f1a94",
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "f0cce93ce54fc88d2ddcd478297f853be47d9eccd5719f18d468bfa9f8f93d2d",
+        "target": "x86_64-pc-windows-msvc"
+      }
+    }
+  ],
+  "rows": [
+    {
+      "source": "17380f64783c26ce77def7dd13429699958f5259",
+      "seconds": 3.0,
+      "capture_ms": 24530,
+      "processed_ms": 24530,
+      "segment_count": 3,
+      "segment_time_ranges_ms": [
+        {
+          "start": 2800,
+          "end": 10400
+        },
+        {
+          "start": 10400,
+          "end": 15800
+        },
+        {
+          "start": 18400,
+          "end": 24530
+        }
+      ],
+      "exact_target_matches": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false,
+        "tail_marker": false
+      },
+      "decoder": "modified_beam_search",
+      "hotword_count": 6,
+      "hotword_input_status": null,
+      "fallback_present": false
+    },
+    {
+      "source": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+      "seconds": 2.781,
+      "capture_ms": 24530,
+      "processed_ms": 24530,
+      "segment_count": 3,
+      "segment_time_ranges_ms": [
+        {
+          "start": 2800,
+          "end": 10400
+        },
+        {
+          "start": 10400,
+          "end": 15800
+        },
+        {
+          "start": 18400,
+          "end": 24530
+        }
+      ],
+      "exact_target_matches": {
+        "omascribe": false,
+        "alice": false,
+        "nvidia": false,
+        "gtx1650": false,
+        "tail_marker": false
+      },
+      "decoder": "modified_beam_search",
+      "hotword_count": 6,
+      "hotword_input_status": "accepted",
+      "fallback_present": false
+    }
+  ],
+  "limitations": [
+    "Two product offline retranscriptions of the same previously recorded user-confirmed tail sample; no microphone started.",
+    "Offline scheduling differs from original live recording and does not validate real-time stop or capture.",
+    "Exact word booleans do not establish general ASR accuracy or explain individual failures.",
+    "Original candidate10 live report remains unchanged.",
+    "Actual audio, actual transcripts, hotword contents and their hashes remain local.",
+    "Both exact private transcript comparison and private audio comparison are reported as booleans only; no transcript or audio hash is exposed."
+  ],
+  "paired_segment_text_sequences_equal": true,
+  "paired_segment_ranges_equal": true
+}
