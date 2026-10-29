@@ -6,6 +6,7 @@ pub(crate) use amounts::repair_unitless_yuan;
 pub(crate) use attribution_roles::Mismatch as AttributionMismatch;
 mod completion;
 mod corrections;
+mod diagnostic;
 #[cfg(test)]
 pub(crate) mod facts;
 mod generation;
@@ -59,6 +60,7 @@ pub const MODEL_FILE: &str = "Qwen3-1.7B-Q4_K_M.gguf";
 
 struct Generation<'a> {
     trace: &'a crate::inference_trace::TaskTrace,
+    diagnostic: &'a diagnostic::Report<'a>,
     scope: &'a generation::Scope,
     requests: &'a generation::Budget,
     context_revision: u64,
@@ -142,80 +144,95 @@ pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let snapshot = engine.snapshot(meeting)?;
-    if !needs_update(&snapshot) {
-        bail!("纪要已与当前关键词和转写同步");
-    }
-    if engine.note_cancel.load(Ordering::SeqCst) {
-        bail!("已取消，待处理内容已保留");
-    }
-    if snapshot.runtime.transcribing
-        && snapshot
-            .runtime
-            .elapsed_ms
-            .saturating_sub(snapshot.runtime.processed_ms)
-            > 2500
-    {
-        bail!("字幕正在追赶，稍后自动整理");
-    }
-    if !engine.diagnostics().llm_ready {
-        bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
-    }
-    let prefs = engine.preferences.lock().unwrap().clone();
-    let scope = generation::Scope::new(engine, &snapshot, &prefs, context_revision)?;
-    let requests = generation::Budget::default();
-    let work = Generation {
-        trace: &trace,
-        scope: &scope,
-        requests: &requests,
-        context_revision,
-    };
-    let state_environment = if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1")
-    {
-        Some(incremental::scope(engine, &snapshot, &prefs)?)
-    } else {
-        None
-    };
-    let delta = if let Some(environment) = &state_environment {
-        let saved = engine
-            .store
-            .lock()
-            .unwrap()
-            .cache_dependency(meeting, incremental::KEY)?;
-        incremental::prepare(&snapshot, environment, &saved)
-    } else {
-        None
-    };
-    let context = delta
-        .as_ref()
-        .map(|d| d.context.clone())
-        .unwrap_or_else(|| retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache)));
-    trace.event(
-        "retrieval",
-        json!({"selected":context.segments.len(),"cursor":context.cursor}),
+    let diagnostic = diagnostic::Report::new(
+        &engine.root,
+        meeting,
+        &engine.preferences.lock().unwrap().llm_model,
+        snapshot.meeting.notes_cursor,
+        &trace,
     );
-    engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
-    let result = crate::acceleration::with_cpu_fallback(engine, || {
-        requests.ensure_remaining()?;
-        generate_inner(
-            engine,
-            meeting,
-            &snapshot,
-            context.clone(),
-            &prefs,
-            &work,
-            (delta.clone(), state_environment.as_deref()),
-        )
-    });
-    let outcome = match &result {
-        Ok(n) => json!({"status":"committed","sections":n}),
-        Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
-    };
-    engine.store.lock().unwrap().finish_job(
-        &job,
-        &outcome,
-        started.elapsed().as_millis() as u64,
-    )?;
-    trace.finish(result.is_ok(), result.as_ref().ok().copied());
+    let result = (|| {
+        if !needs_update(&snapshot) {
+            bail!("纪要已与当前关键词和转写同步");
+        }
+        if engine.note_cancel.load(Ordering::SeqCst) {
+            bail!("已取消，待处理内容已保留");
+        }
+        if snapshot.runtime.transcribing
+            && snapshot
+                .runtime
+                .elapsed_ms
+                .saturating_sub(snapshot.runtime.processed_ms)
+                > 2500
+        {
+            bail!("字幕正在追赶，稍后自动整理");
+        }
+        if !engine.diagnostics().llm_ready {
+            bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
+        }
+        let prefs = engine.preferences.lock().unwrap().clone();
+        let scope = generation::Scope::new(engine, &snapshot, &prefs, context_revision)?;
+        let requests = generation::Budget::default();
+        let work = Generation {
+            trace: &trace,
+            diagnostic: &diagnostic,
+            scope: &scope,
+            requests: &requests,
+            context_revision,
+        };
+        let state_environment =
+            if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1") {
+                Some(incremental::scope(engine, &snapshot, &prefs)?)
+            } else {
+                None
+            };
+        let delta = if let Some(environment) = &state_environment {
+            let saved = engine
+                .store
+                .lock()
+                .unwrap()
+                .cache_dependency(meeting, incremental::KEY)?;
+            incremental::prepare(&snapshot, environment, &saved)
+        } else {
+            None
+        };
+        let context = delta
+            .as_ref()
+            .map(|d| d.context.clone())
+            .unwrap_or_else(|| retrieval::retrieve(&snapshot, Some(&engine.retrieval_cache)));
+        trace.event(
+            "retrieval",
+            json!({"selected":context.segments.len(),"cursor":context.cursor}),
+        );
+        engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
+        let result = crate::acceleration::with_cpu_fallback(engine, || {
+            requests.ensure_remaining()?;
+            generate_inner(
+                engine,
+                meeting,
+                &snapshot,
+                context.clone(),
+                &prefs,
+                &work,
+                (delta.clone(), state_environment.as_deref()),
+            )
+        });
+        let outcome = match &result {
+            Ok(n) => json!({"status":"committed","sections":n}),
+            Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
+        };
+        engine.store.lock().unwrap().finish_job(
+            &job,
+            &outcome,
+            started.elapsed().as_millis() as u64,
+        )?;
+        result
+    })();
+    diagnostic.finish(engine);
+    let committed = diagnostic.committed();
+    let sections = diagnostic.sections();
+    drop(diagnostic);
+    trace.finish(committed, sections);
     result
 }
 fn generate_inner(
@@ -238,18 +255,19 @@ fn generate_inner(
         .as_ref()
         .is_some_and(|d| d.fresh().all(|s| writer::non_substantive(&s.text)))
     {
-        std::fs::write(
-            engine.root.join("last-generation.json"),
-            serde_json::to_vec_pretty(&json!({
+        work.diagnostic.record(
+            engine,
+            json!({
                 "meeting_id":meeting,"model":prefs.llm_model,"attempt":0,"reason":"retained_verified_article",
                 "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":context.cursor,"usage":null
-            }))?,
+            }),
         )?;
         trace.event(
             "article_state",
             json!({"mode":"retain_verified_article","reason":"new_mic_checks_only"}),
         );
-        return engine.store.lock().unwrap().commit_document_with_state(
+        work.diagnostic.commit_started();
+        let result = engine.store.lock().unwrap().commit_document_with_state(
             snapshot,
             &context.segments,
             context.cursor,
@@ -257,6 +275,8 @@ fn generate_inner(
             engine.note_cancel.load(Ordering::SeqCst),
             state_environment,
         );
+        work.diagnostic.commit_result(&result);
+        return result;
     }
     if context
         .segments
@@ -264,14 +284,15 @@ fn generate_inner(
         .all(|s| writer::non_substantive(&s.text))
     {
         // Known mic checks do not need a resident LLM, and are not evidence of completed work.
-        std::fs::write(
-            engine.root.join("last-generation.json"),
-            serde_json::to_vec_pretty(&json!({
+        work.diagnostic.record(
+            engine,
+            json!({
                 "meeting_id":meeting, "model":prefs.llm_model, "attempt":0,
                 "reason":"non_substantive_only", "draft":"{\"sections\":[]}", "usage":null,
-            }))?,
+            }),
         )?;
-        return engine.store.lock().unwrap().commit_document_with_state(
+        work.diagnostic.commit_started();
+        let result = engine.store.lock().unwrap().commit_document_with_state(
             snapshot,
             &context.segments,
             context.cursor,
@@ -279,6 +300,8 @@ fn generate_inner(
             engine.note_cancel.load(Ordering::SeqCst),
             state_environment,
         );
+        work.diagnostic.commit_result(&result);
+        return result;
     }
     if prefs.resource_mode == "quality" && (snapshot.runtime.recording || snapshot.runtime.paused) {
         bail!("质量模式将在录音结束后整理纪要");
@@ -517,12 +540,12 @@ fn generate_inner(
         if generated.is_err() {
             attempts.push(json!({"attempt":request_attempt,"stage":request_stage,"draft":partial_draft,"failure":"incomplete_local_response",
                 "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms}));
-            std::fs::write(
-                engine.root.join("last-generation.json"),
-                serde_json::to_vec_pretty(&json!({
+            work.diagnostic.record(
+                engine,
+                json!({
                     "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
                     "attempt":request_attempt,"attempts":attempts,"draft":partial_draft,"committed":false,
-                }))?,
+                }),
             )?;
         }
         if engine.note_cancel.load(Ordering::SeqCst) {
@@ -559,14 +582,14 @@ fn generate_inner(
                 "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms,
                 "selected":context.segments.iter().map(|s|json!({"id":s.id,"seq":s.seq,"revision":s.revision})).collect::<Vec<_>>(),
             }));
-            std::fs::write(
-                engine.root.join("last-generation.json"),
-                serde_json::to_vec_pretty(&json!({
+            work.diagnostic.record(
+                engine,
+                json!({
                     "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
                     "attempt":request_attempt,"attempts":attempts,"draft":raw_body,
                     "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":snapshot.meeting.notes_cursor,
                     "stage":"source_preparation","committed":false,
-                }))?,
+                }),
             )?;
             let prepared = preparation?;
             // Do not spend the second request on stale representations or
@@ -738,15 +761,15 @@ fn generate_inner(
             "input_tokens":prompt_tokens, "citation_scope":"selected_transcript_context", "context_size":prefs.context_size,
             "selected":context.segments.iter().map(|s|json!({"id":s.id,"seq":s.seq,"revision":s.revision})).collect::<Vec<_>>(),
         }));
-        std::fs::write(
-            engine.root.join("last-generation.json"),
-            serde_json::to_vec_pretty(&json!({
+        work.diagnostic.record(
+            engine,
+            json!({
                 "meeting_id":meeting,"model":prefs.llm_model,"backend":backend.name(),
                 "resource_mode":prefs.resource_mode,"memory_budget_mib":budget,"draft":text,
                 "usage":usage,"attempt":request_attempt,"attempts":attempts,
                 "cursor_before":snapshot.meeting.notes_cursor,"cursor_after":context.cursor,
                 "trimmed_background":trimmed_background,"trimmed_passages":trimmed_passages,
-            }))?,
+            }),
         )?;
         match validation {
             Ok(sections) => {
@@ -908,14 +931,17 @@ fn generate_inner(
     if work.context_revision != engine.context_revision.load(Ordering::SeqCst) {
         bail!("辅助背景已更新，将使用新配置重新整理");
     }
-    db.commit_document_with_state(
+    work.diagnostic.commit_started();
+    let result = db.commit_document_with_state(
         snapshot,
         &context.segments,
         context.cursor,
         sections,
         engine.note_cancel.load(Ordering::SeqCst),
         state_environment,
-    )
+    );
+    work.diagnostic.commit_result(&result);
+    result
 }
 
 #[cfg(test)]
@@ -984,8 +1010,16 @@ mod source_repair_tests {
             let scope = generation::Scope::new(&engine, &snapshot, &prefs, revision)?;
             let requests = generation::Budget::default();
             let trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", "stages");
+            let diagnostic = diagnostic::Report::new(
+                &engine.root,
+                &meeting.id,
+                &prefs.llm_model,
+                snapshot.meeting.notes_cursor,
+                &trace,
+            );
             let work = Generation {
                 trace: &trace,
+                diagnostic: &diagnostic,
                 scope: &scope,
                 requests: &requests,
                 context_revision: revision,
@@ -1046,6 +1080,87 @@ mod source_repair_tests {
                 "a rejected dispatch must not consume quota"
             );
             assert!(requests.take().is_err());
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+
+    #[test]
+    fn mic_only_diagnostics_follow_real_commit_cancellation_and_sql_failure() -> Result<()> {
+        for outcome in ["committed", "cancelled", "sql_failure"] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let meeting = engine.create_meeting("Fictional diagnostic transaction")?;
+            let segment = crate::Segment {
+                id: format!("{}:1:1", meeting.id),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "测试麦克风。".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            engine.store.lock().unwrap().save_segment(&segment)?;
+            let snapshot = engine.snapshot(&meeting.id)?;
+            let prefs = engine.preferences.lock().unwrap().clone();
+            let revision = engine.context_revision.load(Ordering::SeqCst);
+            let scope = generation::Scope::new(&engine, &snapshot, &prefs, revision)?;
+            let requests = generation::Budget::default();
+            let trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", outcome);
+            let diagnostic = diagnostic::Report::new(
+                &engine.root,
+                &meeting.id,
+                &prefs.llm_model,
+                snapshot.meeting.notes_cursor,
+                &trace,
+            );
+            let work = Generation {
+                trace: &trace,
+                diagnostic: &diagnostic,
+                scope: &scope,
+                requests: &requests,
+                context_revision: revision,
+            };
+            if outcome == "cancelled" {
+                engine.note_cancel.store(true, Ordering::SeqCst);
+            } else if outcome == "sql_failure" {
+                engine
+                    .store
+                    .lock()
+                    .unwrap()
+                    .conn
+                    .execute("DROP TABLE document_history", [])?;
+            }
+            let result = generate_inner(
+                &engine,
+                &meeting.id,
+                &snapshot,
+                retrieval::retrieve(&snapshot, None),
+                &prefs,
+                &work,
+                (None, None),
+            );
+            diagnostic.finish(&engine);
+            assert_eq!(result.is_ok(), outcome == "committed", "{outcome}");
+            let actual = engine
+                .store
+                .lock()
+                .unwrap()
+                .meeting(&meeting.id)?
+                .notes_cursor;
+            let diagnostic_value: Value =
+                serde_json::from_slice(&std::fs::read(root.path().join("last-generation.json"))?)?;
+            assert_eq!(diagnostic_value["committed"], result.is_ok(), "{outcome}");
+            assert_eq!(diagnostic_value["cursor_before"], 0, "{outcome}");
+            assert_eq!(diagnostic_value["cursor_after"], actual, "{outcome}");
+            assert_eq!(actual, u32::from(outcome == "committed"));
         }
         Ok(())
     }
