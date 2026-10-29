@@ -1,0 +1,41 @@
+{
+  "source_revision": "36cd99d89a45560b453ad66de139f15cc74c5380",
+  "local_date": "2026-10-29",
+  "ci": {
+    "workflow": "Optional acceleration components",
+    "run_id": 40891389985,
+    "job_id": 123508899865,
+    "step": "cargo test -p omascribe-core -p omascribe-asr --locked",
+    "core_passed": 345,
+    "core_failed": 3,
+    "core_ignored": 6,
+    "asr_passed": 8,
+    "failed_tests": [
+      "model_integrity::tests::detects_secondary_change_after_it_was_hashed",
+      "model_integrity::tests::same_size_corruption_invalidates_cached_receipt",
+      "model_integrity::tests::secondary_asset_change_invalidates_whole_model"
+    ],
+    "observed_failure": "Expected changed model content to invalidate the verified receipt, but the verification or check_current returned success."
+  },
+  "source_analysis": {
+    "identity_fields": ["volume serial", "128-bit file ID", "file byte length", "LastWriteTime", "ChangeTime"],
+    "windows_source": "crates/core/src/model_integrity.rs:583-634",
+    "scope": "open_checked denies concurrent writers while each temporary handle is open; snapshot and per-asset handles are closed before later cache use."
+  },
+  "local_probe": {
+    "os": "Windows 10 Pro 10.0.19045 build 19045",
+    "fixture": "100 newly created isolated 4-byte files were overwritten in place with different 4-byte synthetic contents. Each probe inspected identity using native Windows APIs.",
+    "first_trial": {"runs": 100, "same_size_and_unchanged_last_write_and_change_times": 59, "file_id_measured": false},
+    "second_trial": {"runs": 100, "all_five_identity_fields_unchanged": 66, "file_id_measured": true},
+    "second_trial_script_sha256": "29a98e86a3119dcaeccfd2518db98bb44148551b72f92f4b9a6d2010d3e610b8",
+    "temp_directories_remaining": 0,
+    "user_models_or_recordings_touched": false
+  },
+  "limitations": [
+    "The two 100-run trials are separate and cannot be combined as one trial.",
+    "A local observation on one machine and filesystem, not a failure-rate claim across Windows or filesystems.",
+    "Probe uses native identity APIs but is not a rerun of the failed candidate source tests.",
+    "The results show an identity-based cache invalidation risk; they do not establish that any user's model has been corrupted.",
+    "No production source was changed, no hardware/driver claim was made, and no private content was used."
+  ]
+}
