@@ -1,0 +1,124 @@
+{
+  "source_revision": "67e04649189020438cdc4e7c393124f359a6dea1",
+  "local_date": "2026-10-30",
+  "capture_source": "Previously authorized 24.530-second Realtek tail-prompt recording; user confirmed seeing prompt and sounding until stop. No new capture.",
+  "model_admission": {
+    "small": {
+      "state": "verified",
+      "bytes": 60387707,
+      "elapsed_ms": 2288
+    },
+    "bilingual": {
+      "state": "verified",
+      "bytes": 199056205,
+      "elapsed_ms": 7597
+    },
+    "retranscribe_completed_after_product_asr_integrity_checks": true,
+    "quality_has_no_local_tokenizer": true
+  },
+  "candidate10_offline_bilingual": {
+    "exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": true,
+      "gtx1650": false,
+      "tail_marker": false
+    },
+    "tail_marker_in_final_segment": false,
+    "processed_ms": 24530,
+    "segment_count": 3,
+    "segment_time_ranges_ms": [
+      {
+        "start": 2800,
+        "end": 15000
+      },
+      {
+        "start": 15000,
+        "end": 16200
+      },
+      {
+        "start": 18800,
+        "end": 24530
+      }
+    ],
+    "all_boundaries_within_recording": true,
+    "last_segment_start_ms": 18800,
+    "last_segment_end_ms": 24530,
+    "end_gap_ms": 0,
+    "retranscribe_wall_seconds": 3.782,
+    "mode": "offline retranscription",
+    "decoder": "modified_beam_search",
+    "threads": 2,
+    "hotword_count": 6,
+    "hotword_fallback": null,
+    "final_segment_nonempty": true
+  },
+  "candidate13_offline_bilingual": {
+    "raw_asr_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": true,
+      "gtx1650": false,
+      "tail_marker": false
+    },
+    "final_after_note_correction_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": true,
+      "gtx1650": false,
+      "tail_marker": false
+    },
+    "terminology_edit_counts": {
+      "terminology": 1
+    },
+    "tail_marker_in_final_segment": false,
+    "final_segment_nonempty": true,
+    "processed_ms": 24530,
+    "segment_count": 3,
+    "segment_time_ranges_ms": [
+      {
+        "start": 2800,
+        "end": 15000
+      },
+      {
+        "start": 15000,
+        "end": 16200
+      },
+      {
+        "start": 18800,
+        "end": 24530
+      }
+    ],
+    "all_boundaries_within_recording": true,
+    "end_gap_ms": 0,
+    "retranscribe_wall_seconds": 11.219,
+    "decoder": "modified_beam_search",
+    "threads": 2,
+    "hotword_count": 6,
+    "hotword_fallback": null
+  },
+  "hotword_file_bytes_identical_to_candidate10": true,
+  "hotword_set_identical_ignoring_order_and_case": true,
+  "cli_sha256": "44e8a01d92a3db8c96eedcf1332a069d773427354d3c4fc201dd1a0d46c482f2",
+  "worker_sha256": "2737e4b5a15ea8a4247e5efe7ed319569f39de03a36142cd726cfa212c96e4e5",
+  "model_file_sha256": {
+    "decoder-epoch-99-avg-1.onnx": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+    "encoder-epoch-99-avg-1.int8.onnx": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+    "joiner-epoch-99-avg-1.int8.onnx": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "limits": [
+    "One retained user-confirmed recording and two source revisions, not a broad accuracy evaluation or new physical microphone/stop test.",
+    "Same audio and model with offline replay; changed code, vocabulary ordering, source identities or runtime may confound comparison.",
+    "Time ranges and exact word matching do not show why the tail was missed or prove sound beyond capture was preserved.",
+    "No private audio, transcript or hashes of private contents are included or uploaded.",
+    "No GPU, component installation or release acceptance.",
+    "Wall times are from separate runs with changed source and model integrity admission; no controlled speed comparison is supported."
+  ],
+  "cross_revision_local_comparison": {
+    "final_segment_count_equal": true,
+    "all_final_segment_texts_equal": true,
+    "all_time_ranges_equal": true,
+    "method": "Equality checks were performed locally; no private text or its hash is emitted."
+  }
+}

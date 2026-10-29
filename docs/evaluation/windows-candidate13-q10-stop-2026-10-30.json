@@ -1,0 +1,49 @@
+{
+  "source_revision": "67e04649189020438cdc4e7c393124f359a6dea1",
+  "local_date": "2026-10-30",
+  "platform": "Windows x86_64; CPU ASR",
+  "test": "Single synthetic paced file replay; external native timer calls same-source core stop",
+  "gate_passed": false,
+  "gate_min_capture_ms": 4500,
+  "replay_call_start_ms": 0,
+  "replay_call_return_ms": 3404,
+  "first_nonzero_capture_observation": {
+    "wall_ms": 3426,
+    "captured_ms": 512
+  },
+  "stop_request_wall_ms": 5000,
+  "stop_return_wall_ms": 5129,
+  "drain_complete_wall_ms": 5227,
+  "final_capture_ms": 2176,
+  "final_processed_ms": 2176,
+  "fixture_prefix_exact": true,
+  "model_integrity_admission": "admitted: successful same-source replay follows the required model verification path; internal verification time not separately measured",
+  "model": "zipformer-small",
+  "model_files": {
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+  },
+  "model_files_verified_after": true,
+  "hotword_count": 6,
+  "hotword_input_status": "accepted",
+  "fallback": null,
+  "driver_sha256": "8116175942a05e7c5758ca3d621ffe8059cb6f141d4a2b91f4a6f3bfa1a5a7ef",
+  "asr_worker_sha256": "6d14a474efc2bc9a673629a2d6b9d6fb23d7cac0213f26ea50573d3dbeb1a840",
+  "fixture_synthetic_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+  "prior_candidate8_failure_preserved": {
+    "stop_request_ms": 5000,
+    "capture_ms": 4480,
+    "gate_min_capture_ms": 4500
+  },
+  "limitations": [
+    "Single synthetic file replay; no physical microphone, UI stop, GPU or installer acceptance.",
+    "Captured PCM is an exact prefix; data still buffered in FFmpeg at stop is not measured.",
+    "First capture is first polling observation, not exact production time.",
+    "The call return time includes several operations; no instrumentation separates model hashing, process launch and worker startup, so cause of delay is not established.",
+    "Cold/warm caches and OS load were uncontrolled; this run cannot be interpreted as a controlled performance comparison with prior runs.",
+    "The original Q10 4480ms failure remains unchanged; this additional 2176ms failure is not a rewrite of it."
+  ]
+}
