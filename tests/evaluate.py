@@ -18,6 +18,10 @@ def assess(case, snapshot, check_translations=False):
         if not re.search(expression, text, re.I): errors.append("Missing: " + expression)
     for expression in case.get("forbidden", []):
         if re.search(expression, text, re.I): errors.append("Unsupported claim: " + expression)
+    for value in case.get("required_verbatim", []):
+        if value not in text: errors.append("Missing exact spelling: " + value)
+    for value in case.get("forbidden_verbatim", []):
+        if value in text: errors.append("Old exact spelling: " + value)
     transcript = "\n".join(s["text"] for s in snapshot["segments"])
     for expression in case.get("required_transcript", []):
         if not re.search(expression, transcript): errors.append("Transcript missing canonical name: " + expression)
@@ -104,6 +108,7 @@ def evaluate(args):
         write_json(folder / "input.json", case)
         write_json(root / "preferences.json", {**base_preferences, **case.get("preferences", {})})
         started, mid, seq, runs, errors = time.monotonic(), str(uuid.uuid4()), 0, [], []
+        note_updates = []
         snapshot = None
         protected = []
         try:
@@ -111,8 +116,24 @@ def evaluate(args):
             phases = case.get("phases", [dict(transcript=case.get("transcript", []))])
             for number, phase in enumerate(phases, 1):
                 seq = append(root, mid, phase["transcript"], seq)
+                if "save_note" in phase:
+                    note = phase["save_note"]
+                    watched = ["last-generation.json", "llm-runtime.log", "inference-trace.jsonl", "inference-trace.previous.jsonl"]
+                    before = {name: sha256(root/name) for name in watched if (root/name).is_file()}
+                    with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
+                        jobs_before = db.execute("SELECT COUNT(*) FROM inference_jobs").fetchone()[0]
+                    command([cli, "note", mid, note["content"], note.get("kind", "document")], env, folder/f"phase-{number}"/"save-note")
+                    after = {name: sha256(root/name) for name in watched if (root/name).is_file()}
+                    with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
+                        jobs_after = db.execute("SELECT COUNT(*) FROM inference_jobs").fetchone()[0]
+                    no_generation = before == after and jobs_before == jobs_after
+                    note_updates.append(dict(phase=number, no_generation=no_generation, jobs_before=jobs_before,
+                                             jobs_after=jobs_after, diagnostic_hashes_before=before, diagnostic_hashes_after=after))
+                    if not no_generation: errors.append(f"Phase {number}: spelling save started generation")
                 cursor = -1
-                for batch in range(seq+1):
+                if phase.get("run_generation", True) is False:
+                    snapshot = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-after-note")
+                for batch in range(seq+1 if phase.get("run_generation", True) else 0):
                     generation = folder / f"phase-{number}" / f"batch-{batch+1}"
                     diagnostic_names = ["last-generation.json", "last-writer-resource.json", "last-metal-fallback.json", "llm-runtime.log", "inference-trace.jsonl", "inference-trace.previous.jsonl"]
                     for name in diagnostic_names: (root / name).unlink(missing_ok=True)
@@ -159,6 +180,7 @@ def evaluate(args):
                     db.execute("UPDATE meetings SET json=json_set(json,'$.auto_notes',json('false')) WHERE id=?", (mid,))
         result = dict(case=case["name"], passed=not errors, errors=errors,
             seconds=round(time.monotonic()-started,3), runs=runs,
+            note_updates=note_updates,
             document=snapshot["suggestions"] if snapshot else [],
             coverage=snapshot["meeting"]["notes_cursor"] if snapshot else 0,
             status=snapshot["runtime"]["notes_status"] if snapshot else "failed")

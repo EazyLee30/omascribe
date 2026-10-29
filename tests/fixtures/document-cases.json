@@ -2345,5 +2345,86 @@
     "preferences": {
       "minutes_language": "zh"
     }
+  },
+  {
+    "name": "en_late_note_spelling_sync",
+    "focus": "local test\n\nbudget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "CEDARLEDGER has not completed the local test. The budget has not been approved."
+        ],
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ]
+        }
+      },
+      {
+        "transcript": [],
+        "save_note": {
+          "content": "CedarLedger",
+          "kind": "document"
+        },
+        "run_generation": false,
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CedarLedger"
+          ],
+          "forbidden_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "required_transcript": [
+            "CedarLedger"
+          ],
+          "forbidden_transcript": [
+            "CEDARLEDGER"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "CedarLedger",
+      "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+      "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+    ],
+    "forbidden": [
+      "has been approved",
+      "has completed",
+      "will complete"
+    ],
+    "required_verbatim": [
+      "CedarLedger"
+    ],
+    "forbidden_verbatim": [
+      "CEDARLEDGER"
+    ],
+    "required_transcript": [
+      "CedarLedger"
+    ],
+    "forbidden_transcript": [
+      "CEDARLEDGER"
+    ],
+    "max_sections": 2
   }
 ]

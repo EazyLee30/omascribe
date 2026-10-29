@@ -4,6 +4,7 @@ use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 use rusqlite::OptionalExtension;
 use std::collections::{BTreeMap, HashSet};
+mod document;
 
 pub struct Terms {
     matcher: Option<Regex>,
@@ -573,6 +574,9 @@ impl Terms {
         self.normalize_near_names(&self.normalize_exact(text))
     }
     fn normalize_exact(&self, text: &str) -> String {
+        self.normalize_exact_with(text, |_, _| {})
+    }
+    fn normalize_exact_with(&self, text: &str, mut replaced: impl FnMut(&str, &str)) -> String {
         let Some(matcher) = &self.matcher else {
             return text.to_owned();
         };
@@ -611,6 +615,9 @@ impl Terms {
             }
             result.push_str(&text[cursor..hit.start()]);
             result.push_str(name);
+            if value != name {
+                replaced(value, name);
+            }
             cursor = hit.end();
         }
         result.push_str(&text[cursor..]);
@@ -667,6 +674,13 @@ impl Terms {
             .collect()
     }
     fn normalize_near_names(&self, text: &str) -> String {
+        self.normalize_near_names_with(text, |_, _| {})
+    }
+    fn normalize_near_names_with(
+        &self,
+        text: &str,
+        mut replaced: impl FnMut(&str, &str),
+    ) -> String {
         if self.approximate.is_empty() {
             return text.to_owned();
         }
@@ -741,8 +755,12 @@ impl Terms {
                 }
             }
             if let Some((count, name)) = matched {
+                let original = &text[words[i].start()..words[i + count - 1].end()];
                 out.push_str(&text[cursor..words[i].start()]);
                 out.push_str(name);
+                if original != name {
+                    replaced(original, name);
+                }
                 cursor = words[i + count - 1].end();
                 i += count;
             } else {
@@ -751,6 +769,27 @@ impl Terms {
         }
         out.push_str(&text[cursor..]);
         out
+    }
+    fn normalize_with_changes(&self, text: &str) -> (String, Vec<document::Replacement>) {
+        let mut replacements = Vec::new();
+        let mut record = |old: &str, new: &str| {
+            if old.chars().any(char::is_alphabetic)
+                && self
+                    .writer_names
+                    .iter()
+                    .chain(&self.caption_names)
+                    .any(|n| n == new)
+            {
+                replacements.push(document::Replacement {
+                    old: old.into(),
+                    new: new.into(),
+                    model: self.model_aliases.contains(&old.to_lowercase()),
+                });
+            }
+        };
+        let exact = self.normalize_exact_with(text, &mut record);
+        let normalized = self.normalize_near_names_with(&exact, record);
+        (normalized, replacements)
     }
     /// A small spelling-only vocabulary survives context trimming and repair attempts.
     pub fn spellings(&self, transcript: &str) -> Vec<String> {
@@ -958,6 +997,9 @@ impl Engine {
         let terms = self.terminology(meeting)?;
         let mut db = self.store.lock().unwrap();
         let mut m = db.meeting(meeting)?;
+        let mut before_document = None;
+        let mut document_sources = HashSet::new();
+        let mut source_changes = Vec::new();
         let mut changed = 0;
         let terms_key = terms.fingerprint();
         db.schedule_terminology(&m, &terms_key)?;
@@ -997,10 +1039,30 @@ impl Engine {
                     checked.push(s);
                     continue;
                 }
-                let text = terms.normalize(&original.text);
+                let (text, replacements) = terms.normalize_with_changes(&original.text);
                 if text != s.text {
+                    if before_document.is_none() {
+                        let snapshot = db.suggestions(meeting)?;
+                        document_sources = snapshot
+                            .iter()
+                            .filter(|section| section.status == "pending" && !section.stale)
+                            .flat_map(|section| {
+                                section.sources.iter().map(|s| s.segment_id.clone())
+                            })
+                            .collect();
+                        before_document = Some(snapshot);
+                    }
+                    let before = document_sources.contains(&s.id).then(|| s.clone());
                     db.edit_segment_text(&s.id, &text, s.revision, "terminology")?;
                     s.revision += 1;
+                    s.text = text;
+                    if let Some(before) = before {
+                        source_changes.push(document::SourceChange {
+                            before,
+                            after: s.clone(),
+                            replacements,
+                        });
+                    }
                     changed += 1;
                 }
                 checked.push(s);
@@ -1018,6 +1080,9 @@ impl Engine {
                     s.stale = true;
                     db.save_suggestion(&s)?;
                 }
+            }
+            if let Some(before) = before_document {
+                db.repair_terminology_documents(&m, &before, &source_changes)?;
             }
         }
         drop(db);

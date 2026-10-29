@@ -246,10 +246,16 @@ impl Store {
             .into_iter()
             .find(|s| s.id == id)
             .context("找不到笔记建议")?;
+        let human_edit = text.is_some();
         if let Some(text) = text {
             s.text = text;
         }
-        s.status = status.to_owned();
+        s.status = if human_edit && status == "pending" {
+            "accepted"
+        } else {
+            status
+        }
+        .to_owned();
         self.save_suggestion(&s)
     }
     pub fn start_job(&self, id: &str, meeting: &str, input: &serde_json::Value) -> Result<()> {

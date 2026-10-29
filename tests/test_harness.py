@@ -9,6 +9,15 @@ spec.loader.exec_module(evaluate)
 
 
 class HarnessTests(unittest.TestCase):
+    def test_late_note_gate_rejects_old_case_even_when_regex_names_match(self):
+        source = dict(id="s", seq=1, revision=2, text="CedarLedger remains incomplete.")
+        citation = dict(segment_id="s", revision=2, quote=source["text"])
+        snapshot = dict(segments=[source], suggestions=[dict(status="pending", text=source["text"], sources=[citation])], runtime=dict(notes_status=""))
+        case = dict(required=["CedarLedger"], required_verbatim=["CedarLedger"], forbidden_verbatim=["CEDARLEDGER"])
+        self.assertEqual(evaluate.assess(case, snapshot), [])
+        snapshot["suggestions"][0]["text"] = "CEDARLEDGER remains incomplete."
+        self.assertTrue(evaluate.assess(case, snapshot))
+
     def test_retention_assertions_do_not_count_notes_alone_as_recording(self):
         cases=json.loads((pathlib.Path(__file__).parent/'fixtures/document-cases.json').read_text())
         case=next(c for c in cases if c['name']=='zh_windows_uppercase_asr')
