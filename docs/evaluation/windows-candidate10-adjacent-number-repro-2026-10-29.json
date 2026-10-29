@@ -1,0 +1,35 @@
+{
+  "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+  "local_date": "2026-10-29",
+  "synthetic_test_commit": "5ca007e",
+  "synthetic_test_branch": "codex/windows-adjacent-model-number-repro",
+  "synthetic_case": {
+    "source": "设备代号是 MX二七五零。",
+    "draft": "设备代号是 MX2750。",
+    "candidate10_result": "The shared document validator rejects the draft as a number not supported by its cited source.",
+    "spaced_source_control_passes": true,
+    "different_number_negative_is_rejected": true,
+    "ambiguous_month_and_magnitude_boundaries_unchanged": true,
+    "desired_acceptance_test": "Ignored by default; manually run and fails on the pinned candidate."
+  },
+  "real_private_trace_aggregate": {
+    "scope": "Two model attempts within one preserved generation; no rerun of private input.",
+    "attempts": [
+      {"attempt": 1, "number_validation_error": true, "source_number_count": 0, "generated_number_count": 1, "unsupported_number_count": 1, "all_unsupported_match_adjacent_model_digits_in_source": true},
+      {"attempt": 2, "number_validation_error": true, "source_number_count": 0, "generated_number_count": 1, "unsupported_number_count": 1, "all_unsupported_match_adjacent_model_digits_in_source": true}
+    ],
+    "method": "Run the candidate10 internal numbers function on each retained normalized draft title/body and its one cited source; compare only number sets. Private inputs and outputs were not emitted."
+  },
+  "tests": {
+    "command": "cargo +1.99.0 test -p omascribe-core --lib adjacent_model_repro --locked -- --test-threads=1",
+    "current_behavior": "2 passed, 1 ignored",
+    "desired_behavior_command": "cargo +1.99.0 test -p omascribe-core --lib adjacent_model_repro_should_accept_equal_identifier --locked -- --ignored --test-threads=1",
+    "desired_behavior": "fails on candidate10 as expected (exit 101)"
+  },
+  "limits": [
+    "This is a synthetic deterministic validation reproduction, not an automatic recognition improvement or release acceptance.",
+    "The source set comparison identifies the currently reported numeric guard mismatch; it does not establish that other checks or semantics would pass after a future fix.",
+    "The passing current-behavior test encodes the observed rejection and must be revised or removed when the bug is fixed; the ignored desired-behavior test should then be enabled.",
+    "No private audio, transcription, generated text, or hashes of private content are included. The local-only diagnostic test is not included in the commit."
+  ]
+}
