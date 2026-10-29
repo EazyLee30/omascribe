@@ -9,7 +9,12 @@ export function noteCandidates(
   const seen = new Set<string>();
   const add = (value: string) => {
     const candidate = value.trim();
-    if (!candidate || candidate.length > 80 || /[\r\n]/.test(candidate)) return;
+    if (
+      !candidate ||
+      candidate.length > 80 ||
+      /[\r\n*`\[\]]|~~|(^|\s)_{1,2}\S|\S_{1,2}(?=\s|$)/.test(candidate)
+    )
+      return;
     const key = candidate.toLocaleLowerCase();
     if (seen.has(key) || result.length >= 24) return;
     seen.add(key);
@@ -19,8 +24,14 @@ export function noteCandidates(
     const candidate = line
       .trim()
       .replace(/^(?:#{1,6}\s+|[-*+]\s+|\d+[.)]\s+)/, "")
-      .replace(/^\*\*(.+)\*\*$/, "$1")
+      .replace(/^\[[ xX]\]\s+/, "")
       .trim();
+    // Extract each bold span separately; never offer its surrounding markup.
+    for (const match of candidate.matchAll(/\*\*([^*\r\n]+)\*\*/g)) {
+      const bold = match[1].trim();
+      if (bold.length >= 2 && bold.length <= 40 && !/[。！？.!?;；]/.test(bold))
+        add(bold);
+    }
     // Keep explicit short lines, not a whole paragraph or markdown markup.
     if (
       candidate.length >= 2 &&

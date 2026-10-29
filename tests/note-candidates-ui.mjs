@@ -29,8 +29,8 @@ try {
   await page.addScriptTag({ content: bundle.outputFiles[0].text });
   const candidates = await page.evaluate(() =>
     NoteCandidates.noteCandidates(
-      "OmaScribe\n- Alice\nNVIDIA\nGTX 1650\nALICE\nOne long sentence.\n<img src=x>",
-      ["NVIDIA", "RTX 1660"],
+      "OmaScribe\n- Alice\nNVIDIA\nGTX 1650\nALICE\nQ4_K_M\nOne long sentence.\n<img src=x>\n**展览** **预算** **刘老师**\n- [ ] 林悦\n- [x] 刘老师\n1. [X] 林悦\n- **展览**\n[网站](https://example.com)\n_强调_\n~~删除~~",
+      ["NVIDIA", "RTX 1660", "**预算**", "林悦"],
     ),
   );
   assert.deepEqual(candidates, [
@@ -38,7 +38,12 @@ try {
     "Alice",
     "NVIDIA",
     "GTX 1650",
+    "Q4_K_M",
     "<img src=x>",
+    "展览",
+    "预算",
+    "刘老师",
+    "林悦",
     "RTX 1660",
   ]);
   await page.evaluate((values) => {
