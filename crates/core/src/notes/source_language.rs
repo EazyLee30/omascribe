@@ -42,7 +42,6 @@ pub(super) struct Prepared {
 }
 
 struct CompletionPermit {
-    body: usize,
     word: Range<usize>,
     source: crate::Source,
 }
@@ -50,7 +49,7 @@ struct CompletionPermit {
 /// Request-local proof for individual words copied from checked translations.
 /// It cannot authorize rewritten prose or change the original citation evidence.
 pub(super) struct CompletionBridge {
-    bodies: Vec<String>,
+    body: String,
     permits: Vec<CompletionPermit>,
     sources: Value,
     terms: (String, String),
@@ -80,20 +79,18 @@ impl CompletionBridge {
     }
 
     pub(super) fn permits(&self, body: &str, word: Range<usize>, cited: &[crate::Source]) -> bool {
-        self.permits.iter().any(|permit| {
-            self.bodies
-                .get(permit.body)
-                .is_some_and(|expected| expected == body)
-                && permit.word == word
-                && cited.iter().any(|source| {
-                    source.segment_id == permit.source.segment_id
-                        && source.revision == permit.source.revision
-                        && source.start_ms == permit.source.start_ms
-                        && source.end_ms == permit.source.end_ms
-                        && source.quote == permit.source.quote
-                        && source.speaker_name == permit.source.speaker_name
-                })
-        })
+        body == self.body
+            && self.permits.iter().any(|permit| {
+                permit.word == word
+                    && cited.iter().any(|source| {
+                        source.segment_id == permit.source.segment_id
+                            && source.revision == permit.source.revision
+                            && source.start_ms == permit.source.start_ms
+                            && source.end_ms == permit.source.end_ms
+                            && source.quote == permit.source.quote
+                            && source.speaker_name == permit.source.speaker_name
+                    })
+            })
     }
 }
 
@@ -455,7 +452,6 @@ impl Prepared {
                 for (at, _) in target.match_indices(word) {
                     ensure!(permits.len() < 256, "Too many completion bridge permits");
                     permits.push(CompletionPermit {
-                        body: 0,
                         word: range.start + at..range.start + at + word.len(),
                         source: source.clone(),
                     });
@@ -463,133 +459,7 @@ impl Prepared {
             }
         }
         Ok((!permits.is_empty()).then(|| CompletionBridge {
-            bodies: vec![body.to_owned()],
-            permits,
-            sources: self.sources.clone(),
-            terms: self.terms.clone(),
-            target: self.target,
-        }))
-    }
-
-    /// A typed sentence boundary may transport an entire checked passage into
-    /// a paragraph with other sentences. Reworded text earns no completion
-    /// authority, even if the general translation checks would accept it.
-    pub(super) fn completion_bridge_for_article(
-        &self,
-        article: &super::composition::Article,
-        original_input: &str,
-        current_sources: &[Segment],
-        terms: &Terms,
-        chinese: bool,
-    ) -> Result<Option<CompletionBridge>> {
-        let applied = self.applied_input(original_input, current_sources)?;
-        ensure!(
-            terms_scope(terms) == self.terms,
-            "Prepared terminology changed"
-        );
-        ensure!(
-            self.target == if chinese { "zh" } else { "en" },
-            "Prepared target changed"
-        );
-        ensure!(article.input() == &applied, "Bound article input changed");
-        if !chinese {
-            return Ok(None);
-        }
-        let passages = applied["transcript"]
-            .as_array()
-            .context("Missing bound sources")?;
-        let mut bodies = article.paragraphs().to_vec();
-        ensure!(bodies.len() <= 2, "Too many article paragraphs");
-        let mut permits = Vec::new();
-        for sentence in article.sentences() {
-            let paragraph = article
-                .paragraphs()
-                .get(sentence.paragraph())
-                .context("Unknown article paragraph")?;
-            let range = sentence.range();
-            ensure!(
-                paragraph.get(range.clone()) == Some(sentence.text()),
-                "Article sentence range changed"
-            );
-            let local = if let Some(index) = bodies.iter().position(|body| body == sentence.text())
-            {
-                index
-            } else {
-                ensure!(bodies.len() < 14, "Too many bridge bodies");
-                bodies.push(sentence.text().to_owned());
-                bodies.len() - 1
-            };
-            for binding in self
-                .bindings
-                .iter()
-                .filter(|binding| sentence.sources().contains(&binding.source_id))
-            {
-                let passage = &passages[binding.passage];
-                ensure!(
-                    passage["id"].as_u64() == Some(binding.source_id as u64),
-                    "Bound source ID changed"
-                );
-                let target = passage["text"]
-                    .as_str()
-                    .context("Missing bound source text")?;
-                let Some(suffix) = sentence.text().strip_prefix(target) else {
-                    continue;
-                };
-                if !suffix.is_empty()
-                    && (target.ends_with(['.', '。', '!', '！', '?', '？', ';', '；'])
-                        || ![".", "。"].contains(&suffix))
-                {
-                    continue;
-                }
-                let source_mask = super::validation::completion_name_mask(
-                    &binding.active.text,
-                    &binding.active.text,
-                    terms,
-                );
-                let target_mask =
-                    super::validation::completion_name_mask(target, &binding.active.text, terms);
-                if !super::completion::hedged_completion_covers(&source_mask, &target_mask) {
-                    continue;
-                }
-                let original = &current_sources[binding.source_id - 1];
-                let speaker_name = match passage.get("speaker") {
-                    None | Some(Value::Null) => None,
-                    Some(Value::String(name)) => Some(name.clone()),
-                    _ => anyhow::bail!("Invalid bound source speaker"),
-                };
-                let source = crate::Source {
-                    segment_id: original.id.clone(),
-                    revision: original.revision,
-                    start_ms: original.start_ms,
-                    end_ms: original.end_ms,
-                    quote: original.text.clone(),
-                    speaker_name,
-                };
-                for word in ["已完成", "已经完成"] {
-                    for (at, _) in target.match_indices(word) {
-                        ensure!(permits.len() <= 254, "Too many bound completion permits");
-                        permits.push(CompletionPermit {
-                            body: sentence.paragraph(),
-                            word: range.start + at..range.start + at + word.len(),
-                            source: source.clone(),
-                        });
-                        if local != sentence.paragraph() {
-                            permits.push(CompletionPermit {
-                                body: local,
-                                word: at..at + word.len(),
-                                source: source.clone(),
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        ensure!(
-            bodies.iter().map(String::len).sum::<usize>() <= MAX_RAW_BYTES * 2,
-            "Bound completion body budget exceeded"
-        );
-        Ok((!permits.is_empty()).then(|| CompletionBridge {
-            bodies,
+            body: body.to_owned(),
             permits,
             sources: self.sources.clone(),
             terms: self.terms.clone(),
@@ -691,77 +561,6 @@ mod tests {
             quote: source.text.clone(),
             speaker_name: speaker.map(str::to_owned),
         }
-    }
-
-    #[test]
-    fn typed_article_transports_only_an_entire_prepared_sentence() -> Result<()> {
-        let (prepared, sources, input, applied) = completion_fixture()?;
-        let plan = super::super::composition::Plan::new(&applied, &sources, &terms(), true)?;
-        let raw = json!({"paragraphs":[{"sentences":[
-            {"parts":[{"t":ZH_COMPLETION}],"sources":[1]},
-            {"parts":[{"t":ZH_BUDGET}],"sources":[2]}
-        ]}]})
-        .to_string();
-        let article = plan.parse(&raw, &sources, &terms(), true)?;
-        let bridge = prepared
-            .completion_bridge_for_article(&article, &input, &sources, &terms(), true)?
-            .unwrap();
-        let original = citation(&sources[0], Some("Alice"));
-        for body in [
-            article.paragraphs()[0].as_str(),
-            article.sentences()[0].text(),
-        ] {
-            let at = body.find("已经完成").unwrap();
-            assert!(bridge.permits(
-                body,
-                at..at + "已经完成".len(),
-                std::slice::from_ref(&original)
-            ));
-            assert!(!bridge.permits(
-                body,
-                at..at + "已经完成".len(),
-                &[citation(&sources[1], None)]
-            ));
-            assert!(!bridge.permits(
-                &format!("{body} 审核已经完成。"),
-                at..at + "已经完成".len(),
-                std::slice::from_ref(&original)
-            ));
-        }
-        let names = [("voice-a".to_owned(), "Alice".to_owned())]
-            .into_iter()
-            .collect();
-        super::super::validation::validate_with_bridge(
-            &article.document(),
-            &sources,
-            "m",
-            &names,
-            &terms(),
-            true,
-            &bridge,
-        )?;
-        // A single-source state-pattern match is not proof that its subject or
-        // wording equals the prepared source. Newly composed claims stay guarded.
-        let changed = raw.replace(ZH_COMPLETION, "审核可能已经完成。");
-        let changed = plan.parse(&changed, &sources, &terms(), true)?;
-        assert!(prepared
-            .completion_bridge_for_article(&changed, &input, &sources, &terms(), true)?
-            .is_none());
-        let swapped = json!({"paragraphs":[{"sentences":[
-            {"parts":[{"t":ZH_COMPLETION}],"sources":[2]},
-            {"parts":[{"t":ZH_BUDGET}],"sources":[1]}
-        ]}]})
-        .to_string();
-        let swapped = plan.parse(&swapped, &sources, &terms(), true)?;
-        assert!(prepared
-            .completion_bridge_for_article(&swapped, &input, &sources, &terms(), true)?
-            .is_none());
-        let mut changed_sources = sources.clone();
-        changed_sources[0].run += 1;
-        assert!(prepared
-            .completion_bridge_for_article(&article, &input, &changed_sources, &terms(), true)
-            .is_err());
-        Ok(())
     }
 
     #[test]

@@ -1098,37 +1098,7 @@ pub(super) fn validate_with_bridge(
         ValidationOptions {
             max_body_chars: 1200,
             require_prose: true,
-            unit: false,
             bridge: Some(bridge),
-        },
-    )
-}
-
-/// Check one typed sentence's facts without requiring it to repeat facts owned
-/// by another sentence. Full article coverage is still checked before commit.
-pub(super) fn validate_bound_unit(
-    content: &str,
-    segments: &[Segment],
-    meeting: &str,
-    names: &std::collections::BTreeMap<String, String>,
-    terms: &crate::terminology::Terms,
-    chinese: bool,
-    bridge: Option<&super::source_language::CompletionBridge>,
-) -> Result<Vec<Suggestion>> {
-    if let Some(bridge) = bridge {
-        bridge.check_scope(segments, terms, chinese)?;
-    }
-    validate_document_inner(
-        content,
-        segments,
-        meeting,
-        names,
-        terms,
-        ValidationOptions {
-            max_body_chars: 1200,
-            require_prose: true,
-            unit: true,
-            bridge,
         },
     )
 }
@@ -1381,109 +1351,6 @@ mod hedged_translation_completion_tests {
     }
 }
 
-#[cfg(test)]
-mod bound_unit_tests {
-    use super::*;
-    fn source(seq: u32, text: &str) -> Segment {
-        Segment {
-            id: format!("m:1:{seq}"),
-            meeting_id: "m".into(),
-            run: 1,
-            seq,
-            start_ms: u64::from(seq - 1) * 1000,
-            end_ms: u64::from(seq) * 1000,
-            text: text.into(),
-            revision: 1,
-            speaker: None,
-            speaker_manual: false,
-        }
-    }
-    fn draft(body: &str, ids: &[usize]) -> String {
-        serde_json::json!({"sections":[{"title":"会议纪要","body":body,"sources":ids}]}).to_string()
-    }
-    #[test]
-    fn units_do_not_repeat_another_units_pending_fact_but_final_coverage_still_requires_it(
-    ) -> Result<()> {
-        let sources = [source(1, "音乐仍在播放。"), source(2, "审核尚未完成。")];
-        let terms = crate::terminology::Terms::new(&[], &[]);
-        let music = draft("音乐仍在播放。", &[1]);
-        assert!(validate_with_terms(&music, &sources, "m", &Default::default(), &terms).is_err());
-        validate_bound_unit(
-            &music,
-            &sources,
-            "m",
-            &Default::default(),
-            &terms,
-            true,
-            None,
-        )?;
-        validate_bound_unit(
-            &draft("审核尚未完成。", &[2]),
-            &sources,
-            "m",
-            &Default::default(),
-            &terms,
-            true,
-            None,
-        )?;
-        assert!(validate_bound_unit(
-            &draft("审核已经完成。", &[2]),
-            &sources,
-            "m",
-            &Default::default(),
-            &terms,
-            true,
-            None
-        )
-        .is_err());
-        let article = serde_json::json!({"sections":[{"title":"会议纪要","body":"音乐仍在播放。","sources":[1]}, {"title":"审核","body":"审核尚未完成。","sources":[2]}]}).to_string();
-        validate_with_terms(&article, &sources, "m", &Default::default(), &terms)?;
-        assert!(validate_with_terms(&music, &sources, "m", &Default::default(), &terms).is_err());
-        Ok(())
-    }
-    #[test]
-    fn bound_units_keep_original_ordinals_and_cannot_borrow_uncited_numbers() -> Result<()> {
-        let sources = [
-            source(1, "预算3000元尚未批准。"),
-            source(2, "这是一条无关的历史记录。"),
-            source(3, "周四复核。"),
-        ];
-        let terms = crate::terminology::Terms::new(&[], &[]);
-        validate_bound_unit(
-            &draft("周四复核。", &[3]),
-            &sources,
-            "m",
-            &Default::default(),
-            &terms,
-            true,
-            None,
-        )?;
-        assert!(validate_bound_unit(
-            &draft("周四复核预算3000元。", &[3]),
-            &sources,
-            "m",
-            &Default::default(),
-            &terms,
-            true,
-            None
-        )
-        .is_err());
-        for ids in [vec![0], vec![4], vec![]] {
-            assert!(validate_bound_unit(
-                &draft("周四复核。", &ids),
-                &sources,
-                "m",
-                &Default::default(),
-                &terms,
-                true,
-                None
-            )
-            .is_err());
-        }
-        Ok(())
-    }
-}
-
 fn validate_document(
     content: &str,
     segments: &[Segment],
@@ -1502,7 +1369,6 @@ fn validate_document(
         ValidationOptions {
             max_body_chars,
             require_prose,
-            unit: false,
             bridge: None,
         },
     )
@@ -1511,7 +1377,6 @@ fn validate_document(
 struct ValidationOptions<'a> {
     max_body_chars: usize,
     require_prose: bool,
-    unit: bool,
     bridge: Option<&'a super::source_language::CompletionBridge>,
 }
 
@@ -1526,28 +1391,10 @@ fn validate_document_inner(
     let ValidationOptions {
         max_body_chars,
         require_prose,
-        unit,
         bridge,
     } = options;
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
-    let unit_indices = if unit {
-        anyhow::ensure!(
-            draft.sections.len() == 1,
-            "A bound sentence must have one section"
-        );
-        draft.sections[0]
-            .sources
-            .iter()
-            .map(|id| {
-                id.checked_sub(1)
-                    .filter(|index| *index < segments.len())
-                    .context("Invalid bound sentence source")
-            })
-            .collect::<Result<HashSet<_>>>()?
-    } else {
-        HashSet::new()
-    };
     if draft.sections.is_empty()
         && segments
             .iter()
@@ -1561,7 +1408,7 @@ fn validate_document_inner(
     } else {
         super::completion::View::default()
     };
-    if require_prose && !unit {
+    if require_prose {
         completed.validate(
             &draft
                 .sections
@@ -1574,7 +1421,6 @@ fn validate_document_inner(
     if segments
         .iter()
         .enumerate()
-        .filter(|(i, _)| !unit || unit_indices.contains(i))
         .any(|(i, s)| !completed.retired(i) && unfinished(&s.text))
         && !draft.sections.iter().any(|s| {
             unfinished(&s.body)
@@ -1586,7 +1432,7 @@ fn validate_document_inner(
         // own cited paragraph. It must not discharge a different pending task,
         // borrow another citation, or read a protected literal name as a fact.
         && !segments.iter().enumerate().filter(|(i, s)| {
-            (!unit || unit_indices.contains(i)) && !completed.retired(*i) && unfinished(&s.text)
+            !completed.retired(*i) && unfinished(&s.text)
         }).all(|(i, s)| {
             let source_mask = completion_name_mask(&s.text, &s.text, terms);
             draft.sections.iter().any(|section| {
@@ -1619,7 +1465,7 @@ fn validate_document_inner(
         &segments
             .iter()
             .enumerate()
-            .filter(|(i, _)| (!unit || unit_indices.contains(i)) && !completed.retired(*i))
+            .filter(|(i, _)| !completed.retired(*i))
             .map(|(_, s)| s.text.as_str())
             .collect::<Vec<_>>()
             .join("\n"),
@@ -1638,7 +1484,7 @@ fn validate_document_inner(
         &segments
             .iter()
             .enumerate()
-            .filter(|(i, _)| (!unit || unit_indices.contains(i)) && !completed.retired(*i))
+            .filter(|(i, _)| !completed.retired(*i))
             .map(|(_, s)| s.text.as_str())
             .collect::<Vec<_>>()
             .join("\n"),

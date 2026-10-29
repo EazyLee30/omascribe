@@ -5,13 +5,6 @@ mod closed_state;
 mod named_actions;
 mod names;
 mod repair_case;
-/// Existing caption-name admission, exposed without adding identity inference.
-pub(crate) fn admitted_source_names(
-    terms: &crate::terminology::Terms,
-    source: &str,
-) -> Vec<String> {
-    names::Names::new(terms, source).spellings().to_vec()
-}
 use crate::{notes, preferences::Preferences, store::Store, Engine, Meeting};
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
