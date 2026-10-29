@@ -9,7 +9,7 @@
 当前固定候选12：`dd6d90cac30f992b3b642f77deed3d6b55d1ff4e`，分支 `codex/release-0.3.5-candidate-12` 已推送且不移动。331核心/7忽略、原有集成7项、专名集成12项、严格workspace Clippy及精确源码Windows-core/Linux/prepare/Website CI通过；GPU build/catalog跳过。**65/65原自动检查在一次连续运行中通过，源码/CLI/harness/23份既有资产身份前后相同**。三分片复核80份快照、148条字幕、147处引用；原64项仅一处字幕把源明确的批准状态从“预算未通过”精确化为“预算未获批准”，其余可见内容与候选11相同。新增第65项证明：同一现有document只改专名拼写，转写/正文/引用修订1→2，随后字幕补齐，纪要jobs1→1、文章与引用不再改写。新增预算/主题、换document、原有dirty、未覆盖、人工/过期/歧义继续正常整理。原a6的5PASS/1FAIL和全部红测保留，未改source/断言/预算。**尚无0.3.5正式安装包，稳定版仍为0.3.4**；真实ASR、平台和安装升级门仍开放。[候选12结果与范围](../evaluation/apple-candidate12-spelling-reuse-2026-10-29.json)。
 
 
-独立G1开发跟进 `b569e32`：原生加载前模型SHA校验与进程内缓存、Windows全生命周期读句柄、Mac ARM校验加速已推送；Windows原三项失败保留，修复后同SHA CI通过。此项不移动候选12，也不增加本次发布范围；实际专名/停录和平台/安装验收继续按下表推进。[独立证据及未完成边界](../evaluation/apple-model-integrity-2026-10-29.json)。
+独立G1开发跟进 `b569e32`：原生加载前模型SHA校验与进程内缓存、Windows全生命周期读句柄、Mac ARM校验加速已推送；Windows原三项失败保留，修复后同SHA CI通过。此项不移动候选12，也不增加本次发布范围；实际专名/停录和平台/安装验收继续按下表推进。[独立证据及未完成边界](../evaluation/apple-model-integrity-2026-10-29.json)。随后 `e30460a` 固定原生worker明确传入的共享BPE路径，避免新建本地BPE改路，并限制读取上限；同源码Windows/Linux CI通过，[原发现与修复范围](../evaluation/apple-shared-tokenizer-2026-10-29.json)。
 
 候选11：`ed9d2e7f7800219f98156fec41fec279d76f1681`，分支 `codex/release-0.3.5-candidate-11` 保持原位。325核心/7忽略、原有集成7项、专名集成8项、严格workspace Clippy及精确源码Windows-core/Linux/prepare/Website CI通过；GPU build/catalog跳过。**64/64原自动检查在一次连续运行中通过，源码/CLI/harness/23份SDK、模型和runtime身份前后相同**。三分片复核76份快照、145条字幕和143处引用；原63项全部可见正文与候选10一致。新增项修复实际`MX-2750`被误判为新增数字的字幕阻塞。另有晚补专名字幕专项的严格“后续零生成/文章不变”原FAIL，发生1次翻译和1次纪要；该用例新建document并切换有效内容，重生成有上下文理由，不是候选12同ID纯拼写情形。[候选11及原失败](../evaluation/apple-candidate11-model-separator-2026-10-29.json)。
 
