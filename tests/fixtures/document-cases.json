@@ -2602,6 +2602,9 @@
   },
   {
     "name": "en_punctuation_note_captions",
+    "preferences": {
+      "minutes_language": "zh"
+    },
     "focus": "C++\nNode.js\nGPT-4",
     "transcript": [
       "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
@@ -2646,6 +2649,9 @@
   },
   {
     "name": "en_generic_note_keeps_source_plural",
+    "preferences": {
+      "minutes_language": "zh"
+    },
     "focus": "录音 transcription",
     "transcript": [
       "The transcriptions are incomplete. The report is not approved."
@@ -2686,6 +2692,9 @@
   },
   {
     "name": "en_unused_punctuation_notes_add_no_names",
+    "preferences": {
+      "minutes_language": "zh"
+    },
     "focus": "C++\nNode.js\nGPT-4",
     "transcript": [
       "The report remains unapproved."

@@ -12,6 +12,7 @@ on:
       - tests/test_release_metadata.py
       - crates/core/**
       - crates/asr/**
+      - tests/fixtures/document-cases.json
       - Cargo.toml
       - Cargo.lock
       - models.lock.json
