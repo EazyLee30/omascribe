@@ -88,8 +88,9 @@
       "legacy early stop drains producer output without further pacing; queued tail duration is not established as equivalent to modern FFmpeg"
     ],
     "original_assertions_retained": true,
-    "linux_tests": "9 added observer tests await actual Ubuntu22 execution",
-    "actual_ubuntu22_validation": "pending"
+    "linux_tests": "All 9 new observer tests executed and passed on actual Ubuntu22.",
+    "actual_ubuntu22_validation": "PASS: 28 model-integrity tests and 10 audio tests, with the original immediate-corruption and exact PCM/250ms lead checks retained.",
+    "source": "a710e97a332448cfa1052a7e3dae63029ef1bfc5"
   },
   "local_checks": {
     "base_source": "98dccb8edfcd73782188d78482a7a74bae6e74fe",
@@ -119,10 +120,100 @@
       "command": "git diff --check",
       "exit_code": 0
     },
-    "linux_execution": "pending actual Ubuntu22 CI",
+    "linux_execution": "Actual Ubuntu22 follow-up passed; see fix_validation.",
     "model_or_sdk_downloads": 0,
     "inference_runs": 0
   },
   "raw_local_root": "artifacts/linux-compat-2026-10-30/fix-local",
-  "quality_regression": "Candidate14 seeded-text 68/68 result remains scoped to its fixed source; not rerun or relabeled by this platform patch."
+  "quality_regression": "Candidate14 seeded-text 68/68 result remains scoped to its fixed source; not rerun or relabeled by this platform patch.",
+  "fix_validation": {
+    "scope": "Source/core compatibility gates; no installer, physical audio device, GPU or new seeded-text run claim.",
+    "ubuntu22": {
+      "run": "https://github.com/EazyLee30/omascribe/actions/runs/40926786897",
+      "result": {
+        "receipt": "success",
+        "audio": "success"
+      },
+      "environment": {
+        "source": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "event_revision": "dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b",
+        "kernel": "6.8.0-1070-azure",
+        "system": "Linux",
+        "machine": "x86_64",
+        "scope": "Synthetic local files only; no user data/models or inference",
+        "filesystem": "ext2/ext3",
+        "same_stamp_write": {
+          "found": true,
+          "iterations": 1,
+          "limit": 10000,
+          "before": {
+            "device": 66305,
+            "inode": 6720083,
+            "bytes": 4,
+            "mtime_ns": 1793296900396044846,
+            "ctime_ns": 1793296900396044846
+          },
+          "after": {
+            "device": 66305,
+            "inode": 6720083,
+            "bytes": 4,
+            "mtime_ns": 1793296900396044846,
+            "ctime_ns": 1793296900396044846
+          },
+          "sha256_before": "770e607624d689265ca6c44884d0807d9b054d23c473c106c72be9de08b7376c",
+          "sha256_after": "b5c1fb2efc6d6b4674c2fdcc48ce01b43a3b7c03763c0c3355de0099ee0f8c73"
+        },
+        "ffmpeg_version": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
+        "original_replay_option_probe": {
+          "exit_code": 1,
+          "pcm_bytes": 0,
+          "stderr": "Unrecognized option 'readrate_initial_burst'.\nError splitting the argument list: Option not found\n"
+        }
+      },
+      "integrity_passed": 28,
+      "audio_passed": 10,
+      "audio_child_fixture_ignored": 1
+    },
+    "ci": {
+      "linux-ci.json": {
+        "databaseId": 40926786913,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926786913"
+      },
+      "windows-ci.json": {
+        "databaseId": 40926787023,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926787023"
+      },
+      "website-ci.json": {
+        "databaseId": 40926787387,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926787387"
+      }
+    },
+    "raw_sha256": {
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/audio.log": "fac4fb9573e392ee1403e4c8e1d56f77ded0ad6730fd79ac2b31b27d2a02bcfe",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/environment.json": "f864996f923fa245a97c6dab5443a441f01a667007896ca9b7e4ed5d573d5743",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/receipt.log": "dc16c5c258603b554fcd34175355c73b9ba3471f8792ad5e1919dd77c58b4295",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/result.json": "5ece362da34834fd7878dbc4a5fdea0b20b069ae3a678ef8f7342b97d50f3985",
+      "job.log": "e8a1d7dfde1003a6b5aded321de51c0f807d678df4c80ad6e76d7329515a3e67",
+      "linux-ci.json": "f0318f10d25ee7a07a5f952158d9692f9ab2ddf6cf3abd96b57df6f1fc901937",
+      "run.json": "38d2cabcd4e18cfe80cfdfb905cba0543587cdf73aaafd3c3e0c0f8b78a630c0",
+      "website-ci.json": "0bd4258b5a821f929ec125f67df3dd9812c0d692e2a87fa9028a01a9c81b7432",
+      "windows-ci.json": "294975d9025ae2d4153146ca1959434504552f634cf212f7c4b15cb8dc76b3bb",
+      "windows-core.log": "8927114970dc0922c21c449f2e79cd3b558acb60f7fbd6a9fee457544632dd3e"
+    },
+    "windows_tests": {
+      "asr": 9,
+      "core": 378,
+      "core_ignored": 7,
+      "integration": [2, 7, 2, 12]
+    }
+  }
 }
