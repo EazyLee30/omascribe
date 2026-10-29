@@ -1,0 +1,42 @@
+{
+  "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+  "source_worktree_clean": true,
+  "local_date": "2026-10-29 Asia/Shanghai",
+  "platform": "Windows x86_64",
+  "rust_toolchain": "1.99.0",
+  "build_target": "independent local Cargo target",
+  "runs": [
+    {
+      "command": "cargo +1.99.0 test -p omascribe-core --lib --locked adjacent_model_number_repro -- --test-threads=1",
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 314,
+      "result": "pass",
+      "verified_cases": [
+        "Synthetic MX二七五零 evidence accepts MX2750; a different digit is rejected.",
+        "Model prefixes and complete digits, including leading zeroes, are preserved.",
+        "Unrelated counts, dates, invoices, unsupported suffixes and different identifiers cannot supply model evidence.",
+        "Model identity cannot be assembled from distinct cited segments or speaker labels.",
+        "Single-hyphen forms and independent memory capacities have explicit positive and negative controls."
+      ]
+    },
+    {
+      "command": "cargo +1.99.0 test -p omascribe-core --lib --locked model_separator -- --test-threads=1",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 328,
+      "result": "pass",
+      "verified_cases": [
+        "The source-bound recognized model separator is compacted without changing model identity.",
+        "A protected source spelling with an explicit separator is preserved."
+      ]
+    }
+  ],
+  "limitations": [
+    "Deterministic synthetic unit checks only; no language model, real recording or GPU was used.",
+    "These checks do not establish that the complete transcript-to-minutes flow or real user audio passes.",
+    "This is not a full test suite, install, hardware or release acceptance."
+  ]
+}

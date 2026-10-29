@@ -1,0 +1,40 @@
+{
+  "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+  "local_date": "2026-10-29",
+  "method": "Candidate11 exact product validator logic, with test-only probe appended in a separate worktree; two retained normalized drafts and their original cited segment loaded from local private files. No model run or ASR replay.",
+  "instrumented_test_build_identity": {
+    "profile": "debug",
+    "revision_at_compile": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "c7237bd9bee03e9702069f7d2110e60899a74991c900417e19a3be2324bd8b70",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "test_binary_sha256": "051b511cb81feecfd7cb13e1100d90012cfb01332f383137810ffc21b1c9d926",
+  "attempts": [
+    {
+      "attempt": 1,
+      "full_document_validator_pass": true,
+      "kind": "attempt",
+      "model_guard_pass": true,
+      "numeric_guard_pass": true,
+      "old_number_or_date_error": true,
+      "other_error_category": null
+    },
+    {
+      "attempt": 2,
+      "full_document_validator_pass": true,
+      "kind": "attempt",
+      "model_guard_pass": true,
+      "numeric_guard_pass": true,
+      "old_number_or_date_error": true,
+      "other_error_category": null
+    }
+  ],
+  "preparation_note": "The test itself passed. The first report writer did not recognize JSON object key ordering and failed to parse the test log; this report was produced from the already retained log without rerunning the test.",
+  "limits": [
+    "Only the direct document validator and numeric/model guards were checked, not the complete generation pipeline, new model output, new recording or semantic acceptance.",
+    "Passing these checks does not prove that a future model generation will produce the same text or pass all post-validation checks.",
+    "All private audio, transcript, generated content and their hashes remain local."
+  ]
+}
