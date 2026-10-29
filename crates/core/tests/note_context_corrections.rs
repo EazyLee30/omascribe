@@ -589,6 +589,315 @@ fn same_document_spelling_only_edit_keeps_complete_minutes_synchronized() -> Res
 }
 
 #[test]
+fn successive_note_spellings_replay_from_the_current_source_revision() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let meeting = engine.create_meeting("Successive source-backed spellings")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let original_note = CEDAR_DOCUMENT_BEFORE.replace("CEDARLEDGER", "CEDAR LEDGER");
+    let note = engine.save_note(&meeting.id, None, &original_note, "document", 0)?;
+    let raw = segment(
+        &meeting.id,
+        1,
+        &CEDAR_SOURCE.replace("CEDARLEDGER", "CEDAR LEDGER"),
+    );
+    let raw_prose = CEDAR_PROSE.replace("CEDARLEDGER", "CEDAR LEDGER");
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    let before = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        1,
+        vec![section(&meeting.id, &raw, &raw_prose)],
+        false,
+    )?;
+    let article_id = engine.snapshot(&meeting.id)?.suggestions[0].id.clone();
+
+    for (index, content) in [CEDAR_DOCUMENT_BEFORE, CEDAR_DOCUMENT_AFTER]
+        .into_iter()
+        .enumerate()
+    {
+        engine.save_note(&meeting.id, Some(note.id.clone()), content, "document", 0)?;
+        let after = engine.snapshot(&meeting.id)?;
+        let expected_name = content.lines().next().unwrap();
+        let expected_source = CEDAR_SOURCE.replace("CEDARLEDGER", expected_name);
+        let expected_prose = CEDAR_PROSE.replace("CEDARLEDGER", expected_name);
+        let revision = index as u32 + 2;
+        assert_eq!(after.segments[0].id, raw.id);
+        assert_eq!(after.segments[0].revision, revision);
+        assert_eq!(after.segments[0].text, expected_source);
+        assert_eq!(after.suggestions[0].id, article_id);
+        assert_eq!(after.suggestions[0].text, expected_prose);
+        assert_eq!(after.suggestions[0].status, "pending");
+        assert!(!after.suggestions[0].stale);
+        assert_eq!(after.suggestions[0].sources[0].segment_id, raw.id);
+        assert_eq!(after.suggestions[0].sources[0].revision, revision);
+        assert_eq!(after.suggestions[0].sources[0].quote, expected_source);
+        assert_eq!(after.suggestions[0].sources[0].start_ms, raw.start_ms);
+        assert_eq!(after.suggestions[0].sources[0].end_ms, raw.end_ms);
+        assert_eq!(after.meeting.notes_cursor, 1);
+        assert!(!notes::needs_update(&after));
+        assert_eq!(inference_jobs(&engine)?, 0);
+    }
+    let db = engine.store.lock().unwrap();
+    let mut query = db
+        .conn
+        .prepare("SELECT json FROM segment_history WHERE id=?1 ORDER BY revision")?;
+    let archived = query
+        .query_map([&raw.id], |row| row.get::<_, String>(0))?
+        .map(|row| Ok(serde_json::from_str::<Segment>(&row?)?))
+        .collect::<Result<Vec<_>>>()?;
+    assert_eq!(archived.len(), 2);
+    assert_eq!(archived[0].text, raw.text);
+    assert_eq!(archived[0].revision, 1);
+    assert_eq!(archived[1].text, CEDAR_SOURCE);
+    assert_eq!(archived[1].revision, 2);
+    let mut query = db
+        .conn
+        .prepare("SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id")?;
+    let documents = query
+        .query_map([&meeting.id], |row| row.get::<_, String>(0))?
+        .map(|row| Ok(serde_json::from_str::<Vec<Suggestion>>(&row?)?))
+        .collect::<Result<Vec<_>>>()?;
+    assert_eq!(documents.len(), 3);
+    assert_eq!(documents[1][0].text, raw_prose);
+    assert_eq!(documents[1][0].sources[0].quote, raw.text);
+    assert_eq!(documents[1][0].sources[0].revision, 1);
+    assert_eq!(documents[2][0].text, CEDAR_PROSE);
+    assert_eq!(documents[2][0].sources[0].quote, CEDAR_SOURCE);
+    assert_eq!(documents[2][0].sources[0].revision, 2);
+    Ok(())
+}
+
+fn clean_previously_normalized_document(
+    engine: &Engine,
+    title: &str,
+) -> Result<(UserNote, Snapshot)> {
+    let meeting = engine.create_meeting(title)?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let note = engine.save_note(
+        &meeting.id,
+        None,
+        &CEDAR_DOCUMENT_BEFORE.replace("CEDARLEDGER", "CEDAR LEDGER"),
+        "document",
+        0,
+    )?;
+    let raw = segment(
+        &meeting.id,
+        1,
+        &CEDAR_SOURCE.replace("CEDARLEDGER", "CEDAR LEDGER"),
+    );
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    let before = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        1,
+        vec![section(
+            &meeting.id,
+            &raw,
+            &CEDAR_PROSE.replace("CEDARLEDGER", "CEDAR LEDGER"),
+        )],
+        false,
+    )?;
+    engine.save_note(
+        &meeting.id,
+        Some(note.id.clone()),
+        CEDAR_DOCUMENT_BEFORE,
+        "document",
+        0,
+    )?;
+    let clean = engine.snapshot(&meeting.id)?;
+    assert_eq!(clean.segments[0].revision, 2);
+    assert_eq!(clean.segments[0].text, CEDAR_SOURCE);
+    assert_eq!(clean.suggestions[0].text, CEDAR_PROSE);
+    assert!(!notes::needs_update(&clean));
+    Ok((note, clean))
+}
+
+#[test]
+fn successive_spellings_keep_human_accepted_and_mismatched_evidence_protected() -> Result<()> {
+    for guard in [
+        "human_source",
+        "accepted",
+        "human_article",
+        "wrong_quote",
+        "stale",
+    ] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let (note, clean) = clean_previously_normalized_document(&engine, guard)?;
+        let mut article = clean.suggestions[0].clone();
+        match guard {
+            "human_source" => engine.edit_segment(
+                &clean.segments[0].id,
+                "Human review keeps CEDARLEDGER as a counterexample.",
+                2,
+            )?,
+            "human_article" => engine.store.lock().unwrap().update_suggestion(
+                &note.meeting_id,
+                &article.id,
+                "pending",
+                Some("Human review keeps CEDARLEDGER as a counterexample.".into()),
+            )?,
+            "accepted" => {
+                article.status = "accepted".into();
+                engine.store.lock().unwrap().save_suggestion(&article)?;
+            }
+            "wrong_quote" => {
+                article.sources[0].quote = "An unrelated source.".into();
+                engine.store.lock().unwrap().save_suggestion(&article)?;
+            }
+            _ => {
+                article.stale = true;
+                engine.store.lock().unwrap().save_suggestion(&article)?;
+            }
+        }
+        let protected = engine.snapshot(&note.meeting_id)?;
+        engine.save_note(
+            &note.meeting_id,
+            Some(note.id),
+            CEDAR_DOCUMENT_AFTER,
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&note.meeting_id)?;
+        assert_eq!(
+            after.suggestions[0].text, protected.suggestions[0].text,
+            "{guard}"
+        );
+        assert_eq!(
+            after.suggestions[0].status, protected.suggestions[0].status,
+            "{guard}"
+        );
+        assert_eq!(
+            serde_json::to_value(&after.suggestions[0].sources)?,
+            serde_json::to_value(&protected.suggestions[0].sources)?,
+            "{guard}"
+        );
+        assert!(notes::needs_update(&after), "{guard}");
+        if guard == "human_source" {
+            assert_eq!(
+                serde_json::to_value(&after.segments)?,
+                serde_json::to_value(&protected.segments)?
+            );
+        } else {
+            assert_eq!(
+                after.segments[0].text,
+                CEDAR_SOURCE.replace("CEDARLEDGER", "CedarLedger")
+            );
+            assert_eq!(after.segments[0].revision, 3);
+        }
+        assert_eq!(inference_jobs(&engine)?, 0);
+    }
+    Ok(())
+}
+
+#[test]
+fn successive_spelling_never_uses_current_text_as_the_authoritative_target() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, before) = clean_previously_normalized_document(&engine, "Withdrawn spelling")?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id),
+        "local test\n\nbudget",
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&note.meeting_id)?;
+    // Removing the term restores archived ASR. The current text cannot reach
+    // that target, so its old replacement proof must not authorize a patch.
+    assert_eq!(
+        after.segments[0].text,
+        CEDAR_SOURCE.replace("CEDARLEDGER", "CEDAR LEDGER")
+    );
+    assert_eq!(after.segments[0].revision, 3);
+    assert_eq!(after.suggestions[0].text, before.suggestions[0].text);
+    assert_eq!(
+        serde_json::to_value(&after.suggestions[0].sources)?,
+        serde_json::to_value(&before.suggestions[0].sources)?
+    );
+    assert!(after.suggestions[0].stale);
+    assert!(notes::needs_update(&after));
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn successive_spelling_does_not_invent_new_note_facts_or_acknowledge_them() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, _) = clean_previously_normalized_document(&engine, "New fact is not a spelling")?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id),
+        &format!("{CEDAR_DOCUMENT_AFTER}\n\nBudget 9000 is approved."),
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&note.meeting_id)?;
+    assert_eq!(after.segments[0].revision, 3);
+    assert_eq!(
+        after.segments[0].text,
+        CEDAR_SOURCE.replace("CEDARLEDGER", "CedarLedger")
+    );
+    assert_eq!(
+        after.suggestions[0].text,
+        CEDAR_PROSE.replace("CEDARLEDGER", "CedarLedger")
+    );
+    assert!(!after.suggestions[0].text.contains("9000"));
+    assert!(after.suggestions[0].text.contains("not been approved"));
+    assert!(notes::needs_update(&after));
+    assert!(after.meeting.notes_fingerprint.is_empty());
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn successive_spelling_cannot_borrow_authority_for_another_sources_shared_prefix() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, clean) = clean_previously_normalized_document(&engine, "Successive shared prefix")?;
+    engine.save_library_entry(explicit_term("CEDARLEDGER Beta", ""))?;
+    let other = segment(&note.meeting_id, 2, "CEDARLEDGER Beta still needs review.");
+    engine.store.lock().unwrap().save_segment(&other)?;
+    let before = engine.snapshot(&note.meeting_id)?;
+    let body = format!("{} {}", CEDAR_PROSE, other.text);
+    let mut combined = section(&note.meeting_id, &before.segments[0], &body);
+    combined.sources.push(source(&other));
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        2,
+        vec![combined],
+        false,
+    )?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id),
+        CEDAR_DOCUMENT_AFTER,
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&note.meeting_id)?;
+    assert_eq!(after.segments[0].revision, clean.segments[0].revision + 1);
+    assert_eq!(
+        after.segments[0].text,
+        CEDAR_SOURCE.replace("CEDARLEDGER", "CedarLedger")
+    );
+    assert_eq!(
+        serde_json::to_value(&after.segments[1])?,
+        serde_json::to_value(&other)?
+    );
+    assert_eq!(after.suggestions[0].text, body);
+    assert!(after.suggestions[0].stale);
+    assert!(notes::needs_update(&after));
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
 fn changed_note_content_or_replacement_document_still_needs_generation() -> Result<()> {
     for change in ["new_budget", "new_topic", "replacement_document"] {
         let root = tempfile::tempdir()?;

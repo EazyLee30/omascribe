@@ -2,6 +2,10 @@ use crate::{preferences::atomic_json, Engine, UserNote};
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::Path};
+
+const TERMINOLOGY_ENTRIES_SQL: &str =
+    "SELECT json FROM library_entries WHERE json_extract(json,'$.kind')='term' ORDER BY updated_at DESC";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Entry {
@@ -89,6 +93,31 @@ impl Engine {
                 }
             }
         }
+        entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+        Ok(entries)
+    }
+    /// Load terminology without materializing historical meetings and notes.
+    /// Keep disabled/deleted rows: Terms owns their eligibility rules.
+    pub fn terminology_entries(&self) -> Result<Vec<Entry>> {
+        let db = self.store.lock().unwrap();
+        let mut query = db.conn.prepare(TERMINOLOGY_ENTRIES_SQL)?;
+        let mut entries: Vec<Entry> = query
+            .query_map([], |r| r.get::<_, String>(0))?
+            .map(|r| Ok(serde_json::from_str(&r?)?))
+            .collect::<Result<_>>()?;
+        entries.retain(|e| {
+            e.meeting_id.as_ref().is_none_or(|id| {
+                !db.conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [id],
+                        |r| r.get::<_, bool>(0),
+                    )
+                    .unwrap_or(false)
+            })
+        });
+        // JSON dates can differ from their SQL sort column in imported data.
+        // A stable sort also preserves the full view's order for equal dates.
         entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
         Ok(entries)
     }
@@ -274,6 +303,285 @@ pub fn export_library(engine: &Engine, path: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::terminology::Terms;
+
+    fn insert_entry(e: &Engine, entry: &Entry, sort_date: &str) {
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute(
+                "INSERT INTO library_entries VALUES(?1,?2,?3)",
+                rusqlite::params![entry.id, serde_json::to_string(entry).unwrap(), sort_date],
+            )
+            .unwrap();
+    }
+
+    fn assert_same_terms(e: &Engine, notes: &[UserNote]) {
+        let all = e.library_entries().unwrap();
+        let only = e.terminology_entries().unwrap();
+        let expected: Vec<_> = all.iter().filter(|entry| entry.kind == "term").collect();
+        assert_eq!(
+            serde_json::to_value(expected).unwrap(),
+            serde_json::to_value(&only).unwrap()
+        );
+        let before = Terms::new(notes, &all);
+        let after = Terms::new(notes, &only);
+        assert_eq!(before.fingerprint(), after.fingerprint());
+        assert_eq!(before.hotwords, after.hotwords);
+        assert_eq!(before.recognition_hotwords(), after.recognition_hotwords());
+        let text = "LegacyAlias SharedAlias Model 1650 mixedalias";
+        assert_eq!(before.normalize(text), after.normalize(text));
+        assert_eq!(before.spellings(text), after.spellings(text));
+    }
+
+    #[test]
+    fn terminology_entries_preserve_visibility_order_and_alias_budgets() {
+        let dir = tempfile::tempdir().unwrap();
+        let e = Engine::open(dir.path().into()).unwrap();
+        let meeting = e.create_meeting("Current").unwrap();
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute("INSERT INTO deleted_meetings VALUES('removed')", [])
+            .unwrap();
+        for i in 0..90 {
+            insert_entry(
+                &e,
+                &Entry {
+                    id: format!("term-{i}"),
+                    kind: "term".into(),
+                    title: format!("CanonicalTerm{i:02}"),
+                    aliases: format!("Alias{i:02}|SharedAlias"),
+                    // JSON dates, not the SQL sort column, determine the final
+                    // order; stable ties keep the SQL ordering as before.
+                    updated_at: format!("2026-10-{:02}", i % 4 + 1),
+                    enabled: i != 3,
+                    deleted: i == 4,
+                    meeting_id: match i {
+                        5 => Some("removed".into()),
+                        6 => Some(meeting.id.clone()),
+                        _ => None,
+                    },
+                    ..Default::default()
+                },
+                &format!("2026-09-{:03}", 90 - i),
+            );
+        }
+        for (id, kind) in [("note", "note"), ("memory", "memory"), ("case", "Term")] {
+            insert_entry(
+                &e,
+                &Entry {
+                    id: id.into(),
+                    kind: kind.into(),
+                    title: "Unrelated entry".into(),
+                    updated_at: "2099".into(),
+                    ..Default::default()
+                },
+                "2099",
+            );
+        }
+        insert_entry(
+            &e,
+            &Entry {
+                id: "model".into(),
+                kind: "term".into(),
+                title: "Model1650".into(),
+                aliases: "Model 1650, LegacyAlias; mixedalias".into(),
+                updated_at: "2026-11-01".into(),
+                ..Default::default()
+            },
+            "1900",
+        );
+        let notes = vec![UserNote {
+            id: "current-note".into(),
+            meeting_id: meeting.id,
+            content: "**CanonicalTerm00**\n**Model1650**".into(),
+            kind: "note".into(),
+            anchor_ms: 0,
+            updated_at: "2026-10-30".into(),
+        }];
+        assert_same_terms(&e, &[]);
+        assert_same_terms(&e, &notes);
+        let entries = e.terminology_entries().unwrap();
+        assert_eq!(entries[0].id, "model");
+        assert!(entries.iter().any(|entry| !entry.enabled));
+        assert!(entries.iter().any(|entry| entry.deleted));
+        assert!(!entries.iter().any(|entry| entry.id == "term-5"));
+    }
+
+    #[test]
+    fn terminology_entries_do_not_read_historical_meetings_or_notes() {
+        let dir = tempfile::tempdir().unwrap();
+        let e = Engine::open(dir.path().into()).unwrap();
+        insert_entry(
+            &e,
+            &Entry {
+                id: "kept-term".into(),
+                kind: "term".into(),
+                title: "CanonicalTerm".into(),
+                ..Default::default()
+            },
+            "2026",
+        );
+        // This isolated database no longer has either history table. A
+        // terminology read must not need to prepare or deserialize their rows.
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute_batch("DROP TABLE notes; DROP TABLE meetings;")
+            .unwrap();
+        assert!(e.library_entries().is_err());
+        let entries = e.terminology_entries().unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].id, "kept-term");
+    }
+
+    #[test]
+    fn terminology_entries_read_current_rows_and_reject_invalid_terms() {
+        let dir = tempfile::tempdir().unwrap();
+        let e = Engine::open(dir.path().into()).unwrap();
+        let mut term = Entry {
+            id: "current-term".into(),
+            kind: "term".into(),
+            title: "FirstSpelling".into(),
+            aliases: "LegacyAlias".into(),
+            ..Default::default()
+        };
+        insert_entry(&e, &term, "2026");
+        let before = Terms::new(&[], &e.terminology_entries().unwrap());
+        assert_eq!(before.normalize("LegacyAlias"), "FirstSpelling");
+        term.title = "SecondSpelling".into();
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute(
+                "UPDATE library_entries SET json=?1 WHERE id=?2",
+                rusqlite::params![serde_json::to_string(&term).unwrap(), term.id],
+            )
+            .unwrap();
+        let after = Terms::new(&[], &e.terminology_entries().unwrap());
+        assert_ne!(before.fingerprint(), after.fingerprint());
+        assert_eq!(after.normalize("LegacyAlias"), "SecondSpelling");
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute(
+                "UPDATE library_entries SET json=?1 WHERE id=?2",
+                rusqlite::params![r#"{"kind":"term","enabled":"invalid"}"#, term.id],
+            )
+            .unwrap();
+        assert!(e.terminology_entries().is_err());
+    }
+
+    #[test]
+    #[ignore = "controlled synthetic history lookup measurement"]
+    fn terminology_entries_large_history_measurement() {
+        use std::time::Instant;
+
+        let dir = tempfile::tempdir().unwrap();
+        let e = Engine::open(dir.path().into()).unwrap();
+        let template = e.create_meeting("Synthetic lookup control").unwrap();
+        {
+            let db = e.store.lock().unwrap();
+            let large_content = "x".repeat(65_536);
+            for i in 0..320 {
+                let mut meeting = template.clone();
+                meeting.id = format!("history-meeting-{i}");
+                db.save_meeting(&meeting).unwrap();
+                db.save_note(&UserNote {
+                    id: format!("history-note-{i}"),
+                    meeting_id: meeting.id,
+                    content: large_content.clone(),
+                    kind: "document".into(),
+                    anchor_ms: 0,
+                    updated_at: "2026-10-29".into(),
+                })
+                .unwrap();
+            }
+        }
+        for i in 0..120 {
+            insert_entry(
+                &e,
+                &Entry {
+                    id: format!("library-history-{i}"),
+                    kind: if i % 2 == 0 { "note" } else { "memory" }.into(),
+                    content: "y".repeat(24_576),
+                    updated_at: "2026-10-29".into(),
+                    ..Default::default()
+                },
+                "2026-10-29",
+            );
+        }
+        for i in 0..40 {
+            insert_entry(
+                &e,
+                &Entry {
+                    id: format!("term-{i}"),
+                    kind: "term".into(),
+                    title: format!("CanonicalTerm{i}"),
+                    aliases: format!("LegacyAlias{i}"),
+                    updated_at: "2026-10-30".into(),
+                    ..Default::default()
+                },
+                "2026-10-30",
+            );
+        }
+        assert_same_terms(&e, &[]);
+        let mut full_us = Vec::new();
+        let mut terms_us = Vec::new();
+        // Alternate calls against one warm database; this is a lookup-only
+        // synthetic observation, not an inference or process RSS benchmark.
+        for _ in 0..7 {
+            let started = Instant::now();
+            let full = e.library_entries().unwrap();
+            full_us.push(started.elapsed().as_micros());
+            std::hint::black_box(full);
+            let started = Instant::now();
+            let terms = e.terminology_entries().unwrap();
+            terms_us.push(started.elapsed().as_micros());
+            std::hint::black_box(terms);
+        }
+        let full = e.library_entries().unwrap();
+        let terms = e.terminology_entries().unwrap();
+        let query_plan: Vec<String> = e
+            .store
+            .lock()
+            .unwrap()
+            .conn
+            .prepare(&format!("EXPLAIN QUERY PLAN {TERMINOLOGY_ENTRIES_SQL}"))
+            .unwrap()
+            .query_map([], |row| row.get(3))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert!(query_plan
+            .iter()
+            .all(|row| !row.contains("notes") && !row.contains("meetings")));
+        println!(
+            "{}",
+            serde_json::json!({
+                "historical_meetings": 320,
+                "historical_notes": 320,
+                "history_note_content_bytes_each": 65_536,
+                "persisted_nonterm_entries": 120,
+                "nonterm_content_bytes_each": 24_576,
+                "term_rows": terms.len(),
+                "all_rows": full.len(),
+                "all_serialized_bytes": serde_json::to_vec(&full).unwrap().len(),
+                "term_serialized_bytes": serde_json::to_vec(&terms).unwrap().len(),
+                "lookup_full_us": full_us,
+                "lookup_terms_us": terms_us,
+                "query_plan": query_plan,
+                "fingerprint_equal": Terms::new(&[], &full).fingerprint() == Terms::new(&[], &terms).fingerprint(),
+                "recognition_hotwords_equal": Terms::new(&[], &full).recognition_hotwords() == Terms::new(&[], &terms).recognition_hotwords()
+            })
+        );
+    }
     #[test]
     fn knowledge_is_opt_in_and_deletion_is_reversible() {
         let dir = tempfile::tempdir().unwrap();

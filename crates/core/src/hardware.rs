@@ -11,6 +11,10 @@ pub struct GpuInventory {
     /// Maximum CUDA Driver API supported by the installed driver, not the SDK.
     #[serde(default)]
     pub cuda_driver_version: Option<i32>,
+    /// Provenance of the adapter driver version, not an acceleration result.
+    /// Missing on older helpers; kernel-only versions are not userspace identity.
+    #[serde(default)]
+    pub driver_identity: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GpuDevice {
@@ -43,6 +47,7 @@ fn unavailable(reason: &str) -> GpuInventory {
         devices: vec![],
         error: Some(reason.into()),
         cuda_driver_version: None,
+        driver_identity: None,
     }
 }
 
@@ -95,6 +100,7 @@ pub fn native_inventory() -> GpuInventory {
             devices: vec![],
             error: None,
             cuda_driver_version: None,
+            driver_identity: None,
         }
     }
 }
@@ -174,6 +180,7 @@ fn linux_inventory(pci: &Path) -> GpuInventory {
         devices,
         error: None,
         cuda_driver_version: None,
+        driver_identity: Some("linux_kernel_only".into()),
     }
 }
 
@@ -258,6 +265,7 @@ fn windows_inventory() -> GpuInventory {
         devices,
         error: None,
         cuda_driver_version: cuda_driver_version(),
+        driver_identity: Some("dxgi_adapter_version".into()),
     }
 }
 

@@ -15,6 +15,9 @@ The optional workflow produces four `.tar.bz2` archives and checks every unpacke
 5. A successful certificate is local and bound to device/driver, signed component inventory, model file and inference configuration. An unknown driver cannot carry verification into a later app session. Configuration/driver changes require another test. Explicit CPU never uses an optional component.
 6. GPU startup failure removes activation and tries CPU once. Failed GPU generation transport is reaped before one CPU retry. Existing transactional/revision checks guard commits. Cancellation, maintenance and system memory pressure do not trigger an extra generation retry. Starting audio cancels an in-progress acceleration test.
 
+Driver-provenance follow-up: Linux currently reports kernel/module diagnostics, not a verified Mesa/ICD/CUDA userspace build. Its certificates, older-helper inventories and unknown provenance are therefore session-bound; only the existing nonempty DXGI user-mode version is treated as persistent. A new hardware-key schema also binds the reported CUDA compatibility level. This fixes unsafe cross-launch reuse; it does not yet guarantee userspace/env invalidation during the same app session or remove the30-second observation cache. Actual loaded-library/driverUUID probes with the worker's environment and Linux device tests remain G1 work. [Checks, official interface definitions and limits](../evaluation/late-name-and-lookup-2026-10-30.json).
+
+
 The short local test is an admission check, not proof of whole-meeting quality, battery savings or all-driver compatibility. Separate ASR, translation, minutes, speaker, long-audio and hardware gates in the implementation plan remain required.
 
 ## Validation status

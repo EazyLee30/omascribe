@@ -127,8 +127,23 @@ fn hardware_key(engine: &Engine) -> Result<String> {
     if state.nonce.is_empty() {
         state.nonce = uuid::Uuid::new_v4().to_string();
     }
-    // Unknown driver versions are session-bound; they cannot authorize a future launch.
-    let uncertain = inventory.devices.iter().any(|d| d.driver_version.is_none());
+    let key = inventory_key(&inventory, &state.nonce)?;
+    state.hardware = Some((Instant::now(), key.clone()));
+    Ok(key)
+}
+
+fn inventory_key(inventory: &crate::hardware::GpuInventory, nonce: &str) -> Result<String> {
+    // A Linux module version or boot ID does not identify Mesa/Vulkan/CUDA
+    // userspace. Older helpers likewise supply no provenance. Keep those
+    // certificates local to this app session until actual userspace identity is
+    // available; a nonempty diagnostic string alone must not authorize reuse.
+    let persistent = inventory.driver_identity.as_deref() == Some("dxgi_adapter_version")
+        && !inventory.devices.is_empty()
+        && inventory.devices.iter().all(|d| {
+            d.driver_version
+                .as_ref()
+                .is_some_and(|version| !version.trim().is_empty())
+        });
     let devices: Vec<_> = inventory
         .devices
         .iter()
@@ -142,9 +157,13 @@ fn hardware_key(engine: &Engine) -> Result<String> {
             ])
         })
         .collect();
-    let key = hash(&(devices, uncertain.then_some(&state.nonce)))?;
-    state.hardware = Some((Instant::now(), key.clone()));
-    Ok(key)
+    hash(&(
+        "driver-provenance-v2",
+        &inventory.driver_identity,
+        inventory.cuda_driver_version,
+        devices,
+        (!persistent).then_some(nonce),
+    ))
 }
 fn binding(
     engine: &Engine,
@@ -543,6 +562,89 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn adapter_inventory(
+        provenance: Option<&str>,
+        version: Option<&str>,
+    ) -> crate::hardware::GpuInventory {
+        serde_json::from_value(json!({"schema":1,"status":"detected","devices":[{
+            "local_id":"0000:01:00.0","name":"Fictional adapter","vendor":"amd",
+            "vendor_id":4098,"device_id":1234,"driver":"amdgpu","driver_version":version
+        }],"error":null,"driver_identity":provenance}))
+        .unwrap()
+    }
+    #[test]
+    fn kernel_versions_boot_ids_and_legacy_helpers_cannot_authorize_a_future_session() -> Result<()>
+    {
+        for provenance in [
+            None,
+            Some("linux_kernel_only"),
+            Some("future_unknown_provider"),
+        ] {
+            for version in [
+                None,
+                Some("6.12.0"),
+                Some("kernel:6.12:boot:unchanged"),
+                Some("565.57.01"),
+            ] {
+                let inventory = adapter_inventory(provenance, version);
+                assert_ne!(
+                    inventory_key(&inventory, "session-a")?,
+                    inventory_key(&inventory, "session-b")?,
+                    "{provenance:?} {version:?}"
+                );
+            }
+        }
+        // Real older helper JSON has no provenance field at all.
+        let mut legacy = serde_json::to_value(adapter_inventory(None, Some("6.12.0")))?;
+        legacy.as_object_mut().unwrap().remove("driver_identity");
+        let legacy = serde_json::from_value(legacy)?;
+        assert_ne!(
+            inventory_key(&legacy, "session-a")?,
+            inventory_key(&legacy, "session-b")?
+        );
+        Ok(())
+    }
+    #[test]
+    fn known_driver_provenance_binds_versions_and_cuda_compatibility_without_reusing_old_keys(
+    ) -> Result<()> {
+        let mut known = adapter_inventory(Some("dxgi_adapter_version"), Some("123456"));
+        assert_eq!(
+            inventory_key(&known, "session-a")?,
+            inventory_key(&known, "session-b")?
+        );
+        let before = inventory_key(&known, "session-a")?;
+        known.devices[0].driver_version = Some("123457".into());
+        assert_ne!(before, inventory_key(&known, "session-a")?);
+        let before = inventory_key(&known, "session-a")?;
+        known.cuda_driver_version = Some(12080);
+        assert_ne!(before, inventory_key(&known, "session-a")?);
+        known.devices[0].driver_version = Some("".into());
+        assert_ne!(
+            inventory_key(&known, "session-a")?,
+            inventory_key(&known, "session-b")?
+        );
+        let version = adapter_inventory(Some("dxgi_adapter_version"), Some("123456"));
+        let old_devices: Vec<_> = version
+            .devices
+            .iter()
+            .map(|d| {
+                json!([
+                    d.local_id,
+                    d.vendor_id,
+                    d.device_id,
+                    d.driver,
+                    d.driver_version
+                ])
+            })
+            .collect();
+        let old = hash(&(old_devices, Option::<&str>::None))?;
+        assert_ne!(
+            old,
+            inventory_key(&version, "session-a")?,
+            "old certificates need a fresh binding"
+        );
+        Ok(())
+    }
     #[test]
     fn component_removal_clears_only_the_exact_authorized_version() -> Result<()> {
         let root = tempfile::tempdir()?;

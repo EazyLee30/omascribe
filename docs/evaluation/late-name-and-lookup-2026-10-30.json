@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "parent": "50ea5df",
+  "status": "Production late-name baseline repair, narrower lookup and driver-provenance binding integrated; release gates remain open",
+  "source_sha256": {
+    "crates/core/src/terminology.rs": "36bb30f59d5b81ca9f872bc478f192caa46615018f667b99a924c4a4e2f963af",
+    "crates/core/src/library.rs": "ebf3e708e58429720b527e5c29224199a1d2c3f3916d60c1d7474ea8ec6c6f63",
+    "crates/core/src/hardware.rs": "7fdd9b2d89d674f4a4b3621926d89190e0306e43de2fd1fcacc50d9d1291a20f",
+    "crates/core/src/acceleration.rs": "d2a21d983a6d249be50b0c4efdf93ced76d78b02bdca033f9f347b89f56698c9",
+    "crates/core/tests/note_context_corrections.rs": "57e017f431b3c813206674fdbd26c0b872dafe5e8d62c38bf43a1deada07046e"
+  },
+  "late_name_fix": {
+    "problem": "On the second spelling update, transcript correction still used the earliest ASR as authority, but document replacement ranges were incorrectly based on that old text rather than the currently cited revision.",
+    "change": "Keep the original-derived target. Use replacements derived from the current cited source only if normalizing that current source yields exactly the same authoritative target. Otherwise retain the existing fail-closed replay.",
+    "real_red": "First CEDAR LEDGER→CEDARLEDGER succeeded; second CEDARLEDGER→CedarLedger updated source but left old minutes. The same regression now passes.",
+    "controls": "Consecutive source/citation/history revisions, no added inference jobs; human/accepted/stale/wrong quote/shared-prefix/removed term/new substantive note protections retained."
+  },
+  "lookup": {
+    "change": "Engine::terminology uses terminology_entries(), loading persisted term rows in the original stable order and visibility; it no longer materializes all historical meetings and notes. No cache or admission-rule change.",
+    "evidence": "artifacts/terminology-library-2026-10-30/evidence.json",
+    "warm_synthetic_debug_lookup_median_ms": {
+      "full": 62.375,
+      "terms": 1.585
+    },
+    "serialized_result_bytes": {
+      "full": 24016241,
+      "terms": 7531
+    },
+    "scope": "320 historical meetings/320x64KiB notes,120x24KiB unrelated library entries,40 terms;7 warm repetitions; fingerprints/hotwords equal. Not ASR accuracy, whole-app latency, RSS or energy proof."
+  },
+  "driver_binding": {
+    "problem": "Linux module version or kernel+boot strings were nonempty, so old code treated them as persistent userspace driver identity.",
+    "change": "The helper records driver-version provenance. Only the existing Windows DXGI user-mode version with nonempty versions remains persistent; Linux kernel-only, old-helper and unknown provenance bind to the current app-session nonce. The hardware-key schema changes and CUDA compatibility version participates, invalidating older certificates.",
+    "remaining": "This does not detect every userspace library/env change during one running app, replace the30s probe cache with observers, or implement Vulkan driverUUID/CUDA loaded-library fingerprinting. No Linux GPU execution/OOM/reset performance claim."
+  },
+  "official_sources": [
+    {
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceIDProperties.html",
+      "supports": "driverUUID identifies the driver build in use; raw kernel metadata is not this userspace identity."
+    },
+    {
+      "url": "https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__VERSION.html",
+      "supports": "cuDriverGetVersion reports supported CUDA API version, not a graphics-driver build identifier."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiadapter-checkinterfacesupport",
+      "supports": "CheckInterfaceSupport with IDXGIDevice returns a user-mode driver version."
+    }
+  ],
+  "checks": {
+    "core_passed": 454,
+    "core_ignored": 9,
+    "cli_passed": 2,
+    "integration_passed": 26,
+    "consecutive_name_and_protection_cases": 17,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "diff_check": "PASS"
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/late-name-baseline-2026-10-30/red.log",
+      "sha256": "33116f50f276ff75a419a79ca0f2930ff5ed1249c7532193b4ffb5e6d5c12078"
+    },
+    {
+      "path": "artifacts/late-name-baseline-2026-10-30/green.log",
+      "sha256": "b7e23d3607ff3d46681ada2b5bd376063f22ad905af849bc3c6809de215050cd"
+    },
+    {
+      "path": "artifacts/late-name-baseline-2026-10-30/core-complete.log",
+      "sha256": "ce8a7ac4cb6256ca63407d24967b1358f0f91330327ea69a1e1bf2f7199fb8cf"
+    },
+    {
+      "path": "artifacts/late-name-baseline-2026-10-30/clippy-workspace.log",
+      "sha256": "a2b61afe502c1fa52cd43eb7d6d14175bc0faecd498bb88957b6a2515c176962"
+    }
+  ],
+  "limits": [
+    "No generative model call, SDK/model download, GPU package or native installer build for these fixes.",
+    "Existing Q16 remainsFAIL and0.3.5 is unpublished; no rejected source-unit producer promoted.",
+    "The full P0/P1/P2/P3/G1/G2 objective remains active; ASR pause hotword ordering still requires separate fixed-source native verification."
+  ]
+}

@@ -1135,7 +1135,7 @@ fn edit_distance(a: &[u8], b: &[u8]) -> usize {
 impl Engine {
     pub fn terminology(&self, meeting: &str) -> Result<Terms> {
         let notes = self.store.lock().unwrap().notes(meeting)?;
-        Ok(Terms::new(&notes, &self.library_entries()?))
+        Ok(Terms::new(&notes, &self.terminology_entries()?))
     }
     /// Archive the original ASR revision. Human edits and protected minutes remain authoritative.
     pub fn correct_terminology(&self, meeting: &str) -> Result<usize> {
@@ -1209,6 +1209,17 @@ impl Engine {
                     s.revision += 1;
                     s.text = text;
                     if let Some(before) = before {
+                        // The authoritative target always comes from archived ASR.
+                        // A later spelling edit must replay from the revision the
+                        // article actually cites, rather than an older alias that
+                        // disappeared during an earlier automatic correction.
+                        let (current, current_replacements) =
+                            terms.normalize_with_changes(&before.text);
+                        let replacements = if current == s.text {
+                            current_replacements
+                        } else {
+                            replacements
+                        };
                         source_changes.push(document::SourceChange {
                             before,
                             after: s.clone(),
