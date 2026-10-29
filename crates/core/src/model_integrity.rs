@@ -6,10 +6,14 @@
 //! even ordinary writes. All receipt owners and cached copies must be released
 //! before replacing or deleting these files.
 //!
-//! Other platforms' cached receipts track filesystem-observable identity and
-//! timestamps. They are not secure immutable file-descriptor snapshots: an
+//! Linux also retains inode and directory mutation watches before hashing, so
+//! ordinary local writes invalidate receipts even within one timestamp quantum.
+//! Events, observer failures and queue overflow invalidate all receipt owners.
+//! Other Unix platforms track filesystem-observable identity and timestamps.
+//! These are not secure immutable file-descriptor snapshots: an
 //! uncoordinated writable mmap can change bytes without observable stamp changes,
-//! notably on macOS. Native loaders subsequently reopen paths on every platform;
+//! notably on macOS; Linux mutation watches also do not cover mmap or remote
+//! network-filesystem writes. Native loaders reopen paths on every platform;
 //! callers must check immediately before/after loading and discard a worker on
 //! any detected change, without claiming that the native descriptors are pinned.
 use crate::models::Model;
@@ -27,6 +31,9 @@ use std::{
 
 const READ_BUFFER_BYTES: usize = 64 * 1024;
 const MAX_CACHED_RECEIPTS: usize = 32;
+
+#[cfg(target_os = "linux")]
+mod linux;
 
 /// A distinct error type prevents an integrity failure being retried on CPU.
 #[derive(Debug)]
@@ -158,6 +165,8 @@ struct Verified {
     fingerprint: String,
     #[cfg(windows)]
     retained: RetainedHandles,
+    #[cfg(target_os = "linux")]
+    observer: linux::MutationObserver,
 }
 
 #[derive(Clone, Debug)]
@@ -173,11 +182,16 @@ impl Receipt {
     }
 
     pub(crate) fn check_current(&self) -> Result<()> {
+        #[cfg(target_os = "linux")]
+        self.0.observer.check_current(self.directory())?;
         #[cfg(windows)]
         self.0
             .retained
             .check_current(&self.0.key, &self.0.snapshot)?;
-        let observed = snapshot(self.directory(), &self.0.key.catalog)?;
+        let observed = snapshot(self.directory(), &self.0.key.catalog);
+        #[cfg(target_os = "linux")]
+        self.0.observer.check_current(self.directory())?;
+        let observed = observed?;
         if observed != self.0.snapshot {
             return Err(failure(format!(
                 "model files changed after verification: {}",
@@ -259,6 +273,10 @@ impl Cache {
         #[cfg(test)]
         self.verification_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        #[cfg(target_os = "linux")]
+        let observer = linux::MutationObserver::open(directory, &key.catalog.files)?;
+        #[cfg(target_os = "linux")]
+        observer.check_current(directory)?;
         let before = snapshot(directory, &key.catalog)?;
         #[cfg(windows)]
         let retained = {
@@ -269,11 +287,18 @@ impl Cache {
             retained.check_current(&key, &before)?;
             retained
         };
+        #[cfg(target_os = "linux")]
+        observer.check_current(directory)?;
         for (asset, expected) in key.catalog.files.iter().zip(&before.files) {
             self.verify_asset(directory, asset, expected)?;
         }
+        #[cfg(target_os = "linux")]
+        observer.check_current(directory)?;
         // Recheck the entire set, including secondary files already hashed.
-        if snapshot(directory, &key.catalog)? != before {
+        let after = snapshot(directory, &key.catalog);
+        #[cfg(target_os = "linux")]
+        observer.check_current(directory)?;
+        if after? != before {
             return Err(failure("model directory changed during verification"));
         }
         let fingerprint = fingerprint(&key, &before);
@@ -283,6 +308,8 @@ impl Cache {
             fingerprint,
             #[cfg(windows)]
             retained,
+            #[cfg(target_os = "linux")]
+            observer,
         }));
         let mut successes = self
             .successes
@@ -291,30 +318,52 @@ impl Cache {
         // Catalog subsets can share a directory (for example an encoder model
         // and its tokenizer). Keep their independent successful receipts so a
         // smaller verification does not evict the full model's evidence.
-        if successes.len() >= MAX_CACHED_RECEIPTS && !successes.contains_key(&key) {
+        let evicted = if successes.len() >= MAX_CACHED_RECEIPTS && !successes.contains_key(&key) {
             if let Some(evicted) = successes.keys().next().cloned() {
-                successes.remove(&evicted);
+                successes.remove(&evicted)
+            } else {
+                None
             }
-        }
-        successes.insert(key, receipt.clone());
+        } else {
+            None
+        };
+        let replaced = successes.insert(key, receipt.clone());
+        drop(successes);
+        // Final receipt drops close retained handles/observers outside the cache lock.
+        drop(evicted);
+        drop(replaced);
         Ok(receipt)
     }
 
     pub(crate) fn invalidate(&self, directory: &Path) {
         // Recovering a poisoned lock only removes trust; it cannot add success.
-        self.successes
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .retain(|key, _| key.directory.as_os_str() != directory.as_os_str());
+        let removed = {
+            let mut successes = self
+                .successes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let keys: Vec<_> = successes
+                .keys()
+                .filter(|key| key.directory.as_os_str() == directory.as_os_str())
+                .cloned()
+                .collect();
+            keys.into_iter()
+                .filter_map(|key| successes.remove(&key))
+                .collect::<Vec<_>>()
+        };
+        drop(removed);
     }
 
     /// Drop cached receipts, including Windows sharing handles. Workers and
     /// other receipt owners must also be stopped/dropped before file updates.
     pub(crate) fn clear(&self) {
-        self.successes
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clear();
+        let removed = std::mem::take(
+            &mut *self
+                .successes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+        );
+        drop(removed);
     }
 
     fn verify_asset(
@@ -956,6 +1005,105 @@ mod tests {
         assert!(receipt.check_current().is_err());
         assert!(cache.current(&directory, &spec).unwrap().is_none());
         assert_integrity(cache.verify(&directory, &spec));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_mutation_stays_dirty_across_concurrent_receipt_owners() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let hashed = cache.hashed_bytes();
+        fs::write(directory.join("weights.gguf"), b"evil").unwrap();
+        let barrier = Arc::new(std::sync::Barrier::new(8));
+        let checks: Vec<_> = (0..8)
+            .map(|_| {
+                let receipt = receipt.clone();
+                let barrier = Arc::clone(&barrier);
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    assert!(receipt.check_current().is_err());
+                    assert!(receipt.check_current().is_err());
+                })
+            })
+            .collect();
+        for check in checks {
+            check.join().unwrap();
+        }
+        assert!(cache.current(&directory, &spec).unwrap().is_none());
+        assert_eq!(cache.hashed_bytes(), hashed, "receipt checks must not hash");
+        assert_integrity(cache.verify(&directory, &spec));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_hardlink_alias_write_invalidates_the_complete_group() {
+        let (temp, directory, spec) =
+            fixture(&[("weights.gguf", b"primary"), ("config.json", b"good")]);
+        let alias = temp.path().join("outside-alias");
+        fs::hard_link(directory.join("config.json"), &alias).unwrap();
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let hashed = cache.hashed_bytes();
+        fs::write(alias, b"evil").unwrap();
+        assert!(receipt.check_current().is_err());
+        assert_eq!(cache.hashed_bytes(), hashed);
+        assert_integrity(cache.verify(&directory, &spec));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_matching_replacement_and_restore_do_not_restore_receipt_trust() {
+        let (temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let path = directory.join("weights.gguf");
+        let moved = temp.path().join("original");
+        let replacement = temp.path().join("replacement");
+        fs::write(&replacement, b"good").unwrap();
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        fs::rename(&path, &moved).unwrap();
+        fs::rename(&replacement, &path).unwrap();
+        assert!(receipt.check_current().is_err());
+        fs::rename(&path, &replacement).unwrap();
+        fs::rename(&moved, &path).unwrap();
+        assert!(receipt.clone().check_current().is_err());
+        assert!(cache.current(&directory, &spec).unwrap().is_none());
+        cache.verify(&directory, &spec).unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_read_only_access_keeps_cached_receipts_without_hashing() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        let first = cache.verify(&directory, &spec).unwrap();
+        let hashed = cache.hashed_bytes();
+        for _ in 0..4 {
+            assert_eq!(fs::read(directory.join("weights.gguf")).unwrap(), b"good");
+            fs::read_dir(&directory).unwrap().next().unwrap().unwrap();
+            first.clone().check_current().unwrap();
+            let current = cache.verify(&directory, &spec).unwrap();
+            assert!(Arc::ptr_eq(&first.0, &current.0));
+        }
+        assert_eq!(cache.hashed_bytes(), hashed);
+        assert_eq!(cache.verification_count(), 1);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_cache_clear_retains_observer_until_external_receipts_are_dropped() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let other_owner = receipt.clone();
+        let last_owner = Arc::downgrade(&receipt.0);
+        cache.clear();
+        drop(receipt);
+        other_owner.check_current().unwrap();
+        fs::write(directory.join("weights.gguf"), b"evil").unwrap();
+        assert!(other_owner.check_current().is_err());
+        drop(other_owner);
+        assert!(last_owner.upgrade().is_none());
     }
 
     #[test]

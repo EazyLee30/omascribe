@@ -75,6 +75,54 @@ impl Drop for Capture {
     }
 }
 
+/// Pace legacy FFmpeg's already-decoded 16 kHz mono s16le output. The clock
+/// starts with the first nonempty read, so decoder startup cannot buy a burst.
+/// At most 20 ms is delivered per read; no sample conversion or buffering occurs.
+pub(crate) struct PacedReader<R> {
+    reader: R,
+    stop: Arc<AtomicBool>,
+    started: Option<std::time::Instant>,
+    delivered: u64,
+}
+impl<R> PacedReader<R> {
+    pub(crate) fn new(reader: R, stop: Arc<AtomicBool>) -> Self {
+        Self {
+            reader,
+            stop,
+            started: None,
+            delivered: 0,
+        }
+    }
+}
+impl<R: Read> Read for PacedReader<R> {
+    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+        if out.is_empty() {
+            return Ok(0);
+        }
+        let limit = out.len().min(640);
+        let n = self.reader.read(&mut out[..limit])?;
+        if n == 0 {
+            return Ok(0);
+        }
+        let started = *self.started.get_or_insert_with(std::time::Instant::now);
+        let due = std::time::Duration::from_secs(self.delivered / 32_000)
+            + std::time::Duration::from_nanos((self.delivered % 32_000) * 1_000_000_000 / 32_000);
+        while !self.stop.load(Ordering::SeqCst) {
+            let Some(remaining) = due.checked_sub(started.elapsed()) else {
+                break;
+            };
+            if remaining.is_zero() {
+                break;
+            }
+            std::thread::sleep(remaining.min(std::time::Duration::from_millis(5)));
+        }
+        // Stop closes the producer separately. Drain everything it already
+        // emitted without further pacing delays, rather than discard its tail.
+        self.delivered = self.delivered.saturating_add(n as u64);
+        Ok(n)
+    }
+}
+
 pub trait MonoSource: Send {
     fn next_frames(&mut self) -> io::Result<Option<Vec<f32>>>;
 }
@@ -250,6 +298,28 @@ pub fn wav(path: &std::path::Path) -> Result<Capture> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn legacy_pacer_starts_on_delivery_and_drains_exact_bytes_after_stop() -> Result<()> {
+        let bytes: Vec<_> = (0..1601).map(|i| (i % 251) as u8).collect();
+        let stop = Arc::new(AtomicBool::new(false));
+        let mut reader = PacedReader::new(io::Cursor::new(bytes.clone()), stop.clone());
+        assert_eq!(reader.read(&mut [])?, 0);
+        // Time spent constructing/opening the decoder must not buy a burst.
+        std::thread::sleep(std::time::Duration::from_millis(40));
+        let mut buffer = [0; 1280];
+        let first = reader.read(&mut buffer)?;
+        assert_eq!(first, 640);
+        let mut observed = buffer[..first].to_vec();
+        let delivered = std::time::Instant::now();
+        let second = reader.read(&mut buffer)?;
+        assert!(delivered.elapsed() >= std::time::Duration::from_millis(15));
+        observed.extend_from_slice(&buffer[..second]);
+        stop.store(true, Ordering::SeqCst);
+        reader.read_to_end(&mut observed)?;
+        assert_eq!(observed, bytes);
+        Ok(())
+    }
+
     #[test]
     fn resampling_preserves_duration_and_rejects_aliasing() -> Result<()> {
         struct Source(Option<Vec<f32>>);

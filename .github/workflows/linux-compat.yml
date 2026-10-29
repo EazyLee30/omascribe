@@ -39,7 +39,8 @@ jobs:
           mkdir -p ci-results/linux-compat
           python3 - <<'PY'
           import hashlib, json, os, pathlib, platform, subprocess, tempfile, time, wave
-          result = {"source": os.environ["GITHUB_SHA"], "kernel": platform.release(),
+          result = {"source": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                    "event_revision": os.environ["GITHUB_SHA"], "kernel": platform.release(),
                     "system": platform.system(), "machine": platform.machine(),
                     "scope": "Synthetic local files only; no user data/models or inference"}
           with tempfile.TemporaryDirectory(prefix="omascribe-linux-compat-") as folder:
@@ -83,13 +84,13 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          cargo test -p omascribe-core --locked model_integrity::tests::same_size_corruption_invalidates_cached_receipt -- --exact --nocapture 2>&1 | tee ci-results/linux-compat/receipt.log
+          cargo test -p omascribe-core --locked model_integrity:: -- --nocapture 2>&1 | tee ci-results/linux-compat/receipt.log
       - name: Paced replay keeps exact PCM and the original lead ceiling
         id: audio
         continue-on-error: true
         run: |
           set -o pipefail
-          cargo test -p omascribe-core --locked audio::tests::paced_replay_preserves_pcm_without_an_initial_read_burst -- --exact --nocapture 2>&1 | tee ci-results/linux-compat/audio.log
+          cargo test -p omascribe-core --locked audio:: -- --nocapture 2>&1 | tee ci-results/linux-compat/audio.log
       - name: Both original checks are required
         if: always()
         env:

@@ -7,15 +7,217 @@ use serde_json::Value;
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
-    path::Path,
-    process::{Command, Stdio},
-    time::{Duration, Instant},
+    path::{Path, PathBuf},
+    process::{Child, Command, Stdio},
+    sync::{Mutex, OnceLock},
+    time::{Duration, Instant, SystemTime},
 };
 
 pub use crate::platform::child_command;
 
+#[derive(Clone, PartialEq, Eq)]
+struct FfmpegIdentity {
+    path: PathBuf,
+    bytes: u64,
+    modified: Option<SystemTime>,
+    created: Option<SystemTime>,
+    #[cfg(unix)]
+    file: (u64, u64, i64, i64),
+    #[cfg(windows)]
+    file: (u64, [u8; 16], i64),
+}
+fn ffmpeg_identity(path: &Path) -> Result<FfmpegIdentity> {
+    let file = File::open(path)?;
+    let metadata = file.metadata()?;
+    anyhow::ensure!(metadata.is_file(), "FFmpeg executable is not a file");
+    #[cfg(unix)]
+    let identity = {
+        use std::os::unix::fs::MetadataExt;
+        (
+            metadata.dev(),
+            metadata.ino(),
+            metadata.ctime(),
+            metadata.ctime_nsec(),
+        )
+    };
+    #[cfg(windows)]
+    let identity = {
+        use std::{mem::size_of, os::windows::io::AsRawHandle};
+        use windows::Win32::{
+            Foundation::HANDLE,
+            Storage::FileSystem::{
+                FileBasicInfo, FileIdInfo, GetFileInformationByHandleEx, FILE_BASIC_INFO,
+                FILE_ID_INFO,
+            },
+        };
+        let mut id = FILE_ID_INFO::default();
+        let mut basic = FILE_BASIC_INFO::default();
+        unsafe {
+            let handle = HANDLE(file.as_raw_handle());
+            GetFileInformationByHandleEx(
+                handle,
+                FileIdInfo,
+                (&mut id as *mut FILE_ID_INFO).cast(),
+                size_of::<FILE_ID_INFO>() as u32,
+            )?;
+            GetFileInformationByHandleEx(
+                handle,
+                FileBasicInfo,
+                (&mut basic as *mut FILE_BASIC_INFO).cast(),
+                size_of::<FILE_BASIC_INFO>() as u32,
+            )?;
+        }
+        (
+            id.VolumeSerialNumber,
+            id.FileId.Identifier,
+            basic.ChangeTime,
+        )
+    };
+    Ok(FfmpegIdentity {
+        path: path.to_owned(),
+        bytes: metadata.len(),
+        modified: metadata.modified().ok(),
+        created: metadata.created().ok(),
+        #[cfg(any(unix, windows))]
+        file: identity,
+    })
+}
+
+#[derive(Default)]
+struct FfmpegFeatures(Mutex<Vec<(FfmpegIdentity, bool)>>);
+impl FfmpegFeatures {
+    fn initial_burst(&self, executable: &Path, probe: impl FnOnce() -> Result<bool>) -> bool {
+        let before = ffmpeg_identity(executable).ok();
+        if let Some(ref identity) = before {
+            if let Some((_, supported)) = self
+                .0
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|(old, _)| old == identity)
+            {
+                return *supported;
+            }
+        }
+        // No cache lock is held while starting or waiting for the probe.
+        let Ok(supported) = probe() else {
+            return false;
+        };
+        let after = ffmpeg_identity(executable).ok();
+        if before.is_some() && before != after {
+            return false;
+        }
+        if let Some(identity) = before {
+            let mut cache = self.0.lock().unwrap();
+            cache.retain(|(old, _)| old.path != identity.path);
+            if cache.len() == 8 {
+                cache.remove(0);
+            }
+            cache.push((identity, supported));
+        }
+        supported
+    }
+}
+
+struct FfmpegProbe(Child);
+impl Drop for FfmpegProbe {
+    fn drop(&mut self) {
+        if !matches!(self.0.try_wait(), Ok(Some(_))) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
+fn probe_initial_burst(executable: &Path, timeout: Duration) -> Result<bool> {
+    // Parsing an unknown input option fails before -version. No input, output,
+    // model, network protocol or collected process output is involved.
+    let child = child_command(executable)
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-readrate_initial_burst",
+            "0.001",
+            "-version",
+        ])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+    wait_ffmpeg_probe(child, timeout)
+}
+fn wait_ffmpeg_probe(child: Child, timeout: Duration) -> Result<bool> {
+    let mut child = FfmpegProbe(child);
+    let started = Instant::now();
+    loop {
+        if let Some(status) = child.0.try_wait()? {
+            return Ok(status.success());
+        }
+        anyhow::ensure!(
+            started.elapsed() < timeout,
+            "FFmpeg feature probe timed out"
+        );
+        std::thread::sleep(Duration::from_millis(5).min(timeout.saturating_sub(started.elapsed())));
+    }
+}
+fn replay_ffmpeg() -> Result<(PathBuf, bool)> {
+    static FEATURES: OnceLock<FfmpegFeatures> = OnceLock::new();
+    let mut directories = Vec::new();
+    #[cfg(windows)]
+    {
+        if let Some(parent) = std::env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(Path::to_owned))
+        {
+            directories.push(parent);
+        }
+        if let Ok(current) = std::env::current_dir() {
+            directories.push(current);
+        }
+        if let Some(system) = std::env::var_os("SystemRoot") {
+            directories.push(PathBuf::from(&system).join("System32"));
+            directories.push(PathBuf::from(system));
+        }
+    }
+    directories.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    for directory in directories {
+        let candidate = directory.join(crate::platform::executable("ffmpeg"));
+        let Ok(metadata) = candidate.metadata() else {
+            continue;
+        };
+        if !metadata.is_file() {
+            continue;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if metadata.permissions().mode() & 0o111 == 0 {
+                continue;
+            }
+        }
+        let executable = candidate.canonicalize()?;
+        let supported = FEATURES
+            .get_or_init(FfmpegFeatures::default)
+            .initial_burst(&executable, || {
+                probe_initial_burst(&executable, Duration::from_secs(1))
+            });
+        return Ok((executable, supported));
+    }
+    bail!("Cannot find FFmpeg for paced replay")
+}
+
 fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
-    let mut command = child_command("ffmpeg");
+    ffmpeg_input_with("ffmpeg", input, replay_seconds, true)
+}
+fn ffmpeg_input_with(
+    executable: impl AsRef<std::ffi::OsStr>,
+    input: &Path,
+    replay_seconds: Option<u64>,
+    initial_burst: bool,
+) -> Command {
+    let mut command = child_command(executable);
     command.args([
         "-hide_banner",
         "-loglevel",
@@ -30,13 +232,11 @@ fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
         // FFmpeg's default initial read burst leads the live sample clock by
         // about half a second. Keep file replay close to wall time so ASR
         // admission is measured against paced input, like a capture device.
-        command.args([
-            "-re",
-            "-readrate_initial_burst",
-            "0.001",
-            "-stream_loop",
-            "-1",
-        ]);
+        command.arg("-re");
+        if initial_burst {
+            command.args(["-readrate_initial_burst", "0.001"]);
+        }
+        command.args(["-stream_loop", "-1"]);
     }
     command.arg("-i").arg(input);
     if let Some(seconds) = replay_seconds {
@@ -44,6 +244,33 @@ fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
     }
     command.args(["-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"]);
     command
+}
+
+fn replay_capture(
+    input: &Path,
+    seconds: u64,
+    log: &Path,
+    executable: &Path,
+    initial_burst: bool,
+) -> Result<crate::capture::Capture> {
+    let child = ffmpeg_input_with(executable, input, Some(seconds), initial_burst)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(File::create(log)?)
+        .spawn()
+        .context("Cannot start FFmpeg paced replay")?;
+    let mut capture = crate::capture::Capture::process(child)?;
+    if !initial_burst {
+        let reader = capture
+            .stdout
+            .take()
+            .context("Cannot read FFmpeg replay stream")?;
+        capture.stdout = Some(Box::new(crate::capture::PacedReader::new(
+            reader,
+            capture.stop.clone(),
+        )));
+    }
+    Ok(capture)
 }
 
 #[cfg(target_os = "linux")]
@@ -164,6 +391,10 @@ pub fn spawn_capture(
     replay_seconds: Option<u64>,
     log: &Path,
 ) -> Result<crate::capture::Capture> {
+    if let (Some(path), Some(seconds)) = (input, replay_seconds) {
+        let (executable, initial_burst) = replay_ffmpeg()?;
+        return replay_capture(path, seconds, log, &executable, initial_burst);
+    }
     if replay_seconds.is_none() {
         if let Some(path) =
             input.filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("wav")))
@@ -486,6 +717,15 @@ mod tests {
 
     #[test]
     fn paced_replay_preserves_pcm_without_an_initial_read_burst() -> Result<()> {
+        assert_paced_replay(false)
+    }
+
+    #[test]
+    fn forced_legacy_replay_preserves_pcm_and_the_same_initial_burst_limit() -> Result<()> {
+        assert_paced_replay(true)
+    }
+
+    fn assert_paced_replay(force_legacy: bool) -> Result<()> {
         if !has_ffmpeg() {
             eprintln!("FFmpeg is not installed; paced replay integration check skipped");
             return Ok(());
@@ -502,12 +742,13 @@ mod tests {
             .take(48000)
             .flat_map(|sample| sample.to_le_bytes())
             .collect();
-        let mut capture = spawn_capture(
-            "auto",
-            Some(&input),
-            Some(3),
-            &root.path().join("replay.log"),
-        )?;
+        let log = root.path().join("replay.log");
+        let mut capture = if force_legacy {
+            let (executable, _) = replay_ffmpeg()?;
+            replay_capture(&input, 3, &log, &executable, false)?
+        } else {
+            spawn_capture("auto", Some(&input), Some(3), &log)?
+        };
         let mut reader = capture.stdout.take().unwrap();
         let mut pcm = Vec::new();
         let mut buffer = [0u8; 640];
@@ -524,11 +765,114 @@ mod tests {
             let supplied = Duration::from_secs_f64(pcm.len() as f64 / 32000.);
             max_lead = max_lead.max(supplied.saturating_sub(now.duration_since(first)));
         }
-        assert!(capture.wait()?);
+        assert!(
+            capture.wait()?,
+            "FFmpeg replay failed: {}",
+            fs::read_to_string(&log).unwrap_or_else(|_| "capture log unavailable".into())
+        );
         assert_eq!(pcm, expected);
         // Covers one 200ms persistence block plus scheduling/IO jitter, while
         // rejecting the roughly 500ms initial burst of the default -re path.
         assert!(max_lead <= Duration::from_millis(250), "{max_lead:?}");
+        Ok(())
+    }
+
+    #[test]
+    fn replay_feature_cache_tracks_executable_replacement_and_retries_probe_failure() -> Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let executable = root.path().join("ffmpeg-fixture");
+        fs::write(&executable, b"original")?;
+        let cache = FfmpegFeatures::default();
+        let mut calls = 0;
+        assert!(!cache.initial_burst(&executable, || {
+            calls += 1;
+            bail!("fixture probe failure")
+        }));
+        assert!(cache.0.lock().unwrap().is_empty());
+        assert!(cache.initial_burst(&executable, || {
+            calls += 1;
+            Ok(true)
+        }));
+        assert!(cache.initial_burst(&executable, || panic!("unchanged executable was reprobed")));
+        assert_eq!(calls, 2);
+
+        let modified = executable.metadata()?.modified()?;
+        let replacement = root.path().join("replacement");
+        fs::write(&replacement, b"replaced")?;
+        File::options()
+            .write(true)
+            .open(&replacement)?
+            .set_times(fs::FileTimes::new().set_modified(modified))?;
+        fs::remove_file(&executable)?;
+        fs::rename(replacement, &executable)?;
+        assert!(!cache.initial_burst(&executable, || {
+            calls += 1;
+            Ok(false)
+        }));
+        assert!(!cache.initial_burst(&executable, || panic!("legacy result was not cached")));
+        assert_eq!(calls, 3);
+        assert_eq!(cache.0.lock().unwrap().len(), 1);
+
+        assert!(!cache.initial_burst(&root.path().join("different-executable"), || Ok(false)));
+        assert!(!cache.initial_burst(&executable, || panic!(
+            "another path changed cache identity"
+        )));
+        Ok(())
+    }
+
+    #[test]
+    fn replay_feature_probe_does_not_cache_an_executable_changed_during_probe() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let executable = root.path().join("ffmpeg-fixture");
+        fs::write(&executable, b"first")?;
+        let cache = FfmpegFeatures::default();
+        assert!(!cache.initial_burst(&executable, || {
+            fs::write(&executable, b"changed executable")?;
+            Ok(true)
+        }));
+        assert!(cache.0.lock().unwrap().is_empty());
+        assert!(cache.initial_burst(&executable, || Ok(true)));
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "child fixture invoked only by the bounded feature-probe test"]
+    fn replay_probe_child() {
+        if std::env::var_os("OMASCRIBE_TEST_FFMPEG_PROBE").is_some() {
+            std::thread::sleep(Duration::from_secs(30));
+        }
+    }
+
+    #[test]
+    fn replay_feature_probe_timeout_reaps_its_child_without_collecting_output() -> Result<()> {
+        let child = child_command(std::env::current_exe()?)
+            .args(["--exact", "audio::tests::replay_probe_child", "--ignored"])
+            .env("OMASCRIBE_TEST_FFMPEG_PROBE", "1")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?;
+        let pid = child.id();
+        assert!(wait_ffmpeg_probe(child, Duration::from_millis(40)).is_err());
+        #[cfg(unix)]
+        unsafe {
+            let mut status = 0;
+            assert_eq!(libc::waitpid(pid as i32, &mut status, libc::WNOHANG), -1);
+            assert_eq!(
+                std::io::Error::last_os_error().raw_os_error(),
+                Some(libc::ECHILD)
+            );
+        }
+        #[cfg(windows)]
+        {
+            let mut processes = sysinfo::System::new();
+            processes.refresh_processes(
+                sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]),
+                true,
+            );
+            assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
+        }
         Ok(())
     }
 
