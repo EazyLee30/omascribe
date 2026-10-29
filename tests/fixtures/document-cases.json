@@ -2464,5 +2464,140 @@
       }
     ],
     "max_sections": 1
+  },
+  {
+    "name": "en_existing_document_spelling_only_sync",
+    "focus": "CEDARLEDGER\n\nlocal test\n\nbudget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "CEDARLEDGER has not completed the local test. The budget has not been approved."
+        ],
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "forbidden_verbatim": [
+            "CedarLedger"
+          ]
+        }
+      },
+      {
+        "transcript": [],
+        "save_note": {
+          "content": "CedarLedger\n\nlocal test\n\nbudget",
+          "kind": "document",
+          "edit_existing_document": true
+        },
+        "run_generation": true,
+        "preserve_minutes_generation": true,
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CedarLedger"
+          ],
+          "forbidden_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "required_transcript": [
+            "CedarLedger"
+          ],
+          "forbidden_transcript": [
+            "CEDARLEDGER"
+          ],
+          "translation_checks": [
+            {
+              "seq": 1,
+              "target": "zh",
+              "revision": 2,
+              "required": [
+                "(?:尚未|没有|未|不)[^。]{0,20}(?:完成|结束)|(?:未完成|尚未完成)",
+                "预算[^。]{0,30}(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)|(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)[^。]{0,30}预算"
+              ],
+              "forbidden": [
+                "已经完成",
+                "已完成",
+                "已经批准",
+                "已批准"
+              ],
+              "required_verbatim": [
+                "CedarLedger"
+              ],
+              "forbidden_verbatim": [
+                "CEDARLEDGER"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "required": [
+      "CedarLedger",
+      "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+      "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+    ],
+    "forbidden": [
+      "has been approved",
+      "has completed",
+      "will complete"
+    ],
+    "required_verbatim": [
+      "CedarLedger"
+    ],
+    "forbidden_verbatim": [
+      "CEDARLEDGER"
+    ],
+    "required_transcript": [
+      "CedarLedger"
+    ],
+    "forbidden_transcript": [
+      "CEDARLEDGER"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "revision": 2,
+        "required": [
+          "(?:尚未|没有|未|不)[^。]{0,20}(?:完成|结束)|(?:未完成|尚未完成)",
+          "预算[^。]{0,30}(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)|(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)[^。]{0,30}预算"
+        ],
+        "forbidden": [
+          "已经完成",
+          "已完成",
+          "已经批准",
+          "已批准"
+        ],
+        "required_verbatim": [
+          "CedarLedger"
+        ],
+        "forbidden_verbatim": [
+          "CEDARLEDGER"
+        ]
+      }
+    ],
+    "max_sections": 2
   }
 ]

@@ -425,7 +425,7 @@ impl Engine {
             bail!("文档超过 200,000 字符，请拆分后保存；原有内容未改动");
         }
         let db = self.store.lock().unwrap();
-        db.meeting(id)?;
+        let meeting = db.meeting(id)?;
         let nid = note_id.unwrap_or_else(|| Uuid::new_v4().to_string());
         Uuid::parse_str(&nid)?;
         let existing = db.notes(id)?;
@@ -452,9 +452,10 @@ impl Engine {
             anchor_ms: anchor,
             updated_at: chrono::Utc::now().to_rfc3339(),
         };
+        let spelling_edit = db.note_spelling_edit(&meeting, &existing, &n)?;
         db.save_note(&n)?;
         drop(db);
-        self.correct_terminology(id)?;
+        self.correct_terminology_after_note(id, spelling_edit)?;
         self.refresh_live_hotwords()?;
         *self.notes_target.lock().unwrap() = Some(id.to_owned());
         Ok(n)

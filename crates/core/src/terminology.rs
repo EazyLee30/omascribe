@@ -5,6 +5,7 @@ use regex::{Regex, RegexBuilder};
 use rusqlite::OptionalExtension;
 use std::collections::{BTreeMap, HashSet};
 mod document;
+pub(crate) use document::NoteSpellingEdit;
 
 pub struct Terms {
     matcher: Option<Regex>,
@@ -996,6 +997,13 @@ impl Engine {
     }
     /// Archive the original ASR revision. Human edits and protected minutes remain authoritative.
     pub fn correct_terminology(&self, meeting: &str) -> Result<usize> {
+        self.correct_terminology_after_note(meeting, None)
+    }
+    pub(crate) fn correct_terminology_after_note(
+        &self,
+        meeting: &str,
+        note_edit: Option<NoteSpellingEdit>,
+    ) -> Result<usize> {
         let terms = self.terminology(meeting)?;
         let mut db = self.store.lock().unwrap();
         let mut m = db.meeting(meeting)?;
@@ -1073,6 +1081,18 @@ impl Engine {
         }
         db.set_cache_dependency(meeting, "terms", &terms_key)?;
         if changed > 0 {
+            let reusable = if let (Some(edit), Some(before)) = (&note_edit, &before_document) {
+                edit.reusable_fingerprint(
+                    &m,
+                    &db.notes(meeting)?,
+                    before,
+                    &db.segments(&m)?,
+                    &source_changes,
+                    changed,
+                )?
+            } else {
+                None
+            };
             m.notes_fingerprint.clear();
             db.save_meeting(&m)?;
             for mut s in db.suggestions(meeting)? {
@@ -1084,7 +1104,7 @@ impl Engine {
                 }
             }
             if let Some(before) = before_document {
-                db.repair_terminology_documents(&m, &before, &source_changes)?;
+                db.repair_terminology_documents(&m, &before, &source_changes, reusable)?;
             }
         }
         drop(db);

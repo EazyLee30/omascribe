@@ -21,7 +21,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
     if command == "help" {
-        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  edit-note MEETING_ID NOTE_ID TEXT [kind=document]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let arg = |i| args.get(i).context("缺少命令参数");
@@ -257,6 +257,13 @@ fn run() -> Result<()> {
             None,
             arg(3)?,
             args.get(4).map(|s| s.as_str()).unwrap_or("focus"),
+            0,
+        )?)?,
+        "edit-note" => serde_json::to_value(engine.save_note(
+            arg(2)?,
+            Some(arg(3)?.clone()),
+            arg(4)?,
+            args.get(5).map(|s| s.as_str()).unwrap_or("document"),
             0,
         )?)?,
         "generate" => {
