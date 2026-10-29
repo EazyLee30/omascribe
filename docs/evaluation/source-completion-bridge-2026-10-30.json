@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "Source-bound translated completion bridge integrated; original model replay and release gates still pending",
+  "parent_source": "72b935d",
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "390506e6ba8e4d54ef90d2073312f3d8ad622237b1747706ba113201a064945d",
+    "crates/core/src/notes/source_language.rs": "e3368970a3c8f5ff083f066499175b0cf546ab9930d363d2fc076e6696e71ff8",
+    "crates/core/src/notes/validation.rs": "fe4614940ec492e0c9dd0b7e693f3e30570e4a5320146b2b71aab3176c5c71ac",
+    "crates/core/src/notes/writer.rs": "7bd8749234c786c0129d559c71e9361db8f7c781376cb835bc8709d92aa165a1"
+  },
+  "problem": "A checked English may-have-finished source translation was rejected again when copied into a multi-source Chinese article, because the original raw quotation did not contain the Chinese completion token.",
+  "scope": [
+    "Request-local, private evidence for individual 已完成/已经完成 occurrences copied exactly from the actual validated translation and applied composition input.",
+    "Rebind original source identity, terminology and actor spelling digests, target language, actual source ID, full body and corresponding cited original quote. All-or-none exact presentation proof; no substring, additional text, open logical scope or altered speaker metadata.",
+    "Normalization or repairs changing the body cannot inherit copy ranges. Original transcript, quote/revision and all other factual validators stay unchanged.",
+    "No prompt, fixture, preference, request quota, model weight, runtime, SDK or installer changes."
+  ],
+  "checks": {
+    "focused_validation_passed": 6,
+    "core_passed": 445,
+    "core_ignored": 8,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "independent_static_review": "No new blocking issue; not model or release approval"
+  },
+  "initial_lint_failures": "Dead-code compatibility wrapper and nonminimal boolean expression repaired without allowing warnings; first log retained.",
+  "evidence": {
+    "core": "artifacts/completion-bridge-2026-10-30/core-final.log",
+    "clippy": "artifacts/completion-bridge-2026-10-30/clippy-green.log",
+    "first_clippy": "artifacts/completion-bridge-2026-10-30/clippy-first.log"
+  },
+  "limits": [
+    "This proof transports an already validated local uncertain-completion wording; it is not general semantic entailment or historical topic/name coverage.",
+    "Original zh_recorded_mixed_prose_fidelity manual model replay must still pass with semantic review before freezing a new native release candidate.",
+    "Candidate 14 remains rejected and immutable. No 0.3.5 release has been published."
+  ]
+}

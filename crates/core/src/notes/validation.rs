@@ -335,6 +335,130 @@ mod conditional_role_replay_tests {
         validate(&draft(&body, &[1, 2]), &sources, "m")
             .expect("presentation normalization must preserve independent statements");
     }
+
+    fn prepared_completion() -> (
+        Vec<Segment>,
+        crate::terminology::Terms,
+        String,
+        super::super::source_language::CompletionBridge,
+    ) {
+        let mut sources = original_sources();
+        sources.truncate(5);
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let input = serde_json::json!({"transcript":sources.iter().enumerate()
+            .map(|(i, source)|serde_json::json!({"id":i+1,"text":source.text}))
+            .collect::<Vec<_>>()})
+        .to_string();
+        let ended = "记住即使主舞台的音乐可能已经结束，嘉年华的某些部分仍可能继续演奏音乐直到深夜";
+        let completed =
+            "记住即使主舞台的音乐可能已经完成，嘉年华的某些部分仍可能继续演奏音乐直到深夜";
+        let translated = serde_json::json!({"A":ended,"B":completed,"C":ended}).to_string();
+        let prepared = super::super::source_language::Plan::new(&input, &sources, true, &terms)
+            .unwrap()
+            .unwrap()
+            .prepare(&translated, &sources, &terms)
+            .unwrap();
+        let applied = prepared.apply(&input, &sources).unwrap();
+        let raw = format!(
+            "1. {ended}\n2. {}\n3. {completed}\n4. {}\n5. {ended}",
+            sources[1].text, sources[3].text
+        );
+        let composed = super::super::writer::body_with_evidence(&raw, &applied).unwrap();
+        assert_eq!(composed.copies().len(), 5);
+        let bridge = prepared
+            .completion_bridge(&composed, &input, &sources, &terms, true)
+            .unwrap()
+            .expect("the actual translated completion has source-bound copy evidence");
+        (sources, terms, composed.text().to_owned(), bridge)
+    }
+
+    #[test]
+    fn a_checked_copy_can_transport_its_uncertain_completion_without_rewriting_originals() {
+        let (sources, terms, body, bridge) = prepared_completion();
+        let document =
+            super::super::writer::document(&body, &sources, &Default::default()).unwrap();
+        assert!(validate(&document, &sources, "m")
+            .unwrap_err()
+            .to_string()
+            .contains("计划写成了已完成"));
+        let checked = validate_with_bridge(
+            &document,
+            &sources,
+            "m",
+            &Default::default(),
+            &terms,
+            true,
+            &bridge,
+        )
+        .unwrap();
+        assert_eq!(checked[0].text, body);
+        for quote in &checked[0].sources {
+            let source = sources.iter().find(|s| s.id == quote.segment_id).unwrap();
+            assert_eq!(
+                (quote.revision, &quote.quote),
+                (source.revision, &source.text)
+            );
+        }
+    }
+
+    #[test]
+    fn completion_transport_requires_each_actual_citation_and_unchanged_scope() {
+        let (sources, terms, body, bridge) = prepared_completion();
+        // Other music sources describe a similar event but cannot lend source3's permit.
+        assert!(validate_with_bridge(
+            &draft(&body, &[1, 2, 4, 5]),
+            &sources,
+            "m",
+            &Default::default(),
+            &terms,
+            true,
+            &bridge,
+        )
+        .is_err());
+        for changed in [
+            format!("{body} 审核已经完成。"),
+            format!("不是{body}"),
+            format!("如果{body}"),
+            format!("“{body}”"),
+        ] {
+            assert!(
+                validate_with_bridge(
+                    &draft(&changed, &[1, 2, 3, 4, 5]),
+                    &sources,
+                    "m",
+                    &Default::default(),
+                    &terms,
+                    true,
+                    &bridge,
+                )
+                .is_err(),
+                "{changed}"
+            );
+        }
+        let document = draft(&body, &[1, 2, 3, 4, 5]);
+        let mut changed = sources.clone();
+        changed[2].run += 1;
+        assert!(validate_with_bridge(
+            &document,
+            &changed,
+            "m",
+            &Default::default(),
+            &terms,
+            true,
+            &bridge,
+        )
+        .is_err());
+        assert!(validate_with_bridge(
+            &document,
+            &sources,
+            "m",
+            &Default::default(),
+            &terms,
+            false,
+            &bridge,
+        )
+        .is_err());
+    }
 }
 
 #[derive(Deserialize)]
@@ -954,6 +1078,30 @@ pub(super) fn validate_with_terms(
 ) -> Result<Vec<Suggestion>> {
     validate_document(content, segments, meeting, names, 1200, true, terms)
 }
+
+pub(super) fn validate_with_bridge(
+    content: &str,
+    segments: &[Segment],
+    meeting: &str,
+    names: &std::collections::BTreeMap<String, String>,
+    terms: &crate::terminology::Terms,
+    chinese: bool,
+    bridge: &super::source_language::CompletionBridge,
+) -> Result<Vec<Suggestion>> {
+    bridge.check_scope(segments, terms, chinese)?;
+    validate_document_inner(
+        content,
+        segments,
+        meeting,
+        names,
+        terms,
+        ValidationOptions {
+            max_body_chars: 1200,
+            require_prose: true,
+            bridge: Some(bridge),
+        },
+    )
+}
 #[cfg(test)]
 pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
     validate_translation_with_terms(
@@ -999,7 +1147,11 @@ fn validate_unapproved(source: &str, text: &str) -> Result<()> {
     }
     Ok(())
 }
-fn completion_name_mask(text: &str, source: &str, terms: &crate::terminology::Terms) -> String {
+pub(super) fn completion_name_mask(
+    text: &str,
+    source: &str,
+    terms: &crate::terminology::Terms,
+) -> String {
     let mut mask = crate::translation::source_name_mask(text, source, terms).into_bytes();
     // Keep erased names opaque. Removing a literal such as `not` or `if` must
     // not turn a negated or conditional statement into a closed assertion.
@@ -1208,6 +1360,39 @@ fn validate_document(
     require_prose: bool,
     terms: &crate::terminology::Terms,
 ) -> Result<Vec<Suggestion>> {
+    validate_document_inner(
+        content,
+        segments,
+        meeting,
+        names,
+        terms,
+        ValidationOptions {
+            max_body_chars,
+            require_prose,
+            bridge: None,
+        },
+    )
+}
+
+struct ValidationOptions<'a> {
+    max_body_chars: usize,
+    require_prose: bool,
+    bridge: Option<&'a super::source_language::CompletionBridge>,
+}
+
+fn validate_document_inner(
+    content: &str,
+    segments: &[Segment],
+    meeting: &str,
+    names: &std::collections::BTreeMap<String, String>,
+    terms: &crate::terminology::Terms,
+    options: ValidationOptions<'_>,
+) -> Result<Vec<Suggestion>> {
+    let ValidationOptions {
+        max_body_chars,
+        require_prose,
+        bridge,
+    } = options;
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
     if draft.sections.is_empty()
@@ -1497,15 +1682,25 @@ fn validate_document(
         if ["已告知", "已提供", "已完成", "已经完成"]
             .iter()
             .any(|word| {
-                body.contains(word)
-                    && !evidence.contains(word)
-                    && !(matches!(*word, "已完成" | "已经完成")
-                        && !require_prose
-                        && sources.len() == 1
-                        && super::completion::hedged_completion_covers(
-                            &completion_name_mask(&sources[0].quote, &sources[0].quote, terms),
-                            &completion_name_mask(body, &sources[0].quote, terms),
-                        ))
+                if !body.contains(word) || evidence.contains(word) {
+                    return false;
+                }
+                let completion = matches!(*word, "已完成" | "已经完成");
+                let translated = completion
+                    && !require_prose
+                    && sources.len() == 1
+                    && super::completion::hedged_completion_covers(
+                        &completion_name_mask(&sources[0].quote, &sources[0].quote, terms),
+                        &completion_name_mask(body, &sources[0].quote, terms),
+                    );
+                body.match_indices(word).any(|(at, _)| {
+                    !(translated
+                        || (require_prose
+                            && completion
+                            && bridge.is_some_and(|bridge| {
+                                bridge.permits(body, at..at + word.len(), &sources)
+                            })))
+                })
             })
         {
             bail!("文档可能将计划写成了已完成事项，本轮未提交");

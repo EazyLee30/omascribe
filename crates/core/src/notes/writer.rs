@@ -247,12 +247,281 @@ pub fn validate_language(body: &str, chinese: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Some small models translate the supplied transcript envelope instead of
-/// returning prose. Accept only a complete echo of the actual input IDs; remove
-/// metadata and join its text without rewriting any fact or making another call.
-pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
-    use anyhow::{bail, Context};
+/// A presentation proof is local to the actual model input. Its fields cannot
+/// be supplied by a model response or reconstructed from an arbitrary substring.
+#[derive(Debug)]
+pub(super) struct Composition {
+    text: String,
+    input: Option<Value>,
+    copies: Vec<DirectCopy>,
+}
+impl Composition {
+    pub(super) fn text(&self) -> &str {
+        &self.text
+    }
+    pub(super) fn input(&self) -> Option<&Value> {
+        self.input.as_ref()
+    }
+    pub(super) fn copies(&self) -> &[DirectCopy] {
+        &self.copies
+    }
+}
+#[derive(Debug)]
+pub(super) struct DirectCopy {
+    source_id: usize,
+    range: std::ops::Range<usize>,
+}
+impl DirectCopy {
+    pub(super) fn source_id(&self) -> usize {
+        self.source_id
+    }
+    pub(super) fn range(&self) -> std::ops::Range<usize> {
+        self.range.clone()
+    }
+}
+const MAX_PRESENTATION_BYTES: usize = 65_536;
+const MAX_PRESENTATION_INPUT_BYTES: usize = 16_384;
+const MAX_PRESENTATION_ITEMS: usize = 256;
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CopyEntry {
+    id: usize,
+    text: String,
+    #[serde(default)]
+    speaker: Option<String>,
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CopyEcho {
+    transcript: Vec<CopyEntry>,
+}
+#[derive(serde::Deserialize)]
+struct CopyInput {
+    transcript: Vec<CopyEntry>,
+    #[serde(flatten)]
+    _context: std::collections::BTreeMap<String, Value>,
+}
+fn copy_input(raw: &str) -> Option<Vec<CopyEntry>> {
+    let input: CopyInput = serde_json::from_str(raw).ok()?;
+    if input.transcript.is_empty() || input.transcript.len() > MAX_PRESENTATION_ITEMS {
+        return None;
+    }
+    let mut ids = std::collections::HashSet::new();
+    input
+        .transcript
+        .iter()
+        .all(|entry| {
+            entry.id > 0
+                && entry.id <= MAX_PRESENTATION_ITEMS
+                && ids.insert(entry.id)
+                && !entry.text.trim().is_empty()
+                && entry
+                    .speaker
+                    .as_ref()
+                    .is_none_or(|name| !name.trim().is_empty())
+        })
+        .then_some(input.transcript)
+}
+
+/// Do not turn an explicitly open condition/reference into a separate assertion
+/// by inserting a sentence stop at a presentation boundary.
+fn opens_item_scope(text: &str) -> bool {
+    let trimmed = text.trim();
+    // Explicit cross-item scope is not made independent by adding punctuation.
+    // This is a conservative proof eligibility check, not a semantic parser.
+    let lower = trimmed.to_ascii_lowercase();
+    trimmed.ends_with([':', '：', ',', '，'])
+        || [
+            "如果",
+            "假如",
+            "除非",
+            "一旦",
+            "若",
+            "不要认为",
+            "不能认为",
+            "不应认为",
+            "不要认定",
+            "并不是",
+            "不是",
+        ]
+        .iter()
+        .any(|cue| trimmed.starts_with(cue))
+        || [
+            "以下",
+            "下列",
+            "如下",
+            "上述",
+            "以上",
+            "前述",
+            "后述",
+            "这些说法",
+            "这些陈述",
+        ]
+        .iter()
+        .any(|cue| trimmed.contains(cue))
+        || [
+            "if ",
+            "unless ",
+            "when ",
+            "do not assume",
+            "don't assume",
+            "not ",
+        ]
+        .iter()
+        .any(|cue| lower.starts_with(cue) || lower == cue.trim_end())
+        || [
+            "the following",
+            "following statements",
+            "following claims",
+            "above statements",
+            "above claims",
+            "these claims",
+            "these statements",
+        ]
+        .iter()
+        .any(|cue| lower.contains(cue))
+}
+
+/// A scope opened in one item must never cover a later item. Ambiguous scope
+/// simply has no proof; ordinary body parsing and its factual checks still run.
+fn balanced_item_scope(text: &str) -> bool {
+    !opens_item_scope(text) && balanced_item_delimiters(text)
+}
+fn balanced_item_delimiters(text: &str) -> bool {
+    let chars: Vec<_> = text.chars().collect();
+    let mut stack = Vec::new();
+    let mut quote = None;
+    let mut code: Option<(char, usize)> = None;
+    let mut escaped = false;
+    let mut i = 0;
+    while i < chars.len() {
+        let ch = chars[i];
+        if let Some((delimiter, width)) = code {
+            if ch == delimiter {
+                let end = chars[i..].iter().take_while(|&&c| c == delimiter).count() + i;
+                if end - i == width {
+                    code = None;
+                }
+                i = end;
+            } else {
+                i += 1;
+            }
+            continue;
+        }
+        if escaped {
+            escaped = false;
+            i += 1;
+            continue;
+        }
+        if ch == '\\' {
+            escaped = true;
+            i += 1;
+            continue;
+        }
+        let apostrophe = ['\'', '’'].contains(&ch)
+            && i > 0
+            && chars.get(i + 1).is_some_and(char::is_ascii_alphanumeric)
+            && chars[i - 1].is_ascii_alphanumeric();
+        if apostrophe {
+            i += 1;
+            continue;
+        }
+        if let Some(close) = quote {
+            if ch == close {
+                quote = None;
+            }
+            i += 1;
+            continue;
+        }
+        if ch == '`' || ch == '~' && chars.get(i + 1) == Some(&'~') {
+            let end = chars[i..].iter().take_while(|&&c| c == ch).count() + i;
+            code = Some((ch, end - i));
+            i = end;
+            continue;
+        }
+        match ch {
+            '"' | '\'' => quote = Some(ch),
+            '“' => quote = Some('”'),
+            '‘' => quote = Some('’'),
+            '「' => quote = Some('」'),
+            '『' => quote = Some('』'),
+            '《' => quote = Some('》'),
+            '(' => stack.push(')'),
+            '（' => stack.push('）'),
+            '[' => stack.push(']'),
+            '【' => stack.push('】'),
+            '{' => stack.push('}'),
+            ')' | '）' | ']' | '】' | '}' => {
+                if stack.pop() != Some(ch) {
+                    return false;
+                }
+            }
+            '”' | '’' | '」' | '』' | '》' => return false,
+            _ => {}
+        }
+        i += 1;
+    }
+    !escaped && quote.is_none() && code.is_none() && stack.is_empty()
+}
+fn sentence_item(text: &str) -> String {
+    if text.is_empty()
+        || opens_item_scope(text)
+        || text.ends_with(['.', '。', '!', '！', '?', '？', ';', '；'])
+    {
+        text.to_owned()
+    } else if text.chars().any(|c| ('\u{3400}'..='\u{9fff}').contains(&c)) {
+        format!("{text}。")
+    } else {
+        format!("{text}.")
+    }
+}
+fn sequential_items(text: &str) -> Option<Vec<&str>> {
+    let lines: Vec<_> = text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    if lines.len() < 2 || lines.len() > MAX_PRESENTATION_ITEMS {
+        return None;
+    }
+    lines
+        .iter()
+        .enumerate()
+        .map(|(i, line)| {
+            line.trim()
+                .strip_prefix(&format!("{}. ", i + 1))
+                .map(str::trim)
+        })
+        .collect()
+}
+fn item_copy_range(rendered: &str, expected: &str) -> Option<std::ops::Range<usize>> {
+    let expected = expected.trim();
+    if expected.is_empty() || !rendered.starts_with(expected) {
+        return None;
+    }
+    let suffix = &rendered[expected.len()..];
+    (suffix.is_empty()
+        || !expected.ends_with(['.', '。', '!', '！', '?', '？', ';', '；'])
+            && [".", "。"].contains(&suffix))
+    .then_some(0..expected.len())
+}
+
+/// Some small models echo/translate the transcript envelope instead of prose.
+/// Shape-compatible echoes keep their previous body behavior. Additional local
+/// copy proof is issued only for complete, exact presentations of actual input.
+pub(super) fn body_with_evidence(raw: &str, input: &str) -> anyhow::Result<Composition> {
+    use anyhow::{bail, ensure, Context};
     use std::collections::BTreeMap;
+    ensure!(
+        raw.len() <= MAX_PRESENTATION_BYTES,
+        "模型正文超过原始字节预算"
+    );
+    ensure!(
+        input.len() <= MAX_PRESENTATION_INPUT_BYTES,
+        "正文来源超过字节预算"
+    );
+    let input_value = serde_json::from_str::<Value>(input).ok();
+    let expected_proof = copy_input(input);
     let trimmed = raw.trim();
     let json = trimmed
         .strip_prefix("```json")
@@ -260,10 +529,50 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
         .unwrap_or(trimmed)
         .trim();
     let Ok(value) = serde_json::from_str::<Value>(json) else {
-        return Ok(without_sequential_labels(trimmed));
+        let numbered = sequential_items(trimmed);
+        let text = without_sequential_labels(trimmed);
+        let mut copies = Vec::new();
+        if let Some(expected) = expected_proof {
+            if let Some(items) = numbered.filter(|items| items.len() == expected.len()) {
+                let mut offset = 0;
+                for (item, entry) in items.iter().zip(&expected) {
+                    let rendered = sentence_item(item);
+                    let Some(range) = item_copy_range(&rendered, &entry.text) else {
+                        copies.clear();
+                        break;
+                    };
+                    if !balanced_item_scope(item) || !balanced_item_scope(&entry.text) {
+                        copies.clear();
+                        break;
+                    }
+                    copies.push(DirectCopy {
+                        source_id: entry.id,
+                        range: offset + range.start..offset + range.end,
+                    });
+                    offset += rendered.len() + 1;
+                }
+            } else if expected.len() == 1
+                && trimmed == expected[0].text.trim()
+                && balanced_item_scope(trimmed)
+            {
+                copies.push(DirectCopy {
+                    source_id: expected[0].id,
+                    range: 0..trimmed.len(),
+                });
+            }
+        }
+        return Ok(Composition {
+            text,
+            input: input_value,
+            copies,
+        });
     };
     if !value.is_object() && !value.is_array() {
-        return Ok(trimmed.to_owned());
+        return Ok(Composition {
+            text: trimmed.to_owned(),
+            input: input_value,
+            copies: Vec::new(),
+        });
     }
     let object = value
         .as_object()
@@ -271,7 +580,7 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
     if object.len() != 1 || !object.contains_key("transcript") {
         bail!("模型没有返回正文，而是未识别的结构化内容");
     }
-    let input: Value = serde_json::from_str(input)?;
+    let input = input_value.as_ref().context("缺少来源结构")?;
     let expected = input["transcript"].as_array().context("缺少来源结构")?;
     let entries = value["transcript"]
         .as_array()
@@ -280,6 +589,11 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
     if entries.len() != expected.len() {
         bail!("模型回显遗漏来源，原话仍待整理");
     }
+    let proof_shape = serde_json::from_str::<CopyEcho>(json)
+        .is_ok_and(|echo| echo.transcript.len() == entries.len());
+    let proof_order = expected_proof
+        .as_ref()
+        .is_some_and(|items| items.windows(2).all(|pair| pair[0].id < pair[1].id));
     for entry in entries {
         let fields = entry.as_object().context("模型返回无效来源结构")?;
         if fields
@@ -297,62 +611,84 @@ pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
             .as_str()
             .filter(|s| !s.trim().is_empty())
             .context("模型回显遗漏来源正文")?;
-        let text = if let Some(speaker) = entry.get("speaker") {
+        let mut rendered = if entries.len() > 1 {
+            sentence_item(text.trim())
+        } else {
+            text.trim().to_owned()
+        };
+        let mut prefix = 0;
+        if let Some(speaker) = entry.get("speaker") {
             if source.get("speaker") != Some(speaker) || !(speaker.is_string() || speaker.is_null())
             {
                 bail!("模型回显修改了说话人归属");
             }
-            speaker.as_str().map_or_else(
-                || text.trim().to_owned(),
-                |name| format!("{name}：{}", text.trim()),
-            )
+            if let Some(name) = speaker.as_str() {
+                rendered = format!("{name}：{rendered}");
+                prefix = name.len() + '：'.len_utf8();
+            }
+        }
+        // Speaker is typed source metadata, not a generated logical prefix.
+        let copy = if proof_shape
+            && proof_order
+            && balanced_item_scope(text)
+            && balanced_item_delimiters(&rendered)
+        {
+            source["text"].as_str().and_then(|original| {
+                if !balanced_item_scope(original) {
+                    return None;
+                }
+                item_copy_range(text.trim(), original)
+                    .map(|range| prefix + range.start..prefix + range.end)
+            })
         } else {
-            text.trim().to_owned()
+            None
         };
-        if texts.insert(id, text).is_some() {
+        if texts.insert(id, (rendered, copy)).is_some() {
             bail!("模型回显重复来源编号");
         }
     }
-    Ok(texts.into_values().collect::<Vec<_>>().join(" "))
+    let mut body = String::new();
+    let mut copies = Vec::new();
+    let mut complete = true;
+    for (id, (text, copy)) in texts {
+        if !body.is_empty() {
+            body.push(' ');
+        }
+        let offset = body.len();
+        if let Some(range) = copy {
+            copies.push(DirectCopy {
+                source_id: usize::try_from(id)?,
+                range: offset + range.start..offset + range.end,
+            });
+        } else {
+            complete = false;
+        }
+        body.push_str(&text);
+    }
+    if !complete {
+        copies.clear();
+    }
+    Ok(Composition {
+        text: body,
+        input: input_value,
+        copies,
+    })
 }
 
-/// Normalize a model's complete sequential presentation list into prose. Only
-/// ordinal prefixes are removed; independent items retain sentence boundaries.
-/// Amounts, dates and other numbers stay intact for factual validation.
-/// Wrapped/mixed/nonsequential lines are left alone.
+#[cfg(test)]
+pub fn body_text(raw: &str, input: &str) -> anyhow::Result<String> {
+    Ok(body_with_evidence(raw, input)?.text)
+}
+
+/// Normalize a complete numbered presentation while retaining independent item
+/// boundaries. Wrapped/mixed/nonsequential lines remain ordinary prose.
 fn without_sequential_labels(text: &str) -> String {
-    let lines: Vec<_> = text
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .collect();
-    if lines.len() < 2 {
-        return text.to_owned();
-    }
-    let prose: Option<Vec<_>> = lines
-        .iter()
-        .enumerate()
-        .map(|(i, line)| {
-            line.trim()
-                .strip_prefix(&format!("{}. ", i + 1))
-                .map(str::trim)
-        })
-        .collect();
-    prose.map_or_else(
+    sequential_items(text).map_or_else(
         || text.to_owned(),
-        |lines| {
-            lines
-                .into_iter()
-                .map(|line| {
-                    if line.is_empty()
-                        || line.ends_with(['.', '。', '!', '！', '?', '？', ';', '；'])
-                    {
-                        line.to_owned()
-                    } else if line.chars().any(|c| ('\u{3400}'..='\u{9fff}').contains(&c)) {
-                        format!("{line}。")
-                    } else {
-                        format!("{line}.")
-                    }
-                })
+        |items| {
+            items
+                .iter()
+                .map(|item| sentence_item(item))
                 .collect::<Vec<_>>()
                 .join(" ")
         },
@@ -494,7 +830,7 @@ mod tests {
         }
         assert_eq!(
             super::without_sequential_labels("1. 不是\n2. 预算3000元尚未批准"),
-            "不是。 预算3000元尚未批准。"
+            "不是 预算3000元尚未批准。"
         );
         assert_eq!(
             super::without_sequential_labels(
@@ -541,6 +877,296 @@ mod tests {
         let unassigned = r#"{"transcript":[{"id":1,"text":"原话","speaker":null}]}"#;
         let raw = r#"{"transcript":[{"id":1,"text":"原话","speaker":null}]}"#;
         assert_eq!(super::body_text(raw, unassigned).unwrap(), "原话");
+    }
+    fn proven_copies(composed: &super::Composition) -> Vec<(usize, &str)> {
+        composed
+            .copies()
+            .iter()
+            .map(|copy| {
+                (
+                    copy.source_id(),
+                    composed.text().get(copy.range()).expect("valid byte range"),
+                )
+            })
+            .collect()
+    }
+    #[test]
+    fn numbered_copy_proof_is_complete_and_uses_actual_ids_and_utf8_spans() {
+        let input = serde_json::json!({
+            "transcript":[
+                {"id":1,"text":"任务可能已经完成"},
+                {"id":3,"text":"预算3000元未批准。","speaker":"林悦"},
+                {"id":5,"text":"The Node.js 1.4 check is pending"}
+            ],
+            "background":{"preference":"简短"}, "budget":1200
+        });
+        let composed = super::body_with_evidence(
+            "1. 任务可能已经完成\n2. 预算3000元未批准。\n3. The Node.js 1.4 check is pending",
+            &input.to_string(),
+        )
+        .unwrap();
+        assert_eq!(composed.input(), Some(&input));
+        assert_eq!(
+            composed.text(),
+            "任务可能已经完成。 预算3000元未批准。 The Node.js 1.4 check is pending."
+        );
+        assert_eq!(
+            proven_copies(&composed),
+            [
+                (1, "任务可能已经完成"),
+                (3, "预算3000元未批准。"),
+                (5, "The Node.js 1.4 check is pending")
+            ]
+        );
+    }
+    #[test]
+    fn json_echo_proof_binds_exact_speakers_and_keeps_old_id_sorting() {
+        let input = serde_json::json!({"transcript":[
+            {"id":1,"text":"任务可能已经完成","speaker":"如果"},
+            {"id":3,"text":"O'Neill's review is pending","speaker":null}
+        ]});
+        let raw = serde_json::json!({"transcript":[
+            input["transcript"][1].clone(), input["transcript"][0].clone()
+        ]});
+        let composed = super::body_with_evidence(&raw.to_string(), &input.to_string()).unwrap();
+        assert_eq!(
+            composed.text(),
+            "如果：任务可能已经完成。 O'Neill's review is pending."
+        );
+        assert_eq!(
+            proven_copies(&composed),
+            [(1, "任务可能已经完成"), (3, "O'Neill's review is pending")]
+        );
+        let nonascending = raw.to_string();
+        let unproved = super::body_with_evidence(&input.to_string(), &nonascending).unwrap();
+        assert_eq!(unproved.text(), composed.text());
+        assert!(unproved.copies().is_empty());
+        let unsafe_label = input.to_string().replace("如果", "“林悦");
+        let composed = super::body_with_evidence(&unsafe_label, &unsafe_label).unwrap();
+        assert!(composed.text().starts_with("“林悦："));
+        assert!(composed.copies().is_empty());
+    }
+    #[test]
+    fn only_a_whole_single_plain_source_can_carry_copy_proof() {
+        let input = r#"{"transcript":[{"id":3,"text":"任务可能已经完成。"}]}"#;
+        let plain = super::body_with_evidence(" 任务可能已经完成。 ", input).unwrap();
+        assert_eq!(proven_copies(&plain), [(3, "任务可能已经完成。")]);
+        for raw in [
+            "不是任务可能已经完成。",
+            "如果任务可能已经完成。",
+            "摘要：任务可能已经完成。",
+            "任务可能已经完成。审核已经完成。",
+            "\"任务可能已经完成。\"",
+            "“任务可能已经完成。”",
+            "任务可能已经完成。？",
+        ] {
+            let composed = super::body_with_evidence(raw, input).unwrap();
+            assert_eq!(composed.text(), raw);
+            assert!(composed.copies().is_empty(), "{raw}");
+        }
+        assert!(super::body_with_evidence(r#"["任务可能已经完成。"]"#, input).is_err());
+        let two = r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"审核尚未完成。"}]}"#;
+        assert!(
+            super::body_with_evidence("任务可能已经完成。 审核尚未完成。", two)
+                .unwrap()
+                .copies()
+                .is_empty()
+        );
+    }
+    #[test]
+    fn numbered_copy_proof_refuses_any_added_missing_or_changed_item() {
+        let input = r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算3000元未批准。"}]}"#;
+        for raw in [
+            "摘要\n1. 任务可能已经完成。\n2. 预算3000元未批准。",
+            "1. 任务可能已经完成。\n2. 预算3000元未批准。\n全部完成。",
+            "1. 任务可能已经完成。",
+            "1. 任务可能已经完成。\n3. 预算3000元未批准。",
+            "1. 任务可能已经完成。\n1. 预算3000元未批准。",
+            "1. 任务可能已经完成。\n2. 预算3000元未批准。\n3. 审核已完成。",
+            "1. 任务已经完成。\n2. 预算3000元未批准。",
+            "1. 任务可能已经完成。\n2. 预算5000元未批准。",
+            "1. 不是任务可能已经完成。\n2. 预算3000元未批准。",
+        ] {
+            assert!(
+                super::body_with_evidence(raw, input)
+                    .unwrap()
+                    .copies()
+                    .is_empty(),
+                "{raw}"
+            );
+        }
+    }
+    #[test]
+    fn only_exact_text_or_a_new_neutral_period_preserves_copy_proof() {
+        for expected in ["任务可能已经完成", "任务可能已经完成。"] {
+            let input = serde_json::json!({"transcript":[
+                {"id":1,"text":expected}, {"id":3,"text":"预算尚未批准。"}
+            ]})
+            .to_string();
+            for suffix in ["?", "？", "!", "！", ";", "；", "。？"] {
+                let rendered = format!("{expected}{suffix}");
+                let numbered = format!("1. {rendered}\n2. 预算尚未批准。");
+                let json = serde_json::json!({"transcript":[
+                    {"id":1,"text":rendered}, {"id":3,"text":"预算尚未批准。"}
+                ]})
+                .to_string();
+                for raw in [&numbered, &json] {
+                    assert!(
+                        super::body_with_evidence(raw, &input)
+                            .unwrap()
+                            .copies()
+                            .is_empty(),
+                        "{raw}"
+                    );
+                }
+            }
+        }
+        let input = r#"{"transcript":[{"id":1,"text":"任务可能已经完成"},{"id":3,"text":"预算尚未批准。"}]}"#;
+        for end in [".", "。"] {
+            let numbered = format!("1. 任务可能已经完成{end}\n2. 预算尚未批准。");
+            assert_eq!(
+                super::body_with_evidence(&numbered, input)
+                    .unwrap()
+                    .copies()
+                    .len(),
+                2
+            );
+        }
+    }
+    #[test]
+    fn scope_openers_keep_their_scope_and_never_prove_independent_items() {
+        for opener in [
+            "不是",
+            "不要认为",
+            "以下说法都不成立：",
+            "如果审核通过，",
+            "预算批准后：",
+            "The following statements are false:",
+            "If the review passes,",
+            "not ",
+            "以上说法并不属实。",
+            "Do not assume",
+        ] {
+            let input = serde_json::json!({"transcript":[
+                {"id":1,"text":opener.trim()}, {"id":3,"text":"任务可能已经完成。"}
+            ]})
+            .to_string();
+            let numbered = format!("1. {}\n2. 任务可能已经完成。", opener.trim());
+            let composed = super::body_with_evidence(&numbered, &input).unwrap();
+            assert!(composed.copies().is_empty(), "{opener}");
+            assert_eq!(
+                composed.text(),
+                format!("{} 任务可能已经完成。", opener.trim())
+            );
+            let composed = super::body_with_evidence(&input, &input).unwrap();
+            assert!(composed.copies().is_empty(), "JSON {opener}");
+            assert_eq!(
+                composed.text(),
+                format!("{} 任务可能已经完成。", opener.trim())
+            );
+            // A model-added period cannot close a scope that the input leaves open.
+            let numbered = format!("1. {}.\n2. 任务可能已经完成。", opener.trim());
+            assert!(super::body_with_evidence(&numbered, &input)
+                .unwrap()
+                .copies()
+                .is_empty());
+        }
+    }
+    #[test]
+    fn unbalanced_item_quotes_brackets_or_code_never_cover_another_copy() {
+        for opener in [
+            "他说\"任务",
+            "他说“任务",
+            "他说「任务",
+            "他说『任务",
+            "说明（任务",
+            "说明[任务",
+            "说明【任务",
+            "说明{任务",
+            "示例 `任务",
+            "示例 ``任务",
+            "示例 ~~~任务",
+            "尾部\\",
+            "意外结束）",
+            "意外结束”",
+        ] {
+            let input = serde_json::json!({"transcript":[
+                {"id":1,"text":opener}, {"id":3,"text":"任务可能已经完成。"}
+            ]})
+            .to_string();
+            let numbered = format!("1. {opener}\n2. 任务可能已经完成。");
+            for raw in [&numbered, &input] {
+                assert!(
+                    super::body_with_evidence(raw, &input)
+                        .unwrap()
+                        .copies()
+                        .is_empty(),
+                    "{raw}"
+                );
+            }
+        }
+        let input = serde_json::json!({"transcript":[
+            {"id":1,"text":"O'Neill’s review (phase 1) is pending"},
+            {"id":3,"text":"示例 ``任务`` 与【状态】已记录。"}
+        ]})
+        .to_string();
+        assert_eq!(
+            super::body_with_evidence(&input, &input)
+                .unwrap()
+                .copies()
+                .len(),
+            2
+        );
+    }
+    #[test]
+    fn json_duplicate_fields_and_source_changes_cannot_create_copy_proof() {
+        let input = r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算尚未批准。","speaker":"林悦"}]}"#;
+        let duplicated = r#"{"transcript":[{"id":1,"text":"无关内容","text":"任务可能已经完成。"},{"id":3,"text":"预算尚未批准。","speaker":"林悦"}]}"#;
+        let composed = super::body_with_evidence(duplicated, input).unwrap();
+        assert_eq!(composed.text(), "任务可能已经完成。 林悦：预算尚未批准。");
+        assert!(composed.copies().is_empty());
+        let changed = r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算已批准。","speaker":"林悦"}]}"#;
+        assert!(super::body_with_evidence(changed, input)
+            .unwrap()
+            .copies()
+            .is_empty());
+        for raw in [
+            r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算尚未批准。","speaker":"陈明"}]}"#,
+            r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算尚未批准。","speaker":"林悦","extra":1}]}"#,
+            r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算尚未批准。","speaker":"林悦"}],"footer":"完成"}"#,
+        ] {
+            assert!(super::body_with_evidence(raw, input).is_err(), "{raw}");
+        }
+    }
+    #[test]
+    fn single_json_echo_and_scalar_fallback_keep_their_previous_body_behavior() {
+        let input = r#"{"transcript":[{"id":1,"text":"原话","speaker":null}]}"#;
+        let composed = super::body_with_evidence(input, input).unwrap();
+        assert_eq!(composed.text(), "原话");
+        assert_eq!(proven_copies(&composed), [(1, "原话")]);
+        for raw in ["true", "123", "null", "\"原话\""] {
+            let composed = super::body_with_evidence(raw, input).unwrap();
+            assert_eq!(composed.text(), raw);
+            assert!(composed.copies().is_empty());
+        }
+    }
+    #[test]
+    fn presentation_budgets_and_unknown_source_ids_do_not_issue_proof() {
+        assert!(
+            super::body_with_evidence(&"x".repeat(super::MAX_PRESENTATION_BYTES + 1), "{}")
+                .is_err()
+        );
+        assert!(super::body_with_evidence(
+            "原话",
+            &" ".repeat(super::MAX_PRESENTATION_INPUT_BYTES + 1)
+        )
+        .is_err());
+        for id in [0, super::MAX_PRESENTATION_ITEMS + 1] {
+            let input = serde_json::json!({"transcript":[{"id":id,"text":"原话"}]}).to_string();
+            let composed = super::body_with_evidence(&input, &input).unwrap();
+            assert_eq!(composed.text(), "原话");
+            assert!(composed.copies().is_empty());
+        }
     }
     #[test]
     fn a_wrong_output_language_is_retried_without_rejecting_proper_names() {

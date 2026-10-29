@@ -386,6 +386,7 @@ fn generate_inner(
     let mut translation_repair: Option<language::Repair> = None;
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
     let mut prepared_sources: Option<Value> = None;
+    let mut prepared_evidence: Option<source_language::Prepared> = None;
     // Keep original selected evidence separate from translated prompt passages
     // and generated prose. Names, quotations and cleanup must be source-backed.
     let selected_source = context
@@ -593,16 +594,31 @@ fn generate_inner(
                     "reused_translation_passages":language::reused_count(&content,&context.segments,snapshot)}),
             );
             prepared_sources = Some(metrics);
+            prepared_evidence = Some(prepared);
             continue;
         }
+        let composition = if relation_repair.is_none() && translation_repair.is_none() {
+            Some(writer::body_with_evidence(
+                &raw_body,
+                messages[1]["content"].as_str().unwrap_or("{}"),
+            ))
+        } else {
+            None
+        };
         let prose = if let Some(plan) = &relation_repair {
             plan.body(&raw_body)
         } else if let Some(plan) = &translation_repair {
             plan.body(&raw_body)
         } else {
-            writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
+            composition
+                .as_ref()
+                .expect("ordinary composition was parsed")
+                .as_ref()
+                .map(|composed| composed.text().to_owned())
+                .map_err(|error| anyhow::anyhow!("{error:#}"))
         };
         let mut checked_prose = None;
+        let mut completion_bridge = None;
         let mut unitless_yuan_corrections = 0;
         let mut week_qualifier_corrections = 0;
         let normalized = prose
@@ -635,6 +651,21 @@ fn generate_inner(
                         .join(" "),
                     &body,
                 )?;
+                if let (Some(prepared), Some(Ok(composed))) =
+                    (prepared_evidence.as_ref(), composition.as_ref())
+                {
+                    // Repairs and normalization cannot inherit a copy's ranges.
+                    // Only the exact checked presentation can carry this proof.
+                    if composed.text() == body {
+                        completion_bridge = prepared.completion_bridge(
+                            composed,
+                            &content,
+                            &context.segments,
+                            &terms,
+                            writer::chinese(snapshot, &prefs.minutes_language),
+                        )?;
+                    }
+                }
                 let document =
                     writer::document(&body, &context.segments, &snapshot.meeting.speaker_names)?;
                 checked_prose = Some(body);
@@ -654,13 +685,25 @@ fn generate_inner(
                 }
             })
             .and_then(|draft| {
-                let sections = validation::validate_with_terms(
-                    draft,
-                    &context.segments,
-                    meeting,
-                    &snapshot.meeting.speaker_names,
-                    &terms,
-                )?;
+                let sections = if let Some(bridge) = &completion_bridge {
+                    validation::validate_with_bridge(
+                        draft,
+                        &context.segments,
+                        meeting,
+                        &snapshot.meeting.speaker_names,
+                        &terms,
+                        writer::chinese(snapshot, &prefs.minutes_language),
+                        bridge,
+                    )?
+                } else {
+                    validation::validate_with_terms(
+                        draft,
+                        &context.segments,
+                        meeting,
+                        &snapshot.meeting.speaker_names,
+                        &terms,
+                    )?
+                };
                 validation::preserve_replaced_sources(
                     &snapshot.suggestions,
                     &context.segments,
@@ -685,6 +728,7 @@ fn generate_inner(
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "week_qualifier_corrections":week_qualifier_corrections,
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
+            "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "unitless_yuan_repaired":unitless_yuan_corrections > 0,
