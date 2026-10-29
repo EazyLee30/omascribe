@@ -1,0 +1,228 @@
+{
+  "kind": "windows-real-worker-synthetic-silence-pair",
+  "sources": {
+    "baseline": "9b84d8dc072207823401c0bfb62a1f57b3de886b",
+    "candidate": "fd2afdcfe854fc6b9fd87a328b10e9e1f0ec2d2a"
+  },
+  "model_files": {
+    "bpe.model": {
+      "bytes": 244836,
+      "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+    },
+    "decoder-epoch-99-avg-1.onnx": {
+      "bytes": 13877276,
+      "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+    },
+    "encoder-epoch-99-avg-1.int8.onnx": {
+      "bytes": 42980793,
+      "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+    },
+    "joiner-epoch-99-avg-1.int8.onnx": {
+      "bytes": 3228485,
+      "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+    },
+    "tokens.txt": {
+      "bytes": 56317,
+      "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+    }
+  },
+  "user_model_unchanged": true,
+  "isolated_model_unchanged": true,
+  "arms": {
+    "baseline": {
+      "worker_sha256": "9968dd9d0a6c44842ef809d7983a4fb8a22af03748d019612eb9fb9fd379eeb6",
+      "states": [
+        {
+          "stage": "ready_initial_one",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "short_wait_still_one",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "first_block_two_expected",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "active_block_no_refresh",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "pause_boundary_three",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "paused_idle_still_three",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "resume_first_block_zero_expected",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "resumed_active_no_refresh",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "done_no_extra_refresh",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        }
+      ],
+      "success": true,
+      "normal_exit": true,
+      "exit_code": 0,
+      "timeout_seconds": 30,
+      "seconds": 3.906,
+      "pcm_exact": true,
+      "pcm_bytes": 25600,
+      "pcm_sha256": "c65206769723a13afe80c0d925531639ceef9c2eb97eee3b1b542739ec40597f",
+      "counts_match_expected": true,
+      "accepted_all_states": true,
+      "no_unexpected_boundaries": true,
+      "child_alive_after_run": false,
+      "error": null,
+      "source_worktree_clean_after": true,
+      "main_rs_sha256": "ede54f2e87911610d797fe85aec5b57a735ec78a0e6001dd021a93f6523c2e9b"
+    },
+    "candidate": {
+      "worker_sha256": "b5b9ad7147d6494482664bcf7372473c590e67da88454bfd66bdfd8b8c67a0c9",
+      "states": [
+        {
+          "stage": "ready_initial_one",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "short_wait_still_one",
+          "count": 1,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 1
+        },
+        {
+          "stage": "first_block_two_expected",
+          "count": 2,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "active_block_no_refresh",
+          "count": 2,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 2
+        },
+        {
+          "stage": "pause_boundary_three",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 3
+        },
+        {
+          "stage": "paused_idle_still_three",
+          "count": 3,
+          "decoder": "modified_beam_search",
+          "input_status": "accepted",
+          "load_attempts": 3
+        },
+        {
+          "stage": "resume_first_block_zero_expected",
+          "count": 0,
+          "decoder": "greedy_search",
+          "input_status": "accepted",
+          "load_attempts": 4
+        },
+        {
+          "stage": "resumed_active_no_refresh",
+          "count": 0,
+          "decoder": "greedy_search",
+          "input_status": "accepted",
+          "load_attempts": 4
+        },
+        {
+          "stage": "done_no_extra_refresh",
+          "count": 0,
+          "decoder": "greedy_search",
+          "input_status": "accepted",
+          "load_attempts": 4
+        }
+      ],
+      "success": true,
+      "normal_exit": true,
+      "exit_code": 0,
+      "timeout_seconds": 30,
+      "seconds": 5.546,
+      "pcm_exact": true,
+      "pcm_bytes": 25600,
+      "pcm_sha256": "c65206769723a13afe80c0d925531639ceef9c2eb97eee3b1b542739ec40597f",
+      "counts_match_expected": true,
+      "accepted_all_states": true,
+      "no_unexpected_boundaries": true,
+      "child_alive_after_run": false,
+      "error": null,
+      "source_worktree_clean_after": true,
+      "main_rs_sha256": "5f3ff74b84ff193761d5205b9e7f4addf3b3043b5f329272ae3648e11e183819"
+    }
+  },
+  "limits": [
+    "Synthetic silence only; no real speech, ASR accuracy or note-save integration claim.",
+    "Baseline expected failure is specifically in application timing; arm success means expected observed baseline/candidate patterns.",
+    "No GPU, private audio, transcript, or hashes thereof.",
+    "Worker progress plus diagnostics observe contextual state and the reviewed code establishes refresh order; this does not test save_note or UI.",
+    "Wall times include scripted idle and are not performance comparisons.",
+    "No live microphone, GPU, original user recording or user transcript was used."
+  ],
+  "pair_passed": true,
+  "build": {
+    "profile": "Windows release static CRT; cargo build --release --locked -p omascribe-asr",
+    "baseline_log": "baseline-build.log",
+    "candidate_log": "candidate-rebuild.log",
+    "baseline_seconds_in_cargo": 526,
+    "candidate_seconds_in_cargo": 105,
+    "first_candidate_incremental": "Invalid stale baseline executable: identical binary; kept and never run. Candidate main.rs and core build.rs timestamps refreshed, then rebuilt from candidate worktree.",
+    "runner_sha256": "9190ec55a3ef3d5dcb108e6c6452edc907b0cf5ddda517aa04eb06bbc25aa2ef",
+    "preflight": "Python lacked hashlib.file_digest; failed before workers. Portable block hashing substituted. Each arm was then run once.",
+    "python": "3.9.13"
+  },
+  "protocol": {
+    "platform": "Windows x86_64",
+    "asr_model": "zipformer-small isolated copy",
+    "threads": 1,
+    "decoder_mode": "default recognizer reload",
+    "pcm": "12800 synthetic zero PCM samples at 16000 Hz",
+    "handshake": "ready, progress, and pause boundary events; diagnostics after each step; partial-block idle held for 450ms",
+    "arm_deadline_seconds": 30
+  }
+}
