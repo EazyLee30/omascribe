@@ -1085,6 +1085,12 @@ fn validation_kind(error: &anyhow::Error) -> &'static str {
                 "source_name"
             } else if reason.contains("输出语言") {
                 "target_language"
+            } else if reason.contains("完整型号") {
+                "source_model_identifier"
+            } else if reason.contains("数字或日期") {
+                "source_number_date"
+            } else if reason.contains("未批准") || reason.contains("批准状态") {
+                "approval_state"
             } else {
                 "content"
             }
@@ -1202,6 +1208,114 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn adjacent_spoken_model_caption_uses_full_production_validation() {
+        let source = "设备代号是MX二七五零，测试尚未完成，预算尚未批准。";
+        let passage = crate::Segment {
+            id: "s".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let expected = "The device code is MX2750, the test has not been completed, and the budget has not been approved.";
+        let names = names::Names::new(&terms, source);
+        assert!(names.spellings().is_empty());
+        validate_text(expected, &passage, "en", &terms)
+            .unwrap_or_else(|error| panic!("faithful model caption rejected: {error:#}"));
+        let previous = chunks::Progress::default();
+        let raw = json!({"translation":expected}).to_string();
+        let checked = checked_progress(
+            &raw,
+            source,
+            &previous,
+            &passage,
+            source.len(),
+            "en",
+            &terms,
+        )
+        .unwrap_or_else(|error| panic!("full chunk/passage validation rejected: {error:#}"));
+        assert_eq!(checked.text, expected);
+        assert_eq!(checked.end, source.len());
+        assert_eq!(passage.text, source);
+        for rejected in [
+            expected.replace("MX2750", "MX2751"),
+            expected.replace("MX2750", "QX2750"),
+            expected.replace("has not been approved", "has been approved"),
+        ] {
+            assert!(checked_progress(
+                &json!({"translation":rejected}).to_string(),
+                source,
+                &previous,
+                &passage,
+                source.len(),
+                "en",
+                &terms,
+            )
+            .is_err());
+            assert_eq!(previous.end, 0);
+            assert!(previous.text.is_empty());
+        }
+    }
+    #[test]
+    fn caption_validation_categories_do_not_emit_source_or_rejected_text() {
+        let private_phrase = "仅用于本地测试的私有短语";
+        let source = format!("设备代号是MX二七五零，测试尚未完成，预算尚未批准。{private_phrase}");
+        let passage = crate::Segment {
+            id: "s".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.clone(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let faithful = "The device code is MX2750, the test has not been completed, and the budget has not been approved.";
+        for (rejected, expected_kind) in [
+            (
+                faithful.replace("MX2750", "RX2750"),
+                "source_model_identifier",
+            ),
+            (
+                format!("{faithful} The year is 2026."),
+                "source_number_date",
+            ),
+            (
+                faithful.replace("has not been approved", "has been approved"),
+                "approval_state",
+            ),
+        ] {
+            let error = checked_progress(
+                &json!({"translation":rejected}).to_string(),
+                &source,
+                &chunks::Progress::default(),
+                &passage,
+                source.len(),
+                "en",
+                &terms,
+            )
+            .expect_err("unsupported caption must retain its original rejection");
+            assert_eq!(validation_kind(&error), expected_kind, "{error:#}");
+            // Match the existing trace metadata shape. Detailed error chains,
+            // speech and failed drafts are deliberately not emitted here.
+            let metadata = json!({"kind":validation_kind(&error),"reason":error.to_string()});
+            assert_eq!(metadata["reason"], "chunk_evidence_mismatch");
+            let serialized = metadata.to_string();
+            assert!(!serialized.contains(private_phrase));
+            assert!(!serialized.contains(&source));
+            assert!(!serialized.contains(&rejected));
+        }
+    }
     #[test]
     fn retention_source_fields_consume_only_their_frame_and_require_other_facts() {
         let source =
