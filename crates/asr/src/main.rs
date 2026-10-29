@@ -92,6 +92,9 @@ fn run() -> Result<()> {
     let mut busy = Duration::ZERO;
     let mut last_progress = Instant::now();
     let mut pause_flushed = false;
+    // Words can change while an empty stream waits, especially during pause.
+    // Recheck only before its first actual PCM block, never during speech.
+    let mut fresh_stream = true;
     loop {
         let index = processed / CHUNK_SAMPLES;
         let offset = processed % CHUNK_SAMPLES;
@@ -130,6 +133,7 @@ fn run() -> Result<()> {
             }
             decoder.recognizer.reset(&decoder.stream);
             decoder.refresh(hotword_path);
+            fresh_stream = true;
             segment_start = processed;
             last_text.clear();
             emit(AsrEvent::Partial {
@@ -176,6 +180,12 @@ fn run() -> Result<()> {
             .collect();
         // Improve quiet speech only in the recognizer input; archived PCM/WAV stays exact.
         level.process(&mut samples);
+        // read_count(None) and failed reads above must not consume this state.
+        // Every accepted block does, including a short pause/take/end tail.
+        if fresh_stream {
+            decoder.refresh(hotword_path);
+            fresh_stream = false;
+        }
         let timer = Instant::now();
         decoder.stream.accept_waveform(SAMPLE_RATE as i32, &samples);
         while decoder.recognizer.is_ready(&decoder.stream) {
@@ -206,6 +216,7 @@ fn run() -> Result<()> {
             }
             decoder.recognizer.reset(&decoder.stream);
             decoder.refresh(hotword_path);
+            fresh_stream = true;
             segment_start = processed;
             last_text.clear();
             emit(AsrEvent::Partial {

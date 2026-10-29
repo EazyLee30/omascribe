@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "Fresh-utterance hotword timing fix integrated; paired candidate native control pending",
+  "baseline_source": "9b84d8dc072207823401c0bfb62a1f57b3de886b",
+  "source_file_sha256": "5f3ff74b84ff193761d5205b9e7f4addf3b3043b5f329272ae3648e11e183819",
+  "change": "Keep an explicit fresh_stream marker at startup and after actual stream resets. After read_count returns a block and read_exact succeeds, refresh once immediately before accepting its first real PCM samples. Any accepted positive count consumes the marker; waiting for an incomplete block does not. Existing utterance-boundary refreshes remain.",
+  "invariants": [
+    "Do not reset an active utterance because words changed.",
+    "Ordinary30s file rollover, empty result or no available PCM does not mark a stream fresh.",
+    "Padding silence does not perform the new refresh.",
+    "Invalid update keeps the original decoder context, but cannot keep retrying mid-utterance.",
+    "No mode/search score/tokenizer/default/model/SDK/PCM/time/sample change."
+  ],
+  "baseline_real_red": {
+    "report": "artifacts/asr-fresh-context-2026-10-30/baseline/report.json",
+    "sha256": "856844b20db2f76136f5b44f0c0dbe42237a90e98dc1e471d9f6edfd1fd1ef55",
+    "observed_counts": {
+      "ready_initial_one": 1,
+      "short_wait_still_one": 1,
+      "first_block_two_expected": 1,
+      "active_block_no_refresh": 1,
+      "pause_boundary_three": 3,
+      "paused_idle_still_three": 3,
+      "resume_first_block_zero_expected": 3,
+      "resumed_active_no_refresh": 3,
+      "done_no_extra_refresh": 3
+    },
+    "wall_seconds": 2.749390000011772,
+    "expected": "After Ready/idle update, first real3200 samples should use2 words, but used1. After pause/clear, first resumed3200 should use0, but used3.",
+    "pcm_samples": 12800,
+    "pcm_bytes": 25600,
+    "pcm_sha256": "c65206769723a13afe80c0d925531639ceef9c2eb97eee3b1b542739ec40597f"
+  },
+  "checks": {
+    "asr_tests": 9,
+    "strict_asr_clippy": "PASS",
+    "rustfmt": "PASS",
+    "independent_read_only_ordering_review": "No blocker"
+  },
+  "native_protocol": "Same frozen runner, same12800 synthetic-zero PCM, same existing zipformer-small model and default legacy decoder/endpoints, same30-second per-arm bound. Only hotword application timing/PCM/process identity is assessed.",
+  "limits": [
+    "No acoustic recognition, WER/proper-name recall, real microphone, Windows/Linux device or performance/battery claim.",
+    "Candidate result must be collected before native verification is claimed.",
+    "The P0/P1/P2/P3/G1/G2 objective remains active;0.3.5 remains unpublished and Q16 remains open."
+  ]
+}
