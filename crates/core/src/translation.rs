@@ -1,4 +1,5 @@
 //! Optional on-device translation. Source passages are immutable; revisions invalidate cached text.
+mod approval;
 pub(crate) mod chunks;
 mod closed_state;
 mod named_actions;
@@ -977,6 +978,13 @@ fn checked_progress(
     evidence.text = input.to_owned();
     validate_text(text, &evidence, target, terms).context("chunk_evidence_mismatch")?;
     let protected = names::Names::new(terms, &evidence.text);
+    let precise = (target == "zh")
+        .then(|| approval::precise_budget_approval(&evidence.text, text, &protected))
+        .flatten();
+    if let Some(ref repaired) = precise {
+        validate_text(repaired, &evidence, target, terms).context("chunk_evidence_mismatch")?;
+    }
+    let text = precise.as_deref().unwrap_or(text);
     let text = notes::compact_source_model_separators(text, &evidence.text, protected.spellings());
     let mut next = chunks::Progress {
         end: previous.end,
@@ -1210,6 +1218,42 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn explicit_approval_wording_keeps_the_original_approval_predicate() {
+        let source =
+            "CedarLedger has not completed the local test. The budget has not been approved.";
+        let passage = crate::Segment {
+            id: "s".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.into(),
+            revision: 2,
+            speaker: None,
+            speaker_manual: false,
+        };
+        // Exact ambiguous caption retained in the sourcea6 actual run. Make the
+        // approval predicate explicit without adding a new decision or promise.
+        let draft = "CedarLedger 未完成本地测试。预算未通过。";
+        let previous = chunks::Progress::default();
+        let checked = checked_progress(
+            &json!({"translation":draft}).to_string(),
+            source,
+            &previous,
+            &passage,
+            source.len(),
+            "zh",
+            &crate::terminology::Terms::new(&[], &[]),
+        )
+        .unwrap();
+        assert_eq!(checked.text, "CedarLedger 未完成本地测试。预算未获批准。");
+        assert_eq!(checked.end, source.len());
+        assert_eq!(passage.text, source);
+        assert!(previous.text.is_empty());
+        assert_eq!(previous.end, 0);
+    }
     #[test]
     fn adjacent_spoken_model_caption_uses_full_production_validation() {
         let source = "设备代号是MX二七五零，测试尚未完成，预算尚未批准。";
