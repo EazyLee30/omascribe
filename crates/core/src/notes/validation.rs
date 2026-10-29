@@ -807,23 +807,39 @@ pub fn validate_with_speakers(
     meeting: &str,
     names: &std::collections::BTreeMap<String, String>,
 ) -> Result<Vec<Suggestion>> {
-    validate_document(content, segments, meeting, names, 1200, true)
+    validate_with_terms(
+        content,
+        segments,
+        meeting,
+        names,
+        &crate::terminology::Terms::new(&[], &[]),
+    )
 }
+pub(super) fn validate_with_terms(
+    content: &str,
+    segments: &[Segment],
+    meeting: &str,
+    names: &std::collections::BTreeMap<String, String>,
+    terms: &crate::terminology::Terms,
+) -> Result<Vec<Suggestion>> {
+    validate_document(content, segments, meeting, names, 1200, true, terms)
+}
+#[cfg(test)]
 pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) -> Result<()> {
-    static UNAPPROVED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(concat!(
-        r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b",
-        r"|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)",
-        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过",
-        // A subjectless continuation retains the explicit approval topic.
-        // A new noun (e.g. “但测试未通过”) must not inherit that state.
-        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,40}[,，]\s*(?:但|不过|而)?\s*(?:仍|还|依然|目前|暂时|尚)?(?:未|没)(?:被|获|能)?通过"
-    )).unwrap());
-    if unapproved.is_match(&polarity_text(&source.text))
-        && !unapproved.is_match(&polarity_text(text))
-    {
-        bail!("译文遗漏原话中的未批准状态，请保留否定而非只翻译后续事项");
-    }
+    validate_translation_with_terms(
+        text,
+        source,
+        meeting,
+        &crate::terminology::Terms::new(&[], &[]),
+    )
+}
+pub(crate) fn validate_translation_with_terms(
+    text: &str,
+    source: &Segment,
+    meeting: &str,
+    terms: &crate::terminology::Terms,
+) -> Result<()> {
+    validate_unapproved(&source.text, text)?;
     let content =
         serde_json::json!({"sections":[{"title":"Translation","body":text,"sources":[1]}]})
             .to_string();
@@ -834,8 +850,35 @@ pub(crate) fn validate_translation(text: &str, source: &Segment, meeting: &str) 
         &Default::default(),
         16_000,
         false,
+        terms,
     )?;
     Ok(())
+}
+fn validate_unapproved(source: &str, text: &str) -> Result<()> {
+    static UNAPPROVED: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let unapproved=UNAPPROVED.get_or_init(||regex::Regex::new(concat!(
+        r"\bunapproved\b|\bnot\s+(?:(?:been|yet|officially|formally|fully)\s+){0,4}approved\b",
+        r"|(?:未|没|待)[^。；;,.，!?！？]{0,6}(?:批准|审批|获批|过审|核准)",
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,12}(?:未|没|待)[^。；;,.，!?！？]{0,6}通过",
+        // A subjectless continuation retains the explicit approval topic.
+        // A new noun (e.g. “但测试未通过”) must not inherit that state.
+        r"|(?:预算|申请|方案|提案|议案)[^。；;,.，!?！？]{0,40}[,，]\s*(?:但|不过|而)?\s*(?:仍|还|依然|目前|暂时|尚)?(?:未|没)(?:被|获|能)?通过"
+    )).unwrap());
+    if unapproved.is_match(&polarity_text(source)) && !unapproved.is_match(&polarity_text(text)) {
+        bail!("译文遗漏原话中的未批准状态，请保留否定而非只翻译后续事项");
+    }
+    Ok(())
+}
+fn completion_name_mask(text: &str, source: &str, terms: &crate::terminology::Terms) -> String {
+    let mut mask = crate::translation::source_name_mask(text, source, terms).into_bytes();
+    // Keep erased names opaque. Removing a literal such as `not` or `if` must
+    // not turn a negated or conditional statement into a closed assertion.
+    for (original, masked) in text.bytes().zip(&mut mask) {
+        if original != *masked {
+            *masked = b'#';
+        }
+    }
+    String::from_utf8(mask).expect("masked name spans contain ASCII only")
 }
 fn validate_document(
     content: &str,
@@ -844,6 +887,7 @@ fn validate_document(
     names: &std::collections::BTreeMap<String, String>,
     max_body_chars: usize,
     require_prose: bool,
+    terms: &crate::terminology::Terms,
 ) -> Result<Vec<Suggestion>> {
     let draft: Draft =
         serde_json::from_str(content).context("文档结构校验失败，待处理内容已保留")?;
@@ -879,6 +923,27 @@ fn validate_document(
                 || s.body.contains("待完成")
                 || s.body.contains("尚待")
                 || s.body.to_lowercase().contains("pending")
+        })
+        // Accept this bounded equivalent only from each unfinished passage's
+        // own cited paragraph. It must not discharge a different pending task,
+        // borrow another citation, or read a protected literal name as a fact.
+        && !segments.iter().enumerate().filter(|(i, s)| {
+            !completed.retired(*i) && unfinished(&s.text)
+        }).all(|(i, s)| {
+            let source_mask = completion_name_mask(&s.text, &s.text, terms);
+            draft.sections.iter().any(|section| {
+                if !section.sources.contains(&(i + 1)) {
+                    return false;
+                }
+                let cited_text = section.sources.iter().filter_map(|index| {
+                    index.checked_sub(1).and_then(|index| segments.get(index))
+                }).map(|source| source.text.as_str()).collect::<Vec<_>>().join("\n");
+                validate_unapproved(&s.text, &section.body).is_ok()
+                    && super::completion::incomplete_transcription_covers(
+                    &source_mask,
+                    &completion_name_mask(&section.body, &cited_text, terms),
+                )
+            })
         })
     {
         bail!("纪要遗漏了尚未完成的状态，请明确保留未完成事项");
@@ -1763,6 +1828,134 @@ mod tests {
             "这部分需要分句显示。",
             &format!("{source}这部分需要分句显示。")
         ));
+    }
+    #[test]
+    fn incomplete_transcriptions_accept_the_actual_draft_in_minutes_and_captions() {
+        let mut source = data()[0].clone();
+        source.text = "The transcriptions are incomplete. The report is not approved.".into();
+        let body = "语音转录不完整，报告未批准。";
+        let draft =
+            serde_json::json!({"sections":[{"title":"会议纪要","body":body,"sources":[1]}]})
+                .to_string();
+        let sections = validate(&draft, std::slice::from_ref(&source), "m").unwrap();
+        assert_eq!(sections[0].text, body);
+        assert_eq!(sections[0].sources[0].quote, source.text);
+        assert_eq!(sections[0].sources[0].revision, source.revision);
+        assert!(validate_translation(body, &source, "m").is_ok());
+        for wrong in [
+            "报告未批准。",
+            "语音转录完整，报告未批准。",
+            "报告不完整且未批准。",
+            "如果语音转录不完整，报告未批准。",
+            "语音转录不完整吗？报告未批准。",
+            "“语音转录不完整”，报告未批准。",
+            "语音转录不完整是一个示例，报告未批准。",
+            "语音转录不完整，报告已获批准。",
+        ] {
+            let draft =
+                serde_json::json!({"sections":[{"title":"会议纪要","body":wrong,"sources":[1]}]})
+                    .to_string();
+            assert!(
+                validate(&draft, std::slice::from_ref(&source), "m").is_err(),
+                "minutes: {wrong}"
+            );
+            assert!(
+                validate_translation(wrong, &source, "m").is_err(),
+                "caption: {wrong}"
+            );
+        }
+    }
+    #[test]
+    fn incomplete_fallback_cannot_discharge_other_work_or_borrow_another_citation() {
+        let mut segments = vec![data()[0].clone(); 2];
+        for (i, (s, text)) in segments
+            .iter_mut()
+            .zip([
+                "The transcriptions are incomplete.",
+                "The invoice review is not completed.",
+            ])
+            .enumerate()
+        {
+            s.id = format!("s{i}");
+            s.seq = i as u32 + 1;
+            s.text = text.into();
+        }
+        for citations in [vec![1], vec![2], vec![1, 2]] {
+            let draft = serde_json::json!({"sections":[{"title":"状态","body":"语音转录不完整。","sources":citations}]}).to_string();
+            assert!(validate(&draft, &segments, "m").is_err(), "{draft}");
+        }
+        segments[1].text = "The report is not approved.".into();
+        let draft = serde_json::json!({"sections":[
+            {"title":"报告","body":"语音转录不完整，报告未批准。","sources":[2]},
+            {"title":"转录","body":"这是转录内容。","sources":[1]}
+        ]})
+        .to_string();
+        assert!(validate(&draft, &segments, "m").is_err());
+        segments[0].text = "The invoice review is incomplete.".into();
+        assert!(validate_translation("语音转录不完整。", &segments[0], "m").is_err());
+        segments[0].text =
+            "The transcriptions are incomplete. The invoice review is not completed.".into();
+        assert!(validate_translation("语音转录不完整。", &segments[0], "m").is_err());
+    }
+    #[test]
+    fn incomplete_fallback_does_not_read_protected_literal_names_as_status() {
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "语音转录不完整".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        let mut source = data()[0].clone();
+        source.text = "The transcriptions are incomplete. The product is 语音转录不完整.".into();
+        let body = "语音转录不完整。";
+        let draft = serde_json::json!({"sections":[{"title":"状态","body":body,"sources":[1]}]})
+            .to_string();
+        assert!(validate_with_terms(
+            &draft,
+            std::slice::from_ref(&source),
+            "m",
+            &Default::default(),
+            &terms
+        )
+        .is_err());
+        assert!(validate_translation_with_terms(body, &source, "m", &terms).is_err());
+        let mut other = source.clone();
+        source.text = "The transcriptions are incomplete.".into();
+        other.id = "other".into();
+        other.seq += 1;
+        other.text = "The product is 语音转录不完整.".into();
+        let draft = serde_json::json!({"sections":[{"title":"状态","body":body,"sources":[1,2]}]})
+            .to_string();
+        assert!(
+            validate_with_terms(&draft, &[source, other], "m", &Default::default(), &terms)
+                .is_err()
+        );
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "not".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        let mut source = data()[0].clone();
+        source.text = "The transcriptions are not incomplete. The report is not approved.".into();
+        let body = "语音转录不完整，报告未批准。";
+        let draft = serde_json::json!({"sections":[{"title":"状态","body":body,"sources":[1]}]})
+            .to_string();
+        assert!(validate_with_terms(
+            &draft,
+            std::slice::from_ref(&source),
+            "m",
+            &Default::default(),
+            &terms
+        )
+        .is_err());
+        assert!(validate_translation_with_terms(body, &source, "m", &terms).is_err());
     }
     #[test]
     fn bare_unfinished_assertions_keep_their_status() {

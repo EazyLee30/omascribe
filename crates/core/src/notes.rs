@@ -46,7 +46,7 @@ use std::{
 };
 use uuid::Uuid;
 pub use validation::validate;
-pub(crate) use validation::{compact_source_model_separators, validate_translation};
+pub(crate) use validation::{compact_source_model_separators, validate_translation_with_terms};
 pub(crate) use week_qualifiers::{
     repair as repair_week_qualifiers, validate as validate_week_qualifiers,
     Mismatch as WeekQualifierMismatch,
@@ -490,11 +490,12 @@ fn generate_inner(
                 }
             })
             .and_then(|draft| {
-                let sections = validation::validate_with_speakers(
+                let sections = validation::validate_with_terms(
                     draft,
                     &context.segments,
                     meeting,
                     &snapshot.meeting.speaker_names,
+                    &terms,
                 )?;
                 validation::preserve_replaced_sources(
                     &snapshot.suggestions,

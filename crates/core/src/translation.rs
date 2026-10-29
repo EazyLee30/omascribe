@@ -1170,7 +1170,7 @@ fn validate_text(
         &names.mask(&passage.text),
     )?;
     // Unsupported numbers/dates cannot enter either private chunks or visible translations.
-    notes::validate_translation(text, passage, &passage.meeting_id)?;
+    notes::validate_translation_with_terms(text, passage, &passage.meeting_id, terms)?;
     names.validate(text)?;
     named_actions::validate(&passage.text, text, names.spellings(), target)?;
     crate::task_roles::validate(&terms.normalize(&passage.text), text)?;
@@ -1596,6 +1596,35 @@ mod tests {
         assert_eq!(caption.grammar.as_ref().unwrap(), &article.grammar);
         assert!(!article.grammar.contains("prose \"[A] is responsible for\""));
         assert!(article.body(r#"{"translation":"The test link is to be sent on Wednesday next week. [A] is responsible for the reservation page, which has not yet been completed."}"#).is_ok());
+    }
+    #[test]
+    fn visible_caption_incomplete_status_uses_its_own_source_and_name_mask() {
+        let mut source = crate::Segment {
+            id: "m:1:1".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "The transcriptions are incomplete. The report is not approved.".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        assert!(validate_text("语音转录不完整，报告未批准。", &source, "zh", &terms).is_ok());
+        assert!(validate_text("报告不完整且未批准。", &source, "zh", &terms).is_err());
+        let terms = crate::terminology::Terms::new(
+            &[],
+            &[crate::library::Entry {
+                kind: "term".into(),
+                title: "语音转录不完整".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        source.text.push_str(" The product is 语音转录不完整.");
+        assert!(validate_text("语音转录不完整，报告未批准。", &source, "zh", &terms).is_err());
     }
     #[test]
     fn source_name_mask_keeps_offsets_and_does_not_require_unused_historical_names() {

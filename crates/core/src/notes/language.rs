@@ -34,8 +34,13 @@ pub(super) fn cached_text<'a>(
             chinese,
         )
         .is_ok()
-        && super::validation::validate_translation(&cached.text, source, &source.meeting_id)
-            .is_ok())
+        && super::validation::validate_translation_with_terms(
+            &cached.text,
+            source,
+            &source.meeting_id,
+            terms,
+        )
+        .is_ok())
     .then_some(cached.text.as_str())
 }
 

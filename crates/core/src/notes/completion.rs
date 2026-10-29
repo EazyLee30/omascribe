@@ -33,6 +33,91 @@ pub(super) fn unfinished(text: &str) -> bool {
     RE.get_or_init(|| Regex::new(r"(?i)未完成|还没有完成|还没完成|待完成|\bnot(?:\s+(?:yet|been)){0,2}\s+(?:completed?|finished)\b|\bhasn['’]t\s+been\s+(?:completed|finished)\b|\b(?:still\s+pending|incomplete|unfinished)\b").unwrap()).is_match(text)
         || bare_unfinished_assertion(text)
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum IncompleteLanguage {
+    English,
+    Chinese,
+}
+
+/// Closed incompleteness assertions only. Callers mask protected names first;
+/// an erased subject or predicate cannot become a witness. Every marked state
+/// clause must fit this same predicate, so another unfinished task abstains.
+fn incomplete_transcription_language(text: &str) -> Option<IncompleteLanguage> {
+    static ENGLISH: OnceLock<Regex> = OnceLock::new();
+    static CHINESE: OnceLock<Regex> = OnceLock::new();
+    static NON_ASSERTIVE: OnceLock<Regex> = OnceLock::new();
+    static PENDING: OnceLock<Regex> = OnceLock::new();
+    let english = ENGLISH.get_or_init(|| {
+        Regex::new(r"(?i)^(?:the\s+)?(?:transcription\s+is|transcriptions\s+are)\s+incomplete$")
+            .unwrap()
+    });
+    let chinese = CHINESE.get_or_init(|| Regex::new(r"^(?:语音转录|转录|转写)\s*不完整$").unwrap());
+    let non_assertive = NON_ASSERTIVE.get_or_init(|| {
+        Regex::new(concat!(
+            r"(?i)\b(?:if|unless|when|once|before|until|provided|suppose|assuming|maybe|perhaps|possibly|might|may|could|would|should|will|shall)\b",
+            r"|如果|假如|倘若|除非|只要|只有|一旦|要是|即使|即便|是否|能否|可能|也许|假设"
+        )).unwrap()
+    });
+    let pending = PENDING.get_or_init(|| Regex::new(r"(?i)\bpending\b").unwrap());
+    // A quotation or conditional may span sentence and line boundaries. This
+    // narrow fallback abstains for the whole supplied evidence rather than
+    // turning an inner sentence into an independent assertion.
+    if text.contains([
+        '?', '？', '"', '\'', '“', '”', '‘', '’', '「', '」', '『', '』', '`', '#',
+    ]) || non_assertive.is_match(text)
+    {
+        return None;
+    }
+    let mut language = None;
+    for sentence in text.split_inclusive(['。', '.', '!', '！', '?', '？', '\n']) {
+        let sentence = sentence.trim();
+        for clause in sentence
+            .trim_end_matches(['。', '.', '!', '！', '?', '？', '\n'])
+            .split([',', '，', ';', '；'])
+            .map(str::trim)
+        {
+            if !unfinished(clause)
+                && !clause.contains("不完整")
+                && !clause.contains("尚待")
+                && !pending.is_match(clause)
+            {
+                continue;
+            }
+            let current = if english.is_match(clause) {
+                IncompleteLanguage::English
+            } else if chinese.is_match(clause) {
+                IncompleteLanguage::Chinese
+            } else {
+                return None;
+            };
+            if language.is_some_and(|previous| previous != current) {
+                return None;
+            }
+            language = Some(current);
+        }
+    }
+    language
+}
+
+/// A bounded cross-language fallback for the shared source-evidence validator.
+/// It does not widen `unfinished`, retire tasks, or infer arbitrary subjects.
+pub(super) fn incomplete_transcription_covers(source_mask: &str, target_mask: &str) -> bool {
+    matches!(
+        (
+            incomplete_transcription_language(source_mask),
+            incomplete_transcription_language(target_mask),
+        ),
+        (
+            Some(IncompleteLanguage::English),
+            Some(IncompleteLanguage::Chinese)
+        ) | (
+            Some(IncompleteLanguage::Chinese),
+            Some(IncompleteLanguage::English)
+        )
+    )
+}
+
 fn bare_unfinished_assertion(text: &str) -> bool {
     if !text.contains("没有完成") {
         return false;
@@ -206,6 +291,139 @@ mod tests {
             speaker_manual: false,
         }
     }
+
+    #[test]
+    fn incomplete_transcription_covers_the_actual_draft_and_closed_subjects() {
+        let source = "The transcriptions are incomplete. The report is not approved.";
+        let target = "语音转录不完整，报告未批准。";
+        assert!(incomplete_transcription_covers(source, target));
+        assert!(incomplete_transcription_covers(target, source));
+        for english in [
+            "The transcriptions are incomplete.",
+            "Transcriptions are incomplete.",
+            "The transcription is incomplete.",
+            "\tThe transcriptions are incomplete.\r\n",
+        ] {
+            for chinese in ["语音转录不完整。", "转录不完整。", "转写不完整。"]
+            {
+                assert!(incomplete_transcription_covers(english, chinese));
+                assert!(incomplete_transcription_covers(chinese, english));
+            }
+        }
+        assert!(incomplete_transcription_covers(
+            "The transcriptions are incomplete. Transcriptions are incomplete.",
+            "语音转录不完整。"
+        ));
+    }
+
+    #[test]
+    fn incomplete_transcription_cannot_waive_another_unfinished_source_clause() {
+        for other in [
+            "The invoice review is not completed.",
+            "The upload verification has not yet been completed.",
+            "The upload is still pending.",
+            "Upload is pending.",
+            "The transcriptions are unfinished.",
+            "The transcriptions are not completed.",
+            "没有完成系统音频采集。",
+            "报告不完整。",
+            "上传尚待完成。",
+        ] {
+            for separator in [" ", ", ", "; "] {
+                let source = format!("The transcriptions are incomplete{separator}{other}");
+                assert!(
+                    !incomplete_transcription_covers(&source, "语音转录不完整。"),
+                    "{source}"
+                );
+            }
+        }
+        assert!(!incomplete_transcription_covers(
+            "The transcriptions are incomplete. The invoice review is not completed.",
+            "语音转录不完整。"
+        ));
+        assert!(!incomplete_transcription_covers(
+            "语音转录不完整，发票审核尚未完成。",
+            "The transcriptions are incomplete."
+        ));
+    }
+
+    #[test]
+    fn incomplete_transcription_rejects_unknown_nonassertive_or_changed_predicates() {
+        let valid_source = "The transcriptions are incomplete. The report is not approved.";
+        let valid_target = "语音转录不完整，报告未批准。";
+        for source in [
+            "",
+            "The report is not approved.",
+            "The transcriptions are complete.",
+            "The transcriptions are not incomplete.",
+            "The transcriptions are incomplete?",
+            "Are the transcriptions incomplete?",
+            "The transcriptions may be incomplete.",
+            "If the report is approved, the transcriptions are incomplete.",
+            "If the report is approved; the transcriptions are incomplete.",
+            "If the report is approved,\nthe transcriptions are incomplete.",
+            "Incomplete are the transcriptions.",
+            "The report is incomplete.",
+            "The incomplete transcriptions are complete.",
+            "No one says the transcriptions are incomplete.",
+            "“The transcriptions are incomplete.”",
+            "'The transcriptions are incomplete.'",
+            "“Quoted text. The transcriptions are incomplete. End quote.”",
+        ] {
+            assert!(
+                !incomplete_transcription_covers(source, valid_target),
+                "{source}"
+            );
+        }
+        for target in [
+            "",
+            "报告未批准。",
+            "语音转录完整，报告未批准。",
+            "报告不完整且未批准。",
+            "如果报告未批准，语音转录不完整。",
+            "如果报告未批准；语音转录不完整。",
+            "如果报告未批准，\n语音转录不完整。",
+            "语音转录不完整？",
+            "语音转录不完整吗。",
+            "语音转录可能不完整。",
+            "语音转录并非不完整。",
+            "不完整的是语音转录。",
+            "“语音转录不完整”，报告未批准。",
+            "“引用开始。语音转录不完整。引用结束。”",
+            "语音转录不完整是一个项目名。",
+            "语音转录不完整，报告也不完整。",
+            "语音转录不完整，发票审核未完成。",
+        ] {
+            assert!(
+                !incomplete_transcription_covers(valid_source, target),
+                "{target}"
+            );
+        }
+    }
+
+    #[test]
+    fn incomplete_transcription_needs_an_unmasked_subject_and_status_without_widening_unfinished() {
+        let source = "The transcriptions are incomplete.";
+        let target = "语音转录不完整。";
+        for masked_source in [
+            "The                are incomplete.",
+            "The transcriptions are           .",
+            "                                 .",
+        ] {
+            assert!(!incomplete_transcription_covers(masked_source, target));
+        }
+        for masked_target in [
+            "             不完整。报告未批准。",
+            "语音转录          ，报告未批准。",
+            "                          ，报告未批准。",
+        ] {
+            assert!(!incomplete_transcription_covers(source, masked_target));
+        }
+        assert!(unfinished(source));
+        assert!(!unfinished(target));
+        assert!(unfinished("If the transcriptions are incomplete, wait."));
+    }
+
     #[test]
     fn bare_unfinished_requires_an_assertive_local_clause() {
         for text in [
