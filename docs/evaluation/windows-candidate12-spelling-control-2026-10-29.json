@@ -1,0 +1,68 @@
+{
+  "source_revision": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+  "local_date": "2026-10-29",
+  "fixture_case": "en_existing_document_spelling_only_sync",
+  "fixture_git_sha256": "5cce218a6676f2765223cc247ae05f23b505dce3979ab69aec095c252e0d87f7",
+  "fixture_cases": 65,
+  "synthetic": true,
+  "automatic_harness_passed": true,
+  "harness_errors": [],
+  "same_document_id_across_stages": true,
+  "segment_revisions_before_after_note_after_settle": [
+    1,
+    2,
+    2
+  ],
+  "after_note_citations_exact": true,
+  "after_settle_citations_exact": true,
+  "after_settle_zh_revision2_caption_count": 1,
+  "synthetic_final_caption_text": [
+    "CedarLedger 未完成本地测试。预算未获批准。"
+  ],
+  "note_save_no_generation": true,
+  "jobs_before_note": 1,
+  "jobs_after_note": 1,
+  "automatic_settle_preserved_minutes": true,
+  "settle_jobs_before": 1,
+  "settle_jobs_after": 1,
+  "document_and_citations_unchanged_during_settle": true,
+  "caption_checks_passed": true,
+  "phase2_started_task_counts": {
+    "translation": 1
+  },
+  "all_observed_workers_cuda": true,
+  "observed_workers": [
+    "cuda",
+    "cuda",
+    "cuda"
+  ],
+  "offload_records": [
+    [
+      29,
+      29
+    ],
+    [
+      29,
+      29
+    ]
+  ],
+  "phase_seconds": [
+    {
+      "phase": 1,
+      "seconds": 14.953
+    },
+    {
+      "phase": 2,
+      "seconds": 10.594
+    }
+  ],
+  "cuda_component": "acceleration-ci-40367160891",
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "cli_sha256": "54fee0176061f59a945ea51301927be35ad3a912c71f2497b50c55fb6c4bef98",
+  "preparation_note": "The fixture completed and passed once. The initial summary writer incorrectly treated translations as a list, but it is a dictionary; this report reads the retained results without rerunning any model.",
+  "limits": [
+    "One synthetic same-document spelling-only fixture; separate from the real transcript reconstruction.",
+    "Not a physical microphone, ASR, fresh install, full corpus or release acceptance.",
+    "Automatic pattern checks and assistant inspection do not constitute human review or general semantic acceptance."
+  ]
+}

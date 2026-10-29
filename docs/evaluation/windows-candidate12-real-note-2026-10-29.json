@@ -1,0 +1,69 @@
+{
+  "source_revision": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+  "local_date": "2026-10-29",
+  "scope": "One isolated reconstruction of original Bilingual ASR revision 1 from user-confirmed Realtek recording; original live capture already used note hints. No audio copied; note added after one initial generation.",
+  "cli_sha256": "54fee0176061f59a945ea51301927be35ad3a912c71f2497b50c55fb6c4bef98",
+  "worker_source": "17380f64783c26ce77def7dd13429699958f5259",
+  "worker_invoked": false,
+  "cuda_component": "acceleration-ci-40367160891",
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "cuda_verification_seconds": 52.609,
+  "cuda_offload_observed": [
+    [
+      29,
+      29
+    ]
+  ],
+  "initial_minutes": {
+    "generation_seconds": 8.875,
+    "pending_fresh_count": 1,
+    "runtime_status_nonempty": true,
+    "runtime_status_number_or_date_rejection": false,
+    "all_pending_citations_exact": true,
+    "source_variant_present_in_old_minutes": false
+  },
+  "late_note": {
+    "auto_notes": false,
+    "save_seconds": 0.062,
+    "segment_before_revision": 1,
+    "segment_after_revision": 2,
+    "before_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": false,
+      "gtx1650": false
+    },
+    "after_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": false,
+      "gtx1650": true
+    },
+    "terminology_edits": 1,
+    "human_edits": 0,
+    "segment_history_revisions": [
+      1
+    ],
+    "old_paragraph_ids_kept_fresh_and_citations_revised": true,
+    "pending_fresh_after_count": 1,
+    "old_ids_stale_count": 0,
+    "inference_jobs_before": 1,
+    "inference_jobs_after": 1
+  },
+  "limits": [
+    "No actual audio, transcript, original note, generated text or hashes of these private contents included.",
+    "One reconstructed original ASR segment, not a new live recording or no-hints ASR baseline.",
+    "If no old paragraph contains the precise changed source form, guarded paragraph sync is not established; do not treat fresh citations alone as a full sync pass.",
+    "Source citation identity and exact term matches do not constitute complete semantic or citation-entailment review.",
+    "Signed CUDA payload copied and reverified; worker from candidate10 is cross-build and not invoked."
+  ],
+  "paragraph_observation": {
+    "same_paragraph_ids_present": true,
+    "old_minutes_exact_target_present": true,
+    "new_minutes_exact_target_present": true,
+    "any_prose_changed": true,
+    "all_prose_identical": false,
+    "any_citation_changed": true
+  },
+  "interpretation": "The already generated paragraph retained a fresh source citation after the late note, and at least one paragraph text changed; its original text already contained the canonical target and did not contain the exact source variant checked. Do not claim the target spelling in the paragraph was repaired by the late note or that complete semantics are correct."
+}
