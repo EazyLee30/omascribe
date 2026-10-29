@@ -431,6 +431,10 @@ impl Engine {
         if p.asr_model == id || p.llm_model == id {
             bail!("Select another model before deleting this one");
         }
+        drop(p);
+        if self.note_busy.load(Ordering::SeqCst) || self.inference_pool.status().leased {
+            bail!("Finish local inference before deleting a model");
+        }
         if self.downloads.cancel.lock().unwrap().contains_key(id) {
             bail!("Cancel the download first");
         }
@@ -439,6 +443,10 @@ impl Engine {
             if path.symlink_metadata()?.file_type().is_symlink() {
                 bail!("Refusing to delete a linked model directory");
             }
+            // Windows verification receipts retain read handles to exclude
+            // timestamp-invisible writes. Release them before confirmed removal.
+            self.inference_pool.invalidate();
+            self.model_integrity.invalidate(&path);
             fs::remove_dir_all(path)?;
         } else {
             bail!(

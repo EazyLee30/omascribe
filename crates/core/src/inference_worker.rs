@@ -814,7 +814,7 @@ mod tests {
         std::fs::create_dir_all(&directory)?;
         std::fs::write(directory.join(&model.files[0].name), b"good")?;
         let receipt = engine.model_integrity.verify(&directory, &model)?;
-        let model_identity = receipt.fingerprint();
+        let model_identity = receipt.fingerprint().to_owned();
         let runtime = root.path().join("llama");
         std::fs::create_dir(&runtime)?;
         let executable = runtime.join(crate::platform::executable("llama-server"));
@@ -833,7 +833,7 @@ mod tests {
             &meeting.id,
             meeting.run,
             &spec,
-            model_identity,
+            &model_identity,
         )?;
         engine.inference_pool.reject_metal(&first, false);
         assert!(engine.inference_pool.metal_rejected(&first));
@@ -846,7 +846,7 @@ mod tests {
                 &meeting.id,
                 meeting.run,
                 &spec,
-                model_identity
+                &model_identity
             )?
         );
         save_fixture_take(&engine, &meeting.id, 2)?;
@@ -862,7 +862,7 @@ mod tests {
                 &meeting.id,
                 meeting.run,
                 &spec,
-                model_identity
+                &model_identity
             )?
         );
         let first = worker_key(
@@ -871,7 +871,7 @@ mod tests {
             &meeting.id,
             meeting.run,
             &spec,
-            model_identity,
+            &model_identity,
         )?;
         assert_ne!(
             first,
@@ -881,7 +881,7 @@ mod tests {
                 &meeting.id,
                 meeting.run + 1,
                 &spec,
-                model_identity
+                &model_identity
             )?
         );
         let mut other = prefs.clone();
@@ -894,7 +894,7 @@ mod tests {
                 &meeting.id,
                 meeting.run,
                 &spec,
-                model_identity
+                &model_identity
             )?
         );
         std::fs::write(&executable, b"different runtime fixture")?;
@@ -906,11 +906,22 @@ mod tests {
                 &meeting.id,
                 meeting.run,
                 &spec,
-                model_identity
+                &model_identity
             )?
         );
-        std::fs::write(directory.join(&model.files[0].name), b"evil")?;
-        assert!(receipt.check_current().is_err());
+        let model_path = directory.join(&model.files[0].name);
+        #[cfg(not(windows))]
+        {
+            std::fs::write(&model_path, b"evil")?;
+            assert!(receipt.check_current().is_err());
+        }
+        #[cfg(windows)]
+        {
+            assert!(std::fs::write(&model_path, b"evil").is_err());
+            engine.model_integrity.invalidate(&directory);
+            drop(receipt);
+            std::fs::write(&model_path, b"evil")?;
+        }
         assert!(engine.model_integrity.verify(&directory, &model).is_err());
         assert_ne!(
             first,
@@ -1033,6 +1044,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(not(windows))]
     #[test]
     fn model_change_reaps_gpu_lease_without_rejection_or_cpu_retry() -> Result<()> {
         use sha2::Digest;
@@ -1100,6 +1112,46 @@ mod tests {
         assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
         assert!(!root.path().join("last-metal-fallback.json").exists());
         assert!(!root.path().join("llm-runtime.log").exists());
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn verified_windows_lease_blocks_writes_then_releases_for_model_removal() -> Result<()> {
+        use sha2::Digest;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let directory = root.path().join("fixture");
+        std::fs::create_dir(&directory)?;
+        let mut model = crate::models::model("qwen3-1.7b")?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", sha2::Sha256::digest(b"good"));
+        let path = directory.join(&model.files[0].name);
+        std::fs::write(&path, b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let session = checkout(
+            &engine,
+            "windows-model".into(),
+            Duration::from_secs(30),
+            || {
+                let mut session = fake(&engine)?;
+                session.backend = crate::inference::Backend::Cuda;
+                session.model_receipt = Some(receipt.clone());
+                Ok(session)
+            },
+        )?;
+        session.begin_request()?;
+        assert!(std::fs::write(&path, b"evil").is_err());
+        session.complete_request()?;
+        drop(session);
+        assert_ne!(engine.acceleration_status().state, "cpu_fallback");
+        engine.inference_pool.invalidate();
+        engine.model_integrity.clear();
+        drop(receipt);
+        std::fs::write(&path, b"evil")?;
+        assert!(engine.model_integrity.verify(&directory, &model).is_err());
+        std::fs::remove_dir_all(directory)?;
         Ok(())
     }
 

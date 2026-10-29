@@ -1326,6 +1326,7 @@ impl Engine {
             active.release_awake();
         }
         platform::stop_process(self.diarization_pid.load(Ordering::SeqCst), false);
+        self.model_integrity.clear();
         for _ in 0..30 {
             if self
                 .active

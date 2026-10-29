@@ -1,12 +1,17 @@
 //! Process-local receipts for pinned contents and observable filesystem changes.
 //!
-//! Cold verification hashes every catalog asset. Cached receipts recheck only
-//! filesystem-observable identity and timestamps; they are not secure immutable
-//! file-descriptor snapshots. An uncoordinated writable mmap can change bytes
-//! without observable stamp changes, notably on macOS, so these checks cannot
-//! detect every concurrent writer. Native loaders subsequently reopen paths:
+//! Cold verification hashes every catalog asset. Windows holds deny-write/delete
+//! read handles for the directory and the complete asset group before hashing,
+//! retaining them for the full receipt lifetime: NTFS timestamps alone can miss
+//! even ordinary writes. All receipt owners and cached copies must be released
+//! before replacing or deleting these files.
+//!
+//! Other platforms' cached receipts track filesystem-observable identity and
+//! timestamps. They are not secure immutable file-descriptor snapshots: an
+//! uncoordinated writable mmap can change bytes without observable stamp changes,
+//! notably on macOS. Native loaders subsequently reopen paths on every platform;
 //! callers must check immediately before/after loading and discard a worker on
-//! any detected change, without claiming that those native descriptors are pinned.
+//! any detected change, without claiming that the native descriptors are pinned.
 use crate::models::Model;
 use anyhow::Result;
 use sha2::{Digest, Sha256};
@@ -151,6 +156,8 @@ struct Verified {
     key: CacheKey,
     snapshot: Snapshot,
     fingerprint: String,
+    #[cfg(windows)]
+    retained: RetainedHandles,
 }
 
 #[derive(Clone, Debug)]
@@ -166,6 +173,10 @@ impl Receipt {
     }
 
     pub(crate) fn check_current(&self) -> Result<()> {
+        #[cfg(windows)]
+        self.0
+            .retained
+            .check_current(&self.0.key, &self.0.snapshot)?;
         let observed = snapshot(self.directory(), &self.0.key.catalog)?;
         if observed != self.0.snapshot {
             return Err(failure(format!(
@@ -249,6 +260,15 @@ impl Cache {
         self.verification_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let before = snapshot(directory, &key.catalog)?;
+        #[cfg(windows)]
+        let retained = {
+            // Acquire the entire set before reading the first byte. Otherwise
+            // an already-hashed secondary asset could be modified while a
+            // later asset hashes, with NTFS stamps unchanged inside a quantum.
+            let retained = RetainedHandles::open(directory, &key.catalog)?;
+            retained.check_current(&key, &before)?;
+            retained
+        };
         for (asset, expected) in key.catalog.files.iter().zip(&before.files) {
             self.verify_asset(directory, asset, expected)?;
         }
@@ -261,6 +281,8 @@ impl Cache {
             key: key.clone(),
             snapshot: before,
             fingerprint,
+            #[cfg(windows)]
+            retained,
         }));
         let mut successes = self
             .successes
@@ -284,6 +306,15 @@ impl Cache {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .retain(|key, _| key.directory.as_os_str() != directory.as_os_str());
+    }
+
+    /// Drop cached receipts, including Windows sharing handles. Workers and
+    /// other receipt owners must also be stopped/dropped before file updates.
+    pub(crate) fn clear(&self) {
+        self.successes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
     }
 
     fn verify_asset(
@@ -329,6 +360,49 @@ impl Cache {
     pub(crate) fn verification_count(&self) -> usize {
         self.verification_count
             .load(std::sync::atomic::Ordering::Relaxed)
+    }
+}
+
+#[cfg(windows)]
+#[derive(Debug)]
+struct RetainedHandles {
+    directory: File,
+    files: Vec<File>,
+}
+
+#[cfg(windows)]
+impl RetainedHandles {
+    fn open(directory: &Path, catalog: &CatalogKey) -> Result<Self> {
+        let (directory_handle, _) = open_checked(directory, true)?;
+        let mut files = Vec::with_capacity(catalog.files.len());
+        for asset in &catalog.files {
+            let (file, _) = open_checked(&directory.join(&asset.name), false)?;
+            files.push(file);
+        }
+        Ok(Self {
+            directory: directory_handle,
+            files,
+        })
+    }
+
+    fn check_current(&self, key: &CacheKey, expected: &Snapshot) -> Result<()> {
+        if identity(&self.directory, &key.directory, true)? != expected.directory {
+            return Err(failure("retained model directory changed"));
+        }
+        for ((file, asset), expected) in self
+            .files
+            .iter()
+            .zip(&key.catalog.files)
+            .zip(&expected.files)
+        {
+            if identity(file, &key.directory.join(&asset.name), false)? != *expected {
+                return Err(failure(format!(
+                    "retained model asset changed: {}",
+                    asset.name
+                )));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -723,6 +797,40 @@ mod tests {
         assert!(error.to_string().starts_with("model:integrity:"));
     }
 
+    #[cfg(windows)]
+    fn assert_sharing_denied(error: std::io::Error) {
+        assert_eq!(
+            error.raw_os_error(),
+            Some(windows::Win32::Foundation::ERROR_SHARING_VIOLATION.0 as i32),
+            "expected retained Windows sharing handles to prevent mutation: {error}"
+        );
+    }
+
+    #[cfg(windows)]
+    fn assert_rename_denied(error: std::io::Error) {
+        use windows::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION};
+        let code = error.raw_os_error();
+        assert!(
+            code == Some(ERROR_SHARING_VIOLATION.0 as i32)
+                || code == Some(ERROR_ACCESS_DENIED.0 as i32),
+            "expected retained Windows handles to prevent rename: {error}"
+        );
+    }
+
+    #[cfg(windows)]
+    fn release_receipt_for_corruption(
+        cache: &Cache,
+        directory: &Path,
+        receipt: Receipt,
+        path: &Path,
+        bytes: &[u8],
+    ) {
+        assert_sharing_denied(fs::write(path, bytes).unwrap_err());
+        receipt.check_current().unwrap();
+        drop(receipt);
+        cache.invalidate(directory);
+    }
+
     #[test]
     fn cached_receipt_rechecks_without_reading_contents() {
         let (_temp, directory, spec) = fixture(&[("weights.gguf", b"pinned weights")]);
@@ -835,7 +943,16 @@ mod tests {
         let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
         let cache = Cache::default();
         let receipt = cache.verify(&directory, &spec).unwrap();
+        #[cfg(windows)]
+        release_receipt_for_corruption(
+            &cache,
+            &directory,
+            receipt,
+            &directory.join("weights.gguf"),
+            b"evil",
+        );
         fs::write(directory.join("weights.gguf"), b"evil").unwrap();
+        #[cfg(not(windows))]
         assert!(receipt.check_current().is_err());
         assert!(cache.current(&directory, &spec).unwrap().is_none());
         assert_integrity(cache.verify(&directory, &spec));
@@ -848,7 +965,8 @@ mod tests {
         let receipt = cache.verify(&directory, &spec).unwrap();
         let path = directory.join("weights.gguf");
         let modified = fs::metadata(&path).unwrap().modified().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(5));
+        #[cfg(windows)]
+        release_receipt_for_corruption(&cache, &directory, receipt, &path, b"evil");
         fs::write(&path, b"evil").unwrap();
         File::options()
             .write(true)
@@ -857,6 +975,7 @@ mod tests {
             .set_times(fs::FileTimes::new().set_modified(modified))
             .unwrap();
         assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+        #[cfg(not(windows))]
         assert!(receipt.check_current().is_err());
         assert_integrity(cache.verify(&directory, &spec));
     }
@@ -867,7 +986,16 @@ mod tests {
             fixture(&[("weights.gguf", b"primary"), ("config.json", b"secondary")]);
         let cache = Cache::default();
         let receipt = cache.verify(&directory, &spec).unwrap();
+        #[cfg(windows)]
+        release_receipt_for_corruption(
+            &cache,
+            &directory,
+            receipt,
+            &directory.join("config.json"),
+            b"corrupted",
+        );
         fs::write(directory.join("config.json"), b"corrupted").unwrap();
+        #[cfg(not(windows))]
         assert!(receipt.check_current().is_err());
         assert_integrity(cache.verify(&directory, &spec));
     }
@@ -937,19 +1065,64 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
-    fn existing_writer_prevents_reuse_of_deferred_windows_timestamps() {
+    fn existing_writer_prevents_windows_receipt_admission() {
         let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
         let cache = Cache::default();
-        let receipt = cache.verify(&directory, &spec).unwrap();
         let writer = File::options()
             .write(true)
             .open(directory.join("weights.gguf"))
             .unwrap();
-        assert!(receipt.check_current().is_err());
         assert!(cache.current(&directory, &spec).unwrap().is_none());
         assert_integrity(cache.verify(&directory, &spec));
         drop(writer);
         cache.verify(&directory, &spec).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_sharing_handles_last_until_final_receipt_owner_drops() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let worker_receipt = receipt.clone();
+        cache.invalidate(&directory);
+        drop(receipt);
+        let path = directory.join("weights.gguf");
+        assert_sharing_denied(fs::write(&path, b"evil").unwrap_err());
+        assert_sharing_denied(fs::remove_file(&path).unwrap_err());
+        worker_receipt.check_current().unwrap();
+        drop(worker_receipt);
+        fs::write(&path, b"evil").unwrap();
+        assert_integrity(cache.verify(&directory, &spec));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn clearing_windows_cache_releases_handles_for_model_deletion() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        cache.verify(&directory, &spec).unwrap();
+        let path = directory.join("weights.gguf");
+        assert_sharing_denied(fs::remove_file(&path).unwrap_err());
+        cache.clear();
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(&directory).unwrap();
+        assert!(cache.current(&directory, &spec).unwrap().is_none());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_receipt_blocks_directory_replacement_until_released() {
+        let (temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let moved = temp.path().join("moved-model");
+        assert_rename_denied(fs::rename(&directory, &moved).unwrap_err());
+        receipt.check_current().unwrap();
+        drop(receipt);
+        cache.invalidate(&directory);
+        fs::rename(&directory, &moved).unwrap();
+        assert!(cache.current(&directory, &spec).unwrap().is_none());
     }
 
     #[test]
@@ -997,14 +1170,25 @@ mod tests {
     #[test]
     fn rejects_path_replacement_with_matching_contents() {
         let (_temp, directory, spec) = fixture(&[("weights.gguf", b"good")]);
-        let cache = Cache::default();
-        let receipt = cache.verify(&directory, &spec).unwrap();
         let replacement = directory.join("replacement");
         fs::write(&replacement, b"good").unwrap();
+        let cache = Cache::default();
+        let receipt = cache.verify(&directory, &spec).unwrap();
+        let fingerprint = receipt.fingerprint().to_owned();
+        #[cfg(windows)]
+        {
+            assert_rename_denied(
+                fs::rename(&replacement, directory.join("weights.gguf")).unwrap_err(),
+            );
+            receipt.check_current().unwrap();
+            drop(receipt);
+            cache.invalidate(&directory);
+        }
         fs::rename(&replacement, directory.join("weights.gguf")).unwrap();
+        #[cfg(not(windows))]
         assert!(receipt.check_current().is_err());
         let replacement_receipt = cache.verify(&directory, &spec).unwrap();
-        assert_ne!(receipt.fingerprint(), replacement_receipt.fingerprint());
+        assert_ne!(fingerprint, replacement_receipt.fingerprint());
     }
 
     #[cfg(unix)]
@@ -1028,17 +1212,36 @@ mod tests {
         let (_temp, directory, spec) =
             fixture(&[("config.json", b"good"), ("weights.gguf", b"weights")]);
         let path = directory.join("config.json");
+        #[cfg(windows)]
+        let blocked = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        #[cfg(windows)]
+        let blocked_in_hook = Arc::clone(&blocked);
         // The first hook installs a hook that runs while the second file hashes.
         READ_HOOK.with(|slot| {
             *slot.borrow_mut() = Some(Box::new(move || {
                 READ_HOOK.with(|slot| {
                     *slot.borrow_mut() = Some(Box::new(move || {
-                        fs::write(&path, b"evil").unwrap();
+                        let write = fs::write(&path, b"evil");
+                        #[cfg(windows)]
+                        {
+                            assert_sharing_denied(write.unwrap_err());
+                            blocked_in_hook.store(true, std::sync::atomic::Ordering::SeqCst);
+                        }
+                        #[cfg(not(windows))]
+                        write.unwrap();
                     }))
                 });
             }))
         });
-        assert_integrity(Cache::default().verify(&directory, &spec));
+        let result = Cache::default().verify(&directory, &spec);
+        #[cfg(windows)]
+        {
+            let receipt = result.unwrap();
+            assert!(blocked.load(std::sync::atomic::Ordering::SeqCst));
+            receipt.check_current().unwrap();
+        }
+        #[cfg(not(windows))]
+        assert_integrity(result);
     }
 
     #[cfg(unix)]
