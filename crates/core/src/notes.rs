@@ -379,9 +379,6 @@ fn generate_inner(
         json!({"role":"user","content":content}),
     ];
     let mut messages = compose_messages.clone();
-    // Keep the source envelope separate from its model-facing presentation.
-    // Echo validation must always compare IDs against the bound envelope.
-    let mut composition_input = content.clone();
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
@@ -582,21 +579,7 @@ fn generate_inner(
             session.check_model()?;
             let prepared_content = prepared.apply(&content, &context.segments)?;
             messages = compose_messages.clone();
-            let presentation = writer::composition_content(&prepared_content)?;
-            let instruction = if writer::chinese(snapshot, &prefs.minutes_language) {
-                " 同一事实只写一次；名称、金额、否定或状态不同的内容仍须保留，不能擅自合并。归纳成连贯段落，不要逐条翻译或复述输入。"
-            } else {
-                " State each repeated fact once. Preserve differences in names, amounts, negation and status instead of merging them. Synthesize connected paragraphs rather than translating or repeating each input passage."
-            };
-            messages[0]["content"] = format!(
-                "{}{instruction}",
-                messages[0]["content"]
-                    .as_str()
-                    .context("Missing composition instruction")?
-            )
-            .into();
-            messages[1]["content"] = presentation.into();
-            composition_input = prepared_content;
+            messages[1]["content"] = prepared_content.into();
             prompt_tokens = message_tokens(agent, base, auth, &messages)?;
             if prompt_tokens > prefs.context_size as usize - 1148 {
                 bail!("译后来源超出纪要上下文预算，待处理内容已保留");
@@ -615,7 +598,7 @@ fn generate_inner(
         } else if let Some(plan) = &translation_repair {
             plan.body(&raw_body)
         } else {
-            writer::body_text(&raw_body, &composition_input)
+            writer::body_text(&raw_body, messages[1]["content"].as_str().unwrap_or("{}"))
         };
         let mut checked_prose = None;
         let mut unitless_yuan_corrections = 0;
@@ -845,7 +828,6 @@ fn generate_inner(
                         json!({"role":"system","content":format!("{repair_system} {hint}")}),
                         json!({"role":"user","content":serde_json::to_string(&repair)?}),
                     ];
-                    composition_input = serde_json::to_string(&repair)?;
                 }
                 let repair_input = messages
                     .iter()
