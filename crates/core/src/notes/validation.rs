@@ -855,6 +855,50 @@ fn validate_document(
     Ok(result)
 }
 #[cfg(test)]
+mod adjacent_model_number_repro {
+    use super::*;
+
+    fn source(text: &str) -> Segment {
+        Segment {
+            id: "s1".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        }
+    }
+    fn check(source_text: &str, body: &str) -> anyhow::Result<Vec<Suggestion>> {
+        let draft = serde_json::json!({"sections":[{"title":"设备","body":body,"sources":[1]}]})
+            .to_string();
+        validate(&draft, &[source(source_text)], "m")
+    }
+
+    #[test]
+    fn adjacent_model_repro_currently_rejects_same_spoken_digits() {
+        let error = check("设备代号是 MX二七五零。", "设备代号是 MX2750。")
+            .expect_err("candidate10 unexpectedly accepted the known reproduction");
+        assert!(error.to_string().contains("数字或日期"));
+    }
+    #[test]
+    fn adjacent_model_repro_spaced_and_wrong_digit_controls() {
+        assert!(check("设备代号是 MX 二七五零。", "设备代号是 MX2750。").is_ok());
+        assert!(check("设备代号是 MX 二七五零。", "设备代号是 MX2751。").is_err());
+        assert_eq!(normalize_digit_words("一二月"), "一二月");
+        assert_eq!(normalize_digit_words("三千"), "三千");
+    }
+    #[test]
+    #[ignore = "known candidate10 false rejection; desired behavior after the fix"]
+    fn adjacent_model_repro_should_accept_equal_identifier() {
+        assert!(check("设备代号是 MX二七五零。", "设备代号是 MX2750。").is_ok());
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     #[test]
