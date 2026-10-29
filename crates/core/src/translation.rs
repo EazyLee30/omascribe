@@ -976,11 +976,13 @@ fn checked_progress(
     let mut evidence = passage.clone();
     evidence.text = input.to_owned();
     validate_text(text, &evidence, target, terms).context("chunk_evidence_mismatch")?;
+    let protected = names::Names::new(terms, &evidence.text);
+    let text = notes::compact_source_model_separators(text, &evidence.text, protected.spellings());
     let mut next = chunks::Progress {
         end: previous.end,
         text: previous.text.clone(),
     };
-    next.append(&passage.text, end, text, target)
+    next.append(&passage.text, end, &text, target)
         .context("progress_limit")?;
     if next.end == passage.text.len() {
         validate_text(&next.text, passage, target, terms).context("passage_evidence_mismatch")?;
@@ -1262,6 +1264,91 @@ mod tests {
             assert_eq!(previous.end, 0);
             assert!(previous.text.is_empty());
         }
+    }
+    #[test]
+    fn captured_caption_keeps_a_single_known_model_separator() {
+        let source = "设备代号是MX二七五零，测试尚未完成，预算尚未批准。";
+        let passage = crate::Segment {
+            id: "s".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        // Exact response from the isolated public-fixture run, including its
+        // separator. The source has no canonical model supplied in note context.
+        let expected = "Device code is MX-2750, testing has not been completed, and the budget has not been approved.";
+        let previous = chunks::Progress::default();
+        let checked = checked_progress(
+            &json!({"translation":expected}).to_string(),
+            source,
+            &previous,
+            &passage,
+            source.len(),
+            "en",
+            &terms,
+        )
+        .unwrap_or_else(|error| panic!("captured faithful caption rejected: {error:#}"));
+        assert_eq!(checked.text, expected.replace("MX-2750", "MX2750"));
+        assert_eq!(checked.end, source.len());
+        assert_eq!(passage.text, source);
+        for wrong in [
+            expected.replace("MX-2750", "MX-2751"),
+            expected.replace("MX-2750", "QX-2750"),
+            expected.replace("has not been approved", "has been approved"),
+        ] {
+            assert!(checked_progress(
+                &json!({"translation":wrong}).to_string(),
+                source,
+                &previous,
+                &passage,
+                source.len(),
+                "en",
+                &terms,
+            )
+            .is_err());
+            assert_eq!(previous.end, 0);
+            assert!(previous.text.is_empty());
+        }
+    }
+    #[test]
+    fn model_separator_display_preserves_explicit_source_spelling() {
+        let source = "The device code is MX-2750, the test has not been completed, and the budget has not been approved.";
+        let passage = crate::Segment {
+            id: "s".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: source.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        let expected = "设备代号是MX-2750，测试尚未完成，预算尚未批准。";
+        assert!(names::Names::new(&terms, source)
+            .spellings()
+            .contains(&"MX-2750".into()));
+        let checked = checked_progress(
+            &json!({"translation":expected}).to_string(),
+            source,
+            &chunks::Progress::default(),
+            &passage,
+            source.len(),
+            "zh",
+            &terms,
+        )
+        .unwrap_or_else(|error| panic!("explicit source model spelling rejected: {error:#}"));
+        assert_eq!(checked.text, expected);
+        assert_eq!(checked.end, source.len());
     }
     #[test]
     fn caption_validation_categories_do_not_emit_source_or_rejected_text() {

@@ -46,7 +46,7 @@ use std::{
 };
 use uuid::Uuid;
 pub use validation::validate;
-pub(crate) use validation::validate_translation;
+pub(crate) use validation::{compact_source_model_separators, validate_translation};
 pub(crate) use week_qualifiers::{
     repair as repair_week_qualifiers, validate as validate_week_qualifiers,
     Mismatch as WeekQualifierMismatch,

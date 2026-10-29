@@ -320,19 +320,26 @@ fn numeric_model_has_continuation(text: &str) -> bool {
     let capacity = MEMORY
         .get_or_init(|| {
             regex::Regex::new(
-                r"(?i)^[ \t]+[0-9]+(?:\.[0-9]+)?[ \t]*(?:gib|mib|gb|mb)(?:$|[^a-z0-9_])",
+                r"(?i)^[ \t]+(?:-[ \t]+)?[0-9]+(?:\.[0-9]+)?[ \t]*(?:gib|mib|gb|mb)(?:$|[^a-z0-9_])",
             )
             .unwrap()
         })
         .is_match(text);
-    crate::terminology::model_has_continuation(text) && !capacity
+    // A second separator begins an opaque suffix/range. A clearly separated
+    // explicit capacity above remains a different attribute. Keep this local
+    // to numeric evidence, not term replacement.
+    (text.trim_start_matches([' ', '\t']).starts_with('-')
+        || crate::terminology::model_has_continuation(text))
+        && !capacity
 }
 fn model_number_spellings(text: &str) -> Vec<(std::ops::Range<usize>, String)> {
     static MODEL: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     MODEL
         .get_or_init(|| {
-            regex::Regex::new(r"(?i)([a-z]{2,8})[ \t]*([0-9]{2,8}|[零〇一二三四五六七八九]{2,8})")
-                .unwrap()
+            regex::Regex::new(
+                r"(?i)([a-z]{2,8})[ \t]*(?:-[ \t]*)?([0-9]{2,8}|[零〇一二三四五六七八九]{2,8})",
+            )
+            .unwrap()
         })
         .captures_iter(text)
         .filter_map(|parts| {
@@ -436,22 +443,32 @@ fn mask_numeric_speaker_names(text: &str, sources: &[Source]) -> String {
 
 fn opaque_model_suffix(text: &str) -> &str {
     let text = text.trim_start_matches([' ', '\t']);
-    let ascii = text
-        .chars()
-        .next()
-        .is_some_and(|c| c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％'].contains(&c));
-    let number_or_identifier_bytes: usize = text
-        .chars()
-        .take_while(|c| {
-            c.is_numeric()
-                || if ascii {
-                    c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％'].contains(c)
-                } else {
-                    "零〇一二三四五六七八九十百千万亿两幺点".contains(*c)
-                }
-        })
-        .map(char::len_utf8)
-        .sum();
+    let ascii = text.chars().next().is_some_and(|c| {
+        c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％', '-'].contains(&c)
+    });
+    let mut number_or_identifier_bytes = 0;
+    let mut after_hyphen = false;
+    for (offset, c) in text.char_indices() {
+        let identifier_char = c.is_numeric()
+            || if ascii {
+                c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％', '-'].contains(&c)
+            } else {
+                "零〇一二三四五六七八九十百千万亿两幺点".contains(c)
+            };
+        let hyphen_space = ascii
+            && [' ', '\t'].contains(&c)
+            && (after_hyphen
+                || text[offset..]
+                    .trim_start_matches([' ', '\t'])
+                    .starts_with('-'));
+        if !identifier_char && !hyphen_space {
+            break;
+        }
+        number_or_identifier_bytes = offset + c.len_utf8();
+        if !hyphen_space {
+            after_hyphen = c == '-';
+        }
+    }
     let unit_bytes = crate::terminology::MODEL_CONTINUATION_UNITS
         .iter()
         .find(|unit| text[number_or_identifier_bytes..].starts_with(**unit))
@@ -473,13 +490,18 @@ fn unsupported_model_literal(body: &str, quotes: &[&str], models: &HashSet<Strin
     }
     let identifiers = |text: &str| {
         IDENTIFIER
-            .get_or_init(|| regex::Regex::new(r"(?i)([a-z]{2,8})[ \t]*([0-9]{2,8})").unwrap())
+            // Detection deliberately includes malformed separators. Only the
+            // narrower model_number_spellings grammar can establish evidence.
+            .get_or_init(|| regex::Regex::new(r"(?i)([a-z]{2,8})([ \t-]*)([0-9]{2,8})").unwrap())
             .captures_iter(text)
             .filter_map(|parts| {
                 let whole = parts.get(0)?;
                 let prefix = parts.get(1)?.as_str();
-                let number = parts.get(2)?.as_str();
-                if !digits.contains(number)
+                let separator = parts.get(2)?.as_str();
+                let number = parts.get(3)?.as_str();
+                let canonical = format!("{}{number}", prefix.to_ascii_lowercase());
+                let known_series = crate::terminology::model_identifier(&canonical).is_some();
+                if (!digits.contains(number) && !known_series)
                     || text[..whole.start()]
                         .chars()
                         .next_back()
@@ -498,9 +520,15 @@ fn unsupported_model_literal(body: &str, quotes: &[&str], models: &HashSet<Strin
                 } else {
                     ""
                 };
-                let canonical = format!("{}{number}", prefix.to_ascii_lowercase());
-                let known = !extended && crate::terminology::model_identifier(&canonical).is_some();
-                Some((format!("{canonical}{}", suffix.to_ascii_lowercase()), known))
+                let separators: String = separator.chars().filter(|c| *c == '-').collect();
+                let valid_separator = separators.len() <= 1;
+                let known = !extended && valid_separator && known_series;
+                let literal = if known || separators.is_empty() {
+                    canonical
+                } else {
+                    format!("{}{separators}{number}", prefix.to_ascii_lowercase())
+                };
+                Some((format!("{literal}{}", suffix.to_ascii_lowercase()), known))
             })
             .collect::<Vec<_>>()
     };
@@ -512,6 +540,43 @@ fn unsupported_model_literal(body: &str, quotes: &[&str], models: &HashSet<Strin
     identifiers(body)
         .iter()
         .any(|(literal, known)| !known && !quoted.contains(literal))
+}
+
+/// Use compact display spelling only for complete, validated known models also
+/// present in this source. This changes separator typography, never model digits
+/// or source text. Protected source/note names and opaque identifiers stay literal.
+pub(crate) fn compact_source_model_separators<'a>(
+    text: &'a str,
+    source: &str,
+    protected: &[String],
+) -> std::borrow::Cow<'a, str> {
+    if !text.contains('-') {
+        return std::borrow::Cow::Borrowed(text);
+    }
+    let source_models = numeric_evidence([source]).models;
+    let mut result = String::new();
+    let mut cursor = 0;
+    for (range, canonical) in model_number_spellings(text) {
+        let spelling = &text[range.clone()];
+        if !spelling.contains('-')
+            || !source_models.contains(&canonical)
+            || protected.iter().any(|name| {
+                name.as_bytes()
+                    .windows(spelling.len())
+                    .any(|part| part.eq_ignore_ascii_case(spelling.as_bytes()))
+            })
+        {
+            continue;
+        }
+        result.push_str(&text[cursor..range.start]);
+        result.extend(spelling.chars().filter(|c| !['-', ' ', '\t'].contains(c)));
+        cursor = range.end;
+    }
+    if cursor == 0 {
+        return std::borrow::Cow::Borrowed(text);
+    }
+    result.push_str(&text[cursor..]);
+    std::borrow::Cow::Owned(result)
 }
 fn normalize_digit_words(text: &str) -> String {
     // Literal digit-by-digit readings (e.g. a mic check or a spoken ID) are
@@ -1251,6 +1316,7 @@ mod adjacent_model_number_repro {
         assert!(check("显卡是 GTX一六五零，显存4GB。", "显卡是 GTX1650 4GB。").is_ok());
         assert!(check("显卡是 GTX1650 4GB。", "显卡是 GTX1650，显存8GB。").is_err());
         assert!(check("显卡是 GTX1650 4。", "显卡是 GTX1650。").is_err());
+        assert!(check("显卡是 GTX1650 - 4GB。", "显卡是 GTX1650，显存4GB。").is_ok());
     }
     #[test]
     fn adjacent_model_guard_preserves_supported_alphanumeric_speaker_names() {
@@ -1321,6 +1387,85 @@ mod adjacent_model_number_repro {
                 "a Han unit must not become the plain model literal: {body}"
             );
         }
+    }
+    #[test]
+    fn adjacent_model_single_hyphen_preserves_complete_identity() {
+        for spelling in ["MX-2750", "mx - 2750", "MX\t-\t2750", "MX-二七五零"] {
+            let spoken = "设备代号是 MX二七五零。";
+            let body = format!("设备代号是 {spelling}。");
+            assert!(check(spoken, &body).is_ok(), "{spelling}");
+            assert!(check(&body, spoken).is_ok(), "{spelling}");
+        }
+        // A following ASCII hyphen is part of an opaque identifier, not a
+        // licence to keep only its prefix or borrow independent invoice digits.
+        for model in [
+            "MX-2750-1",
+            "MX-2750 - 1",
+            "MX-2750-Ti",
+            "MX-2750 Ti",
+            "MX-2750台",
+            "MX-2750年",
+            "MX-2750--1",
+            "MX--2750",
+            "MX-27-50",
+            "MX-2751",
+            "QX-2750",
+            "RX-2750",
+        ] {
+            let input = "设备是 MX二七五零，发票编号是2750、27、50、1。";
+            let body = format!("设备代号是 {model}。");
+            assert!(check(input, &body).is_err(), "unsupported {model}");
+        }
+        for input_model in ["MX-2750-1", "MX-27-50", "MX--2750"] {
+            let input = format!("设备代号是 {input_model}。");
+            assert!(check(&input, "设备代号是 MX2750。").is_err(), "{input}");
+        }
+        for model in ["QX-2750", "MX-2750-1", "MX-2750-Ti", "MX--2750"] {
+            let text = format!("设备是 MX二七五零，另一个代号是 {model}。");
+            assert!(check(&text, &text).is_ok(), "literal {model}");
+        }
+        assert!(check(
+            "设备是 MX二七五零，另一个代号是 MX-2750-，发票编号是1。",
+            "另一个代号是 MX-2750- 1。"
+        )
+        .is_err());
+        assert!(check("设备是 MX二七五零。", "设备是 MX-2750，数量2750台。").is_err());
+        assert!(check("发票编号是2750。", "设备代号是 MX-2750。").is_err());
+        for (opaque, changed) in [
+            ("QX-2750", "QX2750"),
+            ("QX2750", "QX-2750"),
+            ("MX-2750Ti", "MX2750Ti"),
+        ] {
+            let input = format!("设备是 MX二七五零，另一个代号是 {opaque}。");
+            let body = format!("另一个代号是 {changed}。");
+            assert!(check(&input, &body).is_err(), "{input} -> {body}");
+        }
+    }
+    #[test]
+    fn compact_caption_models_are_source_bound_and_do_not_touch_opaque_forms() {
+        let input = "设备是 MX二七五零。";
+        assert_eq!(
+            compact_source_model_separators("Use MX-2750.", input, &[]),
+            "Use MX2750."
+        );
+        assert_eq!(
+            compact_source_model_separators("Use MX-2750.", input, &["MX-2750".into()]),
+            "Use MX-2750."
+        );
+        for value in [
+            "MX-2751",
+            "RX-2750",
+            "QX-2750",
+            "MX--2750",
+            "MX-2750-Ti",
+            "MX-2750台",
+        ] {
+            assert_eq!(compact_source_model_separators(value, input, &[]), value);
+        }
+        assert_eq!(
+            compact_source_model_separators("Use MX-2750.", "发票编号2750。", &[]),
+            "Use MX-2750."
+        );
     }
 }
 
