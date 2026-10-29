@@ -1,0 +1,36 @@
+{
+  "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+  "fixture_case": "en_late_note_spelling_sync",
+  "fixture_git_sha256": "0368586654dd9abc1e6ce986ace38e7fb5431be9bd99cd270f7c9a5794193dba",
+  "fixture_cases": 63,
+  "local_date": "2026-10-29",
+  "fixture_input_is_synthetic": true,
+  "automatic_harness_passed": true,
+  "harness_errors": [],
+  "before_revision": 1,
+  "after_revision": 2,
+  "initial_pending_count": 1,
+  "initial_citations_exact": true,
+  "initial_body_contains_source_spelling": true,
+  "same_paragraph_repaired_and_new_citations_exact": true,
+  "after_exact_canonical_source": true,
+  "note_save_inference_jobs_before": 1,
+  "note_save_inference_jobs_after": 1,
+  "no_generation_after_note": true,
+  "generation_seconds": 8.468,
+  "cuda_offload_observed": [
+    [
+      29,
+      29
+    ]
+  ],
+  "cuda_verification_seconds": 49.391,
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "cli_sha256": "feaa932f2be5b90d9aadb83008ef1c23319676b0c00901414cfc8d0d2f7a3672",
+  "limits": [
+    "Synthetic two-phase case; separate from real transcript run, which produced no initial minutes and did not validate synchronization.",
+    "Not actual microphone, ASR, fresh install, full corpus or release acceptance.",
+    "Automatic pattern and citation checks do not replace full semantic review."
+  ],
+  "preparation_failure": "Initial harness process had no Git executable in its isolated PATH and stopped while reading source identity, before executing any test. Resumed once after restoring the installed Git path."
+}

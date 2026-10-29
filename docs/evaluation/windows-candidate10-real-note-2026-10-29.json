@@ -1,0 +1,57 @@
+{
+  "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+  "local_date": "2026-10-29",
+  "test": "One isolated reconstruction of earliest Bilingual ASR segment from a user-confirmed Realtek recording; the original live capture already used note hints. No audio copied.",
+  "initial_minutes": {
+    "generation_completed_without_command_error": true,
+    "pending_fresh_count": 0,
+    "runtime_rejection": "source number or date validation rejected generation; no minutes were committed",
+    "existing_minutes_sync_testable": false
+  },
+  "late_note": {
+    "auto_notes": false,
+    "save_seconds": 0.063,
+    "segment_before_revision": 1,
+    "segment_after_revision": 2,
+    "before_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": false,
+      "gtx1650": false
+    },
+    "after_exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": false,
+      "gtx1650": true
+    },
+    "terminology_edits": 1,
+    "human_edits": 0,
+    "segment_history_revisions": [
+      1
+    ],
+    "minutes_after_count": 0,
+    "inference_jobs_before": 1,
+    "inference_jobs_after": 1
+  },
+  "cuda_component": "acceleration-ci-40367160891",
+  "catalog_sha256": "053114268f2d66e9b0d571c2a97ac40e9c10be17f482a3fce54fc459f1e92956",
+  "cuda_verification_seconds": 52.891,
+  "cuda_offload_observed": [
+    [
+      29,
+      29
+    ]
+  ],
+  "cli_sha256": "feaa932f2be5b90d9aadb83008ef1c23319676b0c00901414cfc8d0d2f7a3672",
+  "worker_source": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+  "worker_invoked": false,
+  "preparation_failure": "First test harness attempted to pass explicit timestamps through a helper that already fills them and stopped before inserting the segment. Resumed once with a direct isolated database reconstruction retaining original timestamps; no generation or user input was repeated.",
+  "limits": [
+    "No actual audio, transcript, note, generated text, or hashes of these private contents included.",
+    "Only one original ASR segment reconstructed in a fresh isolated meeting, not a new live recording.",
+    "First generation failed; existing minutes synchronization and citation updates were not exercised or validated.",
+    "No generation was retried and the original ASR text was not changed to obtain a pass.",
+    "Copied CUDA component reverified; ASR worker from candidate9 was not invoked during generation."
+  ]
+}
