@@ -1,0 +1,56 @@
+{
+  "candidate_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+  "local_date": "2026-10-30",
+  "github_run_id": 40921374918,
+  "github_job_id": 123615277708,
+  "github_job_url": "https://github.com/EazyLee30/omascribe/actions/runs/40921374918/job/123615277708",
+  "github_artifact_url": "https://github.com/EazyLee30/omascribe/actions/runs/40921374918/artifacts/12922026693",
+  "artifact_zip_sha256": "2a1c4762571aa95e4d182e717c2a116cf20e0a729ffd729a0bc0dc9e472a6918",
+  "platform": "Windows-2022Server-10.0.20348-SP0",
+  "cli_build": {
+    "profile": "release",
+    "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "f9e3d55b215536c5d381a4e9f3507e3380974b5aee8ed5cf25d176d8b480ed3a",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "installed_cli_sha256": "7cbbaac691e7ce12425098342a0ecc6ea2660e0e5c4908435755f5ede67c6a10",
+  "model": "qwen3-1.7b Q4_K_M",
+  "backend": "cpu",
+  "evaluation": "translation off, explicit generation",
+  "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+  "fixture_sha256": "19d9c9c7354b5ae20a391e307aa580bc2c5ba13a92a1ff0e79711117a5151890",
+  "case": "zh_recorded_mixed_prose_fidelity",
+  "prior_case_pass_lines": 34,
+  "prior_scope": "34 individual named cases printed PASS in this run before first failure; automatic pattern checks only.",
+  "case_seconds": 53.75,
+  "errors": [
+    "Missing: (?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+  ],
+  "synthetic_source_segments": [
+    "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
+    "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+    "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+    "邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+    "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+    "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性"
+  ],
+  "first_batch_generated_body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台已经结束，但 festival 中可能有部分区域仍将持续播放音乐直到深夜。",
+  "final_generated_body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+  "first_batch_description": "The phrase for main stage music asserts already ended although source is uncertain (may have finished).",
+  "final_observation": "Final body omits all English music/festival facts, including main-stage uncertainty and continuing music until late; it quotes all six source segments despite that omission.",
+  "final_source_count": 6,
+  "first_batch_validation_error": null,
+  "last_batch_validation_error": null,
+  "first_batch_source_coverage": 5,
+  "final_source_coverage": 6,
+  "capture_check": "Synthetic two-take append/retranscription smoke passed per job log; not physical microphone.",
+  "pipeline": "NSIS installer build succeeded; installed-assets and offline inference step failed; smaller update step skipped.",
+  "limitations": [
+    "Public or fictional fixture and CI artifact only; no user recording, transcript or personal content used.",
+    "Pattern checks do not establish complete semantic correctness of the prior PASS cases.",
+    "One Windows CPU run is not evidence about CUDA or other devices.",
+    "No new generation or CI rerun performed; no user installation or release."
+  ]
+}
