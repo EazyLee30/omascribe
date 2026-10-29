@@ -36,6 +36,13 @@ PREFERENCES = dict(asr_model="zipformer-small", llm_model="qwen3-1.7b", threads=
                    context_size=2048, memory_budget_mib=4096, inference_backend="metal",
                    resource_mode="balanced", auto_notes=True, translation_mode="bilingual",
                    minutes_language="zh", diarization=False, use_memory=False, use_knowledge=False)
+RELEASE_COUNTERS = ("ttl_releases", "batch_releases", "lease_releases", "other_releases")
+LIFECYCLE_COUNTERS = ("releases", *RELEASE_COUNTERS, "resource_stops", "admission_refusals", "retention_refusals")
+ADVERSE_COUNTERS = ("other_releases", "resource_stops", "admission_refusals", "retention_refusals")
+# Schema 1 phases emitted by TaskTrace in notes.rs and translation.rs.
+TRACE_PHASES = frozenset(("started", "worker", "request_started", "generation", "finished", "abandoned",
+                          "retrieval", "article_state", "article_prompt", "article_repair", "chunk",
+                          "literal_caption", "validation_failed", "source_unit_repair", "source_week_repair", "batch"))
 
 
 def measured(value):
@@ -125,9 +132,55 @@ def snapshot_summary(snapshot, seconds):
 
 
 def inference_summary(events):
-    """Count real HTTP generation attempts, including rejected and failed work."""
-    if not events or any(row.get("schema") != 1 for row in events):
+    """Require closed successful jobs; retain repaired/rejected request costs."""
+    if not events:
         raise ValueError("Missing or unsupported inference trace")
+    jobs = {}
+    for row in events:
+        if (not isinstance(row, dict) or type(row.get("schema")) is not int or row["schema"] != 1
+                or row.get("task") not in ("translation", "minutes")
+                or not isinstance(row.get("job"), str) or not row["job"]
+                or not isinstance(row.get("phase"), str) or row["phase"] not in TRACE_PHASES
+                or not isinstance(row.get("metrics"), dict)):
+            raise ValueError("Missing or unsupported inference trace")
+        job, phase, metrics = row["job"], row["phase"], row["metrics"]
+        if job not in jobs:
+            if phase != "started":
+                raise ValueError("Inference job lacks its start")
+            jobs[job] = dict(task=row["task"], closed=False, worker=False, seen=set(), pending=set(), completed=False)
+            continue
+        state = jobs[job]
+        if state["task"] != row["task"] or state["closed"] or phase == "started":
+            raise ValueError("Inference job identity/start/terminal order is invalid")
+        if phase in ("abandoned", "aborted", "cancelled", "failed", "admission_failed", "admission_refused"):
+            raise ValueError("An inference job was abandoned or aborted")
+        if phase == "worker":
+            if state["worker"] or state["seen"]:
+                raise ValueError("An inference job has duplicate or late worker evidence")
+            state["worker"] = True
+        if phase in ("request_started", "generation"):
+            attempt = metrics.get("attempt")
+            if type(attempt) is not int or attempt < 1:
+                raise ValueError("Invalid inference request attempt")
+            if phase == "request_started":
+                if (metrics.get("endpoint") != "chat" or not state["worker"] or state["pending"]
+                        or attempt != len(state["seen"]) + 1):
+                    raise ValueError("Missing worker or nonsequential real chat request start")
+                state["seen"].add(attempt)
+                state["pending"].add(attempt)
+            else:
+                if attempt not in state["pending"] or type(metrics.get("completed")) is not bool:
+                    raise ValueError("Generation lacks its outstanding request start")
+                state["pending"].remove(attempt)
+                state["completed"] = metrics["completed"]
+        if phase == "finished":
+            if (metrics.get("committed") is not True or type(metrics.get("items")) is not int
+                    or metrics["items"] < 0 or state["pending"]
+                    or state["seen"] and not state["completed"]):
+                raise ValueError("Unsuccessful or incomplete inference job")
+            state["closed"] = True
+    if any(not state["closed"] for state in jobs.values()):
+        raise ValueError("An inference job has no successful terminal outcome")
     workers = [row["metrics"] for row in events if row["phase"] == "worker"]
     if not workers or any(row.get("backend") != "metal" or type(row.get("reused")) is not bool
                           or not measured(row.get("startup_ms")) for row in workers):
@@ -179,17 +232,107 @@ def inference_summary(events):
 
 def incurred_inference_costs(events):
     """Best-effort totals survive any quality/evidence gate failure."""
-    generated = [row.get("metrics") or {} for row in events if row.get("phase") == "generation"]
-    attempted = sum(row.get("phase") == "request_started" and (row.get("metrics") or {}).get("endpoint") == "chat" for row in events)
-    complete = bool(events) and attempted == len(generated)
-    return dict(attempted_requests=attempted if events else None,
-                observed_responses=len(generated) if events else None,
-                completed_responses=sum(row.get("completed") is True for row in generated) if events else None,
-                validation_failures=sum(row.get("phase") == "validation_failed" for row in events) if events else None,
+    rows, errors = [], collections.Counter()
+    for row in events:
+        if not isinstance(row, dict):
+            errors["nonobject_rows"] += 1
+            continue
+        phase = row.get("phase")
+        if type(row.get("schema")) is not int or row["schema"] != 1 or not isinstance(phase, str) or phase not in TRACE_PHASES:
+            errors["unsupported_events"] += 1
+        metrics = row.get("metrics")
+        if not isinstance(metrics, dict):
+            errors["nonobject_metrics"] += 1
+            metrics = {}
+        if phase == "generation" and metrics.get("usage") is not None and not isinstance(metrics["usage"], dict):
+            errors["nonobject_usage"] += 1
+            metrics = dict(metrics, usage=None)
+        rows.append(dict(phase=phase, metrics=metrics))
+    generated = [row["metrics"] for row in rows if row["phase"] == "generation"]
+    attempted = sum(row["phase"] == "request_started" and row["metrics"].get("endpoint") == "chat" for row in rows)
+    complete = bool(events) and not errors and attempted == len(generated)
+    known_times = [row["request_ms"] for row in generated if measured(row.get("request_ms"))]
+    return dict(trace_error_count=sum(errors.values()), trace_errors=dict(errors),
+                observed_attempted_requests=attempted if events else None,
+                observed_generation_rows=len(generated) if events else None,
+                unmeasured_response_costs=sum(not measured(row.get("request_ms")) for row in generated),
+                attempted_requests=attempted if events and not errors else None,
+                observed_responses=len(generated) if events and not errors else None,
+                completed_responses=sum(row.get("completed") is True for row in generated) if events and not errors else None,
+                validation_failures=sum(row["phase"] == "validation_failed" for row in rows) if events and not errors else None,
                 request_ms=measured_sum(row.get("request_ms") for row in generated) if complete else None,
-                observed_request_ms=measured_sum(row.get("request_ms") for row in generated) if events else None,
+                observed_request_ms=sum(known_times) if known_times else 0 if complete and not generated else None,
                 **{key: measured_sum((row.get("usage") or {}).get(key) for row in generated) if complete else None
                    for key in ("input_tokens", "output_tokens", "cached_tokens", "prefill_ms", "decode_ms")})
+
+
+def writer_resource_summary(path):
+    """Necessary negative screen; a last-spawn diagnostic cannot prove TTL cause."""
+    try:
+        value = read_json(path)
+    except (OSError, ValueError) as error:
+        raise ValueError("Unreadable writer-resource diagnostic") from error
+    if (not isinstance(value, dict) or value.get("backend") != "metal"
+            or type(value.get("budget_mib")) is not int
+            or value["budget_mib"] != PREFERENCES["memory_budget_mib"]
+            or not measured(value.get("available_before_mib")) or "reason" in value):
+        raise ValueError("Missing, unknown or adverse writer-resource diagnostic")
+    return dict(backend=value["backend"], budget_mib=value["budget_mib"],
+        available_before_mib=value["available_before_mib"], sha256=sha256(path),
+        limitation="Last-spawn diagnostic screen only; positive TTL attribution requires sticky lifecycle evidence.")
+
+
+def worker_lifecycle(worker, ttl):
+    """Fail closed on missing/unknown release causes, exits and sticky counters."""
+    if (not isinstance(worker, dict) or type(worker.get("leased")) is not bool
+            or any(key not in worker for key in ("idle_pid", "idle_for_ms", "expires_in_ms"))):
+        raise ValueError("Missing worker lifecycle status")
+    life = worker.get("lifecycle")
+    if (not isinstance(life, dict) or type(life.get("schema")) is not int or life["schema"] != 1
+            or any(type(life.get(key)) is not int or life[key] < 0 for key in LIFECYCLE_COUNTERS)
+            or life["releases"] != sum(life[key] for key in RELEASE_COUNTERS)
+            or "last_release" not in life or any(life[key] for key in ADVERSE_COUNTERS)
+            or (ttl > 0 and (life["batch_releases"] or life["lease_releases"]))
+            or (ttl == 0 and life["ttl_releases"])
+            or any(type(worker.get(key)) is not int or worker[key] < 0 for key in ("starts", "reuses"))):
+        raise ValueError("Missing, inconsistent or adverse lifecycle counters")
+    pid = worker.get("idle_pid")
+    lifetime = ttl * 1000 if ttl else 2000  # TTL-zero in-batch grace, not configured TTL.
+    if pid is None:
+        if worker.get("idle_for_ms") is not None or worker.get("expires_in_ms") is not None:
+            raise ValueError("Idle clocks exist without an idle worker")
+    elif (type(pid) is not int or pid <= 0 or worker["leased"]
+            or any(type(worker.get(key)) is not int or worker[key] < 0 for key in ("idle_for_ms", "expires_in_ms"))
+            or (abs(worker["idle_for_ms"] + worker["expires_in_ms"] - lifetime) > 2
+                if worker["expires_in_ms"] else worker["idle_for_ms"] + 2 < lifetime)):
+        raise ValueError("Missing or inconsistent idle identity/deadline")
+    release = life.get("last_release")
+    if life["releases"] == 0:
+        if release is not None:
+            raise ValueError("Release metadata exists without a release")
+        return life
+    if (not isinstance(release, dict) or type(release.get("sequence")) is not int
+            or release["sequence"] != life["releases"]
+            or type(release.get("pid")) is not int or release["pid"] <= 0
+            or release.get("exit_confirmed") is not True
+            or type(release.get("ttl_ms")) is not int or release["ttl_ms"] != ttl * 1000
+            or "idle_ms" not in release
+            or release.get("idle_ms") is not None
+                and (type(release["idle_ms"]) is not int or release["idle_ms"] < 0)):
+        raise ValueError("Missing, inconsistent or unconfirmed release evidence")
+    reason = release.get("reason")
+    if reason == "ttl_expired":
+        valid = ttl > 0 and life["ttl_releases"] > 0 and type(release.get("idle_ms")) is int and release["idle_ms"] >= ttl * 1000
+    elif reason in ("batch_end", "lease_end", "batch_grace_expired"):
+        counter = "lease_releases" if reason == "lease_end" else "batch_releases"
+        valid = ttl == 0 and life[counter] > 0
+        if reason == "batch_grace_expired":
+            valid &= type(release.get("idle_ms")) is int and release["idle_ms"] >= 2000
+    else:
+        valid = False
+    if not valid:
+        raise ValueError("Release cause is unknown or does not match the configured policy")
+    return life
 
 
 def idle_summary(response, rows, ttl):
@@ -204,26 +347,64 @@ def idle_summary(response, rows, ttl):
             or len(idle) < 3):
         raise ValueError("Incomplete, changed or missing same-process idle observation")
     initial, final = observation["worker_at_start"], observation["worker_at_end"]
+    if type(ttl) is not int or ttl not in (0, 10, 30) or not rows:
+        raise ValueError("Unknown TTL policy or missing whole-run telemetry")
+    prefix = [row for row in rows if row.get("phase") != "idle"]
+    if rows != prefix + idle:
+        raise ValueError("Idle telemetry is not the final contiguous phase")
+    states = [row.get("worker") for row in prefix] + [initial] + [row.get("worker") for row in idle] + [final]
+    previous_worker = previous_life = None
+    for worker in states:
+        life = worker_lifecycle(worker, ttl)
+        if previous_life is not None:
+            if (any(life[key] < previous_life[key] for key in LIFECYCLE_COUNTERS)
+                    or any(worker[key] < previous_worker[key] for key in ("starts", "reuses"))
+                    or life["releases"] == previous_life["releases"] and life.get("last_release") != previous_life.get("last_release")):
+                raise ValueError("Worker lifecycle counters regressed or release identity changed")
+        previous_worker, previous_life = worker, life
+    first_life, last_life = initial["lifecycle"], final["lifecycle"]
+    if ttl and initial.get("idle_pid") is None:
+        raise ValueError("Keep-alive arm has no idle model to observe")
+    if not ttl and initial.get("idle_pid") is not None:
+        raise ValueError("TTL zero retained its worker after the batch")
     for worker in (initial, final, *(row["worker"] for row in idle)):
         if (worker.get("leased") is not False
                 or any(type(worker.get(key)) is not int or worker[key] < 0 for key in ("starts", "reuses"))
                 or any(worker[key] != initial[key] for key in ("starts", "reuses"))):
             raise ValueError("Idle window acquired another lease or changed worker counters")
     previous = -1
+    remaining = initial.get("expires_in_ms") if ttl else 0
+    disappeared = False
+    confirmed_at = None
     for row in idle:
         if (type(row.get("idle_elapsed_ms")) is not int or row["idle_elapsed_ms"] < previous
                 or not measured(row.get("unix_ms"))
                 or row.get("notes_busy") is not False or row.get("translation_busy") is not False):
             raise ValueError("Idle telemetry is incomplete or has active work")
         previous = row["idle_elapsed_ms"]
-        if row["idle_elapsed_ms"] >= (ttl + 2) * 1000 and row["worker"].get("idle_pid") is not None:
+        pid = row["worker"].get("idle_pid")
+        if ttl and row["worker"]["lifecycle"]["releases"] > first_life["releases"] and confirmed_at is None:
+            confirmed_at = row["idle_elapsed_ms"]
+        if ttl and initial.get("idle_pid") is not None:
+            if pid not in (None, initial["idle_pid"]) or disappeared and pid is not None:
+                raise ValueError("Idle worker changed identity or returned after release")
+            disappeared |= pid is None
+            if pid is None and row["idle_elapsed_ms"] < max(0, remaining - 200):
+                raise ValueError("Worker disappeared before its remaining expiry")
+        elif pid is not None:
+            raise ValueError("TTL zero acquired an idle worker")
+        if row["idle_elapsed_ms"] >= remaining + 2000 and pid is not None:
             raise ValueError("Worker remained resident beyond TTL plus two seconds")
     if final.get("idle_pid") is not None:
         raise ValueError("An idle worker remains at the end of observation")
     reaped = observation.get("worker_stopped_after_ms")
     if initial.get("idle_pid") is not None:
-        if not measured(reaped) or reaped > (ttl + 2) * 1000:
+        if not measured(reaped) or not max(0, remaining - 200) <= reaped <= remaining + 2000:
             raise ValueError("Missing or late worker-reaping evidence")
+        # Removing a pool slot precedes the out-of-lock process wait. Its null
+        # PID alone cannot establish that the process exited by the deadline.
+        if confirmed_at is None or not max(0, remaining - 200) <= confirmed_at <= remaining + 2000:
+            raise ValueError("Missing or late confirmed worker exit")
     elif reaped is not None and not measured(reaped):
         raise ValueError("Invalid no-worker observation")
     # A TTL arm that never retained a worker cannot establish its memory tradeoff.
@@ -231,6 +412,15 @@ def idle_summary(response, rows, ttl):
         raise ValueError("Keep-alive arm has no idle model to observe")
     if ttl == 0 and initial.get("idle_pid") is not None:
         raise ValueError("TTL zero retained its worker after the batch")
+    deltas = {key: last_life[key] - first_life[key] for key in LIFECYCLE_COUNTERS}
+    if ttl:
+        release = last_life.get("last_release") or {}
+        if (deltas["releases"] != 1 or deltas["ttl_releases"] != 1
+                or any(deltas[key] for key in LIFECYCLE_COUNTERS if key not in ("releases", "ttl_releases"))
+                or release.get("reason") != "ttl_expired" or release.get("pid") != initial["idle_pid"]):
+            raise ValueError("Final release is not the one observed worker's confirmed TTL expiry")
+    elif any(deltas.values()) or not first_life["releases"]:
+        raise ValueError("TTL zero lacks a prior healthy policy release or changed lifecycle while idle")
     return observation
 
 
@@ -387,6 +577,20 @@ def cleanup_models(root):
     return read_json(root / "model-copy-cleanup.json")
 
 
+def collect_final_evidence(root, folder, result):
+    """Evidence collection must not skip release of this arm's owned links."""
+    try:
+        for key, collect in (("process", lambda: read_json(folder / "process/process.json")),
+                             ("incurred_inference_costs", lambda: incurred_inference_costs(trace_events(root)))):
+            try:
+                result[key] = collect()
+            except Exception as error:
+                result[key] = None
+                result["errors"].append(f"Final {key}: {type(error).__name__}: {error}")
+    finally:
+        result["model_cleanup"] = cleanup_models(root)
+
+
 def file_identity(path):
     stat = path.stat()
     return dict(device=stat.st_dev, inode=stat.st_ino, bytes=stat.st_size,
@@ -534,6 +738,7 @@ def main():
                             error_rate=sum(counts.values())/len(source["reference_units"]), metric="MER")
                         if result["asr_score"]["error_rate"] > .45:
                             raise ValueError("Fixed ASR smoke ceiling exceeded")
+                        result["writer_resource"] = writer_resource_summary(root / "last-writer-resource.json")
                         result["inference"] = inference_summary(trace_events(root))
                         result["idle"] = idle_summary(response, rows, ttl)
                         process = read_json(folder / "process/process.json")
@@ -548,14 +753,13 @@ def main():
                     except Exception as error:
                         result["errors"].append(f"{type(error).__name__}: {error}")
                     finally:
-                        result["process"] = read_json(folder / "process/process.json")
-                        result["incurred_inference_costs"] = incurred_inference_costs(trace_events(root))
-                        result["model_cleanup"] = cleanup_models(root)
+                        collect_final_evidence(root, folder, result)
                         if not (result["model_cleanup"] or {}).get("released"):
                             result["errors"].append("Borrowed model links were not released")
                         result["evidence"] = {str(path.relative_to(folder)): sha256(path) for path in
                             (folder / "response.json", folder / "snapshot.json", folder / "telemetry.jsonl",
-                             folder / "process/resources.json", root / "inference-trace.jsonl") if path.is_file()}
+                             folder / "process/resources.json", root / "inference-trace.jsonl",
+                             root / "last-writer-resource.json") if path.is_file()}
                         result["passed"] = not result["errors"]
                         report["results"].append(result)
                         write_json(output, report)

@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "phase": "P1 bounded worker lifecycle evidence",
+  "base_source": "680b227b7bc5055a21179b17b65edf5aa1639b2e",
+  "full_plan_complete": false,
+  "release_eligible": false,
+  "stable_release": "0.3.4",
+  "scope": "Producer lifecycle instrumentation and stricter resource-study admission. No real model TTL0/10/30 study, default change, resource saving or quality improvement claim. Independent from rejected native candidate14 and Q16.",
+  "protocol": {
+    "schema": 1,
+    "idle_clocks": ["idle_for_ms", "expires_in_ms"],
+    "lifecycle_counters": [
+      "releases",
+      "ttl_releases",
+      "batch_releases",
+      "lease_releases",
+      "other_releases",
+      "resource_stops",
+      "admission_refusals",
+      "retention_refusals"
+    ],
+    "last_release": [
+      "sequence",
+      "pid",
+      "reason",
+      "ttl_ms",
+      "idle_ms",
+      "exit_confirmed"
+    ],
+    "bounded_storage": "Monotonic counters plus one last release; no prompts, text, command lines or unbounded event history.",
+    "unknown_exit": "Always sticky other_releases; cannot be hidden by a later successful release.",
+    "release_sequence": "Allocated after actual cleanup/wait, in completion order.",
+    "zero_ttl_batch_grace": "Existing2s in-batch grace is classified as batch_grace_expired, not configured TTL.",
+    "calibration": "Direct calibration sessions are excluded from pooled-release evidence.",
+    "admission": "Count an overall failed open_session once after bounded CPU fallback; pooled startup child releases still recorded.",
+    "stop_order": "Stop signal and closing use one stop-state mutex; pool accounting/invalidation and kill/wait cleanup do not hold that mutex in reverse order. Rejected stale stops cannot set global cancellation."
+  },
+  "consumer_guards": [
+    "Missing/inconsistent/adverse lifecycle data, counters that reset, wrong policy history, unknown exit or reason, and replaced PID are rejected.",
+    "A vacant pool slot is not confirmed exit; both CLI timestamp and consumer deadline require confirmed matching PID release.",
+    "Every chat job needs its own unique prior worker, sequential nonoverlapping attempts and a closed successful terminal.",
+    "Failed or missing responses and malformed trace costs remain unknown in totals; observed cost survives rejection.",
+    "Final process/trace summarization errors cannot skip cleanup of this harness arm's owned model links."
+  ],
+  "checks": {
+    "base_source": "680b227b7bc5055a21179b17b65edf5aa1639b2e",
+    "source_sha256": {
+      "crates/core/src/inference_worker.rs": "e674374ab3c12c15b99e80b581f24b6b27431818bf4413a95c98bcbc8791966e",
+      "crates/core/src/inference_worker/lifecycle.rs": "673c50e56317cb45dcd8eda4cf9cb8f9511d8310f3ed7cc6b34e06f1292b6984",
+      "crates/core/src/bin/omascribe-cli.rs": "b768ee25df610948faf7bf2c2cbce32476d1adb5a2807acfb6fbd3e8cdcf91e2",
+      "tests/benchmark_keep_alive.py": "17902273a8f43c7e53ec95b445ca267c30beb7364680557774b3404b12a22083",
+      "tests/test_keep_alive.py": "73597a27c67cf3d78f7231ee5d48f2308df4c62f8fd7b79ce28e5ce8cd0a0f78"
+    },
+    "rust_core": {
+      "command": "cargo test -p omascribe-core --locked",
+      "exit_code": 0,
+      "unit_passed": 388,
+      "unit_ignored": 8,
+      "integration_passed": [2, 7, 2, 12]
+    },
+    "clippy": {
+      "command": "cargo clippy -p omascribe-core --all-targets --locked -- -D warnings",
+      "exit_code": 0
+    },
+    "python": {
+      "command": "PYTHONPATH=tests python3 -m unittest test_keep_alive test_process_resources",
+      "exit_code": 0,
+      "tests": 45
+    },
+    "format_and_diff": {
+      "exit_code": 0
+    },
+    "actual_empty_cli": {
+      "scope": "Real empty CLI producer-to-consumer schema only; no loaded model, TTL study, resource or GPU claim.",
+      "cli_sha256": "6301c6d452eab19ba6cdafd2c75ba4aa39f24e924fb07120c1d1cd7f8e056330",
+      "exit_code": 0,
+      "worker": {
+        "expires_in_ms": null,
+        "idle_for_ms": null,
+        "idle_pid": null,
+        "leased": false,
+        "lifecycle": {
+          "admission_refusals": 0,
+          "batch_releases": 0,
+          "last_release": null,
+          "lease_releases": 0,
+          "other_releases": 0,
+          "releases": 0,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 0
+        },
+        "reuses": 0,
+        "starts": 0
+      },
+      "consumer_accepted": true
+    }
+  },
+  "real_child_tests": {
+    "new_groups": 9,
+    "scope": "Synthetic sleeping children only. Real kill/wait, sticky unknown exit, resource/cancel/ASR-backlog reasons, pooled startup/calibration distinction, eligible memory refusals, admission and concurrent detached cleanup.",
+    "clock": "250ms real monotonic TTL check; other classification tests backdate fixture clocks. Not a10s/30s model-residency observation.",
+    "concurrency_limit": "Existing detached cleanup may overlap a newer lease. This does not prove only one OS child exists during cleanup.",
+    "test_error_injection": "Unknown exit is injected only after real child cleanup so the negative test does not leak a process."
+  },
+  "raw_root": "artifacts/worker-lifecycle-2026-10-30",
+  "raw_sha256": {
+    "consumer-cost-cleanup-green.log": "0b44e4380910396a2eccdeffa70b337d6e6a3e406ca700d5cc4d6546acfc41a0",
+    "consumer-cost-cleanup-red.log": "762e11683b9465a2ce9a23d9d8a27b38ad9e808e0b5a132375d70e3996d34bdd",
+    "consumer-green.log": "c12d4254f0b2d05abcc424de9e01867221271ddd3be20dc7c2e9ba9f4e737bd7",
+    "consumer-red.log": "556d5750e771db0ae26d4f31b80ab20d77ff855742e99ea0abace60106681d24",
+    "final/checks.json": "45fa3d6b7b34c66a09e197586d86630a815af8d484dfab082c3ac8c860971c95",
+    "final/cli-build-final.log": "219bf80f42ef99ed9309c3ea08f4bc3b33448ed7493f10ea6e44afdc79c827e6",
+    "final/cli-build.log": "bb9a674ba770cbfe175261758f102774c6ff30b4712634e63d5ad977d821b21c",
+    "final/clippy.log": "f7f4fa02a9ef30b8e896a296c5ad03eed874b870b4594fe5c2f2ba25491f1790",
+    "final/core.log": "bbc80e73eae9d6bb3bdf792158fad079cf7d4f047450603b1075c4762de69026",
+    "final/empty-cli-status.json": "d0b0821f19a57bfb266902cf9448979f7c85335f66edd0d4ed42d373a183612f",
+    "fixed-policy-green.log": "4502c13aef3c6c104d8766ab19bb0f5613b1a2103637d147d221cd0b9aa40782",
+    "fixed-policy-red.log": "5bd58264fe904487c91aa614032221087216a92faa5164c543e21fc3c025e909"
+  },
+  "next_steps": [
+    "Exact-source Windows/Linux checks before integration.",
+    "Keep P1 independent of0.3.5candidate while Q16 manual article-history retention remains unresolved.",
+    "Run real same-model reversed-order TTL0/10/30 arms only after producer/consumer source is frozen; retain failures, all cost, model/runtime identity and process-tree observations.",
+    "Do not promote a TTL default from synthetic children or empty CLI schema."
+  ]
+}

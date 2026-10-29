@@ -1,4 +1,4 @@
-//! One local model process at a time, leased by a job and reclaimed while idle.
+//! One leased model worker; detached children are reaped outside the pool lock.
 use crate::Engine;
 use anyhow::{bail, Context, Result};
 use serde::Serialize;
@@ -17,6 +17,9 @@ use std::{
 };
 use uuid::Uuid;
 
+mod lifecycle;
+use lifecycle::{millis, ReleaseReason, WorkerLifecycle};
+
 #[derive(Default)]
 pub(crate) struct WorkerPool(Mutex<PoolState>);
 #[derive(Default)]
@@ -27,6 +30,7 @@ struct PoolState {
     batches: usize,
     starts: u64,
     reuses: u64,
+    lifecycle: WorkerLifecycle,
     // One failed scope only: no per-meeting map or persistent hardware ban.
     metal_failure: Option<String>,
     metal_failed_requests: u64,
@@ -36,13 +40,32 @@ struct IdleWorker {
     key: String,
     expires: Instant,
     ttl: Duration,
+    since: Instant,
 }
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 pub struct WorkerStatus {
     pub leased: bool,
     pub idle_pid: Option<u32>,
     pub starts: u64,
     pub reuses: u64,
+    pub idle_for_ms: Option<u64>,
+    pub expires_in_ms: Option<u64>,
+    pub lifecycle: WorkerLifecycle,
+}
+impl WorkerStatus {
+    /// A vacant slot is not proof that the previous child has exited: cleanup
+    /// may still be waiting outside the pool lock, alongside a newer lease.
+    pub fn confirms_idle_exit_since(&self, initial: &Self) -> bool {
+        initial.idle_pid.is_some_and(|pid| {
+            self.idle_pid.is_none()
+                && !self.leased
+                && self.lifecycle.last_release.as_ref().is_some_and(|release| {
+                    release.sequence > initial.lifecycle.releases
+                        && release.pid == pid
+                        && release.exit_confirmed
+                })
+        })
+    }
 }
 impl WorkerPool {
     fn metal_rejected(&self, key: &str) -> bool {
@@ -60,11 +83,21 @@ impl WorkerPool {
     }
     pub fn status(&self) -> WorkerStatus {
         let state = self.0.lock().unwrap();
+        let now = Instant::now();
         WorkerStatus {
             leased: state.leased,
-            idle_pid: state.idle.as_ref().map(|i| i.session.server.0.id()),
+            idle_pid: state.idle.as_ref().map(|i| i.session.server.child.id()),
             starts: state.starts,
             reuses: state.reuses,
+            idle_for_ms: state
+                .idle
+                .as_ref()
+                .map(|i| millis(now.saturating_duration_since(i.since))),
+            expires_in_ms: state
+                .idle
+                .as_ref()
+                .map(|i| millis(i.expires.saturating_duration_since(now))),
+            lifecycle: state.lifecycle.clone(),
         }
     }
     pub fn invalidate(&self) {
@@ -74,7 +107,9 @@ impl WorkerPool {
             state.idle.take()
         };
         // Do not wait for a child while holding the pool lock.
-        drop(idle);
+        if let Some(idle) = idle {
+            release_idle(idle, ReleaseReason::Invalidated);
+        }
     }
     pub fn reap_idle(&self, now: Instant) {
         let idle = {
@@ -85,7 +120,14 @@ impl WorkerPool {
                 None
             }
         };
-        drop(idle);
+        if let Some(idle) = idle {
+            let reason = if idle.ttl.is_zero() {
+                ReleaseReason::BatchGraceExpired
+            } else {
+                ReleaseReason::TtlExpired
+            };
+            release_idle(idle, reason);
+        }
     }
     pub fn batch(&self) -> Batch<'_> {
         self.0.lock().unwrap().batches += 1;
@@ -105,8 +147,16 @@ impl Drop for Batch<'_> {
                 None
             }
         };
-        drop(idle);
+        if let Some(idle) = idle {
+            release_idle(idle, ReleaseReason::BatchEnd);
+        }
     }
+}
+fn release_idle(mut idle: IdleWorker, reason: ReleaseReason) {
+    idle.session
+        .server
+        .release_as(reason, idle.ttl, Some(idle.since));
+    drop(idle);
 }
 pub(crate) struct SessionLease {
     session: Option<LocalSession>,
@@ -117,6 +167,8 @@ pub(crate) struct SessionLease {
     pub reused: bool,
     pub startup_ms: u64,
     usable: std::cell::Cell<bool>,
+    #[cfg(test)]
+    retention_memory: Option<Option<u64>>,
 }
 impl SessionLease {
     pub fn begin_request(&self) -> Result<()> {
@@ -160,29 +212,83 @@ impl Drop for SessionLease {
                 reject_metal(&engine, &self.key, true);
             }
         }
-        let healthy = model_current
+        let otherwise_healthy = model_current
             && self.usable.get()
             && session.healthy()
             && !engine.note_cancel.load(Ordering::SeqCst)
-            && !engine.maintenance.load(Ordering::SeqCst)
-            && crate::platform::available_memory_mib().is_some_and(|m| m >= 768);
+            && !engine.maintenance.load(Ordering::SeqCst);
+        let available = if otherwise_healthy {
+            self.retention_headroom()
+        } else {
+            None
+        };
+        let memory_ok = available.is_some_and(|m| m >= 768);
         *session.active_since.lock().unwrap() = None;
         let mut state = engine.inference_pool.0.lock().unwrap();
         state.leased = false;
-        if healthy && state.epoch == self.epoch && (!self.ttl.is_zero() || state.batches > 0) {
+        let eligible = state.epoch == self.epoch && (!self.ttl.is_zero() || state.batches > 0);
+        if otherwise_healthy && memory_ok && eligible {
             let lifetime = if self.ttl.is_zero() {
                 Duration::from_secs(2)
             } else {
                 self.ttl
             };
-            state.idle = Some(IdleWorker {
+            let since = Instant::now();
+            let replaced = state.idle.replace(IdleWorker {
                 session,
                 key: self.key.clone(),
-                expires: Instant::now() + lifetime,
+                expires: since + lifetime,
                 ttl: self.ttl,
+                since,
             });
+            drop(state);
+            if let Some(idle) = replaced {
+                release_idle(idle, ReleaseReason::Invalidated);
+            }
+            return;
         }
-        // The local session (when not reused) is dropped after this lock guard.
+        let reason = if !model_current {
+            ReleaseReason::ModelChanged
+        } else if session.resource_stop.load(Ordering::SeqCst) {
+            if session.budget_stop.load(Ordering::SeqCst) {
+                ReleaseReason::ProcessBudget
+            } else {
+                ReleaseReason::SystemPressure
+            }
+        } else if session.timed_out.load(Ordering::SeqCst) {
+            ReleaseReason::Timeout
+        } else if engine.note_cancel.load(Ordering::SeqCst) {
+            ReleaseReason::Cancelled
+        } else if engine.maintenance.load(Ordering::SeqCst) {
+            ReleaseReason::Maintenance
+        } else if !self.usable.get() {
+            ReleaseReason::RequestFailed
+        } else if otherwise_healthy && eligible && !memory_ok {
+            state.lifecycle.retention_refusals += 1;
+            if available.is_none() {
+                ReleaseReason::MemoryUnknown
+            } else {
+                ReleaseReason::LowMemory
+            }
+        } else if state.epoch != self.epoch {
+            ReleaseReason::Invalidated
+        } else if !otherwise_healthy {
+            ReleaseReason::WorkerUnhealthy
+        } else {
+            ReleaseReason::LeaseEnd
+        };
+        drop(state);
+        session.server.release_as(reason, self.ttl, None);
+        drop(session);
+    }
+}
+impl SessionLease {
+    fn retention_headroom(&self) -> Option<u64> {
+        #[cfg(test)]
+        if let Some(memory) = self.retention_memory {
+            return memory;
+        }
+        crate::platform::available_memory_mib()
     }
 }
 impl LocalSession {
@@ -195,8 +301,8 @@ impl LocalSession {
     fn healthy(&mut self) -> bool {
         !self.resource_stop.load(Ordering::SeqCst)
             && !self.timed_out.load(Ordering::SeqCst)
-            && !self.server.1.load(Ordering::SeqCst)
-            && matches!(self.server.0.try_wait(), Ok(None))
+            && !self.server.done.load(Ordering::SeqCst)
+            && matches!(self.server.child.try_wait(), Ok(None))
     }
 }
 fn worker_key(
@@ -236,6 +342,30 @@ pub(crate) fn open_session(
     meeting: &str,
     run: u32,
 ) -> Result<SessionLease> {
+    admission_attempt(engine, || open_session_inner(engine, prefs, meeting, run))
+}
+fn admission_attempt(
+    engine: &Engine,
+    operation: impl FnOnce() -> Result<SessionLease>,
+) -> Result<SessionLease> {
+    let result = operation();
+    if result.is_err() {
+        engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .lifecycle
+            .admission_refusals += 1;
+    }
+    result
+}
+fn open_session_inner(
+    engine: &Arc<Engine>,
+    prefs: &crate::preferences::Preferences,
+    meeting: &str,
+    run: u32,
+) -> Result<SessionLease> {
     let ttl = if prefs.resource_mode == "eco" {
         0
     } else {
@@ -255,10 +385,10 @@ pub(crate) fn open_session(
     {
         let mut cpu = prefs.clone();
         cpu.inference_backend = "cpu".into();
-        return open_session(engine, &cpu, meeting, run);
+        return open_session_inner(engine, &cpu, meeting, run);
     }
     let result = checkout(engine, key.clone(), Duration::from_secs(ttl.into()), || {
-        spawn_session_with_spec(engine, prefs, &spec)
+        spawn_session(engine, prefs, &spec, Some(Duration::from_secs(ttl.into())))
     });
     if result
         .as_ref()
@@ -274,7 +404,7 @@ pub(crate) fn open_session(
         engine.inference_pool.invalidate();
         let mut cpu = prefs.clone();
         cpu.inference_backend = "cpu".into();
-        return open_session(engine, &cpu, meeting, run);
+        return open_session_inner(engine, &cpu, meeting, run);
     }
     result
 }
@@ -314,25 +444,55 @@ fn checkout(
     };
     let mut reused = false;
     let session = idle.and_then(|mut idle| {
-        if idle.key == key
-            && idle.expires > Instant::now()
-            && idle.session.check_model().is_ok()
-            && idle.session.healthy()
-            && crate::platform::available_memory_mib().is_some_and(|m| m >= 768)
-        {
+        let reason = if idle.key != key {
+            Some(ReleaseReason::ScopeChanged)
+        } else if idle.expires <= Instant::now() {
+            Some(if idle.ttl.is_zero() {
+                ReleaseReason::BatchGraceExpired
+            } else {
+                ReleaseReason::TtlExpired
+            })
+        } else if idle.session.check_model().is_err() {
+            Some(ReleaseReason::ModelChanged)
+        } else if !idle.session.healthy() {
+            Some(ReleaseReason::WorkerUnhealthy)
+        } else {
+            match crate::platform::available_memory_mib() {
+                Some(memory) if memory >= 768 => None,
+                memory => {
+                    engine
+                        .inference_pool
+                        .0
+                        .lock()
+                        .unwrap()
+                        .lifecycle
+                        .retention_refusals += 1;
+                    Some(if memory.is_none() {
+                        ReleaseReason::MemoryUnknown
+                    } else {
+                        ReleaseReason::LowMemory
+                    })
+                }
+            }
+        };
+        if let Some(reason) = reason {
+            release_idle(idle, reason);
+            None
+        } else {
             reused = true;
             Some(idle.session)
-        } else {
-            None
         }
     });
-    let session = match session.map(Ok).unwrap_or_else(spawn) {
+    let mut session = match session.map(Ok).unwrap_or_else(spawn) {
         Ok(session) => session,
         Err(error) => {
             engine.inference_pool.0.lock().unwrap().leased = false;
             return Err(error);
         }
     };
+    session
+        .server
+        .release_as(ReleaseReason::WorkerUnhealthy, ttl, None);
     *session.active_since.lock().unwrap() = Some(Instant::now());
     {
         let mut state = engine.inference_pool.0.lock().unwrap();
@@ -351,6 +511,8 @@ fn checkout(
         reused,
         startup_ms: started.elapsed().as_millis() as u64,
         usable: std::cell::Cell::new(true),
+        #[cfg(test)]
+        retention_memory: None,
     })
 }
 
@@ -364,17 +526,156 @@ fn check_memory(available: Option<u64>, required: u64) -> Result<()> {
     }
 }
 
-struct Server(Child, Arc<AtomicBool>, std::sync::Weak<Engine>);
+#[derive(Default)]
+struct StopState {
+    closing: bool,
+    reason: Option<ReleaseReason>,
+}
+struct ReleaseContext {
+    reason: ReleaseReason,
+    ttl: Duration,
+    idle_since: Option<Instant>,
+}
+struct Server {
+    child: Child,
+    done: Arc<AtomicBool>,
+    engine: Weak<Engine>,
+    stop: Arc<Mutex<StopState>>,
+    pooled: Option<ReleaseContext>,
+    #[cfg(test)]
+    force_unconfirmed_exit: bool,
+    #[cfg(test)]
+    before_reap: Option<Box<dyn FnOnce() + Send>>,
+}
+impl Server {
+    fn new(
+        child: Child,
+        done: Arc<AtomicBool>,
+        engine: &Arc<Engine>,
+        pooled: Option<Duration>,
+    ) -> Self {
+        Self {
+            child,
+            done,
+            engine: Arc::downgrade(engine),
+            stop: Arc::new(Mutex::new(StopState::default())),
+            pooled: pooled.map(|ttl| ReleaseContext {
+                reason: ReleaseReason::StartupFailed,
+                ttl,
+                idle_since: None,
+            }),
+            #[cfg(test)]
+            force_unconfirmed_exit: false,
+            #[cfg(test)]
+            before_reap: None,
+        }
+    }
+    fn release_as(&mut self, reason: ReleaseReason, ttl: Duration, idle_since: Option<Instant>) {
+        self.pooled = Some(ReleaseContext {
+            reason,
+            ttl,
+            idle_since,
+        });
+    }
+}
+fn stop_from_watchdog(
+    engine: Option<&Engine>,
+    stop: &Mutex<StopState>,
+    pid: u32,
+    reason: ReleaseReason,
+    pooled: bool,
+) -> bool {
+    let accepted = {
+        let mut state = stop.lock().unwrap();
+        if state.closing || state.reason.is_some() {
+            false
+        } else {
+            state.reason = Some(reason);
+            if matches!(reason, ReleaseReason::Cancelled | ReleaseReason::AsrBacklog) {
+                if let Some(engine) = engine {
+                    // Preserve cancellation-before-signal ordering, but only
+                    // for this accepted stop. A stale, closing worker must not
+                    // cancel a newer lease through the shared global flag.
+                    engine.note_cancel.store(true, Ordering::SeqCst);
+                }
+            }
+            // Serialize the actual signal with closing, not just its reason.
+            // Once Drop can wait/reap, this old PID must never be signalled.
+            crate::platform::stop_process(pid, false);
+            true
+        }
+    };
+    if accepted
+        && pooled
+        && matches!(
+            reason,
+            ReleaseReason::ProcessBudget | ReleaseReason::SystemPressure
+        )
+    {
+        if let Some(engine) = engine {
+            engine
+                .inference_pool
+                .0
+                .lock()
+                .unwrap()
+                .lifecycle
+                .resource_stops += 1;
+        }
+    }
+    accepted
+}
 impl Drop for Server {
     fn drop(&mut self) {
-        self.1.store(true, Ordering::SeqCst);
-        let _ = self.0.kill();
-        let _ = self.0.wait();
-        if let Some(engine) = self.2.upgrade() {
-            let _ =
-                engine
-                    .llm_pid
-                    .compare_exchange(self.0.id(), 0, Ordering::SeqCst, Ordering::SeqCst);
+        let stop_reason = {
+            let mut state = self.stop.lock().unwrap();
+            state.closing = true;
+            state.reason
+        };
+        self.done.store(true, Ordering::SeqCst);
+        let idle = self
+            .pooled
+            .as_ref()
+            .and_then(|context| context.idle_since.map(|since| since.elapsed()));
+        #[cfg(test)]
+        if let Some(hook) = self.before_reap.take() {
+            hook();
+        }
+        let prior = self.child.try_wait();
+        let running = matches!(prior, Ok(None));
+        let unknown = prior.is_err();
+        if !matches!(prior, Ok(Some(_))) {
+            let _ = self.child.kill();
+        }
+        let confirmed = self.child.wait().is_ok();
+        #[cfg(test)]
+        let confirmed = confirmed && !self.force_unconfirmed_exit;
+        if let Some(engine) = self.engine.upgrade() {
+            let _ = engine.llm_pid.compare_exchange(
+                self.child.id(),
+                0,
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+            );
+            if let Some(context) = &self.pooled {
+                let reason = if unknown || !confirmed {
+                    ReleaseReason::ExitUnconfirmed
+                } else if let Some(reason) = stop_reason {
+                    reason
+                } else if context.reason.policy() && !running {
+                    ReleaseReason::WorkerExited
+                } else {
+                    context.reason
+                };
+                // Kill/wait and all session cleanup above are outside the pool
+                // mutex. Allocate sequence only now, after completion.
+                engine.inference_pool.0.lock().unwrap().lifecycle.released(
+                    self.child.id(),
+                    reason,
+                    context.ttl,
+                    idle,
+                    confirmed && !unknown,
+                );
+            }
         }
     }
 }
@@ -397,6 +698,15 @@ pub(crate) fn spawn_session_with_spec(
     engine: &Arc<Engine>,
     prefs: &crate::preferences::Preferences,
     spec: &crate::inference::LaunchSpec,
+) -> Result<LocalSession> {
+    // Calibration sessions are not pooled launches or lifecycle evidence.
+    spawn_session(engine, prefs, spec, None)
+}
+fn spawn_session(
+    engine: &Arc<Engine>,
+    prefs: &crate::preferences::Preferences,
+    spec: &crate::inference::LaunchSpec,
+    pooled: Option<Duration>,
 ) -> Result<LocalSession> {
     let receipt = engine.verified_model(&prefs.llm_model)?;
     let budget = crate::inference::budget_mib(prefs);
@@ -432,8 +742,9 @@ pub(crate) fn spawn_session_with_spec(
         .spawn()
         .context("无法启动本地笔记模型")?;
     let done = Arc::new(AtomicBool::new(false));
-    let mut server = Server(child, done.clone(), Arc::downgrade(engine));
-    let pid = server.0.id();
+    let mut server = Server::new(child, done.clone(), engine, pooled);
+    let stop_state = Arc::clone(&server.stop);
+    let pid = server.child.id();
     engine.llm_pid.store(pid, Ordering::SeqCst);
     let weak = Arc::downgrade(engine);
     let active_since = Arc::new(std::sync::Mutex::new(Some(Instant::now())));
@@ -467,9 +778,22 @@ pub(crate) fn spawn_session_with_spec(
                 let _ = std::fs::write(&resource_path, serde_json::to_vec(&json!({"backend":backend.name(), "reason":if over_budget {"process_budget"} else {"system_pressure"}, "budget_mib":budget,"rss_mib":rss_mib,"available_mib":available_mib})).unwrap_or_default());
                 budget_flag.store(over_budget, Ordering::SeqCst);
                 resource_flag.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
-                if let Some(engine) = weak.upgrade() {
-                    engine.inference_pool.invalidate();
+                let engine = weak.upgrade();
+                let reason = if over_budget {
+                    ReleaseReason::ProcessBudget
+                } else {
+                    ReleaseReason::SystemPressure
+                };
+                if stop_from_watchdog(
+                    engine.as_deref(),
+                    &stop_state,
+                    pid,
+                    reason,
+                    pooled.is_some(),
+                ) {
+                    if let Some(engine) = engine {
+                        engine.inference_pool.invalidate();
+                    }
                 }
                 break;
             }
@@ -488,7 +812,13 @@ pub(crate) fn spawn_session_with_spec(
             };
             if active_at.is_some_and(|since| since.elapsed() > Duration::from_secs(600)) {
                 timeout_flag.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
+                stop_from_watchdog(
+                    Some(&engine),
+                    &stop_state,
+                    pid,
+                    ReleaseReason::Timeout,
+                    pooled.is_some(),
+                );
                 break;
             }
             if s.recording && s.elapsed_ms.saturating_sub(s.processed_ms) > 4000 {
@@ -496,9 +826,14 @@ pub(crate) fn spawn_session_with_spec(
             } else {
                 lag_count = 0;
             }
-            if engine.note_cancel.load(Ordering::SeqCst) || lag_count >= 6 {
-                engine.note_cancel.store(true, Ordering::SeqCst);
-                crate::platform::stop_process(pid, false);
+            let cancelled = engine.note_cancel.load(Ordering::SeqCst);
+            if cancelled || lag_count >= 6 {
+                let reason = if cancelled {
+                    ReleaseReason::Cancelled
+                } else {
+                    ReleaseReason::AsrBacklog
+                };
+                stop_from_watchdog(Some(&engine), &stop_state, pid, reason, pooled.is_some());
                 break;
             }
         }
@@ -522,7 +857,7 @@ pub(crate) fn spawn_session_with_spec(
             }
             bail!("writer:resource-pressure");
         }
-        if server.0.try_wait()?.is_some() {
+        if server.child.try_wait()?.is_some() {
             bail!("笔记模型已停止；原文保留，可以稍后重试");
         }
         if agent
@@ -624,7 +959,7 @@ mod tests {
             timed_out: Default::default(),
             peak_rss_mib: Default::default(),
             active_since: Arc::new(Mutex::new(Some(Instant::now()))),
-            server: Server(child, Default::default(), Arc::downgrade(engine)),
+            server: Server::new(child, Default::default(), engine, None),
         })
     }
     fn lease(engine: &Arc<Engine>, key: &str, ttl: u64) -> Result<SessionLease> {
@@ -632,13 +967,421 @@ mod tests {
             fake(engine)
         })
     }
+    fn retained_lease(engine: &Arc<Engine>, ttl: u64) -> Result<SessionLease> {
+        let mut session = lease(engine, "lifecycle-fixture", ttl)?;
+        session.retention_memory = Some(Some(2048));
+        Ok(session)
+    }
+    fn assert_reaped(pid: u32) {
+        #[cfg(unix)]
+        unsafe {
+            let mut status = 0;
+            assert_eq!(libc::waitpid(pid as i32, &mut status, libc::WNOHANG), -1);
+            assert_eq!(
+                std::io::Error::last_os_error().raw_os_error(),
+                Some(libc::ECHILD)
+            );
+        }
+        #[cfg(windows)]
+        {
+            let mut processes = sysinfo::System::new();
+            processes.refresh_processes(
+                sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]),
+                true,
+            );
+            assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
+        }
+    }
+    #[test]
+    fn lifecycle_zero_ttl_lease_and_final_batch_confirm_real_child_exit() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let first = retained_lease(&engine, 0)?;
+        let first_pid = first.server.child.id();
+        drop(first);
+        assert_reaped(first_pid);
+        let status = engine.inference_pool.status();
+        assert_eq!(status.lifecycle.lease_releases, 1);
+        assert_eq!(status.lifecycle.last_release.unwrap().reason, "lease_end");
+        let batch = engine.inference_pool.batch();
+        let nested = engine.inference_pool.batch();
+        let second = retained_lease(&engine, 0)?;
+        let pid = second.server.child.id();
+        drop(second);
+        drop(nested);
+        assert_eq!(engine.inference_pool.status().idle_pid, Some(pid));
+        let reused = retained_lease(&engine, 0)?;
+        assert!(reused.reused);
+        drop(reused);
+        drop(batch);
+        assert_reaped(pid);
+        let status = engine.inference_pool.status();
+        assert_eq!(status.lifecycle.releases, 2);
+        assert_eq!(status.lifecycle.batch_releases, 1);
+        assert_eq!(status.lifecycle.ttl_releases, 0);
+        assert_eq!(status.lifecycle.other_releases, 0);
+        let last = status.lifecycle.last_release.unwrap();
+        assert_eq!(last.reason, "batch_end");
+        assert!(last.exit_confirmed);
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_ttl_and_zero_ttl_batch_grace_are_distinct() -> Result<()> {
+        for ttl in [0, 10] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let batch = engine.inference_pool.batch();
+            drop(retained_lease(&engine, ttl)?);
+            let initial = engine.inference_pool.status();
+            let pid = initial.idle_pid.unwrap();
+            let lifetime = Duration::from_secs(if ttl == 0 { 2 } else { ttl });
+            // Backdate only the fixture clock; actual child termination/reaping
+            // still executes the same production reaper with a real process.
+            {
+                let mut state = engine.inference_pool.0.lock().unwrap();
+                let idle = state.idle.as_mut().unwrap();
+                idle.since = Instant::now() - lifetime;
+                idle.expires = Instant::now();
+            }
+            engine.inference_pool.reap_idle(Instant::now());
+            assert_reaped(pid);
+            let final_status = engine.inference_pool.status();
+            assert!(final_status.confirms_idle_exit_since(&initial));
+            assert_eq!(final_status.lifecycle.ttl_releases, u64::from(ttl != 0));
+            assert_eq!(final_status.lifecycle.batch_releases, u64::from(ttl == 0));
+            let last = final_status.lifecycle.last_release.unwrap();
+            assert_eq!(
+                last.reason,
+                if ttl == 0 {
+                    "batch_grace_expired"
+                } else {
+                    "ttl_expired"
+                }
+            );
+            assert!(last.idle_ms.unwrap() >= millis(lifetime));
+            assert_eq!(last.ttl_ms, ttl * 1000);
+            drop(batch);
+        }
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_short_real_clock_expiry_confirms_the_same_child() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        // This is a short real-clock regression, not a 10/30-second benchmark.
+        let ttl = Duration::from_millis(250);
+        let mut session = checkout(&engine, "short-real-clock".into(), ttl, || fake(&engine))?;
+        session.retention_memory = Some(Some(2048));
+        let pid = session.server.child.id();
+        drop(session);
+        let initial = engine.inference_pool.status();
+        assert_eq!(initial.idle_pid, Some(pid));
+        let remaining = initial.expires_in_ms.unwrap();
+        assert!(remaining > 0);
+        assert!((initial.idle_for_ms.unwrap() + remaining).abs_diff(250) <= 2);
+        engine.inference_pool.reap_idle(Instant::now());
+        assert_eq!(engine.inference_pool.status().idle_pid, Some(pid));
+        let deadline = engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .idle
+            .as_ref()
+            .unwrap()
+            .expires;
+        while let Some(remaining) = deadline.checked_duration_since(Instant::now()) {
+            if remaining.is_zero() {
+                break;
+            }
+            thread::sleep(remaining.min(Duration::from_millis(5)));
+        }
+        engine.inference_pool.reap_idle(Instant::now());
+        assert_reaped(pid);
+        let final_status = engine.inference_pool.status();
+        assert!(final_status.confirms_idle_exit_since(&initial));
+        let release = final_status.lifecycle.last_release.unwrap();
+        assert_eq!(release.pid, pid);
+        assert_eq!(release.reason, "ttl_expired");
+        assert_eq!(release.ttl_ms, 250);
+        assert!(release.idle_ms.unwrap() >= 250);
+        assert!(release.exit_confirmed);
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_leased_watchdog_stops_keep_exact_cause_and_count_resources_once() -> Result<()> {
+        for (reason, expected) in [
+            (ReleaseReason::ProcessBudget, "process_budget"),
+            (ReleaseReason::SystemPressure, "system_pressure"),
+            (ReleaseReason::AsrBacklog, "asr_backlog"),
+            (ReleaseReason::Cancelled, "cancelled"),
+            (ReleaseReason::Timeout, "timeout"),
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let session = retained_lease(&engine, 10)?;
+            let pid = session.server.child.id();
+            session.begin_request()?;
+            assert!(stop_from_watchdog(
+                Some(&engine),
+                &session.server.stop,
+                pid,
+                reason,
+                true
+            ));
+            assert!(!stop_from_watchdog(
+                Some(&engine),
+                &session.server.stop,
+                pid,
+                reason,
+                true
+            ));
+            if matches!(
+                reason,
+                ReleaseReason::ProcessBudget | ReleaseReason::SystemPressure
+            ) {
+                session.resource_stop.store(true, Ordering::SeqCst);
+                session
+                    .budget_stop
+                    .store(reason == ReleaseReason::ProcessBudget, Ordering::SeqCst);
+                engine.inference_pool.invalidate();
+            } else if reason == ReleaseReason::Timeout {
+                session.timed_out.store(true, Ordering::SeqCst);
+            }
+            // Backlog and user cancellation both set this flag in production;
+            // the first observed cause must survive that shared flag.
+            if matches!(reason, ReleaseReason::AsrBacklog | ReleaseReason::Cancelled) {
+                assert!(engine.note_cancel.load(Ordering::SeqCst));
+            }
+            drop(session);
+            assert_reaped(pid);
+            let status = engine.inference_pool.status();
+            assert_eq!(
+                status.lifecycle.resource_stops,
+                u64::from(matches!(
+                    reason,
+                    ReleaseReason::ProcessBudget | ReleaseReason::SystemPressure
+                ))
+            );
+            assert_eq!(status.lifecycle.other_releases, 1);
+            assert_eq!(status.lifecycle.ttl_releases, 0);
+            assert_eq!(status.lifecycle.last_release.unwrap().reason, expected);
+        }
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_unknown_exit_stays_adverse_after_a_later_clean_release() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut session = retained_lease(&engine, 0)?;
+        let pid = session.server.child.id();
+        // Inject an unknown wait result only after real kill/wait has run, so
+        // the negative telemetry test cannot leak a real child process.
+        session
+            .session
+            .as_mut()
+            .unwrap()
+            .server
+            .force_unconfirmed_exit = true;
+        drop(session);
+        assert_reaped(pid);
+        let first = engine.inference_pool.status();
+        assert!(
+            !first
+                .lifecycle
+                .last_release
+                .as_ref()
+                .unwrap()
+                .exit_confirmed
+        );
+        assert_eq!(first.lifecycle.other_releases, 1);
+        drop(retained_lease(&engine, 0)?);
+        let later = engine.inference_pool.status();
+        assert!(
+            later
+                .lifecycle
+                .last_release
+                .as_ref()
+                .unwrap()
+                .exit_confirmed
+        );
+        assert_eq!(later.lifecycle.last_release.as_ref().unwrap().sequence, 2);
+        assert_eq!(later.lifecycle.releases, 2);
+        assert_eq!(later.lifecycle.lease_releases, 1);
+        assert_eq!(later.lifecycle.other_releases, 1);
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_pooled_startup_drop_is_recorded_but_calibration_is_not() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let direct = fake(&engine)?;
+        let direct_pid = direct.server.child.id();
+        drop(direct);
+        assert_reaped(direct_pid);
+        assert_eq!(engine.inference_pool.status().lifecycle.releases, 0);
+        let result = checkout(&engine, "startup".into(), Duration::from_secs(10), || {
+            let mut startup = fake(&engine)?;
+            startup
+                .server
+                .release_as(ReleaseReason::StartupFailed, Duration::from_secs(10), None);
+            drop(startup);
+            bail!("fixture refusal after child spawn")
+        });
+        assert!(result.is_err());
+        let status = engine.inference_pool.status();
+        assert!(!status.leased);
+        assert_eq!(status.starts, 0);
+        assert_eq!(status.lifecycle.releases, 1);
+        assert_eq!(status.lifecycle.other_releases, 1);
+        assert_eq!(
+            status.lifecycle.last_release.unwrap().reason,
+            "startup_failed"
+        );
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_memory_refusal_requires_eligible_retention() -> Result<()> {
+        for ttl in [0, 10] {
+            for available in [None, Some(0)] {
+                let root = tempfile::tempdir()?;
+                let engine = Engine::open(root.path().into())?;
+                let mut session = retained_lease(&engine, ttl)?;
+                session.retention_memory = Some(available);
+                drop(session);
+                let status = engine.inference_pool.status();
+                assert_eq!(status.lifecycle.retention_refusals, u64::from(ttl > 0));
+                assert_eq!(status.lifecycle.other_releases, u64::from(ttl > 0));
+                assert_eq!(status.lifecycle.lease_releases, u64::from(ttl == 0));
+            }
+        }
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_admission_counts_the_whole_attempt_once_after_fallback() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        assert!(admission_attempt(&engine, || {
+            let _ = checkout(&engine, "first".into(), Duration::ZERO, || {
+                bail!("first startup failed")
+            });
+            checkout(&engine, "fallback".into(), Duration::ZERO, || {
+                bail!("fallback failed")
+            })
+        })
+        .is_err());
+        assert_eq!(
+            engine.inference_pool.status().lifecycle.admission_refusals,
+            1
+        );
+        let session = admission_attempt(&engine, || {
+            let _ = checkout(&engine, "first".into(), Duration::ZERO, || {
+                bail!("first startup failed")
+            });
+            lease(&engine, "fallback", 0)
+        })?;
+        assert_eq!(
+            engine.inference_pool.status().lifecycle.admission_refusals,
+            1
+        );
+        drop(session);
+        Ok(())
+    }
+    #[test]
+    fn lifecycle_pending_wait_does_not_confirm_exit_or_hold_the_pool_lock() -> Result<()> {
+        use std::sync::mpsc;
+        for mode in ["no_new_lease", "new_finishes_first", "new_finishes_last"] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let (waiting_tx, waiting_rx) = mpsc::channel();
+            let (continue_tx, continue_rx) = mpsc::channel();
+            let mut old = retained_lease(&engine, 10)?;
+            let old_pid = old.server.child.id();
+            let old_stop = Arc::clone(&old.server.stop);
+            old.session.as_mut().unwrap().server.before_reap = Some(Box::new(move || {
+                // Even an assertion failure/disconnected test controller must
+                // let real kill/wait cleanup continue rather than leak a child.
+                let _ = waiting_tx.send(());
+                let _ = continue_rx.recv_timeout(Duration::from_secs(5));
+            }));
+            drop(old);
+            let initial = engine.inference_pool.status();
+            assert_eq!(initial.idle_pid, Some(old_pid));
+            let reaping_engine = Arc::clone(&engine);
+            let reaping = thread::spawn(move || reaping_engine.inference_pool.invalidate());
+            waiting_rx.recv_timeout(Duration::from_secs(5))?;
+            let pending = engine.inference_pool.status();
+            assert!(pending.idle_pid.is_none());
+            assert!(!pending.confirms_idle_exit_since(&initial));
+            assert_eq!(pending.lifecycle.releases, 0);
+            assert!(!stop_from_watchdog(
+                Some(&engine),
+                &old_stop,
+                old_pid,
+                ReleaseReason::ProcessBudget,
+                true
+            ));
+            assert_eq!(engine.inference_pool.status().lifecycle.resource_stops, 0);
+            assert!(!stop_from_watchdog(
+                Some(&engine),
+                &old_stop,
+                old_pid,
+                ReleaseReason::AsrBacklog,
+                true
+            ));
+            assert!(!engine.note_cancel.load(Ordering::SeqCst));
+            let mut newer = if mode == "no_new_lease" {
+                None
+            } else {
+                Some(retained_lease(&engine, 0)?)
+            };
+            let new_pid = newer.as_ref().map(|s| s.server.child.id());
+            if mode == "new_finishes_first" {
+                drop(newer.take());
+                let completed_new = engine.inference_pool.status();
+                assert_eq!(completed_new.lifecycle.releases, 1);
+                assert_eq!(
+                    completed_new.lifecycle.last_release.unwrap().pid,
+                    new_pid.unwrap()
+                );
+                assert!(!engine
+                    .inference_pool
+                    .status()
+                    .confirms_idle_exit_since(&initial));
+            }
+            continue_tx.send(())?;
+            reaping.join().unwrap();
+            assert_reaped(old_pid);
+            let final_status = engine.inference_pool.status();
+            let release = final_status.lifecycle.last_release.as_ref().unwrap();
+            assert_eq!(release.pid, old_pid);
+            assert_eq!(
+                release.sequence,
+                if mode == "new_finishes_first" { 2 } else { 1 }
+            );
+            assert_eq!(release.sequence, final_status.lifecycle.releases);
+            if mode == "new_finishes_last" {
+                assert!(final_status.leased);
+                assert!(!final_status.confirms_idle_exit_since(&initial));
+                assert_eq!(
+                    engine.llm_pid.load(Ordering::SeqCst),
+                    new_pid.unwrap(),
+                    "old cleanup must not clear the new PID"
+                );
+            } else {
+                assert!(final_status.confirms_idle_exit_since(&initial));
+            }
+            drop(newer);
+        }
+        Ok(())
+    }
     #[test]
     fn batch_reuses_one_child_and_zero_ttl_reaps_it_at_batch_end() -> Result<()> {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let batch = engine.inference_pool.batch();
         let first = lease(&engine, "meeting/run/model", 0)?;
-        let pid = first.server.0.id();
+        let pid = first.server.child.id();
         assert!(
             lease(&engine, "other", 0).is_err(),
             "one inference at a time"
@@ -646,7 +1389,7 @@ mod tests {
         drop(first);
         let second = lease(&engine, "meeting/run/model", 0)?;
         assert!(second.reused);
-        assert_eq!(second.server.0.id(), pid);
+        assert_eq!(second.server.child.id(), pid);
         drop(second);
         assert_eq!(engine.inference_pool.status().starts, 1);
         drop(batch);
@@ -659,11 +1402,11 @@ mod tests {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let first = lease(&engine, "run1", 30)?;
-        let pid = first.server.0.id();
+        let pid = first.server.child.id();
         drop(first);
         let second = lease(&engine, "run2", 30)?;
         assert!(!second.reused);
-        assert_ne!(second.server.0.id(), pid);
+        assert_ne!(second.server.child.id(), pid);
         drop(second);
         engine
             .inference_pool
@@ -1028,7 +1771,10 @@ mod tests {
         assert!(error.to_string().contains("local inference"));
         assert!(engine.inference_pool.status().leased);
         assert_eq!(engine.inference_pool.0.lock().unwrap().epoch, epoch);
-        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), first.server.0.id());
+        assert_eq!(
+            engine.llm_pid.load(Ordering::SeqCst),
+            first.server.child.id()
+        );
         engine.inference_pool.invalidate();
         drop(first);
         assert!(engine.inference_pool.status().idle_pid.is_none());
