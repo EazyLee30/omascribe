@@ -1,0 +1,128 @@
+{
+  "source_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+  "local_date": "2026-10-30",
+  "test": "source-built release core and release ASR worker; external native timer; isolated synthetic paced file",
+  "core_build": {
+    "profile": "release",
+    "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "f9e3d55b215536c5d381a4e9f3507e3380974b5aee8ed5cf25d176d8b480ed3a",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "driver_sha256": "b1a3172b3d06dd9cf0fdf196046f4a4058f19805fe0f08175f3d77a47a52d447",
+  "asr_worker_sha256": "c9ab0ae5589b8c0be1a4697903a47af5cbeece89b51bb6eedd4566f8622882d5",
+  "fixture_synthetic_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+  "model_files": {
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+  },
+  "model_copies_verified_after": true,
+  "same_engine_for_both_rounds": true,
+  "receipt_cached_after_first": true,
+  "positive_rounds": [
+    {
+      "round": 1,
+      "gate_passed": true,
+      "stop_request_late_by_ms": 0,
+      "metrics": {
+        "replay_return_ms": 831,
+        "stop_requested_ms": 5000,
+        "stop_return_ms": 5118,
+        "drain_complete_ms": 5176,
+        "capture_ms": 4800,
+        "processed_ms": 4800,
+        "segments": 1
+      },
+      "wav_duration_ms": 4800.0,
+      "wav_pcm_equal": true,
+      "fixture_pcm_exact_prefix": true,
+      "capture_done": true,
+      "capture_error": false,
+      "take_statuses": [
+        "ready"
+      ],
+      "first_capture_observation": "round1_first_observed_wall_ms=853 captured_ms=576",
+      "asr_hotword_input": "accepted",
+      "asr_fallback": null
+    },
+    {
+      "round": 2,
+      "gate_passed": true,
+      "stop_request_late_by_ms": 0,
+      "metrics": {
+        "replay_return_ms": 22,
+        "stop_requested_ms": 5000,
+        "stop_return_ms": 5114,
+        "drain_complete_ms": 5181,
+        "capture_ms": 5056,
+        "processed_ms": 5056,
+        "segments": 1
+      },
+      "wav_duration_ms": 5056.0,
+      "wav_pcm_equal": true,
+      "fixture_pcm_exact_prefix": true,
+      "capture_done": true,
+      "capture_error": false,
+      "take_statuses": [
+        "ready"
+      ],
+      "first_capture_observation": "round2_first_observed_wall_ms=64 captured_ms=64",
+      "asr_hotword_input": "accepted",
+      "asr_fallback": null
+    }
+  ],
+  "negative_synthetic_model": {
+    "exit_code": 0,
+    "rejected": true,
+    "integrity_error": true,
+    "recording": false,
+    "transcribing": false,
+    "synthetic_prior_audio_and_marker_unchanged": true,
+    "takes_before": 0,
+    "takes_after": 0,
+    "no_new_capture_files": true,
+    "completion_marker": true,
+    "stderr_empty": true,
+    "sampled_owned_child_names": null,
+    "sampled_owned_children_remaining": null,
+    "monitoring_note": "Original harness exited before sampling; resumed existing owned driver without re-running it.",
+    "passed": true
+  },
+  "earlier_failures_preserved": {
+    "candidate8_capture_ms": 4480,
+    "candidate13_capture_ms": 2176,
+    "gate_min_ms": 4500
+  },
+  "harness_issues": [
+    {
+      "stage": "initial positive result aggregation",
+      "failure": "Harness expected WAV in the audio directory; product stored it in the meeting files directory.",
+      "preserved_positive_execution": true,
+      "positive_driver_process_exit": 0,
+      "positive_completion_marker_present": true,
+      "negative_started_before_error": false,
+      "loss": "Sampled positive child list existed only in process memory and was not written before aggregation failed."
+    },
+    {
+      "stage": "negative fixture setup before start.request",
+      "failure": "Test harness attempted to create a meeting audio directory that the product had already created.",
+      "capture_started_before_failure": false,
+      "recovery": "Verified the owned waiting driver's PID and command line; continued the same attempt with synthetic sentinel files in the existing empty directory, without restarting the driver.",
+      "limits": "Original process-tree sampler did not survive the setup exception."
+    }
+  ],
+  "limitations": [
+    "Release source build, not a formal packaged executable or installer.",
+    "OS page cache uncontrolled; copying and checking model before test warms page cache. First means first engine receipt, not cold filesystem.",
+    "External timer originates before replay; stop request and any delay are reported.",
+    "Synthetic FFmpeg replay is not real CPAL microphone or physical product UI stop.",
+    "Process sampling data was lost when the harness aggregation failed; later OS inspection found no driver, ASR worker or FFmpeg process, but does not prove that every short-lived child was sampled.",
+    "Negative test uses isolated zero-filled files with expected model file sizes; source inspection and rejection before capture support no-spawn, but no complete process trace survived.",
+    "Synthetic existing PCM and marker in the negative fixture are unchanged; no new take, capture data or marker was observed.",
+    "No user model files, user audio, microphone or GPU used."
+  ]
+}
