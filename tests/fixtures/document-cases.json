@@ -2599,5 +2599,123 @@
       }
     ],
     "max_sections": 2
+  },
+  {
+    "name": "en_punctuation_note_captions",
+    "focus": "C++\nNode.js\nGPT-4",
+    "transcript": [
+      "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
+    ],
+    "required_verbatim": [
+      "C++",
+      "Node.js",
+      "GPT-4"
+    ],
+    "required": [
+      "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+      "(?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+    ],
+    "forbidden": [
+      "已完成",
+      "已经完成",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required_verbatim": [
+          "C++",
+          "Node.js",
+          "GPT-4"
+        ],
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+          "(?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "已完成",
+          "已经完成",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_generic_note_keeps_source_plural",
+    "focus": "录音 transcription",
+    "transcript": [
+      "The transcriptions are incomplete. The report is not approved."
+    ],
+    "required": [
+      "(?:转写|转录)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:完成|结束|完整)",
+      "(?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+    ],
+    "required_transcript": [
+      "The transcriptions are incomplete\\."
+    ],
+    "forbidden_transcript": [
+      "The transcription are incomplete\\."
+    ],
+    "forbidden": [
+      "已完成",
+      "已经完成",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束|完整)",
+          "(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "已完成",
+          "已经完成",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_unused_punctuation_notes_add_no_names",
+    "focus": "C++\nNode.js\nGPT-4",
+    "transcript": [
+      "The report remains unapproved."
+    ],
+    "required": [
+      "(?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+    ],
+    "forbidden": [
+      "C\\+\\+",
+      "Node\\.js",
+      "GPT-4",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "C\\+\\+",
+          "Node\\.js",
+          "GPT-4",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 1
   }
 ]

@@ -12,10 +12,37 @@ pub struct Terms {
     names: BTreeMap<String, String>,
     model_aliases: HashSet<String>,
     pub hotwords: Vec<String>,
+    recognition_aliases: Vec<(String, String)>,
+    priorities: BTreeMap<String, u8>,
     writer_names: Vec<String>,
     caption_names: Vec<String>,
     actor_spellings: Vec<String>,
     approximate: Vec<String>,
+}
+
+fn decoder_spelling(value: &str) -> bool {
+    !value.is_empty()
+        && value.chars().count() <= crate::asr_hotwords::MAX_WORD_CHARS
+        && value.chars().all(|c| c.is_alphanumeric() || c == ' ')
+}
+
+fn display_spelling(value: &str) -> bool {
+    !value.is_empty()
+        && value.chars().count() <= crate::asr_hotwords::MAX_WORD_CHARS
+        && !value.chars().any(char::is_control)
+}
+
+fn identifier_spelling(value: &str) -> bool {
+    value.chars().skip(1).any(|c| c.is_ascii_uppercase())
+        || value.chars().any(|c| c.is_ascii_digit())
+        || value.contains(['.', '+', '_'])
+}
+
+fn prioritize_spellings(words: &mut Vec<String>, priorities: &BTreeMap<String, u8>) {
+    words.sort_by(|a, b| priorities[a].cmp(&priorities[b]).then(a.cmp(b)));
+    let mut seen = HashSet::new();
+    words.retain(|word| seen.insert(word.to_lowercase()));
+    words.truncate(crate::asr_hotwords::MAX_WORDS);
 }
 
 // A complete explicit graphics-series keyword may supply a model number.
@@ -228,6 +255,70 @@ fn note_honorific_spellings(content: &str) -> Vec<&str> {
     }
     names
 }
+
+struct NoteWord<'a> {
+    word: &'a str,
+    named: bool,
+}
+
+/// The same bounded note admission serves glossary selection and normalization.
+fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
+    static LATIN: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let latin = LATIN.get_or_init(|| Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap());
+    let chinese_context = note
+        .content
+        .chars()
+        .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
+    let mut accepted_words = HashSet::new();
+    let mut words = Vec::new();
+    for word in latin.find_iter(&note.content) {
+        let line_start = note.content[..word.start()]
+            .rfind('\n')
+            .map_or(0, |i| i + 1);
+        let line_end = note.content[word.end()..]
+            .find('\n')
+            .map_or(note.content.len(), |i| word.end() + i);
+        let line = note.content[line_start..line_end]
+            .trim()
+            .trim_matches(['*', '-', '#', ' ']);
+        if model_identifier(line).is_some() {
+            continue;
+        }
+        let word = word.as_str().trim_end_matches(['.', '-']);
+        if accepted_words.contains(word) {
+            continue;
+        }
+        if accepted_words.len() >= 80 {
+            break;
+        }
+        accepted_words.insert(word.to_owned());
+        if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
+            continue;
+        }
+        // Standalone keywords may provide lowercase spellings. Concept headings
+        // remain ASR focus; strong identifiers and explicit terms remain names.
+        let keyword_line = note
+            .content
+            .lines()
+            .any(|line| line.trim().trim_matches(['*', '-', '#', ' ']) == word);
+        let identifier = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
+            || word.chars().any(|c| c.is_ascii_digit())
+            || word.eq_ignore_ascii_case("omascribe");
+        let concept = note.kind != "term"
+            && !identifier
+            && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
+        let named = identifier
+            || !concept
+                && (keyword_line
+                    || word.starts_with(char::is_uppercase)
+                        && note.content.contains(&format!("**{word}**")));
+        if note.kind == "term" || chinese_context || named || concept && keyword_line {
+            words.push(NoteWord { word, named });
+        }
+    }
+    words
+}
+
 impl Terms {
     pub fn fingerprint(&self) -> String {
         use sha2::{Digest, Sha256};
@@ -258,9 +349,46 @@ impl Terms {
         let mut model_aliases = HashSet::new();
         let mut conflicts = HashSet::new();
         let mut hotwords = Vec::new();
+        let mut recognition_aliases = Vec::new();
         let mut writer_names = Vec::new();
+        let mut declared_note_names = HashSet::new();
         let mut caption_names = Vec::new();
         let mut approximate = Vec::new();
+        let note_spellings: Vec<_> = crate::notes::document_notes(notes)
+            .into_iter()
+            .map(|note| {
+                (
+                    note,
+                    note_honorific_spellings(&note.content),
+                    note_words(note),
+                )
+            })
+            .collect();
+        let mut active_spellings = HashSet::new();
+        for (note, honorifics, words) in &note_spellings {
+            active_spellings.extend(honorifics.iter().map(|name| name.to_lowercase()));
+            active_spellings.extend(
+                words
+                    .iter()
+                    .filter(|word| word.named || note.kind == "term")
+                    .map(|word| word.word.to_lowercase()),
+            );
+            let mut models = HashSet::new();
+            for line in note.content.lines() {
+                let name = line.trim().trim_matches(['*', '-', '#', ' ']);
+                if let Some((prefix, digits)) = model_identifier(name) {
+                    let compact = format!("{prefix}{digits}").to_lowercase();
+                    if models.len() == 80 && !models.contains(&compact) {
+                        break;
+                    }
+                    models.insert(compact.clone());
+                    active_spellings.insert(name.to_lowercase());
+                    active_spellings.insert(compact);
+                    active_spellings.insert(format!("{prefix} {digits}").to_lowercase());
+                }
+            }
+        }
+        let mut glossary_names = HashSet::new();
         let mut expanded_models = HashSet::new();
         let explicit: HashSet<String> = entries
             .iter()
@@ -283,11 +411,27 @@ impl Terms {
             }
             names.insert(key, name.to_owned());
         };
+        let eligible = |entry: &&Entry| entry.kind == "term" && entry.enabled && !entry.deleted;
+        let active = |entry: &&Entry| {
+            std::iter::once(entry.title.as_str())
+                .chain(entry.aliases.split([',', '，', ';', '；', '\n', '|']))
+                .any(|spelling| active_spellings.contains(&spelling.trim().to_lowercase()))
+        };
+        // Select before taking the existing entry budget. Two ordered passes
+        // retain input order within ranks without building an all-entry map.
         for e in entries
             .iter()
-            .filter(|e| e.kind == "term" && e.enabled && !e.deleted)
+            .filter(eligible)
+            .filter(active)
+            .chain(
+                entries
+                    .iter()
+                    .filter(eligible)
+                    .filter(|entry| !active(entry)),
+            )
             .take(80)
         {
+            glossary_names.insert(e.title.trim().to_owned());
             hotwords.push(e.title.trim().to_owned());
             writer_names.push(e.title.trim().to_owned());
             caption_names.push(e.title.trim().to_owned());
@@ -297,6 +441,15 @@ impl Terms {
                 .chain(e.aliases.split([',', '，', ';', '；', '\n', '|']))
             {
                 add(alias, &e.title);
+                // Punctuation is part of the display spelling, but native
+                // hotword syntax stays strict. Only the user's complete,
+                // explicit aliases can supply another recognition spelling.
+                if !decoder_spelling(e.title.trim())
+                    && display_spelling(e.title.trim())
+                    && decoder_spelling(alias.trim())
+                {
+                    recognition_aliases.push((alias.trim().to_owned(), e.title.trim().to_owned()));
+                }
                 if let Some((prefix, digits)) = model_identifier(alias.trim()) {
                     model_aliases.insert(alias.trim().to_lowercase());
                     let key = (
@@ -323,9 +476,8 @@ impl Terms {
             }
         }
         // User-written names supply spelling/casing, never facts or inferred aliases.
-        let latin = Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap();
-        for n in crate::notes::document_notes(notes) {
-            for name in note_honorific_spellings(&n.content) {
+        for (n, honorifics, words) in note_spellings {
+            for name in honorifics {
                 if !explicit.contains(&name.to_lowercase()) {
                     add(name, name);
                     hotwords.push(name.to_owned());
@@ -340,6 +492,9 @@ impl Terms {
                 };
                 let compact = format!("{prefix}{digits}");
                 let spaced = format!("{prefix} {digits}");
+                active_spellings.insert(name.to_lowercase());
+                active_spellings.insert(compact.to_lowercase());
+                active_spellings.insert(spaced.to_lowercase());
                 // Explicit glossary names and aliases always take precedence.
                 if explicit.contains(&compact.to_lowercase())
                     || explicit.contains(&spaced.to_lowercase())
@@ -365,58 +520,7 @@ impl Terms {
                 writer_names.push(name.to_owned());
                 caption_names.push(name.to_owned());
             }
-            let chinese_context = n
-                .content
-                .chars()
-                .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
-            let mut accepted_words = HashSet::new();
-            for word in latin.find_iter(&n.content) {
-                let line_start = n.content[..word.start()].rfind('\n').map_or(0, |i| i + 1);
-                let line_end = n.content[word.end()..]
-                    .find('\n')
-                    .map_or(n.content.len(), |i| word.end() + i);
-                let line = n.content[line_start..line_end]
-                    .trim()
-                    .trim_matches(['*', '-', '#', ' ']);
-                if model_identifier(line).is_some() {
-                    continue;
-                }
-                let word = word.as_str().trim_end_matches(['.', '-']);
-                if accepted_words.contains(word) {
-                    continue;
-                }
-                if accepted_words.len() >= 80 {
-                    break;
-                }
-                accepted_words.insert(word.to_owned());
-                if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
-                    continue;
-                }
-                // A standalone keyword line may supply a spelling even in
-                // lowercase (gtx1650/nvidia); concept headings remain separate.
-                let keyword_line = n
-                    .content
-                    .lines()
-                    .any(|line| line.trim().trim_matches(['*', '-', '#', ' ']) == word);
-                let identifier = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
-                    || word.chars().any(|c| c.is_ascii_digit())
-                    || word.eq_ignore_ascii_case("omascribe");
-                // A few ordinary concept headings are useful focus/ASR words,
-                // not literal names. Explicit terms and strong identifiers
-                // retain their spelling rules, including DATE as an acronym.
-                let concept = n.kind != "term"
-                    && !identifier
-                    && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
-                let named = identifier
-                    || !concept
-                        && (keyword_line
-                            || word.starts_with(char::is_uppercase)
-                                && n.content.contains(&format!("**{word}**")));
-                let usable_asr_word =
-                    n.kind == "term" || chinese_context || named || concept && keyword_line;
-                if !usable_asr_word {
-                    continue;
-                }
+            for NoteWord { word, named } in words {
                 let name = if word.eq_ignore_ascii_case("omascribe") {
                     "OmaScribe"
                 } else {
@@ -430,17 +534,23 @@ impl Terms {
                     // ordinary words must remain free to translate.
                     if named || n.kind == "term" {
                         writer_names.push(name.to_owned());
+                        if n.kind == "term" {
+                            declared_note_names.insert(name.to_owned());
+                        }
                     }
                     // A generic keyword such as Budget is still translatable.
                     // Strong product identifiers and explicitly stored terms
                     // supply caption spellings, never additional speech facts.
                     if name.chars().skip(1).any(|c| c.is_ascii_uppercase())
                         || name.chars().any(|c| c.is_ascii_digit())
+                        || named && name.contains(['.', '+', '_'])
                         || n.kind == "term"
                     {
                         caption_names.push(name.to_owned());
                     }
-                    approximate.push(name.to_owned());
+                    if named || n.kind == "term" {
+                        approximate.push(name.to_owned());
+                    }
                 }
             }
         }
@@ -464,6 +574,27 @@ impl Terms {
         for key in conflicts {
             names.remove(&key);
         }
+        // A note may name an explicit glossary alias. Resolve priority through
+        // the final, non-conflicting map without changing canonical spelling.
+        let active_names: HashSet<_> = active_spellings
+            .iter()
+            .filter_map(|spelling| names.get(spelling))
+            .collect();
+        let priorities: BTreeMap<_, _> = hotwords
+            .iter()
+            .chain(&writer_names)
+            .chain(&caption_names)
+            .map(|name| {
+                let priority = if active_names.contains(name) {
+                    0
+                } else if glossary_names.contains(name) {
+                    1
+                } else {
+                    2
+                };
+                (name.clone(), priority)
+            })
+            .collect();
         model_aliases.retain(|key| names.contains_key(key));
         let mut aliases: Vec<_> = names.keys().collect();
         aliases.sort_by_key(|s| std::cmp::Reverse(s.len()));
@@ -479,33 +610,41 @@ impl Terms {
             .build()
             .unwrap()
         });
-        hotwords.retain(|s| {
-            !s.is_empty()
-                && s.chars().count() <= 80
-                && s.chars().all(|c| c.is_alphanumeric() || c == ' ')
+        hotwords.retain(|s| decoder_spelling(s));
+        prioritize_spellings(&mut hotwords, &priorities);
+        writer_names.retain(|s| {
+            display_spelling(s)
+                && names.get(&s.to_lowercase()) == Some(s)
+                && (decoder_spelling(s)
+                    || identifier_spelling(s)
+                    || glossary_names.contains(s)
+                    || declared_note_names.contains(s))
         });
-        hotwords.sort();
-        hotwords.dedup();
-        hotwords.truncate(80);
-        writer_names.retain(|s| hotwords.contains(s) && names.get(&s.to_lowercase()) == Some(s));
-        writer_names.sort();
-        writer_names.dedup();
-        caption_names.retain(|s| hotwords.contains(s) && names.get(&s.to_lowercase()) == Some(s));
-        caption_names.sort();
-        caption_names.dedup();
+        prioritize_spellings(&mut writer_names, &priorities);
+        caption_names.retain(|s| display_spelling(s) && names.get(&s.to_lowercase()) == Some(s));
+        prioritize_spellings(&mut caption_names, &priorities);
+        recognition_aliases.retain(|(alias, canonical)| {
+            writer_names.contains(canonical) && names.get(&alias.to_lowercase()) == Some(canonical)
+        });
+        recognition_aliases.sort_by(|(alias, canonical), (other_alias, other_canonical)| {
+            priorities[canonical]
+                .cmp(&priorities[other_canonical])
+                .then(canonical.cmp(other_canonical))
+                .then(alias.cmp(other_alias))
+        });
         approximate.retain(|s| {
             (8..=40).contains(&s.len())
                 && s.chars().all(|c| c.is_ascii_alphabetic())
                 && names.get(&s.to_lowercase()) == Some(s)
         });
-        approximate.sort();
-        approximate.dedup();
-        approximate.truncate(80);
+        prioritize_spellings(&mut approximate, &priorities);
         Self {
             matcher,
             names,
             model_aliases,
             hotwords,
+            recognition_aliases,
+            priorities,
             writer_names,
             caption_names,
             actor_spellings: Vec::new(),
@@ -630,11 +769,13 @@ impl Terms {
     /// The bundled token inventory represents spoken digits as CJK characters.
     /// Keep the display spelling for notes, but send a complete encodable hint.
     pub fn recognition_hotwords(&self) -> Vec<String> {
-        let mut primary = Vec::new();
-        let mut other_models = Vec::new();
-        let mut alternatives = Vec::new();
-        let mut title_fallbacks = Vec::new();
+        // Keep the existing model/alternative preference inside each rank.
+        // Explicit punctuation aliases inherit their canonical name's rank.
+        let mut ranked: [[Vec<String>; 5]; 3] =
+            std::array::from_fn(|_| std::array::from_fn(|_| Vec::new()));
         for name in &self.hotwords {
+            let [primary, other_models, title_fallbacks, alternatives, _] =
+                &mut ranked[usize::from(self.priorities[name])];
             let mut seen_models = HashSet::new();
             let mut models = Vec::new();
             for (prefix, digits) in
@@ -666,14 +807,15 @@ impl Terms {
                 alternatives.push(format!("{prefix} {}", english_digits(digits)));
             }
         }
+        for (alias, canonical) in &self.recognition_aliases {
+            ranked[usize::from(self.priorities[canonical])][4].push(alias.clone());
+        }
         let mut seen = HashSet::new();
-        primary
+        ranked
             .into_iter()
-            .chain(other_models)
-            .chain(title_fallbacks)
-            .chain(alternatives)
+            .flat_map(|groups| groups.into_iter().flatten())
             .filter(|word| seen.insert(word.to_lowercase()))
-            .take(80)
+            .take(crate::asr_hotwords::MAX_WORDS)
             .collect()
     }
     fn normalize_near_names(&self, text: &str) -> String {
@@ -1946,6 +2088,270 @@ mod tests {
             .validate_writer_names(source, "离线转写原型已可评审。")
             .is_err());
     }
+
+    #[test]
+    fn ordinary_mixed_language_focus_preserves_a_spoken_plural() {
+        for (word, source) in [
+            ("transcription", "The transcriptions are incomplete."),
+            ("recording", "The recordings are incomplete."),
+        ] {
+            let terms = Terms::new(&[note(&format!("录音 {word}"))], &[]);
+            assert!(terms.recognition_hotwords().contains(&word.to_owned()));
+            assert!(terms.spellings(source).is_empty());
+            assert_eq!(terms.normalize(source), source);
+            assert_eq!(terms.normalize(&word.to_uppercase()), word);
+        }
+        let glossary = Terms::new(
+            &[],
+            &[Entry {
+                kind: "term".into(),
+                title: "PixelLedger".into(),
+                ..Default::default()
+            }],
+        );
+        assert_eq!(
+            glossary.normalize("PIXEL LEDGRE remains untested."),
+            "PixelLedger remains untested."
+        );
+    }
+
+    fn glossary(count: usize) -> Vec<Entry> {
+        (0..count)
+            .map(|i| Entry {
+                kind: "term".into(),
+                title: format!("AName{i:03}"),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn active_note_name_precedes_eighty_unreferenced_global_names() {
+        let entries = glossary(80);
+        let plain = Terms::new(&[], &entries);
+        let old_order: Vec<_> = entries.iter().map(|entry| entry.title.clone()).collect();
+        assert_eq!(plain.hotwords, old_order);
+        assert_eq!(plain.recognition_hotwords(), old_order);
+        let terms = Terms::new(&[note("ZoraLedger")], &entries);
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), 80);
+        assert_eq!(hints[0], "ZoraLedger");
+        assert_eq!(&hints[1..], &old_order[..79]);
+        assert_eq!(terms.writer_names.len(), 80);
+        assert_eq!(terms.caption_names.len(), 80);
+        assert_eq!(
+            terms.spellings("ZoraLedger remains untested."),
+            ["ZoraLedger"]
+        );
+        assert_eq!(
+            terms.caption_spellings("ZoraLedger remains untested."),
+            ["ZoraLedger"]
+        );
+    }
+
+    #[test]
+    fn active_note_selects_a_global_canonical_or_alias_before_the_entry_cap() {
+        for (canonical, aliases) in [("ZoraLedger", ""), ("Zora-Ledger", "ZoraLedger")] {
+            let mut entries = glossary(80);
+            entries.push(Entry {
+                kind: "term".into(),
+                title: canonical.into(),
+                aliases: aliases.into(),
+                ..Default::default()
+            });
+            let terms = Terms::new(&[note("ZoraLedger")], &entries);
+            let hints = terms.recognition_hotwords();
+            assert_eq!(hints.len(), 80);
+            assert_eq!(hints[0], "ZoraLedger");
+            assert_eq!(
+                terms.normalize("ZoraLedger remains untested."),
+                format!("{canonical} remains untested.")
+            );
+            assert_eq!(terms.spellings("ZoraLedger remains untested."), [canonical]);
+            assert_eq!(
+                terms.caption_spellings("ZoraLedger remains untested."),
+                [canonical]
+            );
+            assert_eq!(
+                Terms::new(&[], &entries).hotwords,
+                glossary(80)
+                    .into_iter()
+                    .map(|entry| entry.title)
+                    .collect::<Vec<_>>()
+            );
+        }
+        let mut entries = glossary(80);
+        for title in ["Zora-Ledger", "Other-Ledger"] {
+            entries.push(Entry {
+                kind: "term".into(),
+                title: title.into(),
+                aliases: "SharedName".into(),
+                ..Default::default()
+            });
+        }
+        let conflicts = Terms::new(&[note("SharedName")], &entries);
+        assert!(!conflicts
+            .recognition_hotwords()
+            .iter()
+            .any(|word| word.eq_ignore_ascii_case("SharedName")));
+        assert_eq!(
+            conflicts.normalize("SharedName remains untested."),
+            "SharedName remains untested."
+        );
+    }
+
+    #[test]
+    fn active_note_priority_also_preserves_near_name_candidates() {
+        let entries: Vec<_> = (0..80)
+            .map(|i| Entry {
+                kind: "term".into(),
+                title: format!(
+                    "AlphaName{}{}",
+                    char::from(b'a' + i / 26),
+                    char::from(b'a' + i % 26)
+                ),
+                ..Default::default()
+            })
+            .collect();
+        let terms = Terms::new(&[note("ZoraLedger\n\n录音 transcription")], &entries);
+        assert_eq!(terms.approximate.len(), 80);
+        assert_eq!(terms.approximate[0], "ZoraLedger");
+        assert_eq!(
+            terms.normalize("ZoraLedgr remains untested."),
+            "ZoraLedger remains untested."
+        );
+        let ordinary = "Only transcriptions remain incomplete.";
+        assert_eq!(terms.normalize(ordinary), ordinary);
+        assert!(terms.spellings(ordinary).is_empty());
+        assert!(!terms.approximate.contains(&"transcription".to_owned()));
+    }
+
+    #[test]
+    fn priority_uses_only_existing_admitted_note_name_classes() {
+        let entries = glossary(80);
+        for (content, hint, canonical) in [
+            ("**ZoraLedger**", "ZoraLedger", "ZoraLedger"),
+            ("**王老师**", "王老师", "王老师"),
+            ("gtx1650", "gtx 一六五零", "gtx1650"),
+        ] {
+            let terms = Terms::new(&[note(content)], &entries);
+            assert_eq!(terms.recognition_hotwords()[0], hint);
+            assert!(terms.writer_names.contains(&canonical.to_owned()));
+            assert!(terms.caption_names.contains(&canonical.to_owned()));
+        }
+        let mut explicit_note = note("录音 terminology");
+        explicit_note.kind = "term".into();
+        let terms = Terms::new(&[explicit_note], &entries);
+        assert_eq!(terms.recognition_hotwords()[0], "terminology");
+        assert!(terms.writer_names.contains(&"terminology".to_owned()));
+        let plain = Terms::new(&[], &entries);
+        assert_eq!(
+            Terms::new(&[note("**张敬先**")], &entries).recognition_hotwords(),
+            plain.recognition_hotwords()
+        );
+    }
+
+    #[test]
+    fn active_punctuation_alias_inherits_canonical_priority_and_glossary_spelling() {
+        let mut entries = vec![Entry {
+            kind: "term".into(),
+            title: "Node.js".into(),
+            aliases: "NODE JS,SHARED".into(),
+            ..Default::default()
+        }];
+        entries.extend(glossary(79));
+        let terms = Terms::new(&[note("Node.js\n\n录音 transcription")], &entries);
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), 80);
+        assert_eq!(&hints[..2], ["NODE JS", "SHARED"]);
+        assert!(!hints.contains(&"transcription".to_owned()));
+        assert_eq!(
+            terms.normalize("NODE JS remains untested."),
+            "Node.js remains untested."
+        );
+        let mut entries = glossary(79);
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "CanonicalNode".into(),
+            aliases: "ZoraLedger".into(),
+            ..Default::default()
+        });
+        let explicit = Terms::new(&[note("ZoraLedger")], &entries);
+        assert_eq!(explicit.recognition_hotwords()[0], "CanonicalNode");
+        assert_eq!(
+            explicit.normalize("ZoraLedger remains untested."),
+            "CanonicalNode remains untested."
+        );
+        let conflicts = Terms::new(
+            &[note("SHARED")],
+            &[
+                Entry {
+                    kind: "term".into(),
+                    title: "C++".into(),
+                    aliases: "SHARED".into(),
+                    ..Default::default()
+                },
+                Entry {
+                    kind: "term".into(),
+                    title: "C--".into(),
+                    aliases: "SHARED".into(),
+                    ..Default::default()
+                },
+            ],
+        );
+        assert!(conflicts.recognition_hotwords().is_empty());
+        assert_eq!(
+            conflicts.normalize("SHARED remains untested."),
+            "SHARED remains untested."
+        );
+    }
+
+    #[test]
+    fn generic_mixed_prose_never_displaces_explicit_global_names() {
+        let mut entries = glossary(80);
+        for entry in &mut entries {
+            entry.title = entry.title.to_lowercase();
+        }
+        let plain = Terms::new(&[], &entries);
+        let terms = Terms::new(&[note("录音 budget transcription recordings")], &entries);
+        assert_eq!(terms.recognition_hotwords(), plain.recognition_hotwords());
+        assert_eq!(terms.hotwords.len(), 80);
+    }
+
+    #[test]
+    fn admitted_note_overflow_and_case_duplicates_use_one_deterministic_hint_budget() {
+        let names: Vec<_> = (0..81).map(|i| format!("NoteName{i:03}")).collect();
+        let notes = [note(&names.join("\n"))];
+        let terms = Terms::new(&notes, &[]);
+        assert_eq!(terms.recognition_hotwords(), names[..80]);
+        assert_eq!(
+            Terms::new(&notes, &[]).recognition_hotwords(),
+            terms.recognition_hotwords()
+        );
+        let mut entries = glossary(79);
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "ZoraLedger".into(),
+            ..Default::default()
+        });
+        let duplicate = Terms::new(&[note("ZoraLedger\nZORALEDGER\nzoraledger")], &entries);
+        let hints = duplicate.recognition_hotwords();
+        assert_eq!(hints.len(), 80);
+        assert_eq!(hints[0], "ZoraLedger");
+        assert_eq!(
+            hints
+                .iter()
+                .filter(|word| word.eq_ignore_ascii_case("zoraledger"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            crate::asr_hotwords::encode_words(&hints)
+                .stats
+                .accepted_terms,
+            80
+        );
+    }
     #[test]
     fn writer_receives_note_spelling_without_opt_in_knowledge_or_memory() {
         let dir = tempfile::tempdir().unwrap();
@@ -1984,6 +2390,284 @@ mod tests {
         );
         assert_eq!(Terms::new(&[], &[]).normalize("奥马的SCRIB"), "奥马的SCRIB");
     }
+
+    #[test]
+    fn implicit_hyphen_focus_remains_translatable_in_minutes() {
+        let terms = Terms::new(&[note("follow-up")], &[]);
+        let source = "A follow-up is still pending.";
+        assert!(terms.spellings(source).is_empty());
+        assert!(terms
+            .validate_writer_names(source, "跟进仍待处理。")
+            .is_ok());
+        let mut declared = note("follow-up");
+        declared.kind = "term".into();
+        assert_eq!(
+            Terms::new(&[declared], &[]).spellings(source),
+            ["follow-up"]
+        );
+        for (title, alias) in [("C--", "C MINUS MINUS"), ("follow-up", "FOLLOW UP")] {
+            let explicit = Terms::new(
+                &[],
+                &[Entry {
+                    kind: "term".into(),
+                    title: title.into(),
+                    aliases: alias.into(),
+                    ..Default::default()
+                }],
+            );
+            assert_eq!(
+                explicit.spellings(&format!("{alias} remains pending.")),
+                [title]
+            );
+        }
+        let identifiers = Terms::new(&[note("C++\nNode.js\nGPT-4")], &[]);
+        for name in ["C++", "Node.js", "GPT-4"] {
+            assert_eq!(
+                identifiers.spellings(&format!("{name} remains pending.")),
+                [name]
+            );
+        }
+    }
+
+    #[test]
+    fn standalone_note_punctuation_names_keep_literal_caption_spellings() {
+        let terms = Terms::new(&[note("C++\nNode.js")], &[]);
+        let source = "C++ and Node.js remain untested.";
+        assert_eq!(terms.spellings(source), ["C++", "Node.js"]);
+        assert_eq!(terms.caption_spellings(source), ["C++", "Node.js"]);
+        assert_eq!(terms.normalize(source), source);
+        assert!(terms.recognition_hotwords().is_empty());
+        assert_eq!(
+            terms.normalize("C PLUS PLUS and NODE JS"),
+            "C PLUS PLUS and NODE JS"
+        );
+        assert!(terms
+            .caption_spellings("The test remains pending.")
+            .is_empty());
+        assert!(terms.spellings("The test remains pending.").is_empty());
+        let generic = Terms::new(&[note("录音 note-taking\nfollow-up")], &[]);
+        assert!(generic
+            .caption_spellings("The note-taking follow-up remains pending.")
+            .is_empty());
+    }
+
+    #[test]
+    fn punctuation_names_preserve_display_spellings_and_only_explicit_decoder_aliases() {
+        let entries: Vec<_> = [
+            ("C++", "C PLUS PLUS"),
+            ("GPT-4", "GPT FOUR"),
+            ("Node.js", "NODE JS"),
+        ]
+        .into_iter()
+        .map(|(title, aliases)| Entry {
+            kind: "term".into(),
+            title: title.into(),
+            aliases: aliases.into(),
+            ..Default::default()
+        })
+        .collect();
+        let terms = Terms::new(&[], &entries);
+        let source = "C PLUS PLUS and GPT FOUR use NODE JS. The test is still pending.";
+        let corrected = "C++ and GPT-4 use Node.js. The test is still pending.";
+        assert_eq!(terms.normalize(source), corrected);
+        assert!(terms.hotwords.is_empty());
+        assert_eq!(
+            terms.recognition_hotwords(),
+            ["C PLUS PLUS", "GPT FOUR", "NODE JS"]
+        );
+        let wire = crate::asr_hotwords::encode_words(&terms.recognition_hotwords());
+        assert_eq!(wire.words, "C PLUS PLUS\nGPT FOUR\nNODE JS");
+        assert_eq!(
+            crate::asr_hotwords::validate_words(&wire.words).unwrap(),
+            wire.words
+        );
+        assert_eq!(terms.spellings(source), ["C++", "GPT-4", "Node.js"]);
+        assert_eq!(terms.caption_spellings(source), ["C++", "GPT-4", "Node.js"]);
+        assert!(terms.validate_writer_names(source, corrected).is_ok());
+        assert!(terms
+            .validate_writer_names(source, "The test is still pending.")
+            .is_err());
+        assert!(terms.spellings("The test is still pending.").is_empty());
+        assert!(terms
+            .validate_writer_names("The test is still pending.", "The test is still pending.")
+            .is_ok());
+        // Knowing punctuation alone never invents a pronunciation or an alias.
+        let unaliased = Terms::new(
+            &[],
+            &[Entry {
+                kind: "term".into(),
+                title: "Node.js".into(),
+                ..Default::default()
+            }],
+        );
+        assert!(unaliased.recognition_hotwords().is_empty());
+        assert_eq!(unaliased.normalize("NODE JS"), "NODE JS");
+        assert_eq!(
+            unaliased.spellings("Node.js remains untested."),
+            ["Node.js"]
+        );
+    }
+
+    #[test]
+    fn punctuation_aliases_keep_native_syntax_conflicts_and_disabled_entries_out_of_hints() {
+        let entries: Vec<_> = [
+            (
+                "C++",
+                "SHARED,C PLUS PLUS,C PLUS PLUS :99999,C\tPLUS,C\0PLUS",
+                true,
+                false,
+            ),
+            ("C--", "SHARED,C MINUS MINUS", true, false),
+            ("GPT-4", "DISABLED", false, false),
+            ("Node.js", "DELETED", true, true),
+            ("BAD\0TITLE", "CONTROL TITLE", true, false),
+        ]
+        .into_iter()
+        .map(|(title, aliases, enabled, deleted)| Entry {
+            kind: "term".into(),
+            title: title.into(),
+            aliases: aliases.into(),
+            enabled,
+            deleted,
+            ..Default::default()
+        })
+        .collect();
+        let terms = Terms::new(&[], &entries);
+        assert_eq!(
+            terms.normalize("SHARED DISABLED DELETED"),
+            "SHARED DISABLED DELETED"
+        );
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints, ["C PLUS PLUS", "C MINUS MINUS"]);
+        let wire = crate::asr_hotwords::encode_words(&hints);
+        assert_eq!(wire.words, "C PLUS PLUS\nC MINUS MINUS");
+        assert_eq!(
+            crate::asr_hotwords::validate_words(&wire.words).unwrap(),
+            wire.words
+        );
+        assert!(terms.spellings("DISABLED DELETED CONTROL TITLE").is_empty());
+    }
+
+    #[test]
+    fn punctuation_aliases_share_the_existing_recognition_and_spelling_bounds() {
+        let terms = Terms::new(
+            &[],
+            &[Entry {
+                kind: "term".into(),
+                title: "Node.js".into(),
+                aliases: (0..100)
+                    .map(|i| format!("NODE JS {i}"))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                ..Default::default()
+            }],
+        );
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), crate::asr_hotwords::MAX_WORDS);
+        let wire = crate::asr_hotwords::encode_words(&hints);
+        assert_eq!(wire.stats.accepted_terms, crate::asr_hotwords::MAX_WORDS);
+        assert!(wire.words.len() <= crate::asr_hotwords::MAX_WORD_BYTES);
+        assert_eq!(
+            crate::asr_hotwords::validate_words(&wire.words).unwrap(),
+            wire.words
+        );
+        let entries: Vec<_> = (0..100)
+            .map(|i| Entry {
+                kind: "term".into(),
+                title: format!("Name-{i}"),
+                ..Default::default()
+            })
+            .collect();
+        let many = Terms::new(&[], &entries);
+        assert_eq!(many.writer_names.len(), 80);
+        assert_eq!(many.caption_names.len(), 80);
+    }
+
+    #[test]
+    fn saving_a_note_replays_punctuation_aliases_with_revised_sources_and_citations() -> Result<()>
+    {
+        let dir = tempfile::tempdir()?;
+        let engine = Engine::open(dir.path().into())?;
+        let meeting = engine.create_meeting("Punctuation spelling replay")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        engine.save_library_entry(Entry {
+            kind: "term".into(),
+            title: "GPT-4".into(),
+            aliases: "GPT FOUR".into(),
+            ..Default::default()
+        })?;
+        let note =
+            engine.save_note(&meeting.id, None, "Review the pending test.", "document", 0)?;
+        let source = crate::Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "GPT FOUR has not completed the test.".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let before = engine.snapshot(&meeting.id)?;
+        engine.store.lock().unwrap().commit_document(
+            &before,
+            std::slice::from_ref(&source),
+            1,
+            vec![crate::Suggestion {
+                id: String::new(),
+                meeting_id: meeting.id.clone(),
+                kind: "section".into(),
+                focus: String::new(),
+                text: source.text.clone(),
+                status: "pending".into(),
+                stale: false,
+                sources: vec![crate::Source {
+                    segment_id: source.id.clone(),
+                    revision: source.revision,
+                    start_ms: source.start_ms,
+                    end_ms: source.end_ms,
+                    quote: source.text.clone(),
+                    speaker_name: None,
+                }],
+            }],
+            false,
+        )?;
+        engine.save_note(
+            &meeting.id,
+            Some(note.id),
+            "Review GPT-4's pending test.",
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&meeting.id)?;
+        let corrected = "GPT-4 has not completed the test.";
+        assert_eq!(after.segments[0].text, corrected);
+        assert_eq!(after.segments[0].revision, 2);
+        assert_eq!(after.suggestions[0].text, corrected);
+        assert!(!after.suggestions[0].stale);
+        assert_eq!(after.suggestions[0].sources[0].quote, corrected);
+        assert_eq!(after.suggestions[0].sources[0].revision, 2);
+        let original: String = engine.store.lock().unwrap().conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&source.id],
+            |r| r.get(0),
+        )?;
+        assert_eq!(
+            serde_json::from_str::<crate::Segment>(&original)?.text,
+            source.text
+        );
+        engine.edit_segment(&source.id, "Human review keeps GPT FOUR as an example.", 2)?;
+        assert_eq!(engine.correct_terminology(&meeting.id)?, 0);
+        assert_eq!(
+            engine.snapshot(&meeting.id)?.segments[0].text,
+            "Human review keeps GPT FOUR as an example."
+        );
+        Ok(())
+    }
+
     #[test]
     fn conflicting_aliases_are_not_guessed() {
         let entries = vec![
