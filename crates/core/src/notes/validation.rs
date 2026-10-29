@@ -880,6 +880,195 @@ fn completion_name_mask(text: &str, source: &str, terms: &crate::terminology::Te
     }
     String::from_utf8(mask).expect("masked name spans contain ASCII only")
 }
+
+#[cfg(test)]
+mod hedged_translation_completion_tests {
+    use super::*;
+
+    const ACTUAL_SOURCE: &str = "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT";
+    const ACTUAL_TARGET: &str =
+        "记住即使主舞台的音乐可能已经完成，嘉年华的某些部分仍可能继续演奏音乐直到深夜";
+
+    fn source(text: &str) -> Segment {
+        Segment {
+            id: "hedged-source".into(),
+            meeting_id: "m".into(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        }
+    }
+
+    #[test]
+    fn actual_hedged_asr_finish_translation_keeps_its_uncertain_past() -> Result<()> {
+        crate::translation::validate_text(
+            ACTUAL_TARGET,
+            &source(ACTUAL_SOURCE),
+            "zh",
+            &crate::terminology::Terms::new(&[], &[]),
+        )
+    }
+
+    #[test]
+    fn generic_modal_past_completion_does_not_ban_unrelated_future_work() -> Result<()> {
+        for predicate in [
+            "MAY HAVE FINISHED",
+            "MIGHT HAVE COMPLETED",
+            "MIGHT HAVE BEEN COMPLETED",
+        ] {
+            crate::translation::validate_text(
+                "任务或许已经完成，播放仍将继续。",
+                &source(&format!("THE TASK {predicate}. PLAYBACK WILL CONTINUE.")),
+                "zh",
+                &crate::terminology::Terms::new(&[], &[]),
+            )?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn translation_hedge_cannot_waive_other_states_or_nonassertive_evidence() {
+        let valid = "THE TASK MAY HAVE FINISHED.";
+        let target = "任务可能已经完成。";
+        for (original, body) in [
+            (
+                ACTUAL_SOURCE,
+                "记住即使主舞台的音乐已经完成，嘉年华仍可能继续演奏音乐直到深夜。",
+            ),
+            ("THE TASK WILL BE COMPLETED.", target),
+            ("THE TASK MAY FINISH.", target),
+            ("THE TASK MAY NOT HAVE FINISHED.", target),
+            ("NOT THE TASK MAY HAVE FINISHED.", target),
+            (
+                "IF THE TASK MAY HAVE FINISHED, PLAYBACK WILL CONTINUE.",
+                target,
+            ),
+            ("\"THE TASK MAY HAVE FINISHED.\"", target),
+            ("THE TASK MAY HAVE FINISHED?", target),
+            (valid, "如果任务可能已经完成，就继续播放。"),
+            (valid, "“任务可能已经完成。”"),
+            (valid, "任务不可能已经完成。"),
+            (valid, "任务未必可能已经完成。"),
+            (valid, "任务可能已经完成吗"),
+            (valid, "任务可能已经完成，审核已经完成。"),
+            (
+                "THE TASK MAY HAVE FINISHED. THE AUDIT WAS COMPLETED.",
+                target,
+            ),
+            ("THE TASK MAY HAVE FINISHED. THE AUDIT WILL FINISH.", target),
+            (valid, "任务可能已经完成，已告知团队。"),
+            (valid, "任务可能已经完成，已提供材料。"),
+        ] {
+            assert!(
+                crate::translation::validate_text(
+                    body,
+                    &source(original),
+                    "zh",
+                    &crate::terminology::Terms::new(&[], &[]),
+                )
+                .is_err(),
+                "{original} -> {body}"
+            );
+        }
+    }
+
+    #[test]
+    fn conditional_or_second_completion_cannot_borrow_a_modal_state() {
+        let valid = "THE TASK MAY HAVE FINISHED.";
+        let target = "任务可能已经完成。";
+        let accepted: Vec<_> = [
+            (
+                "WHEN THE TASK MAY HAVE FINISHED, PLAYBACK WILL CONTINUE.",
+                target,
+            ),
+            (
+                "ONCE THE TASK MAY HAVE FINISHED, PLAYBACK WILL CONTINUE.",
+                target,
+            ),
+            (valid, "一旦任务可能已经完成，就继续播放。"),
+            (valid, "只要任务可能已经完成，就继续播放。"),
+            (valid, "只有任务可能已经完成，才继续播放。"),
+            (valid, "任务可能已经完成，审核已经结束。"),
+            ("THE TASK MAY HAVE FINISHED. THE AUDIT HAS ENDED.", target),
+        ]
+        .into_iter()
+        .filter(|(original, body)| {
+            crate::translation::validate_text(
+                body,
+                &source(original),
+                "zh",
+                &crate::terminology::Terms::new(&[], &[]),
+            )
+            .is_ok()
+        })
+        .collect();
+        assert!(accepted.is_empty(), "{accepted:?}");
+    }
+
+    #[test]
+    fn protected_modal_or_predicate_names_cannot_authorize_a_completion() {
+        for literal in ["may", "completed", "if"] {
+            let terms = crate::terminology::Terms::new(
+                &[],
+                &[crate::library::Entry {
+                    kind: "term".into(),
+                    title: literal.into(),
+                    enabled: true,
+                    ..Default::default()
+                }],
+            );
+            let original = if literal == "if" {
+                "IF THE TASK MAY HAVE COMPLETED."
+            } else {
+                "THE TASK MAY HAVE COMPLETED."
+            };
+            assert!(completion_name_mask(original, original, &terms).contains('#'));
+            assert!(validate_translation_with_terms(
+                "任务可能已经完成。",
+                &source(original),
+                "m",
+                &terms
+            )
+            .is_err());
+        }
+    }
+
+    #[test]
+    fn modal_translation_exception_does_not_extend_to_prose_or_multiple_sources() {
+        let first = source("THE TASK MAY HAVE FINISHED.");
+        let draft = |body: &str, indices: &[usize]| {
+            serde_json::json!({
+                "sections":[{"title":"状态","body":body,"sources":indices}]
+            })
+            .to_string()
+        };
+        assert!(validate(
+            &draft("任务可能已经完成。", &[1]),
+            std::slice::from_ref(&first),
+            "m"
+        )
+        .is_err());
+        let mut second = source("THE AUDIT WILL FINISH.");
+        second.id = "other-source".into();
+        second.seq = 2;
+        assert!(validate_document(
+            &draft("审核可能已经完成。", &[1, 2]),
+            &[first, second],
+            "m",
+            &Default::default(),
+            16_000,
+            false,
+            &crate::terminology::Terms::new(&[], &[]),
+        )
+        .is_err());
+    }
+}
+
 fn validate_document(
     content: &str,
     segments: &[Segment],
@@ -1163,7 +1352,17 @@ fn validate_document(
         }
         if ["已告知", "已提供", "已完成", "已经完成"]
             .iter()
-            .any(|word| body.contains(word) && !evidence.contains(word))
+            .any(|word| {
+                body.contains(word)
+                    && !evidence.contains(word)
+                    && !(matches!(*word, "已完成" | "已经完成")
+                        && !require_prose
+                        && sources.len() == 1
+                        && super::completion::hedged_completion_covers(
+                            &completion_name_mask(&sources[0].quote, &sources[0].quote, terms),
+                            &completion_name_mask(body, &sources[0].quote, terms),
+                        ))
+            })
         {
             bail!("文档可能将计划写成了已完成事项，本轮未提交");
         }
