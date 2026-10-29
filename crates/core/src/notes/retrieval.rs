@@ -164,9 +164,9 @@ pub fn fingerprint(notes: &[UserNote], segments: &[Segment], cursor: u32) -> Str
             hash = hash.wrapping_mul(0x100000001b3);
         }
     };
-    // Revisit automatic drafts once for source-state composition and spelling fixes.
+    // Revisit automatic drafts once for complete model-number evidence checks.
     // Human paragraphs remain protected by the transactional document merge.
-    add(b"document-v28-closed-state-fields");
+    add(b"document-v29-model-number-evidence");
     for note in document_notes(notes) {
         add(note.content.as_bytes());
         add(note.kind.as_bytes());

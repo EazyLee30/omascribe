@@ -19,7 +19,7 @@ pub struct Terms {
 
 // A complete explicit graphics-series keyword may supply a model number.
 // Monetary abbreviations such as "RMB 3000" are not graphics identifiers.
-fn model_identifier(value: &str) -> Option<(&str, &str)> {
+pub(crate) fn model_identifier(value: &str) -> Option<(&str, &str)> {
     static MODEL: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let parts = MODEL
         .get_or_init(|| Regex::new(r"(?i)^([a-z]{2,8})[ \t]*([0-9]{2,8})$").unwrap())
@@ -96,6 +96,35 @@ fn model_spellings(name: &str) -> Option<Vec<String>> {
     Some(variants)
 }
 
+pub(crate) const MODEL_CONTINUATION_UNITS: &[&str] = &[
+    "美元",
+    "人民币",
+    "公斤",
+    "千克",
+    "毫秒",
+    "毫升",
+    "元",
+    "个",
+    "件",
+    "号",
+    "张",
+    "台",
+    "年",
+    "月",
+    "日",
+    "次",
+    "份",
+    "块",
+    "分",
+    "支",
+    "款",
+    "吨",
+    "米",
+    "秒",
+    "%",
+    "％",
+];
+
 fn model_continuation(c: char) -> bool {
     c.is_ascii_alphanumeric()
         || c.is_numeric()
@@ -103,7 +132,7 @@ fn model_continuation(c: char) -> bool {
         || "零〇一二三四五六七八九十百千万亿两幺点%％".contains(c)
 }
 
-fn model_has_continuation(text: &str) -> bool {
+pub(crate) fn model_has_continuation(text: &str) -> bool {
     let trimmed = text.trim_start_matches([' ', '\t']);
     if (trimmed.starts_with('.') || trimmed.starts_with('．') || trimmed.starts_with('点'))
         && trimmed[trimmed.chars().next().unwrap().len_utf8()..]
@@ -114,36 +143,9 @@ fn model_has_continuation(text: &str) -> bool {
     {
         return true;
     }
-    if [
-        "美元",
-        "人民币",
-        "公斤",
-        "千克",
-        "毫秒",
-        "毫升",
-        "元",
-        "个",
-        "件",
-        "号",
-        "张",
-        "台",
-        "年",
-        "月",
-        "日",
-        "次",
-        "份",
-        "块",
-        "分",
-        "支",
-        "款",
-        "吨",
-        "米",
-        "秒",
-        "%",
-        "％",
-    ]
-    .iter()
-    .any(|unit| trimmed.starts_with(unit))
+    if MODEL_CONTINUATION_UNITS
+        .iter()
+        .any(|unit| trimmed.starts_with(unit))
     {
         return true;
     }

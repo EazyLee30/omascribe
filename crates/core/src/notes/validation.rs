@@ -310,6 +310,209 @@ fn numbers(s: &str) -> HashSet<String> {
     .map(|s| s.trim_matches('.').to_owned())
     .collect()
 }
+/// A known model series and its complete digit sequence form one identity.
+/// Reuse the terminology boundaries so dates, quantities, suffixes and partial
+/// identifiers cannot acquire a new model reading in the number guard.
+fn numeric_model_has_continuation(text: &str) -> bool {
+    static MEMORY: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    // A separated, explicit capacity is another numeric attribute, not more
+    // model digits. An unlabelled trailing number keeps the strict boundary.
+    let capacity = MEMORY
+        .get_or_init(|| {
+            regex::Regex::new(
+                r"(?i)^[ \t]+[0-9]+(?:\.[0-9]+)?[ \t]*(?:gib|mib|gb|mb)(?:$|[^a-z0-9_])",
+            )
+            .unwrap()
+        })
+        .is_match(text);
+    crate::terminology::model_has_continuation(text) && !capacity
+}
+fn model_number_spellings(text: &str) -> Vec<(std::ops::Range<usize>, String)> {
+    static MODEL: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    MODEL
+        .get_or_init(|| {
+            regex::Regex::new(r"(?i)([a-z]{2,8})[ \t]*([0-9]{2,8}|[零〇一二三四五六七八九]{2,8})")
+                .unwrap()
+        })
+        .captures_iter(text)
+        .filter_map(|parts| {
+            let whole = parts.get(0)?;
+            if text[..whole.start()]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_')
+                || numeric_model_has_continuation(&text[whole.end()..])
+            {
+                return None;
+            }
+            let prefix = parts.get(1)?.as_str();
+            let digits: String = parts
+                .get(2)?
+                .as_str()
+                .chars()
+                .map(|c| match c {
+                    '零' | '〇' => '0',
+                    '一' => '1',
+                    '二' => '2',
+                    '三' => '3',
+                    '四' => '4',
+                    '五' => '5',
+                    '六' => '6',
+                    '七' => '7',
+                    '八' => '8',
+                    '九' => '9',
+                    c => c,
+                })
+                .collect();
+            let canonical = format!("{}{digits}", prefix.to_ascii_lowercase());
+            crate::terminology::model_identifier(&canonical)?;
+            Some((whole.range(), canonical))
+        })
+        .collect()
+}
+#[derive(Default)]
+struct NumericEvidence {
+    ordinary: HashSet<String>,
+    models: HashSet<String>,
+}
+fn numeric_evidence<'a>(texts: impl IntoIterator<Item = &'a str>) -> NumericEvidence {
+    let mut evidence = NumericEvidence::default();
+    for text in texts {
+        let mut ordinary = String::new();
+        let mut cursor = 0;
+        for (range, canonical) in model_number_spellings(text) {
+            ordinary.push_str(&text[cursor..range.start]);
+            // A model number cannot support an unrelated count, date or invoice.
+            // A separator also prevents joining the text on either side.
+            ordinary.push(' ');
+            cursor = range.end;
+            evidence.models.insert(canonical);
+        }
+        ordinary.push_str(&text[cursor..]);
+        evidence.ordinary.extend(numbers(&ordinary));
+    }
+    evidence
+}
+
+fn mask_numeric_speaker_names(text: &str, sources: &[Source]) -> String {
+    let mut names: Vec<_> = sources
+        .iter()
+        .filter_map(|source| source.speaker_name.as_deref())
+        .filter(|name| {
+            name.chars().any(|c| c.is_ascii_digit())
+                && name.chars().any(char::is_alphabetic)
+                // A hardware model used as a label cannot establish that device.
+                && model_number_spellings(name).is_empty()
+        })
+        .collect();
+    names.sort_by_key(|name| std::cmp::Reverse(name.len()));
+    names.dedup();
+    let mut result = text.to_owned();
+    for name in names {
+        let mut masked = String::new();
+        let mut cursor = 0;
+        for (start, value) in result.match_indices(name) {
+            let end = start + value.len();
+            if result[..start]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_')
+                || result[end..]
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_')
+            {
+                continue;
+            }
+            masked.push_str(&result[cursor..start]);
+            masked.push(' ');
+            cursor = end;
+        }
+        masked.push_str(&result[cursor..]);
+        result = masked;
+    }
+    result
+}
+
+fn opaque_model_suffix(text: &str) -> &str {
+    let text = text.trim_start_matches([' ', '\t']);
+    let ascii = text
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％'].contains(&c));
+    let number_or_identifier_bytes: usize = text
+        .chars()
+        .take_while(|c| {
+            c.is_numeric()
+                || if ascii {
+                    c.is_ascii_alphanumeric() || ['_', '.', '．', '%', '％'].contains(c)
+                } else {
+                    "零〇一二三四五六七八九十百千万亿两幺点".contains(*c)
+                }
+        })
+        .map(char::len_utf8)
+        .sum();
+    let unit_bytes = crate::terminology::MODEL_CONTINUATION_UNITS
+        .iter()
+        .find(|unit| text[number_or_identifier_bytes..].starts_with(**unit))
+        .map_or(0, |unit| unit.len());
+    &text[..number_or_identifier_bytes + unit_bytes]
+}
+
+/// Only inspect apparent ASCII identifiers carrying digits from an explicit
+/// source model. Unknown or suffixed forms must be quoted literally; they must
+/// not disappear from the model guard and borrow an unrelated invoice value.
+fn unsupported_model_literal(body: &str, quotes: &[&str], models: &HashSet<String>) -> bool {
+    static IDENTIFIER: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let digits: HashSet<_> = models
+        .iter()
+        .filter_map(|model| crate::terminology::model_identifier(model).map(|(_, n)| n))
+        .collect();
+    if digits.is_empty() {
+        return false;
+    }
+    let identifiers = |text: &str| {
+        IDENTIFIER
+            .get_or_init(|| regex::Regex::new(r"(?i)([a-z]{2,8})[ \t]*([0-9]{2,8})").unwrap())
+            .captures_iter(text)
+            .filter_map(|parts| {
+                let whole = parts.get(0)?;
+                let prefix = parts.get(1)?.as_str();
+                let number = parts.get(2)?.as_str();
+                if !digits.contains(number)
+                    || text[..whole.start()]
+                        .chars()
+                        .next_back()
+                        .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_')
+                    // Currency notation remains under the existing amount guard.
+                    || ["rmb", "cny", "usd", "eur", "gbp", "jpy", "hkd", "cad", "aud", "chf", "inr", "krw"]
+                        .iter()
+                        .any(|code| prefix.eq_ignore_ascii_case(code))
+                {
+                    return None;
+                }
+                let continuation = &text[whole.end()..];
+                let extended = numeric_model_has_continuation(continuation);
+                let suffix = if extended {
+                    opaque_model_suffix(continuation)
+                } else {
+                    ""
+                };
+                let canonical = format!("{}{number}", prefix.to_ascii_lowercase());
+                let known = !extended && crate::terminology::model_identifier(&canonical).is_some();
+                Some((format!("{canonical}{}", suffix.to_ascii_lowercase()), known))
+            })
+            .collect::<Vec<_>>()
+    };
+    let quoted: HashSet<_> = quotes
+        .iter()
+        .flat_map(|quote| identifiers(quote))
+        .map(|(literal, _)| literal)
+        .collect();
+    identifiers(body)
+        .iter()
+        .any(|(literal, known)| !known && !quoted.contains(literal))
+}
 fn normalize_digit_words(text: &str) -> String {
     // Literal digit-by-digit readings (e.g. a mic check or a spoken ID) are
     // equivalent to the same Arabic digits. Do not reinterpret approximate
@@ -767,9 +970,27 @@ fn validate_document(
         {
             bail!("Ambiguous speaker attribution: this paragraph names a speaker but also cites another or unassigned voice without identifying it. Name each cited speaker with their own statement, or remove speaker names and summarize neutrally. Do not attribute all cited statements to one speaker. Evidence: {evidence}");
         }
-        if !numbers(&format!("{title} {body}")).is_subset(&numbers(&evidence)) {
+        let numeric_title = mask_numeric_speaker_names(title, &sources);
+        let numeric_body = mask_numeric_speaker_names(body, &sources);
+        let generated_numbers = numeric_evidence([numeric_title.as_str(), numeric_body.as_str()]);
+        let quotes: Vec<_> = sources.iter().map(|source| source.quote.as_str()).collect();
+        // Do not construct an identifier across citations or from a speaker label.
+        let source_numbers = numeric_evidence(quotes.iter().copied());
+        if !generated_numbers
+            .ordinary
+            .is_subset(&source_numbers.ordinary)
+        {
             bail!(
                 "第 {} 段的数字或日期不在其引用的原文中，请核对出处编号；本轮未提交",
+                index + 1
+            );
+        }
+        if !generated_numbers.models.is_subset(&source_numbers.models)
+            || unsupported_model_literal(&numeric_title, &quotes, &source_numbers.models)
+            || unsupported_model_literal(&numeric_body, &quotes, &source_numbers.models)
+        {
+            bail!(
+                "第 {} 段的完整型号不在其引用的原文中，请保留型号前缀和全部数字；本轮未提交",
                 index + 1
             );
         }
@@ -879,10 +1100,10 @@ mod adjacent_model_number_repro {
     }
 
     #[test]
-    fn adjacent_model_repro_currently_rejects_same_spoken_digits() {
-        let error = check("设备代号是 MX二七五零。", "设备代号是 MX2750。")
-            .expect_err("candidate10 unexpectedly accepted the known reproduction");
-        assert!(error.to_string().contains("数字或日期"));
+    fn adjacent_model_repro_rejects_a_changed_digit() {
+        let error = check("设备代号是 MX二七五零。", "设备代号是 MX2751。")
+            .expect_err("a different model number must remain unsupported");
+        assert!(error.to_string().contains("完整型号"));
     }
     #[test]
     fn adjacent_model_repro_spaced_and_wrong_digit_controls() {
@@ -892,9 +1113,214 @@ mod adjacent_model_number_repro {
         assert_eq!(normalize_digit_words("三千"), "三千");
     }
     #[test]
-    #[ignore = "known candidate10 false rejection; desired behavior after the fix"]
     fn adjacent_model_repro_should_accept_equal_identifier() {
         assert!(check("设备代号是 MX二七五零。", "设备代号是 MX2750。").is_ok());
+    }
+    #[test]
+    fn adjacent_model_digits_keep_complete_series_and_leading_zeroes() {
+        for (spoken, canonical) in [
+            ("GTX一六五零", "GTX1650"),
+            ("RTX三零六零", "RTX3060"),
+            ("GTS四五零", "GTS450"),
+            ("GT一零三零", "GT1030"),
+            ("MX〇一二三", "MX0123"),
+            ("RX六六零零", "RX6600"),
+            ("ARC七七零", "ARC770"),
+        ] {
+            let input = format!("设备代号是 {spoken}。");
+            let body = format!("设备代号是 {canonical}。");
+            assert!(check(&input, &body).is_ok(), "{input} -> {body}");
+            assert!(check(&body, &input).is_ok(), "{body} -> {input}");
+            assert!(validate_translation(&body, &source(&input), "m").is_ok());
+        }
+        for (input, body) in [
+            ("设备代号是 MX二七五零。", "设备代号是 RX2750。"),
+            ("设备代号是 MX二七五零一。", "设备代号是 MX2750。"),
+            ("设备代号是 MX〇一二三。", "设备代号是 MX123。"),
+            (
+                "设备是 MX二七五零 和 RX三零六零。",
+                "设备是 RX2750 和 MX3060。",
+            ),
+        ] {
+            assert!(check(input, body).is_err(), "{input} -> {body}");
+            assert!(validate_translation(body, &source(input), "m").is_err());
+        }
+    }
+    #[test]
+    fn adjacent_model_reading_does_not_consume_suffixes_dates_or_quantities() {
+        for value in [
+            "MX二七五零一二三四五",
+            "MX二七五零5",
+            "MX二七五零.5",
+            "MX二七五零点五",
+            "MX二七五零台",
+            "MX二七五零年",
+            "MX二七五零月",
+            "MX二七五零万",
+            "MX二七五零 Ti",
+            "MY_MX二七五零",
+            "QX二七五零",
+        ] {
+            let evidence = numeric_evidence([value]);
+            assert!(evidence.models.is_empty(), "{value}");
+            assert_eq!(evidence.ordinary, numbers(value), "{value}");
+            assert!(
+                check(&format!("设备代号是 {value}。"), "设备代号是 MX2750。").is_err(),
+                "{value}"
+            );
+        }
+        for value in ["一二月", "三千", "预算一二", "RMB二七五零"] {
+            assert_eq!(normalize_digit_words(value), value);
+            let evidence = numeric_evidence([value]);
+            assert!(evidence.models.is_empty(), "{value}");
+            assert_eq!(evidence.ordinary, numbers(value), "{value}");
+        }
+    }
+    #[test]
+    fn adjacent_model_digits_cannot_become_an_unknown_or_extended_model() {
+        for body in [
+            "设备代号是 QX2750。",
+            "设备代号是 MX2750 Ti。",
+            "设备代号是 MX2750台。",
+            "设备代号是 MX2750年。",
+        ] {
+            assert!(check("设备代号是 MX二七五零。", body).is_err(), "{body}");
+        }
+        for body in ["设备代号是 QX2750。", "设备代号是 MX2750 Ti。"] {
+            assert!(
+                check("设备代号是 MX二七五零，发票编号是2750。", body).is_err(),
+                "same-valued invoice must not support {body}"
+            );
+        }
+        assert!(check(
+            "设备代号是 MX二七五零，另一个代号是 QX2750。",
+            "另一个代号是 QX2750。"
+        )
+        .is_ok());
+    }
+    #[test]
+    fn adjacent_model_digits_cannot_become_an_ordinary_count_or_date() {
+        for body in ["设备数量是2750台。", "时间是2750年。"] {
+            assert!(check("设备代号是 MX二七五零。", body).is_err(), "{body}");
+        }
+        assert!(check(
+            "设备代号是 MX二七五零。",
+            "设备代号是 MX2750，数量是2750台。"
+        )
+        .is_err());
+        assert!(check("发票编号是2750。", "设备代号是 MX2750。").is_err());
+        assert!(check("设备是 RX三零六零，发票编号是2750。", "设备代号是 RX2750。").is_err());
+    }
+    #[test]
+    fn adjacent_model_identity_cannot_be_joined_across_cited_segments() {
+        let first = source("设备代号是 MX");
+        let mut second = source("二七五零。");
+        second.id = "s2".into();
+        second.seq = 2;
+        second.start_ms = 1000;
+        second.end_ms = 2000;
+        let draft = serde_json::json!({"sections":[{
+            "title":"设备","body":"设备代号是 MX2750。","sources":[1,2]
+        }]})
+        .to_string();
+        assert!(validate(&draft, &[first, second], "m").is_err());
+    }
+    #[test]
+    fn adjacent_model_identity_cannot_borrow_a_speaker_label() {
+        let mut segment = source("二七五零。");
+        segment.speaker = Some("voice".into());
+        let draft = serde_json::json!({"sections":[{
+            "title":"设备","body":"设备代号是 MX2750。","sources":[1]
+        }]})
+        .to_string();
+        let names = [("voice".into(), "MX".into())].into_iter().collect();
+        assert!(validate_with_speakers(&draft, &[segment], "m", &names).is_err());
+    }
+    #[test]
+    fn adjacent_model_guard_preserves_literal_legacy_identifiers_and_english_readings() {
+        for literal in ["QX2750", "MX2750 Ti", "GTX ONE SIX FIVE ZERO"] {
+            let text = format!("设备代号是 {literal}。");
+            assert!(check(&text, &text).is_ok(), "{literal}");
+        }
+        assert!(check("发票编号是2750。", "发票编号是2750。").is_ok());
+    }
+    #[test]
+    fn adjacent_model_guard_preserves_an_independent_memory_capacity() {
+        assert!(check("显卡是 GTX1650 4GB。", "显卡是 GTX1650，显存4GB。").is_ok());
+        assert!(check("显卡是 GTX一六五零 4GB。", "显卡是 GTX1650，显存4GB。").is_ok());
+        assert!(check("显卡是 GTX一六五零，显存4GB。", "显卡是 GTX1650 4GB。").is_ok());
+        assert!(check("显卡是 GTX1650 4GB。", "显卡是 GTX1650，显存8GB。").is_err());
+        assert!(check("显卡是 GTX1650 4。", "显卡是 GTX1650。").is_err());
+    }
+    #[test]
+    fn adjacent_model_guard_preserves_supported_alphanumeric_speaker_names() {
+        let mut segment = source("本周继续测试。");
+        segment.speaker = Some("voice".into());
+        let draft = serde_json::json!({"sections":[{
+            "title":"测试","body":"Eazy2026表示本周继续测试。","sources":[1]
+        }]})
+        .to_string();
+        let names = [("voice".into(), "Eazy2026".into())].into_iter().collect();
+        assert!(
+            validate_with_speakers(&draft, std::slice::from_ref(&segment), "m", &names).is_ok()
+        );
+        for body in [
+            "Eazy2026表示2026年继续测试。",
+            "preEazy2026表示本周继续测试。",
+            "Eazy2026X表示本周继续测试。",
+        ] {
+            let draft = serde_json::json!({"sections":[{
+                "title":"测试","body":body,"sources":[1]
+            }]})
+            .to_string();
+            assert!(
+                validate_with_speakers(&draft, std::slice::from_ref(&segment), "m", &names)
+                    .is_err(),
+                "{body}"
+            );
+        }
+        segment.text = "本周继续测试，设备代号是 MX二七五零。".into();
+        let draft = serde_json::json!({"sections":[{
+            "title":"测试","body":"Eazy2026表示本周继续测试，设备代号是 MX2750。","sources":[1]
+        }]})
+        .to_string();
+        assert!(validate_with_speakers(&draft, &[segment], "m", &names).is_ok());
+    }
+    #[test]
+    fn adjacent_model_guard_does_not_turn_a_model_like_speaker_name_into_hardware_evidence() {
+        let mut segment = source("本周继续测试。");
+        segment.speaker = Some("voice".into());
+        let names = [("voice".into(), "GTX1650".into())].into_iter().collect();
+        let draft = serde_json::json!({"sections":[{
+            "title":"测试","body":"显卡型号是GTX1650，本周继续测试。","sources":[1]
+        }]})
+        .to_string();
+        assert!(validate_with_speakers(&draft, &[segment], "m", &names).is_err());
+    }
+    #[test]
+    fn adjacent_model_opaque_suffix_stops_before_adjacent_han_prose() {
+        for (input, body) in [
+            (
+                "设备是 RTX三零六零，另一个设备 RTX3060Ti已完成测试。",
+                "另一个设备 RTX3060Ti 已完成测试。",
+            ),
+            (
+                "设备是 RTX三零六零，另一个设备 RTX3060Ti 已完成测试。",
+                "另一个设备 RTX3060Ti已完成测试。",
+            ),
+        ] {
+            assert!(check(input, body).is_ok(), "{input} -> {body}");
+        }
+        for body in ["设备代号是 MX2750台。", "设备代号是 MX2750年。"] {
+            assert!(
+                check(
+                    "设备代号是 MX二七五零，也写作 MX2750，发票编号是2750。",
+                    body
+                )
+                .is_err(),
+                "a Han unit must not become the plain model literal: {body}"
+            );
+        }
     }
 }
 

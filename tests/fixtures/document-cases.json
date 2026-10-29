@@ -2426,5 +2426,43 @@
       "CEDARLEDGER"
     ],
     "max_sections": 2
+  },
+  {
+    "name": "zh_adjacent_spoken_model",
+    "focus": "设备\n\n测试\n\n预算",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "设备代号是MX二七五零，测试尚未完成，预算尚未批准。"
+    ],
+    "required": [
+      "MX(?:2750|二七五零)",
+      "测试[^。]{0,25}(?:尚未|未完成)",
+      "预算[^。]{0,25}(?:尚未|未批准)"
+    ],
+    "forbidden": [
+      "测试已经完成",
+      "测试已完成",
+      "预算已经批准",
+      "预算已批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "MX2750",
+          "(?:not|incomplete|unfinished)[^.]{0,50}(?:complet|finish)|(?:incomplete|unfinished)",
+          "(?:budget[^.]{0,50}(?:not|unapproved)|(?:not|unapproved)[^.]{0,50}budget)"
+        ],
+        "forbidden": [
+          "has been approved",
+          "has completed",
+          "will complete"
+        ]
+      }
+    ],
+    "max_sections": 1
   }
 ]
