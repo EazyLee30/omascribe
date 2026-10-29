@@ -349,7 +349,7 @@ fn generate_inner(
         let generation_started = Instant::now();
         let mut first_token_ms = None;
         let mut partial_draft = String::new();
-        session.begin_request();
+        session.begin_request()?;
         let mut request = json!({
             "messages":messages,"temperature":0.1,"seed":42,"chat_template_kwargs":{"enable_thinking":false},
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
@@ -391,7 +391,7 @@ fn generate_inner(
                 .as_ref()
                 .is_err_and(|e| e.is::<stream::OutputLimit>())
         {
-            session.complete_request();
+            session.complete_request()?;
         }
         if generated.is_err() {
             attempts.push(json!({"attempt":attempt+1,"draft":partial_draft,"failure":"incomplete_local_response",

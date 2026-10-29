@@ -160,6 +160,18 @@ pub(crate) fn server_command_with_spec(
     token: &str,
     spec: &LaunchSpec,
 ) -> Result<(Command, Backend)> {
+    let receipt = engine.verified_model(&prefs.llm_model)?;
+    server_command_with_model(engine, prefs, port, token, spec, &receipt)
+}
+pub(crate) fn server_command_with_model(
+    engine: &Engine,
+    prefs: &Preferences,
+    port: u16,
+    token: &str,
+    spec: &LaunchSpec,
+    receipt: &crate::model_integrity::Receipt,
+) -> Result<(Command, Backend)> {
+    receipt.check_current()?;
     let backend = spec.backend;
     let budget = budget_mib(prefs);
     let mut command = if backend == Backend::Mlx {
@@ -167,7 +179,7 @@ pub(crate) fn server_command_with_spec(
         c.arg("-I")
             .arg(engine.runtime_dir.join("mlx/runner.py"))
             .arg("--model")
-            .arg(engine.model_directory(&prefs.llm_model)?)
+            .arg(receipt.directory())
             .args([
                 "--port",
                 &port.to_string(),
@@ -199,7 +211,12 @@ pub(crate) fn server_command_with_spec(
             _ => ("128", "128"),
         };
         c.arg("-m")
-            .arg(engine.model_file(&prefs.llm_model)?.canonicalize()?)
+            .arg(
+                receipt
+                    .directory()
+                    .join(&crate::models::model(&prefs.llm_model)?.files[0].name)
+                    .canonicalize()?,
+            )
             .args([
                 "--host",
                 "127.0.0.1",

@@ -86,9 +86,11 @@ pub struct ModelStatus {
     pub download: Option<Download>,
 }
 fn complete(path: &Path, spec: &Model) -> bool {
-    spec.files
-        .iter()
-        .all(|a| fs::metadata(path.join(&a.name)).is_ok_and(|m| m.is_file() && m.len() == a.bytes))
+    fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_dir())
+        && spec.files.iter().all(|a| {
+            fs::symlink_metadata(path.join(&a.name))
+                .is_ok_and(|m| m.file_type().is_file() && m.len() == a.bytes)
+        })
 }
 impl Engine {
     pub fn recover_downloads(&self) -> Result<()> {
@@ -133,6 +135,91 @@ impl Engine {
         }
         bail!("Model not installed: {}", spec.name)
     }
+    /// Execution admission only. UI/status callers must keep using metadata-only
+    /// resolution; hashing is streamed once per unchanged model in this process.
+    pub(crate) fn verified_model(&self, id: &str) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec(model(id)?)
+    }
+    pub fn verify_model_integrity(&self, id: &str) -> Result<serde_json::Value> {
+        self.require_available()?;
+        let before = self.cached_model(id)?;
+        let started = std::time::Instant::now();
+        let receipt = self.verified_model(id)?;
+        Ok(serde_json::json!({"model":id,"state":"verified",
+            "cached":before.as_ref().is_some_and(|old|old.fingerprint()==receipt.fingerprint()),
+            "elapsed_ms":started.elapsed().as_millis(),
+            "bytes":model(id)?.files.iter().map(|asset|asset.bytes).sum::<u64>(),
+            "receipt":receipt.fingerprint()}))
+    }
+    pub(crate) fn cached_model(&self, id: &str) -> Result<Option<crate::model_integrity::Receipt>> {
+        let spec = model(id)?;
+        for directory in self.model_candidates(spec) {
+            if let Some(receipt) = self.model_integrity.current(&directory, spec)? {
+                return Ok(Some(receipt));
+            }
+        }
+        Ok(None)
+    }
+    fn model_candidates(&self, spec: &Model) -> Vec<PathBuf> {
+        let mut directories = vec![self.root.join("model-store").join(&spec.id)];
+        if spec.bundled {
+            directories.push(if spec.kind == "asr" {
+                self.models.join("zipformer")
+            } else {
+                self.models.clone()
+            });
+        }
+        directories
+    }
+    fn verify_model_spec(&self, spec: &Model) -> Result<crate::model_integrity::Receipt> {
+        let directories = self.model_candidates(spec);
+        // A valid bundled receipt can serve the identical pinned model even if
+        // a corrupt managed copy exists, without rereading that bad copy per job.
+        for directory in &directories {
+            if let Some(receipt) = self.model_integrity.current(directory, spec)? {
+                return Ok(receipt);
+            }
+        }
+        let mut failure = None;
+        for directory in directories {
+            if directory.symlink_metadata().is_err() {
+                continue;
+            }
+            match self.model_integrity.verify(&directory, spec) {
+                Ok(receipt) => return Ok(receipt),
+                Err(error) => failure = Some(error),
+            }
+        }
+        Err(failure.unwrap_or_else(|| anyhow::anyhow!("Model not installed: {}", spec.name)))
+    }
+    pub(crate) fn verified_asr_model(
+        &self,
+        id: &str,
+    ) -> Result<Vec<crate::model_integrity::Receipt>> {
+        let primary = self.verified_model(id)?;
+        let mut receipts = vec![primary];
+        if id == "zipformer-bilingual" {
+            // The native decoder prefers a local BPE file. This model does not
+            // ship one: do not let an unlisted file override the pinned tokenizer.
+            if receipts[0]
+                .directory()
+                .join("bpe.model")
+                .symlink_metadata()
+                .is_ok()
+            {
+                bail!("model:integrity:unexpected-bilingual-tokenizer");
+            }
+            let mut tokenizer = model("zipformer-small")?.clone();
+            tokenizer
+                .files
+                .retain(|a| ["tokens.txt", "bpe.model"].contains(&a.name.as_str()));
+            if tokenizer.files.len() != 2 {
+                bail!("model:integrity:missing-tokenizer-catalog");
+            }
+            receipts.push(self.verify_model_spec(&tokenizer)?);
+        }
+        Ok(receipts)
+    }
     /// Keep verified model files outside the replaceable application before a runtime-only update.
     pub fn preserve_bundled_models(&self) -> Result<()> {
         let store = self.root.join("model-store");
@@ -140,6 +227,7 @@ impl Engine {
         for spec in catalog().iter().filter(|s| s.bundled) {
             let target = store.join(&spec.id);
             if complete(&target, spec) {
+                self.model_integrity.verify(&target, spec)?;
                 continue;
             }
             let source = if spec.kind == "asr" {
@@ -357,6 +445,8 @@ impl Engine {
                 "Bundled models belong to the application; only downloaded copies can be deleted"
             );
         }
+        self.model_integrity
+            .invalidate(&self.root.join("model-store").join(id));
         self.downloads.status.lock().unwrap().remove(id);
         Ok(())
     }

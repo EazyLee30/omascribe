@@ -174,27 +174,33 @@ pub fn companion_snapshot(
 }
 
 #[tauri::command]
-pub fn companion_start(
+pub async fn companion_start(
     app: tauri::AppHandle,
-    engine: tauri::State<AppState>,
-    views: tauri::State<ViewState>,
+    engine: tauri::State<'_, AppState>,
+    views: tauri::State<'_, ViewState>,
     device: String,
     new_meeting: bool,
 ) -> Reply<String> {
-    let status = engine.status.lock().unwrap().clone();
-    if status.recording || status.paused {
-        return Err("Finish or resume the active recording first".into());
-    }
-    let selected = views.meeting.lock().unwrap().clone();
-    let id = match selected.filter(|_| !new_meeting) {
-        Some(id) => id,
-        None => engine.create_meeting("OmaScribe").map_err(err)?.id,
-    };
-    engine.start_recording(&id, &device, None).map_err(err)?;
-    *views.meeting.lock().unwrap() = Some(id.clone());
-    let _ = app.emit("view-meeting", &id);
-    let _ = app.emit("companion-meeting", &id);
-    Ok(id)
+    let e = engine.inner().clone();
+    let v = views.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let status = e.status.lock().unwrap().clone();
+        if status.recording || status.paused {
+            return Err("Finish or resume the active recording first".into());
+        }
+        let selected = v.meeting.lock().unwrap().clone();
+        let id = match selected.filter(|_| !new_meeting) {
+            Some(id) => id,
+            None => e.create_meeting("OmaScribe").map_err(err)?.id,
+        };
+        e.start_recording(&id, &device, None).map_err(err)?;
+        *v.meeting.lock().unwrap() = Some(id.clone());
+        let _ = app.emit("view-meeting", &id);
+        let _ = app.emit("companion-meeting", &id);
+        Ok(id)
+    })
+    .await
+    .map_err(err)?
 }
 
 pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool {

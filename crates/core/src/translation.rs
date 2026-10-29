@@ -695,7 +695,7 @@ fn run_inner(
                     });
                     let system = system_prompt(language, &names, plan.as_ref(), repair);
                     let input = plan.as_ref().map_or(input, |p| p.input.as_str());
-                    session.begin_request();
+                    session.begin_request()?;
                     let tokens: Value = session
                     .agent
                     .post(&format!("{}/tokenize", session.base))
@@ -708,7 +708,7 @@ fn run_inner(
                         .as_array()
                         .context("Invalid tokenizer response")?
                         .len();
-                    session.complete_request();
+                    session.complete_request()?;
                     Ok(count)
                 },
             )
@@ -745,7 +745,7 @@ fn run_inner(
             let request_started = Instant::now();
             let mut first_token_ms = None;
             let mut draft = String::new();
-            session.begin_request();
+            session.begin_request()?;
             let mut request = json!({
                 "messages":[{"role":"system","content":system},{"role":"user","content":request_input}],"temperature":0.0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":chunks::OUTPUT_TOKENS,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
             });
@@ -802,13 +802,13 @@ fn run_inner(
                 // The server completed its output budget; this is content failure,
                 // not a broken GPU transport. Yield this passage without committing
                 // a draft or re-running the whole batch on CPU.
-                session.complete_request();
+                session.complete_request()?;
                 trace.event("validation_failed", json!({"reason":"output_budget"}));
                 deferred += 1;
                 continue;
             }
             let (raw, _) = response?;
-            session.complete_request();
+            session.complete_request()?;
             raw
         };
         if engine.note_cancel.load(Ordering::SeqCst)

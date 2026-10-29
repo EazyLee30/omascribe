@@ -119,11 +119,14 @@ pub(crate) struct SessionLease {
     usable: std::cell::Cell<bool>,
 }
 impl SessionLease {
-    pub fn begin_request(&self) {
+    pub fn begin_request(&self) -> Result<()> {
         self.usable.set(false);
+        self.check_model()
     }
-    pub fn complete_request(&self) {
+    pub fn complete_request(&self) -> Result<()> {
+        self.check_model()?;
         self.usable.set(true);
+        Ok(())
     }
 }
 impl Deref for SessionLease {
@@ -140,7 +143,12 @@ impl Drop for SessionLease {
         let Some(engine) = self.engine.upgrade() else {
             return;
         };
+        let model_current = session.check_model().is_ok();
+        if !model_current {
+            engine.inference_pool.invalidate();
+        }
         if !self.usable.get()
+            && model_current
             && !engine.note_cancel.load(Ordering::SeqCst)
             && !session.resource_stop.load(Ordering::SeqCst)
             && !session.timed_out.load(Ordering::SeqCst)
@@ -152,7 +160,8 @@ impl Drop for SessionLease {
                 reject_metal(&engine, &self.key, true);
             }
         }
-        let healthy = self.usable.get()
+        let healthy = model_current
+            && self.usable.get()
             && session.healthy()
             && !engine.note_cancel.load(Ordering::SeqCst)
             && !engine.maintenance.load(Ordering::SeqCst)
@@ -177,6 +186,12 @@ impl Drop for SessionLease {
     }
 }
 impl LocalSession {
+    pub(crate) fn check_model(&self) -> Result<()> {
+        if let Some(receipt) = &self.model_receipt {
+            receipt.check_current()?;
+        }
+        Ok(())
+    }
     fn healthy(&mut self) -> bool {
         !self.resource_stop.load(Ordering::SeqCst)
             && !self.timed_out.load(Ordering::SeqCst)
@@ -190,10 +205,9 @@ fn worker_key(
     meeting: &str,
     run: u32,
     spec: &crate::inference::LaunchSpec,
+    model_identity: &str,
 ) -> Result<String> {
     use sha2::{Digest, Sha256};
-    let model = engine.model_file(&prefs.llm_model)?;
-    let metadata = model.metadata()?;
     // Appending a recording creates a take without changing the transcription run.
     // Read only its indexed number; do not deserialize a meeting's audio history.
     let take = engine
@@ -208,8 +222,7 @@ fn worker_key(
         )?
         .unwrap_or_default();
     let key = json!({
-        "model":prefs.llm_model,"path":model,"bytes":metadata.len(),
-        "modified":metadata.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_nanos().to_string(),
+        "model":prefs.llm_model,"verified_assets":model_identity,
         "backend":spec.backend.name(),"component":spec.identity,"device":spec.device,"runtime":std::fs::read(spec.directory.join("build-info.json")).ok(),
         "executable":engine.inference_fingerprints.file(&spec.directory.join(if spec.backend == crate::inference::Backend::Mlx {"runner.py".into()} else {crate::platform::executable("llama-server")})),
         "threads":prefs.threads,"context":prefs.context_size,"mode":prefs.resource_mode,
@@ -228,8 +241,15 @@ pub(crate) fn open_session(
     } else {
         prefs.llm_keep_alive_seconds
     };
+    let receipt = match engine.verified_model(&prefs.llm_model) {
+        Ok(receipt) => receipt,
+        Err(error) => {
+            engine.inference_pool.invalidate();
+            return Err(error);
+        }
+    };
     let spec = crate::inference::launch_spec(engine, prefs)?;
-    let key = worker_key(engine, prefs, meeting, run, &spec)?;
+    let key = worker_key(engine, prefs, meeting, run, &spec, receipt.fingerprint())?;
     if spec.backend == crate::inference::Backend::Metal
         && engine.inference_pool.metal_rejected(&key)
     {
@@ -274,6 +294,7 @@ fn retryable_start_failure(engine: &Engine, error: &anyhow::Error) -> bool {
             message.starts_with("writer:resource-")
                 || message.starts_with("writer:low-memory:")
                 || message == "writer:memory-unavailable"
+                || message.starts_with("model:integrity:")
         })
 }
 fn checkout(
@@ -295,6 +316,7 @@ fn checkout(
     let session = idle.and_then(|mut idle| {
         if idle.key == key
             && idle.expires > Instant::now()
+            && idle.session.check_model().is_ok()
             && idle.session.healthy()
             && crate::platform::available_memory_mib().is_some_and(|m| m >= 768)
         {
@@ -358,6 +380,7 @@ impl Drop for Server {
 }
 
 pub(crate) struct LocalSession {
+    model_receipt: Option<crate::model_integrity::Receipt>,
     pub agent: ureq::Agent,
     pub base: String,
     pub auth: String,
@@ -375,6 +398,7 @@ pub(crate) fn spawn_session_with_spec(
     prefs: &crate::preferences::Preferences,
     spec: &crate::inference::LaunchSpec,
 ) -> Result<LocalSession> {
+    let receipt = engine.verified_model(&prefs.llm_model)?;
     let budget = crate::inference::budget_mib(prefs);
     let estimate = crate::models::model(&prefs.llm_model)?.memory_mib
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4;
@@ -392,7 +416,7 @@ pub(crate) fn spawn_session_with_spec(
     drop(listener);
     let token = Uuid::new_v4().to_string();
     let (mut command, backend) =
-        crate::inference::server_command_with_spec(engine, prefs, port, &token, spec)?;
+        crate::inference::server_command_with_model(engine, prefs, port, &token, spec, &receipt)?;
     let resource_path = engine.root.join("last-writer-resource.json");
     std::fs::write(
         &resource_path,
@@ -526,7 +550,9 @@ pub(crate) fn spawn_session_with_spec(
         thread::sleep(Duration::from_millis(200));
     }
 
+    receipt.check_current()?;
     Ok(LocalSession {
+        model_receipt: Some(receipt),
         agent,
         base,
         auth,
@@ -587,6 +613,7 @@ mod tests {
             .spawn()?;
         engine.llm_pid.store(child.id(), Ordering::SeqCst);
         Ok(LocalSession {
+            model_receipt: None,
             agent: ureq::AgentBuilder::new().try_proxy_from_env(false).build(),
             base: String::new(),
             auth: String::new(),
@@ -661,7 +688,7 @@ mod tests {
         let before = engine.acceleration_status();
         assert_ne!(before.state, "cpu_fallback");
         let session = checkout(&engine, "gpu-fixture".into(), Duration::from_secs(30), make)?;
-        session.begin_request();
+        session.begin_request()?;
         drop(session);
         assert_eq!(engine.acceleration_status().state, "cpu_fallback");
         assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
@@ -689,7 +716,7 @@ mod tests {
                         Ok(session)
                     },
                 )?;
-                session.begin_request();
+                session.begin_request()?;
                 drop(session);
                 bail!("fixture interrupted Metal response");
             }
@@ -728,13 +755,13 @@ mod tests {
                 session.backend = crate::inference::Backend::Metal;
                 Ok(session)
             })?;
-            session.begin_request();
+            session.begin_request()?;
             match condition {
                 "cancel" => engine.note_cancel.store(true, Ordering::SeqCst),
                 "pressure" => session.resource_stop.store(true, Ordering::SeqCst),
                 "timeout" => session.timed_out.store(true, Ordering::SeqCst),
                 "maintenance" => engine.maintenance.store(true, Ordering::SeqCst),
-                _ => session.complete_request(),
+                _ => session.complete_request()?,
             }
             drop(session);
             assert!(
@@ -760,6 +787,7 @@ mod tests {
             "writer:resource-pressure",
             "writer:low-memory:100:1400",
             "writer:memory-unavailable",
+            "model:integrity: SHA-256 mismatch",
         ] {
             let error = anyhow::anyhow!(reason).context("fixture context");
             assert!(!retryable_start_failure(&engine, &error), "{reason}");
@@ -778,12 +806,15 @@ mod tests {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let prefs = crate::preferences::Preferences::default();
-        let model = crate::models::model(&prefs.llm_model)?;
+        let mut model = crate::models::model(&prefs.llm_model)?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(b"good"));
         let directory = root.path().join("model-store").join(&model.id);
         std::fs::create_dir_all(&directory)?;
-        // Sparse metadata fixture, never passed to an inference process.
-        let file = File::create(directory.join(&model.files[0].name))?;
-        file.set_len(model.files[0].bytes)?;
+        std::fs::write(directory.join(&model.files[0].name), b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let model_identity = receipt.fingerprint();
         let runtime = root.path().join("llama");
         std::fs::create_dir(&runtime)?;
         let executable = runtime.join(crate::platform::executable("llama-server"));
@@ -796,13 +827,27 @@ mod tests {
         };
         let meeting = engine.create_meeting("Fictional Metal lifecycle")?;
         save_fixture_take(&engine, &meeting.id, 1)?;
-        let first = worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?;
+        let first = worker_key(
+            &engine,
+            &prefs,
+            &meeting.id,
+            meeting.run,
+            &spec,
+            model_identity,
+        )?;
         engine.inference_pool.reject_metal(&first, false);
         assert!(engine.inference_pool.metal_rejected(&first));
         save_fixture_take(&engine, &meeting.id, 1)?;
         assert_eq!(
             first,
-            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+            worker_key(
+                &engine,
+                &prefs,
+                &meeting.id,
+                meeting.run,
+                &spec,
+                model_identity
+            )?
         );
         save_fixture_take(&engine, &meeting.id, 2)?;
         assert_eq!(
@@ -811,26 +856,73 @@ mod tests {
         );
         assert_ne!(
             first,
-            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+            worker_key(
+                &engine,
+                &prefs,
+                &meeting.id,
+                meeting.run,
+                &spec,
+                model_identity
+            )?
         );
-        let first = worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?;
+        let first = worker_key(
+            &engine,
+            &prefs,
+            &meeting.id,
+            meeting.run,
+            &spec,
+            model_identity,
+        )?;
         assert_ne!(
             first,
-            worker_key(&engine, &prefs, &meeting.id, meeting.run + 1, &spec)?
+            worker_key(
+                &engine,
+                &prefs,
+                &meeting.id,
+                meeting.run + 1,
+                &spec,
+                model_identity
+            )?
         );
         let mut other = prefs.clone();
         other.context_size += 512;
         assert_ne!(
             first,
-            worker_key(&engine, &other, &meeting.id, meeting.run, &spec)?
+            worker_key(
+                &engine,
+                &other,
+                &meeting.id,
+                meeting.run,
+                &spec,
+                model_identity
+            )?
         );
         std::fs::write(&executable, b"different runtime fixture")?;
         assert_ne!(
             first,
-            worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec)?
+            worker_key(
+                &engine,
+                &prefs,
+                &meeting.id,
+                meeting.run,
+                &spec,
+                model_identity
+            )?
         );
-        file.set_len(model.files[0].bytes + 1)?;
-        assert!(worker_key(&engine, &prefs, &meeting.id, meeting.run, &spec).is_err());
+        std::fs::write(directory.join(&model.files[0].name), b"evil")?;
+        assert!(receipt.check_current().is_err());
+        assert!(engine.model_integrity.verify(&directory, &model).is_err());
+        assert_ne!(
+            first,
+            worker_key(
+                &engine,
+                &prefs,
+                &meeting.id,
+                meeting.run,
+                &spec,
+                "changed verified asset identity"
+            )?
+        );
         Ok(())
     }
     fn save_fixture_take(engine: &Engine, meeting: &str, number: u32) -> Result<()> {
@@ -942,6 +1034,76 @@ mod tests {
     }
 
     #[test]
+    fn model_change_reaps_gpu_lease_without_rejection_or_cpu_retry() -> Result<()> {
+        use sha2::Digest;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let directory = root.path().join("fixture");
+        std::fs::create_dir(&directory)?;
+        let mut model = crate::models::model("qwen3-1.7b")?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", sha2::Sha256::digest(b"good"));
+        let path = directory.join(&model.files[0].name);
+        std::fs::write(&path, b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let mut calls = 0;
+        let result = crate::acceleration::with_cpu_fallback(&engine, || {
+            calls += 1;
+            let session = checkout(
+                &engine,
+                "gpu-fixture".into(),
+                Duration::from_secs(30),
+                || {
+                    let mut session = fake(&engine)?;
+                    session.backend = crate::inference::Backend::Cuda;
+                    session.model_receipt = Some(receipt.clone());
+                    Ok(session)
+                },
+            )?;
+            session.begin_request()?;
+            std::fs::write(&path, b"evil")?;
+            session.complete_request()
+        });
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .starts_with("model:integrity:"));
+        assert_eq!(calls, 1);
+        assert_ne!(engine.acceleration_status().state, "cpu_fallback");
+        assert!(!engine.inference_pool.status().leased);
+        assert!(engine.inference_pool.status().idle_pid.is_none());
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn corrupt_llm_is_refused_before_backend_selection_or_worker_launch() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        Arc::get_mut(&mut engine).unwrap().models = root.path().join("no-bundled-model");
+        let prefs = crate::preferences::Preferences::default();
+        let model = crate::models::model(&prefs.llm_model)?;
+        let directory = root.path().join("model-store").join(&model.id);
+        std::fs::create_dir_all(&directory)?;
+        for asset in &model.files {
+            // Entry ordering fixture: fail metadata admission without hashing
+            // gigabytes of sparse data. Same-size SHA failures use tiny fixtures.
+            File::create(directory.join(&asset.name))?.set_len(asset.bytes + 1)?;
+        }
+        let error = open_session(&engine, &prefs, "unused", 1)
+            .err()
+            .context("corrupt model admitted")?;
+        assert!(error.to_string().starts_with("model:integrity:"));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert!(!engine.inference_pool.status().leased);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        assert!(!root.path().join("last-metal-fallback.json").exists());
+        assert!(!root.path().join("llm-runtime.log").exists());
+        Ok(())
+    }
+
+    #[test]
     #[ignore = "explicit local model benchmark; requires verified model and runtime directories"]
     fn live_reuse_benchmark() -> Result<()> {
         use std::io::BufReader;
@@ -954,7 +1116,7 @@ mod tests {
             for repeat in 0..2 {
                 let job_start = Instant::now();
                 let session = open_session(&engine, &prefs, "public-benchmark", 1)?;
-                session.begin_request();
+                session.begin_request()?;
                 let request_start = Instant::now();
                 let mut first = None;
                 let response=session.agent.post(&format!("{}/v1/chat/completions",session.base))
@@ -972,7 +1134,7 @@ mod tests {
                         }
                     },
                 )?;
-                session.complete_request();
+                session.complete_request()?;
                 anyhow::ensure!(
                     text.contains('不') || text.contains('未') || text.contains("没有"),
                     "negation missing"

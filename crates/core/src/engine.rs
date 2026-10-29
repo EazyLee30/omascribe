@@ -96,6 +96,7 @@ pub struct Engine {
     pub llm_pid: AtomicU32,
     pub(crate) inference_pool: crate::inference_worker::WorkerPool,
     pub(crate) inference_fingerprints: crate::inference_cache::Fingerprints,
+    pub(crate) model_integrity: crate::model_integrity::Cache,
     pub(crate) retrieval_cache: crate::notes::RetrievalCache,
     pub(crate) acceleration: Mutex<crate::acceleration::State>,
     microphone_monitor: crate::microphone::MicrophoneMonitor,
@@ -173,6 +174,7 @@ impl Engine {
             llm_pid: AtomicU32::new(0),
             inference_pool: Default::default(),
             inference_fingerprints: Default::default(),
+            model_integrity: Default::default(),
             retrieval_cache: Default::default(),
             acceleration: Default::default(),
             microphone_monitor: Default::default(),
@@ -540,12 +542,38 @@ impl Engine {
         input: Option<PathBuf>,
         replay_seconds: Option<u64>,
     ) -> Result<()> {
-        let _config = self.config_lock.lock().unwrap();
-        self.microphone_monitor.stop();
         self.require_available()?;
-        if self.status.lock().unwrap().diarization_busy {
-            bail!("Cancel speaker analysis before starting another recording");
+        {
+            let status = self.status.lock().unwrap();
+            if status.diarization_busy {
+                bail!("Cancel speaker analysis before starting another recording");
+            }
+            if status.recording || status.paused || status.transcribing {
+                bail!("请先结束当前录音或转写");
+            }
         }
+        let asr_model = self.preferences.lock().unwrap().asr_model.clone();
+        // Stream model hashes without holding configuration, active or store locks.
+        let verified = self.verified_asr_model(&asr_model)?;
+        let _config = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        let prefs = self.preferences.lock().unwrap().clone();
+        if prefs.asr_model != asr_model {
+            bail!("ASR model configuration changed; try starting again");
+        }
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
+        {
+            let status = self.status.lock().unwrap();
+            if status.diarization_busy {
+                bail!("Cancel speaker analysis before starting another recording");
+            }
+            if status.recording || status.paused || status.transcribing {
+                bail!("请先结束当前录音或转写");
+            }
+        }
+        self.microphone_monitor.stop();
         // start_capture already owns config_lock; this only checks whether a
         // calibration needs cancellation, without restoring persisted state.
         if self.acceleration_test_running() {
@@ -639,7 +667,7 @@ impl Engine {
         if live {
             active.hold_awake();
         }
-        if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq) {
+        if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq, &prefs, verified) {
             let _ = child.kill();
             let _ = child.wait();
             active.release_awake();
@@ -756,7 +784,13 @@ impl Engine {
         run: u32,
         start_sample: u64,
         next_seq: u32,
+        prefs: &crate::preferences::Preferences,
+        verified: Vec<crate::model_integrity::Receipt>,
     ) -> Result<()> {
+        let primary = verified.first().context("Missing verified ASR model")?;
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
         let dir = self.audio_dir(&active.id)?;
         let boundaries = self
             .store
@@ -769,11 +803,11 @@ impl Engine {
             .map(|end| end.to_string())
             .collect::<Vec<_>>()
             .join(",");
-        let prefs = self.preferences.lock().unwrap().clone();
         let hotwords =
             publish_hotwords(&dir, &self.terminology(&active.id)?.recognition_hotwords())?;
-        let mut child = audio::child_command(self.worker_path())
-            .arg(self.model_directory(&prefs.asr_model)?)
+        let mut command = audio::child_command(self.worker_path());
+        command
+            .arg(primary.directory())
             .arg(&dir)
             .arg(start_sample.to_string())
             .arg(next_seq.to_string())
@@ -781,19 +815,40 @@ impl Engine {
             .arg(hotwords)
             // The quality model has the same token inventory but no bundled tokenizer.
             // The worker verifies the inventories before reusing this local asset.
-            .arg(self.model_directory("zipformer-small").unwrap_or_default())
+            .arg(
+                verified
+                    .get(1)
+                    .map(|receipt| receipt.directory())
+                    .unwrap_or_else(|| Path::new("")),
+            )
             .env("OMASCRIBE_ASR_THREADS", prefs.threads.to_string())
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(File::create(dir.join(format!("asr-{run}.log")))?)
-            .spawn()?;
+            .stderr(File::create(dir.join(format!("asr-{run}.log")))?);
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
+        let mut child = command.spawn()?;
+        if let Err(error) = verified
+            .iter()
+            .try_for_each(|receipt| receipt.check_current())
+        {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
+        let Some(output) = child.stdout.take() else {
+            let _ = child.kill();
+            let _ = child.wait();
+            bail!("无法连接转写进程");
+        };
         active.worker_pid.store(child.id(), Ordering::SeqCst);
-        let output = child.stdout.take().context("无法连接转写进程")?;
         let engine = self.clone();
         thread::spawn(move || {
             let mut complete = false;
+            let mut integrity_error = None;
             let mut partial_terms = engine.terminology(&active.id).ok();
             let mut terms_refreshed = Instant::now();
             for line in BufReader::new(output).lines() {
@@ -801,6 +856,22 @@ impl Engine {
                 let Ok(event) = serde_json::from_str::<AsrEvent>(&line) else {
                     continue;
                 };
+                // Recheck before persistent output and completion. Partial captions
+                // remain free of per-event filesystem work.
+                if matches!(
+                    &event,
+                    AsrEvent::Ready | AsrEvent::Segment { .. } | AsrEvent::Done { .. }
+                ) {
+                    if let Err(error) = verified
+                        .iter()
+                        .try_for_each(|receipt| receipt.check_current())
+                    {
+                        integrity_error = Some(format!("{error:#}"));
+                        complete = false;
+                        let _ = child.kill();
+                        break;
+                    }
+                }
                 match event {
                     AsrEvent::Ready => {}
                     AsrEvent::Partial { text } => {
@@ -865,6 +936,13 @@ impl Engine {
                 }
             }
             let exit = child.wait();
+            if let Err(error) = verified
+                .iter()
+                .try_for_each(|receipt| receipt.check_current())
+            {
+                integrity_error = Some(format!("{error:#}"));
+                complete = false;
+            }
             active.worker_pid.store(0, Ordering::SeqCst);
             let _transition = active.transition.lock().unwrap();
             let db = engine.store.lock().unwrap();
@@ -885,7 +963,9 @@ impl Engine {
             let mut s = engine.status.lock().unwrap();
             s.transcribing = false;
             s.partial.clear();
-            if !complete || exit.as_ref().is_ok_and(|x| !x.success()) {
+            if let Some(error) = integrity_error {
+                s.error = Some(error);
+            } else if !complete || exit.as_ref().is_ok_and(|x| !x.success()) {
                 s.error = Some("转写进程中断，录音仍独立保存；结束后可重新转写".into());
             }
             active.worker_done.store(true, Ordering::SeqCst);
@@ -986,8 +1066,23 @@ impl Engine {
         Ok(())
     }
     pub fn retranscribe(self: &Arc<Self>, id: &str) -> Result<()> {
-        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
         self.configuration_idle()?;
+        if self.note_busy.load(Ordering::SeqCst) {
+            bail!("请先等待或取消笔记生成");
+        }
+        let asr_model = self.preferences.lock().unwrap().asr_model.clone();
+        let verified = self.verified_asr_model(&asr_model)?;
+        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        self.configuration_idle()?;
+        let prefs = self.preferences.lock().unwrap().clone();
+        if prefs.asr_model != asr_model {
+            bail!("ASR model configuration changed; try retranscribing again");
+        }
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
         let mut guard = self.active.lock().unwrap();
         if guard.as_ref().is_some_and(|a| {
             !a.capture_done.load(Ordering::SeqCst) || !a.worker_done.load(Ordering::SeqCst)
@@ -1041,7 +1136,14 @@ impl Engine {
             transcribing: true,
             ..Default::default()
         };
-        self.spawn_asr(active, m.run, 0, 1)
+        if let Err(error) = self.spawn_asr(active.clone(), m.run, 0, 1, &prefs, verified) {
+            active.worker_done.store(true, Ordering::SeqCst);
+            self.status.lock().unwrap().transcribing = false;
+            m.status = "interrupted".into();
+            self.store.lock().unwrap().save_meeting(&m)?;
+            return Err(error);
+        }
+        Ok(())
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
         self.correct_terminology(id)?;

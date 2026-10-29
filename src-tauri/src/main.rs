@@ -153,8 +153,11 @@ fn stop_recording(engine: State<AppState>) -> Reply<()> {
     engine.stop_recording().map_err(err)
 }
 #[tauri::command]
-fn retranscribe(engine: State<AppState>, id: String) -> Reply<()> {
-    engine.inner().retranscribe(&id).map_err(err)
+async fn retranscribe(engine: State<'_, AppState>, id: String) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.retranscribe(&id).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 fn generate_notes(engine: State<AppState>, id: String) -> Reply<()> {

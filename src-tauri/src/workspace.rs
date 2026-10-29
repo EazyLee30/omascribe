@@ -109,8 +109,11 @@ pub async fn remove_acceleration_component(
         .map_err(err)
 }
 #[tauri::command]
-pub fn verify_acceleration(engine: State<AppState>, id: String) -> Reply<()> {
-    engine.inner().verify_acceleration(&id).map_err(err)
+pub async fn verify_acceleration(engine: State<'_, AppState>, id: String) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.verify_acceleration(&id).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 pub fn disable_acceleration(engine: State<AppState>) -> Reply<()> {
@@ -175,8 +178,11 @@ pub fn assign_speaker(
         .map_err(err)
 }
 #[tauri::command]
-pub fn diarize(engine: State<AppState>, id: String, count: Option<u32>) -> Reply<()> {
-    engine.inner().diarize_with_count(&id, count).map_err(err)
+pub async fn diarize(engine: State<'_, AppState>, id: String, count: Option<u32>) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.diarize_with_count(&id, count).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 pub fn cancel_diarization(engine: State<AppState>) {

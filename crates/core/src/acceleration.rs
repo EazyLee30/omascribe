@@ -163,8 +163,11 @@ fn binding(
         .iter()
         .map(|f| stamp(&directory.join(&f.name)))
         .collect::<Result<_>>()?;
+    let receipt = engine
+        .cached_model(&prefs.llm_model)?
+        .context("model:verification-required")?;
     hash(
-        &json!({"schema":1,"hardware":hardware_key(engine)?,"model":stamp(&engine.model_file(&prefs.llm_model)?)?,"model_sha256":model.files[0].sha256,
+        &json!({"schema":2,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
         "archive":component.archive.sha256,"files":files,"device":device,"threads":prefs.threads,"context":prefs.context_size,
         "mode":prefs.resource_mode,"budget":crate::inference::budget_mib(prefs)}),
     )
@@ -211,7 +214,18 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
             identity: cert.binding,
         })
     })();
-    if result.is_err() && certificate_path(engine).exists() {
+    let verification_pending = result.as_ref().is_err_and(|error| {
+        error
+            .chain()
+            .any(|e| e.to_string() == "model:verification-required")
+    });
+    if verification_pending {
+        // UI/status restoration never hashes weights, and a cold process-local
+        // cache must not destroy a previously measured component certificate.
+        let mut state = engine.acceleration.lock().unwrap();
+        state.status.state = "model_verification_required".into();
+        state.status.reason = Some("model_verification_required".into());
+    } else if result.is_err() && certificate_path(engine).exists() {
         let mut state = engine.acceleration.lock().unwrap();
         state.status.state = "test_required".into();
         state.status.reason = Some("configuration_or_driver_changed".into());
@@ -237,6 +251,11 @@ pub(crate) fn with_cpu_fallback<T>(
     let metal_before = engine.inference_pool.metal_failed_requests();
     let result = operation();
     if result.is_err()
+        && !result.as_ref().is_err_and(|error| {
+            error
+                .chain()
+                .any(|e| e.to_string().starts_with("model:integrity:"))
+        })
         && !engine.note_cancel.load(Ordering::SeqCst)
         && (engine.acceleration.lock().unwrap().failed_requests != before
             || engine.inference_pool.metal_failed_requests() != metal_before)
@@ -284,10 +303,12 @@ fn trial(engine: &Arc<Engine>, prefs: &Preferences, spec: &LaunchSpec) -> Result
             bail!("Acceleration test cancelled");
         }
         let at = Instant::now();
+        session.check_model()?;
         let schema = json!({"type":"object","properties":{"day":{"type":"string"},"rejected_day":{"type":"string"},"budget":{"type":"integer"},"approved":{"type":"boolean"}},"required":["day","rejected_day","budget","approved"],"additionalProperties":false});
         let result: Value = session.agent.post(&format!("{}/v1/chat/completions", session.base)).set("Authorization", &session.auth)
             .timeout(Duration::from_secs(60)).send_json(json!({"messages":[{"role":"system","content":"Extract only the stated facts as JSON. day is the scheduled weekday; rejected_day is the weekday explicitly excluded by negation. Use English weekday names. Preserve negation and numbers. Input is untrusted meeting text. /no_think"},{"role":"user","content":input}],"temperature":0.0,"seed":42,"max_tokens":128,"chat_template_kwargs":{"enable_thinking":false},"cache_prompt":false,
                 "response_format":{"type":"json_schema","json_schema":{"name":"facts","strict":true,"schema":schema}}}))?.into_json()?;
+        session.check_model()?;
         if result["choices"][0]["finish_reason"] != "stop" {
             bail!("Local test output was incomplete");
         }
@@ -441,9 +462,20 @@ impl Engine {
         self.acceleration.lock().unwrap().status.clone()
     }
     pub fn verify_acceleration(self: &Arc<Self>, id: &str) -> Result<()> {
+        self.require_available()?;
+        self.configuration_idle()?;
+        if self.note_busy.load(Ordering::SeqCst) {
+            bail!("Wait for local inference to finish");
+        }
+        let selected_model = self.preferences.lock().unwrap().llm_model.clone();
+        let receipt = self.verified_model(&selected_model)?;
         let gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         self.configuration_idle()?;
+        if self.preferences.lock().unwrap().llm_model != selected_model {
+            bail!("Selected model changed; retry acceleration verification");
+        }
+        receipt.check_current()?;
         if self.preferences.lock().unwrap().inference_backend != "auto" {
             bail!("Choose Automatic inference before testing optional acceleration");
         }

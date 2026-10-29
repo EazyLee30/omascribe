@@ -25,6 +25,7 @@ struct Probe<'a> {
 impl Probe<'_> {
     fn ask(&mut self, r: NativeRequest<'_>) -> Result<String> {
         let messages = json!([{"role":"system","content":r.system},{"role":"user","content":r.input.to_string()}]);
+        self.session.begin_request()?;
         let counted: Value = self
             .session
             .agent
@@ -32,6 +33,7 @@ impl Probe<'_> {
             .set("Authorization", &self.session.auth)
             .send_json(json!({"content":format!("{}\n{}",r.system,r.input)}))?
             .into_json()?;
+        self.session.complete_request()?;
         let input_tokens = counted["tokens"]
             .as_array()
             .context("Tokenizer missing")?
@@ -43,7 +45,7 @@ impl Probe<'_> {
         );
         let sent = json!({"messages":messages,"temperature":0,"seed":42,"chat_template_kwargs":{"enable_thinking":false},"max_tokens":r.limit,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true,
             "response_format":{"type":"json_schema","json_schema":{"name":"facts","strict":true,"schema":r.schema}}});
-        self.session.begin_request();
+        self.session.begin_request()?;
         let at = Instant::now();
         let transport = self
             .session
@@ -53,7 +55,7 @@ impl Probe<'_> {
             .send_json(sent.clone());
         // An invalid schema/request is not evidence of a faulty GPU.
         if matches!(&transport,Err(ureq::Error::Status(code,_)) if (400..500).contains(code)) {
-            self.session.complete_request();
+            self.session.complete_request()?;
         }
         let generated = transport.map_err(anyhow::Error::from).and_then(|response| {
             super::super::stream::read_observed(
@@ -62,7 +64,7 @@ impl Probe<'_> {
             )
         });
         if generated.is_ok() {
-            self.session.complete_request();
+            self.session.complete_request()?;
         }
         self.requests.push(json!({"case":r.case,"stage":r.stage,"input_tokens_counted":input_tokens,"elapsed_ms":at.elapsed().as_millis() as u64,"response":generated.as_ref().ok().map(|(text,_)|text),"usage":generated.as_ref().ok().map(|(_,usage)|usage),"error":generated.as_ref().err().map(|e|e.to_string()),"sent":sent}));
         // Fictional fixtures only. Product task traces still contain no prompts or prose.

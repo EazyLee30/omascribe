@@ -28,6 +28,7 @@ mod inference_cache;
 pub mod inference_trace;
 mod inference_worker;
 mod minutes_schedule;
+mod model_integrity;
 mod probe;
 mod source_context;
 mod task_roles;

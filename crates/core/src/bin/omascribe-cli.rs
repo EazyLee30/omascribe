@@ -21,7 +21,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
     if command == "help" {
-        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  edit-note MEETING_ID NOTE_ID TEXT [kind=document]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  verify-model MODEL_ID [REPEATS]\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  edit-note MEETING_ID NOTE_ID TEXT [kind=document]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let arg = |i| args.get(i).context("缺少命令参数");
@@ -88,6 +88,18 @@ fn run() -> Result<()> {
         }
         "correct-terms" => serde_json::json!({"corrected":engine.correct_terminology(arg(2)?)?}),
         "models" => serde_json::to_value(engine.model_status())?,
+        "verify-model" => {
+            let id = args.get(2).context("verify-model MODEL_ID [REPEATS]")?;
+            let repeats: usize = args.get(3).map(|s| s.parse()).transpose()?.unwrap_or(1);
+            anyhow::ensure!(
+                (1..=8).contains(&repeats),
+                "Use 1 to 8 verification repeats"
+            );
+            let rows = (0..repeats)
+                .map(|_| engine.verify_model_integrity(id))
+                .collect::<Result<Vec<_>>>()?;
+            serde_json::to_value(rows)?
+        }
         "hardware" => serde_json::to_value(omascribe_core::models::hardware(&engine.root))?,
         "network" => {
             let mut policy = engine.get_network_policy()?;

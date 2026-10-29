@@ -227,12 +227,14 @@ impl Engine {
         self.diarize_with_count(id, None)
     }
     pub fn diarize_with_count(self: &Arc<Self>, id: &str, count: Option<u32>) -> Result<()> {
-        let _gate = self.config_lock.lock().unwrap();
-        self.require_available()?;
-        self.configuration_idle()?;
         if count.is_some_and(|n| n > 16) {
             bail!("Speaker count must be 0–16");
         }
+        let verified = self.verified_model("speaker-diarization")?;
+        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        self.configuration_idle()?;
+        verified.check_current()?;
         let before = self.snapshot(id)?;
         if before.segments.is_empty() {
             bail!("Transcribe audio before separating speakers");
@@ -244,11 +246,12 @@ impl Engine {
         if crate::platform::available_memory_mib().is_none_or(|m| m < required) {
             bail!("Not enough memory for speaker analysis");
         }
-        let dir = self.model_directory("speaker-diarization")?;
+        let dir = verified.directory();
         let prefs = self.preferences.lock().unwrap().clone();
         let job = uuid::Uuid::new_v4().to_string();
         let output = self.root.join(format!("speaker-{job}.json"));
-        let mut child = crate::platform::child_command(self.worker_path())
+        let mut command = crate::platform::child_command(self.worker_path());
+        command
             .arg("--diarize")
             .arg(dir.join("segmentation.onnx"))
             .arg(dir.join("embedding.onnx"))
@@ -258,9 +261,16 @@ impl Engine {
             .arg(prefs.threads.to_string())
             .stdin(Stdio::null())
             .stdout(Stdio::null())
-            .stderr(std::fs::File::create(self.root.join("diarization.log"))?)
+            .stderr(std::fs::File::create(self.root.join("diarization.log"))?);
+        verified.check_current()?;
+        let mut child = command
             .spawn()
             .context("Unable to start speaker analysis")?;
+        if let Err(error) = verified.check_current() {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
         self.diarization_pid.store(child.id(), Ordering::SeqCst);
         self.diarization_cancelled.lock().unwrap().remove(id);
         {
@@ -287,6 +297,7 @@ impl Engine {
                     }
                     std::thread::sleep(Duration::from_millis(250));
                 }
+                verified.check_current()?;
                 if std::fs::metadata(&output)?.len() > 16 * 1024 * 1024 {
                     bail!("Speaker result too large");
                 }
