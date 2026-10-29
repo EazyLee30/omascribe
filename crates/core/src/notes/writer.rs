@@ -388,7 +388,7 @@ fn opens_item_scope(text: &str) -> bool {
 fn balanced_item_scope(text: &str) -> bool {
     !opens_item_scope(text) && balanced_item_delimiters(text)
 }
-fn balanced_item_delimiters(text: &str) -> bool {
+pub(super) fn balanced_item_delimiters(text: &str) -> bool {
     let chars: Vec<_> = text.chars().collect();
     let mut stack = Vec::new();
     let mut quote = None;

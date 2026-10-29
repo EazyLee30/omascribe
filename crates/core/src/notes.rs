@@ -5,8 +5,10 @@ pub(crate) use amounts::normalize as normalize_money;
 pub(crate) use amounts::repair_unitless_yuan;
 pub(crate) use attribution_roles::Mismatch as AttributionMismatch;
 mod completion;
+mod composition;
 mod corrections;
 mod diagnostic;
+mod entity_refs;
 #[cfg(test)]
 pub(crate) mod facts;
 mod generation;
@@ -410,6 +412,7 @@ fn generate_inner(
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
     let mut prepared_sources: Option<Value> = None;
     let mut prepared_evidence: Option<source_language::Prepared> = None;
+    let mut composition_plan: Option<composition::Plan> = None;
     // Keep original selected evidence separate from translated prompt passages
     // and generated prose. Names, quotations and cleanup must be source-backed.
     let selected_source = context
@@ -501,6 +504,9 @@ fn generate_inner(
             request["temperature"] = json!(0.0);
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"translation","strict":true,"schema":plan.schema()}});
+        } else if let Some(plan) = &composition_plan {
+            request["response_format"] = json!({"type":"json_schema","json_schema":{
+                "name":"source_units","strict":true,"schema":plan.schema()}});
         }
         trace.event(
             "request_started",
@@ -604,8 +610,14 @@ fn generate_inner(
             )?;
             session.check_model()?;
             let prepared_content = prepared.apply(&content, &context.segments)?;
-            messages = compose_messages.clone();
-            messages[1]["content"] = prepared_content.into();
+            let plan = composition::Plan::new(
+                &prepared_content,
+                &context.segments,
+                &terms,
+                writer::chinese(snapshot, &prefs.minutes_language),
+            )?;
+            messages = plan.messages();
+            composition_plan = Some(plan);
             prompt_tokens = message_tokens(agent, base, auth, &messages)?;
             if prompt_tokens > prefs.context_size as usize - 1148 {
                 bail!("译后来源超出纪要上下文预算，待处理内容已保留");
@@ -613,6 +625,7 @@ fn generate_inner(
             trace.event(
                 "article_prompt",
                 json!({"mode":"compose_prepared_sources","input_tokens":prompt_tokens,
+                    "composition_protocol":"source_units_v1",
                     "source_preparation":metrics,
                     "reused_translation_passages":language::reused_count(&content,&context.segments,snapshot)}),
             );
@@ -620,18 +633,33 @@ fn generate_inner(
             prepared_evidence = Some(prepared);
             continue;
         }
-        let composition = if relation_repair.is_none() && translation_repair.is_none() {
-            Some(writer::body_with_evidence(
+        let bound_article = composition_plan.as_ref().map(|plan| {
+            plan.parse(
                 &raw_body,
-                messages[1]["content"].as_str().unwrap_or("{}"),
-            ))
-        } else {
-            None
-        };
+                &context.segments,
+                &terms,
+                writer::chinese(snapshot, &prefs.minutes_language),
+            )
+        });
+        let composition =
+            if relation_repair.is_none() && translation_repair.is_none() && bound_article.is_none()
+            {
+                Some(writer::body_with_evidence(
+                    &raw_body,
+                    messages[1]["content"].as_str().unwrap_or("{}"),
+                ))
+            } else {
+                None
+            };
         let prose = if let Some(plan) = &relation_repair {
             plan.body(&raw_body)
         } else if let Some(plan) = &translation_repair {
             plan.body(&raw_body)
+        } else if let Some(article) = &bound_article {
+            article
+                .as_ref()
+                .map(|article| article.body().to_owned())
+                .map_err(|error| anyhow::anyhow!("{error:#}"))
         } else {
             composition
                 .as_ref()
@@ -674,6 +702,27 @@ fn generate_inner(
                         .join(" "),
                     &body,
                 )?;
+                if let Some(Ok(article)) = &bound_article {
+                    // A changed body must not keep stale sentence/quote ranges.
+                    anyhow::ensure!(article.body() == body, "绑定正文在规范化后发生变化，待处理来源已保留");
+                    if let Some(budget) = corrections::budget_view(&context.segments) {
+                        budget.validate(&body)?;
+                    }
+                    if let Some(prepared) = &prepared_evidence {
+                        completion_bridge = prepared.completion_bridge_for_article(
+                            article, &content, &context.segments, &terms,
+                            writer::chinese(snapshot, &prefs.minutes_language),
+                        )?;
+                    }
+                    // Validate each sentence against only its declared original
+                    // evidence before joining sentences into article paragraphs.
+                    for sentence in article.sentences() {
+                        let unit = json!({"sections":[{"title":"Meeting minutes","body":sentence.text(),"sources":sentence.sources()}]}).to_string();
+                        validation::validate_bound_unit(&unit, &context.segments, meeting, &snapshot.meeting.speaker_names, &terms, writer::chinese(snapshot, &prefs.minutes_language), completion_bridge.as_ref())?;
+                    }
+                    checked_prose = Some(body);
+                    return Ok(article.document());
+                }
                 if let (Some(prepared), Some(Ok(composed))) =
                     (prepared_evidence.as_ref(), composition.as_ref())
                 {
@@ -752,6 +801,7 @@ fn generate_inner(
             "week_qualifier_corrections":week_qualifier_corrections,
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
+            "composition_protocol":composition_plan.as_ref().map(|_|"source_units_v1"),
             "source_preparation":prepared_sources,
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
             "unitless_yuan_repaired":unitless_yuan_corrections > 0,
