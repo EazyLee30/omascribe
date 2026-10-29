@@ -362,6 +362,10 @@ fn generate_inner(
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"translation","strict":true,"schema":plan.schema()}});
         }
+        trace.event(
+            "request_started",
+            json!({"attempt":attempt+1,"endpoint":"chat"}),
+        );
         let response = agent
             .post(&format!("{base}/v1/chat/completions"))
             .set("Authorization", auth)

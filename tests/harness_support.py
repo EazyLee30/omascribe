@@ -54,13 +54,13 @@ def isolated_env(root):
     write_json(root / "network-policy.json", dict(allow_model_downloads=False, allow_online_recommendations=False))
     return env
 
-def command(argv, env, directory, timeout=650):
+def command(argv, env, directory, timeout=650, resource_samples=False):
     directory.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     options = {"start_new_session": True} if os.name != "nt" else {}
     with (directory / "stdout.txt").open("w", encoding="utf-8") as out, (directory / "stderr.txt").open("w", encoding="utf-8") as err:
         process = subprocess.Popen([str(a) for a in argv], env=env, stdout=out, stderr=err, **options)
-        sampler = ProcessTreeSampler(process.pid).start()
+        sampler = ProcessTreeSampler(process.pid, record_samples=True).start() if resource_samples else ProcessTreeSampler(process.pid).start()
         failure = None
         try: code = process.wait(timeout=timeout)
         except BaseException as error:
@@ -72,6 +72,10 @@ def command(argv, env, directory, timeout=650):
             code, failure = process.returncode, type(error).__name__
         finally:
             resources = sampler.finish()
+    if resource_samples:
+        write_json(directory / "resources.json", resources)
+        resources = {key: value for key, value in resources.items() if key not in ("timeline", "observed_processes")}
+        resources["timeline_file"] = "resources.json"
     write_json(directory / "process.json", dict(command=[str(a) for a in argv], code=code,
         seconds=round(time.monotonic()-started,3), failure=failure, resources=resources))
     if failure or code: raise RuntimeError(f"{failure or 'Exit ' + str(code)}; see {directory}")

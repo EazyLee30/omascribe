@@ -754,6 +754,10 @@ fn run_inner(
             } else {
                 request["response_format"] = json!({"type":"json_schema","json_schema":{"name":"translation","strict":true,"schema":serde_json::from_str::<Value>(OUTPUT_SCHEMA).expect("schema")}});
             }
+            trace.event(
+                "request_started",
+                json!({"attempt":requests+1,"endpoint":"chat"}),
+            );
             let response = session
                 .agent
                 .post(&format!("{}/v1/chat/completions", session.base))
