@@ -1,0 +1,84 @@
+{
+  "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+  "local_date": "2026-10-29",
+  "input": "Previously captured 24.530-second Realtek tail prompt recording; user reported seeing tail prompt and sustaining voice until stop. No new recording.",
+  "live_small": {
+    "exact_target_matches": {
+      "omascribe": false,
+      "alice": false,
+      "nvidia": false,
+      "gtx1650": false,
+      "tail_marker": false
+    },
+    "processed_ms": 24530,
+    "segment_count": 3,
+    "segment_time_ranges_ms": [
+      {
+        "start": 2800,
+        "end": 10400
+      },
+      {
+        "start": 10400,
+        "end": 15800
+      },
+      {
+        "start": 18400,
+        "end": 24530
+      }
+    ],
+    "mode": "real-time capture"
+  },
+  "offline_bilingual": {
+    "exact_target_matches": {
+      "omascribe": false,
+      "alice": true,
+      "nvidia": true,
+      "gtx1650": false,
+      "tail_marker": false
+    },
+    "tail_marker_in_final_segment": false,
+    "processed_ms": 24530,
+    "segment_count": 3,
+    "segment_time_ranges_ms": [
+      {
+        "start": 2800,
+        "end": 15000
+      },
+      {
+        "start": 15000,
+        "end": 16200
+      },
+      {
+        "start": 18800,
+        "end": 24530
+      }
+    ],
+    "all_boundaries_within_recording": true,
+    "last_segment_start_ms": 18800,
+    "last_segment_end_ms": 24530,
+    "end_gap_ms": 0,
+    "retranscribe_wall_seconds": 3.782,
+    "mode": "offline retranscription",
+    "decoder": "modified_beam_search",
+    "threads": 2,
+    "hotword_count": 6,
+    "hotword_fallback": null,
+    "final_segment_nonempty": true
+  },
+  "actual_hotword_files_identical": true,
+  "same_source_cli_sha256": "feaa932f2be5b90d9aadb83008ef1c23319676b0c00901414cfc8d0d2f7a3672",
+  "same_source_worker_sha256": "94877004fc0b34c6665b5724a9c2c4bd69163e77b194b2a0424e088cebbc384a",
+  "model_file_sha256": {
+    "decoder-epoch-99-avg-1.onnx": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+    "encoder-epoch-99-avg-1.int8.onnx": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+    "joiner-epoch-99-avg-1.int8.onnx": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "limits": [
+    "Live small versus offline bilingual are not a controlled A/B or comparable timing measurement.",
+    "Word matching, end-of-segment boundary and signal energy cannot establish why a tail word was missed, whether phonetic variants were spoken or whether audio beyond capture was truncated.",
+    "Private recording and actual transcripts and their hashes remain local.",
+    "One recording, no new microphone capture, GPU, installer or release acceptance."
+  ],
+  "interpretation": "Bilingual final segment has nonempty recognized text and reaches the final captured timestamp, but the exact tail marker is absent. This alone does not distinguish alternate transcription, speech-sound capture, decoder behavior or cutoff."
+}
