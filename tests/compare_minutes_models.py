@@ -22,10 +22,21 @@ MODELS = ("qwen3-1.7b", "qwen3-0.6b")
 PREFERENCES = dict(inference_backend="cpu", threads=1, context_size=2048, resource_mode="balanced",
                    memory_budget_mib=4096, llm_keep_alive_seconds=0, auto_notes=False, translation_mode="off",
                    diarization=False, use_memory=False, use_knowledge=False)
+REQUEST_STAGES = frozenset(("prepare_sources", "compose", "compose_prepared_sources", "repair"))
 
 
 def measured_sum(values):
     return sum(values) if all(isinstance(v, (int, float)) and math.isfinite(v) and v >= 0 for v in values) else None
+
+
+def repair_request(metrics):
+    # Historical reports predate stage metadata and retain their old meaning.
+    if "stage" not in metrics:
+        return metrics.get("attempt", 1) > 1
+    stage = metrics["stage"]
+    if not isinstance(stage, str) or stage not in REQUEST_STAGES:
+        raise ValueError("Unknown generation request stage")
+    return stage == "repair"
 
 
 def summarize(report):
@@ -41,7 +52,7 @@ def summarize(report):
     return dict(cases=len(report["cases"]), passed_cases=sum(c["passed"] is True for c in report["cases"]),
                 case_seconds=measured_sum([c["seconds"] for c in report["cases"]]),
                 generation_commands=len(runs), process_seconds=measured_sum([p.get("seconds") for p in processes]),
-                attempts=len(attempts), repairs=sum(a.get("attempt", 1) > 1 for a in attempts),
+                attempts=len(attempts), repairs=sum(repair_request(a) for a in attempts),
                 rejected_attempts=sum(bool(a.get("validation_error") or a.get("failure")) for a in attempts),
                 attempt_seconds=measured_sum([a.get("elapsed_ms") / 1000 if a.get("elapsed_ms") is not None else None for a in attempts]),
                 input_tokens=measured_sum([u.get("prompt_tokens") for u in usage]),

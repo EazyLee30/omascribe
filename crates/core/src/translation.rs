@@ -1156,7 +1156,7 @@ fn repair_hint(error: &anyhow::Error) -> &'static str {
     }
 }
 
-fn validate_text(
+pub(crate) fn validate_text(
     text: &str,
     passage: &crate::Segment,
     target: &str,
