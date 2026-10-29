@@ -64,13 +64,10 @@ fn run() -> Result<()> {
     );
     let audio = Path::new(args.get(2).context("缺少音频目录")?);
     let hotword_path = args.get(6).map(Path::new);
-    let hotwords = hotword_path
-        .and_then(|p| decoder::read_words(p).ok())
-        .unwrap_or_default();
     let shared = args.get(7).filter(|s| !s.is_empty()).map(Path::new);
-    let mut decoder = decoder::Decoder::new(
+    let mut decoder = decoder::Decoder::from_path(
         recognizer_config(model),
-        &hotwords,
+        hotword_path,
         decoder::Mode::configured(),
         model,
         audio,

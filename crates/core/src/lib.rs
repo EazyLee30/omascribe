@@ -20,6 +20,7 @@ mod capture;
 mod native_audio;
 
 pub mod acceleration;
+pub mod asr_hotwords;
 pub mod components;
 pub mod hardware;
 pub mod inference;

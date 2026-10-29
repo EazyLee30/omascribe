@@ -15,6 +15,30 @@ use std::{
 };
 use uuid::Uuid;
 
+fn replace_hotword_file(dir: &Path, name: &str, contents: &[u8]) -> Result<()> {
+    let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
+    let result = fs::write(&temp, contents).and_then(|_| fs::rename(&temp, dir.join(name)));
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result.context("无法更新转写热词文件")
+}
+
+/// Startup and boundary refresh use one bounded wire format. Diagnostics contain
+/// only counts; display spellings and the original note remain unchanged.
+fn publish_hotwords(dir: &Path, candidates: &[String]) -> Result<PathBuf> {
+    let encoded = crate::asr_hotwords::encode_words(candidates);
+    replace_hotword_file(dir, "hotwords.txt", encoded.words.as_bytes())?;
+    // An unavailable diagnostic must not turn a successful note/context save
+    // into an error. As with the worker's asr-config.json, it is best effort.
+    if let Ok(metadata) = serde_json::to_vec_pretty(&serde_json::json!({
+        "schema": 1, "encoding": "uppercase_complete_utf8_terms", "stats": encoded.stats
+    })) {
+        let _ = replace_hotword_file(dir, "hotwords-input.json", &metadata);
+    }
+    Ok(dir.join("hotwords.txt"))
+}
+
 pub struct Active {
     pub id: String,
     pub take_number: Option<u32>,
@@ -439,17 +463,7 @@ impl Engine {
         let id = self.active.lock().unwrap().as_ref().map(|a| a.id.clone());
         if let Some(id) = id {
             let dir = self.audio_dir(&id)?;
-            let words = self
-                .terminology(&id)?
-                .recognition_hotwords()
-                .join("\n")
-                .to_uppercase();
-            let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
-            fs::write(&temp, words)?;
-            if let Err(error) = fs::rename(&temp, dir.join("hotwords.txt")) {
-                let _ = fs::remove_file(temp);
-                return Err(error.into());
-            }
+            publish_hotwords(&dir, &self.terminology(&id)?.recognition_hotwords())?;
         }
         Ok(())
     }
@@ -755,14 +769,8 @@ impl Engine {
             .collect::<Vec<_>>()
             .join(",");
         let prefs = self.preferences.lock().unwrap().clone();
-        let hotwords = dir.join("hotwords.txt");
-        fs::write(
-            &hotwords,
-            self.terminology(&active.id)?
-                .recognition_hotwords()
-                .join("\n")
-                .to_uppercase(),
-        )?;
+        let hotwords =
+            publish_hotwords(&dir, &self.terminology(&active.id)?.recognition_hotwords())?;
         let mut child = audio::child_command(self.worker_path())
             .arg(self.model_directory(&prefs.asr_model)?)
             .arg(&dir)
@@ -1240,6 +1248,63 @@ impl Engine {
 pub fn timestamp(ms: u64) -> String {
     let s = ms / 1000;
     format!("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60)
+}
+
+#[cfg(test)]
+mod hotword_publication_tests {
+    use super::*;
+
+    #[test]
+    fn serialized_hotwords_fit_worker_contract_and_updates_clear_old_context() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let pcm = vec![42u8; 32_000];
+        fs::write(dir.path().join("000000.pcm"), &pcm)?;
+        let mut candidates: Vec<_> = (0..79)
+            .map(|i| format!("{}{}", "界".repeat(79), char::from_u32(0x4e00 + i).unwrap()))
+            .collect();
+        candidates.push("Bob".into());
+        let path = publish_hotwords(dir.path(), &candidates)?;
+        let wire = fs::read_to_string(&path)?;
+        assert!(wire.len() <= crate::asr_hotwords::MAX_WORD_BYTES);
+        assert_eq!(crate::asr_hotwords::validate_words(&wire)?, wire);
+        assert_eq!(wire.lines().count(), 67);
+        assert!(wire.ends_with("\nBOB"));
+        assert!(wire
+            .lines()
+            .all(|line| candidates.iter().any(|word| word.to_uppercase() == line)));
+        let stats: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.path().join("hotwords-input.json"))?)?;
+        assert_eq!(stats["stats"]["accepted_terms"], 67);
+        assert_eq!(stats["stats"]["dropped_by_reason"]["byte_limit"], 13);
+        assert_eq!(stats["stats"]["wire_bytes"], wire.len());
+        assert!(!stats.to_string().contains("BOB"));
+        assert!(!stats.to_string().contains('界'));
+
+        assert_eq!(publish_hotwords(dir.path(), &[])?, path);
+        assert_eq!(fs::read_to_string(path)?, "");
+        let stats: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.path().join("hotwords-input.json"))?)?;
+        assert_eq!(stats["stats"]["accepted_terms"], 0);
+        assert_eq!(fs::read(dir.path().join("000000.pcm"))?, pcm);
+        assert!(!fs::read_dir(dir.path())?.any(|entry| entry
+            .unwrap()
+            .path()
+            .extension()
+            .is_some_and(|ext| ext == "next")));
+        Ok(())
+    }
+
+    #[test]
+    fn failed_hotword_publication_preserves_existing_target_and_cleans_stage() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let target = dir.path().join("hotwords.txt");
+        fs::create_dir(&target)?;
+        fs::write(target.join("keep"), b"previous target")?;
+        assert!(publish_hotwords(dir.path(), &["OmaScribe".into()]).is_err());
+        assert_eq!(fs::read(target.join("keep"))?, b"previous target");
+        assert_eq!(fs::read_dir(dir.path())?.count(), 1);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
