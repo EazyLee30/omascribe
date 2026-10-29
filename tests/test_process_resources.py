@@ -8,6 +8,8 @@ from unittest.mock import Mock, patch
 
 import harness_support
 import process_resources as resources
+import test_keep_alive as keep_alive_tests
+from benchmark_keep_alive import resource_summary
 
 
 MIB = 1024**2
@@ -45,6 +47,7 @@ class FakeProcess:
     def __init__(self, pid=10, created=1000., rss=2*MIB, pss=MIB, cpu=0.):
         self.pid, self.created = pid, created
         self.rss, self.pss, self.cpu = rss, pss, cpu
+        self.cpu_system = 0.
         self.descendants = []
         self.running = True
         self.process_status = "running"
@@ -52,6 +55,7 @@ class FakeProcess:
         self.children_error = None
         self.rss_error = None
         self.pss_error = None
+        self.cpu_error = None
         self.status_error = None
 
     def create_time(self):
@@ -65,7 +69,9 @@ class FakeProcess:
         return self.descendants
 
     def cpu_times(self):
-        return types.SimpleNamespace(user=self.cpu, system=0.)
+        if self.cpu_error:
+            raise self.cpu_error
+        return types.SimpleNamespace(user=self.cpu, system=self.cpu_system)
 
     def memory_info(self):
         if self.rss_error:
@@ -170,10 +176,124 @@ class ProcessResourceTests(unittest.TestCase):
         result = self.finish_dead(sampler)
         self.assertIsNone(result["peak_tree_pss_mib"])
         self.assertIsNone(result["tree_rss_mib_seconds_sampled"])
-        self.assertEqual([sample["tree_rss_mib"] for sample in result["timeline"]], [2., None, None])
+        self.assertEqual([sample["tree_rss_mib"] for sample in result["timeline"]], [2., None, 8.])
         self.assertEqual([sample["tree_pss_mib"] for sample in result["timeline"]], [None, None, None])
         self.assertEqual([sample["processes_observed"] for sample in result["timeline"]], [1, 0, 1])
-        self.assertGreater(result["sample_errors"], 0)
+        self.assertEqual(result["sample_errors"], 0)
+        self.assertEqual(result["optional_pss_unavailable"], 2)
+        self.assertEqual(result["optional_pss_errors"], 1)
+
+    def test_optional_full_info_denied_does_not_invalidate_readable_child_rss_or_cpu(self):
+        child = FakeProcess(pid=11, created=1100., rss=3*MIB, cpu=2.)
+        child.pss_error = FakeAccessDenied()
+        self.root.descendants = [child]
+        self.root.cpu = 1.
+        sampler = self.sampler()
+        sampler._sample()
+        self.clock.elapsed = 1.
+        sampler._sample()
+        result = self.finish_dead(sampler)
+        self.assertEqual(result["sample_errors"], 0)
+        self.assertEqual(result["optional_pss_unavailable"], 2)
+        self.assertEqual(result["optional_pss_errors"], 2)
+        self.assertEqual(result["cpu_seconds_sampled"], 3.)
+        self.assertEqual(result["tree_rss_mib_seconds_sampled"], 5.)
+        self.assertEqual([row["tree_rss_mib"] for row in result["timeline"]], [5., 5.])
+        self.assertEqual([row["cpu_seconds_sampled"] for row in result["timeline"]], [3., 3.])
+        self.assertTrue(all(row["tree_pss_mib"] is None for row in result["timeline"]))
+
+    def test_optional_pss_missing_error_or_invalid_number_stays_unknown_separately(self):
+        for value, error, errors in [(None, None, 0), (None, FakeAccessDenied(), 1),
+                (None, OSError("fixture failure"), 1), (None, AttributeError("unsupported API"), 1),
+                (None, TypeError("unsupported API"), 1), (None, NotImplementedError(), 1),
+                (float("nan"), None, 1),
+                (float("inf"), None, 1), (-1., None, 1), (True, None, 1), ("1", None, 1)]:
+            with self.subTest(value=value, error=type(error).__name__):
+                self.root.pss, self.root.pss_error = value, error
+                sampler = self.sampler()
+                sampler._sample()
+                result = self.finish_dead(sampler)
+                self.assertEqual(result["sample_errors"], 0)
+                self.assertEqual(result["optional_pss_unavailable"], 1)
+                self.assertEqual(result["optional_pss_errors"], errors)
+                self.assertEqual(result["timeline"][0]["tree_rss_mib"], 2.)
+                self.assertEqual(result["timeline"][0]["cpu_seconds_sampled"], 0.)
+                self.assertIsNone(result["timeline"][0]["tree_pss_mib"])
+                self.assertIsNone(result["peak_tree_pss_mib"])
+
+    def test_overflowed_resource_sums_are_not_emitted_as_measured_values(self):
+        for metric in ("cpu_components", "cpu_tree", "rss", "pss"):
+            with self.subTest(metric=metric):
+                self.root.cpu = self.root.cpu_system = 0.
+                self.root.rss, self.root.pss = 2*MIB, MIB
+                child = FakeProcess(pid=11, created=1100.)
+                self.root.descendants = [child]
+                if metric == "cpu_components":
+                    self.root.cpu = self.root.cpu_system = 1e308
+                elif metric == "cpu_tree":
+                    self.root.cpu = child.cpu = 1e308
+                elif metric == "rss":
+                    self.root.rss = child.rss = 1e308
+                else:
+                    self.root.pss = child.pss = 1e308
+                sampler = self.sampler()
+                sampler._sample()
+                result = self.finish_dead(sampler)
+                json.dumps(result, allow_nan=False)
+                if metric == "pss":
+                    self.assertEqual(result["sample_errors"], 0)
+                    self.assertEqual(result["optional_pss_errors"], 1)
+                    self.assertEqual(result["timeline"][0]["tree_rss_mib"], 4.)
+                    self.assertIsNone(result["timeline"][0]["tree_pss_mib"])
+                else:
+                    self.assertGreater(result["sample_errors"], 0)
+                    self.assertIsNone(result["timeline"][0]["tree_rss_mib"])
+                    self.assertIsNone(result["timeline"][0]["cpu_seconds_sampled"])
+
+    def test_available_pss_is_preserved_including_known_zero(self):
+        for value in (0, MIB):
+            with self.subTest(value=value):
+                self.root.pss = value
+                sampler = self.sampler()
+                sampler._sample()
+                result = self.finish_dead(sampler)
+                self.assertEqual(result["optional_pss_unavailable"], 0)
+                self.assertEqual(result["optional_pss_errors"], 0)
+                self.assertEqual(result["timeline"][0]["tree_pss_mib"], value/MIB)
+                self.assertEqual(result["peak_tree_pss_mib"], value/MIB)
+
+    def test_producer_keeps_required_failures_unknown_and_existing_resource_gate_strict(self):
+        for failure in (None, "rss", "cpu", "rss_nan", "cpu_nan"):
+            with self.subTest(failure=failure):
+                self.clock.elapsed = 0.
+                self.root.rss_error = self.root.cpu_error = None
+                self.root.rss, self.root.cpu = 100*MIB, 0.
+                self.root.pss_error = FakeAccessDenied()
+                sampler = self.sampler()
+                for elapsed in range(38):
+                    self.clock.elapsed = float(elapsed)
+                    self.root.rss_error = FakeAccessDenied() if elapsed == 10 and failure == "rss" else None
+                    self.root.cpu_error = FakeAccessDenied() if elapsed == 10 and failure == "cpu" else None
+                    self.root.rss = float("nan") if elapsed == 10 and failure == "rss_nan" else 100*MIB
+                    self.root.cpu = float("nan") if elapsed == 10 and failure == "cpu_nan" else elapsed/10
+                    sampler._sample()
+                result = self.finish_dead(sampler)
+                response, rows = keep_alive_tests.KeepAliveTests().idle()
+                offset = result["timeline"][0]["unix_ms"]
+                response["idle_observation"]["started_unix_ms"] += offset
+                for row in rows:
+                    row["unix_ms"] += offset
+                if failure is None:
+                    self.assertEqual(result["sample_errors"], 0)
+                    checked = resource_summary(result, response, rows, 37.1)
+                    self.assertEqual(checked["phases"]["idle"]["rss_mib_seconds_sampled"], 3200.)
+                    self.assertIsNone(checked["phases"]["idle"]["pss_mib_seconds_sampled"])
+                else:
+                    self.assertGreater(result["sample_errors"], 0)
+                    self.assertIsNone(result["timeline"][10]["tree_rss_mib"])
+                    self.assertIsNone(result["timeline"][10]["cpu_seconds_sampled"])
+                    with self.assertRaises(ValueError):
+                        resource_summary(result, response, rows, 37.1)
 
     def test_readable_parent_and_inaccessible_child_make_memory_unknown_without_integration(self):
         for error in (FakeAccessDenied(), OSError("fixture failure")):
@@ -200,7 +320,7 @@ class ProcessResourceTests(unittest.TestCase):
                 self.assertIsNone(result["tree_rss_mib_seconds_sampled"])
                 self.assertTrue(result["timeline_truncated"])
                 self.assertEqual(result["timeline_dropped_samples"], 1)
-                self.assertEqual(result["timeline"][1]["cpu_seconds_sampled"], 0.)
+                self.assertIsNone(result["timeline"][1]["cpu_seconds_sampled"])
 
     def test_known_zero_is_preserved_and_no_samples_stays_unknown(self):
         sampler = self.sampler()

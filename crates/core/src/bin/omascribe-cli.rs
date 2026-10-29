@@ -340,7 +340,9 @@ fn run() -> Result<()> {
                             && current.suggestions.len() == snapshot.suggestions.len()
                             && worker.starts == worker_at_start.starts
                             && worker.reuses == worker_at_start.reuses;
-                        if worker.idle_pid.is_none() && !worker.leased {
+                        // A vacant pool slot can precede kill/wait completion.
+                        // Time the observed worker's confirmed exit instead.
+                        if worker.confirms_idle_exit_since(&worker_at_start) {
                             worker_stopped_after_ms.get_or_insert(elapsed_ms);
                         }
                         replay_row(
