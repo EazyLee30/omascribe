@@ -5576,5 +5576,146 @@
       "path": "artifacts/benchmarks/release035-late-note-17380f6/en_late_note_spelling_sync.json",
       "sha256": "401f6a93edee4e7bfe3891e27bb772083c328ed2bf3873aa43594104eeb937ee"
     }
+  },
+  "windows_peer_followup": {
+    "verification": {
+      "path": "artifacts/candidate10-windows-peer-verification.json",
+      "sha256": "eba17fdc0fbb975c85828b5cd676e4385405d89844f1321c43f764567fdc796f"
+    },
+    "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+    "report_commit": "45b885f162321cb1cef8073e5c5f5f6d7e0298e3",
+    "scope": "Fetched exact public peer report bytes through GitHub base64 connector; checked supplied SHA-256 and source/fixture identities. Main Mac reviewer did not repeat Windows execution, inspect private text, independently measure CUDA, or conduct semantic entailment review.",
+    "synthetic_control": {
+      "remote_path": "docs/evaluation/windows-candidate10-late-note-control-2026-10-29.json",
+      "remote_url": "https://github.com/EazyLee30/omascribe/blob/45b885f162321cb1cef8073e5c5f5f6d7e0298e3/docs/evaluation/windows-candidate10-late-note-control-2026-10-29.json",
+      "raw_report": {
+        "path": "artifacts/peer-candidate10-control.json",
+        "bytes": 1620,
+        "sha256": "4eceb3cc9b322c79c746c925d6391ebb64ab1cebda3c39dfbd0be5d84cb7b4bb"
+      },
+      "git_blob_sha": "853b8591eaa6106df08de12d030ebba3be06ef4d",
+      "byte_hash_matches_claim": true,
+      "source_matches_candidate10": true,
+      "fixture_git_sha256": "0368586654dd9abc1e6ce986ace38e7fb5431be9bd99cd270f7c9a5794193dba",
+      "fixture_count_matches_63": true,
+      "fixture_case": "en_late_note_spelling_sync",
+      "peer_result": "PASS single fictional two-phase control",
+      "auto_notes_false_attribution": "Explicitly stated by PR1 comment6487679030; compact report itself does not contain an auto_notes field.",
+      "facts_from_peer_report": {
+        "initial_pending_count": 1,
+        "initial_citations_exact": true,
+        "same_paragraph_repaired_and_new_citations_exact": true,
+        "source_revision_before": 1,
+        "source_revision_after": 2,
+        "source_exact_canonical_after": true,
+        "inference_jobs_before": 1,
+        "inference_jobs_after": 1,
+        "new_generation_jobs": 0,
+        "generation_seconds": 8.468,
+        "cuda_verification_seconds": 49.391,
+        "cuda_offload_observed": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "preparation_failure_retained": "Initial harness process had no Git executable in its isolated PATH and stopped while reading source identity, before executing any test. Resumed once after restoring the installed Git path.",
+      "limits": [
+        "Synthetic two-phase case; separate from real transcript run, which produced no initial minutes and did not validate synchronization.",
+        "Not actual microphone, ASR, fresh install, full corpus or release acceptance.",
+        "Automatic pattern and citation checks do not replace full semantic review."
+      ]
+    },
+    "real_asr_reconstruction": {
+      "remote_path": "docs/evaluation/windows-candidate10-real-note-2026-10-29.json",
+      "remote_url": "https://github.com/EazyLee30/omascribe/blob/45b885f162321cb1cef8073e5c5f5f6d7e0298e3/docs/evaluation/windows-candidate10-real-note-2026-10-29.json",
+      "raw_report": {
+        "path": "artifacts/peer-candidate10-real-note.json",
+        "bytes": 2471,
+        "sha256": "b3037619e1be65d756422d1c78b1910479624eeb85a246802e2200d65a0b1f20"
+      },
+      "git_blob_sha": "d72244a3b918a4f32fd2ee4a54ea4103f1ce76a9",
+      "byte_hash_matches_claim": true,
+      "source_matches_candidate10": true,
+      "peer_result": "INITIAL MINUTES REJECTED; existing-minutes synchronization NOT EXERCISED",
+      "runtime_rejection": "source number or date validation rejected generation; no minutes were committed",
+      "command_success_is_not_minutes_success": true,
+      "existing_minutes_sync_verified": false,
+      "facts_from_peer_report": {
+        "auto_notes": false,
+        "source_revision_before": 1,
+        "source_revision_after": 2,
+        "exact_target_matches_before": {
+          "omascribe": false,
+          "alice": true,
+          "nvidia": false,
+          "gtx1650": false
+        },
+        "exact_target_matches_after": {
+          "omascribe": false,
+          "alice": true,
+          "nvidia": false,
+          "gtx1650": true
+        },
+        "terminology_edits": 1,
+        "human_edits": 0,
+        "history_revisions": [
+          1
+        ],
+        "minutes_count_after": 0,
+        "inference_jobs_before": 1,
+        "inference_jobs_after": 1,
+        "save_seconds": 0.063,
+        "cuda_verification_seconds": 52.891,
+        "cuda_offload_observed": [
+          [
+            29,
+            29
+          ]
+        ],
+        "worker_source": "2f6edac071aadbe3f9995e9fb248a9a8a174c456",
+        "worker_invoked": false
+      },
+      "preparation_failure_retained": "First test harness attempted to pass explicit timestamps through a helper that already fills them and stopped before inserting the segment. Resumed once with a direct isolated database reconstruction retaining original timestamps; no generation or user input was repeated.",
+      "limits": [
+        "No actual audio, transcript, note, generated text, or hashes of these private contents included.",
+        "Only one original ASR segment reconstructed in a fresh isolated meeting, not a new live recording.",
+        "First generation failed; existing minutes synchronization and citation updates were not exercised or validated.",
+        "No generation was retried and the original ASR text was not changed to obtain a pass.",
+        "Copied CUDA component reverified; ASR worker from candidate9 was not invoked during generation."
+      ]
+    },
+    "conclusion": "The fictional CUDA control reports successful source/prose/citation synchronization without additional generation. The separate real-ASR reconstruction demonstrates only one terminology revision and preserved history; initial minutes were rejected, so it cannot validate existing-minutes synchronization. Exact match failures for OmaScribe and NVIDIA remain open. Do not combine the two inputs into a real-scenario PASS.",
+    "no_release_acceptance": true
+  },
+  "frontend_followup": {
+    "merge_revision": "1c5853f",
+    "pull_request": "https://github.com/EazyLee30/omascribe/pull/11",
+    "author_head": "c3d512e3277475d68534accb21606f6904f706c1",
+    "scope": "Separate user-selected note candidates in transcript edit modal, not automatic ASR or minute sync. Core candidate10 files preserved; full model corpus above bound to17380f6, not falsely relabeled as the later frontend merge.",
+    "checks": {
+      "npm_build": {
+        "path": "artifacts/pr11-merged-frontend-build.log",
+        "sha256": "07d6d20cb2b615570ad966b8720320d9aa54d41e6456327a6553dbd368fa0a27"
+      },
+      "chromium_component": {
+        "path": "artifacts/pr11-merged-component-ui.log",
+        "sha256": "a0473bd977a1b8742b039deada470c777005523cbf738fa7bc12293d70740b9b"
+      },
+      "affected_prettier": {
+        "path": "artifacts/pr11-merged-format.log",
+        "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+      },
+      "independent_review": {
+        "path": "artifacts/pr11-c3d512e-review-part1.json",
+        "sha256": "e8a8853030c7dd07046145fafd18e99b9314f520fdf074e5043095d22c8e7922"
+      }
+    },
+    "build_warning": "Existing main bundle >500kB minified warning retained.",
+    "limits": [
+      "Headless Chrome component checks; physical mouse/new native WebView acceptance not established.",
+      "Original author commits retained by merge; PR10 tests and shared source repair were not reset."
+    ]
   }
 }

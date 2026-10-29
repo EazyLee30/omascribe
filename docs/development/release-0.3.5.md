@@ -37,6 +37,7 @@
 | --- | --- | --- |
 | Mac/M系列 | 候选10完整63项自动PASS、75快照复核；74份M5 Metal生成阶段日志有29/29记录，296核心/严格Clippy通过。受测晚补拼写保存命令0.016秒、0新增生成任务；单例CLI测量，不推广为整会速度。父8臂资源结果保留。 | festival未译、源限定/代词/含混词义仍公开；真实麦克风、物理窗口、后补专名后的双语字幕及最终安装升级待验证。阶段日志可含前阶段记录，不计作74次新加载。 |
 | Windows | 候选8 GTX1650/621.01复用签名CUDA，3/3定向自动+独立语义/引用通过。Realtek预览定时停止/释放、DOM/invoke语言切换，以及受控CUDA子进程故障→CPU和独立CPU推理通过；三份peer报告字节hash与源码已核对。 | 另有同候选8源码的真实ASR专名和合成停录失败，见Q9/Q10。实际OOM、实体会议录音/停录、物理鼠标和安装升级未验收；不得把这些候选8结果当候选9同构建证明。[平台检查点](../evaluation/candidate8-platform-checkpoint-2026-10-29.json)。 |
+| Windows/候选10 | 同源码17380f6的两份脱敏peer报告按固定45b885f/base64取回，字节hash均匹配：虚构late-note控制报告CUDA29/29，先有纪要再补笔记、auto_notes=false的同步通过，保存jobs1→1。 | 另一份真实ASR单片段重建的初始纪要被数字/日期校验拒绝、0篇提交；虽更正GTX1650，OmaScribe/NVIDIA仍未精确命中，不能算真实旧纪要同步通过。首次PATH/时间参数准备失败各自保留，未新录音/调用ASR；Mac仅核对peer身份，未复跑Windows。[分开记录的原证据](../evaluation/apple-candidate10-note-sync-2026-10-29.json)。 |
 | Linux/Omarchy | 共享源码CI和GPU组件隔离测试已有证据；CUDA/Vulkan组件保持独立。 | 实际GPU/音频/原生窗口和候选安装升级仍待本端验收，不能由编译通过代替。 |
 | 组件与模型复用 | 签名/hash/原子安装/回滚路径及组件污染负例已有代码与CI；基础包禁CUDA/Vulkan/HIP依赖。 | 新候选安装包及升级保留模型/组件流程仍需实测。没有为了本批语义修复重编SDK/组件或安装包。 |
 
@@ -45,7 +46,7 @@
 - 主线程负责共享转写/翻译/纪要、事实校验、Mac Metal、集成和候选冻结；Windows负责本端输入/停止、冷ASR、CUDA与回退；Linux负责本端桌面/音频及Omarchy。共享问题在PR给最小差异，避免重复实现。
 - 开发期只跑受影响检查，及时推送源码；已知共享失败未修好时不启动完整矩阵。候选冻结后，三端围绕同一SHA完成完整语料、真实录音、必要原生和安装升级验收；最后统一构建候选包。
 - 复用已签GPU组件、模型和SDK；只有组件缺陷才重编/重签。Windows暂不重跑已知共享失败或追加完整CPU×GPU矩阵，等待主线程给新的固定SHA及最小范围。
-- 候选10已在[PR #1给出三端最小验证范围](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6487506753)：Windows继续真实专名/停止；Linux继续桌面/音频/Omarchy；均可复核“先有纪要、后补笔记专名”。PR #10原测试已整合；PR #11仅人工候选辅助、Markdown提取问题待作者修正，不重复实现。Windows候选9的实际笔记/纪要检查保留[原说明](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6483517183)：用户确认说过NVIDIA，不能把它判成凭空添加；词汇命中也不能代替全文语义与实际ASR验收。
+- 候选10已在[PR #1给出三端最小验证范围](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6487506753)：Windows继续真实专名/停止；Linux继续桌面/音频/Omarchy；均可复核“先有纪要、后补笔记专名”。PR #10原测试已整合。PR #11的c3d512e已修多段加粗/中文复选框提取，整合提交1c5853f通过前端构建、原Chrome组件回归、受影响Prettier/diff-check；仅人工辅助，实体鼠标/新版原生WebView仍待验收，候选10核心和旧冻结分支不移动。[整合说明](https://github.com/EazyLee30/omascribe/pull/11#issuecomment-6488233436)。Windows候选9的实际笔记/纪要检查保留[原说明](https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6483517183)：用户确认说过NVIDIA，不能把它判成凭空添加；词汇命中也不能代替全文语义与实际ASR验收。
 - PR #9已整合到be3：literal-only延迟启动、两个8秒工作预算及首次CPU回退缓存身份均共用现成实现；无需另写一遍。
 - 只报“问题ID—负责人—SHA—结果—下一阻塞”，无新增阻塞可直接回报。原始证据保留，测试借用模型副本释放不等于同量磁盘空间回收。
 - 发布时间等下一候选完整回归后再估算；0.3.5发布也不等于P0/P1/P2/P3/G1/G2全部研究结束。
