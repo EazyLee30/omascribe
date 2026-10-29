@@ -1,0 +1,112 @@
+name: Linux compatibility
+on:
+  pull_request:
+    paths:
+      - .github/workflows/linux-compat.yml
+      - crates/core/src/audio.rs
+      - crates/core/src/capture.rs
+      - crates/core/src/model_integrity.rs
+      - crates/core/src/model_integrity/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: linux-compat-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  CARGO_BUILD_JOBS: 2
+jobs:
+  ubuntu22:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.99.0"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-compat-core
+          cache-on-failure: true
+      - name: Install distribution FFmpeg
+        run: |
+          sudo apt-get -o Acquire::Retries=2 update
+          sudo apt-get -o Acquire::Retries=2 install -y --no-install-recommends ffmpeg
+      - name: Record kernel, filesystem and bounded synthetic reproductions
+        run: |
+          mkdir -p ci-results/linux-compat
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, platform, subprocess, tempfile, time, wave
+          result = {"source": os.environ["GITHUB_SHA"], "kernel": platform.release(),
+                    "system": platform.system(), "machine": platform.machine(),
+                    "scope": "Synthetic local files only; no user data/models or inference"}
+          with tempfile.TemporaryDirectory(prefix="omascribe-linux-compat-") as folder:
+              root = pathlib.Path(folder)
+              result["filesystem"] = subprocess.check_output(["stat", "-f", "-c", "%T", folder], text=True).strip()
+              path = root / "synthetic-weights"
+              def stamp():
+                  s = path.stat()
+                  return dict(device=s.st_dev, inode=s.st_ino, bytes=s.st_size,
+                              mtime_ns=s.st_mtime_ns, ctime_ns=s.st_ctime_ns)
+              result["same_stamp_write"] = {"found": False, "iterations": 0, "limit": 10000}
+              for i in range(10000):
+                  path.write_bytes(b"good")
+                  before = stamp()
+                  good = hashlib.sha256(path.read_bytes()).hexdigest()
+                  path.write_bytes(b"evil")
+                  after = stamp()
+                  evil = hashlib.sha256(path.read_bytes()).hexdigest()
+                  result["same_stamp_write"]["iterations"] = i + 1
+                  if before == after and good != evil:
+                      result["same_stamp_write"].update(found=True, before=before, after=after,
+                                                        sha256_before=good, sha256_after=evil)
+                      break
+              audio = root / "synthetic.wav"
+              with wave.open(str(audio), "wb") as target:
+                  target.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
+                  target.writeframes(b"\0\0" * 1600)
+              version = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True, timeout=5)
+              result["ffmpeg_version"] = version.stdout.splitlines()[0]
+              probe = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin",
+                  "-protocol_whitelist", "file,pipe", "-re", "-readrate_initial_burst", "0.001",
+                  "-stream_loop", "-1", "-i", str(audio), "-t", "0.02", "-vn", "-ac", "1",
+                  "-ar", "16000", "-f", "s16le", "pipe:1"], capture_output=True, timeout=5)
+              result["original_replay_option_probe"] = dict(exit_code=probe.returncode,
+                  pcm_bytes=len(probe.stdout), stderr=probe.stderr.decode(errors="replace")[-4096:])
+          pathlib.Path("ci-results/linux-compat/environment.json").write_text(json.dumps(result, indent=2) + "\n")
+          print(json.dumps(result, indent=2))
+          PY
+      - name: Immediate model corruption must revoke its cached receipt
+        id: receipt
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test -p omascribe-core --locked model_integrity::tests::same_size_corruption_invalidates_cached_receipt -- --exact --nocapture 2>&1 | tee ci-results/linux-compat/receipt.log
+      - name: Paced replay keeps exact PCM and the original lead ceiling
+        id: audio
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test -p omascribe-core --locked audio::tests::paced_replay_preserves_pcm_without_an_initial_read_burst -- --exact --nocapture 2>&1 | tee ci-results/linux-compat/audio.log
+      - name: Both original checks are required
+        if: always()
+        env:
+          RECEIPT_OUTCOME: ${{ steps.receipt.outcome }}
+          AUDIO_OUTCOME: ${{ steps.audio.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          result = {"receipt": os.environ["RECEIPT_OUTCOME"], "audio": os.environ["AUDIO_OUTCOME"]}
+          root = pathlib.Path("ci-results/linux-compat")
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "result.json").write_text(json.dumps(result, indent=2) + "\n")
+          assert all(value == "success" for value in result.values()), result
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-compat-${{ github.sha }}
+          path: ci-results/linux-compat/
+          if-no-files-found: error
