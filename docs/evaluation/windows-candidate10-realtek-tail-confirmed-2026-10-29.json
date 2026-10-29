@@ -1,0 +1,61 @@
+{
+  "source_revision": "17380f64783c26ce77def7dd13429699958f5259",
+  "local_date": "2026-10-29",
+  "test": "Single selected Realtek hardware input, native timed stop and tail prompt, isolated CPU ASR",
+  "driver_sha256": "b2a4ffcad4e77df08906b0bf3cb4f64757463835f33a9c6c6a138bf746865b27",
+  "asr_worker_sha256": "94877004fc0b34c6665b5724a9c2c4bd69163e77b194b2a0424e088cebbc384a",
+  "user_confirmation": {
+    "reported_seen_tail_prompt": true,
+    "reported_continuous_voice_until_window_stop": true,
+    "source": "User self-report after the test"
+  },
+  "tail_prompt_set_elapsed_external_ms": 22078,
+  "tail_prompt_remaining_approx_seconds": 3,
+  "capture_call_return_ms": 1019,
+  "first_capture_observed_wall_ms": 1040,
+  "first_capture_observed_ms": 530,
+  "stop_requested_ms": 25012,
+  "stop_returned_ms": 25012,
+  "drain_complete_wall_ms": 25166,
+  "captured_ms": 24530,
+  "asr_processed_ms": 24530,
+  "segment_count": 3,
+  "segment_time_ranges_ms": [
+    {
+      "start": 2800,
+      "end": 10400
+    },
+    {
+      "start": 10400,
+      "end": 15800
+    },
+    {
+      "start": 18400,
+      "end": 24530
+    }
+  ],
+  "pcm_wav_byte_equal": true,
+  "last_100ms_rms": 0.021157,
+  "last_250ms_rms": 0.028267,
+  "last_500ms_rms": 0.025652,
+  "last_1000ms_rms": 0.020731,
+  "signal_nonzero": true,
+  "stop_reason": "timer",
+  "runtime_error": false,
+  "case_insensitive_exact_target_matches": {
+    "omascribe": false,
+    "alice": false,
+    "nvidia": false,
+    "gtx1650": false,
+    "tail_marker": false
+  },
+  "limitations": [
+    "The user self-reported seeing the tail prompt and sustaining voice until the window stopped; UI countdown and native stop use separate timing observations.",
+    "Last-window energy does not identify speech or its content; exact ASR word matches do not establish why a word was missed.",
+    "First observed capture is a polling observation, not the actual first-frame timestamp.",
+    "Elapsed sample status and segment end do not prove semantic recognition of the tail.",
+    "No private audio, actual transcript or their hashes are present here; all remain local.",
+    "External native core harness; not product UI stop, GPU concurrency or installer acceptance.",
+    "Nonzero end-of-file signal, processed sample count and segment timing do not prove tail semantics were recognized or prove physical preservation of sound after the capture boundary."
+  ]
+}
