@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-10-30",
-  "status": "Fresh-utterance hotword timing fix integrated; paired candidate native control pending",
+  "status": "Fixed-source real worker timing control PASS; original baseline RED retained, not acoustic or release proof",
   "baseline_source": "9b84d8dc072207823401c0bfb62a1f57b3de886b",
   "source_file_sha256": "5f3ff74b84ff193761d5205b9e7f4addf3b3043b5f329272ae3648e11e183819",
   "change": "Keep an explicit fresh_stream marker at startup and after actual stream resets. After read_count returns a block and read_exact succeeds, refresh once immediately before accepting its first real PCM samples. Any accepted positive count consumes the marker; waiting for an incomplete block does not. Existing utterance-boundary refreshes remain.",
@@ -36,12 +36,84 @@
     "asr_tests": 9,
     "strict_asr_clippy": "PASS",
     "rustfmt": "PASS",
-    "independent_read_only_ordering_review": "No blocker"
+    "independent_read_only_ordering_review": "No blocker",
+    "exact_candidate_ci": "Linux, Ubuntu22, Windows-core, prepare and Website validation SUCCESS; GPU build/catalog SKIPPED"
   },
   "native_protocol": "Same frozen runner, same12800 synthetic-zero PCM, same existing zipformer-small model and default legacy decoder/endpoints, same30-second per-arm bound. Only hotword application timing/PCM/process identity is assessed.",
   "limits": [
     "No acoustic recognition, WER/proper-name recall, real microphone, Windows/Linux device or performance/battery claim.",
-    "Candidate result must be collected before native verification is claimed.",
+    "Original held-model bytes, exact PCM and owned process exit are proven for this synthetic timing control only; actual speech/partial stability and all-platform hardware gates remain separate.",
     "The P0/P1/P2/P3/G1/G2 objective remains active;0.3.5 remains unpublished and Q16 remains open."
-  ]
+  ],
+  "candidate_source": "fd2afdcfe854fc6b9fd87a328b10e9e1f0ec2d2a",
+  "native_pair": {
+    "passed": true,
+    "baseline_observed_counts": {
+      "ready_initial_one": 1,
+      "short_wait_still_one": 1,
+      "first_block_two_expected": 1,
+      "active_block_no_refresh": 1,
+      "pause_boundary_three": 3,
+      "paused_idle_still_three": 3,
+      "resume_first_block_zero_expected": 3,
+      "resumed_active_no_refresh": 3,
+      "done_no_extra_refresh": 3
+    },
+    "candidate_observed_counts": {
+      "ready_initial_one": 1,
+      "short_wait_still_one": 1,
+      "first_block_two_expected": 2,
+      "active_block_no_refresh": 2,
+      "pause_boundary_three": 3,
+      "paused_idle_still_three": 3,
+      "resume_first_block_zero_expected": 0,
+      "resumed_active_no_refresh": 0,
+      "done_no_extra_refresh": 0
+    },
+    "baseline_seconds": 2.749390000011772,
+    "candidate_seconds": 3.0655734579777345,
+    "identical_pcm": true,
+    "normal_exit_without_signal": true,
+    "owned_process_groups_absent": true,
+    "original_model_and_worker_identity_unchanged": true,
+    "candidate_meaning": "Idle/paused term changes are applied before the first real block; active utterances do not refresh. Unchanged words create no additional recognizer."
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/baseline/report.json",
+      "sha256": "856844b20db2f76136f5b44f0c0dbe42237a90e98dc1e471d9f6edfd1fd1ef55"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/candidate/report.json",
+      "sha256": "8b84a24e57da9af838dbad764ab920f068cd7936bfd0cdbda3deed36c4b70803"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/comparison.json",
+      "sha256": "a04b3c2456c3bbf53b6c8de45f333cf558a0c2ace333915be51666e6b3834279"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/cleanup.json",
+      "sha256": "78a101bf3e4ebf9e89eca044da01be248c4d211fec9980dbb1545f93702a3f0a"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/baseline-build.json",
+      "sha256": "81831d9d99508f419994a7650304f42d139ec5c0b58784e80de9ca9c956a0792"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/candidate-build.json",
+      "sha256": "6c6094f8ae88d7c2c4fe8cee6a0fcb6885b4eafc1de6886ed315e36e8482f98a"
+    },
+    {
+      "path": "artifacts/asr-fresh-context-2026-10-30/runner.py",
+      "sha256": "334fb0031d56b3f7fa05af52cd52a7948f6034dbd1f1c95a726725d4f7b3bcc9"
+    }
+  ],
+  "cleanup": {
+    "owned_model_clones_removed": true,
+    "owned_archived_worker_copies_removed": true,
+    "archived_worker_logical_bytes": 52637248,
+    "no_owned_workers_alive": true,
+    "original_assets_unchanged": true,
+    "raw_evidence_retained": true
+  }
 }
