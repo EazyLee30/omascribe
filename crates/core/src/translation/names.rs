@@ -1,12 +1,172 @@
 //! Source spellings for captions, not an entity resolver. Never infer a real
 //! identity/university from an ambiguous ASR spelling or an unspoken note name.
 use crate::terminology::Terms;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use regex::{Regex, RegexBuilder};
 use serde_json::json;
-use std::{collections::BTreeMap, ops::Range, sync::OnceLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+    sync::OnceLock,
+};
 
-pub(super) struct Names(Vec<String>);
+// Match the existing original-evidence byte ceiling, including final merged
+// captions. This is a local scan bound, not a model/context/token allowance.
+const REPORTED_SCAN_BYTES: usize = 120_000;
+const REPORTED_COUNT: usize = 12;
+const REPORTED_CHARS: usize = 240;
+
+/// Lexical name labels only. A title, quote or conditional occurrence does not
+/// establish that this person spoke, decided, attended or owns any task.
+struct ReportedSpans {
+    ranges: Vec<Range<usize>>,
+    truncated: bool,
+}
+fn reported_patterns() -> &'static [Regex] {
+    static PATTERNS: OnceLock<Vec<Regex>> = OnceLock::new();
+    PATTERNS.get_or_init(|| {
+        vec![
+            // Reuse the explicit mixed-script professor/doctor spelling frame.
+            // Horizontal whitespace is literal; never bind across source lines.
+            Regex::new(r"(?:^|的|[ \t。！？;；\n.!?])(?P<name>(?:[\p{Han}]{1,2}[ \t]+)?[A-Z][A-Za-z'’-]{1,79}(?:[ \t]+[A-Z][A-Za-z'’-]{1,79})*?(?:[ \t]*[\p{Han}][\p{Han}A-Za-z'’-]{0,79}?)??)(?:教授|博士)").unwrap(),
+            // Target-language titles/verbs can change while the literal label
+            // remains intact. A report/affiliation delimiter bounds the label.
+            Regex::new(r"(?:^|[^A-Za-z0-9_])(?i:professor|prof\.|doctor|dr\.)[ \t]+(?P<name>(?:[\p{Han}]{1,2}[ \t]+)?[A-Za-z][A-Za-z'’-]{1,79}(?:[ \t]+[A-Za-z][A-Za-z'’-]{1,79})*?(?:[ \t]*[\p{Han}][\p{Han}A-Za-z'’-]{0,79}?)??)[ \t]+(?:(?i:said|says|stated|states|reported|reports|noted|notes|indicated|indicates|explained|explains|confirmed|confirms|pointed[ \t]+out|points[ \t]+out)\b|of\b|from\b)").unwrap(),
+        ]
+    })
+}
+fn reported_ranges(text: &str) -> impl Iterator<Item = Range<usize>> + '_ {
+    reported_patterns()
+        .iter()
+        .enumerate()
+        .flat_map(move |(pattern, re)| {
+            re.captures_iter(text).filter_map(move |capture| {
+                let name = capture.name("name")?;
+                // A regex must not start halfway through a longer capitalized
+                // label and thereby authorize its suffix as a different person.
+                if pattern == 0 {
+                    let prefix = text[..name.start()].trim_end_matches([' ', '\t']);
+                    let previous = prefix
+                        .rsplit(|c: char| !c.is_alphanumeric() && !"'’-".contains(c))
+                        .next()
+                        .unwrap_or("");
+                    if previous.starts_with(|c: char| c.is_ascii_uppercase()) {
+                        return None;
+                    }
+                } else if name
+                    .as_str()
+                    .split_whitespace()
+                    .next()
+                    .is_some_and(|first| {
+                        [
+                            "said",
+                            "says",
+                            "stated",
+                            "states",
+                            "reported",
+                            "reports",
+                            "noted",
+                            "notes",
+                            "confirmed",
+                            "confirms",
+                            "indicated",
+                            "indicates",
+                            "explained",
+                            "explains",
+                            "of",
+                            "from",
+                            "the",
+                            "a",
+                            "an",
+                        ]
+                        .iter()
+                        .any(|word| first.eq_ignore_ascii_case(word))
+                    })
+                {
+                    return None;
+                }
+                Some(name.range())
+            })
+        })
+}
+fn reported_spans(text: &str) -> ReportedSpans {
+    // A large plain caption needs no reported-person protection. Avoid both a
+    // regex name scan and a new rejection for unrelated long speech.
+    static TITLE: OnceLock<Regex> = OnceLock::new();
+    if !TITLE
+        .get_or_init(|| {
+            Regex::new(r"教授|博士|(?i:\bprofessor\b|\bprof\.|\bdoctor\b|\bdr\.)").unwrap()
+        })
+        .is_match(text)
+    {
+        return ReportedSpans {
+            ranges: Vec::new(),
+            truncated: false,
+        };
+    }
+    if text.len() > REPORTED_SCAN_BYTES {
+        return ReportedSpans {
+            ranges: Vec::new(),
+            truncated: true,
+        };
+    }
+    let mut ranges = Vec::new();
+    let mut seen = BTreeSet::new();
+    let mut remaining = REPORTED_CHARS;
+    let mut truncated = false;
+    for range in reported_ranges(text) {
+        let name = &text[range.clone()];
+        if !seen.insert(name) {
+            continue;
+        }
+        let length = name.chars().count();
+        if ranges.len() == REPORTED_COUNT || length > remaining {
+            truncated = true;
+            continue;
+        }
+        remaining -= length;
+        ranges.push(range);
+    }
+    ReportedSpans { ranges, truncated }
+}
+pub(super) fn reported_data(text: &str) -> serde_json::Value {
+    let data = reported_spans(text);
+    json!({"spellings":data.ranges.into_iter().map(|range| &text[range]).collect::<Vec<_>>(),
+        "truncated":data.truncated})
+}
+pub(super) fn validate_reported(
+    source: &str,
+    body: &str,
+    canonical: impl Fn(&str) -> String,
+) -> Result<()> {
+    let candidates = reported_spans(body);
+    ensure!(
+        !candidates.truncated,
+        "纪要报道名称校验超出有界范围，原文已保留"
+    );
+    if candidates.ranges.is_empty() {
+        return Ok(());
+    }
+    ensure!(
+        source.len() <= REPORTED_SCAN_BYTES,
+        "纪要来源名称校验超出有界范围，原文已保留"
+    );
+    for range in candidates.ranges {
+        let candidate = &body[range];
+        // Scan the complete selected source, not the truncated prompt legend.
+        // This is spelling membership, never identity or claim authorization.
+        ensure!(
+            reported_ranges(source).any(|range| {
+                let observed = &source[range];
+                candidate == observed || candidate == canonical(observed)
+            }),
+            "纪要改写了原话中的报道人名：{candidate}。保留来源中的专有名称拼写，不猜测其他姓名。"
+        );
+    }
+    Ok(())
+}
+
+pub(super) struct Names(Vec<String>, bool);
 fn json_grammar(orders: &str) -> String {
     format!(
         r#"root ::= "{{" space "\"translation\"" space ":" space "\"" translation "\"" space "}}" space
@@ -18,6 +178,9 @@ space ::= [ \t\r\n]*
 }
 impl Names {
     pub fn repair_source(&self, source: &str) -> Option<Repair> {
+        if self.1 {
+            return None;
+        }
         if self.0.is_empty() && !source.contains(['[', ']']) {
             Some(Repair {
                 names: Vec::new(),
@@ -41,11 +204,17 @@ impl Names {
         static LITERAL: OnceLock<Vec<Regex>> = OnceLock::new();
         let source = terms.normalize(source);
         let mut values = terms.caption_spellings(&source);
+        let reported = reported_spans(&source);
+        values.extend(
+            reported
+                .ranges
+                .iter()
+                .map(|range| source[range.clone()].to_owned()),
+        );
         // These bounded, syntactically explicit references preserve the exact
         // observed spelling. They do not assert who an all-caps subject is.
         let patterns = LITERAL.get_or_init(|| [
             r"(?:^|[。！？;；\n])\s*(?P<name>[\p{Han}]{2,6}(?:大学|学院))(?:的|\s|$)",
-            r"(?:^|的|[ \t])(?P<name>(?:[\p{Han}]{1,2}\s+)?[A-Z][A-Z'’-]{1,29}(?:[ \t]+[A-Z][A-Z'’-]{1,29}){0,3}(?:[ \t]*[\p{Han}]{1,2})?)(?:教授|博士)",
             r"\b(?P<name>[A-Z][A-Z0-9]{2,29})\s+WILL\s+(?:CHECK|SEND|TEST|DELIVER|REVIEW|VERIFY|PUBLISH)\b",
             r"\bPROJECT IS (?P<name>[A-Z][A-Z0-9'’-]*(?:\s+[A-Z][A-Z0-9'’-]*){0,2}) WE WILL\b",
             r"\bWILL CHECK THE (?P<name>[A-Z][A-Z0-9'’-]*(?:\s+[A-Z][A-Z0-9'’-]*){0,2} CARD)\b",
@@ -104,7 +273,13 @@ impl Names {
                 selected.push(value);
             }
         }
-        Self(selected)
+        let incomplete = reported.truncated
+            || reported.ranges.iter().any(|range| {
+                !selected
+                    .iter()
+                    .any(|name| contains(name, &source[range.clone()]))
+            });
+        Self(selected, incomplete)
     }
     pub fn hint(&self) -> String {
         if self.0.is_empty() {
@@ -147,6 +322,7 @@ impl Names {
             .collect()
     }
     pub fn validate(&self, body: &str) -> Result<String> {
+        ensure!(!self.1, "字幕报道名称校验超出有界范围，原文已保留");
         if self.0.iter().any(|name| !contains(body, name)) {
             bail!("译文遗漏或改写原文名称，须保留提供的原始拼写");
         }
@@ -162,7 +338,8 @@ impl Names {
         Ok(prose)
     }
     pub fn repair(&self, source: &str) -> Option<Repair> {
-        if self.0.is_empty()
+        if self.1
+            || self.0.is_empty()
             || source.contains(['[', ']'])
             || self.0.iter().any(|n| source.matches(n).count() != 1)
         {
@@ -585,6 +762,141 @@ mod tests {
             }],
             &[],
         )
+    }
+
+    #[test]
+    fn reported_labels_are_exact_utf8_spans_and_not_generic_roles() {
+        for (source, spelling) in [
+            ("北岭大学的 LENA FARO森教授指出可能有风险。", "LENA FARO森"),
+            (
+                "研究所的沈 MALE DUNSTON博士表示仍未确认。",
+                "沈 MALE DUNSTON",
+            ),
+            (
+                "Professor LENA FARO森 stated that the report is pending.",
+                "LENA FARO森",
+            ),
+            (
+                "Doctor 沈 MALE DUNSTON reported that the report is pending.",
+                "沈 MALE DUNSTON",
+            ),
+        ] {
+            let data = reported_spans(source);
+            assert!(!data.truncated);
+            assert_eq!(data.ranges.len(), 1, "{source}");
+            assert_eq!(&source[data.ranges[0].clone()], spelling);
+        }
+        for ordinary in [
+            "THE SYSTEM REPORTS THE RESULT",
+            "The Budget is pending.",
+            "工程师表示缓存需要复核。",
+            "教授指出仍需核实。",
+            "博士表示还没确认。",
+            "The professor reports that the test is pending.",
+            "Professor reports that the test is pending.",
+        ] {
+            let data = reported_data(ordinary);
+            assert_eq!(data["spellings"], json!([]), "{ordinary}");
+            assert_eq!(data["truncated"], false);
+        }
+    }
+
+    #[test]
+    fn reported_spelling_membership_is_one_way_and_checks_whole_labels() {
+        let source =
+            "北岭大学的 LENA FARO森教授指出仍未确认。研究所的沈 MALE DUNSTON博士表示尚未完成。";
+        let exact = |name: &str| name.to_owned();
+        for body in [
+            "Professor LENA FARO森 stated that the report remains unconfirmed.",
+            "Doctor 沈 MALE DUNSTON noted that the test is pending.",
+            "事项仍未确认。", // A summary need not retain every historical name.
+        ] {
+            validate_reported(source, body, exact).unwrap();
+        }
+        for body in [
+            "LENA FARO 森教授指出仍未确认。",
+            "SEN MALE DUNSTON博士表示仍未确认。",
+            "Professor LENA FARO stated that the report is pending.",
+            "Professor LENA FARO森X stated that the report is pending.",
+            "Professor ZORA NIL stated that the report is pending.",
+        ] {
+            assert!(validate_reported(source, body, exact).is_err(), "{body}");
+        }
+        let other = "ALICE SMITH教授指出需要复核。";
+        assert!(validate_reported(other, "ALICE教授指出需要复核。", exact).is_err());
+        assert!(validate_reported("ALICE教授指出需要复核。", other, exact).is_err());
+    }
+
+    #[test]
+    fn prompt_overflow_does_not_turn_complete_source_membership_into_a_partial_legend() {
+        let source = (0..14)
+            .map(|i| format!("NAME{}教授指出仍待确认。", char::from(b'A' + i)))
+            .collect::<String>();
+        let data = reported_data(&source);
+        assert_eq!(data["spellings"].as_array().unwrap().len(), REPORTED_COUNT);
+        assert_eq!(data["truncated"], true);
+        // The final label is outside the prompt legend but still present in
+        // the complete selected evidence. Do not reject a legitimate summary.
+        validate_reported(&source, "NAMEN教授指出仍待确认。", str::to_owned).unwrap();
+        validate_reported(&source, "仍待确认。", str::to_owned).unwrap();
+        assert!(validate_reported(&source, "UNKNOWN教授指出仍待确认。", str::to_owned).is_err());
+        assert!(validate_reported(&source, &source, str::to_owned).is_err());
+        let names = Names::new(&Terms::new(&[], &[]), &source);
+        assert!(
+            names.validate(&source).is_err(),
+            "caption overflow is not complete protection"
+        );
+        assert!(names.repair_source(&source).is_none());
+        let oversized = format!("NAMEN教授指出仍待确认。{}", "x".repeat(REPORTED_SCAN_BYTES));
+        assert_eq!(reported_data(&oversized)["truncated"], true);
+        assert!(validate_reported(&oversized, "NAMEN教授指出仍待确认。", str::to_owned).is_err());
+    }
+
+    #[test]
+    fn captions_keep_reported_labels_without_freezing_titles_or_report_verbs() {
+        let source = "LENA FARO森教授指出报告仍未确认。";
+        let names = Names::new(&Terms::new(&[], &[]), source);
+        assert_eq!(names.spellings(), &["LENA FARO森"]);
+        assert!(names
+            .validate("Professor LENA FARO森 stated that the report is still unconfirmed.")
+            .is_ok());
+        assert!(names
+            .validate("Professor LENA FARO 森 stated that the report is still unconfirmed.")
+            .is_err());
+    }
+
+    #[test]
+    fn final_caption_selection_must_not_drop_short_reported_names() {
+        for identifiers in [
+            (0..12)
+                .map(|i| format!("ModelIdentifierAA{i}"))
+                .collect::<Vec<_>>(),
+            (0..6)
+                .map(|i| format!("LongID{}{}{i}", "x".repeat(32), char::from(b'A' + i)))
+                .collect(),
+        ] {
+            let source = format!("LI博士表示仍待确认。 {}", identifiers.join(" "));
+            let reported = reported_spans(&source);
+            assert!(!reported.truncated);
+            assert_eq!(reported.ranges.len(), 1);
+            let names = Names::new(&Terms::new(&[], &[]), &source);
+            assert!(!names.spellings().iter().any(|name| name == "LI"));
+            assert!(names.validate(&source).is_err());
+            assert!(names.repair_source(&source).is_none());
+        }
+    }
+
+    #[test]
+    fn long_plain_captions_do_not_require_reported_name_protection() {
+        let source = "The report is still pending. ".repeat(REPORTED_SCAN_BYTES / 20 + 1);
+        assert!(source.len() > REPORTED_SCAN_BYTES);
+        assert_eq!(
+            reported_data(&source),
+            json!({"spellings":[],"truncated":false})
+        );
+        let names = Names::new(&Terms::new(&[], &[]), &source);
+        assert!(names.validate("报告仍未确认。").is_ok());
+        assert!(names.repair_source(&source).is_some());
     }
     #[test]
     fn actual_withdrawal_caption_preserves_focused_teacher_spelling_without_gender_guess() {

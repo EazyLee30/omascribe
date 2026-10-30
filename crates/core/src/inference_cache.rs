@@ -111,6 +111,7 @@ pub(crate) fn environment(
     let input = json!({"schema":"translation-cache-v31-approval-wording","model":model.id,"assets":assets,
         "runtime":engine.inference_fingerprints.file(&runtime),"component":component,
         "template":crate::translation::SYSTEM_TEMPLATE,"output_schema":crate::translation::OUTPUT_SCHEMA,
+        "reported_source_names":crate::translation::SOURCE_REPORTED_NAMES_VERSION,
         "generation":{"seed":42,"temperature":0,"max_tokens":crate::translation::chunks::OUTPUT_TOKENS,"thinking":false,"input_budget":crate::translation::chunks::INPUT_TOKENS},
         "configuration":{"context":prefs.context_size,"threads":prefs.threads,"backend":prefs.inference_backend,"mode":prefs.resource_mode,"memory_budget":prefs.memory_budget_mib},
         "permissions":{"knowledge":prefs.use_knowledge,"memory":prefs.use_memory},

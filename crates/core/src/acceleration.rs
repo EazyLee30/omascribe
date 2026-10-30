@@ -197,6 +197,8 @@ fn binding(
 fn configuration_binding(configuration: &Value, selectors: &SelectorEnv) -> Result<String> {
     // The inexpensive environment identity lives outside the cached hardware
     // inventory, so its thirty-second lifetime cannot conceal selector edits.
+    // Keep the legacy private field name to preserve existing CUDA bindings;
+    // the digest itself is now explicitly scoped to CUDA or Vulkan.
     hash(&json!({"schema":3,"configuration":configuration,"cuda_selectors":selectors.digest()}))
 }
 fn backend(component: &components::Component) -> Result<Backend> {
@@ -683,6 +685,123 @@ mod tests {
             "old environment-unbound certificates need a fresh trial"
         );
         assert_eq!(hardware_key(&engine)?, "same-cached-hardware");
+        Ok(())
+    }
+
+    #[test]
+    fn vulkan_cached_inventory_and_trial_certificate_follow_the_fixed_snapshot() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.acceleration.lock().unwrap().hardware =
+            Some((Instant::now(), "same-vulkan-inventory".into()));
+        let configuration =
+            json!({"schema":2,"hardware":hardware_key(&engine)?,"device":"Vulkan0"});
+        let before = SelectorEnv::vulkan(&[("GGML_VK_VISIBLE_DEVICES", Some("0,1".into()))]);
+        let changed = SelectorEnv::vulkan(&[("GGML_VK_VISIBLE_DEVICES", Some("1,0".into()))]);
+        let key = configuration_binding(&configuration, &before)?;
+        assert_ne!(key, configuration_binding(&configuration, &changed)?);
+        assert_eq!(key, configuration_binding(&configuration, &before.clone())?);
+        let make_trial = || {
+            let mut trial = fixed_trial(&key, before.clone());
+            trial.component_id = "synthetic-vulkan".into();
+            trial.device = "Vulkan0".into();
+            trial
+        };
+        assert!(finish_verification(&engine, make_trial(), &key, &changed).is_err());
+        assert!(!certificate_path(&engine).exists());
+        assert!(!engine.root.join("last-acceleration-test.json").exists());
+        finish_verification(&engine, make_trial(), &key, &before)?;
+        let certificate: Certificate =
+            serde_json::from_slice(&fs::read(certificate_path(&engine))?)?;
+        assert_eq!(certificate.binding, key);
+        assert_eq!(certificate.device, "Vulkan0");
+        assert_eq!(hardware_key(&engine)?, "same-vulkan-inventory");
+        Ok(())
+    }
+
+    #[test]
+    fn vulkan_listing_and_worker_command_receive_the_identical_frozen_scope() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = Preferences {
+            memory_budget_mib: 1024,
+            ..Default::default()
+        };
+        let mut model = crate::models::model(&prefs.llm_model)?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", Sha256::digest(b"good"));
+        let directory = root.path().join("model-store").join(&model.id);
+        fs::create_dir_all(&directory)?;
+        fs::write(directory.join(&model.files[0].name), b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let runtime = root.path().join("synthetic-vulkan");
+        fs::create_dir(&runtime)?;
+        let snapshot = SelectorEnv::vulkan(&[
+            ("GGML_VK_VISIBLE_DEVICES", Some("1,0".into())),
+            ("VK_DRIVER_FILES", Some("not-opened.json".into())),
+            ("DRI_PRIME", Some("1!".into())),
+        ]);
+        let listing = device_list_command(
+            &runtime,
+            &crate::platform::executable("llama-server"),
+            Backend::Vulkan,
+            &snapshot,
+        )?;
+        let mut spec = LaunchSpec {
+            backend: Backend::Vulkan,
+            directory: runtime,
+            device: Some("Vulkan0".into()),
+            identity: "synthetic-binding".into(),
+            selectors: snapshot,
+        };
+        let (worker, backend) = crate::inference::server_command_with_model(
+            &engine,
+            &prefs,
+            12345,
+            "synthetic-token",
+            &spec,
+            &receipt,
+        )?;
+        assert_eq!(backend, Backend::Vulkan);
+        let worker_env: std::collections::BTreeMap<_, _> = worker.get_envs().collect();
+        for (key, value) in listing.get_envs() {
+            if key != "LD_LIBRARY_PATH" && key != "GGML_BACKEND_PATH" {
+                assert_eq!(worker_env[key], value, "{key:?}");
+            }
+        }
+        assert_eq!(
+            worker_env[std::ffi::OsStr::new("GGML_VK_VISIBLE_DEVICES")],
+            Some(std::ffi::OsStr::new("1,0"))
+        );
+        assert_eq!(worker_env[std::ffi::OsStr::new("VK_ICD_FILENAMES")], None);
+        // A fallback must construct a CPU scope, never carry a Vulkan scope.
+        spec.backend = Backend::Cpu;
+        assert!(crate::inference::server_command_with_model(
+            &engine,
+            &prefs,
+            12345,
+            "synthetic-token",
+            &spec,
+            &receipt
+        )
+        .is_err());
+        spec.selectors = SelectorEnv::capture(Backend::Cpu);
+        spec.device = None;
+        let (cpu, backend) = crate::inference::server_command_with_model(
+            &engine,
+            &prefs,
+            12345,
+            "synthetic-token",
+            &spec,
+            &receipt,
+        )?;
+        assert_eq!(backend, Backend::Cpu);
+        assert!(cpu
+            .get_args()
+            .collect::<Vec<_>>()
+            .windows(2)
+            .any(|pair| pair == ["--device", "none"]));
         Ok(())
     }
 

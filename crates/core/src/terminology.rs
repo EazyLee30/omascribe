@@ -980,6 +980,9 @@ impl Terms {
     }
     pub fn validate_writer_names(&self, transcript: &str, body: &str) -> Result<()> {
         crate::task_roles::validate(&self.normalize(transcript), &self.normalize_exact(body))?;
+        crate::translation::validate_reported_name_spellings(transcript, body, |name| {
+            self.normalize_exact(name)
+        })?;
         let body = self.normalize_exact(body).to_lowercase();
         let owners = source_owner_names(transcript);
         // A sole explicit owner is a source spelling, not a guessed translation.
@@ -1285,6 +1288,114 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reported_person_spelling_changes_are_rejected_without_requiring_every_history_name() {
+        let terms = Terms::new(&[], &[]);
+        for (source, changed) in [
+            (
+                "北岭大学的 LENA FARO森教授指出公开照片可能有风险。",
+                "北岭大学的 LENA FARO 森教授指出公开照片可能有风险。",
+            ),
+            (
+                "研究所的沈 MALE DUNSTON博士表示报告仍未确认。",
+                "研究所的 SEN MALE DUNSTON博士表示报告仍未确认。",
+            ),
+        ] {
+            assert!(
+                terms.validate_writer_names(source, changed).is_err(),
+                "{changed}"
+            );
+            assert!(terms.validate_writer_names(source, source).is_ok());
+        }
+    }
+
+    #[test]
+    fn reported_names_allow_only_observed_or_explicitly_mapped_spellings_without_hotwords() {
+        let source = "LENA FARO森教授指出报告仍未确认。";
+        let plain = Terms::new(&[], &[]);
+        assert!(plain.spellings(source).is_empty());
+        assert!(plain.actor_spellings().is_empty());
+        assert!(plain.recognition_hotwords().is_empty());
+        assert_eq!(plain.normalize(source), source);
+        plain
+            .validate_writer_names(
+                source,
+                "Professor LENA FARO森 stated that the report is pending.",
+            )
+            .unwrap();
+        plain
+            .validate_writer_names(source, "报告仍未确认。")
+            .unwrap();
+        let mapped = Terms::new(
+            &[],
+            &[Entry {
+                kind: "term".into(),
+                title: "Lena Faro".into(),
+                aliases: "LENA FARO森".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        mapped
+            .validate_writer_names(
+                source,
+                "Professor Lena Faro stated that the report is pending.",
+            )
+            .unwrap();
+        let unrelated = Terms::new(
+            &[],
+            &[Entry {
+                kind: "term".into(),
+                title: "Zora Nil".into(),
+                enabled: true,
+                ..Default::default()
+            }],
+        );
+        assert!(unrelated
+            .validate_writer_names(
+                source,
+                "Professor Zora Nil stated that the report is pending."
+            )
+            .is_err());
+        let history = "LENA FARO森教授指出原报告待确认。该报告已经撤回。沈 MALE DUNSTON博士表示新报告仍待确认。";
+        plain
+            .validate_writer_names(
+                history,
+                "Doctor 沈 MALE DUNSTON reported that the new report is pending.",
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn reported_literal_names_do_not_authorize_conditional_or_quoted_speakers() {
+        let terms = Terms::new(&[], &[]);
+        for source in [
+            "LENA FARO森教授指出记者如果公布照片可能有风险。",
+            "LENA FARO森教授指出‘记者如果公布照片可能有风险’。",
+            "LENA FARO森教授并未指出记者如果公布照片可能有风险。",
+        ] {
+            let body = format!("{source}记者表示需要继续核实。");
+            terms.validate_writer_names(source, &body).unwrap();
+            let segment = crate::Segment {
+                id: "m:1:1".into(),
+                meeting_id: "m".into(),
+                run: 1,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: source.into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            let draft =
+                serde_json::json!({"sections":[{"title":"纪要","body":body,"sources":[1]}]})
+                    .to_string();
+            let error = crate::notes::validate(&draft, &[segment], "m").unwrap_err();
+            assert!(error.is::<crate::notes::AttributionMismatch>(), "{error:#}");
+        }
+    }
 
     fn concurrent_context_save_cannot_revert_sources(update_term: bool) -> Result<()> {
         use crate::{Segment, Source, Suggestion};

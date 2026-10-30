@@ -939,12 +939,18 @@ mod tests {
             memory_budget_mib: 1024,
             ..Default::default()
         };
+        let (backend, directory, device) =
+            match std::env::var("OMASCRIBE_TEST_SELECTOR_BACKEND").as_deref() {
+                Ok("vulkan") => (crate::inference::Backend::Vulkan, "vulkan", "Vulkan0"),
+                Ok("cuda") | Err(_) => (crate::inference::Backend::Cuda, "cuda", "CUDA0"),
+                _ => bail!("Unsupported synthetic selector backend"),
+            };
         let spec = crate::inference::LaunchSpec {
-            backend: crate::inference::Backend::Cuda,
-            directory: root.join("cuda"),
-            device: Some("CUDA0".into()),
+            backend,
+            directory: root.join(directory),
+            device: Some(device.into()),
             identity: "fixed-synthetic-certificate".into(),
-            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Cuda),
+            selectors: crate::inference::SelectorEnv::capture(backend),
         };
         let key = worker_key(
             &engine,
@@ -956,6 +962,63 @@ mod tests {
         )?;
         std::fs::write(output, key)?;
         Ok(())
+    }
+
+    fn vulkan_selector_pair(variable: &str, before: &str, after: &str) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let runtime = root.path().join("vulkan");
+        std::fs::create_dir(&runtime)?;
+        std::fs::write(
+            runtime.join(crate::platform::executable("llama-server")),
+            b"never executed",
+        )?;
+        let key = |value: &str, label: &str| -> Result<String> {
+            let output = root.path().join(format!("{label}.key"));
+            let child = std::process::Command::new(std::env::current_exe()?)
+                .args([
+                    "--exact",
+                    "inference_worker::tests::cuda_selector_key_child",
+                    "--ignored",
+                ])
+                .env("OMASCRIBE_TEST_SELECTOR_ROOT", root.path())
+                .env("OMASCRIBE_TEST_SELECTOR_OUTPUT", &output)
+                .env("OMASCRIBE_TEST_SELECTOR_BACKEND", "vulkan")
+                .env(
+                    "OMASCRIBE_TEST_UNRELATED_UI",
+                    if label == "stable" { "dark" } else { "light" },
+                )
+                .env(variable, value)
+                .output()?;
+            anyhow::ensure!(
+                child.status.success(),
+                "selector fixture failed: {}",
+                String::from_utf8_lossy(&child.stderr)
+            );
+            Ok(std::fs::read_to_string(output)?)
+        };
+        let first = key(before, "first")?;
+        assert_ne!(
+            first,
+            key(after, "changed")?,
+            "Vulkan0 binding must follow {variable}"
+        );
+        assert_eq!(first, key(before, "stable")?);
+        Ok(())
+    }
+
+    #[test]
+    fn vulkan_selector_ggml_order_changes_invalidate_a_real_worker_key() -> Result<()> {
+        vulkan_selector_pair("GGML_VK_VISIBLE_DEVICES", "0,1", "1,0")
+    }
+
+    #[test]
+    fn vulkan_selector_dri_prime_changes_invalidate_a_real_worker_key() -> Result<()> {
+        vulkan_selector_pair("DRI_PRIME", "0", "1!")
+    }
+
+    #[test]
+    fn vulkan_selector_driver_manifest_changes_invalidate_a_real_worker_key() -> Result<()> {
+        vulkan_selector_pair("VK_DRIVER_FILES", "synthetic-a.json", "synthetic-b.json")
     }
 
     #[test]
@@ -979,6 +1042,7 @@ mod tests {
                     ])
                     .env("OMASCRIBE_TEST_SELECTOR_ROOT", root.path())
                     .env("OMASCRIBE_TEST_SELECTOR_OUTPUT", &output)
+                    .env("OMASCRIBE_TEST_SELECTOR_BACKEND", "cuda")
                     .env("OMASCRIBE_TEST_UNRELATED_UI", ui);
                 for (name, value) in [
                     ("CUDA_VISIBLE_DEVICES", visible),
