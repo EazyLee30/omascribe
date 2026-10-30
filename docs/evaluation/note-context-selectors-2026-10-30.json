@@ -52,7 +52,17 @@
     "frontend_build": "PASS; existing >500kB chunk warning remains",
     "frontend_format": "PASS",
     "source_identity_before_after": "160 source/config files unchanged during full checks",
-    "source_ci": "Triggered after the containing source commit; platform results are checked separately, not inferred from local tests."
+    "source_ci": {
+      "commit": "bdc8c4fc11b6a0e53257d085ae36aa292c77a445",
+      "linux": "SUCCESS",
+      "ubuntu22": "SUCCESS",
+      "windows_core": "SUCCESS",
+      "prepare": "SUCCESS",
+      "validate": "SUCCESS",
+      "gpu_build": "SKIPPED",
+      "gpu_catalog": "SKIPPED",
+      "meaning": "Same-source platform checks; not physical device, real recording, model-quality or installer acceptance."
+    }
   },
   "resources": {
     "model_inference_requests": 0,
@@ -194,7 +204,12 @@
     {
       "path": "artifacts/note-context-selector-2026-10-30/source-before.json",
       "sha256": "b9817f608fca53bd3d30c030b8cf5e4ab1b45e0d67515e9a3fcd42f8edc7767f"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/exact-source-ci.json",
+      "sha256": "aa293e71a337ba6030ce75eb5e46410eeba434ad5901443366ff1d5e17109d20"
     }
   ],
-  "release": "0.3.5 unpublished;stable0.3.4. This batch closes concrete save/env races, not original manual Q16, full real-recording/install/platform gates or the P0/P1/P2/P3/G1/G2 objective."
+  "release": "0.3.5 unpublished;stable0.3.4. This batch closes concrete save/env races, not original manual Q16, full real-recording/install/platform gates or the P0/P1/P2/P3/G1/G2 objective.",
+  "source_commit": "bdc8c4fc11b6a0e53257d085ae36aa292c77a445"
 }

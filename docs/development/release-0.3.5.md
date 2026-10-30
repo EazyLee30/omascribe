@@ -4,7 +4,7 @@
 
 ## 固定范围与当前状态
 
-本批在 `5db93f2` 基础上修复两类专名回退竞态及CUDA设备选择环境漏绑定：前端旧保存失败不再恢复并覆盖已排队的新稿；纠词派生与源/纪要/引用/terms key回写共用当前Store锁；CUDA验证与实际worker使用同一固定设备选择环境。真实异步/并发/隔离worker-key红测后通过，本地464核心/10忽略、ASR9、CLI2、26集成、Python126项（1跳过）、严格workspace Clippy、格式及前端构建通过，160份源/配置身份前后相同。没有模型推理或安装包/GPU组件重编；同提交三端CI单独核对。完整精确来源行补句号方案因可能截断跨来源否定/谓词已撤回，事实门与原Q16失败保留。[原始红绿测、被拒方案与边界](../evaluation/note-context-selectors-2026-10-30.json)。
+本批固定共享源码 `bdc8c4f`（在 `5db93f2` 基础上）修复两类专名回退竞态及CUDA设备选择环境漏绑定：前端旧保存失败不再恢复并覆盖已排队的新稿；纠词派生与源/纪要/引用/terms key回写共用当前Store锁；CUDA验证与实际worker使用同一固定设备选择环境。真实异步/并发/隔离worker-key红测后通过，本地464核心/10忽略、ASR9、CLI2、26集成、Python126项（1跳过）、严格workspace Clippy、格式及前端构建通过，160份源/配置身份前后相同。没有模型推理或安装包/GPU组件重编；同SHA Windows-core、Linux、Ubuntu22、prepare、validate CI均成功，GPU build/catalog跳过；不代表实体设备验收。完整精确来源行补句号方案因可能截断跨来源否定/谓词已撤回，事实门与原Q16失败保留。[原始红绿测、被拒方案与边界](../evaluation/note-context-selectors-2026-10-30.json)。
 
 上一共享源码提交 `bda6614` 已推送，包含连续改名、术语查询、驱动出处与首块PCM热词更新修复；未获实测认可的来源预处理改为显式实验开关，默认保留原直接成文及两请求内修复。本地454核心/9忽略、2CLI、26集成、严格workspace Clippy/格式及同SHA Windows-core、Linux、Ubuntu22、prepare、validate CI通过，build/catalog跳过。**原手动Q16本轮仍FAIL；0.3.5未发布，正式版仍为0.3.4。** 未重编安装包或可选GPU组件。
 
