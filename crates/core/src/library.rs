@@ -36,6 +36,33 @@ impl Default for Entry {
         }
     }
 }
+impl crate::store::Store {
+    /// Read terms under the caller's existing Store guard so note context and
+    /// spelling changes can share one consistent database snapshot.
+    pub(crate) fn terminology_entries(&self) -> Result<Vec<Entry>> {
+        let mut query = self.conn.prepare(TERMINOLOGY_ENTRIES_SQL)?;
+        let mut entries: Vec<Entry> = query
+            .query_map([], |r| r.get::<_, String>(0))?
+            .map(|r| Ok(serde_json::from_str(&r?)?))
+            .collect::<Result<_>>()?;
+        entries.retain(|e| {
+            e.meeting_id.as_ref().is_none_or(|id| {
+                !self
+                    .conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [id],
+                        |r| r.get::<_, bool>(0),
+                    )
+                    .unwrap_or(false)
+            })
+        });
+        // JSON dates can differ from their SQL sort column in imported data.
+        // A stable sort also preserves the full view's order for equal dates.
+        entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+        Ok(entries)
+    }
+}
 impl Engine {
     pub fn invalidate_background(&self) -> Result<()> {
         let db = self.store.lock().unwrap();
@@ -99,27 +126,7 @@ impl Engine {
     /// Load terminology without materializing historical meetings and notes.
     /// Keep disabled/deleted rows: Terms owns their eligibility rules.
     pub fn terminology_entries(&self) -> Result<Vec<Entry>> {
-        let db = self.store.lock().unwrap();
-        let mut query = db.conn.prepare(TERMINOLOGY_ENTRIES_SQL)?;
-        let mut entries: Vec<Entry> = query
-            .query_map([], |r| r.get::<_, String>(0))?
-            .map(|r| Ok(serde_json::from_str(&r?)?))
-            .collect::<Result<_>>()?;
-        entries.retain(|e| {
-            e.meeting_id.as_ref().is_none_or(|id| {
-                !db.conn
-                    .query_row(
-                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
-                        [id],
-                        |r| r.get::<_, bool>(0),
-                    )
-                    .unwrap_or(false)
-            })
-        });
-        // JSON dates can differ from their SQL sort column in imported data.
-        // A stable sort also preserves the full view's order for equal dates.
-        entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-        Ok(entries)
+        self.store.lock().unwrap().terminology_entries()
     }
     pub fn save_library_entry(&self, mut entry: Entry) -> Result<Entry> {
         let prefs = self.preferences.lock().unwrap().clone();

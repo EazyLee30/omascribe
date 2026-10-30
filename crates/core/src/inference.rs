@@ -7,6 +7,9 @@ use std::{
     process::Command,
 };
 
+mod selector_env;
+pub(crate) use selector_env::SelectorEnv;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
@@ -36,6 +39,7 @@ pub(crate) struct LaunchSpec {
     pub directory: PathBuf,
     pub device: Option<String>,
     pub identity: String,
+    pub selectors: SelectorEnv,
 }
 pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<LaunchSpec> {
     if prefs.inference_backend == "auto" {
@@ -53,6 +57,7 @@ pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<Launch
         }),
         device: None,
         identity: String::new(),
+        selectors: SelectorEnv::capture(backend),
     })
 }
 pub fn apple_silicon() -> bool {
@@ -283,12 +288,64 @@ pub(crate) fn server_command_with_model(
         .env("DO_NOT_TRACK", "1")
         .env("OMP_NUM_THREADS", "1")
         .env("OPENBLAS_NUM_THREADS", "1");
+    spec.selectors.apply(backend, &mut command)?;
     Ok((command, backend))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cuda_server_command_uses_only_the_captured_selector_values() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = Preferences {
+            memory_budget_mib: 1024,
+            ..Default::default()
+        };
+        // A synthetic integrity receipt is enough to inspect the production
+        // command builder; these bytes are never passed to a native runtime.
+        let mut model = models::model(&prefs.llm_model)?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(b"good"));
+        let directory = root.path().join("model-store").join(&model.id);
+        std::fs::create_dir_all(&directory)?;
+        std::fs::write(directory.join(&model.files[0].name), b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let runtime = root.path().join("cuda");
+        std::fs::create_dir(&runtime)?;
+        let mut spec = LaunchSpec {
+            backend: Backend::Cuda,
+            directory: runtime,
+            device: Some("CUDA0".into()),
+            identity: "synthetic-certificate".into(),
+            selectors: SelectorEnv::cuda(Some("0,1".into()), None),
+        };
+        let (command, backend) =
+            server_command_with_model(&engine, &prefs, 12345, "synthetic-token", &spec, &receipt)?;
+        assert_eq!(backend, Backend::Cuda);
+        let env: std::collections::BTreeMap<_, _> = command.get_envs().collect();
+        assert_eq!(
+            env[std::ffi::OsStr::new("CUDA_VISIBLE_DEVICES")],
+            Some(std::ffi::OsStr::new("0,1"))
+        );
+        assert_eq!(env[std::ffi::OsStr::new("CUDA_DEVICE_ORDER")], None);
+        let args: Vec<_> = command.get_args().collect();
+        assert!(args.windows(2).any(|pair| pair == ["--device", "CUDA0"]));
+        spec.selectors = SelectorEnv::capture(Backend::Cpu);
+        assert!(server_command_with_model(
+            &engine,
+            &prefs,
+            12345,
+            "synthetic-token",
+            &spec,
+            &receipt
+        )
+        .is_err());
+        Ok(())
+    }
     #[test]
     fn auto_keeps_legacy_cpu_runtime_and_explicit_unavailable_backend_fails() {
         let root = tempfile::tempdir().unwrap();

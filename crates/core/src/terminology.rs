@@ -7,6 +7,14 @@ use std::collections::{BTreeMap, HashSet};
 mod document;
 pub(crate) use document::NoteSpellingEdit;
 
+#[cfg(test)]
+thread_local! {
+    // A one-shot, thread-local boundary lets tests coordinate concurrent saves
+    // without timing assumptions or a production runtime mode.
+    static BEFORE_CORRECTION_LOCK: std::cell::RefCell<Option<Box<dyn FnOnce()>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
 pub struct Terms {
     matcher: Option<Regex>,
     names: BTreeMap<String, String>,
@@ -1134,8 +1142,8 @@ fn edit_distance(a: &[u8], b: &[u8]) -> usize {
 }
 impl Engine {
     pub fn terminology(&self, meeting: &str) -> Result<Terms> {
-        let notes = self.store.lock().unwrap().notes(meeting)?;
-        Ok(Terms::new(&notes, &self.terminology_entries()?))
+        let db = self.store.lock().unwrap();
+        Ok(Terms::new(&db.notes(meeting)?, &db.terminology_entries()?))
     }
     /// Archive the original ASR revision. Human edits and protected minutes remain authoritative.
     pub fn correct_terminology(&self, meeting: &str) -> Result<usize> {
@@ -1146,8 +1154,15 @@ impl Engine {
         meeting: &str,
         note_edit: Option<NoteSpellingEdit>,
     ) -> Result<usize> {
-        let terms = self.terminology(meeting)?;
+        #[cfg(test)]
+        if let Some(pause) = BEFORE_CORRECTION_LOCK.with(|slot| slot.borrow_mut().take()) {
+            pause();
+        }
         let mut db = self.store.lock().unwrap();
+        // Derive the environment under the same guard used for all source,
+        // citation and terms-key writes; an older worker cannot restore a
+        // spelling snapshot captured before a concurrent note/glossary save.
+        let terms = Terms::new(&db.notes(meeting)?, &db.terminology_entries()?);
         let mut m = db.meeting(meeting)?;
         let mut before_document = None;
         let mut document_sources = HashSet::new();
@@ -1270,6 +1285,197 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn concurrent_context_save_cannot_revert_sources(update_term: bool) -> Result<()> {
+        use crate::{Segment, Source, Suggestion};
+        use std::{sync::mpsc, thread, time::Duration};
+
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Concurrent spelling update")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        let note = engine.save_note(&meeting.id, None, "CEDARLEDGER", "document", 0)?;
+        let raw = Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "CEDARLEDGER尚未完成，预算仍未批准。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let mut human = raw.clone();
+        human.id = format!("{}:1:2", meeting.id);
+        human.seq = 2;
+        human.start_ms = 1000;
+        human.end_ms = 2000;
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&raw)?;
+            db.save_segment(&human)?;
+        }
+        engine.edit_segment(&human.id, "人工确认：CEDARLEDGER仅是示例。", 1)?;
+        let before = engine.snapshot(&meeting.id)?;
+        let section = Suggestion {
+            focus: String::new(),
+            id: String::new(),
+            meeting_id: meeting.id.clone(),
+            kind: "section".into(),
+            text: raw.text.clone(),
+            sources: vec![Source {
+                segment_id: raw.id.clone(),
+                revision: raw.revision,
+                start_ms: raw.start_ms,
+                end_ms: raw.end_ms,
+                quote: raw.text.clone(),
+                speaker_name: None,
+            }],
+            status: "pending".into(),
+            stale: false,
+        };
+        let mut accepted = section.clone();
+        accepted.status = "accepted".into();
+        accepted.text = "人工纪要：CEDARLEDGER仍保留为示例。".into();
+        engine.store.lock().unwrap().commit_document(
+            &before,
+            &before.segments,
+            2,
+            vec![section, accepted],
+            false,
+        )?;
+        let other = engine.create_meeting("Unrelated meeting")?;
+        engine.save_note(&other.id, None, "OtherProduct", "document", 0)?;
+        let mut other_source = raw.clone();
+        other_source.id = format!("{}:1:1", other.id);
+        other_source.meeting_id = other.id.clone();
+        other_source.text = "OtherProduct仍待确认。".into();
+        engine.store.lock().unwrap().save_segment(&other_source)?;
+
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (resume_tx, resume_rx) = mpsc::channel();
+        let worker_engine = engine.clone();
+        let worker_meeting = meeting.id.clone();
+        let worker = thread::spawn(move || {
+            BEFORE_CORRECTION_LOCK.with(|slot| {
+                *slot.borrow_mut() = Some(Box::new(move || {
+                    entered_tx.send(()).unwrap();
+                    resume_rx.recv().unwrap();
+                }));
+            });
+            worker_engine.correct_terminology(&worker_meeting)
+        });
+        // In the old path the worker has already captured A's Terms here.
+        // Resume only after the real public save has completely applied B.
+        entered_rx.recv_timeout(Duration::from_secs(10))?;
+        let saved = if update_term {
+            engine
+                .save_library_entry(Entry {
+                    kind: "term".into(),
+                    title: "CedarLedger".into(),
+                    aliases: "CEDARLEDGER".into(),
+                    ..Default::default()
+                })
+                .map(|_| ())
+        } else {
+            engine
+                .save_note(&meeting.id, Some(note.id), "CedarLedger", "document", 0)
+                .map(|_| ())
+        };
+        let expected = engine.snapshot(&meeting.id)?;
+        let other_expected = engine.snapshot(&other.id)?;
+        let expected_key = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&meeting.id, "terms")?;
+        let other_key = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&other.id, "terms")?;
+        // Release even when the public save failed, so the regression never
+        // strands a waiting worker or relies on a sleep to race the mutex.
+        resume_tx.send(())?;
+        let corrected = worker.join().expect("correction worker must not panic")?;
+        saved?;
+
+        let after = engine.snapshot(&meeting.id)?;
+        let after_key = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&meeting.id, "terms")?;
+        assert_eq!(
+            expected.segments[0].text,
+            "CedarLedger尚未完成，预算仍未批准。"
+        );
+        assert_eq!(expected.segments[0].revision, 2);
+        assert_eq!(expected.suggestions[0].text, expected.segments[0].text);
+        assert_eq!(
+            expected.suggestions[0].sources[0].quote,
+            expected.segments[0].text
+        );
+        assert_eq!(expected.suggestions[0].sources[0].revision, 2);
+        assert_eq!(
+            serde_json::json!({"sources":after.segments,"minutes":after.suggestions,"terms":after_key}),
+            serde_json::json!({"sources":expected.segments,"minutes":expected.suggestions,"terms":expected_key}),
+            "an older worker must not roll back the current spelling, citation or terms key"
+        );
+        assert_eq!(corrected, 0);
+        assert_eq!(engine.terminology(&meeting.id)?.fingerprint(), expected_key);
+        assert_eq!(after.segments[1].text, "人工确认：CEDARLEDGER仅是示例。");
+        assert_eq!(after.segments[1].revision, 2);
+        assert_eq!(
+            after.suggestions[1].text,
+            "人工纪要：CEDARLEDGER仍保留为示例。"
+        );
+        assert_eq!(after.suggestions[1].status, "accepted");
+        let other_after = engine.snapshot(&other.id)?;
+        assert_eq!(
+            serde_json::to_value(&other_after.segments)?,
+            serde_json::to_value(&other_expected.segments)?
+        );
+        assert_eq!(
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .cache_dependency(&other.id, "terms")?,
+            other_key
+        );
+        let db = engine.store.lock().unwrap();
+        let archived: String = db.conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&raw.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(serde_json::from_str::<Segment>(&archived)?.text, raw.text);
+        let revisions: i64 = db.conn.query_row(
+            "SELECT COUNT(*) FROM segment_history WHERE id=?1",
+            [&raw.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(revisions, 1);
+        let jobs: i64 = db
+            .conn
+            .query_row("SELECT COUNT(*) FROM inference_jobs", [], |row| row.get(0))?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn concurrent_note_save_cannot_restore_an_older_terminology_snapshot() -> Result<()> {
+        concurrent_context_save_cannot_revert_sources(false)
+    }
+
+    #[test]
+    fn concurrent_glossary_save_cannot_restore_an_older_terminology_snapshot() -> Result<()> {
+        concurrent_context_save_cannot_revert_sources(true)
+    }
+
     #[test]
     fn combined_chinese_and_english_task_frames_keep_the_twelve_name_bound() {
         let mut text = (b'A'..=b'L')

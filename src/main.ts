@@ -636,7 +636,8 @@ async function persist(id: string) {
   try {
     await job;
   } catch (e) {
-    if (!drafts.has(id)) drafts.set(id, draft);
+    // A newer queued save owns recovery even while its draft is in flight.
+    if (queues.get(id) === job && !drafts.has(id)) drafts.set(id, draft);
     throw e;
   }
 }

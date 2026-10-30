@@ -1,7 +1,7 @@
 //! Test signed optional runtimes locally before selecting them for writing jobs.
 use crate::{
     components,
-    inference::{Backend, LaunchSpec},
+    inference::{Backend, LaunchSpec, SelectorEnv},
     preferences::Preferences,
     Engine,
 };
@@ -13,6 +13,7 @@ use std::{
     fs,
     io::Read,
     path::Path,
+    process::Command,
     sync::{atomic::Ordering, Arc},
     time::{Duration, Instant},
 };
@@ -171,6 +172,7 @@ fn binding(
     component: &components::Component,
     directory: &Path,
     device: &str,
+    selectors: &SelectorEnv,
 ) -> Result<String> {
     let model = crate::models::model(&prefs.llm_model)?;
     if model.format != "gguf" {
@@ -185,11 +187,17 @@ fn binding(
     let receipt = engine
         .cached_model(&prefs.llm_model)?
         .context("model:verification-required")?;
-    hash(
+    configuration_binding(
         &json!({"schema":2,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
         "archive":component.archive.sha256,"files":files,"device":device,"threads":prefs.threads,"context":prefs.context_size,
         "mode":prefs.resource_mode,"budget":crate::inference::budget_mib(prefs)}),
+        selectors,
     )
+}
+fn configuration_binding(configuration: &Value, selectors: &SelectorEnv) -> Result<String> {
+    // The inexpensive environment identity lives outside the cached hardware
+    // inventory, so its thirty-second lifetime cannot conceal selector edits.
+    hash(&json!({"schema":3,"configuration":configuration,"cuda_selectors":selectors.digest()}))
 }
 fn backend(component: &components::Component) -> Result<Backend> {
     match component.backend.as_str() {
@@ -217,7 +225,17 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
         }
         let (_, component, directory) =
             components::installed_component(&engine.root, &cert.component_id, Some(&cert.version))?;
-        if binding(engine, prefs, &component, &directory, &cert.device)? != cert.binding {
+        let kind = backend(&component)?;
+        let selectors = SelectorEnv::capture(kind);
+        if binding(
+            engine,
+            prefs,
+            &component,
+            &directory,
+            &cert.device,
+            &selectors,
+        )? != cert.binding
+        {
             bail!("Acceleration configuration changed; test again");
         }
         let mut state = engine.acceleration.lock().unwrap();
@@ -227,10 +245,11 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
         state.status.report = Some(cert.report);
         state.status.reason = None;
         Ok(LaunchSpec {
-            backend: backend(&component)?,
+            backend: kind,
             directory,
             device: Some(cert.device),
             identity: cert.binding,
+            selectors,
         })
     })();
     let verification_pending = result.as_ref().is_err_and(|error| {
@@ -391,6 +410,69 @@ fn correct_facts(value: &Value) -> bool {
         && value["budget"].as_u64() == Some(3000)
         && value["approved"].as_bool() == Some(false)
 }
+
+fn device_list_command(
+    directory: &Path,
+    entrypoint: &str,
+    kind: Backend,
+    selectors: &SelectorEnv,
+) -> Result<Command> {
+    let mut command = crate::platform::child_command(directory.join(entrypoint));
+    command
+        .arg("--list-devices")
+        .current_dir(directory)
+        .env("LD_LIBRARY_PATH", directory)
+        .env_remove("GGML_BACKEND_PATH");
+    selectors.apply(kind, &mut command)?;
+    Ok(command)
+}
+
+struct VerifiedTrial {
+    component_id: String,
+    version: String,
+    device: String,
+    binding: String,
+    selectors: SelectorEnv,
+    report: Report,
+}
+
+fn finish_verification(
+    engine: &Engine,
+    trial: VerifiedTrial,
+    observed_binding: &str,
+    observed_selectors: &SelectorEnv,
+) -> Result<Report> {
+    // Check before either report or certificate writes. A selector changing
+    // during the trial cannot authorize an ordinal tested in another scope.
+    if engine.note_cancel.load(Ordering::SeqCst)
+        || trial.selectors != *observed_selectors
+        || trial.binding != observed_binding
+    {
+        bail!("Acceleration test configuration changed");
+    }
+    fs::write(
+        engine.root.join("last-acceleration-test.json"),
+        serde_json::to_vec_pretty(&trial.report)?,
+    )?;
+    if trial.report.faster {
+        fs::create_dir_all(engine.root.join("accelerators"))?;
+        crate::preferences::atomic_json(
+            &certificate_path(engine),
+            &Certificate {
+                schema: 1,
+                component_id: trial.component_id,
+                version: trial.version,
+                device: trial.device,
+                binding: trial.binding,
+                report: trial.report.clone(),
+            },
+        )?;
+    } else {
+        let _ = fs::remove_file(certificate_path(engine));
+    }
+    Ok(trial.report)
+}
+
 fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     engine.inference_pool.invalidate();
     let prefs = engine.preferences.lock().unwrap().clone();
@@ -398,6 +480,7 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
         components::installed_component(&engine.root, id, Some(version))?;
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
     let kind = backend(&component)?;
+    let selectors = SelectorEnv::capture(kind);
     if kind == Backend::Cuda
         && crate::hardware::detect(&engine.root, &engine.runtime_dir)
             .cuda_driver_version
@@ -405,24 +488,20 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     {
         bail!("The installed NVIDIA driver does not support CUDA 12. Update the NVIDIA driver or test the Vulkan component; CPU remains available.");
     }
-    let mut command = crate::platform::child_command(directory.join(&component.entrypoint));
-    command
-        .arg("--list-devices")
-        .current_dir(&directory)
-        .env("LD_LIBRARY_PATH", &directory)
-        .env_remove("GGML_BACKEND_PATH");
+    let mut command = device_list_command(&directory, &component.entrypoint, kind, &selectors)?;
     let listing = crate::probe::capture(&mut command, Duration::from_secs(15), 64 * 1024)?;
     let required = crate::models::model(&prefs.llm_model)?.memory_mib
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4
         + 256;
     let device = choose_device(&String::from_utf8(listing)?, kind, required)?;
-    let key = binding(engine, &prefs, &component, &directory, &device)?;
+    let key = binding(engine, &prefs, &component, &directory, &device, &selectors)?;
     engine.inference_pool.invalidate();
     let cpu_spec = LaunchSpec {
         backend: Backend::Cpu,
         directory: engine.runtime_dir.join("llama"),
         device: None,
         identity: String::new(),
+        selectors: SelectorEnv::capture(Backend::Cpu),
     };
     let cpu = trial(engine, &prefs, &cpu_spec)?;
     let gpu_spec = LaunchSpec {
@@ -430,38 +509,38 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
         directory: directory.clone(),
         device: Some(device.clone()),
         identity: key.clone(),
+        selectors: selectors.clone(),
     };
     let gpu = trial(engine, &prefs, &gpu_spec)?;
     let faster = gpu.total_ms < cpu.total_ms && gpu.requests_ms.last() < cpu.requests_ms.last();
     let report = Report { cpu, gpu, faster };
     // A driver/config change or cancellation during a test cannot activate stale results.
     engine.acceleration.lock().unwrap().hardware = None;
-    if engine.note_cancel.load(Ordering::SeqCst)
-        || key != binding(engine, &prefs, &component, &directory, &device)?
-    {
+    let observed_selectors = SelectorEnv::capture(kind);
+    if engine.note_cancel.load(Ordering::SeqCst) || selectors != observed_selectors {
         bail!("Acceleration test configuration changed");
     }
-    fs::write(
-        engine.root.join("last-acceleration-test.json"),
-        serde_json::to_vec_pretty(&report)?,
+    let observed_binding = binding(
+        engine,
+        &prefs,
+        &component,
+        &directory,
+        &device,
+        &observed_selectors,
     )?;
-    if faster {
-        fs::create_dir_all(engine.root.join("accelerators"))?;
-        crate::preferences::atomic_json(
-            &certificate_path(engine),
-            &Certificate {
-                schema: 1,
-                component_id: id.into(),
-                version: index.version,
-                device,
-                binding: key,
-                report: report.clone(),
-            },
-        )?;
-    } else {
-        let _ = fs::remove_file(certificate_path(engine));
-    }
-    Ok(report)
+    finish_verification(
+        engine,
+        VerifiedTrial {
+            component_id: id.into(),
+            version: index.version,
+            device,
+            binding: key,
+            selectors,
+            report,
+        },
+        &observed_binding,
+        &observed_selectors,
+    )
 }
 impl Engine {
     pub(crate) fn acceleration_test_running(&self) -> bool {
@@ -562,6 +641,128 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fixed_trial(binding: &str, selectors: SelectorEnv) -> VerifiedTrial {
+        let measured = Trial {
+            startup_ms: 1,
+            requests_ms: vec![1, 1],
+            total_ms: 3,
+            peak_rss_mib: None,
+            runtime_gpu_buffer_mib: None,
+        };
+        VerifiedTrial {
+            component_id: "synthetic-cuda".into(),
+            version: "fixture-v1".into(),
+            device: "CUDA0".into(),
+            binding: binding.into(),
+            selectors,
+            report: Report {
+                cpu: measured.clone(),
+                gpu: measured,
+                faster: true,
+            },
+        }
+    }
+
+    #[test]
+    fn cached_hardware_cannot_hide_a_selector_change_or_reuse_old_certificates() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.acceleration.lock().unwrap().hardware =
+            Some((Instant::now(), "same-cached-hardware".into()));
+        // This hits the real30s cache without starting a hardware helper.
+        let configuration = json!({"schema":2,"hardware":hardware_key(&engine)?,"device":"CUDA0"});
+        let before = SelectorEnv::cuda(Some("0,1".into()), None);
+        let after = SelectorEnv::cuda(Some("1,0".into()), None);
+        let key = configuration_binding(&configuration, &before)?;
+        assert_ne!(key, configuration_binding(&configuration, &after)?);
+        assert_eq!(key, configuration_binding(&configuration, &before.clone())?);
+        assert_ne!(
+            key,
+            hash(&configuration)?,
+            "old environment-unbound certificates need a fresh trial"
+        );
+        assert_eq!(hardware_key(&engine)?, "same-cached-hardware");
+        Ok(())
+    }
+
+    #[test]
+    fn device_listing_receives_the_same_explicit_cuda_selector_scope() -> Result<()> {
+        let snapshot = SelectorEnv::cuda(Some("1,0".into()), Some("PCI_BUS_ID".into()));
+        let command = device_list_command(
+            Path::new("synthetic-runtime"),
+            "never-executed",
+            Backend::Cuda,
+            &snapshot,
+        )?;
+        let env: std::collections::BTreeMap<_, _> = command.get_envs().collect();
+        assert_eq!(
+            env[std::ffi::OsStr::new("CUDA_VISIBLE_DEVICES")],
+            Some(std::ffi::OsStr::new("1,0"))
+        );
+        assert_eq!(
+            env[std::ffi::OsStr::new("CUDA_DEVICE_ORDER")],
+            Some(std::ffi::OsStr::new("PCI_BUS_ID"))
+        );
+        assert!(device_list_command(
+            Path::new("synthetic-runtime"),
+            "never-executed",
+            Backend::Cuda,
+            &SelectorEnv::capture(Backend::Cpu)
+        )
+        .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn changing_selectors_configuration_or_cancellation_cannot_write_a_trial_certificate(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        fs::create_dir_all(engine.root.join("accelerators"))?;
+        fs::write(certificate_path(&engine), b"previous certificate")?;
+        fs::write(
+            engine.root.join("last-acceleration-test.json"),
+            b"previous report",
+        )?;
+        let before = SelectorEnv::cuda(Some("0,1".into()), None);
+        let changed = SelectorEnv::cuda(Some("1,0".into()), None);
+        for (observed, key, cancelled) in [
+            (&changed, "bound", false),
+            (&before, "other", false),
+            (&before, "bound", true),
+        ] {
+            engine.note_cancel.store(cancelled, Ordering::SeqCst);
+            assert!(finish_verification(
+                &engine,
+                fixed_trial("bound", before.clone()),
+                key,
+                observed
+            )
+            .is_err());
+            assert_eq!(
+                fs::read(certificate_path(&engine))?,
+                b"previous certificate"
+            );
+            assert_eq!(
+                fs::read(engine.root.join("last-acceleration-test.json"))?,
+                b"previous report"
+            );
+        }
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        finish_verification(
+            &engine,
+            fixed_trial("bound", before.clone()),
+            "bound",
+            &before,
+        )?;
+        let certificate: Certificate =
+            serde_json::from_slice(&fs::read(certificate_path(&engine))?)?;
+        assert_eq!(certificate.binding, "bound");
+        assert_eq!(certificate.device, "CUDA0");
+        assert!(certificate.report.faster);
+        Ok(())
+    }
     fn adapter_inventory(
         provenance: Option<&str>,
         version: Option<&str>,
@@ -896,6 +1097,7 @@ mod tests {
                 .into(),
             ),
             identity: "explicit-developer-trial".into(),
+            selectors: SelectorEnv::capture(kind),
         };
         let tested = trial(&engine, &prefs, &spec);
         let log = fs::read_to_string(engine.root.join("llm-runtime.log")).unwrap_or_default();
@@ -939,6 +1141,7 @@ mod tests {
             directory: engine.runtime_dir.join("llama"),
             device: None,
             identity: String::new(),
+            selectors: SelectorEnv::capture(Backend::Cpu),
         };
         let report = trial(&engine, &prefs, &spec)?;
         assert_eq!(report.requests_ms.len(), 2);

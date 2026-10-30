@@ -974,6 +974,28 @@ mod tests {
         );
     }
     #[test]
+    fn exact_source_lines_are_not_proof_of_independent_subjects_or_predicates() {
+        // Exact per-source bytes do not prove that an ASR boundary closes a
+        // subject, report predicate or negation spanning the next source.
+        for (first, second) in [
+            ("审计员指出", "承包商如果上传日志可能泄露信息"),
+            ("审计员没有", "表示缓存已完成"),
+        ] {
+            let input = serde_json::json!({"transcript":[
+                {"id":1,"text":first}, {"id":3,"text":second}
+            ]})
+            .to_string();
+            let raw = format!("{first}\n{second}");
+            let composed = super::body_with_evidence(&raw, &input).unwrap();
+            assert_eq!(
+                composed.text(),
+                raw,
+                "source identity is not syntactic closure"
+            );
+            assert!(composed.copies().is_empty());
+        }
+    }
+    #[test]
     fn numbered_copy_proof_refuses_any_added_missing_or_changed_item() {
         let input = r#"{"transcript":[{"id":1,"text":"任务可能已经完成。"},{"id":3,"text":"预算3000元未批准。"}]}"#;
         for raw in [

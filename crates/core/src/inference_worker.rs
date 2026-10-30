@@ -328,6 +328,7 @@ fn worker_key(
         )?
         .unwrap_or_default();
     let key = json!({
+        "schema":"worker-cuda-selectors-v1", "selectors":spec.selectors.digest(),
         "model":prefs.llm_model,"verified_assets":model_identity,
         "backend":spec.backend.name(),"component":spec.identity,"device":spec.device,"runtime":std::fs::read(spec.directory.join("build-info.json")).ok(),
         "executable":engine.inference_fingerprints.file(&spec.directory.join(if spec.backend == crate::inference::Backend::Mlx {"runner.py".into()} else {crate::platform::executable("llama-server")})),
@@ -925,6 +926,95 @@ mod memory_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "isolated selector environment fixture; never starts a model worker"]
+    fn cuda_selector_key_child() -> Result<()> {
+        let root =
+            std::path::PathBuf::from(std::env::var_os("OMASCRIBE_TEST_SELECTOR_ROOT").unwrap());
+        let output =
+            std::path::PathBuf::from(std::env::var_os("OMASCRIBE_TEST_SELECTOR_OUTPUT").unwrap());
+        let engine = Engine::open(root.clone())?;
+        let prefs = crate::preferences::Preferences {
+            memory_budget_mib: 1024,
+            ..Default::default()
+        };
+        let spec = crate::inference::LaunchSpec {
+            backend: crate::inference::Backend::Cuda,
+            directory: root.join("cuda"),
+            device: Some("CUDA0".into()),
+            identity: "fixed-synthetic-certificate".into(),
+            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Cuda),
+        };
+        let key = worker_key(
+            &engine,
+            &prefs,
+            "synthetic-meeting",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        std::fs::write(output, key)?;
+        Ok(())
+    }
+
+    #[test]
+    fn cuda_selector_changes_invalidate_a_real_worker_key() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let runtime = root.path().join("cuda");
+        std::fs::create_dir(&runtime)?;
+        std::fs::write(
+            runtime.join(crate::platform::executable("llama-server")),
+            b"never executed",
+        )?;
+        let key =
+            |visible: Option<&str>, order: Option<&str>, ui: &str, label: &str| -> Result<String> {
+                let output = root.path().join(format!("{label}.key"));
+                let mut command = std::process::Command::new(std::env::current_exe()?);
+                command
+                    .args([
+                        "--exact",
+                        "inference_worker::tests::cuda_selector_key_child",
+                        "--ignored",
+                    ])
+                    .env("OMASCRIBE_TEST_SELECTOR_ROOT", root.path())
+                    .env("OMASCRIBE_TEST_SELECTOR_OUTPUT", &output)
+                    .env("OMASCRIBE_TEST_UNRELATED_UI", ui);
+                for (name, value) in [
+                    ("CUDA_VISIBLE_DEVICES", visible),
+                    ("CUDA_DEVICE_ORDER", order),
+                ] {
+                    if let Some(value) = value {
+                        command.env(name, value);
+                    } else {
+                        command.env_remove(name);
+                    }
+                }
+                let child = command.output()?;
+                anyhow::ensure!(
+                    child.status.success(),
+                    "selector fixture failed: {}",
+                    String::from_utf8_lossy(&child.stderr)
+                );
+                Ok(std::fs::read_to_string(output)?)
+            };
+        let first = key(Some("0,1"), None, "light", "first")?;
+        let other = key(Some("1,0"), None, "light", "reordered")?;
+        assert_ne!(
+            first, other,
+            "CUDA0 can name another physical GPU after selector reordering"
+        );
+        assert_eq!(first, key(Some("0,1"), None, "dark", "unchanged")?);
+        assert_ne!(
+            first,
+            key(Some("0,1"), Some("PCI_BUS_ID"), "light", "order")?
+        );
+        assert_ne!(
+            key(None, None, "light", "absent")?,
+            key(Some(""), None, "light", "empty")?
+        );
+        Ok(())
+    }
 
     // A real child process verifies ownership and reaping without requiring model weights.
     #[test]
@@ -1567,6 +1657,7 @@ mod tests {
             directory: runtime,
             device: None,
             identity: String::new(),
+            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Metal),
         };
         let meeting = engine.create_meeting("Fictional Metal lifecycle")?;
         save_fixture_take(&engine, &meeting.id, 1)?;
