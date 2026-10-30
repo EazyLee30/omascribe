@@ -1,0 +1,115 @@
+{
+  "kind": "windows-single-engine-live-note-synthetic-replay",
+  "source": "fd2afdcfe854fc6b9fd87a328b10e9e1f0ec2d2a",
+  "build_identity": {
+    "profile": "release",
+    "revision_at_compile": "fd2afdcfe854fc6b9fd87a328b10e9e1f0ec2d2a",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "schema": 1,
+    "source_sha256": "9666e5594952331bc99a91b9c332f1e2db32e3889f7fa88cce0398b88d7f98c1",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "worker_sha256": "b5b9ad7147d6494482664bcf7372473c590e67da88454bfd66bdfd8b8c67a0c9",
+  "proxy_harness_sha256": "d83f9dc4dc1a2e63319a89bf1f6be37bf7c30bc7aa4a74d67ca938e3f2d8f535",
+  "ffmpeg_sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+  "model_files": {
+    "bpe.model": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
+    "decoder-epoch-99-avg-1.onnx": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+    "encoder-epoch-99-avg-1.int8.onnx": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+    "joiner-epoch-99-avg-1.int8.onnx": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+    "tokens.txt": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+  },
+  "fixture": {
+    "sample_rate": 16000,
+    "samples": 320000,
+    "bytes": 640000,
+    "pcm_sha256": "90a496378b63e37206dac279af677c8f06f4b7cefcae507108f0f2f3fe444c3d",
+    "fixture_sha256": "57a54dd327aa286901b0570f3ea96c9d064d765fc15b26c1929ccf2ec552cd53",
+    "input": "existing locally generated synthetic Chinese TTS plus silence, repeated"
+  },
+  "checks": {
+    "fixture_pcm_exact": true,
+    "fixture_pcm_bytes": 640000,
+    "fixture_expected_bytes": 640000,
+    "proxy_bytes_match_event_log": true,
+    "proxy_lines_match_event_log": true,
+    "worker_exit_zero": true,
+    "proxy_process_ids_recorded": true,
+    "has_ready": true,
+    "has_done_20s": true,
+    "source_clean_after": true,
+    "model_unchanged": true,
+    "harness_exit_zero": true,
+    "host_checks_passed": true
+  },
+  "steps": [
+    {
+      "active": true,
+      "boundaries": 0,
+      "captured_ms": 1472,
+      "hotword_count": 0,
+      "processed_ms": 400,
+      "stage": "before_save"
+    },
+    {
+      "active": true,
+      "asr_count": 0,
+      "boundary_already_seen": false,
+      "captured_ms": 1536,
+      "processed_ms": 600,
+      "published_count": 1,
+      "save_note_content_correct": true,
+      "stage": "after_save",
+      "target_published": true
+    },
+    {
+      "asr_count": 1,
+      "input_status": "accepted",
+      "processed_ms": 7200,
+      "stage": "endpoint"
+    },
+    {
+      "active": true,
+      "asr_count": 1,
+      "captured_ms": 7872,
+      "input_status": "accepted",
+      "processed_ms": 7600,
+      "stage": "after_endpoint_progress"
+    },
+    {
+      "active": true,
+      "asr_count": 1,
+      "captured_ms": 12032,
+      "input_status": "accepted",
+      "processed_ms": 12000,
+      "stage": "second_speech"
+    },
+    {
+      "duration_ms": 20000,
+      "note_count": 1,
+      "processed_ms": 20000,
+      "runtime_error": null,
+      "segment_count": 2,
+      "stage": "complete"
+    }
+  ],
+  "proxy": {
+    "bytes_forwarded": 8185,
+    "lines_forwarded": 127,
+    "worker_exit": 0,
+    "endpoint_times_ms": [
+      7200,
+      10000,
+      18200
+    ]
+  },
+  "process_seconds": 20.953,
+  "limits": [
+    "One synthetic fixture and one run; no microphone, GPU, private recording or real user text.",
+    "One Engine instance exercises replay_audio, save_note, hotword publication, worker and archived PCM; manual UI and physical capture are not tested.",
+    "Event-tapping proxy adds a process; it forwards worker stdout bytes unchanged and reports successful write counts but is not the uninstrumented production process tree.",
+    "One observation validates save before an endpoint and subsequent speech; it does not cover the newly fixed after-endpoint before-first-block race, nor prove ASR name accuracy.",
+    "Initial workspace setup failure, incorrect initial Python path sorting, and candidate build cache issue from the earlier independent worker control are retained in local preparation evidence."
+  ],
+  "passed": true
+}
