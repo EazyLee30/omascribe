@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-10-30",
   "parent": "33fe011",
-  "status": "Direct writer restored by gating unproven source preparation; one unchanged manual model trial pending",
+  "status": "Default direct writer policy bounded trial FAIL; raw retained and owned models cleaned;0.3.5 still held",
   "scope": "Only OMASCRIBE_PREPARE_SOURCES=1 builds/runs source-language preparation. Default begins with the existing unchanged writer and retains its factual/language repair within the same two-send budget. No prompt, fixture, output/context limit, canonical spelling, citation or final guard relaxed.",
   "cache": "Incremental state template identity now includes notes/source_language source bytes and the source-preparation bool. Valid caption translations are not purged; existing synced articles are not silently recomputed. The test uses a fresh workspace.",
   "historical_evidence": "49d8 local original manual pattern PASS is not semantic acceptance: repeated music, weakened uncertainty and name spacing/transliteration remain. Native candidate14 manual Mac/Intel/Windows failures still stand. Auto candidate14 used9 caption requests plus2 minutes requests with3 prepared cache passages, not the manual2-send budget.",
@@ -21,13 +21,81 @@
     "strict_workspace_clippy": "PASS",
     "rustfmt": "PASS",
     "diff_check": "PASS",
-    "independent_static_review": "No introduced blocker"
+    "independent_static_review": "No introduced blocker",
+    "exact_source_ci": "Linux, Ubuntu22, Windows-core, prepare and validate SUCCESS;build/catalog SKIPPED"
   },
   "source_files_sha256": {
     "crates/core/src/notes.rs": "8769868bfc9ed9f588aaba282a59bf917818b1efafc1d5054a78524259f14b6e",
     "crates/core/src/notes/source_language.rs": "f42da1f5e6fa0412698c24a4a9cdf498f1068f371d5b372699d8350b4403f62b",
     "crates/core/src/notes/incremental.rs": "32ff31868c88d4fa2ee5f42eb45634e30c0a0140850007581537421f0e990fed"
   },
-  "trial": "One original manual zh_recorded_mixed_prose_fidelity/default preferences+existing fixture zh/no auto-schedule, same installed weights/runtime. Full raw/final/topic/name/state/citation review, failure and cost retained; no prompt sweep or another protocol.",
-  "release": "Original Q16 remains open until actual verification;0.3.5 unpublished, stable0.3.4. No installer/SDK/model/runtime/GPU component rebuild."
+  "trial": {
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "execution": "One original manual run; default preferences plus existing fixture zh setting; no auto-schedule; same installed weights/runtime; no prompt/fixture/guard/quota changes or rerun",
+    "passed": false,
+    "audit_passed": true,
+    "wall_seconds": 15.162,
+    "actual_db_cursor": 0,
+    "actual_article_count": 0,
+    "actual_document_history_count": 0,
+    "requests": 4,
+    "input_tokens": 1810,
+    "output_tokens": 748,
+    "total_tokens": 2558,
+    "validation_failures": 4,
+    "request_ms": 12489,
+    "observed": "Each of two batches used compose then repair and was rejected by the actor guard. Raw copied first five sources with music repeated three times in English;source literal 潘 became PAN and FURGO森 gained a space. Selected zh was not achieved. No first-batch commit means both selections stayed1..5 and source6 was never selected.",
+    "factual_limits": "Raw retained English may-have and until-late-night qualifiers; no new reporter response/decision was observed in this run. The actor rejection is not proof of invented reporter speech. No final article/citation was committed, so final topic/name/state coverage and general entailment did not pass.",
+    "identity": "CLI compiled at exact bda6614 with clean inference tree. Source/CLI/fixture/model/runtime identities unchanged before and after; actual DB agrees with diagnostics.",
+    "comparison": "Original candidate14 native manual FAIL and49d8 local pattern PASS remain separate historical evidence. No whole-meeting speed or quality benefit is claimed."
+  },
+  "release": "Q16 remains FAIL and0.3.5 unpublished;stable0.3.4. No installer/SDK/model/runtime/GPU component rebuild. Do not promote the direct-writer trial to quality acceptance or repeat prompt/protocol tuning from this result.",
+  "source": "bda6614f2eb8d30cb372f7679dd458c2676dde63",
+  "cleanup": {
+    "owned_model_files_removed": 6,
+    "borrowed_links_released": true,
+    "owned_workers_alive": [],
+    "signals_sent": 0,
+    "original_assets_unchanged": true,
+    "raw_evidence_retained": true,
+    "physical_disk_reclaimed_not_measured": true
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/run-trial.py",
+      "sha256": "b4eb1a9b782d997849e351e22263233dac459548e22dde623615a9e9d2be2238"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/fixture-binding.json",
+      "sha256": "02835bac82de7132c65665adcbb3ed3128c9d44e603c6c4cce8009811485a151"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/historical-comparison.json",
+      "sha256": "0b1413065c573421469b7b7ecb017d2695a41aa538f1bd378c81c5d353fb4999"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/model-clones.json",
+      "sha256": "a46e66f2781482c0d3636ae2cf1a17cb85c0d7a1dc31718b57ade72586eeaec4"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/build-cli.log",
+      "sha256": "0718d3e40c4c289eaaf2b2a3e25ae2d96656bb4e156a0249656717cedc6dce49"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/trial/report.json",
+      "sha256": "90df3be65658d13c0932259c0db54c9dc1deef191faf1f66e037f318db705f4b"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/trial/state.json",
+      "sha256": "76c909c74f4ee35853b5528d4287ca677ef693f3d6633fa5fc8706c83cbe9413"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/trial/actual-review.json",
+      "sha256": "54c78b89951b901df154c4816434820be4b54ce9e2b10c34ea6ab01f215b4afa"
+    },
+    {
+      "path": "artifacts/q16-direct-writer-2026-10-30/trial/cleanup.json",
+      "sha256": "267299aa20389f04a44de7a13824cffb3b4f4b8fea4a045124555e1f0d5b722a"
+    }
+  ]
 }
