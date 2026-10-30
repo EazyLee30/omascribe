@@ -1190,9 +1190,6 @@ pub(crate) fn source_name_mask(
 ) -> String {
     names::Names::new(terms, source).mask(body)
 }
-pub(crate) fn source_reported_names(source: &str) -> Value {
-    names::reported_data(source)
-}
 pub(crate) fn validate_reported_name_spellings(
     source: &str,
     body: &str,

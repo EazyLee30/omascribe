@@ -129,7 +129,8 @@ fn reported_spans(text: &str) -> ReportedSpans {
     }
     ReportedSpans { ranges, truncated }
 }
-pub(super) fn reported_data(text: &str) -> serde_json::Value {
+#[cfg(test)]
+fn reported_data(text: &str) -> serde_json::Value {
     let data = reported_spans(text);
     json!({"spellings":data.ranges.into_iter().map(|range| &text[range]).collect::<Vec<_>>(),
         "truncated":data.truncated})

@@ -157,21 +157,6 @@ fn prompt_sources(
         })
         .collect();
     let mut content = json!({"transcript":transcript});
-    let reported = crate::translation::source_reported_names(
-        &context
-            .segments
-            .iter()
-            .map(|source| source.text.as_str())
-            .collect::<Vec<_>>()
-            .join("\n"),
-    );
-    if reported["truncated"] == true
-        || reported["spellings"]
-            .as_array()
-            .is_some_and(|names| !names.is_empty())
-    {
-        content["source_reported_names"] = reported;
-    }
     if let Some(budget) = budget {
         content["current_budget"] = budget.context();
     }
@@ -830,45 +815,6 @@ pub fn non_substantive(text: &str) -> bool {
 }
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn reported_spellings_are_source_data_and_do_not_add_a_mandatory_history_hint() {
-        let root = tempfile::tempdir().unwrap();
-        let engine = crate::Engine::open(root.path().into()).unwrap();
-        let meeting = engine.create_meeting("Reported spelling data").unwrap();
-        let source = crate::Segment {
-            id: "source".into(),
-            meeting_id: meeting.id.clone(),
-            run: 1,
-            seq: 1,
-            start_ms: 0,
-            end_ms: 1000,
-            text: "LENA FARO森教授指出报告仍未确认。".into(),
-            revision: 1,
-            speaker: None,
-            speaker_manual: false,
-        };
-        engine.store.lock().unwrap().save_segment(&source).unwrap();
-        let snapshot = engine.snapshot(&meeting.id).unwrap();
-        let context = super::Context {
-            segments: vec![source],
-            cursor: 1,
-            keywords: vec![],
-        };
-        for (_, input) in [
-            super::prompt(&snapshot, &context, &serde_json::json!({}), "zh"),
-            super::prompt_mode(&snapshot, &context, &serde_json::json!({}), "en", false),
-        ] {
-            let data: serde_json::Value = serde_json::from_str(&input).unwrap();
-            assert_eq!(
-                data["source_reported_names"]["spellings"],
-                serde_json::json!(["LENA FARO森"])
-            );
-            assert_eq!(data["source_reported_names"]["truncated"], false);
-        }
-        let (system, _) = super::prompt(&snapshot, &context, &serde_json::json!({}), "zh");
-        assert!(!system.contains("LENA FARO森"));
-        assert!(!system.contains("正确拼写是"));
-    }
     #[test]
     fn presentation_ordinals_are_removed_without_erasing_factual_numbers() {
         assert_eq!(
