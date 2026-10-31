@@ -139,7 +139,7 @@ fn source_repair(
 }
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
-    generate_for_run(engine, meeting, None)
+    generate_for_run(engine, meeting, None, None)
 }
 
 pub(crate) fn generate_in_run(
@@ -147,13 +147,40 @@ pub(crate) fn generate_in_run(
     meeting: &str,
     expected_run: u32,
 ) -> Result<usize> {
-    generate_for_run(engine, meeting, Some(expected_run))
+    generate_for_run(engine, meeting, Some(expected_run), None)
+}
+
+pub(crate) fn generate_in_run_observed(
+    engine: &Arc<Engine>,
+    meeting: &str,
+    expected_run: u32,
+) -> (Result<usize>, Option<crate::minutes_schedule::InputDigest>) {
+    let mut observed = None;
+    let result = generate_for_run(engine, meeting, Some(expected_run), Some(&mut observed));
+    (result, observed)
+}
+
+// Pure metadata observation: use the already-admitted snapshot/preferences,
+// never another engine snapshot, runtime identity or model/driver read.
+fn record_admitted_input(
+    _scope: &generation::Scope,
+    snapshot: &crate::Snapshot,
+    prefs: &crate::preferences::Preferences,
+    context_revision: u64,
+    observed: Option<&mut Option<crate::minutes_schedule::InputDigest>>,
+) {
+    if let Some(observed) = observed {
+        *observed =
+            crate::minutes_schedule::InputDigest::from_snapshot(snapshot, prefs, context_revision)
+                .ok();
+    }
 }
 
 fn generate_for_run(
     engine: &Arc<Engine>,
     meeting: &str,
     expected_run: Option<u32>,
+    mut observed: Option<&mut Option<crate::minutes_schedule::InputDigest>>,
 ) -> Result<usize> {
     let started = Instant::now();
     let job = Uuid::new_v4().to_string();
@@ -195,6 +222,13 @@ fn generate_for_run(
         }
         let prefs = engine.preferences.lock().unwrap().clone();
         let scope = generation::Scope::new(engine, &snapshot, &prefs, context_revision)?;
+        record_admitted_input(
+            &scope,
+            &snapshot,
+            &prefs,
+            context_revision,
+            observed.as_deref_mut(),
+        );
         let requests = generation::Budget::default();
         let work = Generation {
             trace: &trace,
@@ -1184,6 +1218,100 @@ mod diagnostic_tests {
             assert_eq!(diagnostic_value["cursor_after"], actual, "{outcome}");
             assert_eq!(actual, u32::from(outcome == "committed"));
         }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod admission_metadata_tests {
+    use super::*;
+
+    fn seed() -> Result<(tempfile::TempDir, Arc<Engine>, String)> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Actual admission metadata")?;
+        engine.store.lock().unwrap().save_segment(&crate::Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "缓存仍待核对。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })?;
+        Ok((root, engine, meeting.id))
+    }
+    fn observe(
+        engine: &Engine,
+        snapshot: &crate::Snapshot,
+    ) -> Result<crate::minutes_schedule::InputDigest> {
+        let prefs = engine.preferences.lock().unwrap().clone();
+        let revision = engine.context_revision.load(Ordering::SeqCst);
+        let scope = generation::Scope::new(engine, snapshot, &prefs, revision)?;
+        let before = serde_json::to_vec(snapshot)?;
+        let mut observed = None;
+        record_admitted_input(&scope, snapshot, &prefs, revision, Some(&mut observed));
+        assert_eq!(before, serde_json::to_vec(snapshot)?);
+        assert_eq!(
+            observed,
+            Some(crate::minutes_schedule::InputDigest::from_snapshot(
+                snapshot, &prefs, revision
+            )?)
+        );
+        observed.context("Missing actual admission metadata")
+    }
+    #[test]
+    fn actual_admission_observes_updated_notes_and_caption_snapshot_without_new_io() -> Result<()> {
+        let (_root, engine, id) = seed()?;
+        let scheduled = engine.snapshot(&id)?;
+        let old = observe(&engine, &scheduled)?;
+        engine.save_note(&id, None, "重点核对导出格式。", "document", 0)?;
+        let mut admitted = engine.snapshot(&id)?;
+        let note_key = observe(&engine, &admitted)?;
+        assert_ne!(old, note_key);
+        // Typed checked-caption metadata fixture; no model or caption-quality claim.
+        let source = &admitted.segments[0];
+        admitted.translations.insert(
+            source.id.clone(),
+            crate::translation::Translation {
+                segment_id: source.id.clone(),
+                revision: source.revision,
+                target: "en".into(),
+                model: "qwen3-1.7b".into(),
+                text: "The cache remains unchecked.".into(),
+                cache_key: "already-checked-caption-fixture".into(),
+            },
+        );
+        let actual = observe(&engine, &admitted)?;
+        assert_ne!(actual, note_key);
+        assert_ne!(actual, old);
+        assert!(!engine.inference_worker_status().leased);
+        assert_eq!(engine.inference_worker_status().starts, 0);
+        let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM inference_jobs",
+            [],
+            |row| row.get(0),
+        )?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
+    #[test]
+    fn pre_scope_failure_returns_unknown_admission_without_worker_or_job() -> Result<()> {
+        let (_root, engine, id) = seed()?;
+        // A stale expected run exits before model admission and Scope construction.
+        let (result, observed) = generate_in_run_observed(&engine, &id, 2);
+        assert!(result.is_err());
+        assert!(observed.is_none());
+        assert_eq!(engine.inference_worker_status().starts, 0);
+        let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM inference_jobs",
+            [],
+            |row| row.get(0),
+        )?;
+        assert_eq!(jobs, 0);
         Ok(())
     }
 }

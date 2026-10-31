@@ -522,14 +522,33 @@ impl Engine {
         meeting: &str,
         minutes: bool,
     ) -> Result<bool> {
+        self.translate_with_minutes_dispatch(meeting, minutes, None)
+    }
+    pub(crate) fn translate_with_minutes_dispatch(
+        self: &Arc<Self>,
+        meeting: &str,
+        minutes: bool,
+        dispatch: Option<crate::minutes_schedule::Dispatch>,
+    ) -> Result<bool> {
         let _gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         let snapshot = self.snapshot(meeting)?;
-        if !pending(&snapshot) || snapshot.runtime.diarization_busy {
+        if !pending(&snapshot)
+            || snapshot.runtime.diarization_busy
+            || dispatch
+                .as_ref()
+                .is_some_and(|dispatch| dispatch.run != snapshot.meeting.run)
+        {
             return Ok(false);
         }
         if self.note_busy.swap(true, Ordering::SeqCst) {
             return Ok(false);
+        }
+        if let Some(dispatch) = &dispatch {
+            if let Err(error) = self.register_minutes_dispatch(meeting, dispatch) {
+                self.note_busy.store(false, Ordering::SeqCst);
+                return Err(error);
+            }
         }
         self.note_cancel.store(false, Ordering::SeqCst);
         {
@@ -555,8 +574,25 @@ impl Engine {
             }
             if continue_minutes {
                 engine.status.lock().unwrap().notes_busy = true;
-                let minutes_result = notes::generate_in_run(&engine, &id, launch_run);
-                engine.finish_minutes(&id, launch_run, minutes_result);
+                if let Some(dispatch) = &dispatch {
+                    let (minutes_result, input) =
+                        notes::generate_in_run_observed(&engine, &id, launch_run);
+                    let succeeded = minutes_result.is_ok();
+                    engine.finish_minutes_observed(
+                        &id,
+                        launch_run,
+                        dispatch,
+                        input.as_ref(),
+                        minutes_result,
+                    );
+                    dispatch.complete_observed(succeeded, input);
+                } else {
+                    let result = notes::generate_in_run(&engine, &id, launch_run);
+                    engine.finish_minutes(&id, launch_run, result);
+                }
+            } else if let Some(dispatch) = &dispatch {
+                // A pre-admission translation/resource failure has no actual minutes key.
+                dispatch.complete_observed(false, None);
             }
             engine.note_busy.store(false, Ordering::SeqCst);
         });
@@ -2298,6 +2334,36 @@ mod tests {
         )
         .is_err());
         assert_eq!(passage.revision, 1);
+    }
+    #[test]
+    fn stale_scheduled_translation_run_does_not_leak_busy_flags() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("stale translated dispatch")?;
+        let mut prefs = engine.preferences.lock().unwrap().clone();
+        prefs.translation_mode = "bilingual".into();
+        engine.update_preferences(prefs)?;
+        engine.store.lock().unwrap().save_segment(&crate::Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "The report remains pending.".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })?;
+        assert!(pending(&engine.snapshot(&meeting.id)?));
+        let dispatch = crate::minutes_schedule::Dispatch::new(meeting.run + 1, None);
+        assert!(!engine.translate_with_minutes_dispatch(&meeting.id, true, Some(dispatch))?);
+        assert!(!engine.note_busy.load(Ordering::SeqCst));
+        let status = engine.status.lock().unwrap();
+        assert!(!status.translation_busy);
+        assert!(!status.notes_busy);
+        assert!(!engine.inference_worker_status().leased);
+        Ok(())
     }
     #[test]
     fn invalid_translations_do_not_starve_minutes_but_runtime_failures_and_cancellation_yield() {
