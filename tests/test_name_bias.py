@@ -7,6 +7,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 
 from prepare_name_bias_fixtures import REVISION, occurs, selection_rows
 from evaluate_name_bias import database_evidence, observed_pair
@@ -82,7 +83,7 @@ class RawEvidenceTests(unittest.TestCase):
         self.original = dict(id="m:1:1", meeting_id="m", run=1, seq=1, revision=1,
                              start_ms=0, end_ms=1000, text="The ASR misspelling remains.")
         self.corrected = dict(self.original, revision=2, text="The corrected name remains.")
-        with sqlite3.connect(self.root / "meetings.sqlite3") as db:
+        with closing(sqlite3.connect(self.root / "meetings.sqlite3")) as db, db:
             db.executescript("""CREATE TABLE meetings(id TEXT,json TEXT);
                 CREATE TABLE notes(meeting_id TEXT,json TEXT);
                 CREATE TABLE segments(meeting_id TEXT,run INTEGER,seq INTEGER,json TEXT);
@@ -103,7 +104,7 @@ class RawEvidenceTests(unittest.TestCase):
         self.assertNotEqual(evidence["raw"][0]["text"], evidence["corrected"][0]["text"])
 
     def test_missing_original_cannot_be_replaced_with_corrected_text(self):
-        with sqlite3.connect(self.root / "meetings.sqlite3") as db:
+        with closing(sqlite3.connect(self.root / "meetings.sqlite3")) as db, db:
             db.execute("DELETE FROM segment_history")
         with self.assertRaises(ValueError): database_evidence(self.root, "m")
 
