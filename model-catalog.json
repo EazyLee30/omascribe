@@ -140,24 +140,6 @@
       "format": "gguf"
     },
     {
-      "id": "qwen3-4b-instruct-2507",
-      "name": "Qwen3 4B Instruct 2507 · Q4_K_M (experimental)",
-      "kind": "llm",
-      "license": "Apache-2.0",
-      "source": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF",
-      "memory_mib": 4096,
-      "bundled": false,
-      "files": [
-        {
-          "name": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-          "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-          "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
-          "bytes": 2497281120
-        }
-      ],
-      "format": "gguf"
-    },
-    {
       "id": "speaker-diarization",
       "name": "Pyannote 3.0 + 3D-Speaker ERes2Net",
       "kind": "diarization",
