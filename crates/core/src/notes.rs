@@ -263,6 +263,7 @@ fn generate_for_run(
         );
         engine.store.lock().unwrap().start_job(&job,meeting,&json!({"pipeline":"document-v3","model":prefs.llm_model,"retrieval_keywords":context.keywords,"cursor_before":snapshot.meeting.notes_cursor,"selected":context.segments.iter().map(|s|json!({"id":s.id,"revision":s.revision})).collect::<Vec<_>>()}))?;
         let result = crate::acceleration::with_cpu_fallback(engine, || {
+            diagnostic.begin_operation();
             requests.ensure_remaining()?;
             generate_inner(
                 engine,
@@ -278,14 +279,16 @@ fn generate_for_run(
             Ok(n) => json!({"status":"committed","sections":n}),
             Err(e) => json!({"status":"deferred","reason":format!("{e:#}")}),
         };
-        engine.store.lock().unwrap().finish_job(
+        let written = engine.store.lock().unwrap().finish_job(
             &job,
             &outcome,
             started.elapsed().as_millis() as u64,
-        )?;
+        );
+        diagnostic.observe_job_write(&written);
+        written?;
         result
     })();
-    diagnostic.finish(engine);
+    diagnostic.finish(engine, &result);
     let committed = diagnostic.committed();
     let sections = diagnostic.sections();
     drop(diagnostic);
@@ -618,14 +621,15 @@ fn generate_inner(
         }
         let (raw_body, usage) = generated.map_err(|error| {
             // Transport details (ephemeral URLs and nested socket errors) are not useful in the UI.
-            if error
+            let error = if error
                 .chain()
                 .any(|e| e.is::<ureq::Error>() || e.is::<std::io::Error>())
             {
                 anyhow::anyhow!("本地模型响应中断或等待过久；原文已保留，稍后自动重试")
             } else {
                 error
-            }
+            };
+            work.diagnostic.incomplete_response(error)
         })?;
         if let Some(plan) = source_plan.take() {
             let preparation = plan.prepare(&raw_body, &context.segments, &terms);
@@ -647,7 +651,8 @@ fn generate_inner(
                     "stage":"source_preparation","committed":false,
                 }),
             )?;
-            let prepared = preparation?;
+            let prepared =
+                preparation.map_err(|error| work.diagnostic.validation_rejected(error))?;
             // Do not spend the second request on stale representations or
             // silently trim away a translated source that no longer fits.
             work.ready(
@@ -976,7 +981,7 @@ fn generate_inner(
                     return Err(error.context("复核超出上下文预算，待处理内容已保留"));
                 }
             }
-            Err(error) => return Err(error),
+            Err(error) => return Err(work.diagnostic.validation_rejected(error)),
         }
     }
     let sections = verified.context("纪要复核未完成，待处理内容已保留")?;
@@ -1203,7 +1208,7 @@ mod diagnostic_tests {
                 &work,
                 (None, None),
             );
-            diagnostic.finish(&engine);
+            diagnostic.finish(&engine, &result);
             assert_eq!(result.is_ok(), outcome == "committed", "{outcome}");
             let actual = engine
                 .store

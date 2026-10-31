@@ -10,6 +10,12 @@ use std::{
     sync::atomic::Ordering,
 };
 
+#[derive(Clone, Copy)]
+enum Terminal {
+    ValidationRejected,
+    IncompleteLocalResponse,
+}
+
 pub(super) struct Report<'a> {
     path: PathBuf,
     meeting: String,
@@ -20,6 +26,7 @@ pub(super) struct Report<'a> {
     commit_started: Cell<bool>,
     committed: Cell<bool>,
     sections: Cell<Option<usize>>,
+    terminal: Cell<Option<Terminal>>,
 }
 impl<'a> Report<'a> {
     pub(super) fn new(
@@ -39,6 +46,7 @@ impl<'a> Report<'a> {
             commit_started: Cell::new(false),
             committed: Cell::new(false),
             sections: Cell::new(None),
+            terminal: Cell::new(None),
         }
     }
 
@@ -96,7 +104,29 @@ impl<'a> Report<'a> {
         self.sections.get()
     }
 
-    pub(super) fn finish(&self, engine: &Engine) {
+    // A CPU fallback is another operation, not the previous operation's
+    // terminal result. Clear before its budget/admission checks can return.
+    pub(super) fn begin_operation(&self) {
+        self.terminal.set(None);
+    }
+
+    pub(super) fn validation_rejected(&self, error: anyhow::Error) -> anyhow::Error {
+        self.terminal.set(Some(Terminal::ValidationRejected));
+        error
+    }
+
+    pub(super) fn incomplete_response(&self, error: anyhow::Error) -> anyhow::Error {
+        self.terminal.set(Some(Terminal::IncompleteLocalResponse));
+        error
+    }
+
+    pub(super) fn observe_job_write(&self, result: &Result<()>) {
+        if result.is_err() {
+            self.terminal.set(None);
+        }
+    }
+
+    pub(super) fn finish(&self, engine: &Engine, result: &Result<usize>) {
         let mut value = self.value.borrow_mut();
         let outcome = if self.committed() {
             "committed"
@@ -106,14 +136,12 @@ impl<'a> Report<'a> {
             "cancelled"
         } else if self.commit_started.get() {
             "commit_failed"
-        } else if value["validation_error"].is_string() {
-            "validation_rejected"
-        } else if value["attempts"]
-            .as_array()
-            .and_then(|attempts| attempts.last())
-            .is_some_and(|attempt| attempt["failure"] == "incomplete_local_response")
-        {
-            "incomplete_local_response"
+        } else if result.is_err() {
+            match self.terminal.get() {
+                Some(Terminal::ValidationRejected) => "validation_rejected",
+                Some(Terminal::IncompleteLocalResponse) => "incomplete_local_response",
+                None => "deferred",
+            }
         } else {
             "deferred"
         };
@@ -157,6 +185,175 @@ mod tests {
         )?)?)
     }
 
+    fn later_stop_is_not_the_first_draft_validation_rejection(stop: &str) -> Result<()> {
+        {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let meeting = engine.create_meeting("Public diagnostic terminal control")?;
+            let source = crate::Segment {
+                id: format!("{}:1:1", meeting.id),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            };
+            engine.store.lock().unwrap().save_segment(&source)?;
+            let snapshot = engine.snapshot(&meeting.id)?;
+            let prefs = engine.preferences.lock().unwrap().clone();
+            let scope = super::super::generation::Scope::new(&engine, &snapshot, &prefs, 0)?;
+            let terms = engine
+                .terminology(&meeting.id)?
+                .with_actor_spellings([source.text.as_str()], std::iter::empty::<&str>());
+            // This is the real production spelling validator, not a made-up
+            // quality Result; no local model or transport is started.
+            let first_error = terms
+                .validate_writer_names(
+                    &source.text,
+                    "当迪大学的 PAMELA FURGO 森教授指出，公布照片似乎存在危害性。",
+                )
+                .unwrap_err();
+            let trace = TaskTrace::start(root.path(), "minutes", stop);
+            let report = Report::new(root.path(), &meeting.id, "local-model", 0, &trace);
+            report.record(
+                &engine,
+                json!({"attempts":[{"attempt":1,"stage":"compose",
+                    "validation_error":format!("{first_error:#}")}]}),
+            )?;
+            let requests = super::super::generation::Budget::default();
+            assert_eq!(requests.take()?, 1);
+            let terminal = if stop == "scope" {
+                engine.save_note(&meeting.id, None, "待核对发布范围。", "document", 0)?;
+                scope.check(&engine, std::slice::from_ref(&source))
+            } else {
+                let work = super::super::Generation {
+                    trace: &trace,
+                    diagnostic: &report,
+                    scope: &scope,
+                    requests: &requests,
+                    context_revision: 0,
+                };
+                work.ready(
+                    &engine,
+                    std::slice::from_ref(&source),
+                    true,
+                    false,
+                    false,
+                    4096,
+                )
+            };
+            assert!(terminal.is_err(), "{stop}: production stop was not reached");
+            report.finish(&engine, &terminal.map(|()| 0));
+            let value = read(root.path())?;
+            assert_eq!(
+                value["attempts"][0]["validation_error"],
+                format!("{first_error:#}")
+            );
+            assert_eq!(value["committed"], false);
+            assert_eq!(value["cursor_after"], 0);
+            assert_eq!(
+                value["outcome"], "deferred",
+                "{stop}: a first-draft error was mistaken for the later terminal stop"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn later_scope_stop_is_not_the_first_draft_validation_rejection() -> Result<()> {
+        later_stop_is_not_the_first_draft_validation_rejection("scope")
+    }
+
+    #[test]
+    fn later_resource_stop_is_not_the_first_draft_validation_rejection() -> Result<()> {
+        later_stop_is_not_the_first_draft_validation_rejection("resource")
+    }
+
+    fn spelling_rejection() -> anyhow::Error {
+        let source = "当迪大学的 PAMELA FURGO森教授指出公布照片似乎存在危害性。";
+        crate::terminology::Terms::new(&[], &[])
+            .with_actor_spellings([source], std::iter::empty::<&str>())
+            .validate_writer_names(
+                source,
+                "当迪大学的 PAMELA FURGO 森教授指出公布照片存在危害性。",
+            )
+            .unwrap_err()
+    }
+
+    #[test]
+    fn fallback_entry_clears_the_previous_terminal_before_budget_check() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Diagnostic fallback metadata control")?;
+        let trace = TaskTrace::start(root.path(), "minutes", "diagnostic-fallback");
+        let report = Report::new(root.path(), &meeting.id, "local-model", 0, &trace);
+        let requests = super::super::generation::Budget::default();
+        let mut calls = 0;
+        let result: Result<usize> = crate::acceleration::with_cpu_fallback(&engine, || {
+            report.begin_operation();
+            requests.ensure_remaining()?;
+            calls += 1;
+            assert_eq!(requests.take()?, 1);
+            assert_eq!(requests.take()?, 2);
+            let error = spelling_rejection();
+            report.record(
+                &engine,
+                json!({"attempts":[{"attempt":2,"stage":"repair",
+                    "validation_error":format!("{error:#}")}]}),
+            )?;
+            // Force the existing fallback branch using metadata only. This is
+            // not a claim that a real GPU/model produced this rejection.
+            crate::acceleration::reject(&engine, "diagnostic_control", true);
+            Err(report.validation_rejected(error))
+        });
+        assert!(result.is_err());
+        assert_eq!(calls, 1, "fallback must stop at its existing budget check");
+        report.finish(&engine, &result);
+        assert_eq!(read(root.path())?["outcome"], "deferred");
+        Ok(())
+    }
+
+    #[test]
+    fn failed_job_write_replaces_only_terminal_provenance_not_attempt_history() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Diagnostic job-write control")?;
+        let trace = TaskTrace::start(root.path(), "minutes", "diagnostic-job-write");
+        let report = Report::new(root.path(), &meeting.id, "local-model", 0, &trace);
+        let error = spelling_rejection();
+        let text = format!("{error:#}");
+        report.record(
+            &engine,
+            json!({"attempts":[{"attempt":2,"stage":"repair","validation_error":text}]}),
+        )?;
+        let rejected: Result<usize> = Err(report.validation_rejected(error));
+        assert_eq!(format!("{:#}", rejected.as_ref().unwrap_err()), text);
+        engine
+            .store
+            .lock()
+            .unwrap()
+            .conn
+            .execute("DROP TABLE inference_jobs", [])?;
+        let written = engine
+            .store
+            .lock()
+            .unwrap()
+            .finish_job("control", &json!({}), 0);
+        assert!(written.is_err(), "the real Store write must fail");
+        report.observe_job_write(&written);
+        let result = written.map(|()| 0);
+        report.finish(&engine, &result);
+        let value = read(root.path())?;
+        assert_eq!(value["outcome"], "deferred");
+        assert_eq!(value["attempts"][0]["validation_error"], text);
+        assert_eq!(value["cursor_after"], 0);
+        Ok(())
+    }
+
     #[test]
     fn final_quota_exhausted_validation_failure_is_reported_once_without_advancing_cursor(
     ) -> Result<()> {
@@ -187,7 +384,8 @@ mod tests {
         report.record(&engine, rejected.clone())?;
         assert!(requests.ensure_remaining().is_err());
         report.record(&engine, rejected)?;
-        report.finish(&engine);
+        let result = Err(report.validation_rejected(anyhow::anyhow!("actor attribution rejected")));
+        report.finish(&engine, &result);
         let value = read(root.path())?;
         assert_eq!(value["committed"], false);
         assert_eq!(value["cursor_before"], 5);
@@ -247,7 +445,18 @@ mod tests {
                 &engine,
                 json!({"meeting_id":meeting.id,"cursor_after":6,"attempts":[attempt]}),
             )?;
-            report.finish(&engine);
+            let result = match outcome {
+                "prepare_rejected" => {
+                    Err(report.validation_rejected(anyhow::anyhow!("source preparation rejected")))
+                }
+                "incomplete" => {
+                    let error =
+                        super::super::stream::read_observed("".as_bytes(), |_| {}).unwrap_err();
+                    Err(report.incomplete_response(error))
+                }
+                _ => Ok(0),
+            };
+            report.finish(&engine, &result);
             let value = read(root.path())?;
             assert_eq!(value["committed"], false, "{outcome}");
             assert_eq!(value["cursor_after"], 5, "{outcome}");
@@ -293,7 +502,7 @@ mod tests {
             .unwrap()
             .conn
             .execute("DELETE FROM meetings WHERE id=?1", [&meeting.id])?;
-        report.finish(&engine);
+        report.finish(&engine, &Ok(0));
         let value = read(root.path())?;
         assert_eq!(value["cursor_before"], 5);
         assert_eq!(value["cursor_after"], Value::Null);
