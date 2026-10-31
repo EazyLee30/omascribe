@@ -163,9 +163,14 @@ def evaluate(args):
                         last_generation_sha256_before=sha256(root / "last-generation.json"),
                         document_before=saved["suggestions"])
                     minutes_preservation.append(preservation)
-                cursor = -1
-                if phase.get("run_generation", True) is False:
-                    snapshot = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-after-note")
+                # A rejected first job already made no progress. Compare with
+                # the actual frontier after append/save, not a -1 sentinel
+                # that would pay for the same rejected batch once more.
+                snapshot_name = "snapshot-before-generation" if phase.get("run_generation", True) else "snapshot-after-note"
+                snapshot = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/snapshot_name)
+                cursor = snapshot["meeting"]["notes_cursor"]
+                # Still run the first job when requested: a spelling or
+                # fingerprint update may be needed at an already-covered cursor.
                 for batch in range(seq+1 if phase.get("run_generation", True) else 0):
                     generation = folder / f"phase-{number}" / f"batch-{batch+1}"
                     diagnostic_names = ["last-generation.json", "last-writer-resource.json", "last-metal-fallback.json", "llm-runtime.log", "inference-trace.jsonl", "inference-trace.previous.jsonl"]
