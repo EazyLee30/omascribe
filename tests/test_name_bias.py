@@ -7,10 +7,11 @@ import json
 import sqlite3
 import tempfile
 import unittest
+import wave
 from contextlib import closing
 
 from prepare_name_bias_fixtures import REVISION, occurs, selection_rows
-from evaluate_name_bias import database_evidence, observed_pair
+from evaluate_name_bias import database_evidence, observed_pair, recording_evidence
 
 
 class SelectionIntegrityTests(unittest.TestCase):
@@ -116,6 +117,45 @@ class RawEvidenceTests(unittest.TestCase):
         pair = observed_pair(rows, "acoustic_metrics", "positive", "expected_name_present")
         self.assertIsNone(pair["observed_delta"])
         self.assertEqual(pair["discordant_counts"]["unknown"], 1)
+
+
+class RecordingContractTests(unittest.TestCase):
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = pathlib.Path(self.folder.name)
+        self.audio = self.root / "meetings" / "m" / "audio"
+        self.files = self.root / "meetings" / "m" / "files"
+        self.audio.mkdir(parents=True); self.files.mkdir()
+        self.pcm = b"\x02\x00" * 160
+        self.prepared = dict(samples=160, sample_rate=16000, seconds=.01,
+                             pcm_sha256=hashlib.sha256(b"\x01\x00" * 160).hexdigest())
+        self.reference = dict(schema=1, decoder="native_wav_import", samples=160, pcm_bytes=320,
+                              sample_rate=16000, pcm_sha256=hashlib.sha256(self.pcm).hexdigest())
+        (self.audio / "000000.pcm").write_bytes(self.pcm)
+        self.write_wav(self.pcm)
+
+    def write_wav(self, payload):
+        with wave.open(str(self.files / "recording-001.wav"), "wb") as wav:
+            wav.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
+            wav.writeframes(payload)
+
+    def test_production_conversion_has_its_own_strict_pcm_reference(self):
+        result = recording_evidence(self.root, "m", self.prepared, self.reference)
+        self.assertEqual(result["pcm_sha256"], self.reference["pcm_sha256"])
+        self.assertNotEqual(result["pcm_sha256"], self.prepared["pcm_sha256"])
+
+    def test_matching_archive_copies_cannot_replace_the_independent_reference(self):
+        altered = b"\x03\x00" * 160
+        (self.audio / "000000.pcm").write_bytes(altered)
+        self.write_wav(altered)
+        with self.assertRaises(ValueError):
+            recording_evidence(self.root, "m", self.prepared, self.reference)
+
+    def test_recording_wav_and_pcm_chunks_must_both_match(self):
+        self.write_wav(b"\x03\x00" * 160)
+        with self.assertRaises(ValueError):
+            recording_evidence(self.root, "m", self.prepared, self.reference)
 
 
 if __name__ == "__main__":

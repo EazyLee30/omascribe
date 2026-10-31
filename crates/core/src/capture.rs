@@ -3,8 +3,11 @@ use anyhow::{Context, Result};
 use rubato::{
     Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
 };
+use sha2::{Digest, Sha256};
 use std::{
-    io::{self, Read},
+    fs::File,
+    io::{self, Read, Seek, SeekFrom},
+    path::Path,
     process::Child,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -12,6 +15,159 @@ use std::{
     },
     thread::JoinHandle,
 };
+
+const MAX_INFO_PCM_BYTES: u64 = 16_000 * 120 * 2;
+const MAX_INFO_INPUT_BYTES: u64 = 64 * 1024 * 1024;
+
+#[derive(PartialEq, Eq)]
+struct WavIdentity {
+    bytes: u64,
+    modified: std::time::SystemTime,
+    created: Option<std::time::SystemTime>,
+    #[cfg(unix)]
+    file: (u64, u64, i64, i64),
+    #[cfg(windows)]
+    file: (u64, [u8; 16], i64),
+}
+
+fn wav_identity(file: &File) -> Result<WavIdentity> {
+    let metadata = file.metadata()?;
+    anyhow::ensure!(metadata.is_file(), "WAV input must be a regular file");
+    #[cfg(unix)]
+    let identity = {
+        use std::os::unix::fs::MetadataExt;
+        (
+            metadata.dev(),
+            metadata.ino(),
+            metadata.ctime(),
+            metadata.ctime_nsec(),
+        )
+    };
+    #[cfg(windows)]
+    let identity = {
+        use std::{mem::size_of, os::windows::io::AsRawHandle};
+        use windows::Win32::{
+            Foundation::HANDLE,
+            Storage::FileSystem::{
+                FileBasicInfo, FileIdInfo, GetFileInformationByHandleEx, FILE_BASIC_INFO,
+                FILE_ID_INFO,
+            },
+        };
+        let mut id = FILE_ID_INFO::default();
+        let mut basic = FILE_BASIC_INFO::default();
+        unsafe {
+            let handle = HANDLE(file.as_raw_handle());
+            GetFileInformationByHandleEx(
+                handle,
+                FileIdInfo,
+                (&mut id as *mut FILE_ID_INFO).cast(),
+                size_of::<FILE_ID_INFO>() as u32,
+            )?;
+            GetFileInformationByHandleEx(
+                handle,
+                FileBasicInfo,
+                (&mut basic as *mut FILE_BASIC_INFO).cast(),
+                size_of::<FILE_BASIC_INFO>() as u32,
+            )?;
+        }
+        (
+            id.VolumeSerialNumber,
+            id.FileId.Identifier,
+            basic.ChangeTime,
+        )
+    };
+    Ok(WavIdentity {
+        bytes: metadata.len(),
+        modified: metadata.modified()?,
+        created: metadata.created().ok(),
+        #[cfg(any(unix, windows))]
+        file: identity,
+    })
+}
+
+fn wav_input_digest(file: &mut File, identity: &WavIdentity) -> Result<String> {
+    file.seek(SeekFrom::Start(0))?;
+    let limit = identity
+        .bytes
+        .checked_add(1)
+        .context("WAV input is too large")?;
+    let mut reader = (&mut *file).take(limit);
+    let mut digest = Sha256::new();
+    let mut count = 0;
+    let mut buffer = [0; 16_384];
+    loop {
+        let n = reader.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        count += n as u64;
+        anyhow::ensure!(count <= identity.bytes, "WAV input changed while hashing");
+        digest.update(&buffer[..n]);
+    }
+    anyhow::ensure!(
+        count == identity.bytes && wav_identity(file)? == *identity,
+        "WAV input changed while hashing"
+    );
+    Ok(format!("{:x}", digest.finalize()))
+}
+
+fn info_pcm_digest(reader: impl Read, maximum: u64) -> Result<(u64, String)> {
+    let mut reader = reader.take(maximum + 1);
+    let mut digest = Sha256::new();
+    let mut count = 0;
+    let mut buffer = [0; 16_384];
+    loop {
+        let n = reader.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        count += n as u64;
+        anyhow::ensure!(count <= maximum, "Decoded WAV exceeds 120 seconds");
+        digest.update(&buffer[..n]);
+    }
+    anyhow::ensure!(
+        count > 0 && count.is_multiple_of(2),
+        "Decoded WAV must contain complete PCM samples"
+    );
+    Ok((count, format!("{:x}", digest.finalize())))
+}
+
+/// Read-only canonical PCM identity using the exact native WAV import decoder.
+/// No Engine, models, subprocesses or PCM output files are created.
+pub fn wav_pcm_info(path: &Path) -> Result<serde_json::Value> {
+    anyhow::ensure!(
+        path.extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("wav")),
+        "Expected a WAV input path"
+    );
+    let mut input = File::open(path).context("Cannot open diagnostic WAV input")?;
+    let identity = wav_identity(&input)?;
+    anyhow::ensure!(
+        identity.bytes <= MAX_INFO_INPUT_BYTES,
+        "Diagnostic WAV input exceeds 64 MiB"
+    );
+    let input_sha256 = wav_input_digest(&mut input, &identity)?;
+    anyhow::ensure!(
+        wav_identity(&File::open(path)?)? == identity,
+        "WAV input path changed"
+    );
+    let mut capture = wav(path)?;
+    let reader = capture
+        .stdout
+        .take()
+        .context("Cannot read native WAV decoder")?;
+    let (pcm_bytes, pcm_sha256) = info_pcm_digest(reader, MAX_INFO_PCM_BYTES)?;
+    anyhow::ensure!(capture.wait()?, "Native WAV decoder failed");
+    anyhow::ensure!(
+        wav_input_digest(&mut input, &identity)? == input_sha256
+            && wav_identity(&File::open(path)?)? == identity,
+        "WAV input changed while decoding"
+    );
+    Ok(
+        serde_json::json!({"schema":1,"decoder":"native_wav_import", "input_sha256":input_sha256,
+        "pcm_sha256":pcm_sha256,"pcm_bytes":pcm_bytes,"samples":pcm_bytes/2,"sample_rate":16000}),
+    )
+}
 
 pub struct Capture {
     pub stdout: Option<Box<dyn Read + Send>>,
@@ -298,6 +454,114 @@ pub fn wav(path: &std::path::Path) -> Result<Capture> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn write_wav(path: &Path, rate: u32, channels: u16, frames: u32) -> Result<()> {
+        let mut writer = hound::WavWriter::create(
+            path,
+            hound::WavSpec {
+                channels,
+                sample_rate: rate,
+                bits_per_sample: 16,
+                sample_format: hound::SampleFormat::Int,
+            },
+        )?;
+        for i in 0..u64::from(frames) * u64::from(channels) {
+            writer.write_sample(((i * 97) % 16_000) as i16 - 8_000)?;
+        }
+        writer.finalize()?;
+        Ok(())
+    }
+
+    #[test]
+    fn wav_pcm_info_matches_the_existing_decoder_without_changing_input() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        for (rate, channels) in [(16_000, 1), (48_000, 2)] {
+            let path = dir.path().join(format!("{rate}-{channels}.wav"));
+            write_wav(&path, rate, channels, 2049)?;
+            let before = std::fs::read(&path)?;
+            let mut capture = wav(&path)?;
+            let mut pcm = Vec::new();
+            capture.stdout.take().unwrap().read_to_end(&mut pcm)?;
+            assert!(capture.wait()?);
+            let info = wav_pcm_info(&path)?;
+            assert_eq!(info["schema"], 1);
+            assert_eq!(info["decoder"], "native_wav_import");
+            assert_eq!(
+                info["input_sha256"],
+                format!("{:x}", Sha256::digest(&before))
+            );
+            assert_eq!(info["pcm_sha256"], format!("{:x}", Sha256::digest(&pcm)));
+            assert_eq!(info["pcm_bytes"], pcm.len());
+            assert_eq!(info["samples"], 2049_u64 * 16_000 / u64::from(rate));
+            assert_eq!(info["sample_rate"], 16_000);
+            assert_eq!(std::fs::read(&path)?, before);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn pcm_info_read_is_bounded_and_requires_whole_nonempty_samples() -> Result<()> {
+        let bytes = [1, 2, 3, 4, 5, 6];
+        assert_eq!(
+            info_pcm_digest(io::Cursor::new(bytes), 6)?,
+            (6, format!("{:x}", Sha256::digest(bytes)))
+        );
+        assert!(info_pcm_digest(io::empty(), 6).is_err());
+        assert!(info_pcm_digest(io::Cursor::new([1, 2, 3]), 6).is_err());
+        let mut source = io::Cursor::new([0; 100]);
+        assert!(info_pcm_digest(&mut source, 6).is_err());
+        assert_eq!(
+            source.position(),
+            7,
+            "Only one byte beyond the limit is consumed"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn wav_pcm_info_rejects_non_wav_empty_truncated_and_over_limit_audio() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let malformed = dir.path().join("not-a-wave.wav");
+        std::fs::write(&malformed, b"not a WAV")?;
+        assert!(wav_pcm_info(&malformed).is_err());
+        let oversized = dir.path().join("oversized.wav");
+        File::create(&oversized)?.set_len(MAX_INFO_INPUT_BYTES + 1)?;
+        assert!(wav_pcm_info(&oversized)
+            .unwrap_err()
+            .to_string()
+            .contains("exceeds 64 MiB"));
+        let empty = dir.path().join("empty.wav");
+        write_wav(&empty, 16_000, 1, 0)?;
+        assert!(wav_pcm_info(&empty).is_err());
+        let truncated = dir.path().join("truncated.wav");
+        write_wav(&truncated, 16_000, 1, 1024)?;
+        let file = std::fs::OpenOptions::new().write(true).open(&truncated)?;
+        file.set_len(file.metadata()?.len() - 1)?;
+        assert!(wav_pcm_info(&truncated).is_err());
+        let over = dir.path().join("over.wav");
+        write_wav(&over, 16_000, 1, (MAX_INFO_PCM_BYTES / 2 + 1) as u32)?;
+        assert!(wav_pcm_info(&over)
+            .unwrap_err()
+            .to_string()
+            .contains("exceeds 120 seconds"));
+        Ok(())
+    }
+
+    #[test]
+    fn input_hashing_rejects_changes_to_the_bound_file() -> Result<()> {
+        use std::io::Write;
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("source.wav");
+        write_wav(&path, 16_000, 1, 1024)?;
+        let mut file = File::open(&path)?;
+        let identity = wav_identity(&file)?;
+        wav_input_digest(&mut file, &identity)?;
+        let mut edit = std::fs::OpenOptions::new().append(true).open(&path)?;
+        edit.write_all(b"changed")?;
+        assert!(wav_input_digest(&mut file, &identity).is_err());
+        Ok(())
+    }
+
     #[test]
     fn legacy_pacer_starts_on_delivery_and_drains_exact_bytes_after_stop() -> Result<()> {
         let bytes: Vec<_> = (0..1601).map(|i| (i % 251) as u8).collect();

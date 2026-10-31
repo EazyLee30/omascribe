@@ -88,6 +88,14 @@ fn run() -> Result<()> {
         println!("{}", omascribe_core::build_identity());
         return Ok(());
     }
+    if command == "decode-wav-info" {
+        anyhow::ensure!(args.len() == 3, "decode-wav-info WAV");
+        println!(
+            "{}",
+            omascribe_core::wav_pcm_info(std::path::Path::new(&args[2]))?
+        );
+        return Ok(());
+    }
     if command == "--hardware-probe" {
         println!(
             "{}",
@@ -96,7 +104,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
     if command == "help" {
-        println!("OmaScribe CLI\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  verify-model MODEL_ID [REPEATS]\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH] [--idle-observe-seconds 0..60]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  edit-note MEETING_ID NOTE_ID TEXT [kind=document]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
+        println!("OmaScribe CLI\n  decode-wav-info WAV\n  verify-update FILE SIGNATURE PUBLIC_KEY VERSION\n  diagnose\n  preserve-models\n  correct-terms MEETING_ID\n  translate MEETING_ID\n  models\n  hardware\n  network [downloads|recommendations] [on|off]\n  download-model MODEL_ID\n  verify-model MODEL_ID [REPEATS]\n  diarize MEETING_ID\n  list\n  import AUDIO_PATH [TITLE]\n  record SECONDS [TITLE]\n  replay AUDIO_PATH SECONDS [--telemetry NEW_JSONL_PATH]\n  replay-settle AUDIO_PATH SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH] [--idle-observe-seconds 0..60]\n  append MEETING_ID AUDIO_PATH\n  files MEETING_ID\n  retranscribe MEETING_ID\n  snapshot MEETING_ID\n  note MEETING_ID TEXT [note|focus|term|opinion]\n  edit-note MEETING_ID NOTE_ID TEXT [kind=document]\n  generate MEETING_ID\n  settle MEETING_ID SECONDS\n  export MEETING_ID [--audio]\nAll command results are JSON. OMASCRIBE_DATA_DIR selects an isolated workspace.");
         return Ok(());
     }
     let arg = |i| args.get(i).context("缺少命令参数");

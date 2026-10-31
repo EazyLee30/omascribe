@@ -16,6 +16,7 @@ pub mod desktheme;
 pub mod inhibit;
 
 mod capture;
+pub use capture::wav_pcm_info;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod native_audio;
 

@@ -244,7 +244,65 @@ def score(text, case):
                 expected_exact_spelling_present=case["positive"]["expected_name"] in text)
 
 
-def recording_evidence(root, mid, audio):
+def validate_reference(reference, audio_row):
+    require(isinstance(reference, dict) and reference.get("schema") == 1
+            and reference.get("decoder") == "native_wav_import", "Missing canonical production WAV reference")
+    require(reference.get("input_sha256") == audio_row["sha256"]
+            and type(reference.get("samples")) is int and reference["samples"] == audio_row["samples"]
+            and reference.get("sample_rate") == SAMPLE_RATE
+            and type(reference.get("pcm_bytes")) is int and reference["pcm_bytes"] == reference["samples"] * 2,
+            "Canonical production reference input/duration differs from prepared audio")
+    require(isinstance(reference.get("pcm_sha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", reference["pcm_sha256"]), "Invalid canonical production PCM identity")
+
+
+def compact_resources(process, path):
+    # command() already stores the compact summary in process.json. The full
+    # timeline stays once in resources.json, never in every report rewrite.
+    value = (process or {}).get("resources")
+    if not isinstance(value, dict):
+        value = read_json(path)
+    return ({key: item for key, item in value.items() if key not in ("timeline", "observed_processes")}
+            if isinstance(value, dict) else None)
+
+
+def canonical_reference(args, audio_row, folder):
+    """One model-free production PcmReader pass, independent of all three arms."""
+    path = safe_audio(args.audio_manifest, audio_row)
+    result = dict(passed=False, canonical=None, errors=[], process=None, resources=None)
+    env = arm_environment(folder / "workspace", args.runtime, args.models_dir, args.stream_mode)
+    try:
+        before, prepared = file_identity(path), wave_identity(path)
+        result.update(source_before=before, prepared=prepared)
+        require(before["sha256"] == audio_row["sha256"] and prepared["samples"] == audio_row["samples"],
+                "Prepared audio changed before canonical decoding")
+        reference = command([args.cli, "decode-wav-info", path], env, folder,
+                            timeout=args.timeout, resource_samples=True)
+        result["canonical"] = reference
+        validate_reference(reference, audio_row)
+        result["captured_input_differs"] = reference["pcm_sha256"] != prepared["pcm_sha256"]
+    except Exception as error:
+        result["errors"].append(f"{type(error).__name__}: {error}")
+    finally:
+        try:
+            result["source_after"] = file_identity(path)
+            if result.get("source_before") is not None:
+                require(result["source_after"] == result["source_before"], "Canonical decode changed prepared audio")
+        except Exception as error:
+            result["errors"].append(f"Reference audio revalidation {type(error).__name__}: {error}")
+        result["process"] = read_json(folder / "process.json")
+        result["resources"] = compact_resources(result["process"], folder / "resources.json")
+        result["resources_file"] = "resources.json"
+        if result["process"] is None:
+            result["errors"].append("Canonical reference command record is missing")
+        result["passed"] = not result["errors"]
+        write_json(folder / "result.json", result)
+    return result
+
+
+def recording_evidence(root, mid, audio, reference):
+    require(reference.get("schema") == 1 and reference.get("decoder") == "native_wav_import",
+            "Recording requires the independent canonical production reference")
     directory = root / "meetings" / mid
     chunks = sorted((directory / "audio").glob("*.pcm"))
     require(bool(chunks), "No archived PCM")
@@ -256,16 +314,21 @@ def recording_evidence(root, mid, audio):
         digest.update(payload)
         count += len(payload) // 2
     result = dict(samples=count, pcm_sha256=digest.hexdigest(), chunks=len(chunks))
-    require(count == audio["samples"] and result["pcm_sha256"] == audio["pcm_sha256"], "Archived PCM differs from prepared audio")
+    require(count == audio["samples"] == reference["samples"] and reference["sample_rate"] == SAMPLE_RATE
+            and reference["pcm_bytes"] == count * 2 and result["pcm_sha256"] == reference["pcm_sha256"],
+            "Archived PCM differs from canonical production decode")
     takes = sorted((directory / "files").glob("recording-*.wav"))
     require(len(takes) == 1, "Fresh arm must have exactly one recording take")
     archived = wave_identity(takes[0])
-    require(archived == audio, "Archived WAV samples differ from prepared audio")
+    require(archived["samples"] == reference["samples"] and archived["sample_rate"] == reference["sample_rate"]
+            and archived["pcm_sha256"] == reference["pcm_sha256"], "Archived WAV payload differs from canonical production decode")
     result["archived_wav_sha256"] = sha256(takes[0])
+    result.update(prepared_pcm_sha256=audio["pcm_sha256"], reference_pcm_sha256=reference["pcm_sha256"],
+                  captured_input_differs=result["pcm_sha256"] != audio["pcm_sha256"])
     return result
 
 
-def run_arm(args, case, audio_row, folder, arm, position):
+def run_arm(args, case, audio_row, folder, arm, position, reference):
     root, mid = folder / "workspace", str(uuid.uuid4())
     env = arm_environment(root, args.runtime, args.models_dir, args.stream_mode)
     note = "" if arm == "baseline" else case[arm]["note"]
@@ -274,6 +337,7 @@ def run_arm(args, case, audio_row, folder, arm, position):
                   acoustic_metrics=None, corrected_metrics=None, rtf=None, resources=None, passed=False)
     audio_path = safe_audio(args.audio_manifest, audio_row)
     try:
+        validate_reference(reference, audio_row)
         write_json(root / "preferences.json", PREFERENCES)
         command([args.cli, "diagnose"], env, folder / "diagnose", timeout=30)
         with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
@@ -310,12 +374,17 @@ def run_arm(args, case, audio_row, folder, arm, position):
         require(len(evidence["notes"]) == 1 and evidence["notes"][0]["content"] == note, "Document changed during arm")
         require(bool(evidence["raw"]), "Speech produced no ASR source")
         previous = 0
-        duration = wave_before["samples"] * 1000 // SAMPLE_RATE
+        duration = reference["samples"] * 1000 // SAMPLE_RATE
+        require(snapshot["meeting"].get("duration_ms") == duration
+                and snapshot["runtime"].get("processed_ms") == duration,
+                "Capture duration or ASR processed tail differs from canonical sample count")
+        result["processed_ms"] = snapshot["runtime"]["processed_ms"]
+        result["duration_ms"] = snapshot["meeting"]["duration_ms"]
         for segment in evidence["raw"]:
             require(previous <= segment["start_ms"] <= segment["end_ms"] <= duration, "ASR timestamps overlap or escape audio")
             previous = segment["end_ms"]
         result["timestamps_valid"] = True
-        result["recording"] = recording_evidence(root, mid, wave_before)
+        result["recording"] = recording_evidence(root, mid, wave_before, reference)
         audio_dir = root / "meetings" / mid / "audio"
         wire_path = audio_dir / "hotwords.txt"
         wire = wire_path.read_text(encoding="utf-8")
@@ -346,7 +415,8 @@ def run_arm(args, case, audio_row, folder, arm, position):
             result["errors"].append(f"Audio revalidation {type(error).__name__}: {error}")
         process = read_json(folder / "append" / "process.json")
         result["process"] = process
-        result["resources"] = read_json(folder / "append" / "resources.json")
+        result["resources"] = compact_resources(process, folder / "append" / "resources.json")
+        result["resources_file"] = "append/resources.json"
         result["wall_seconds"] = (process or {}).get("seconds")
         # Preserve failed/partial ASR evidence as such, never score it as a complete result.
         if result["raw"] is None and (root / "meetings.sqlite3").exists():
@@ -463,6 +533,7 @@ def evaluate(args):
                   execution_passed=False, full_gate=False, full_corpus_complete=False, quality_gate_passed=None,
                   release_admission=False, smoke=args.smoke, expected_clusters=len(chosen),
                   expected_asr_invocations=len(chosen) * 3, stream_mode=args.stream_mode,
+                  expected_reference_invocations=len(chosen),
                   decoder_promotion=False, preferences=PREFERENCES,
                   known_environment_flags={**KNOWN_FLAGS, "OMASCRIBE_ASR_STREAM_HOTWORDS": "1" if args.stream_mode == "stream" else "0"},
                   inherited_flag_policy="Remove all OMASCRIBE_* and LLAMA_ARG_* flags, then set only isolated DATA_DIR, explicit model/runtime directories and known flags.",
@@ -472,6 +543,8 @@ def evaluate(args):
                   limitations=["English public read speech, not cross-language/near-homophone/natural meetings or real UX admission.",
                     "First revisions are worker-final ASR before terminology normalization; not partial-caption or word-level timing evidence.",
                     "Worker/runtime/PATH FFmpeg bytes are bound; a complete inventory of system-loaded dynamic libraries is unavailable.",
+                    "Ordinary WAV append uses native PcmReader preprocessing. Every arm must exactly match its independent model-free decode-wav-info reference, not the unfiltered prepared WAV PCM; no tolerance is used.",
+                    "Canonical reference costs are recorded separately and excluded from the three append-arm resource/time comparisons.",
                     "ASR-only: no scheduler, captions translation, minutes or LLM. Acoustic and corrected metrics are separate.",
                     "All 100 clusters are required; smoke never passes the full gate. No approved numerical quality threshold; quality_gate_passed stays null.",
                     "Three arm orders rotate by cluster; OS filesystem/model page caches are uncontrolled. Sampled CPU is a lower bound; summed RSS may double-count shared pages."])
@@ -484,9 +557,17 @@ def evaluate(args):
                                reference=case["reference"], raw_reference=case["raw_reference"], audio=audio,
                                arm_order=list(ARMS[index % 3:] + ARMS[:index % 3]), arms=[], passed=False)
             report["cases"].append(case_result)
+            reference = canonical_reference(args, audio, artifacts / case["name"] / "reference")
+            case_result["canonical_reference"] = reference
             for position, arm in enumerate(case_result["arm_order"]):
                 folder = artifacts / case["name"] / arm
-                result = run_arm(args, case, audio, folder, arm, position)
+                if reference["passed"]:
+                    result = run_arm(args, case, audio, folder, arm, position, reference["canonical"])
+                else:
+                    result = dict(arm=arm, position=position, passed=False, process=None, resources=None,
+                                  acoustic_metrics=None, corrected_metrics=None, blocked_by_reference=True,
+                                  errors=["Canonical production reference failed; ASR was not started"])
+                    write_json(folder / "result.json", result)
                 case_result["arms"].append(result)
                 # Bootstrap only at finalization, not after every arm.
                 write_json(args.output, report)
@@ -509,6 +590,13 @@ def evaluate(args):
         report["aggregates"] = aggregate(report["cases"], comparison_valid=report.get("identities_unchanged") is True)
         arms = [item for case in report["cases"] for item in case["arms"]]
         report["actual_asr_invocations"] = sum(item.get("process") is not None for item in arms)
+        references = [case["canonical_reference"] for case in report["cases"] if "canonical_reference" in case]
+        costs = [(item.get("process") or {}).get("seconds") for item in references]
+        report["canonical_reference_costs"] = dict(
+            actual_invocations=sum(item.get("process") is not None for item in references),
+            successful=sum(item.get("passed") is True for item in references),
+            wall_seconds=sum(costs) if costs and all(type(value) in (int, float) and math.isfinite(value) for value in costs) else None,
+            resources_recorded_per_case=True, included_in_append_comparisons=False)
         report["execution_passed"] = (len(report["cases"]) == len(chosen) and len(arms) == len(chosen) * 3
             and all(item["passed"] for item in arms) and not report["errors"] and report.get("identities_unchanged") is True)
         report["full_corpus_complete"] = args.smoke is None and len(chosen) == 100 and len(arms) == 300 and report["execution_passed"]
