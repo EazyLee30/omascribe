@@ -1,0 +1,306 @@
+{
+  "schema": 1,
+  "observed_at": "2026-10-31T05:52:58.115945+00:00",
+  "source_commit": "ad04cc0b8a79e7b3c55c67999a3bd9f48a959bbc",
+  "release": {
+    "stable": "0.3.4",
+    "candidate": "0.3.5",
+    "published": false,
+    "quality_gate_passed": false,
+    "remaining": [
+      "Q16 coherent source-backed minutes still fails",
+      "Broader actual audio, platform hardware and installation/upgrade acceptance remain open"
+    ]
+  },
+  "source_changes": {
+    "asr": [
+      "Bounded full token/BPE snapshots; whole-hint necessary glyph filtering, no name rewriting",
+      "Unknown inventories are forwarded as unknown; forwarding is not native encoding proof",
+      "Contextual loads use the exact checked tokens_buf; unchanged effective context does not rebuild native state",
+      "Inventory preparation failure retains accepted context/coverage; successful export followed by native load failure has no dictionary rollback guarantee",
+      "Legacy default and Stream opt-in, beam4 and score1.5 unchanged",
+      "last_inventory_prepare_ms includes preparation for accepted/rejected/no-op paths; it is not cumulative cost"
+    ],
+    "gpu": [
+      "Cold qualification restoration checks for an existing verified model receipt before expensive explicit-driver capture",
+      "Warm restoration still captures once and checks same model receipt/component/hardware afterward",
+      "No model, driver-file hash or GPU admission gate was weakened"
+    ]
+  },
+  "source_checks": {
+    "core_passed": 532,
+    "core_ignored": 12,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "asr_passed": 18,
+    "python_discovered": 149,
+    "python_skipped": 1,
+    "strict_workspace_clippy": true,
+    "format": true,
+    "exact_source_ci": {
+      "linux": "SUCCESS",
+      "ubuntu22": "SUCCESS",
+      "prepare": "SUCCESS",
+      "validate": "SUCCESS",
+      "windows-core": "SUCCESS",
+      "build": "SKIPPED",
+      "catalog": "SKIPPED"
+    }
+  },
+  "real_worker_validation": {
+    "worker_sha256": "6b1d2fef7cd7b7a22f78cbaa532d022602b0af2f2412a0c3d3d045cfb72f1840",
+    "acoustic_worker_processes": 6,
+    "llm_model_requests": 0,
+    "lifecycle": {
+      "processes": 2,
+      "passed": true,
+      "submitted_unsupported_forwarded": [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          0,
+          2
+        ]
+      ],
+      "rejected_phase_retains_previous_accepted_coverage": true,
+      "legacy_model_load_attempts": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "stream_model_load_attempts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "stream_updates": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "supplied_pcm_samples_per_process": 149760,
+      "processed_ms_per_process": 9360,
+      "quality_admission": false
+    },
+    "prefix_controls": [
+      {
+        "name": "raw_empty",
+        "input_pcm_sha256": "ca8de21620efb6db86307180cfb5113b41a78154eacf84e4f1b877d653485539",
+        "wire": "",
+        "final": "HE DIDNT SET A FIGURE FOR THE CUT SAYING THEY WILL BE MADE BASED ON CHINAS ECONOMIC OUTPUT",
+        "execution_passed": true
+      },
+      {
+        "name": "raw_china",
+        "input_pcm_sha256": "ca8de21620efb6db86307180cfb5113b41a78154eacf84e4f1b877d653485539",
+        "wire": "CHINA",
+        "final": "FIGURE FOR THE CUT SAYING THEY WILL BE MADE BASED ON CHINAS ECONOMIC OUTPUT",
+        "execution_passed": true
+      },
+      {
+        "name": "raw_china_dubai",
+        "input_pcm_sha256": "ca8de21620efb6db86307180cfb5113b41a78154eacf84e4f1b877d653485539",
+        "wire": "CHINA\nDUBAI",
+        "final": "FIGURE FOR THE CUT SAYING THEY WILL BE MADE BASED ON CHINAS ECONOMIC OUTPUT",
+        "execution_passed": true
+      },
+      {
+        "name": "canonical_china_dubai",
+        "input_pcm_sha256": "0a97b9700925c0bff2fc9b5b8af65b48e7f9ba6245245b29529b05908cdd0fef",
+        "wire": "CHINA\nDUBAI",
+        "final": "HE DID NOT SET A FIGURE FOR THE CUT SAYING THEY WILL BE MADE BASED ON CHINAS ECONOMIC OUTPUT",
+        "execution_passed": true
+      }
+    ],
+    "prefix_findings": [
+      "Raw PCM with no hints retains negation as HE DIDNT; raw with CHINA, alone or with DUBAI, loses HE DID NOT SET A from final despite earlier partial presence",
+      "Canonical PCM from the production PcmReader with two hints retains HE DID NOT SET A",
+      "The observed loss requires neither dynamic context updates nor two hints; no old-source raw-PCM control establishes a glyph-filter regression",
+      "Partial text has no own processed_ms; adjacent progress bounds are retained, not promoted to an exact drop timestamp",
+      "Do not splice partials into final to repair semantic content"
+    ],
+    "production_input_review": {
+      "wav": "capture.rs::wav -> PcmReader::new",
+      "native": "native_audio.rs::capture -> PcmReader::new",
+      "unity_ratio_still_filtered": true,
+      "path_changed_between_52c2_and_ad04": false
+    },
+    "public_audio": {
+      "dataset": "google/fleurs",
+      "revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+      "license": "CC-BY-4.0",
+      "prepared_manifest_sha256": "957c4fa032fe0938c48b461c6072319fc533f699d6d7c4a01ef9bf9c2b57d640",
+      "selected": "fleurs_en_hotword_010"
+    }
+  },
+  "native_encoder_probe": {
+    "sdk": "sherpa-onnx v1.13.8",
+    "acoustic_models_loaded": 0,
+    "finding": "Fixed native EncodeHotwords can return partial token rows and unknown symbols for unsupported names; bool alone is insufficient",
+    "production_check_is_necessary_coverage_only": true
+  },
+  "minutes": {
+    "q16": "Existing real-model failures remain; no new Q16 run or candidate promotion",
+    "case_helper": "Static reuse rejected: five proper-name preservation counterexamples; mixed-brand no-op is not counted as a name failure",
+    "automatic_retry": "Read-only audit: time backoff exists but identical semantic failures can create new jobs after the cap; no production dedup fix yet",
+    "next_requirement": "Typed terminal semantic rejection plus complete actual request/model/runtime identity; manual retry stays available and transport/resource/cancel failures must not become persistent semantic rejections",
+    "cache_scope": "Reliable no-extra-I/O gate is after existing session admission and envelope creation; no claim to avoid existing startup/tokenization; unknown identity must allow normal retry"
+  },
+  "cleanup": {
+    "all_six_owned_worker_groups_gone": true,
+    "all_owned_model_dirs_removed": true,
+    "model_logical_bytes_removed": 181163121,
+    "physical_reclaimed_bytes": null,
+    "original_models_worker_wav_canonical_pcm_unchanged": true,
+    "raw_evidence_preserved": true
+  },
+  "limits": [
+    "Six short direct worker processes are not whole-meeting quality, energy, RSS or GPU acceptance",
+    "No new SDK, optional GPU archive, installer or model download; only the affected release ASR worker was compiled using existing SDK",
+    "No acoustic recall, generic latency improvement or safe default Stream promotion is inferred",
+    "Explicit-driver cost surrogate was warmed and is not an actual Windows/Linux GPU or application benchmark",
+    "0.3.5 remains unpublished; research plan P0/P1/P2/P3/G1/G2 remains active"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/name-inventory-source-2026-10-31/frozen-source-checks.json",
+      "bytes": 1593,
+      "sha256": "d5db51742d6f1034255d8aac56e2f3fdc4a41e935cb1192823127fd993746f91"
+    },
+    {
+      "path": "artifacts/asr-glyph-worker-2026-10-31/binary-identity.json",
+      "bytes": 519,
+      "sha256": "a26ae63963fbc7b75ba14f07754b1f7092d5d92969d9e931e5080a107c9f3158"
+    },
+    {
+      "path": "artifacts/asr-glyph-worker-2026-10-31/ci.json",
+      "bytes": 2802,
+      "sha256": "d165e9c60c5ee5af86c998caf71b9fc32b84781f47a714e91638e59442c334c3"
+    },
+    {
+      "path": "artifacts/asr-glyph-worker-2026-10-31/run/report.json",
+      "bytes": 44704,
+      "sha256": "ad6aad43ba8f9e4be66e4648f7056b28cc13406494bd71841d56c51fffde55d4"
+    },
+    {
+      "path": "artifacts/asr-glyph-worker-2026-10-31/independent-review.json",
+      "bytes": 14851,
+      "sha256": "f721cffb9bb3e71f55da12c1f762d1eb91ef5597c222f92b6c1df03b60bf30a2"
+    },
+    {
+      "path": "artifacts/asr-glyph-worker-2026-10-31/cleanup-audit.json",
+      "bytes": 20426,
+      "sha256": "6e9cc31fbe4508585305beff2ea619bedb27516226cf08d46c844d206d3a6cfd"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/control-run/report.json",
+      "bytes": 29361,
+      "sha256": "bcc0f1f0a6310c3b45a501805d9a69b7c4d1b1061cc25cfdc95b7195ef883e47"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/control-run/independent-review.json",
+      "bytes": 16286,
+      "sha256": "5d3338aac54e0208b6583b39b9bf8330ae7deb4668715d52f7ae0d9086f8f8f0"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/control-run/cleanup-audit.json",
+      "bytes": 14531,
+      "sha256": "ab07207e9eb28a34b0369cf5f5784a3324030d2afaa6483c9b0e4a7348425c9d"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/source-audit.json",
+      "bytes": 7880,
+      "sha256": "6621277590f55e51b95b70fe37a33b8706b3f7a44d1894e60165f3c5725f9cef"
+    },
+    {
+      "path": "artifacts/native-encoder-probe-2026-10-31/native-probe-final.json",
+      "bytes": 22363,
+      "sha256": "cff2fa9002dc67ddba8133791f3cf6b4aed7f5704008998cce67cf801edf0bad"
+    },
+    {
+      "path": "artifacts/vulkan-driver-cost-2026-10-31/cold-selection-and-cost-final.json",
+      "bytes": 3958,
+      "sha256": "31ffd473d969b09c0af36d8946012433424e1f73263e10d074f5e96087461212"
+    },
+    {
+      "path": "artifacts/writer-case-feasibility-2026-10-31/summary.json",
+      "bytes": 12435,
+      "sha256": "2c8d38c6ca90006967b76d8f8b545214843e388789ee0030437ef5a9b3702114"
+    },
+    {
+      "path": "artifacts/minutes-auto-retry-audit-2026-10-31/plan.json",
+      "bytes": 15016,
+      "sha256": "874605de2f872f8a5ca6c017181d7894815f0fcdc5b42116cdf861ae0b4bd63e"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/unity-filter-test.json",
+      "bytes": 1467,
+      "sha256": "b7042a7cd09cd8760428299a4c8b6bf9564d5fe05f5258ee0058d42c4861f5fb"
+    },
+    {
+      "path": "artifacts/asr-prefix-loss-2026-10-31/follow-up-clippy.log",
+      "bytes": 291,
+      "sha256": "77fb73a75a652fc534c3d3cb2ebe49394ac11e35e2471e62022d26ca5e77f43d"
+    }
+  ],
+  "follow_up_guard": {
+    "scope": "Existing PcmReader unity-filter contract test only; production implementation unchanged except comment; no model/SDK runs.",
+    "source": "crates/core/src/capture.rs",
+    "source_sha256": "3a9b53c51461c89594d55a8b46151ceccd194ca6ba047bce45a19b5a50989a77",
+    "test": "cargo test -p omascribe-core --lib capture::tests::resampling_preserves_duration_and_rejects_aliasing -- --exact --nocapture",
+    "result": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 543,
+      "input_rate_hz": 16000,
+      "stopband_control_hz": 7900,
+      "unfiltered_rms": 0.353661031,
+      "filtered_rms": 0.008165285,
+      "unchanged_stopband_rms_ceiling": 0.01,
+      "unchanged_passband_rms_range": [
+        0.33,
+        0.37
+      ]
+    },
+    "unchanged_controls": {
+      "sample_rates_hz": [
+        16000,
+        44100,
+        48000,
+        96000
+      ],
+      "passband_control_hz": 1000,
+      "higher_rate_stopband_control_hz": 12000,
+      "exact_duration_assertion": true
+    },
+    "log": "artifacts/asr-prefix-loss-2026-10-31/unity-filter-test.log",
+    "log_sha256": "dac7e517c670336444d7682b326a107216fad078c0d3b9c5f1659cbf40b27dc8",
+    "checks": [
+      "cargo fmt --all -- --check: exit 0",
+      "git diff --check: exit 0"
+    ],
+    "limits": [
+      "Does not measure transcription quality, prove new source regression, or justify bypassing unity filtering.",
+      "Single test observed filtered RMS 0.008165285 against existing <0.01 bound; threshold and filter unchanged."
+    ],
+    "strict_workspace_clippy": true
+  }
+}

@@ -303,6 +303,8 @@ impl<S: MonoSource> PcmReader<S> {
             (8000..=384000).contains(&rate),
             "Unsupported sample rate: {rate}"
         );
+        // Unity-rate filtering is part of the current PCM contract; bypassing it
+        // requires ASR quality validation even when the input is already 16 kHz.
         let resampler = SincFixedIn::new(
             16000.0 / rate as f64,
             1.0,
@@ -593,15 +595,24 @@ mod tests {
             }
         }
         for rate in [16000u32, 44100, 48000, 96000] {
-            for frequency in [1000., 12000.] {
-                if frequency >= rate as f32 / 2. {
-                    continue;
-                }
-                let input = (0..rate + 137)
+            let stopband_frequency = if rate == 16000 { 7900. } else { 12000. };
+            for frequency in [1000., stopband_frequency] {
+                let input: Vec<f32> = (0..rate + 137)
                     .map(|n| {
                         (n as f32 * frequency * std::f32::consts::TAU / rate as f32).sin() * 0.5
                     })
                     .collect();
+                let unity_stopband_input_rms = (rate == 16000 && frequency == 7900.).then(|| {
+                    let body = &input[500..input.len() - 500];
+                    let rms = (body.iter().map(|&s| f64::from(s).powi(2)).sum::<f64>()
+                        / body.len() as f64)
+                        .sqrt();
+                    assert!(
+                        (0.33..0.37).contains(&rms),
+                        "Unfiltered 16 kHz input: {rms}"
+                    );
+                    rms
+                });
                 let mut reader =
                     PcmReader::new(Source(Some(input)), rate, Arc::new(AtomicBool::new(false)))?;
                 let mut bytes = Vec::new();
@@ -618,6 +629,11 @@ mod tests {
                     .collect();
                 let body = &samples[500..samples.len() - 500];
                 let rms = (body.iter().map(|s| s * s).sum::<f64>() / body.len() as f64).sqrt();
+                if let Some(input_rms) = unity_stopband_input_rms {
+                    eprintln!(
+                        "16 kHz / 7900 Hz: unfiltered RMS={input_rms:.9}, filtered RMS={rms:.9}"
+                    );
+                }
                 if frequency == 1000. {
                     assert!((0.33..0.37).contains(&rms), "{rate}: {rms}");
                 } else {
