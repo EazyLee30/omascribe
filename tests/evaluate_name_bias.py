@@ -50,6 +50,61 @@ def require(value, message):
         raise ValueError(message)
 
 
+def decoder_evidence(words, decoder, stream_mode, target=None):
+    """Separate publication from forwarding; neither proves native encoding."""
+    require(isinstance(decoder, dict) and decoder.get("fallback") is None,
+            "Missing/fallback ASR decoder diagnostics")
+    require((decoder.get("hotword_input") or {}).get("status") == "accepted",
+            "Decoder rejected context")
+    coverage = decoder.get("hotword_coverage")
+    require(isinstance(coverage, dict) and coverage.get("schema") == 1
+            and coverage.get("method") == "necessary_glyph_coverage"
+            and coverage.get("scope") == "last_accepted_input"
+            and coverage.get("line_ordinal_basis") == "normalized_nonempty_wire"
+            and coverage.get("native_encoding_verified") is False,
+            "Missing or unsupported model-character coverage diagnostics")
+    submitted, unsupported, forwarded = (coverage.get(key) for key in
+                                          ("submitted", "unsupported", "forwarded"))
+    require(all(type(value) is int and 0 <= value <= 80 for value in
+                (submitted, unsupported, forwarded)) and submitted == len(words)
+            and unsupported + forwarded == submitted,
+            "Model-character coverage counts do not match publication")
+    rejected = coverage.get("unsupported_lines")
+    require(isinstance(rejected, list) and len(rejected) == unsupported
+            and all(type(index) is int and 0 <= index < submitted for index in rejected)
+            and len(set(rejected)) == len(rejected),
+            "Invalid unsupported line ordinals")
+    status = coverage.get("status")
+    require(status in ("checked", "unknown", "not_needed"),
+            "Model-character coverage is unavailable")
+    if status == "not_needed":
+        require(submitted == 0 and coverage.get("reason") is None,
+                "Non-empty publication cannot skip model-character coverage")
+    elif status == "unknown":
+        require(unsupported == 0 and forwarded == submitted
+                and isinstance(coverage.get("reason"), str) and coverage["reason"]
+                and re.fullmatch(r"[a-z0-9_]{1,128}", coverage["reason"]),
+                "Unknown coverage cannot claim unsupported or discard words")
+    else:
+        require(coverage.get("reason") is None, "Checked coverage has an unexpected error")
+    require(type(decoder.get("hotword_count")) is int
+            and decoder.get("hotword_count") == forwarded and decoder.get("decoder") ==
+            ("modified_beam_search" if forwarded else "greedy_search"),
+            "Decoder did not apply the forwarded context")
+    require(decoder.get("hotword_update_mode") ==
+            ("stream_experiment" if stream_mode == "stream" else "recognizer"),
+            "Wrong decoder experiment mode")
+    target_status = "not_applicable"
+    if target is not None:
+        require(target in words, "Target missing from published context")
+        indices = [index for index, word in enumerate(words) if word == target]
+        if all(index in rejected for index in indices):
+            target_status = "rejected_necessary_glyph_gap"
+        else:
+            target_status = "unknown_forwarded" if status == "unknown" else "necessary_coverage_forwarded"
+    return dict(coverage=coverage, target_status=target_status, native_encoding_verified=False)
+
+
 def phrase_present(text, phrase):
     # Reuse the prep contract for possessives/initialisms; WER retains its
     # separate evaluate_asr.units normalization without entity-specific edits.
@@ -394,13 +449,10 @@ def run_arm(args, case, audio_row, folder, arm, position, reference):
         target = None if arm == "baseline" else case[arm]["expected_name" if arm == "positive" else "forbidden_name"].upper()
         require(not words if target is None else target in words, "Expected hint did not reach publication wire")
         decoder = read_json(audio_dir / "asr-config.json")
-        require(isinstance(decoder, dict) and decoder.get("fallback") is None, "Missing/fallback ASR decoder diagnostics")
-        require(decoder.get("hotword_count") == len(words) and decoder.get("decoder") ==
-                ("modified_beam_search" if words else "greedy_search"), "Decoder did not apply the published hints")
-        require(decoder.get("hotword_update_mode") == ("stream_experiment" if args.stream_mode == "stream" else "recognizer"), "Wrong decoder experiment mode")
-        require((decoder.get("hotword_input") or {}).get("status") == "accepted", "Decoder rejected context")
+        forwarding = decoder_evidence(words, decoder, args.stream_mode, target)
         result.update(wire=dict(words=words, terms=len(words), bytes=len(wire.encode()), sha256=sha256(wire_path),
                                 publication=read_json(audio_dir / "hotwords-input.json")), decoder=decoder,
+                      hotword_forwarding=forwarding,
                       acoustic_metrics=score(result["raw_text"], case), corrected_metrics=score(result["corrected_text"], case),
                       rtf=snapshot["runtime"].get("asr_rtf"))
         require(type(result["rtf"]) in (float, int) and math.isfinite(result["rtf"]) and result["rtf"] >= 0, "Unknown/invalid ASR RTF")
@@ -546,6 +598,7 @@ def evaluate(args):
                     "Ordinary WAV append uses native PcmReader preprocessing. Every arm must exactly match its independent model-free decode-wav-info reference, not the unfiltered prepared WAV PCM; no tolerance is used.",
                     "Canonical reference costs are recorded separately and excluded from the three append-arm resource/time comparisons.",
                     "ASR-only: no scheduler, captions translation, minutes or LLM. Acoustic and corrected metrics are separate.",
+                    "Published hints, necessary character coverage and forwarded hints are separate. Forwarding is not proof of native tokenization or complete acoustic context paths; blocked hints remain in the original publication evidence.",
                     "All 100 clusters are required; smoke never passes the full gate. No approved numerical quality threshold; quality_gate_passed stays null.",
                     "Three arm orders rotate by cluster; OS filesystem/model page caches are uncontrolled. Sampled CPU is a lower bound; summed RSS may double-count shared pages."])
     initial = None

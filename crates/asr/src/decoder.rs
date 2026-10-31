@@ -19,6 +19,7 @@ pub enum InputError {
     InvalidUtf8,
     InvalidWords,
     DecoderUpdate,
+    InventoryUnavailable,
 }
 impl InputError {
     fn read(error: std::io::Error) -> Self {
@@ -34,6 +35,7 @@ impl InputError {
             Self::InvalidUtf8 => "invalid_utf8",
             Self::InvalidWords => "invalid_words",
             Self::DecoderUpdate => "decoder_update_failed",
+            Self::InventoryUnavailable => "inventory_unavailable",
         }
     }
     fn diagnostics(&self) -> Value {
@@ -164,12 +166,45 @@ fn validated(raw: String) -> std::result::Result<String, InputError> {
     validate_words(&raw).map_err(|_| InputError::InvalidWords)
 }
 
+fn prepare_input(
+    input: std::result::Result<String, InputError>,
+    model: &Path,
+    shared: Option<&Path>,
+    known_scope: bool,
+) -> std::result::Result<hotwords::Prepared, InputError> {
+    let raw = input?;
+    // The existing wire validator owns syntax/byte/term limits. Coverage
+    // ordinals count normalized nonempty wire lines, matching publication.
+    validated(raw.clone())?;
+    hotwords::prepare(model, shared, &raw, known_scope)
+        .map_err(|_| InputError::InventoryUnavailable)
+}
+/// Inventory work is measured separately from native context updates, including
+/// rejected and unchanged inputs. Fractional milliseconds retain short reads.
+fn timed_prepare_input(
+    input: std::result::Result<String, InputError>,
+    model: &Path,
+    shared: Option<&Path>,
+    known_scope: bool,
+) -> (std::result::Result<hotwords::Prepared, InputError>, f64) {
+    let at = Instant::now();
+    let result = prepare_input(input, model, shared, known_scope);
+    (result, at.elapsed().as_secs_f64() * 1000.)
+}
+fn known_coverage_scope(config: &OnlineRecognizerConfig) -> bool {
+    // This worker installs cjkchar+bpe for the pinned Zipformer families.
+    // A future model family is forwarded as unknown, never guessed unsupported.
+    config.model_config.model_type.as_deref() == Some("zipformer")
+}
+
 pub struct Decoder {
     // Destroy the stream before the recognizer that created it.
     pub stream: OnlineStream,
     pub recognizer: OnlineRecognizer,
     config: OnlineRecognizerConfig,
     words: String,
+    inventory: Option<[u8; 32]>,
+    coverage: hotwords::Coverage,
     mode: Mode,
     model: PathBuf,
     audio: PathBuf,
@@ -180,36 +215,48 @@ pub struct Decoder {
     stream_updates: u32,
     initial_load_ms: u64,
     update_ms: u64,
+    inventory_prepare_ms: f64,
+}
+fn configure_context(
+    config: &mut OnlineRecognizerConfig,
+    words: &str,
+    mode: Mode,
+    vocabulary: Option<&Path>,
+    tokens: Option<&[u8]>,
+) -> Result<()> {
+    config.decoding_method = Some("greedy_search".into());
+    config.hotwords_buf = None;
+    config.model_config.modeling_unit = None;
+    config.model_config.bpe_vocab = None;
+    if !words.is_empty() {
+        let path = vocabulary.context("Prepared hotword vocabulary unavailable")?;
+        let tokens = tokens.context("Prepared token inventory unavailable")?;
+        anyhow::ensure!(!tokens.is_empty(), "Prepared token inventory unavailable");
+        // Fixed sherpa1.13.8 gives tokens_buf priority. Bind the symbol table
+        // to the same complete bytes used by coverage, never a later path read.
+        config.model_config.tokens = None;
+        config.model_config.tokens_buf = Some(tokens.to_vec());
+        config.decoding_method = Some("modified_beam_search".into());
+        config.max_active_paths = 4;
+        config.hotwords_score = 1.5;
+        // Per-stream words are added to defaults by sherpa: defaults must be empty.
+        if mode == Mode::Legacy {
+            config.hotwords_buf = Some(words.as_bytes().to_vec());
+        }
+        config.model_config.modeling_unit = Some("cjkchar+bpe".into());
+        config.model_config.bpe_vocab = Some(path.to_string_lossy().into_owned());
+    }
+    Ok(())
 }
 fn load(
     config: &mut OnlineRecognizerConfig,
     words: &str,
     mode: Mode,
-    model: &Path,
-    audio: &Path,
-    shared: Option<&Path>,
+    vocabulary: Option<&Path>,
+    tokens: Option<&[u8]>,
 ) -> Result<(OnlineRecognizer, Option<String>, u32)> {
-    config.decoding_method = Some("greedy_search".into());
-    config.hotwords_buf = None;
-    config.model_config.modeling_unit = None;
-    config.model_config.bpe_vocab = None;
+    configure_context(config, words, mode, vocabulary, tokens)?;
     let mut fallback = None;
-    if !words.is_empty() {
-        match hotwords::vocabulary(model, audio, shared) {
-            Ok(path) => {
-                config.decoding_method = Some("modified_beam_search".into());
-                config.max_active_paths = 4;
-                config.hotwords_score = 1.5;
-                // Per-stream words are added to defaults by sherpa: defaults must be empty.
-                if mode == Mode::Legacy {
-                    config.hotwords_buf = Some(words.as_bytes().to_vec());
-                }
-                config.model_config.modeling_unit = Some("cjkchar+bpe".into());
-                config.model_config.bpe_vocab = Some(path.to_string_lossy().into_owned());
-            }
-            Err(error) => fallback = Some(format!("{error:#}")),
-        }
-    }
     let hotword_decoder = config.decoding_method.as_deref() == Some("modified_beam_search");
     let mut attempts = 1;
     let mut recognizer = OnlineRecognizer::create(config);
@@ -228,6 +275,7 @@ fn load(
         attempts,
     ))
 }
+
 fn enabled(config: &OnlineRecognizerConfig) -> bool {
     config.decoding_method.as_deref() == Some("modified_beam_search")
 }
@@ -280,21 +328,40 @@ impl Decoder {
         shared: Option<&Path>,
     ) -> Result<Self> {
         let at = Instant::now();
-        let (words, input_status) = match input.and_then(validated) {
-            Ok(words) => (words, InputStatus::accepted("startup")),
+        let (preparation, inventory_prepare_ms) =
+            timed_prepare_input(input, model, shared, known_coverage_scope(&config));
+        let (mut prepared, mut input_status) = match preparation {
+            Ok(prepared) => (prepared, InputStatus::accepted("startup")),
             Err(error) => (
-                String::new(),
+                hotwords::Prepared::unavailable(),
                 InputStatus::rejected("startup", error, false),
             ),
         };
-        let (recognizer, fallback, model_load_attempts) =
-            load(&mut config, &words, mode, model, audio, shared)?;
-        let stream = new_stream(&recognizer, &config, &words, mode);
+        let vocabulary = match prepared.export(audio) {
+            Ok(path) => path,
+            Err(_) => {
+                input_status =
+                    InputStatus::rejected("startup", InputError::InventoryUnavailable, false);
+                prepared = hotwords::Prepared::unavailable();
+                None
+            }
+        };
+        let (recognizer, fallback, model_load_attempts) = load(
+            &mut config,
+            &prepared.words,
+            mode,
+            vocabulary.as_deref(),
+            prepared.tokens(),
+        )?;
+        let stream = new_stream(&recognizer, &config, &prepared.words, mode);
+        let inventory = prepared.inventory_id();
         let decoder = Self {
             stream,
             recognizer,
             config,
-            words,
+            words: prepared.words,
+            inventory,
+            coverage: prepared.coverage,
             mode,
             model: model.into(),
             audio: audio.into(),
@@ -305,6 +372,7 @@ impl Decoder {
             stream_updates: 0,
             initial_load_ms: at.elapsed().as_millis() as u64,
             update_ms: 0,
+            inventory_prepare_ms,
         };
         decoder.save_diagnostics();
         Ok(decoder)
@@ -318,38 +386,67 @@ impl Decoder {
         input: std::result::Result<String, InputError>,
         stage: &'static str,
     ) -> Result<bool> {
-        let previous_input_status = self.input_status.clone();
-        let words = match self.input_status.prepare_update(input, stage, &self.words) {
-            Ok(Some(words)) => words,
-            Ok(None) => {
-                // A repaired file can contain the same valid context: clear the
-                // error without changing the recognizer or creating a stream.
-                if self.input_status != previous_input_status {
-                    self.save_diagnostics();
-                }
-                return Ok(false);
-            }
+        let (preparation, elapsed) = timed_prepare_input(
+            input,
+            &self.model,
+            self.shared.as_deref(),
+            known_coverage_scope(&self.config),
+        );
+        self.inventory_prepare_ms = elapsed;
+        let prepared = match preparation {
+            Ok(prepared) => prepared,
             Err(error) => {
-                if self.input_status != previous_input_status {
-                    self.save_diagnostics();
-                }
+                self.input_status = InputStatus::rejected(stage, error.clone(), true);
+                // Repeated failures still have a newly measured preparation.
+                self.save_diagnostics();
                 return Err(error.into());
             }
         };
+        let changed = prepared.changes_native_context(&self.words, self.inventory);
+        // Preserve existing accepted/rejected metadata behavior, but compare
+        // only after the whole inventory check has succeeded.
+        if let Err(error) =
+            self.input_status
+                .prepare_update(Ok(prepared.words.clone()), stage, &self.words)
+        {
+            self.save_diagnostics();
+            return Err(error.into());
+        }
+        if !changed {
+            self.inventory = prepared.inventory_id();
+            self.coverage = prepared.coverage;
+            self.input_status = InputStatus::accepted(stage);
+            // A native no-op still performed inventory I/O and parsing.
+            self.save_diagnostics();
+            return Ok(false);
+        }
         let at = Instant::now();
-        if self.mode == Mode::Stream && enabled(&self.config) && !words.is_empty() {
-            self.stream = self.recognizer.create_stream_with_hotwords(&words);
+        if self.mode == Mode::Stream
+            && enabled(&self.config)
+            && !prepared.words.is_empty()
+            && prepared.inventory_id() == self.inventory
+        {
+            self.stream = self.recognizer.create_stream_with_hotwords(&prepared.words);
             self.stream_updates += 1;
         } else {
-            // Enabling/disabling contextual decoding changes the search algorithm.
+            // Inventory changes require a new native tokenizer even if the
+            // filtered words are identical; never reuse it based on timestamps.
+            let vocabulary = match prepared.export(&self.audio) {
+                Ok(path) => path,
+                Err(_) => {
+                    self.input_status =
+                        InputStatus::rejected(stage, InputError::InventoryUnavailable, true);
+                    self.save_diagnostics();
+                    return Err(InputError::InventoryUnavailable.into());
+                }
+            };
             let mut config = self.config.clone();
             let loaded = load(
                 &mut config,
-                &words,
+                &prepared.words,
                 self.mode,
-                &self.model,
-                &self.audio,
-                self.shared.as_deref(),
+                vocabulary.as_deref(),
+                prepared.tokens(),
             );
             let (recognizer, fallback, attempts) = match loaded {
                 Ok(loaded) => loaded,
@@ -360,18 +457,21 @@ impl Decoder {
                     return Err(error);
                 }
             };
-            self.stream = new_stream(&recognizer, &config, &words, self.mode);
+            self.stream = new_stream(&recognizer, &config, &prepared.words, self.mode);
             self.recognizer = recognizer;
             self.config = config;
             self.fallback = fallback;
             self.model_load_attempts += attempts;
         }
-        self.words = words;
+        self.inventory = prepared.inventory_id();
+        self.words = prepared.words;
+        self.coverage = prepared.coverage;
         self.input_status = InputStatus::accepted(stage);
         self.update_ms = at.elapsed().as_millis() as u64;
         self.save_diagnostics();
         Ok(true)
     }
+
     pub fn refresh(&mut self, path: Option<&Path>) {
         if let Some(path) = path {
             let _ = self.apply_input(read_words(path), "refresh");
@@ -381,11 +481,14 @@ impl Decoder {
         json!({"decoder":self.config.decoding_method,"threads":self.config.model_config.num_threads,
             "model_type":self.config.model_config.model_type,
             "hotword_count":if enabled(&self.config) { self.words.lines().count() } else {0},
+            "hotword_coverage":self.coverage.diagnostics(),
             "fallback":self.input_status.fallback().or_else(|| self.fallback.clone()),
             "hotword_input":self.input_status.diagnostics(),
             "hotword_update_mode":self.mode.name(),"model_load_attempts":self.model_load_attempts,
             "stream_updates":self.stream_updates,"initial_load_ms":self.initial_load_ms,"last_update_ms":self.update_ms,
-            "default_hotword_buffer_present":self.config.hotwords_buf.is_some()})
+            "last_inventory_prepare_ms":self.inventory_prepare_ms,
+            "default_hotword_buffer_present":self.config.hotwords_buf.is_some(),
+            "token_inventory_buffer_present":self.config.model_config.tokens_buf.is_some()})
     }
     fn save_diagnostics(&self) {
         let _ = fs::write(
@@ -569,5 +672,84 @@ mod tests {
         assert_eq!(state.diagnostics()["error"], Value::Null);
         assert_eq!(state.diagnostics()["previous_context_retained"], false);
         assert_eq!(state.fallback(), None);
+    }
+
+    #[test]
+    fn contextual_config_uses_the_checked_token_snapshot_for_both_modes() -> Result<()> {
+        let root = hotwords::tests::coverage_fixture()?;
+        let mut config = OnlineRecognizerConfig::default();
+        config.model_config.model_type = Some("zipformer".into());
+        config.model_config.tokens = Some(root.0.join("tokens.txt").to_string_lossy().into_owned());
+        let prepared = prepare_input(Ok("CHINA\nF1".into()), &root.0, None, true)?;
+        let checked = fs::read(root.0.join("tokens.txt"))?;
+        let audio = root.0.join("audio");
+        fs::create_dir(&audio)?;
+        let exported = prepared.export(&audio)?;
+        // A path edit after prepare cannot replace the native symbol table.
+        fs::write(root.0.join("tokens.txt"), b"invalid later path contents")?;
+        for mode in [Mode::Legacy, Mode::Stream] {
+            let mut next = config.clone();
+            configure_context(
+                &mut next,
+                &prepared.words,
+                mode,
+                exported.as_deref(),
+                prepared.tokens(),
+            )?;
+            assert!(next.model_config.tokens.is_none());
+            assert_eq!(next.model_config.tokens_buf.as_ref(), Some(&checked));
+            assert_eq!(next.max_active_paths, 4);
+            assert_eq!(next.hotwords_score, 1.5);
+            assert_eq!(next.hotwords_buf.is_some(), mode == Mode::Legacy);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn inventory_failure_does_not_export_or_silently_produce_empty_context() -> Result<()> {
+        let root = hotwords::tests::coverage_fixture()?;
+        let retained = prepare_input(Ok("CHINA".into()), &root.0, None, true)?;
+        let audio = root.0.join("audio");
+        fs::create_dir(&audio)?;
+        let exported = retained.export(&audio)?.unwrap();
+        let before = fs::read(&exported)?;
+        fs::write(root.0.join("bpe.model"), b"private malformed inventory")?;
+        let error = match prepare_input(Ok("CHINA\nF1".into()), &root.0, None, true) {
+            Ok(_) => panic!("invalid inventory must reject the whole candidate"),
+            Err(error) => error,
+        };
+        assert_eq!(error, InputError::InventoryUnavailable);
+        let state = InputStatus::rejected("refresh", error, true);
+        assert_eq!(state.diagnostics()["previous_context_retained"], true);
+        assert_eq!(
+            state.diagnostics()["error"]["code"],
+            "inventory_unavailable"
+        );
+        assert!(!state.diagnostics().to_string().contains("private"));
+        assert!(!state.diagnostics().to_string().contains("CHINA"));
+        assert_eq!(retained.words, "CHINA");
+        assert_eq!(fs::read(exported)?, before);
+        Ok(())
+    }
+
+    #[test]
+    fn inventory_prepare_timing_covers_success_failure_and_effective_noop() -> Result<()> {
+        let root = hotwords::tests::coverage_fixture()?;
+        let (first, success_ms) = timed_prepare_input(Ok("CHINA".into()), &root.0, None, true);
+        let first = first?;
+        let (unchanged, noop_ms) = timed_prepare_input(Ok("CHINA\nF1".into()), &root.0, None, true);
+        let unchanged = unchanged?;
+        assert!(!unchanged.changes_native_context(&first.words, first.inventory_id()));
+        fs::write(root.0.join("bpe.model"), b"malformed inventory")?;
+        let (failed, failure_ms) = timed_prepare_input(Ok("CHINA".into()), &root.0, None, true);
+        assert!(matches!(failed, Err(InputError::InventoryUnavailable)));
+        for elapsed in [success_ms, noop_ms, failure_ms] {
+            assert!(elapsed.is_finite() && elapsed >= 0.);
+            assert!(
+                json!({"last_inventory_prepare_ms":elapsed})["last_inventory_prepare_ms"]
+                    .is_number()
+            );
+        }
+        Ok(())
     }
 }

@@ -11,7 +11,66 @@ import wave
 from contextlib import closing
 
 from prepare_name_bias_fixtures import REVISION, occurs, selection_rows
-from evaluate_name_bias import database_evidence, observed_pair, recording_evidence
+from evaluate_name_bias import database_evidence, decoder_evidence, observed_pair, recording_evidence
+
+
+class DecoderCoverageTests(unittest.TestCase):
+    @staticmethod
+    def diagnostics(count=2, blocked=(1,), status="checked"):
+        forwarded = count - len(blocked)
+        return dict(fallback=None, hotword_input=dict(status="accepted"),
+                    hotword_count=forwarded,
+                    decoder="modified_beam_search" if forwarded else "greedy_search",
+                    hotword_update_mode="recognizer",
+                    hotword_coverage=dict(schema=1, method="necessary_glyph_coverage",
+                        scope="last_accepted_input", status=status, reason=None,
+                        line_ordinal_basis="normalized_nonempty_wire",
+                        submitted=count, unsupported=len(blocked), forwarded=forwarded,
+                        unsupported_lines=list(blocked), native_encoding_verified=False))
+
+    def test_blocked_whole_name_is_distinct_from_the_other_forwarded_hint(self):
+        result = decoder_evidence(["CHINA", "CHIŞINĂU"], self.diagnostics(), "legacy", "CHIŞINĂU")
+        self.assertEqual(result["target_status"], "rejected_necessary_glyph_gap")
+        self.assertFalse(result["native_encoding_verified"])
+        self.assertEqual(result["coverage"]["forwarded"], 1)
+
+    def test_all_blocked_and_empty_context_use_greedy_without_false_acceptance(self):
+        result = decoder_evidence(["F1"], self.diagnostics(1, (0,)), "legacy", "F1")
+        self.assertEqual(result["target_status"], "rejected_necessary_glyph_gap")
+        empty = decoder_evidence([], self.diagnostics(0, (), "not_needed"), "legacy")
+        self.assertEqual(empty["target_status"], "not_applicable")
+
+    def test_unknown_inventory_keeps_words_but_cannot_establish_encoding(self):
+        diagnostic = self.diagnostics(1, (), "unknown")
+        diagnostic["hotword_coverage"]["reason"] = "byte_fallback_inventory"
+        result = decoder_evidence(["F1"], diagnostic, "legacy", "F1")
+        self.assertEqual(result["target_status"], "unknown_forwarded")
+        self.assertFalse(result["native_encoding_verified"])
+        diagnostic["hotword_coverage"]["unsupported"] = 1
+        diagnostic["hotword_coverage"]["forwarded"] = 0
+        diagnostic["hotword_coverage"]["unsupported_lines"] = [0]
+        with self.assertRaises(ValueError): decoder_evidence(["F1"], diagnostic, "legacy", "F1")
+
+    def test_bad_counts_ordinals_and_native_claims_cannot_pass(self):
+        for change in [dict(submitted=3), dict(forwarded=2), dict(unsupported=True),
+                       dict(unsupported_lines=[2]), dict(native_encoding_verified=True),
+                       dict(unsupported=2, forwarded=0, unsupported_lines=[1, 1])]:
+            diagnostic = self.diagnostics()
+            diagnostic["hotword_coverage"].update(change)
+            with self.assertRaises(ValueError): decoder_evidence(["CHINA", "CHIŞINĂU"], diagnostic, "legacy")
+        diagnostic = self.diagnostics()
+        diagnostic["hotword_count"] = 2
+        with self.assertRaises(ValueError): decoder_evidence(["CHINA", "CHIŞINĂU"], diagnostic, "legacy")
+
+    def test_missing_or_unavailable_inventory_and_rejected_input_stay_failures(self):
+        diagnostic = self.diagnostics()
+        del diagnostic["hotword_coverage"]
+        with self.assertRaises(ValueError): decoder_evidence(["CHINA", "CHIŞINĂU"], diagnostic, "legacy")
+        diagnostic = self.diagnostics(status="unavailable")
+        with self.assertRaises(ValueError): decoder_evidence(["CHINA", "CHIŞINĂU"], diagnostic, "legacy")
+        diagnostic = self.diagnostics()
+        diagnostic["hotword_input"]["status"] = "rejected"
+        with self.assertRaises(ValueError): decoder_evidence(["CHINA", "CHIŞINĂU"], diagnostic, "legacy")
 
 
 class SelectionIntegrityTests(unittest.TestCase):

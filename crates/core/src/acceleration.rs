@@ -174,6 +174,51 @@ fn binding(
     device: &str,
     selectors: &SelectorEnv,
 ) -> Result<String> {
+    let prepared = prepare_binding(engine, prefs, component, directory, device, |id| {
+        engine.cached_model(id)
+    })?;
+    configuration_binding(&prepared.configuration, selectors)
+}
+
+struct PreparedBinding<'a> {
+    engine: &'a Engine,
+    component: &'a components::Component,
+    directory: &'a Path,
+    receipt: crate::model_integrity::Receipt,
+    configuration: Value,
+}
+
+impl PreparedBinding<'_> {
+    fn after_capture(self, selectors: &SelectorEnv) -> Result<String> {
+        // An explicit library read can be substantial. Keep the one receipt
+        // and configuration, but do not extend their validity across changes
+        // observed while capturing drivers. No second model-cache lookup or
+        // second driver capture is needed.
+        self.receipt.check_current()?;
+        components::exact_directory(self.component, self.directory)?;
+        let files = self
+            .component
+            .files
+            .iter()
+            .map(|file| stamp(&self.directory.join(&file.name)))
+            .collect::<Result<Vec<_>>>()?;
+        if self.configuration["files"] != json!(files)
+            || self.configuration["hardware"] != hardware_key(self.engine)?
+        {
+            bail!("Acceleration configuration changed; test again");
+        }
+        configuration_binding(&self.configuration, selectors)
+    }
+}
+
+fn prepare_binding<'a>(
+    engine: &'a Engine,
+    prefs: &Preferences,
+    component: &'a components::Component,
+    directory: &'a Path,
+    device: &str,
+    cached_model: impl FnOnce(&str) -> Result<Option<crate::model_integrity::Receipt>>,
+) -> Result<PreparedBinding<'a>> {
     let model = crate::models::model(&prefs.llm_model)?;
     if model.format != "gguf" {
         bail!("Optional GPU runtimes require a GGUF model");
@@ -184,15 +229,17 @@ fn binding(
         .iter()
         .map(|f| stamp(&directory.join(&f.name)))
         .collect::<Result<_>>()?;
-    let receipt = engine
-        .cached_model(&prefs.llm_model)?
-        .context("model:verification-required")?;
-    configuration_binding(
-        &json!({"schema":2,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
+    let receipt = cached_model(&prefs.llm_model)?.context("model:verification-required")?;
+    let configuration = json!({"schema":2,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
         "archive":component.archive.sha256,"files":files,"device":device,"threads":prefs.threads,"context":prefs.context_size,
-        "mode":prefs.resource_mode,"budget":crate::inference::budget_mib(prefs)}),
-        selectors,
-    )
+        "mode":prefs.resource_mode,"budget":crate::inference::budget_mib(prefs)});
+    Ok(PreparedBinding {
+        engine,
+        component,
+        directory,
+        receipt,
+        configuration,
+    })
 }
 fn configuration_binding(configuration: &Value, selectors: &SelectorEnv) -> Result<String> {
     selectors.ensure_driver_files_verified()?;
@@ -214,6 +261,24 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
     if prefs.inference_backend != "auto" || !cfg!(any(target_os = "linux", target_os = "windows")) {
         return None;
     }
+    selected_with(
+        engine,
+        prefs,
+        |id, version| {
+            components::installed_component(&engine.root, id, Some(version))
+                .map(|(_, component, directory)| (component, directory))
+        },
+        |id| engine.cached_model(id),
+        SelectorEnv::capture,
+    )
+}
+fn selected_with(
+    engine: &Engine,
+    prefs: &Preferences,
+    installed_component: impl FnOnce(&str, &str) -> Result<(components::Component, std::path::PathBuf)>,
+    cached_model: impl FnOnce(&str) -> Result<Option<crate::model_integrity::Receipt>>,
+    capture: impl FnOnce(Backend) -> SelectorEnv,
+) -> Option<LaunchSpec> {
     let result = (|| -> Result<LaunchSpec> {
         let mut data = Vec::new();
         fs::File::open(certificate_path(engine))?
@@ -226,19 +291,18 @@ pub(crate) fn selected(engine: &Engine, prefs: &Preferences) -> Option<LaunchSpe
         if cert.schema != 1 || !cert.report.faster {
             bail!("Acceleration has not passed local verification");
         }
-        let (_, component, directory) =
-            components::installed_component(&engine.root, &cert.component_id, Some(&cert.version))?;
+        let (component, directory) = installed_component(&cert.component_id, &cert.version)?;
         let kind = backend(&component)?;
-        let selectors = SelectorEnv::capture(kind);
-        if binding(
+        let prepared = prepare_binding(
             engine,
             prefs,
             &component,
             &directory,
             &cert.device,
-            &selectors,
-        )? != cert.binding
-        {
+            cached_model,
+        )?;
+        let selectors = capture(kind);
+        if prepared.after_capture(&selectors)? != cert.binding {
             bail!("Acceleration configuration changed; test again");
         }
         let mut state = engine.acceleration.lock().unwrap();
@@ -665,6 +729,268 @@ mod tests {
                 faster: true,
             },
         }
+    }
+
+    struct SelectionFixture {
+        engine: Arc<Engine>,
+        prefs: Preferences,
+        model: crate::models::Model,
+        model_directory: std::path::PathBuf,
+        component: components::Component,
+        directory: std::path::PathBuf,
+        manifest: std::path::PathBuf,
+        // Release cached Windows deny-write receipts before removing fixtures.
+        _root: tempfile::TempDir,
+    }
+
+    fn selection_fixture(warm: bool) -> Result<SelectionFixture> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = Preferences {
+            memory_budget_mib: 1024,
+            ..Default::default()
+        };
+        let mut model = crate::models::model(&prefs.llm_model)?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", Sha256::digest(b"good"));
+        let model_directory = root.path().join("model-store").join(&model.id);
+        fs::create_dir_all(&model_directory)?;
+        fs::write(model_directory.join(&model.files[0].name), b"good")?;
+        if warm {
+            engine.model_integrity.verify(&model_directory, &model)?;
+        }
+        let directory = root.path().join("component-fixture");
+        fs::create_dir(&directory)?;
+        let mut files = vec![];
+        for (name, bytes) in [
+            (
+                crate::platform::executable("llama-server"),
+                b"never executed".as_slice(),
+            ),
+            ("build-info.json".to_owned(), b"{}".as_slice()),
+        ] {
+            fs::write(directory.join(&name), bytes)?;
+            files.push(crate::models::Asset {
+                name,
+                url: "https://example.invalid/fixture".into(),
+                sha256: format!("{:x}", Sha256::digest(bytes)),
+                bytes: bytes.len() as u64,
+            });
+        }
+        let component = components::Component {
+            id: "selection-fixture".into(),
+            name: "Selection boundary fixture".into(),
+            backend: "vulkan".into(),
+            target: components::target(),
+            entrypoint: crate::platform::executable("llama-server"),
+            license: "fixture".into(),
+            archive: crate::models::Asset {
+                name: "fixture.tar.bz2".into(),
+                url: "https://example.invalid/fixture".into(),
+                sha256: "a".repeat(64),
+                bytes: 1,
+            },
+            files,
+        };
+        let library = root.path().join("driver-fixture.bin");
+        fs::write(&library, b"driver-a")?;
+        let manifest = root.path().join("driver.json");
+        fs::write(
+            &manifest,
+            serde_json::to_vec(&json!({"ICD":{"library_path":library}}))?,
+        )?;
+        engine.acceleration.lock().unwrap().hardware =
+            Some((Instant::now(), "fixed-selection-hardware".into()));
+        Ok(SelectionFixture {
+            engine,
+            prefs,
+            model,
+            model_directory,
+            component,
+            directory,
+            manifest,
+            _root: root,
+        })
+    }
+
+    fn selection_snapshot(fixture: &SelectionFixture) -> SelectorEnv {
+        SelectorEnv::vulkan(&[(
+            "VK_DRIVER_FILES",
+            Some(fixture.manifest.as_os_str().to_owned()),
+        )])
+    }
+
+    fn selection_certificate(fixture: &SelectionFixture, binding: &str) -> Result<Vec<u8>> {
+        fs::create_dir_all(fixture.engine.root.join("accelerators"))?;
+        crate::preferences::atomic_json(
+            &certificate_path(&fixture.engine),
+            &Certificate {
+                schema: 1,
+                component_id: fixture.component.id.clone(),
+                version: "selection-fixture-1".into(),
+                device: "Vulkan0".into(),
+                binding: binding.into(),
+                report: fixed_trial(binding, SelectorEnv::cuda(None, None)).report,
+            },
+        )?;
+        Ok(fs::read(certificate_path(&fixture.engine))?)
+    }
+
+    fn legacy_selection_binding(
+        fixture: &SelectionFixture,
+        selectors: &SelectorEnv,
+    ) -> Result<String> {
+        let receipt = fixture
+            .engine
+            .model_integrity
+            .current(&fixture.model_directory, &fixture.model)?
+            .unwrap();
+        let files = fixture
+            .component
+            .files
+            .iter()
+            .map(|file| stamp(&fixture.directory.join(&file.name)))
+            .collect::<Result<Vec<_>>>()?;
+        // Existing schema-2/schema-3 protocol, independent of preparation.
+        hash(&json!({"schema":3,"configuration":{
+            "schema":2,"hardware":"fixed-selection-hardware","verified_model":receipt.fingerprint(),
+            "archive":fixture.component.archive.sha256,"files":files,"device":"Vulkan0",
+            "threads":fixture.prefs.threads,"context":fixture.prefs.context_size,
+            "mode":fixture.prefs.resource_mode,"budget":1024
+        },"cuda_selectors":selectors.digest()}))
+    }
+
+    #[test]
+    fn selected_cold_model_preserves_certificate_without_capturing_driver_files() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        let original = selection_certificate(&fixture, &"0".repeat(64))?;
+        let captures = std::cell::Cell::new(0);
+        let lookups = std::cell::Cell::new(0);
+        let result = selected_with(
+            &fixture.engine,
+            &fixture.prefs,
+            |id, version| {
+                assert_eq!(id, fixture.component.id);
+                assert_eq!(version, "selection-fixture-1");
+                Ok((fixture.component.clone(), fixture.directory.clone()))
+            },
+            |id| {
+                assert_eq!(id, fixture.prefs.llm_model);
+                lookups.set(lookups.get() + 1);
+                fixture
+                    .engine
+                    .model_integrity
+                    .current(&fixture.model_directory, &fixture.model)
+            },
+            |kind| {
+                assert_eq!(kind, Backend::Vulkan);
+                captures.set(captures.get() + 1);
+                selection_snapshot(&fixture)
+            },
+        );
+        assert!(result.is_none());
+        assert_eq!(
+            captures.get(),
+            0,
+            "a pending model must not read an explicit driver"
+        );
+        assert_eq!(lookups.get(), 1);
+        assert_eq!(fixture.engine.model_integrity.verification_count(), 0);
+        let status = &fixture.engine.acceleration.lock().unwrap().status;
+        assert_eq!(status.state, "model_verification_required");
+        assert_eq!(
+            status.reason.as_deref(),
+            Some("model_verification_required")
+        );
+        assert_eq!(fs::read(certificate_path(&fixture.engine))?, original);
+        Ok(())
+    }
+
+    #[test]
+    fn selected_warm_model_captures_once_and_keeps_the_existing_binding_scope() -> Result<()> {
+        let fixture = selection_fixture(true)?;
+        let selectors = selection_snapshot(&fixture);
+        let legacy = legacy_selection_binding(&fixture, &selectors)?;
+        let original = selection_certificate(&fixture, &legacy)?;
+        let captures = std::cell::Cell::new(0);
+        let lookups = std::cell::Cell::new(0);
+        let spec = selected_with(
+            &fixture.engine,
+            &fixture.prefs,
+            |_, _| Ok((fixture.component.clone(), fixture.directory.clone())),
+            |id| {
+                assert_eq!(id, fixture.prefs.llm_model);
+                lookups.set(lookups.get() + 1);
+                fixture
+                    .engine
+                    .model_integrity
+                    .current(&fixture.model_directory, &fixture.model)
+            },
+            |kind| {
+                assert_eq!(kind, Backend::Vulkan);
+                captures.set(captures.get() + 1);
+                selection_snapshot(&fixture)
+            },
+        )
+        .expect("unchanged qualified selection must remain active");
+        assert_eq!(captures.get(), 1);
+        assert_eq!(lookups.get(), 1);
+        assert_eq!(fixture.engine.model_integrity.verification_count(), 1);
+        assert_eq!(spec.backend, Backend::Vulkan);
+        assert_eq!(spec.directory, fixture.directory);
+        assert_eq!(spec.device.as_deref(), Some("Vulkan0"));
+        assert_eq!(spec.identity, legacy);
+        assert_eq!(spec.selectors, selectors);
+        assert_eq!(
+            fixture.engine.acceleration.lock().unwrap().status.state,
+            "active"
+        );
+        assert_eq!(fs::read(certificate_path(&fixture.engine))?, original);
+        Ok(())
+    }
+
+    #[test]
+    fn selected_rechecks_prepared_component_and_hardware_after_driver_capture() -> Result<()> {
+        for component_change in [true, false] {
+            let fixture = selection_fixture(true)?;
+            let selectors = selection_snapshot(&fixture);
+            let legacy = legacy_selection_binding(&fixture, &selectors)?;
+            selection_certificate(&fixture, &legacy)?;
+            let captures = std::cell::Cell::new(0);
+            let lookups = std::cell::Cell::new(0);
+            let result = selected_with(
+                &fixture.engine,
+                &fixture.prefs,
+                |_, _| Ok((fixture.component.clone(), fixture.directory.clone())),
+                |_| {
+                    lookups.set(lookups.get() + 1);
+                    fixture
+                        .engine
+                        .model_integrity
+                        .current(&fixture.model_directory, &fixture.model)
+                },
+                |_| {
+                    captures.set(captures.get() + 1);
+                    if component_change {
+                        fs::write(fixture.directory.join("unexpected.bin"), b"changed").unwrap();
+                    } else {
+                        fixture.engine.acceleration.lock().unwrap().hardware =
+                            Some((Instant::now(), "changed-selection-hardware".into()));
+                    }
+                    selection_snapshot(&fixture)
+                },
+            );
+            assert!(result.is_none());
+            assert_eq!(captures.get(), 1);
+            assert_eq!(lookups.get(), 1);
+            assert_eq!(
+                fixture.engine.acceleration.lock().unwrap().status.state,
+                "test_required"
+            );
+            assert!(!certificate_path(&fixture.engine).exists());
+        }
+        Ok(())
     }
 
     #[test]

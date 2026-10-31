@@ -2971,8 +2971,10 @@ name = "omascribe-asr"
 version = "0.3.5"
 dependencies = [
  "anyhow",
+ "libc",
  "omascribe-core",
  "serde_json",
+ "sha2",
  "sherpa-onnx",
 ]
 
