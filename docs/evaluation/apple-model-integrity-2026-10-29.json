@@ -1,0 +1,579 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "source": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+  "predecessor_with_retained_windows_failure": "36cd99d89a45560b453ad66de139f15cc74c5380",
+  "fixed_release_candidate_unchanged": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "scope": [
+    "Catalog SHA and size checked before application ASR, diarization and LLM native load; all model assets, including secondary MLX files, participate.",
+    "Process-local metadata-checked receipts, bounded 64KiB streaming IO and expected-length+1 read bound; at most32 success entries; per-model single-flight cold verification.",
+    "Bilingual ASR separately verifies actual pinned BPE and token inventory without hashing unused Small acoustic weights; full and subset receipts coexist.",
+    "Windows retains deny-write/delete directory and asset handles before hashing and for the complete receipt/worker lifetime; confirmed model removal and shutdown release cached handles.",
+    "Integrity errors do not revoke GPU authorization or retry the same bad model on CPU. Leased LLM checks before/after requests and ASR checks before finalized source events.",
+    "Apple Silicon SHA hardware path uses pinned sha2 0.10.9 asm-aarch64 and sha2-asm0.6.4; software fallback remains; no CUDA/Vulkan/SDK/model rebuild."
+  ],
+  "validation": {
+    "mac_core_passed": 352,
+    "mac_core_ignored": 7,
+    "integration_passed": 21,
+    "verifier_mac_unit_cases": 19,
+    "strict_workspace_clippy": "pass",
+    "frontend_build": "pass",
+    "python": {
+      "passed": 70,
+      "skipped": 1
+    },
+    "windows_ci": {
+      "asr_passed": 8,
+      "core_passed": 351,
+      "core_ignored": 6,
+      "integration_passed": 21,
+      "cpu_worker_link": "pass",
+      "strict_clippy": "pass",
+      "inventory_probe": "pass",
+      "source": "b569e320ddc669eb64fb5eaebc57827012d330f8"
+    },
+    "github": [
+      {
+        "conclusion": "success",
+        "databaseId": 40893837728,
+        "name": "Website validation",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40893837728"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40893837322,
+        "name": "CI",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40893837322"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40893837503,
+        "name": "Optional acceleration components",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40893837503"
+      }
+    ],
+    "gpu_build_and_catalog": "skipped; existing signed components reused"
+  },
+  "retained_failure": {
+    "windows_source": "36cd99d",
+    "run": "https://github.com/EazyLee30/omascribe/actions/runs/40891389985",
+    "result": {
+      "core_passed": 345,
+      "core_failed": 3,
+      "core_ignored": 6
+    },
+    "reason": "Ordinary immediate same-size NTFS writes can keep FileId, LastWriteTime and ChangeTime identical after temporary handles close. Not fixed by sleeping or relabelling the original failure.",
+    "fix": "Retain whole-group read-sharing handles; test writes denied while receipts live, then release and immediately corrupt before requiring SHA rejection."
+  },
+  "installed_model": {
+    "model": "qwen3-1.7b",
+    "bytes": 1107409472,
+    "debug_baseline": [
+      {
+        "bytes": 1107409472,
+        "cached": false,
+        "elapsed_ms": 24143,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      },
+      {
+        "bytes": 1107409472,
+        "cached": true,
+        "elapsed_ms": 0,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      }
+    ],
+    "debug_arm_sha": [
+      {
+        "bytes": 1107409472,
+        "cached": false,
+        "elapsed_ms": 5969,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      },
+      {
+        "bytes": 1107409472,
+        "cached": true,
+        "elapsed_ms": 0,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      }
+    ],
+    "release_arm_sha": [
+      {
+        "bytes": 1107409472,
+        "cached": false,
+        "elapsed_ms": 419,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      },
+      {
+        "bytes": 1107409472,
+        "cached": true,
+        "elapsed_ms": 0,
+        "model": "qwen3-1.7b",
+        "receipt": "68a0917caf0928aeab5034c776d3ca1e034606d1bbb3c58542ab757ea57db362",
+        "state": "verified"
+      }
+    ],
+    "release_build": {
+      "profile": "release",
+      "revision_at_compile": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "d05257dd87f234f089af835607e8419e120c932e41cc88dc50902a0073034862",
+      "target": "aarch64-apple-darwin"
+    },
+    "measurement_scope": "One process-first verification plus one same-process cache hit per build, on one M-series machine. OS page cache was not flushed. Millisecond zero means below timer resolution, not zero CPU/IO. No release baseline or population speed claim."
+  },
+  "native_metal": {
+    "baseline": {
+      "limitations": [
+        "Four short requests on one machine; not an ASR or minutes quality benchmark.",
+        "No energy measurement; no claim of Windows/Linux GPU performance."
+      ],
+      "measured_at": "2026-10-29T14:29:00.118556+00:00",
+      "model": "qwen3-1.7b",
+      "runs": [
+        {
+          "backend": "metal",
+          "batched": false,
+          "first_token_ms": 61,
+          "job_ms": 25756,
+          "repeat": 0,
+          "request_ms": 210,
+          "reused": false,
+          "startup_ms": 625,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 148.452,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 59.11
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": false,
+          "first_token_ms": 55,
+          "job_ms": 608,
+          "repeat": 1,
+          "request_ms": 190,
+          "reused": false,
+          "startup_ms": 417,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 135.205,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 53.696
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": true,
+          "first_token_ms": 55,
+          "job_ms": 624,
+          "repeat": 0,
+          "request_ms": 206,
+          "reused": false,
+          "startup_ms": 417,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 150.142,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 53.935
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": true,
+          "first_token_ms": 14,
+          "job_ms": 176,
+          "repeat": 1,
+          "request_ms": 174,
+          "reused": true,
+          "startup_ms": 0,
+          "usage": {
+            "cached_tokens": 52,
+            "decode_ms": 159.462,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 11.842
+          }
+        }
+      ],
+      "runtime_revision": "{\n  \"revision\": \"5aeac37a35b44fde4bdffaec9159f2fcb253b622\",\n  \"metal\": true,\n  \"format\": 1\n}\n",
+      "schema": 1,
+      "synthetic_input": true,
+      "worker": {
+        "idle_pid": null,
+        "leased": false,
+        "reuses": 1,
+        "starts": 3
+      }
+    },
+    "arm_sha": {
+      "limitations": [
+        "Four short requests on one machine; not an ASR or minutes quality benchmark.",
+        "No energy measurement; no claim of Windows/Linux GPU performance."
+      ],
+      "measured_at": "2026-10-29T14:42:26.374913+00:00",
+      "model": "qwen3-1.7b",
+      "runs": [
+        {
+          "backend": "metal",
+          "batched": false,
+          "first_token_ms": 58,
+          "job_ms": 6665,
+          "repeat": 0,
+          "request_ms": 189,
+          "reused": false,
+          "startup_ms": 421,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 130.749,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 56.882
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": false,
+          "first_token_ms": 55,
+          "job_ms": 604,
+          "repeat": 1,
+          "request_ms": 186,
+          "reused": false,
+          "startup_ms": 417,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 130.258,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 54.244
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": true,
+          "first_token_ms": 55,
+          "job_ms": 615,
+          "repeat": 0,
+          "request_ms": 203,
+          "reused": false,
+          "startup_ms": 411,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 147.931,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 53.837
+          }
+        },
+        {
+          "backend": "metal",
+          "batched": true,
+          "first_token_ms": 15,
+          "job_ms": 178,
+          "repeat": 1,
+          "request_ms": 177,
+          "reused": true,
+          "startup_ms": 0,
+          "usage": {
+            "cached_tokens": 52,
+            "decode_ms": 160.918,
+            "input_tokens": 53,
+            "output_tokens": 13,
+            "prefill_ms": 12.451
+          }
+        }
+      ],
+      "runtime_revision": "{\n  \"revision\": \"5aeac37a35b44fde4bdffaec9159f2fcb253b622\",\n  \"metal\": true,\n  \"format\": 1\n}\n",
+      "schema": 1,
+      "synthetic_input": true,
+      "worker": {
+        "idle_pid": null,
+        "leased": false,
+        "reuses": 1,
+        "starts": 3
+      }
+    },
+    "scope": "Four fictional short requests in each debug process; three cold worker starts and one reuse, all children reaped. Negation and weekday assertions only; not ASR/minutes quality, whole-meeting memory, energy, or general speedup."
+  },
+  "assets": {
+    "unchanged_count": 23,
+    "all_hashes_equal": true,
+    "items": [
+      {
+        "name": "libespeak-ng.a",
+        "bytes": 446248,
+        "sha256": "11b222e567a8930ab4d7f7409e45ad998b9cf25568c66e76df8a89cd1cf1a7a8"
+      },
+      {
+        "name": "libkaldi-decoder-core.a",
+        "bytes": 729056,
+        "sha256": "fe888368f73f971a7a2cd74bb4455b810b214aa3eb999790a9700926869e9c7b"
+      },
+      {
+        "name": "libkaldi-native-fbank-core.a",
+        "bytes": 233656,
+        "sha256": "d0ef00030bc95186c5ba71c2a762c26bc0f5a10a0355593bdfdfcbf7760762f0"
+      },
+      {
+        "name": "libkissfft-float.a",
+        "bytes": 19944,
+        "sha256": "f20ba14918ef0fce25a990940e8ffb69a0d5e02cbb3c883f37733e757a85e4d8"
+      },
+      {
+        "name": "libonnxruntime.a",
+        "bytes": 75070504,
+        "sha256": "589e781d544d85267be5d7e74eae68fddd40ba41bf27e9961f867378170f8802"
+      },
+      {
+        "name": "libpiper_phonemize.a",
+        "bytes": 381920,
+        "sha256": "1ddd3d209802cf4ebaaa458e6d3cb238bba100a9e9300f2200e9a324a9e0f44b"
+      },
+      {
+        "name": "libsherpa-onnx-c-api.a",
+        "bytes": 373320,
+        "sha256": "610a6e55ac996f7d0e89cad935a94a7da37011827e40035e43254d3741608140"
+      },
+      {
+        "name": "libsherpa-onnx-core.a",
+        "bytes": 14512584,
+        "sha256": "58e7e9c7a8f557a4708f8719325daf833aa8f9c57feeaf667b14bc957abca08e"
+      },
+      {
+        "name": "libsherpa-onnx-cxx-api.a",
+        "bytes": 150408,
+        "sha256": "56a62b1e207c34343ef7fc4f801967dbf401e96bf7dfe71532e63be30ed5a9b4"
+      },
+      {
+        "name": "libsherpa-onnx-fst.a",
+        "bytes": 2535400,
+        "sha256": "9a09fec5ad9097da74bd6804824d1ff927850b1365de5f015e5ce652ec7dd380"
+      },
+      {
+        "name": "libsherpa-onnx-fstfar.a",
+        "bytes": 55920,
+        "sha256": "6026b47ce7825d780d67516fa8d833c9d89c0ca67dc647c649d1de45e252332c"
+      },
+      {
+        "name": "libsherpa-onnx-kaldifst-core.a",
+        "bytes": 1585872,
+        "sha256": "c3bf44ed62ff8b4289f6056d4daf915b099451d4ffd9101cf9cab3fa2a9de9c1"
+      },
+      {
+        "name": "libsherpa-onnx-portaudio_static.a",
+        "bytes": 124128,
+        "sha256": "be5ffc7c0048697cf2235f46b37d001ec2179a7acc80f1898dcfca2d64fccac6"
+      },
+      {
+        "name": "libssentencepiece_core.a",
+        "bytes": 151000,
+        "sha256": "1dde9dc6e46ef76b48241b95ee3327a07707be245fc6385f84b11fb286aba41b"
+      },
+      {
+        "name": "libucd.a",
+        "bytes": 206336,
+        "sha256": "7dd0a83ca9c568103736b49f6492b3a431b13d1a0c666d237001942934452794"
+      },
+      {
+        "name": "bpe.model",
+        "bytes": 244836,
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+      },
+      {
+        "name": "decoder-epoch-99-avg-1.onnx",
+        "bytes": 13877276,
+        "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+      },
+      {
+        "name": "encoder-epoch-99-avg-1.int8.onnx",
+        "bytes": 42980793,
+        "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+      },
+      {
+        "name": "joiner-epoch-99-avg-1.int8.onnx",
+        "bytes": 3228485,
+        "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+      },
+      {
+        "name": "tokens.txt",
+        "bytes": 56317,
+        "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+      },
+      {
+        "name": "Qwen3-1.7B-Q4_K_M.gguf",
+        "bytes": 1107409472,
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+      },
+      {
+        "name": "build-info.json",
+        "bytes": 93,
+        "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+      },
+      {
+        "name": "llama-server",
+        "bytes": 18953328,
+        "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+      }
+    ]
+  },
+  "remaining": [
+    "The original frozen candidate12 is not replaced; no0.3.5 installer/release was built or published.",
+    "Standalone native ASR CLI arbitrary-path entry does not use this parent admission API; complete model verification/recovery UI remains follow-up.",
+    "Unix receipts track observable identity/mtime/ctime, not immutable snapshots. A synthetic macOS writable-mmap reproduction changed bytes without these fields changing; retained as explicit limitation. Native loaders reopen paths, leaving an external TOCTOU boundary.",
+    "Windows handle protections need broader actual app/install/upgrade acceptance beyond these CI fixtures; no new physical microphone or GPU hardware result.",
+    "A post-preflight external change can interrupt a newly started take/run after state changes; audio is retained, but prior run/cursor state is not transactionally restored.",
+    "Candidate12 full65 seeded regression is separate evidence and was not rerun for this development follow-up. Real proper names, actual capture stop, Linux/Omarchy and installer gates plus P0/P1/P2/P3/G1/G2 work remain."
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/model-integrity-2026-10-29/checks.json",
+      "bytes": 1720,
+      "sha256": "fdd371bbdb8d86a5852b878d73744f1fb4c54ccf1a183dd54eeff4129c7b7319"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/repair-checks.json",
+      "bytes": 601,
+      "sha256": "8a8734cddd8d28857097c30f1840cb5fd1773a79780396556b6cc518a0c657ac"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/core-final.log",
+      "bytes": 1099,
+      "sha256": "ee2f1692c9ce4a78eeac3f9c1ce44d36441a4153fd07c77f45a7eb83ee2c7255"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/repair-core.log",
+      "bytes": 1099,
+      "sha256": "8d23b84dd59925a78c2c6047c926957d68d0376d2bfb9896ba76dff7bb0c8624"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/repair-clippy.log",
+      "bytes": 291,
+      "sha256": "1e63c6af66672f37fe0d2e372ea239c6939865a858f9da719367cd1231dbc24e"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/frontend.log",
+      "bytes": 2063,
+      "sha256": "a0f44133e3b5a8be2ab804d8a10c3ce569914c155d77e9eab9e9204fd629af76"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/python.log",
+      "bytes": 411,
+      "sha256": "9b6aa439427e1d99957cc9c67b293ae94df00b0057a14a9ba526165e1e5fb75b"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci36-windows-jobs.json",
+      "bytes": 4508,
+      "sha256": "9685e71658b3f3648152c7550fc123f8286eeb7b439eccd7b0edeeeca077337e"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci36-windows-failed.log",
+      "bytes": 83676,
+      "sha256": "8b4cf0531ec93b516eb0e3839fc638a4d256ef3e47daa186becdfa7415e4497b"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-b569-optional.json",
+      "bytes": 4508,
+      "sha256": "10ab719332ec39c777b90657b024b94ec07222f7c421c29ea4eceece43f2fcb1"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-b569-windows-log.log",
+      "bytes": 195244,
+      "sha256": "a565836cfd80b4e6777e036f567d38db73a562a24497b5ae3c6f77864d357635"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-b569-all.json",
+      "bytes": 513,
+      "sha256": "5646d0a3464d1e3d25a89617d3ea10fd572af84d5fb6f28318f7709bed6d7ec5"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/cli-build-info.json",
+      "bytes": 257,
+      "sha256": "68f321651fd5076fb16f4f22d054bb87275ecfb7be5c03f0abbda48303bfc7fa"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/cli-build-info-b569.json",
+      "bytes": 257,
+      "sha256": "946f2baf4b33f28fc6fd37da5ea17d357e7672404e6c50f7c20e8f12042b1316"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/cli-build-info-release.json",
+      "bytes": 259,
+      "sha256": "ef118c97bfba7d024b28629e3429fc45a28ce44688f66b6c7d3412cc87abff5a"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/installed-verification.log",
+      "bytes": 426,
+      "sha256": "3254ab806d9a0962922231620cfe7ae856ceb727f922fff4452e175de092282e"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/installed-verification-b569.log",
+      "bytes": 425,
+      "sha256": "dcce168d1d0ec029e9c90ee69a72a9b6312b172329c0ab2ca4fdd4cf5f3714ae"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/installed-verification-release.json",
+      "bytes": 424,
+      "sha256": "7f0fbef4937dfe7023471ae50463b2ec9423a253c8067c3460a7e9370d30cbe7"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/native-reuse.json",
+      "bytes": 2034,
+      "sha256": "0261439307a3e9138cab2dcfea22d3ed48eff82e4bed231c591133116451d815"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/native-reuse-b569.json",
+      "bytes": 2034,
+      "sha256": "fe435fb1f57387c6f9830f7047f1ff6fb07090610b6c784202bec92d35d63af8"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/live-checks.json",
+      "bytes": 775,
+      "sha256": "7f475df9b46775bf94d54bf993fd6b142b9d624b5b540ecdb88b6f99f02ca336"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/live-checks-b569.json",
+      "bytes": 780,
+      "sha256": "30cdab1589617218e8bc822a30a37e300b3d6d6542fcd64ec2fd2200be63f829"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/assets-before.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/assets-after.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/mmap-cache-limitation.py",
+      "bytes": 1518,
+      "sha256": "7920ed051bae0f357bddd0840dceca4031a38e096c60121028c1267c810cf24a"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/mmap-cache-limitation.json",
+      "bytes": 732,
+      "sha256": "b36169c78c2df3d97d73b24e6feb859c4e41cd7c43e7a00313a48abba8023f17"
+    }
+  ]
+}

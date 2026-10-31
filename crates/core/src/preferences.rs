@@ -37,6 +37,7 @@ pub struct Preferences {
     pub inference_backend: String,
     pub resource_mode: String,
     pub memory_budget_mib: u64,
+    pub llm_keep_alive_seconds: u32,
     pub auto_notes: bool,
     pub translation_mode: String,
     pub minutes_language: String,
@@ -56,6 +57,8 @@ impl Default for Preferences {
             inference_backend: "auto".into(),
             resource_mode: "balanced".into(),
             memory_budget_mib: 0,
+            // Opt in after measuring the memory/latency tradeoff on this device.
+            llm_keep_alive_seconds: 0,
             auto_notes: true,
             translation_mode: "off".into(),
             minutes_language: "auto".into(),
@@ -71,6 +74,7 @@ impl Preferences {
         if !["auto", "cpu", "metal", "mlx"].contains(&self.inference_backend.as_str())
             || !["eco", "balanced", "quality"].contains(&self.resource_mode.as_str())
             || (self.memory_budget_mib != 0 && !(1024..=32768).contains(&self.memory_budget_mib))
+            || ![0, 10, 30].contains(&self.llm_keep_alive_seconds)
         {
             bail!("Invalid local inference resource settings");
         }
@@ -81,7 +85,7 @@ impl Preferences {
         }
         let a = &self.appearance;
         if !["system", "light", "dark"].contains(&a.mode.as_str())
-            || !["forest", "neutral", "slate"].contains(&a.theme.as_str())
+            || !["forest", "neutral", "slate", "omarchy"].contains(&a.theme.as_str())
             || !["system", "serif", "mono"].contains(&a.font.as_str())
         {
             bail!("Invalid appearance option");

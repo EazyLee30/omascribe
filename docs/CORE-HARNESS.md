@@ -42,15 +42,39 @@ python3 tests/harness.py \
 
 转写绝对质量默认门槛为该小样本每模型/语言错误率不超过 45%，同时拒绝空转写、静音出字、时间戳异常和基线退化。此门槛用于发现严重退化，**不是产品准确率承诺或理想目标**。专名和口音仍需更多录音验证，不允许为了过关替换失败样本或提高阈值。
 
+2026-10-27 已实际准备并校验八段官方朗读及两段构造切换音频，使用当前 CPU worker 完成两个模型共 24 项（含各自静音/低噪声）的基线。逐组错误率及实际 worker/模型/语料摘要见 [ASR 基线](evaluation/asr-public-2026-10-27.json)，精确参考文本与片段来源见 [公开 manifest](evaluation/fleurs-manifest-2026-10-27.json)。小模型中文 CER 32.45%、英文 WER 34.21%、拼接 MER 29.94%；双语大模型为 28.19%、32.89%、30.54%。这是严重退化烟测通过，部分单段仍有较高错误率，不能称为理想识别质量或换模型即可改进。未改默认模型/beam/score，也未用该小集作自然混说、专名或说话人评估。
+
+准备命令现在打印 manifest SHA-256。记录该值后，可以清理已完成的 `.tar.gz` 下载档案，保留 manifest 和所选 WAV，以后离线验证复用，不重新下载 815 MB：
+
+```sh
+python3 tests/prepare_asr_fixtures.py --directory artifacts/fixtures/fleurs-20261026 \
+  --verify-existing 76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69
+```
+
+该摘要对应这次实际制备的十段语料。其他环境应使用自身已校验制备时记录的摘要；WAV 转换器的元数据可能随工具版本变化，不能只因 PCM 相似就强行改成同一文件摘要。命令同时校验 manifest 和每段音频，任何参考文本/音频修改都会拒绝复用。它不隐式修补失败证据或替换样本。
+
 纪要先由本地模型生成正文，再由代码绑定本次选入的转写来源组，相关片段排在前面；绑定过程不再让模型改写正文。引用表示成文使用的上下文，不能证明每句话都被原话蕴含。金额、日期、待定状态、说话人和无依据因果词另作保守检查；这仍不能替代语义核对。以试麦和填充词为主的输入使用更窄的概括提示，不要求模型补齐负责人和期限，原始转写与引用上下文继续保留。
 
 ## 结果和失败证据
+
+Apple Silicon 的并行负载验收使用 `tests/benchmark_recording_contention.py`：同一公开中英拼接音频补足静音边界，按真实时间回放；两轮反转顺序，对照仅 ASR 与 ASR＋Metal 双语翻译、自动纪要。运行时须同时包含当前 `omascribe-asr`、`llama/`、`platform/ffmpeg`，模型目录使用已有已校验文件，不下载组件。
+
+```sh
+python3 tests/benchmark_recording_contention.py \
+  --fixtures artifacts/fixtures/fleurs-20261026 \
+  --runtime /absolute/path/to/runtime \
+  --asr-model-dir /absolute/path/to/zipformer-small \
+  --llm-model-dir /absolute/path/to/qwen3-1.7b \
+  --output artifacts/benchmarks/apple-recording-pair.json
+```
+
+CLI 的 `replay AUDIO SECONDS --telemetry NEW_JSONL_PATH` 每 200 ms 保存无正文的时序、积压、任务进度及 worker 计数。验收拒绝不完整录音、PCM 字节变化、ASR 输出变化、超过 2.5 s 的处理积压、超过 1.5 s 的采样空洞，以及后台没有实际翻译/纪要进展的空负载；任务 trace 必须报告 Metal，最后一个 worker 另查真实 offload 日志，CPU 回退不能冒充 Metal 成功。末尾尚未处理的任务如实报告，不在计时外补跑后宣称实时完成。CPU 时间与进程树 RSS 由同一采样器记录，不能据此推断能耗或独立显存。此项是文件回放的资源竞争验收，不能替代真实麦克风、自然会议语义、长会、设备故障和 M1–M4 实机结果。
 
 总入口的 `report.json` 汇总每个子套件。未完成全部场景时不会标记为通过。CI 上传诊断时排除复用的模型目录，保留文本、数据库、测试音频和校验结果。单个场景失败后继续运行其余场景，并以非零状态退出。保留输入、进程输出、错误、每次生成草稿、校验失败原因、引用、模型/CLI 摘要、推理后端、耗时和 token 使用量；输出中途断开时，保留本地草稿但不提交为正式纪要。纪要生成诊断只覆盖最近一次任务，避免在产品数据目录无限追加正文副本。
 
 `*.artifacts/workspace` 是测试专用数据库及音频；排错后可自行删除整个输出目录。不得把实际用户录音添加为公开 CI fixture。示例中的 `artifacts/` 已被 Git 忽略。
 
-跨平台安装包烟测执行同一份完整的本地纪要场景清单（目前十八个），覆盖中文日期、英文期限、试麦过滤、多轮更正、说话人、长上下文、名称贯通、双向输出语言、人工段落保护和含混转写不得补造议题。轻量 CI 执行评分器测试、Rust 校验及流式中断/原文保护测试；公开语料全套需要显式准备后运行。
+跨平台安装包烟测执行同一份完整的本地纪要场景清单（目前二十一个），覆盖中文日期、英文期限、试麦过滤、多轮更正、说话人、长上下文、名称贯通、双向输出语言、人工段落保护和含混转写不得补造议题。轻量 CI 执行评分器测试、Rust 校验及流式中断/原文保护测试；公开语料全套需要显式准备后运行。
 
 本轮固定样本的前后对照及限制见 [core-0.3.3.json](evaluation/core-0.3.3.json)。
 
@@ -71,3 +95,19 @@ python3 tests/replay_terminology.py \
 ```
 
 先把用户提供的名称写入隔离会议，再运行真实识别、自动校正和本地纪要。检查标准名称的大小写、错误名称残留、修订归档、全部转写覆盖和引用一致性。`--expected` / `--forbidden` 可重复指定；`--forbidden-minutes` 只检查纪要，适合禁止照抄原始杂音或补造议题，再人工核对成文。名称与引用通过不等于每一句含义都已验证。这里的记录可能包含私人内容，只留在本机；不作为默认 CI 语料，也不得上传。
+
+## 自动纪要和录音结束后的补齐
+
+`--minutes-catchup` 在相同 Metal 模型、音频和 60 秒补齐预算下，对照原调度与实验调度，两轮反转顺序。它在同一进程采样区间内计算录音及结束后全部工作，分别保存结束瞬间与补齐后的覆盖、等待时间、任务 trace、引用和资源成本。不会把等待间隔缩短解释成模型计算变快。用前面的回放命令加上该选项与新的输出路径即可。
+
+CLI `replay-settle AUDIO SECONDS SETTLE_SECONDS [--telemetry NEW_JSONL_PATH]` 返回补齐结果及 snapshot；`settle MEETING_ID SECONDS` 验证已启用自动纪要的隔离会议。两者仅接受 1–600 秒显式预算。`OMASCRIBE_MINUTES_CATCHUP=1 python3 tests/evaluate.py --auto-schedule --preferences FILE --output NEW.json` 用真实后台调度跑同一十八项事实、引用及人工段落保护场景。实验默认关闭；结果未通过不更换样本或放宽质量门槛。每一阶段保留所有 metadata-only task trace；不能用只含最后一次生成的诊断文件推断整个自动补齐过程的 token 或重试成本。
+
+M5 上 `116469e` 两轮逆序回放与十八项自动纪要均已通过，具体身份、全成本、原始结果摘要及未测范围见 [补齐验收](evaluation/apple-minutes-catchup-2026-10-27.json)。3.1 秒与 29.3 秒对比为相同工作完成后的调度等待差异，不表示模型运算或耗电同比改善。
+
+## 增量正文对照
+
+`tests/compare_incremental_minutes.py --model-dir 已安装的qwen3-1.7b目录 --runtime 原生runtime目录 --backend metal --output 新结果.json` 两轮反转顺序，比较相同模型、完整场景及所有重试成本。CPU设备可选 `--backend cpu`。模型必须已安装且与catalog摘要一致；不下载。`OMASCRIBE_INCREMENTAL_MINUTES=1` 是实验开关，默认关闭。当前21项场景保留旧18项，新增独立议题保留、撤回/金额变更、真实完成及试麦不重写。新的语料摘要与旧18项历史记录分开，不改写旧结果。
+
+每次输入仍使用当前原始来源做数字、否定、人名和引用校验；已生成的旧正文是带版本的增量状态，不是新的原话，也不替代语义核对。没有事实/状态结构化提取器或长会压缩的完成声明。少读历史但更多token、重试、时间，或任一事实失败，均不能作为启用理由。
+
+2026-10-27 对照结果已完成并[判定失败](evaluation/incremental-article-2026-10-27.json)：旧路径20/21，新路径17/21，两轮相同；新路径总输入与修复成本更高。该命令用于重现研究结果，不能作为开启产品实验开关的建议。原18项通过不代表新增21项已通过；0.3.4发布门需继续修复新发现的过时预算状态及事实保留问题。

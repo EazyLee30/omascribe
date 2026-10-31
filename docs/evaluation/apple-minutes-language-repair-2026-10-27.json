@@ -1,0 +1,1587 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "production_minutes_language_repair_development",
+  "source_commit": "cb85620d0a143fb1a865b9244b042234727ff128",
+  "release_eligible": false,
+  "compiled_source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+  "scope": "Original fictional Windows report inputs, seeded production CLI on M5/Metal; no physical recording or installer acceptance. Tests ran on this exact source content before commit; compile revision and dirty flags retained below.",
+  "source_report": {
+    "commit": "e11db07940af753c632ac14fb1559664ee1024fe",
+    "sha256": "509a2a3518be4532a67cf438906158225fee741a85f2804726e6ebe49bcbf20d"
+  },
+  "checks": {
+    "core": "160 passed/7 ignored",
+    "strict_core_all_targets_clippy": "passed",
+    "source_log_sha256": "d5295b95564e69663e139f4e76f148475f428898afff9183efe18f00a3969516"
+  },
+  "runs": [
+    {
+      "case": "bilingual_scope",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 1.938,
+      "report_sha256": "4bee379672af328fbbeaa17072353e5916eccb8d5ff819c2bc9c4af764ee5222",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "42937c91-207a-41dd-b5aa-b9eac14ec363",
+          "kind": "section",
+          "meeting_id": "0cab70cf-90af-4567-a53d-ec6ee8b21042",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+              "revision": 1,
+              "segment_id": "0cab70cf-90af-4567-a53d-ec6ee8b21042:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+              "revision": 1,
+              "segment_id": "0cab70cf-90af-4567-a53d-ec6ee8b21042:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线转录原型已准备好进行评审。我们将于周五进行测试。 本阶段仅实现麦克风录音与实时转写，系统音频采集推迟到下一个版本。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 163,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "bilingual_scope",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "eb6a12a6e0714c94644d01cc8c1446dad07c7f67232d5aead0c162c8c336d432"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 1.686,
+      "report_sha256": "d57c159ad694b49b0b45225d10a2b289477310d3f23ef8b9e5f2d03a702596e9",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "Meeting minutes",
+          "id": "f41596e1-dc1c-4ea1-b842-6625aa738eb0",
+          "kind": "section",
+          "meeting_id": "6fbe580d-730b-4fc6-95a5-0f89b4a4e6a6",
+          "sources": [
+            {
+              "end_ms": 30000,
+              "quote": "The budget amount is corrected to 5000, still not approved.",
+              "revision": 1,
+              "segment_id": "6fbe580d-730b-4fc6-95a5-0f89b4a4e6a6:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "An invoice for 3000 is awaiting review.",
+              "revision": 1,
+              "segment_id": "6fbe580d-730b-4fc6-95a5-0f89b4a4e6a6:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The budget amount is 3000, not approved yet.",
+              "revision": 1,
+              "segment_id": "6fbe580d-730b-4fc6-95a5-0f89b4a4e6a6:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 224,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "en_budget_invoice_same_amount",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "a827509141cbd9b6022c4e03eab2752dc5fe24ea614c8719b762c201b6c87a5d"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 3.207,
+      "report_sha256": "c91f385a7cefb5669ad6b84368c535881e821feaefb3a51eeebb5f77a931dab6",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "Meeting minutes",
+          "id": "a364c0e5-16c7-4e32-a14c-1b924c47e1b2",
+          "kind": "section",
+          "meeting_id": "ad6841f2-4fa8-4387-9375-25d67e08af0c",
+          "sources": [
+            {
+              "end_ms": 30000,
+              "quote": "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks.",
+              "revision": 1,
+              "segment_id": "ad6841f2-4fa8-4387-9375-25d67e08af0c:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "The invoice review has not been completed. Riley will run it on Friday.",
+              "revision": 1,
+              "segment_id": "ad6841f2-4fa8-4387-9375-25d67e08af0c:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The upload verification is not completed. Morgan will run it on Thursday.",
+              "revision": 1,
+              "segment_id": "ad6841f2-4fa8-4387-9375-25d67e08af0c:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The invoice review has not been completed, and Riley will run it on Friday. Morgan confirms that the upload verification has been completed successfully on Thursday, with no remaining upload tasks."
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 216,
+          "mode": "full",
+          "reused_translation_passages": 0
+        },
+        {
+          "input_tokens": 134,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "en_completion_independent_pending",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "e5a00f51e1eb7d8b52f920082b9b1ba9fc43af5a646012e4fc21f2b76cf3794b"
+          },
+          {
+            "case": "en_completion_independent_pending",
+            "phase": 2,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "805ac2efc426cc95952775ba6df2bf4f209866dfac3071a7702f6f8bb889f811"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 2.35,
+      "report_sha256": "dbb39277af49b0a4ce382c44ca1c5ada8de49f61de690e3ee8433204f1bd2ed2",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "Meeting minutes",
+          "id": "3da8f5a8-d0de-4136-b15d-bd001ba63f72",
+          "kind": "section",
+          "meeting_id": "62a359d8-b5df-4c6c-bacb-73bd770d96b2",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "这次只做离线转写，模型由用户手动下载。",
+              "revision": 1,
+              "segment_id": "62a359d8-b5df-4c6c-bacb-73bd770d96b2:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "录音、转写和纪要不上传服务器。系统音频采集还没有实现。",
+              "revision": 1,
+              "segment_id": "62a359d8-b5df-4c6c-bacb-73bd770d96b2:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "This session only performed offline transcription, with the model downloaded by the user. The recording, transcription, and summary were not uploaded to the server. System audio collection has not been implemented yet."
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 136,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "en_minutes_from_zh",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "c97a48ada25bea96db86013c2a91fff3f3e81a65f9f2d20d2f9b3bba79ee0d2f"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 1.486,
+      "report_sha256": "4a5439d852b2ba1894a0fbd53fed667ce3c8cc4a7a7f12f60afa8ab85a572340",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "Meeting minutes",
+          "id": "c0e66fed-0da8-4c15-9925-38d3901fd12a",
+          "kind": "section",
+          "meeting_id": "8d2d8473-c367-435d-8a73-9aa5e5fd9ad6",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The Budget of 3000 hasn't been approved.",
+              "revision": 2,
+              "segment_id": "8d2d8473-c367-435d-8a73-9aa5e5fd9ad6:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The Budget of 3000 has not been approved."
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 129,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "en_sparse_unapproved_passive",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "de864165349d7abc3bf4f42fd1f8ce39006970a341d877dc17416e87459367c6"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 2.309,
+      "report_sha256": "f71ffcf91e65dfa82a79a109a62678f42be253b5e5ee0634cf4f4e198722d068",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "Meeting minutes",
+          "id": "f2107746-1a1a-4e1d-bd0a-291dd4bb2011",
+          "kind": "section",
+          "meeting_id": "fa76815e-081e-45ab-affd-f1cc9b00f3b7",
+          "sources": [
+            {
+              "end_ms": 30000,
+              "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+              "revision": 1,
+              "segment_id": "fa76815e-081e-45ab-affd-f1cc9b00f3b7:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+              "revision": 1,
+              "segment_id": "fa76815e-081e-45ab-affd-f1cc9b00f3b7:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+              "revision": 1,
+              "segment_id": "fa76815e-081e-45ab-affd-f1cc9b00f3b7:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The OmaScribe Windows acceptance check is scheduled for Thursday, not Friday. The budget is provisionally set at 3000 yuan and has not been officially approved. Alice will conduct a check on the NVIDIA GTX1650 local model. Recordings, transcripts, and minutes remain on this computer. GPU components are optional downloads that require a local test before enabling."
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 279,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "en_windows_long_acceptance",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "3b063782518322e807b5a69d2759da1e00416e6239786e6f0d7c6e2de06023eb"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_incremental_completion",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 2.579,
+      "report_sha256": "2bc21c94514b55c0138b7d741da06eaec42cecdf8327a18f7bd71acec862df45",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "7f5c436d-e194-4f4d-8df5-79142709a9c6",
+          "kind": "section",
+          "meeting_id": "ca004b24-541d-43cb-b4be-a87cac38ef17",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "发票核对尚未完成。",
+              "revision": 1,
+              "segment_id": "ca004b24-541d-43cb-b4be-a87cac38ef17:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "上传验证现已完成。",
+              "revision": 1,
+              "segment_id": "ca004b24-541d-43cb-b4be-a87cac38ef17:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "上传验证尚未完成。",
+              "revision": 1,
+              "segment_id": "ca004b24-541d-43cb-b4be-a87cac38ef17:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "发票核对尚未完成。上传验证现已完成。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 227,
+          "mode": "full",
+          "reused_translation_passages": 0
+        },
+        {
+          "input_tokens": 137,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_incremental_completion",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "758f708bd99e717e32970c7dc998f95950d5d7082208f6dd4c348d4d4b36530d"
+          },
+          {
+            "case": "zh_incremental_completion",
+            "phase": 2,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "258fc4d9bc8bec0b283a35027f94e60963866a6cdfdab6318566aa8a87d755c6"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 1.5,
+      "report_sha256": "31bc0307490d859be949f6849f42063078002b2a5487902a9674b419f88d7468",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "81aec381-6994-4c28-af10-10b138bca141",
+          "kind": "section",
+          "meeting_id": "24a7a834-5b1c-4562-a82d-8ff63743fa90",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "24a7a834-5b1c-4562-a82d-8ff63743fa90:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+              "revision": 1,
+              "segment_id": "24a7a834-5b1c-4562-a82d-8ff63743fa90:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan拥有延迟报告，并将于周四交付。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 182,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_minutes_from_en",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "7d3f53098459620a48ec182ebfb051bbecfc40f70a3f37cb1375276976744b91"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 2.33,
+      "report_sha256": "63c459335d0dcbad259cccd8951252880592e81e0c1e475466e68a17e028eb22",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "0af8e7eb-4183-440c-b52f-76b176688570",
+          "kind": "section",
+          "meeting_id": "0a496cfe-7ad8-4dc3-8596-8734175191e3",
+          "sources": [
+            {
+              "end_ms": 50000,
+              "quote": "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。",
+              "revision": 2,
+              "segment_id": "0a496cfe-7ad8-4dc3-8596-8734175191e3:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "嗯 TRY MY OWN ALMOST TRIP NOW",
+              "revision": 1,
+              "segment_id": "0a496cfe-7ad8-4dc3-8596-8734175191e3:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "嗯",
+              "revision": 1,
+              "segment_id": "0a496cfe-7ad8-4dc3-8596-8734175191e3:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "AND",
+              "revision": 1,
+              "segment_id": "0a496cfe-7ad8-4dc3-8596-8734175191e3:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "转写中提到 PixelLedger 的人员分配好像有问题，需要核对。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 157,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_noisy_name_no_added_topics",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "189bb33a84839648cf50408d6944be3aa81682c5ecd71119deee5343b434021c"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 3.372,
+      "report_sha256": "1d9703f7d9e18d2feed1c6fd407bca16227b5a456111433d94b0398f353f8f83",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "069135f9-eb66-476e-b949-f22aa8ad4dd4",
+          "kind": "section",
+          "meeting_id": "496e5bc8-3044-497c-8a22-c937dd6a6e3b",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+              "revision": 1,
+              "segment_id": "496e5bc8-3044-497c-8a22-c937dd6a6e3b:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+              "revision": 1,
+              "segment_id": "496e5bc8-3044-497c-8a22-c937dd6a6e3b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+              "revision": 1,
+              "segment_id": "496e5bc8-3044-497c-8a22-c937dd6a6e3b:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "OmaScribe Windows 接受检查在周四，而不是周五。预算暂定为3000元，尚未批准。Alice 将检查 NVIDIA GTX1650 的本地模型。录音、转录和会议记录都留在这台电脑上。GPU 组件是可选下载，需要在启用前进行本地测试。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 314,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_long_acceptance",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "c8168f6ec5a5eb87d3f23e40ecdd0509b1c3a1822d9961e892d6c029b5ef2941"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "execution": "targeted",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 4.589,
+      "report_sha256": "e6dacb6ca4a5d9b1b3fb650769e3a7c696176af4b7d9040c38b35f77636d6435",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "3a098767-c652-4579-9f52-8116fb6e4082",
+          "kind": "section",
+          "meeting_id": "e620ec8d-1b35-44be-8740-510ffb8f0467",
+          "sources": [
+            {
+              "end_ms": 50000,
+              "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "e620ec8d-1b35-44be-8740-510ffb8f0467:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "LICE WILL CHECK THE ENVY A CARD",
+              "revision": 1,
+              "segment_id": "e620ec8d-1b35-44be-8740-510ffb8f0467:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+              "revision": 1,
+              "segment_id": "e620ec8d-1b35-44be-8740-510ffb8f0467:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+              "revision": 1,
+              "segment_id": "e620ec8d-1b35-44be-8740-510ffb8f0467:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "e620ec8d-1b35-44be-8740-510ffb8f0467:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在这台计算机上。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 369,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_uppercase_asr",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "60130c6dcaceb71bff5f91afe5cdbc17305468e4f9d97900224efaffcee8f363"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "execution": "automatic",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 7.962,
+      "report_sha256": "4d75256f02850940ad1f892040246317dc14ece2950ca28c7b39479f9203afa1",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "e6068533-601a-4b56-b140-b7694941dfd6",
+          "kind": "section",
+          "meeting_id": "740f6d4b-fafe-4c79-9800-19133ba748b5",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+              "revision": 1,
+              "segment_id": "740f6d4b-fafe-4c79-9800-19133ba748b5:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+              "revision": 1,
+              "segment_id": "740f6d4b-fafe-4c79-9800-19133ba748b5:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling.",
+              "revision": 1,
+              "segment_id": "740f6d4b-fafe-4c79-9800-19133ba748b5:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "OmaScribe Windows 接受检查在周四，而不是周五。预算暂定为3000元，尚未批准。Alice将检查NVIDIA GTX1650本地模型。录音、转录和会议记录都保留在此电脑上。GPU组件是可选下载，启用前需要本地测试。"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 316,
+          "mode": "full",
+          "reused_translation_passages": 2
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_long_acceptance",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "bbf23507828a57046315f827bced9f9dc920a193a2f8d960ae90c38348dc7bca"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "execution": "automatic",
+      "passed": true,
+      "manual_minutes_review": "passed for stated facts, target language, amounts, negation, source name spellings and citations; unclear ASR names remain as source text",
+      "seconds": 10.471,
+      "report_sha256": "30bfea5ee0671e9d92e4045dd122e37e9e8fc57c46ee4f14e896d33b309e85ca",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "bf123dd565898fa7c73b78b452430651b924dd8ee233a266aa8abf68980d6f77",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "80595ad3cb348069376c07f01fe9a5001c7bf62b745906bc3075c96c538d5c4e",
+        "inference_source_tree_dirty": true,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "cb37b2526b31c29ab1f86a6570ba735f7bd85decf4f81592f38f71af6e06fc99",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "e0b1316150cb9269c5b1d3ee245aeae0d77fdf30",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "document": [
+        {
+          "focus": "会议纪要",
+          "id": "87aad8ad-6e25-4ba2-ab4c-d008ab65453d",
+          "kind": "section",
+          "meeting_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453",
+          "sources": [
+            {
+              "end_ms": 50000,
+              "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "LICE WILL CHECK THE ENVY A CARD",
+              "revision": 1,
+              "segment_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+              "revision": 1,
+              "segment_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+              "revision": 1,
+              "segment_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "b7b22cd0-5a56-44a6-bb34-2d2cb9d5f453:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "这是虚构的会议，项目是ILLMIS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。LICE将检查ENVY A CARD，周五不是截止日期。会议记录应留在这台计算机上。这是虚构的会议，项目是LLAS CRIBE，我们将周四测试Windows版本。预算为3000美元，尚未批准。ALICE将检查UN VIDEO CARD"
+        }
+      ],
+      "prompt_metrics": [
+        {
+          "input_tokens": 369,
+          "mode": "full",
+          "reused_translation_passages": 0
+        }
+      ],
+      "backend_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_uppercase_asr",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "f29f21d94e57e868eb704909181f7fba7a5715d9ce40896b9026aa8a031f0a23"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      }
+    }
+  ],
+  "retained_failures": [
+    {
+      "folder": "release035-real-windows-baseline",
+      "reason": "All three raw-input cases had no minutes: English recopy or adverbic approval false rejection.",
+      "results_sha256": "25a09080aa4342f3c8b9240cfde922b9ca6b27cb1faef64ec33b14a5c36563a3"
+    },
+    {
+      "folder": "release035-real-windows-language-dev1",
+      "reason": "Pattern pass hid three thousand dollars mistranslated as thirty thousand; rejected on manual review.",
+      "results_sha256": "ccb18950453daefbced9d923924976b84a7ec53afbc9d952f882b4f3d524b1b3"
+    },
+    {
+      "folder": "release035-real-windows-auto",
+      "reason": "Automatic reuse exposed owner transliteration, mixed-language recopy and repeated caption amount rejection; not accepted.",
+      "results_sha256": "c081084ff039552ea17b4ca18d38e466f64c45c1ba05552251e0fac5165bf4d0"
+    },
+    {
+      "folder": "release035-real-windows-auto-dev2",
+      "reason": "Patterns passed but manual review rejected acronym/name reinterpretation from all-caps cached captions; not accepted.",
+      "results_sha256": "a1b9f8d161f52159b59264ba277b0cce6284948a38b76bc163c1af37759ccdb2"
+    }
+  ],
+  "limitations": [
+    "Not a general semantic-entailment proof; unsupported/decimal written money is not interpreted.",
+    "All-caps caption reuse is declined because acronym/name meaning is ambiguous; original-prose repair stays inside two attempts.",
+    "The actual 92s Windows audio/automatic CUDA reproduction still needs same-source validation.",
+    "Realtek microphone capture/ASR, cold-ASR pacing, final installation/upgrade/data retention and multi-platform release remain unaccepted.",
+    "No GPU package rebuilt, base installer changed or stable release promoted."
+  ],
+  "summary": {
+    "targeted_passed": 11,
+    "automatic_passed": 2,
+    "fixture_cases": 31,
+    "ordinary_auto_reused_passages": 2,
+    "ambiguous_caps_auto_reused_passages": 0,
+    "candidate_frozen": false
+  },
+  "integrated_followup": {
+    "source_commit": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+    "merged_windows_pr": 5,
+    "merged_windows_head": "3841298d422313257fe4068af68bb82097f78d76",
+    "checks": {
+      "core": "163 passed/7 ignored",
+      "workspace_all_targets_clippy": "passed -D warnings",
+      "native_ui_test_all_targets_clippy": "passed -D warnings",
+      "typescript_vite": "passed",
+      "prettier": "passed",
+      "source_log_sha256": "2907a315425888f52359199c8b843df2eb86bdfde59e7d012765a03a736a5670",
+      "python": "63 tests run, 1 skipped, passed"
+    },
+    "runs": [
+      {
+        "case": "zh_windows_long_acceptance",
+        "execution": "automatic",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 7.937,
+        "report_sha256": "b4eedbdf8c4f0019287ff672d4679c4f51f3dd50bdbecf883cd078c275faa4ca",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "6b39661cdde788bf860eb6dd93cdea1949b66591b2c44cd645bda068424af2d8"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "execution": "automatic",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 10.621,
+        "report_sha256": "b137f1064175dbde7f2920e65d613d67eede0122b9f98ec7426edfc6c6b95b74",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_uppercase_asr",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "b9de6e1ec79a967c494abc874db7bae29846fbd153cb2bd701fb436c4875ff54"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "en_windows_long_acceptance",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 2.342,
+        "report_sha256": "524e468bddf970b2773d47e2503b1ddc4fee4988b5b1645720cd5fbfc1715d78",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "en_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "edab3b5950d8fa9fec49c68808892679a31cf5d3e6ae771689125f72e9149c13"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 3.367,
+        "report_sha256": "fce674d408ff41bfcda73cf0fe2191033780c7edec7298ef4654acd2875694d0",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_long_acceptance",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "3e309bfe3594441c009d8b443537a2f03a5a23c97eee0a52a1cb4f297cc5d57a"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "execution": "explicit",
+        "passed": true,
+        "prose_unchanged_from_manually_reviewed_development_output": true,
+        "seconds": 4.56,
+        "report_sha256": "f144c7bd6260b92e40e7b6f07340e05984880d3cd34460c5d469b4ca08cd015d",
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "9d82a6c3240e17517c512f8a4eb7930e5c8dd19052ba7aa95ba798cd2c355072",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "backend_evidence": {
+          "commands": [
+            {
+              "case": "zh_windows_uppercase_asr",
+              "phase": 1,
+              "batch": 1,
+              "requested_backend": "metal",
+              "actual_backend": "metal",
+              "offloaded_layers": [
+                [
+                  29,
+                  29
+                ]
+              ],
+              "positive_offload": true,
+              "log_sha256": "1186644b722171b4b1ad9330b4f927b5de3878810400a83e862aa4894c9ced76"
+            }
+          ],
+          "errors": [],
+          "passed": true
+        }
+      }
+    ],
+    "release_eligible": false,
+    "scope": "Same exact integrated source checkpoint; seeded text/scheduler and actual Metal evidence, not Windows PCM/physical recording/installer acceptance."
+  }
+}

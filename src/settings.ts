@@ -2,6 +2,8 @@ import { getViewSettings, patchViewSettings } from "./views-client";
 import { translationChoices } from "./translation-ui";
 import { confirmDelete } from "./interactions";
 import { mountUpdates } from "./updates";
+import { accelerationBody, type ComponentCatalog } from "./acceleration-ui";
+import { mountMicrophoneTest } from "./microphone-test";
 import { invoke } from "@tauri-apps/api/core";
 import { t, locale, type Locale } from "./i18n";
 import type { Diagnostic } from "./types";
@@ -9,6 +11,7 @@ import {
   getPreferences,
   savePreferences,
   defaultAppearance,
+  hasDesktopTheme,
   type Preferences,
   type ModelStatus,
   type Hardware,
@@ -47,6 +50,10 @@ export async function mountSettings(
   let models: ModelStatus[] = [],
     hardware: Hardware | null = null,
     profile: Profile | null = options.profile || null;
+  let acceleration: ComponentCatalog = {
+    state: "catalog_required",
+    components: [],
+  };
   const readNetwork = async (): Promise<NetworkPolicy> => {
     try {
       return await invoke<NetworkPolicy>("get_network_policy");
@@ -60,6 +67,7 @@ export async function mountSettings(
     }
   };
   let updateCleanup: (() => void) | undefined;
+  let microphoneTest: ReturnType<typeof mountMicrophoneTest> | undefined;
   let network = await readNetwork();
   const diagnostics = await invoke<Diagnostic>("diagnostics");
   root.classList.add("workspace-page");
@@ -103,6 +111,10 @@ export async function mountSettings(
   function header(title: string, sub: string) {
     return `<header class="page-heading"><span class="eyebrow">OMASCRIBE / ${t("settings")}</span><h1>${title}</h1><p>${sub}</p></header>`;
   }
+  function modelPairText() {
+    const selected = models.filter((m) => m.selected);
+    return `${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => m.model.name).join(" + ")}`;
+  }
   function modelCards() {
     return models
       .map(
@@ -134,7 +146,6 @@ export async function mountSettings(
   }
   function modelBody() {
     const h = hardware!;
-    const selected = models.filter((m) => m.selected);
     const modes = {
       eco: tr("节能", "Eco", "節能"),
       balanced: tr("均衡", "Balanced"),
@@ -154,6 +165,7 @@ export async function mountSettings(
     <div class="hardware-card"><div class="hardware-title">${glyph("models")}<div><strong>${esc(h.cpu || h.arch)}</strong><p>${esc(h.os)} · ${h.arch}${h.apple_silicon ? " · Apple Silicon" : ""}</p></div><button class="subtle" data-settings="refresh-hardware">${tr("重新检测", "Detect again", "重新偵測")}</button></div>
     <div class="hardware-metrics"><div><strong>${(h.total_memory_mib / 1024).toFixed(0)} <small>GiB</small></strong><span>${tr("总内存", "Total memory", "總記憶體")}</span></div><div><strong>${h.available_memory_mib === null ? "—" : (h.available_memory_mib / 1024).toFixed(1)} <small>GiB</small></strong><span>${tr("当前可用", "Available now", "目前可用")}</span></div><div><strong>${h.cores}</strong><span>${tr("逻辑核心", "Logical cores", "邏輯核心")}</span></div><div><strong>${bytes(h.free_disk_bytes)}</strong><span>${tr("可用磁盘", "Free disk", "可用磁碟")}</span></div></div>
     <p class="setting-help">${tr("硬件检测在本机完成，不上传设备信息。推荐依据容量与运行时支持，速度需实测。", "Hardware detection is local and sends no device information. Recommendations reflect capacity and installed runtimes; speed requires measurement.", "硬體偵測在本機完成，不上傳裝置資訊；推薦依容量及執行環境，速度需實測。")}</p><p class="setting-help">${tr("本机可用后端", "Available local backends", "本機可用後端")}: ${h.backends.map((b) => esc(backendLabels[b] || b)).join(" / ")}</p></div>
+    <div id="acceleration-components">${accelerationBody(h, acceleration)}</div>
     <h2 class="settings-subtitle">${tr("模型与资源搭配", "Model and resource combinations", "模型及資源搭配")}</h2><div class="preset-grid">${h.resource_presets.map(({ id, preferences: p }) => `<button data-preset="${id}" class="preset-card ${prefs.resource_mode === id ? "recommended" : ""}"><span>${modes[id as keyof typeof modes] || esc(id)}</span><strong>${esc(models.find((m) => m.model.id === p.llm_model)?.model.name || p.llm_model)}</strong><p>${esc(p.asr_model)}<br>${p.threads} ${tr("线程", "threads", "執行緒")} · ${p.context_size} tokens</p></button>`).join("")}</div>
     <div class="settings-group">${row(
       tr("推理后端", "Inference backend", "推理後端"),
@@ -171,7 +183,24 @@ export async function mountSettings(
         "Apple Silicon 可用 Metal 加速 GGUF；MLX 需獨立模型及本機執行環境，不會改用雲端。",
       ),
     )}
-    ${row(tr("资源策略", "Resource policy", "資源策略"), choice("resource_mode", Object.entries(modes), tr("资源策略", "Resource policy")), tr("节能限制生成线程与批量。每次任务后释放模型，录音与转写优先。", "Eco limits generation threads and batches. Models unload after each task; recording and transcription take priority.", "節能限制生成執行緒及批次，任務後釋放模型，錄音轉寫優先。"))}
+    ${row(tr("资源策略", "Resource policy", "資源策略"), choice("resource_mode", Object.entries(modes), tr("资源策略", "Resource policy")), tr("节能限制生成线程与批量，批次结束释放模型。录音与转写优先。", "Eco limits generation threads and batches and unloads the model after the batch. Recording and transcription take priority.", "節能限制生成執行緒及批次，批次結束釋放模型；錄音轉寫優先。"))}
+    ${row(
+      tr("模型空闲保留", "Keep model ready", "模型閒置保留"),
+      choice(
+        "llm_keep_alive_seconds",
+        [
+          [0, tr("批次结束释放", "Unload after batch", "批次結束釋放")],
+          [10, tr("10 秒", "10 seconds", "10 秒")],
+          [30, tr("30 秒", "30 seconds", "30 秒")],
+        ],
+        tr("模型空闲保留", "Keep model ready"),
+      ),
+      tr(
+        "减少连续翻译和纪要的重复启动，但会暂时保留模型内存。节能模式始终在批次结束后释放，内存紧张时立即退出。",
+        "Reduces repeated model starts for translation and minutes, using memory while idle. Eco always unloads after the batch; memory pressure releases it immediately.",
+        "減少翻譯及紀要重複啟動，但暫時保留模型記憶體；節能模式在批次結束後釋放，記憶體緊張時立即退出。",
+      ),
+    )}
     ${row(
       tr("推理线程", "Inference threads", "推理執行緒"),
       choice(
@@ -208,10 +237,12 @@ export async function mountSettings(
     )}</div>
     <div class="settings-section-title"><h2>${tr("本地模型", "Local models", "本機模型")}</h2><button class="outline" data-settings="download-selected">${tr("下载所选组合", "Download selected pair", "下載所選組合")}</button></div>
     <p class="setting-help">${tr("下载会连接模型托管站点，只获取文件，不发送录音或笔记。下载完成后断网也可使用。", "Downloads contact model hosts to fetch files; recordings and notes are never sent. Installed models work offline.", "下載會連接模型託管站點取得檔案，不傳送錄音或筆記；完成後可離線使用。")} <button class="text-button" data-section="privacy">${tr("查看联网权限", "Network permissions", "檢視連網權限")}</button></p>
-    ${!diagnostics.worker_ready || !diagnostics.server_ready ? `<p class="inline-error">${tr("本地推理程序尚未就绪，请使用完整安装包或开发环境的 bin/setup。模型下载不安装运行程序。", "Local runtimes are missing. Use a full installer or bin/setup in development. Model downloads do not install runtime programs.", "本機推理程式尚未就緒，請使用完整安裝包或 bin/setup。")}</p>` : ""}
-    <div id="model-list">${modelCards()}</div><p class="setting-help">${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => esc(m.model.name)).join(" + ")}</p>`;
+    ${!diagnostics.worker_ready || !diagnostics.server_ready ? `<p class="inline-error">${tr("本地推理程序尚未就绪，请使用完整安装包或开发环境的 scripts/bin/setup。模型下载不安装运行程序。", "Local runtimes are missing. Use a full installer or scripts/bin/setup in development. Model downloads do not install runtime programs.", "本機推理程式尚未就緒，請使用完整安裝包或 scripts/bin/setup。")}</p>` : ""}
+    <div id="model-list">${modelCards()}</div><p id="model-selected-pair" class="setting-help">${esc(modelPairText())}</p>`;
   }
   async function render() {
+    await microphoneTest?.close();
+    microphoneTest = undefined;
     updateCleanup?.();
     updateCleanup = undefined;
     const section = active;
@@ -230,13 +261,16 @@ export async function mountSettings(
           ["forest", tr("森林", "Forest")],
           ["neutral", tr("简洁", "Neutral", "簡潔")],
           ["slate", tr("岩蓝", "Slate", "岩藍")],
+          ...(hasDesktopTheme()
+            ? [["omarchy", tr("跟随桌面主题", "Desktop theme", "跟隨桌面主題")]]
+            : []),
         ]
           .map(
             ([v, s]) =>
               `<option value="${v}" ${a.theme === v ? "selected" : ""}>${s}</option>`,
           )
           .join("")}</select>`,
-      )}${row(tr("强调色", "Accent", "強調色"), `<div class="color-control"><input type="color" data-appearance="accent" value="${a.accent}" aria-label="${tr("强调色", "Accent", "強調色")}"><code>${a.accent.toUpperCase()}</code></div>`)}${[
+      )}${row(tr("强调色", "Accent", "強調色"), `<div class="color-control"><input type="color" data-appearance="accent" value="${a.accent}" aria-label="${tr("强调色", "Accent", "強調色")}" ${a.theme === "omarchy" ? "disabled" : ""}><code>${a.theme === "omarchy" ? tr("来自桌面", "From desktop", "來自桌面") : a.accent.toUpperCase()}</code></div>`)}${[
         "background",
         "foreground",
       ]
@@ -271,17 +305,55 @@ export async function mountSettings(
       ]);
       if (!alive || section !== active) return;
       [models, hardware] = values;
+      acceleration = await invoke<ComponentCatalog>("acceleration_components");
+      if (!alive || section !== active) return;
       content.innerHTML = modelBody();
     } else if (section === "general") {
       const devices =
-        await invoke<{ id: string; name: string }[]>("list_devices");
+        await invoke<{ id: string; name: string; kind?: string }[]>(
+          "list_devices",
+        );
       if (!alive || section !== active) return;
       const views = await getViewSettings();
-      content.innerHTML = `${header(tr("常规", "General", "一般"), tr("语言、输入设备和工作区行为。", "Language, input device, and workspace behavior.", "語言、輸入裝置與工作區行為。"))}<div class="settings-group">${row(t("language"), `<select id="settings-language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option></select>`)}${row(t("device"), `<select id="settings-device">${devices.map((d) => `<option value="${esc(d.id)}">${esc(d.id === "auto" ? t("defaultDevice") : d.name)}</option>`).join("")}</select>`)}</div><div class="settings-group">${row(t("displaySettings"), `<button class="outline" data-settings="display">${tr("调整", "Configure", "調整")}</button>`, tr("悬浮转写、屏幕字幕与面板布局。", "Floating transcript, screen captions, and panel layout.", "浮動轉寫、螢幕字幕與面板配置。"))}</div><div class="settings-group">${row(tr("桌面录音小助手", "Desktop recording companion", "桌面錄音小助手"), `<input id="settings-companion" type="checkbox" role="switch" ${views.companion_enabled ? "checked" : ""}>`, tr("显示在整个桌面；点击展开后再开始录音。可拖动位置。", "Appears on the desktop. Click to open controls, then start recording. Drag to reposition.", "顯示於整個桌面；點擊展開後再開始錄音，可拖曳位置。"))}${row(tr("小助手动效", "Companion animation", "助手動效"), `<input id="settings-companion-animation" type="checkbox" role="switch" ${views.companion_animation ? "checked" : ""}>`, tr("待机、眨眼和记录动作；遵循系统减少动态效果设置。", "Idle, blink and writing poses. Respects the system reduced-motion preference.", "待機、眨眼及記錄動作；遵循系統減少動態效果設定。"))}</div><div class="privacy-card">${glyph("storage")}<h2>${tr("保存在这台电脑", "Saved on this device", "儲存在這台電腦")}</h2><p>${tr("录音、转写、笔记、记忆和模型均保存在本地。导出配置不会包含会议、笔记或记忆内容。", "Audio, transcripts, notes, memory, and models are stored locally. Shared configurations do not contain meetings, notes, or memory.", "錄音、轉寫、筆記、記憶與模型皆保存在本機。分享設定不含個人內容。")}</p></div>`;
+      if (!alive || section !== active) return;
+      const option = (d: { id: string; name: string; kind?: string }) =>
+        `<option value="${esc(d.id)}" data-kind="${esc(d.kind || "microphone")}">${esc(d.id === "auto" ? t("defaultDevice") + (d.name === "System default microphone" ? "" : " · " + d.name) : d.name)}</option>`;
+      const mixed = devices.filter((d) => d.kind === "mixed");
+      const system = devices.filter((d) => d.kind === "system");
+      const microphones = devices.filter(
+        (d) => d.kind !== "system" && d.kind !== "mixed",
+      );
+      const grouped = (label: string, items: typeof devices) =>
+        items.length
+          ? `<optgroup label="${label}">${items.map(option).join("")}</optgroup>`
+          : "";
+      const deviceOptions =
+        grouped(tr("麦克风", "Microphones", "麥克風"), microphones) +
+        grouped(tr("会议混合", "Meeting mix", "會議混合"), mixed) +
+        grouped(tr("仅系统声音", "System audio only", "僅系統聲音"), system);
+      const deviceHelp = mixed.length
+        ? tr(
+            "“麦克风 + …”同时录制你的声音和浏览器、会议软件播放的声音。选“仅系统声音”只录对方。两者都需要 PipeWire；不支持同一设备的回声消除。",
+            "“Microphone + …” records you and what apps play at once. “System audio only” captures just the other side. Both need PipeWire; echo cancellation is not applied.",
+            "「麥克風 + …」同時錄製你的聲音與瀏覽器、會議軟體播放的聲音；「僅系統聲音」只錄對方。兩者都需要 PipeWire，未套用回音消除。",
+          )
+        : system.length
+          ? tr(
+              "选“系统声音”只录制浏览器或会议软件播放的声音。",
+              "A System audio entry records only what apps play.",
+              "選「系統聲音」只錄製瀏覽器或會議軟體播放的聲音。",
+            )
+          : "";
+      content.innerHTML = `${header(tr("常规", "General", "一般"), tr("语言、输入设备和工作区行为。", "Language, input device, and workspace behavior.", "語言、輸入裝置與工作區行為。"))}<div class="settings-group">${row(t("language"), `<select id="settings-language"><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option></select>`)}${row(t("device"), `<select id="settings-device">${deviceOptions}</select>`, deviceHelp)}</div><div class="settings-group">${row(t("displaySettings"), `<button class="outline" data-settings="display">${tr("调整", "Configure", "調整")}</button>`, tr("悬浮转写、屏幕字幕与面板布局。", "Floating transcript, screen captions, and panel layout.", "浮動轉寫、螢幕字幕與面板配置。"))}</div><div class="settings-group">${row(tr("桌面录音小助手", "Desktop recording companion", "桌面錄音小助手"), `<input id="settings-companion" type="checkbox" role="switch" ${views.companion_enabled ? "checked" : ""}>`, tr("显示在整个桌面；点击展开后再开始录音。可拖动位置。", "Appears on the desktop. Click to open controls, then start recording. Drag to reposition.", "顯示於整個桌面；點擊展開後再開始錄音，可拖曳位置。"))}${row(tr("小助手动效", "Companion animation", "助手動效"), `<input id="settings-companion-animation" type="checkbox" role="switch" ${views.companion_animation ? "checked" : ""}>`, tr("待机、眨眼和记录动作；遵循系统减少动态效果设置。", "Idle, blink and writing poses. Respects the system reduced-motion preference.", "待機、眨眼及記錄動作；遵循系統減少動態效果設定。"))}</div><div class="privacy-card">${glyph("storage")}<h2>${tr("保存在这台电脑", "Saved on this device", "儲存在這台電腦")}</h2><p>${tr("录音、转写、笔记、记忆和模型均保存在本地。导出配置不会包含会议、笔记或记忆内容。", "Audio, transcripts, notes, memory, and models are stored locally. Shared configurations do not contain meetings, notes, or memory.", "錄音、轉寫、筆記、記憶與模型皆保存在本機。分享設定不含個人內容。")}</p></div>`;
       (root.querySelector("#settings-language") as HTMLSelectElement).value =
         locale;
       (root.querySelector("#settings-device") as HTMLSelectElement).value =
         localStorage.getItem("omascribe-device") || "auto";
+      const deviceSelect =
+        root.querySelector<HTMLSelectElement>("#settings-device")!;
+      const preview = document.createElement("div");
+      deviceSelect.closest(".settings-group")!.after(preview);
+      microphoneTest = mountMicrophoneTest(preview, deviceSelect);
     } else if (section === "transcription") {
       content.innerHTML = `${header(tr("转写与纪要", "Transcription & minutes", "轉寫與紀要"), tr("新会议和音频导入的默认行为。已有会议可单独调整。", "Defaults for new meetings and imported audio. Existing meetings have their own controls.", "新會議及音訊匯入的預設行為，現有會議可個別調整。"))}<div class="settings-group">${row(
         tr("实时转写与字幕", "Live transcript & captions", "即時轉寫及字幕"),
@@ -333,7 +405,7 @@ export async function mountSettings(
           "Specify a count if known. Analysis supports recordings up to 2 hours. Ambiguous or overlapping passages remain unassigned.",
           "已知時可指定人數；單次最長 2 小時，重疊及不確定片段保留未分配。",
         ),
-      )}</div><button class="outline" data-section="models">${tr("管理说话人模型", "Manage speaker models", "管理說話人模型")}</button><h2 class="settings-subtitle">${tr("辅助背景", "Supporting context", "輔助背景")}</h2><div class="settings-group">${toggle("use_knowledge", tr("使用知识库", "Use knowledge base", "使用知識庫"), tr("只检索你明确加入知识库的笔记。用于理解背景，不作为会议事实来源。", "Retrieve notes you explicitly add to the knowledge base as context, never as meeting evidence.", "僅檢索明確加入知識庫的筆記作為背景。"))}${toggle("use_memory", tr("使用记忆", "Use memory", "使用記憶"), tr("使用你维护的表达偏好与工作背景，不自动保存新记忆。", "Use your saved writing preferences and work context. New memories are never saved automatically.", "使用你維護的寫作偏好及背景，不自動新增記憶。"))}</div><p class="setting-help">${tr("已启用的专有名词供纪要参考；转写原文不自动替换。", "Enabled glossary entries guide the writer; original transcripts are not automatically replaced.", "啟用的專有名詞供紀要參考，不自動取代轉寫原文。")}</p>`;
+      )}</div><button class="outline" data-section="models">${tr("管理说话人模型", "Manage speaker models", "管理說話人模型")}</button><h2 class="settings-subtitle">${tr("辅助背景", "Supporting context", "輔助背景")}</h2><div class="settings-group">${toggle("use_knowledge", tr("使用知识库", "Use knowledge base", "使用知識庫"), tr("只检索你明确加入知识库的笔记。用于理解背景，不作为会议事实来源。", "Retrieve notes you explicitly add to the knowledge base as context, never as meeting evidence.", "僅檢索明確加入知識庫的筆記作為背景。"))}${toggle("use_memory", tr("使用记忆", "Use memory", "使用記憶"), tr("使用你维护的表达偏好与工作背景，不自动保存新记忆。", "Use your saved writing preferences and work context. New memories are never saved automatically.", "使用你維護的寫作偏好及背景，不自動新增記憶。"))}</div><p class="setting-help">${tr("已启用的专有名词帮助校正拼写并生成纪要。原识别版本保留，你手动修改的文字不会被覆盖。", "Enabled terms guide spelling corrections and minutes. Original recognition revisions are retained; your manual edits remain protected.", "啟用的專有名詞協助校正拼寫及生成紀要；原識別版本保留，手動修改不被覆蓋。")}</p>`;
     } else if (section === "profiles") {
       content.innerHTML = `${header(tr("配置分享", "Configuration sharing", "設定分享"), tr("把适合某台电脑的模型搭配与外观保存为文件。", "Save a device-specific model pair and appearance as a portable file.", "將適合某台電腦的模型搭配及外觀存為檔案。"))}<div class="settings-group">${row(tr("配置名称", "Configuration name", "設定名稱"), `<input id="profile-name" maxlength="160" value="${tr("我的离线配置", "My offline configuration", "我的離線設定")}">`)}${row(tr("导出当前配置", "Export current configuration", "匯出目前設定"), `<button class="outline" data-settings="export-profile">${glyph("upload")}${tr("导出分享文件", "Export share file", "匯出分享檔案")}</button>`, tr("包含模型 ID、推理参数和外观；不包含模型权重或个人内容。", "Includes model IDs, inference settings, and appearance. No model weights or personal content.", "包含模型 ID、推理參數及外觀，不含模型權重或個人內容。"))}${row(tr("使用别人的配置", "Use a shared configuration", "使用別人的設定"), `<button class="outline" data-settings="import-profile">${glyph("download")}${tr("导入配置文件", "Import configuration", "匯入設定檔")}</button>`, tr("先预览，再应用；缺少的模型可以随后下载。", "Preview before applying, then download any missing models.", "預覽後套用，再下載缺少的模型。"))}</div><button class="outline" data-settings="open-community">${tr("打开官网配置广场", "Open configuration gallery", "開啟官網設定廣場")} ↗</button><p class="setting-help">${tr("在浏览器中查看和投稿；本地导入无需联网。外部配置只供预览，不会自动应用或下载模型。", "Browse and contribute in your browser. Local imports work offline. External profiles are previewed, never automatically applied or downloaded.", "透過瀏覽器查看及投稿，本機匯入不需連網；外部設定僅供預覽，不自動套用或下載。")}</p>${profile ? `<div class="profile-preview"><span class="badge">${tr("待应用配置", "Configuration preview", "待套用設定")}</span><h2>${esc(profile.name)}</h2><p>${esc(profile.hardware_hint)}</p><dl><dt>${tr("转写", "Transcription", "轉寫")}</dt><dd>${esc(profile.preferences.asr_model)}</dd><dt>LLM</dt><dd>${esc(profile.preferences.llm_model)}</dd><dt>${tr("线程 / 上下文", "Threads / context", "執行緒 / 上下文")}</dt><dd>${profile.preferences.threads} / ${profile.preferences.context_size}</dd><dt>${tr("后端 / 资源策略", "Backend / resource policy", "後端 / 資源策略")}</dt><dd>${esc(profile.preferences.inference_backend)} / ${esc(profile.preferences.resource_mode)}</dd><dt>${tr("生成内存预算", "Writer memory budget", "生成記憶體預算")}</dt><dd>${profile.preferences.memory_budget_mib ? `${profile.preferences.memory_budget_mib / 1024} GiB` : tr("自动", "Automatic", "自動")}</dd><dt>${tr("外观 / 自动纪要", "Appearance / automatic minutes", "外觀 / 自動紀要")}</dt><dd>${esc(profile.preferences.appearance.theme)} · ${esc(profile.preferences.appearance.mode)} · ${profile.preferences.appearance.font_size}px / ${profile.preferences.auto_notes ? tr("启用", "On", "啟用") : tr("关闭", "Off", "關閉")}</dd><dt>${tr("说话人 / 知识库 / 记忆", "Speakers / knowledge / memory", "說話人 / 知識庫 / 記憶")}</dt><dd>${[profile.preferences.diarization, profile.preferences.use_knowledge, profile.preferences.use_memory].map((v) => (v ? tr("启用", "On", "啟用") : tr("关闭", "Off", "關閉"))).join(" / ")}</dd></dl><div class="button-row"><button class="primary" data-settings="apply-profile">${tr("应用此配置", "Apply configuration", "套用此設定")}</button><button class="subtle" data-settings="dismiss-profile">${tr("取消", "Cancel")}</button></div></div>` : ""}`;
     } else if (section === "updates") {
@@ -348,7 +420,7 @@ export async function mountSettings(
       const offline = `<span class="badge">${tr("仅本机 · 不可开启上传", "Local only · no upload option", "僅本機 · 無上傳選項")}</span>`;
       const control = (key: keyof NetworkPolicy, label: string) =>
         `<input type="checkbox" role="switch" data-network="${key}" aria-label="${esc(label)}" ${network[key] ? "checked" : ""}>`;
-      content.innerHTML = `${header(tr("隐私与联网", "Privacy & network", "隱私與連網"), tr("内容处理始终离线。可选联网功能单独授权，并且不会随分享配置开启。", "Content processing stays offline. Optional network features have separate device permissions that shared profiles cannot enable.", "內容處理始終離線；可選連網功能獨立授權，不隨分享設定開啟。"))}<div class="settings-group">${row(tr("录音与音频导入", "Recording & audio import", "錄音及音訊匯入"), offline)}${row(tr("转写与说话人分析", "Transcription & speaker analysis", "轉寫及說話人分析"), offline)}${row(tr("AI 纪要、知识库与记忆", "AI minutes, knowledge & memory", "AI 紀要、知識庫及記憶"), offline, tr("仅使用已安装模型。没有云端模型、遥测或内容上传接口。本机进程间通信不连接互联网。", "Uses installed models only. No cloud inference, telemetry, or content-upload endpoint. Local inter-process communication does not use the internet.", "僅使用已安裝模型，無雲端推理、遙測或內容上傳；本機程序通訊不連接網際網路。"))}</div><h2 class="settings-subtitle">${tr("可选联网功能", "Optional network features", "可選連網功能")}</h2><div class="settings-group">${row(tr("软件更新", "Software updates", "軟體更新"), `<button class="outline" data-section="updates">${tr("管理", "Manage")}</button>`, tr("单独授权，手动检查和下载 GitHub 上的签名安装包。", "Separate permission for manual checks and signed GitHub installers.", "獨立授權，手動檢查及下載 GitHub 上的簽章安裝包。"))}${row(tr("允许手动下载模型", "Allow manual model downloads", "允許手動下載模型"), control("allow_model_downloads", tr("允许手动下载模型", "Allow manual model downloads")), tr("只在你点击下载后连接 Hugging Face / GitHub 获取已固定版本的文件并核对哈希。关闭会取消进行中的下载。", "Only your Download action fetches pinned files from Hugging Face / GitHub and verifies hashes. Disabling cancels active downloads.", "僅點擊下載後從 Hugging Face / GitHub 取得固定檔案並核對雜湊；關閉會取消下載。"))}${row(tr("允许打开在线配置广场", "Allow opening the online gallery", "允許開啟線上設定廣場"), control("allow_online_recommendations", tr("允许打开在线配置广场", "Allow opening the online gallery")), tr("由默认浏览器访问 OmaScribe 官网和 Cloudflare。网站可看到网络地址；应用不附带硬件、录音、笔记或配置。投稿需在网页中另行操作。", "Your browser visits the OmaScribe site on Cloudflare, which receives normal web connection metadata. The app sends no hardware, recordings, notes or configuration. Publishing is a separate website action.", "由瀏覽器存取 Cloudflare 上的官網，網站可見網路位址；應用不附帶硬體、錄音、筆記或設定，投稿另行操作。"))}</div><p class="setting-help">${tr("本地文件目前不由应用加密；请使用系统磁盘加密。配置文件只含设置，个人资料备份则包含正文。", "Local files are not app-encrypted; use system disk encryption. Configuration files contain settings only; private-library backups contain your content.", "本機檔案目前未由應用加密，請使用系統磁碟加密。設定檔不含正文，個人資料備份則包含正文。")}</p>`;
+      content.innerHTML = `${header(tr("隐私与联网", "Privacy & network", "隱私與連網"), tr("内容处理始终离线。可选联网功能单独授权，并且不会随分享配置开启。", "Content processing stays offline. Optional network features have separate device permissions that shared profiles cannot enable.", "內容處理始終離線；可選連網功能獨立授權，不隨分享設定開啟。"))}<div class="settings-group">${row(tr("录音与音频导入", "Recording & audio import", "錄音及音訊匯入"), offline)}${row(tr("转写与说话人分析", "Transcription & speaker analysis", "轉寫及說話人分析"), offline)}${row(tr("AI 纪要、知识库与记忆", "AI minutes, knowledge & memory", "AI 紀要、知識庫及記憶"), offline, tr("仅使用已安装模型。没有云端模型、遥测或内容上传接口。本机进程间通信不连接互联网。", "Uses installed models only. No cloud inference, telemetry, or content-upload endpoint. Local inter-process communication does not use the internet.", "僅使用已安裝模型，無雲端推理、遙測或內容上傳；本機程序通訊不連接網際網路。"))}</div><h2 class="settings-subtitle">${tr("可选联网功能", "Optional network features", "可選連網功能")}</h2><div class="settings-group">${row(tr("软件更新", "Software updates", "軟體更新"), `<button class="outline" data-section="updates">${tr("管理", "Manage")}</button>`, tr("单独授权，手动检查和下载 GitHub 上的签名安装包。", "Separate permission for manual checks and signed GitHub installers.", "獨立授權，手動檢查及下載 GitHub 上的簽章安裝包。"))}${row(tr("允许手动下载模型与组件", "Allow model and component downloads", "允許手動下載模型及元件"), control("allow_model_downloads", tr("允许手动下载模型与组件", "Allow model and component downloads")), tr("只在你点击下载后连接 Hugging Face / GitHub 获取已固定版本的文件并核对哈希。关闭会取消进行中的下载。", "Only your Download action fetches pinned files from Hugging Face / GitHub and verifies hashes. Disabling cancels active downloads.", "僅點擊下載後從 Hugging Face / GitHub 取得固定檔案並核對雜湊；關閉會取消下載。"))}${row(tr("允许打开在线配置广场", "Allow opening the online gallery", "允許開啟線上設定廣場"), control("allow_online_recommendations", tr("允许打开在线配置广场", "Allow opening the online gallery")), tr("由默认浏览器访问 OmaScribe 官网和 Cloudflare。网站可看到网络地址；应用不附带硬件、录音、笔记或配置。投稿需在网页中另行操作。", "Your browser visits the OmaScribe site on Cloudflare, which receives normal web connection metadata. The app sends no hardware, recordings, notes or configuration. Publishing is a separate website action.", "由瀏覽器存取 Cloudflare 上的官網，網站可見網路位址；應用不附帶硬體、錄音、筆記或設定，投稿另行操作。"))}</div><p class="setting-help">${tr("本地文件目前不由应用加密；请使用系统磁盘加密。配置文件只含设置，个人资料备份则包含正文。", "Local files are not app-encrypted; use system disk encryption. Configuration files contain settings only; private-library backups contain your content.", "本機檔案目前未由應用加密，請使用系統磁碟加密。設定檔不含正文，個人資料備份則包含正文。")}</p>`;
     } else if (section === "shortcuts") {
       const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl";
       const keys = [
@@ -397,9 +469,9 @@ export async function mountSettings(
     await render();
     options.toast(
       tr(
-        "请先开启手动模型下载权限，再选择下载。",
-        "Enable manual model downloads here, then choose Download.",
-        "請先開啟手動模型下載權限，再選擇下載。",
+        "请先开启手动模型与组件下载权限，再选择下载。",
+        "Enable model and component downloads here, then choose Download.",
+        "請先開啟手動模型及元件下載權限，再選擇下載。",
       ),
     );
     return false;
@@ -414,6 +486,81 @@ export async function mountSettings(
       active = button.dataset.section;
       await render();
       root.querySelector(".settings-scroll")!.scrollTop = 0;
+      return;
+    }
+    if (button.dataset.componentAction) {
+      button.disabled = true;
+      try {
+        const kind = button.dataset.componentAction;
+        if (kind === "check") {
+          if (!(await allowDownload())) return;
+          acceleration = await invoke<ComponentCatalog>(
+            "check_acceleration_components",
+          );
+          const region = root.querySelector("#acceleration-components");
+          if (region && hardware)
+            region.innerHTML = accelerationBody(hardware, acceleration);
+        } else if (kind === "download") {
+          if (!(await allowDownload())) return;
+          await invoke("download_acceleration_component", {
+            id: button.dataset.id,
+          });
+        } else if (kind === "cancel") {
+          await invoke("cancel_acceleration_download", {
+            id: button.dataset.id,
+          });
+        } else if (kind === "remove") {
+          // Bind confirmation to the exact rendered version, even if polling
+          // refreshes the catalog while the dialog is open.
+          const id = button.dataset.id;
+          const version = button.dataset.version;
+          const selected = acceleration.components.find(
+            (entry) => entry.component.id === id && entry.version === version,
+          );
+          if (!selected) {
+            await pollModels();
+            return;
+          }
+          if (
+            !(await confirmDelete(
+              `${tr("移除组件", "Remove component", "移除元件")} · ${selected.component.name}`,
+              tr(
+                "移除后需要重新下载和测试才能再次使用。模型与会议内容会保留。",
+                "Download and test it again to use it after removal. Models and meetings will be kept.",
+                "移除後需要重新下載及測試才能再次使用。模型與會議內容會保留。",
+              ),
+              tr("移除", "Remove", "移除"),
+            ))
+          )
+            return;
+          if (!alive) return;
+          await invoke("remove_acceleration_component", { id, version });
+        } else if (kind === "test") {
+          await invoke("verify_acceleration", { id: button.dataset.id });
+        } else if (kind === "disable") {
+          await invoke("disable_acceleration");
+        } else if (kind === "cancel-test") {
+          await invoke("cancel_notes");
+        }
+        await pollModels();
+      } catch (e) {
+        options.toast(
+          button.dataset.componentAction === "remove"
+            ? tr(
+                "组件正在使用或状态已变化，请结束当前任务并刷新后重试。",
+                "The component is in use or has changed. Finish current tasks, refresh, and try again.",
+                "元件正在使用或狀態已變更，請結束目前任務並重新整理後再試。",
+              )
+            : tr(
+                "暂时无法取得或安装组件。CPU 仍可使用，请稍后重试。",
+                "Components could not be fetched or installed. CPU remains available; try again later.",
+                "暫時無法取得或安裝元件，CPU 仍可使用，請稍後再試。",
+              ),
+          true,
+        );
+      } finally {
+        if (button.isConnected) button.disabled = false;
+      }
       return;
     }
     if (button.dataset.mode) {
@@ -650,6 +797,26 @@ export async function mountSettings(
       models = next;
       const list = root.querySelector("#model-list");
       if (list) list.innerHTML = modelCards();
+      const pair = root.querySelector("#model-selected-pair");
+      if (pair) pair.textContent = modelPairText();
+    }
+    const nextAcceleration = await invoke<ComponentCatalog>(
+      "acceleration_components",
+    );
+    if (
+      acceleration.state === "not_published" &&
+      nextAcceleration.state !== "ready"
+    )
+      nextAcceleration.state = "not_published";
+    if (!alive || active !== "models") return;
+    const region = root.querySelector("#acceleration-components");
+    if (
+      region &&
+      hardware &&
+      JSON.stringify(nextAcceleration) !== JSON.stringify(acceleration)
+    ) {
+      acceleration = nextAcceleration;
+      region.innerHTML = accelerationBody(hardware, acceleration);
     }
   }
   const click = (e: Event) =>
@@ -674,6 +841,8 @@ export async function mountSettings(
       await queue;
     },
     async close() {
+      await microphoneTest?.close();
+      microphoneTest = undefined;
       updateCleanup?.();
       alive = false;
       clearInterval(timer);

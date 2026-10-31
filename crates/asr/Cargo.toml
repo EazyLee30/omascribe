@@ -1,11 +1,15 @@
 [package]
 name = "omascribe-asr"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2021"
 license = "MIT"
 
 [dependencies]
 anyhow = "1"
 serde_json = "1"
+sha2 = "0.10"
 omascribe-core = { path = "../core" }
 sherpa-onnx = "=1.13.8"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

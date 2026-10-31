@@ -28,15 +28,23 @@ pub fn apply(app: &tauri::AppHandle, enabled: bool) -> Reply<()> {
     .decorations(false)
     .transparent(true)
     .shadow(false)
-    .resizable(false)
     .always_on_top(true)
     .visible_on_all_workspaces(true)
     .skip_taskbar(true)
     .focused(false)
     .accept_first_mouse(true)
-    .visible(false)
-    .build()
-    .map_err(err)?;
+    .visible(false);
+    // On Wayland a non-resizable window rejects compositor-driven sizes, so the
+    // pet kept the WebView's natural 710x427: an invisible transparent block
+    // that swallowed clicks and hid whatever was behind it, and expanding
+    // could not grow it either. The surface is undecorated, so the user has no
+    // resize affordance anyway; allow programmatic sizes and let the CSS size
+    // the pet itself.
+    #[cfg(target_os = "linux")]
+    let w = w.resizable(true);
+    #[cfg(not(target_os = "linux"))]
+    let w = w.resizable(false);
+    let w = w.build().map_err(err)?;
     #[cfg(not(target_os = "linux"))]
     {
         let prefs = app.state::<ViewState>().prefs.lock().unwrap().clone();
@@ -75,7 +83,18 @@ pub fn apply(app: &tauri::AppHandle, enabled: bool) -> Reply<()> {
     }
     w.show().map_err(err)?;
     #[cfg(target_os = "linux")]
-    place_hyprland(100, 112, true);
+    {
+        // Wayland clients cannot place themselves, so the compositor moves the
+        // window. Restore the saved anchor there too, in logical coordinates
+        // with the pet kept fully on-screen.
+        let anchor = app
+            .state::<ViewState>()
+            .prefs
+            .lock()
+            .unwrap()
+            .companion_anchor;
+        place_hyprland(100, 112, true, anchor);
+    }
     Ok(())
 }
 
@@ -114,7 +133,19 @@ pub fn set_companion_expanded(app: tauri::AppHandle, expanded: bool) -> Reply<()
             .map_err(err)?;
     }
     #[cfg(target_os = "linux")]
-    place_hyprland(width as u32, height as u32, false);
+    {
+        // Growing or shrinking must keep the pet anchored at the same corner,
+        // otherwise expanding lands somewhere else on screen and the saved
+        // position becomes meaningless.
+        sync_anchor(&app.state::<ViewState>());
+        let anchor = app
+            .state::<ViewState>()
+            .prefs
+            .lock()
+            .unwrap()
+            .companion_anchor;
+        place_hyprland(width as u32, height as u32, false, anchor);
+    }
     if expanded {
         w.set_focus().map_err(err)?;
     }
@@ -143,27 +174,33 @@ pub fn companion_snapshot(
 }
 
 #[tauri::command]
-pub fn companion_start(
+pub async fn companion_start(
     app: tauri::AppHandle,
-    engine: tauri::State<AppState>,
-    views: tauri::State<ViewState>,
+    engine: tauri::State<'_, AppState>,
+    views: tauri::State<'_, ViewState>,
     device: String,
     new_meeting: bool,
 ) -> Reply<String> {
-    let status = engine.status.lock().unwrap().clone();
-    if status.recording || status.paused {
-        return Err("Finish or resume the active recording first".into());
-    }
-    let selected = views.meeting.lock().unwrap().clone();
-    let id = match selected.filter(|_| !new_meeting) {
-        Some(id) => id,
-        None => engine.create_meeting("OmaScribe").map_err(err)?.id,
-    };
-    engine.start_recording(&id, &device, None).map_err(err)?;
-    *views.meeting.lock().unwrap() = Some(id.clone());
-    let _ = app.emit("view-meeting", &id);
-    let _ = app.emit("companion-meeting", &id);
-    Ok(id)
+    let e = engine.inner().clone();
+    let v = views.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let status = e.status.lock().unwrap().clone();
+        if status.recording || status.paused {
+            return Err("Finish or resume the active recording first".into());
+        }
+        let selected = v.meeting.lock().unwrap().clone();
+        let id = match selected.filter(|_| !new_meeting) {
+            Some(id) => id,
+            None => e.create_meeting("OmaScribe").map_err(err)?.id,
+        };
+        e.start_recording(&id, &device, None).map_err(err)?;
+        *v.meeting.lock().unwrap() = Some(id.clone());
+        let _ = app.emit("view-meeting", &id);
+        let _ = app.emit("companion-meeting", &id);
+        Ok(id)
+    })
+    .await
+    .map_err(err)?
 }
 
 pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool {
@@ -171,6 +208,12 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool 
         return false;
     }
     let state = window.state::<ViewState>();
+    // Wayland compositors move the surface, and Tauri's `Moved` event then
+    // reports a stale or unscaled position: the pet saved `[200,224]` on a
+    // 1.6x panel while actually sitting at 700,1500, so the position never
+    // survived a restart. Linux reconciles the anchor from the compositor
+    // instead; see `sync_anchor`.
+    #[cfg(not(target_os = "linux"))]
     if let tauri::WindowEvent::Moved(p) = event {
         if let Ok(size) = window.inner_size() {
             state.prefs.lock().unwrap().companion_anchor =
@@ -186,11 +229,90 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) -> bool 
         let _ = window.app_handle().emit("view-settings", prefs.clone());
         state.mark_dirty();
     }
+    // Hiding is the reliable "user finished moving it" signal on Wayland,
+    // where no `Moved` event arrives for a compositor-driven move.
+    #[cfg(target_os = "linux")]
+    if matches!(
+        event,
+        tauri::WindowEvent::Destroyed | tauri::WindowEvent::CloseRequested { .. }
+    ) {
+        sync_anchor(&state);
+    }
     true
 }
 
+/// Keep the stored anchor in step with the pet's real position.
+///
+/// Wayland reports no `Moved` event for a compositor-driven move, so the saved
+/// position would only refresh when the pet happened to be hidden. Polling the
+/// compositor on a background thread avoids blocking the GTK main thread, and
+/// only runs while the pet is actually visible.
 #[cfg(target_os = "linux")]
-fn place_hyprland(width: u32, height: u32, initial: bool) {
+pub fn start_anchor_sync(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_none() {
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        let Some(window) = app.get_webview_window("companion") else {
+            continue;
+        };
+        if window.is_visible().unwrap_or(false) {
+            sync_anchor(&app.state::<ViewState>());
+        }
+    });
+}
+
+/// Record the pet's real position from the compositor.
+///
+/// Tauri's own position getters disagree with Hyprland's logical coordinates on
+/// a fractionally scaled output, and the `Moved` event only fires for
+/// client-side moves. Hyprland reports `at` in the same logical space the
+/// restore path uses, so store the pet's bottom-right corner from there.
+#[cfg(target_os = "linux")]
+pub fn sync_anchor(views: &ViewState) {
+    if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_none() {
+        return;
+    }
+    let Ok(out) = std::process::Command::new("hyprctl")
+        .args(["clients", "-j"])
+        .output()
+    else {
+        return;
+    };
+    let Ok(clients) = serde_json::from_slice::<Vec<serde_json::Value>>(&out.stdout) else {
+        return;
+    };
+    let Some(window) = clients.iter().find(|w| {
+        w["pid"].as_u64() == Some(std::process::id() as u64)
+            && w["title"].as_str() == Some("OmaScribe Companion")
+    }) else {
+        return;
+    };
+    let (Some(x), Some(y), Some(width), Some(height)) = (
+        window["at"][0].as_i64(),
+        window["at"][1].as_i64(),
+        window["size"][0].as_i64(),
+        window["size"][1].as_i64(),
+    ) else {
+        return;
+    };
+    if width <= 0 || height <= 0 {
+        return;
+    }
+    let anchor = ((x + width) as i32, (y + height) as i32);
+    let mut prefs = views.prefs.lock().unwrap();
+    if prefs.companion_anchor != Some(anchor) {
+        prefs.companion_anchor = Some(anchor);
+        drop(prefs);
+        views.mark_dirty();
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn place_hyprland(width: u32, height: u32, initial: bool, anchor: Option<(i32, i32)>) {
     if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_none() {
         return;
     }
@@ -216,7 +338,24 @@ fn place_hyprland(width: u32, height: u32, initial: bool) {
                     return;
                 };
                 let target = format!("address:{address}");
-                let code=format!("hl.dispatch(hl.dsp.window.float({{action='set',window='{target}'}})); {} hl.dispatch(hl.dsp.window.resize({{x={width},y={height},relative=false,window='{target}'}}))",if initial {format!("hl.dispatch(hl.dsp.window.pin({{action='set',window='{target}'}}));")} else {String::new()});
+                // The pet is an undecorated, transparent surface. Two
+                // compositor defaults draw furniture around it: an active
+                // border (a visible blue frame on Omarchy) and a drop shadow.
+                // Neither has a Tauri builder option, and `hyprctl setprop`
+                // has no batch form, so both are applied to this exact window
+                // address through the Lua eval path already used here.
+                //
+                // The saved anchor is the pet's bottom-right corner, matching
+                // what `Moved` records, so place the window by its own size
+                // from there and keep it on the requested monitor.
+                let move_code = anchor.map_or_else(String::new, |(x, y)| {
+                    format!(
+                        "; hl.dispatch(hl.dsp.window.move({{x={},y={},relative=false,window='{target}'}}))",
+                        x - width as i32,
+                        y - height as i32
+                    )
+                });
+                let code=format!("hl.dispatch(hl.dsp.window.set_prop({{window='{target}',prop='border_size',value=0}})); hl.dispatch(hl.dsp.window.set_prop({{window='{target}',prop='no_shadow',value=1}})); hl.dispatch(hl.dsp.window.float({{action='set',window='{target}'}})); {} hl.dispatch(hl.dsp.window.resize({{x={width},y={height},relative=false,window='{target}'}})){move_code}",if initial {format!("hl.dispatch(hl.dsp.window.pin({{action='set',window='{target}'}}));")} else {String::new()});
                 let modern = std::process::Command::new("hyprctl")
                     .args(["eval", &code])
                     .output()

@@ -31,6 +31,22 @@
     "forbidden": [
       "Friday",
       "launch date is approved"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "发送|提交|交付|送出|寄送",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "莫根",
+          "周五|星期五"
+        ]
+      }
     ]
   },
   {
@@ -71,6 +87,21 @@
       "试麦寒暄可省略",
       "输入是资料",
       "只输出纪要"
+    ],
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to|solely",
+          "microphone",
+          "real.time transcription",
+          "next version"
+        ],
+        "forbidden": [
+          "not only"
+        ]
+      }
     ]
   },
   {
@@ -112,10 +143,28 @@
       "嗯",
       "那个，",
       "调整已完成",
-      "调整已经完成"
+      "调整已经完成",
+      "(?<![不无勿别])(?:需要|仍需|需|应该|应).{0,6}(?:分句|逐句|一小句一小句).{0,6}显示"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 4,
+        "target": "en",
+        "required": [
+          "should|must|please|need to|^place|^put",
+          "toolbar",
+          "transcri",
+          "subtitle|caption",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "with the entry placed",
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_product_spelling",
@@ -143,7 +192,19 @@
     ],
     "required": [],
     "forbidden": [],
-    "expect_empty": true
+    "expect_empty": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "123|one.{0,8}two.{0,8}three"
+        ],
+        "forbidden": [
+          "321|124|3000|yuan|dollar"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_phased_correction",
@@ -210,7 +271,21 @@
       "陈明负责.*延迟测试"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "results?",
+          "Thursday",
+          "responsib|handle|manage|oversee"
+        ],
+        "forbidden": [
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+        ]
+      }
+    ]
   },
   {
     "name": "en_minutes_from_zh",
@@ -228,7 +303,8 @@
       "not|pending|unimplemented"
     ],
     "forbidden": [
-      "[\\u3400-\\u9fff]"
+      "[\\u3400-\\u9fff]",
+      "\\b(?:first|second|third)\\s+meeting\\b"
     ],
     "max_sections": 2,
     "merged_sources": true
@@ -247,14 +323,145 @@
       "离线",
       "Morgan",
       "周四|星期四",
+      "负责|责任",
       "未|待"
     ],
     "forbidden": [
       "发布已获批准",
-      "公开发布已经批准"
+      "公开发布已经批准",
+      "公测",
+      "公測",
+      "beta",
+      "拥有[^。！？]*报告"
     ],
     "max_sections": 2,
-    "merged_sources": true
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "离线",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "公测|公測|beta"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "负责|责任"
+        ],
+        "forbidden": [
+          "莫根",
+          "拥有[^。！？]*报告"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_actual_report_publication",
+    "focus": "**release report** **Morgan**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Morgan will publish the release report on Thursday."
+    ],
+    "required": [
+      "Morgan",
+      "周四|星期四",
+      "发布|发表|出版"
+    ],
+    "forbidden": [
+      "发送|寄送"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "发布|发表|出版"
+        ],
+        "forbidden": [
+          "发送|寄送"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_report_delivery_variant",
+    "focus": "**Nora** **latency report**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Nora will deliver the latency report on Friday. The deployment date is not approved yet."
+    ],
+    "required": [
+      "Nora",
+      "周五|星期五",
+      "交付|提交|送交",
+      "未.*批准|尚未.*批准"
+    ],
+    "forbidden": [
+      "发布延迟报告",
+      "周四|星期四"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Nora",
+          "周五|星期五",
+          "交付|提交|送交",
+          "未.*批准|尚未.*批准"
+        ],
+        "forbidden": [
+          "发布延迟报告",
+          "周四|星期四"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_physical_report_ownership",
+    "focus": "**original report** **Morgan**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Morgan owns the original paper report and will deliver it on Thursday."
+    ],
+    "required": [
+      "Morgan",
+      "周四|星期四",
+      "拥有|所有|持有"
+    ],
+    "forbidden": [
+      "负责[^。！？]*报告"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "周四|星期四",
+          "拥有|所有|持有"
+        ],
+        "forbidden": [
+          "负责[^。！？]*报告"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_long_context_state",
@@ -294,7 +501,46 @@
       "公开发布已经批准",
       "系统音频采集已完成"
     ],
-    "max_sections": 4
+    "max_sections": 4,
+    "translation_checks": [
+      {
+        "seq": 8,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "latency|delay"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      },
+      {
+        "seq": 10,
+        "target": "en",
+        "required": [
+          "林悦",
+          "test report",
+          "Thursday",
+          "not|pending|unapproved"
+        ],
+        "forbidden": [
+          "Lin Yuejian|Lin Yue|Lin Yu",
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+        ]
+      },
+      {
+        "seq": 9,
+        "target": "en",
+        "required": [
+          "system",
+          "audio|sound",
+          "\\b(?:not|incomplete|unfinished|uncompleted)\\b",
+          "release date|launch date"
+        ],
+        "forbidden": []
+      }
+    ]
   },
   {
     "name": "zh_human_paragraph_protected",
@@ -319,7 +565,22 @@
       "下载"
     ],
     "forbidden": [],
-    "max_sections": 3
+    "max_sections": 3,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "responsible for|handled by|manages|handles",
+          "consent|permission|approv"
+        ],
+        "forbidden": [
+          "responsible for (?:Chen Ming|陈明)"
+        ]
+      }
+    ]
   },
   {
     "name": "zh_note_name_spelling",
@@ -398,10 +659,15 @@
     "required": [
       "PixelLedger",
       "分配",
-      "问题|核对"
+      "问题|核对",
+      "好像|似乎|可能|疑似"
     ],
     "forbidden": [
-      "字幕|延迟|算法|格式|captions|latency|预算|会议日期|已经修复"
+      "字幕|延迟|算法|格式|captions|latency|预算|会议日期|已经修复",
+      "检查检查",
+      "试试我的",
+      "出发",
+      "绊倒"
     ],
     "required_transcript": [
       "PixelLedger"
@@ -409,6 +675,2056 @@
     "forbidden_transcript": [
       "PIXEL LEDGRE"
     ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 4,
+        "target": "zh",
+        "required": [
+          "和|以及|而且|并|及"
+        ]
+      },
+      {
+        "seq": 5,
+        "target": "en",
+        "required": [
+          "PixelLedger",
+          "seem|may|might|appears|possibly"
+        ],
+        "forbidden": [
+          "PIXEL LEDGRE"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_windows_gpu_keyword_lines",
+    "focus": "omascribe\n\ngtx1650\n\nnvidia",
+    "transcript": [
+      "这个 OMA SCRIBE 的功能目前还没有正常运行。",
+      "gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。"
+    ],
+    "required": [
+      "OmaScribe",
+      "(?i)gtx1650",
+      "(?i)nvidia",
+      "未|没有"
+    ],
+    "forbidden": [
+      "已经完成|已经修复|已优化"
+    ],
+    "required_transcript": [
+      "OmaScribe"
+    ],
+    "forbidden_transcript": [
+      "OMA SCRIBE"
+    ]
+  },
+  {
+    "name": "en_incremental_separate_topics",
+    "focus": "**budget** **accessibility** **Riley**",
+    "phases": [
+      {
+        "transcript": [
+          "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "3000",
+            "Thursday",
+            "not|pending|unapproved"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "3000",
+            "Thursday",
+            "Riley",
+            "Tuesday",
+            "not|pending|unapproved"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "5000",
+            "Thursday",
+            "Riley",
+            "Tuesday",
+            "not|pending|unapproved"
+          ],
+          "forbidden": [
+            "amount.{0,20}3000",
+            "3000.{0,20}budget remains"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Mic check. Hello. Thank you."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "5000",
+            "Riley",
+            "Tuesday"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "Morgan",
+      "5000",
+      "Thursday",
+      "Riley",
+      "Tuesday",
+      "not|pending|unapproved"
+    ],
+    "forbidden": [
+      "accessibility test is complete",
+      "budget is approved"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "3000",
+          "未.*批准|尚未.*批准",
+          "负责|承担|主管"
+        ],
+        "forbidden": [
+          "莫根|元|美元",
+          "拥有|持有|审核权|审查权|审批权"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周二|星期二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "莱利",
+          "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)(?:二|2)"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "5000",
+          "Morgan",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "元|美元"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_incremental_withdrawal",
+    "focus": "**展览** **预算** **刘老师**",
+    "phases": [
+      {
+        "transcript": [
+          "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "周五",
+            "3000",
+            "未|没有|待"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "5000",
+            "撤回|取消|不再",
+            "未|没有|待"
+          ],
+          "forbidden": [
+            "将于周五开放",
+            "周五开放已确定"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        ],
+        "expect": {
+          "required": [
+            "刘老师",
+            "陈老师",
+            "5000",
+            "下周三",
+            "未|待",
+            "撤回|取消|不再"
+          ],
+          "forbidden": [
+            "页面已经完成",
+            "周五开放已确定"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "刘老师",
+      "陈老师",
+      "5000",
+      "下周三",
+      "未|待",
+      "撤回|取消|不再"
+    ],
+    "forbidden": [
+      "页面已经完成",
+      "将于周五开放"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 3,
+        "target": "en",
+        "required": [
+          "陈老师",
+          "test(?:ing)? link",
+          "Wednesday",
+          "next week|next Wednesday",
+          "not|unfinished|incomplete",
+          "page",
+          "reservation|booking|appointment"
+        ],
+        "forbidden": [
+          "page.{0,40}(?:released|published)"
+        ]
+      },
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "刘老师",
+          "arrang|set(?:ting)?\\s*up|prepar|decorat|layout"
+        ],
+        "forbidden": [
+          "\\b(?:Mr|Mrs|Ms|Miss)\\.?\\s*(?:Liu|刘)"
+        ]
+      },
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "刘老师",
+          "arrang|set(?:ting)?\\s*up|prepar|decorat|layout"
+        ],
+        "forbidden": [
+          "\\b(?:Mr|Mrs|Ms|Miss)\\.?\\s*(?:Liu|刘)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_incremental_completion",
+    "focus": "**upload** **Morgan**",
+    "phases": [
+      {
+        "transcript": [
+          "The upload verification is not completed. Morgan will run it on Thursday."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "Thursday",
+            "not completed|not finished|pending"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+        ],
+        "expect": {
+          "required": [
+            "Morgan",
+            "Thursday",
+            "completed|finished"
+          ],
+          "forbidden": [
+            "still pending",
+            "remains incomplete",
+            "not yet completed",
+            "Morgan will run"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "Morgan",
+      "Thursday",
+      "completed|finished"
+    ],
+    "forbidden": [
+      "still pending",
+      "remains incomplete",
+      "not yet completed",
+      "verification is not completed",
+      "Morgan will run"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "完成",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "莫根"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_sparse_unapproved",
+    "focus": "Budget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget of 3000 is not approved."
+    ],
+    "required": [
+      "3000",
+      "not|unapproved|hasn.t|isn.t"
+    ],
+    "forbidden": [
+      "meeting.{0,20}(?:concluded|ended)",
+      "no (?:further )?action",
+      "other topics",
+      "no changes",
+      "no corrections"
+    ],
+    "max_body_words": 22,
+    "max_sections": 1
+  },
+  {
+    "name": "en_sparse_unapproved_passive",
+    "focus": "Budget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget of 3000 hasn't been approved."
+    ],
+    "required": [
+      "3000",
+      "not|unapproved|hasn.t|isn.t"
+    ],
+    "forbidden": [
+      "meeting.{0,20}(?:concluded|ended)",
+      "no (?:further )?action",
+      "other topics",
+      "no changes",
+      "no corrections"
+    ],
+    "max_body_words": 22,
+    "max_sections": 1
+  },
+  {
+    "name": "en_explicit_meeting_closure",
+    "focus": "Meeting closure",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The meeting has ended. No further action has been taken."
+    ],
+    "required": [
+      "meeting.{0,20}(?:ended|concluded)",
+      "no.{0,20}action.{0,30}taken"
+    ],
+    "max_body_words": 28,
+    "max_sections": 1
+  },
+  {
+    "name": "en_budget_invoice_same_amount",
+    "focus": "Budget and invoice",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "The budget amount is 3000, not approved yet.",
+      "An invoice for 3000 is awaiting review.",
+      "The budget amount is corrected to 5000, still not approved."
+    ],
+    "required": [
+      "5000",
+      "invoice.{0,40}3000",
+      "not|unapproved|pending"
+    ],
+    "forbidden": [
+      "budget(?: amount)? (?:is |of |remains )?3000",
+      "no (?:indication|mention|evidence) of.{0,20}deadline",
+      "source passage",
+      "superseded",
+      "current_budget"
+    ],
+    "max_sections": 2,
+    "max_body_words": 45
+  },
+  {
+    "name": "en_completion_independent_pending",
+    "focus": "**upload** **invoice**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "The upload verification is not completed. Morgan will run it on Thursday.",
+          "The invoice review has not been completed. Riley will run it on Friday."
+        ],
+        "expect": {
+          "required": [
+            "upload",
+            "invoice",
+            "Morgan",
+            "Riley",
+            "Thursday",
+            "Friday",
+            "not|pending"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "Morgan confirms the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+        ],
+        "expect": {
+          "required": [
+            "upload.{0,70}(?:completed|finished)",
+            "invoice.{0,70}(?:not|pending)",
+            "Morgan",
+            "Riley",
+            "Thursday",
+            "Friday"
+          ],
+          "forbidden": [
+            "verification is not completed",
+            "Morgan will run"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "upload.{0,70}(?:completed|finished)",
+      "invoice.{0,70}(?:not|pending)",
+      "Morgan",
+      "Riley",
+      "Thursday",
+      "Friday"
+    ],
+    "forbidden": [
+      "verification is not completed",
+      "Morgan will run"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周五|星期五",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "里利|莱利"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "Morgan",
+          "完成",
+          "周四|星期四"
+        ],
+        "forbidden": [
+          "莫根"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_incremental_completion",
+    "focus": "**上传验证** **发票核对**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "上传验证尚未完成。",
+          "发票核对尚未完成。"
+        ],
+        "expect": {
+          "required": [
+            "上传验证",
+            "发票核对",
+            "未完成|待完成"
+          ]
+        }
+      },
+      {
+        "transcript": [
+          "上传验证现已完成。"
+        ],
+        "expect": {
+          "required": [
+            "上传验证.{0,12}(?:已完成|已经完成|完成)",
+            "发票核对.{0,12}(?:未完成|待完成)"
+          ],
+          "forbidden": [
+            "上传验证尚未完成",
+            "上传验证还没有完成"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "上传验证.{0,12}(?:已完成|已经完成|完成)",
+      "发票核对.{0,12}(?:未完成|待完成)"
+    ],
+    "forbidden": [
+      "上传验证尚未完成",
+      "上传验证还没有完成"
+    ],
     "max_sections": 2
+  },
+  {
+    "name": "zh_windows_long_acceptance",
+    "focus": "OmaScribe",
+    "transcript": [
+      "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+      "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+      "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "OmaScribe",
+      "Alice",
+      "NVIDIA",
+      "GTX\\s*1650",
+      "3000",
+      "周四|星期四",
+      "周五|星期五",
+      "未|不.*批准",
+      "可选|按需|选择",
+      "本机|本地|电脑|计算机"
+    ],
+    "max_sections": 2,
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "zh",
+        "required": [
+          "Alice",
+          "NVIDIA",
+          "GTX\\s*1650",
+          "3000",
+          "未|不.*批准"
+        ],
+        "forbidden": [
+          "艾莉丝|爱丽丝"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_windows_long_acceptance",
+    "focus": "OmaScribe",
+    "transcript": [
+      "The OmaScribe Windows acceptance check is on Thursday, not Friday.",
+      "The budget is provisionally 3000 yuan and has not been approved. Alice will check the NVIDIA GTX1650 local model.",
+      "Recordings, transcripts and minutes stay on this computer. GPU components are optional downloads and require a local test before enabling."
+    ],
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "required": [
+      "OmaScribe",
+      "Alice",
+      "NVIDIA",
+      "GTX\\s*1650",
+      "3000",
+      "Thursday",
+      "Friday",
+      "not.*approved",
+      "optional",
+      "this computer"
+    ],
+    "max_sections": 2,
+    "merged_sources": true
+  },
+  {
+    "name": "zh_windows_uppercase_asr",
+    "focus": "",
+    "transcript": [
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+      "LICE WILL CHECK THE ENVY A CARD",
+      "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+      "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+      "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "周四|星期四",
+      "周五|星期五",
+      "预算",
+      "未|不.*批准",
+      "本机|本地|电脑|计算机",
+      "3000|三千",
+      "ILLMIS\\s+CRIBE",
+      "LLAS\\s+CRIBE",
+      "(?<![A-Za-z0-9])LICE(?![A-Za-z0-9])",
+      "ENVY A CARD",
+      "ALICE",
+      "UN VIDEO CARD",
+      "录音|音频|录制"
+    ],
+    "max_sections": 2,
+    "merged_sources": true,
+    "forbidden": [
+      "三万美元",
+      "30000"
+    ],
+    "translation_checks": [
+      {
+        "seq": 5,
+        "target": "zh",
+        "required": [
+          "ALICE",
+          "UN VIDEO CARD",
+          "未|没有|尚",
+          "检查|检验|核对"
+        ],
+        "forbidden": [
+          "IT HAS NOT BEEN APPROVED",
+          "NVIDIA|英伟达",
+          "UN VIDEO CARD[^。！？；;\\n]{0,24}(?:检查|核对|检验)[^。！？；;\\n]{0,24}ALICE",
+          "它尚未批准"
+        ]
+      },
+      {
+        "seq": 3,
+        "target": "zh",
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机",
+          "周五|星期五",
+          "不是|并非|不.*截止"
+        ],
+        "forbidden": []
+      }
+    ]
+  },
+  {
+    "name": "zh_recorded_mixed_prose_fidelity",
+    "focus": "",
+    "transcript": [
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
+      "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+      "邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+      "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+      "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "当迪大学",
+      "邓迪大学",
+      "(?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+    ],
+    "forbidden": [
+      "迪尔大学",
+      "(?:尽管|虽然)[^，。；,.;!?！？]{0,20}音乐已经结束"
+    ],
+    "max_sections": 2,
+    "merged_sources": true,
+    "translation_checks": [
+      {
+        "seq": 2,
+        "target": "en",
+        "required": [
+          "当迪大学",
+          "PAMELA\\s+FURGO森"
+        ],
+        "forbidden": [
+          "Denver|迪尔"
+        ]
+      },
+      {
+        "seq": 4,
+        "target": "en",
+        "required": [
+          "邓迪大学",
+          "潘\\s+MALE\\s+FERGUSON"
+        ]
+      },
+      {
+        "seq": 6,
+        "target": "en",
+        "required": [
+          "潘\\s+MALE\\s+FERGUSTON"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_mixed_script_task_owner",
+    "focus": "Alice负责检查",
+    "transcript": [
+      "Alice负责检查显卡。"
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "required": [
+      "Alice",
+      "检查|核对|检验"
+    ],
+    "max_sections": 1,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "Alice",
+          "check|inspect|examin|verif"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_phase_exclusive_scope",
+    "focus": "**recording** **scope**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段只支持麦克风录音，系统音频将在下个版本加入。"
+    ],
+    "required": [
+      "only|limited to|restricted to",
+      "microphone",
+      "next version"
+    ],
+    "forbidden": [
+      "not only"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to",
+          "microphone",
+          "next version"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_phase_nonexclusive_scope",
+    "focus": "**recording**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段实现麦克风录音与实时转写。"
+    ],
+    "required": [
+      "microphone",
+      "transcri"
+    ],
+    "forbidden": [
+      "only|limited to|restricted to|solely"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "microphone",
+          "transcri"
+        ],
+        "forbidden": [
+          "only|limited to|restricted to|solely"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_toolbar_existing_state",
+    "focus": "**toolbar** **transcription**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。"
+    ],
+    "required": [
+      "toolbar",
+      "transcri",
+      "subtitle|caption"
+    ],
+    "forbidden": [
+      "should|must|need to|requested"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "toolbar",
+          "transcri",
+          "subtitle|caption"
+        ],
+        "forbidden": [
+          "should|must|need to|requested"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_toolbar_requested_state",
+    "focus": "**toolbar** **transcription**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+      "这两项调整还没有完成。"
+    ],
+    "required": [
+      "should|must|please|need to",
+      "toolbar",
+      "not.*completed|not.*finished|pending",
+      "transcri",
+      "caption|subtitle"
+    ],
+    "forbidden": [
+      "already in the toolbar",
+      "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "should|must|please|need to|^place|^put",
+          "toolbar",
+          "transcri",
+          "subtitle|caption"
+        ],
+        "forbidden": [
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_compound_scope_and_request",
+    "focus": "**scope** **toolbar**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+    ],
+    "required": [
+      "only|limited to|restricted to",
+      "microphone",
+      "should|must|need to|please",
+      "toolbar",
+      "not.*completed|not.*finished|pending",
+      "transcri",
+      "caption|subtitle"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "only|limited to|restricted to",
+          "microphone",
+          "should|must|need to|please",
+          "toolbar",
+          "not.*completed|not.*finished|pending"
+        ],
+        "forbidden": [
+          "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+        ]
+      }
+    ],
+    "forbidden": [
+      "\\b(?:is|are) (?:already )?(?:available|ready|enabled)\\b"
+    ]
+  },
+  {
+    "name": "en_named_download_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "离线模型下载由陈明负责，下载必须获得用户同意。"
+    ],
+    "required": [
+      "陈明",
+      "download",
+      "responsible for|handled by|manages|handles",
+      "consent|permission|approv"
+    ],
+    "forbidden": [
+      "responsible for (?:Chen Ming|陈明)",
+      "[（(]\\s*[A-L]\\s*[)）]"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "responsible for|handled by|manages|handles",
+          "consent|permission|approv"
+        ],
+        "forbidden": [
+          "responsible for (?:Chen Ming|陈明)",
+          "[（(]\\s*[A-L]\\s*[)）]"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_other_named_task_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "构建检查由李华负责，完成前不能发布。"
+    ],
+    "required": [
+      "李华",
+      "build",
+      "responsible for|handled by|manages|handles",
+      "not|cannot|before|until"
+    ],
+    "forbidden": [
+      "responsible for (?:Li Hua|李华)",
+      "李华[^.。]*\\band cannot be (?:published|released)",
+      "check[^.。]*\\bwhich cannot be (?:published|released)",
+      "[（(]\\s*[A-L]\\s*[)）]"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "李华",
+          "build",
+          "responsible for|handled by|manages|handles",
+          "not|cannot|before|until"
+        ],
+        "forbidden": [
+          "responsible for (?:Li Hua|李华)",
+          "李华[^.。]*\\band cannot be (?:published|released)",
+          "check[^.。]*\\bwhich cannot be (?:published|released)",
+          "[（(]\\s*[A-L]\\s*[)）]"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_future_named_task_owner",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "模型下载将由陈明负责，目前尚未获得用户同意。"
+    ],
+    "required": [
+      "陈明",
+      "download",
+      "will|going to",
+      "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
+    ],
+    "forbidden": [
+      "陈明 is responsible for",
+      "[（(]\\s*[A-L]\\s*[)）]"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈明",
+          "download",
+          "will|going to",
+          "not yet|not.*obtained|no user consent has been obtained|has not (?:yet )?(?:given|granted|provided) consent|pending"
+        ],
+        "forbidden": [
+          "陈明 is responsible for",
+          "[（(]\\s*[A-L]\\s*[)）]"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_generic_task_actor",
+    "focus": "**task** **responsibility**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "构建任务由服务器负责，人工不需要介入。"
+    ],
+    "required": [
+      "server",
+      "build",
+      "responsible|handl|manag",
+      "not|no "
+    ],
+    "forbidden": [
+      "陈明",
+      "李华",
+      "responsible for (?:the )?server",
+      "[（(]\\s*[A-L]\\s*[)）]"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "server",
+          "build",
+          "responsible|handl|manag",
+          "not|no "
+        ],
+        "forbidden": [
+          "陈明",
+          "李华",
+          "responsible for (?:the )?server",
+          "[（(]\\s*[A-L]\\s*[)）]"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_metric_report_requirements",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_word_metric_only",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "报告必须包括词错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "word error rate|WER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "character error rate|\\bCER\\b",
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "word error rate|WER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "character error rate|\\bCER\\b",
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_sentence_metric_allowed",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括句错率和转写延迟，不能只写处理成功。"
+    ],
+    "required": [
+      "sentence error rate|SER",
+      "latency|delay",
+      "not|rather than|instead"
+    ],
+    "forbidden": [
+      "character error rate|\\bCER\\b",
+      "word error rate|\\bWER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "sentence error rate|SER",
+          "latency|delay",
+          "not|rather than|instead"
+        ],
+        "forbidden": [
+          "character error rate|\\bCER\\b",
+          "word error rate|\\bWER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_closed_metric_request",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_metric_acronyms",
+    "focus": "**report** **metrics**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "The test report must include CER and WER and transcription latency, not only successful processing."
+    ],
+    "required": [
+      "字错率|字符错误率|CER",
+      "词错率|单词错误率|WER",
+      "延迟"
+    ],
+    "forbidden": [
+      "句错率|sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "字错率|字符错误率|CER",
+          "词错率|单词错误率|WER",
+          "延迟"
+        ],
+        "forbidden": [
+          "句错率|sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_metric_with_following_fact",
+    "focus": "**report** **metrics** **cache**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告要包括字错率、词错率。缓存保存在本机。"
+    ],
+    "required": [
+      "character error rate|CER",
+      "word error rate|WER",
+      "cache",
+      "local|device|computer|machine"
+    ],
+    "forbidden": [
+      "sentence error rate|\\bSER\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "character error rate|CER",
+          "word error rate|WER",
+          "cache",
+          "local|device|computer|machine"
+        ],
+        "forbidden": [
+          "sentence error rate|\\bSER\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_submission_schedule",
+    "focus": "**latency** **results**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "实时转写的延迟测试由我负责，结果周四提交。"
+    ],
+    "required": [
+      "latency|delay",
+      "test",
+      "responsib|handle|manage|oversee",
+      "results?",
+      "Thursday"
+    ],
+    "forbidden": [
+      "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "latency|delay",
+          "test",
+          "responsib|handle|manage|oversee",
+          "results?",
+          "Thursday"
+        ],
+        "forbidden": [
+          "\\b(?:was|were|has been|have been|had been)\\s+(?:submitted|sent|delivered)\\b|(?<!be )(?<!been )\\bsubmitted\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_test_link_schedule",
+    "focus": "**page** **test link**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+    ],
+    "required": [
+      "陈老师",
+      "page",
+      "test(?:ing)? link",
+      "Wednesday",
+      "next week|next Wednesday",
+      "not|unfinished|incomplete",
+      "reservation|booking|appointment"
+    ],
+    "forbidden": [
+      "page.{0,40}(?:released|published)"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "陈老师",
+          "page",
+          "test(?:ing)? link",
+          "Wednesday",
+          "next week|next Wednesday",
+          "not|unfinished|incomplete",
+          "page",
+          "reservation|booking|appointment"
+        ],
+        "forbidden": [
+          "page.{0,40}(?:released|published)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_actual_submission_completion",
+    "focus": "**test report**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "测试报告已经在周四提交了。"
+    ],
+    "required": [
+      "test report",
+      "Thursday",
+      "submitted|delivered",
+      "was|has been|already"
+    ],
+    "forbidden": [
+      "is to submit|to be submitted|will submit"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "test report",
+          "Thursday",
+          "submitted|delivered",
+          "was|has been|already"
+        ],
+        "forbidden": [
+          "is to submit|to be submitted|will submit"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "en_actual_page_publication",
+    "focus": "**page** **test link**",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "transcript": [
+      "预约页面将于下周三发布，测试链接已发送。"
+    ],
+    "required": [
+      "reservation|booking|appointment",
+      "page",
+      "Wednesday",
+      "next week|next Wednesday",
+      "test(?:ing)? link",
+      "already sent|has been sent|was sent"
+    ],
+    "forbidden": [
+      "page is to be sent"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "reservation|booking|appointment",
+          "page",
+          "Wednesday",
+          "next week|next Wednesday",
+          "test(?:ing)? link",
+          "already sent|has been sent|was sent"
+        ],
+        "forbidden": [
+          "page is to be sent"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_explicit_this_weekday",
+    "focus": "**Riley** **test**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "(?:本|这(?:个)?)(?:周|星期|礼拜)二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:下|上)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "(?:本|这(?:个)?)(?:周|星期|礼拜)二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:下|上)(?:周|星期|礼拜)二",
+          "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_explicit_next_weekday",
+    "focus": "**Riley** **test**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility next Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "下(?:个)?(?:周|星期|礼拜)二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:本|这(?:个)?|上)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "下(?:个)?(?:周|星期|礼拜)二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:本|这(?:个)?|上)(?:周|星期|礼拜)二",
+          "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_absolute_weekday_scope",
+    "focus": "**date**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "The meeting date is Tuesday, 2024-5-7."
+    ],
+    "required": [
+      "2024",
+      "5月|五月",
+      "7日|七日",
+      "周二|星期二"
+    ],
+    "forbidden": [
+      "(?:本|这|下|上)(?:周|星期|礼拜)"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "2024",
+          "5月|五月",
+          "7日|七日",
+          "周二|星期二"
+        ],
+        "forbidden": [
+          "(?:本|这|下|上)(?:周|星期|礼拜)"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_recording_retention_local",
+    "focus": "",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+    ],
+    "required": [
+      "录音|音频|录制",
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机",
+      "周五|星期五",
+      "不是|并非|不.*截止"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": []
+      }
+    ]
+  },
+  {
+    "name": "zh_notes_only_retention",
+    "focus": "",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Meeting notes should stay on this computer."
+    ],
+    "required": [
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机"
+    ],
+    "forbidden": [
+      "录音|音频|录制"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "录音|音频|录制"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_unqualified_weekday",
+    "focus": "**Riley**",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+    ],
+    "required": [
+      "Riley",
+      "周二|星期二",
+      "键盘|keyboard",
+      "未|没有|尚"
+    ],
+    "forbidden": [
+      "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)二"
+    ],
+    "max_sections": 2,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "Riley",
+          "周二|星期二",
+          "未|没有|尚"
+        ],
+        "forbidden": [
+          "(?:本|这(?:个)?|下(?:个)?|上(?:个)?)(?:周|星期|礼拜)二",
+          "莱利"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zh_unspoken_honorific_note",
+    "focus": "**刘老师** **录音**",
+    "transcript": [
+      "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+    ],
+    "required": [
+      "周五|星期五",
+      "不是|并非|不.*截止",
+      "录音|音频",
+      "会议(?:笔记|记录|纪要)",
+      "本机|本地|电脑|计算机"
+    ],
+    "forbidden": [
+      "刘老师",
+      "\\bLiu\\b"
+    ],
+    "max_sections": 1,
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "周五|星期五",
+          "不是|并非|不.*截止",
+          "录音|音频",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "刘老师",
+          "\\bLiu\\b"
+        ]
+      }
+    ],
+    "preferences": {
+      "minutes_language": "zh"
+    }
+  },
+  {
+    "name": "en_late_note_spelling_sync",
+    "focus": "local test\n\nbudget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "CEDARLEDGER has not completed the local test. The budget has not been approved."
+        ],
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ]
+        }
+      },
+      {
+        "transcript": [],
+        "save_note": {
+          "content": "CedarLedger",
+          "kind": "document"
+        },
+        "run_generation": false,
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CedarLedger"
+          ],
+          "forbidden_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "required_transcript": [
+            "CedarLedger"
+          ],
+          "forbidden_transcript": [
+            "CEDARLEDGER"
+          ]
+        }
+      }
+    ],
+    "required": [
+      "CedarLedger",
+      "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+      "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+    ],
+    "forbidden": [
+      "has been approved",
+      "has completed",
+      "will complete"
+    ],
+    "required_verbatim": [
+      "CedarLedger"
+    ],
+    "forbidden_verbatim": [
+      "CEDARLEDGER"
+    ],
+    "required_transcript": [
+      "CedarLedger"
+    ],
+    "forbidden_transcript": [
+      "CEDARLEDGER"
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "zh_adjacent_spoken_model",
+    "focus": "设备\n\n测试\n\n预算",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "transcript": [
+      "设备代号是MX二七五零，测试尚未完成，预算尚未批准。"
+    ],
+    "required": [
+      "MX(?:2750|二七五零)",
+      "测试[^。]{0,25}(?:尚未|未完成)",
+      "预算[^。]{0,25}(?:尚未|未批准)"
+    ],
+    "forbidden": [
+      "测试已经完成",
+      "测试已完成",
+      "预算已经批准",
+      "预算已批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "en",
+        "required": [
+          "MX2750",
+          "(?:not|incomplete|unfinished)[^.]{0,50}(?:complet|finish)|(?:incomplete|unfinished)",
+          "(?:budget[^.]{0,50}(?:not|unapproved)|(?:not|unapproved)[^.]{0,50}budget)"
+        ],
+        "forbidden": [
+          "has been approved",
+          "has completed",
+          "will complete"
+        ]
+      }
+    ],
+    "max_sections": 1
+  },
+  {
+    "name": "en_existing_document_spelling_only_sync",
+    "focus": "CEDARLEDGER\n\nlocal test\n\nbudget",
+    "preferences": {
+      "minutes_language": "en"
+    },
+    "phases": [
+      {
+        "transcript": [
+          "CEDARLEDGER has not completed the local test. The budget has not been approved."
+        ],
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "forbidden_verbatim": [
+            "CedarLedger"
+          ]
+        }
+      },
+      {
+        "transcript": [],
+        "save_note": {
+          "content": "CedarLedger\n\nlocal test\n\nbudget",
+          "kind": "document",
+          "edit_existing_document": true
+        },
+        "run_generation": true,
+        "preserve_minutes_generation": true,
+        "expect": {
+          "required": [
+            "CedarLedger",
+            "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+            "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+          ],
+          "forbidden": [
+            "has been approved",
+            "has completed",
+            "will complete"
+          ],
+          "required_verbatim": [
+            "CedarLedger"
+          ],
+          "forbidden_verbatim": [
+            "CEDARLEDGER"
+          ],
+          "required_transcript": [
+            "CedarLedger"
+          ],
+          "forbidden_transcript": [
+            "CEDARLEDGER"
+          ],
+          "translation_checks": [
+            {
+              "seq": 1,
+              "target": "zh",
+              "revision": 2,
+              "required": [
+                "(?:尚未|没有|未|不)[^。]{0,20}(?:完成|结束)|(?:未完成|尚未完成)",
+                "预算[^。]{0,30}(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)|(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)[^。]{0,30}预算"
+              ],
+              "forbidden": [
+                "已经完成",
+                "已完成",
+                "已经批准",
+                "已批准"
+              ],
+              "required_verbatim": [
+                "CedarLedger"
+              ],
+              "forbidden_verbatim": [
+                "CEDARLEDGER"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "required": [
+      "CedarLedger",
+      "(?:not|hasn.t|incomplete|unfinished)[^.]{0,70}(?:complet|finish)|(?:incomplete|unfinished)",
+      "(?:budget[^.]{0,60}(?:not|unapproved)|(?:not|unapproved)[^.]{0,60}budget)"
+    ],
+    "forbidden": [
+      "has been approved",
+      "has completed",
+      "will complete"
+    ],
+    "required_verbatim": [
+      "CedarLedger"
+    ],
+    "forbidden_verbatim": [
+      "CEDARLEDGER"
+    ],
+    "required_transcript": [
+      "CedarLedger"
+    ],
+    "forbidden_transcript": [
+      "CEDARLEDGER"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "revision": 2,
+        "required": [
+          "(?:尚未|没有|未|不)[^。]{0,20}(?:完成|结束)|(?:未完成|尚未完成)",
+          "预算[^。]{0,30}(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)|(?:尚未|没有|未|不)[^。]{0,15}(?:批准|获批)[^。]{0,30}预算"
+        ],
+        "forbidden": [
+          "已经完成",
+          "已完成",
+          "已经批准",
+          "已批准"
+        ],
+        "required_verbatim": [
+          "CedarLedger"
+        ],
+        "forbidden_verbatim": [
+          "CEDARLEDGER"
+        ]
+      }
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_punctuation_note_captions",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "focus": "C++\nNode.js\nGPT-4",
+    "transcript": [
+      "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
+    ],
+    "required_verbatim": [
+      "C++",
+      "Node.js",
+      "GPT-4"
+    ],
+    "required": [
+      "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+      "(?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+    ],
+    "forbidden": [
+      "已完成",
+      "已经完成",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required_verbatim": [
+          "C++",
+          "Node.js",
+          "GPT-4"
+        ],
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+          "(?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "已完成",
+          "已经完成",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_generic_note_keeps_source_plural",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "focus": "录音 transcription",
+    "transcript": [
+      "The transcriptions are incomplete. The report is not approved."
+    ],
+    "required": [
+      "(?:转写|转录)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:完成|结束|完整)",
+      "(?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+    ],
+    "required_transcript": [
+      "The transcriptions are incomplete\\."
+    ],
+    "forbidden_transcript": [
+      "The transcription are incomplete\\."
+    ],
+    "forbidden": [
+      "已完成",
+      "已经完成",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束|完整)",
+          "(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "已完成",
+          "已经完成",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 2
+  },
+  {
+    "name": "en_unused_punctuation_notes_add_no_names",
+    "preferences": {
+      "minutes_language": "zh"
+    },
+    "focus": "C++\nNode.js\nGPT-4",
+    "transcript": [
+      "The report remains unapproved."
+    ],
+    "required": [
+      "(?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+    ],
+    "forbidden": [
+      "C\\+\\+",
+      "Node\\.js",
+      "GPT-4",
+      "已批准",
+      "已经批准"
+    ],
+    "translation_checks": [
+      {
+        "seq": 1,
+        "target": "zh",
+        "required": [
+          "(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "forbidden": [
+          "C\\+\\+",
+          "Node\\.js",
+          "GPT-4",
+          "已批准",
+          "已经批准"
+        ]
+      }
+    ],
+    "max_sections": 1
   }
 ]

@@ -905,6 +905,25 @@ dialog p {
   border-color: var(--border);
   font-size: 14px;
 }
+.edit-note-terms {
+  margin-top: 12px;
+}
+.edit-note-terms p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.edit-note-term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.edit-note-term-list button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
 .export-path {
   overflow-wrap: anywhere;
   font-family: ui-monospace, monospace;

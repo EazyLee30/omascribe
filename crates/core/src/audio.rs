@@ -7,15 +7,217 @@ use serde_json::Value;
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
-    path::Path,
-    process::{Command, Stdio},
-    time::{Duration, Instant},
+    path::{Path, PathBuf},
+    process::{Child, Command, Stdio},
+    sync::{Mutex, OnceLock},
+    time::{Duration, Instant, SystemTime},
 };
 
 pub use crate::platform::child_command;
 
+#[derive(Clone, PartialEq, Eq)]
+struct FfmpegIdentity {
+    path: PathBuf,
+    bytes: u64,
+    modified: Option<SystemTime>,
+    created: Option<SystemTime>,
+    #[cfg(unix)]
+    file: (u64, u64, i64, i64),
+    #[cfg(windows)]
+    file: (u64, [u8; 16], i64),
+}
+fn ffmpeg_identity(path: &Path) -> Result<FfmpegIdentity> {
+    let file = File::open(path)?;
+    let metadata = file.metadata()?;
+    anyhow::ensure!(metadata.is_file(), "FFmpeg executable is not a file");
+    #[cfg(unix)]
+    let identity = {
+        use std::os::unix::fs::MetadataExt;
+        (
+            metadata.dev(),
+            metadata.ino(),
+            metadata.ctime(),
+            metadata.ctime_nsec(),
+        )
+    };
+    #[cfg(windows)]
+    let identity = {
+        use std::{mem::size_of, os::windows::io::AsRawHandle};
+        use windows::Win32::{
+            Foundation::HANDLE,
+            Storage::FileSystem::{
+                FileBasicInfo, FileIdInfo, GetFileInformationByHandleEx, FILE_BASIC_INFO,
+                FILE_ID_INFO,
+            },
+        };
+        let mut id = FILE_ID_INFO::default();
+        let mut basic = FILE_BASIC_INFO::default();
+        unsafe {
+            let handle = HANDLE(file.as_raw_handle());
+            GetFileInformationByHandleEx(
+                handle,
+                FileIdInfo,
+                (&mut id as *mut FILE_ID_INFO).cast(),
+                size_of::<FILE_ID_INFO>() as u32,
+            )?;
+            GetFileInformationByHandleEx(
+                handle,
+                FileBasicInfo,
+                (&mut basic as *mut FILE_BASIC_INFO).cast(),
+                size_of::<FILE_BASIC_INFO>() as u32,
+            )?;
+        }
+        (
+            id.VolumeSerialNumber,
+            id.FileId.Identifier,
+            basic.ChangeTime,
+        )
+    };
+    Ok(FfmpegIdentity {
+        path: path.to_owned(),
+        bytes: metadata.len(),
+        modified: metadata.modified().ok(),
+        created: metadata.created().ok(),
+        #[cfg(any(unix, windows))]
+        file: identity,
+    })
+}
+
+#[derive(Default)]
+struct FfmpegFeatures(Mutex<Vec<(FfmpegIdentity, bool)>>);
+impl FfmpegFeatures {
+    fn initial_burst(&self, executable: &Path, probe: impl FnOnce() -> Result<bool>) -> bool {
+        let before = ffmpeg_identity(executable).ok();
+        if let Some(ref identity) = before {
+            if let Some((_, supported)) = self
+                .0
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|(old, _)| old == identity)
+            {
+                return *supported;
+            }
+        }
+        // No cache lock is held while starting or waiting for the probe.
+        let Ok(supported) = probe() else {
+            return false;
+        };
+        let after = ffmpeg_identity(executable).ok();
+        if before.is_some() && before != after {
+            return false;
+        }
+        if let Some(identity) = before {
+            let mut cache = self.0.lock().unwrap();
+            cache.retain(|(old, _)| old.path != identity.path);
+            if cache.len() == 8 {
+                cache.remove(0);
+            }
+            cache.push((identity, supported));
+        }
+        supported
+    }
+}
+
+struct FfmpegProbe(Child);
+impl Drop for FfmpegProbe {
+    fn drop(&mut self) {
+        if !matches!(self.0.try_wait(), Ok(Some(_))) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
+fn probe_initial_burst(executable: &Path, timeout: Duration) -> Result<bool> {
+    // Parsing an unknown input option fails before -version. No input, output,
+    // model, network protocol or collected process output is involved.
+    let child = child_command(executable)
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-readrate_initial_burst",
+            "0.001",
+            "-version",
+        ])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+    wait_ffmpeg_probe(child, timeout)
+}
+fn wait_ffmpeg_probe(child: Child, timeout: Duration) -> Result<bool> {
+    let mut child = FfmpegProbe(child);
+    let started = Instant::now();
+    loop {
+        if let Some(status) = child.0.try_wait()? {
+            return Ok(status.success());
+        }
+        anyhow::ensure!(
+            started.elapsed() < timeout,
+            "FFmpeg feature probe timed out"
+        );
+        std::thread::sleep(Duration::from_millis(5).min(timeout.saturating_sub(started.elapsed())));
+    }
+}
+fn replay_ffmpeg() -> Result<(PathBuf, bool)> {
+    static FEATURES: OnceLock<FfmpegFeatures> = OnceLock::new();
+    let mut directories = Vec::new();
+    #[cfg(windows)]
+    {
+        if let Some(parent) = std::env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(Path::to_owned))
+        {
+            directories.push(parent);
+        }
+        if let Ok(current) = std::env::current_dir() {
+            directories.push(current);
+        }
+        if let Some(system) = std::env::var_os("SystemRoot") {
+            directories.push(PathBuf::from(&system).join("System32"));
+            directories.push(PathBuf::from(system));
+        }
+    }
+    directories.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    for directory in directories {
+        let candidate = directory.join(crate::platform::executable("ffmpeg"));
+        let Ok(metadata) = candidate.metadata() else {
+            continue;
+        };
+        if !metadata.is_file() {
+            continue;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if metadata.permissions().mode() & 0o111 == 0 {
+                continue;
+            }
+        }
+        let executable = candidate.canonicalize()?;
+        let supported = FEATURES
+            .get_or_init(FfmpegFeatures::default)
+            .initial_burst(&executable, || {
+                probe_initial_burst(&executable, Duration::from_secs(1))
+            });
+        return Ok((executable, supported));
+    }
+    bail!("Cannot find FFmpeg for paced replay")
+}
+
 fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
-    let mut command = child_command("ffmpeg");
+    ffmpeg_input_with("ffmpeg", input, replay_seconds, true)
+}
+fn ffmpeg_input_with(
+    executable: impl AsRef<std::ffi::OsStr>,
+    input: &Path,
+    replay_seconds: Option<u64>,
+    initial_burst: bool,
+) -> Command {
+    let mut command = child_command(executable);
     command.args([
         "-hide_banner",
         "-loglevel",
@@ -27,7 +229,14 @@ fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
         "file,pipe",
     ]);
     if replay_seconds.is_some() {
-        command.args(["-re", "-stream_loop", "-1"]);
+        // FFmpeg's default initial read burst leads the live sample clock by
+        // about half a second. Keep file replay close to wall time so ASR
+        // admission is measured against paced input, like a capture device.
+        command.arg("-re");
+        if initial_burst {
+            command.args(["-readrate_initial_burst", "0.001"]);
+        }
+        command.args(["-stream_loop", "-1"]);
     }
     command.arg("-i").arg(input);
     if let Some(seconds) = replay_seconds {
@@ -35,6 +244,33 @@ fn ffmpeg_input(input: &Path, replay_seconds: Option<u64>) -> Command {
     }
     command.args(["-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"]);
     command
+}
+
+fn replay_capture(
+    input: &Path,
+    seconds: u64,
+    log: &Path,
+    executable: &Path,
+    initial_burst: bool,
+) -> Result<crate::capture::Capture> {
+    let child = ffmpeg_input_with(executable, input, Some(seconds), initial_burst)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(File::create(log)?)
+        .spawn()
+        .context("Cannot start FFmpeg paced replay")?;
+    let mut capture = crate::capture::Capture::process(child)?;
+    if !initial_burst {
+        let reader = capture
+            .stdout
+            .take()
+            .context("Cannot read FFmpeg replay stream")?;
+        capture.stdout = Some(Box::new(crate::capture::PacedReader::new(
+            reader,
+            capture.stop.clone(),
+        )));
+    }
+    Ok(capture)
 }
 
 #[cfg(target_os = "linux")]
@@ -46,22 +282,107 @@ pub fn devices() -> Result<Vec<Device>> {
         bail!("PipeWire 未运行");
     }
     let data: Value = serde_json::from_slice(&output.stdout)?;
-    let mut result = vec![Device {
-        id: "auto".into(),
-        name: "系统默认麦克风".into(),
-    }];
-    for node in data.as_array().context("设备列表格式错误")? {
+    let mut result = vec![Device::microphone("auto", "系统默认麦克风")];
+    let nodes = data.as_array().context("设备列表格式错误")?;
+    for node in nodes {
         let p = &node["info"]["props"];
         if p["media.class"].as_str() == Some("Audio/Source") {
             if let Some(name) = p["node.name"].as_str() {
-                result.push(Device {
-                    id: name.into(),
-                    name: p["node.description"].as_str().unwrap_or(name).into(),
-                });
+                result.push(Device::microphone(
+                    name,
+                    p["node.description"].as_str().unwrap_or(name),
+                ));
             }
         }
     }
+    // Meeting software often plays the other side through the speakers, so a
+    // mic-only recording loses half the conversation. Offer the combined
+    // capture first, then the playback-only monitor of each hardware sink.
+    // Virtual filter sinks (speaker EQ, spatial audio) are duplicates of the
+    // same hardware and are skipped.
+    if let Some(sink) = default_sink() {
+        let description = nodes
+            .iter()
+            .filter_map(|node| node["info"]["props"].as_object())
+            .find(|p| {
+                p.get("media.class").and_then(Value::as_str) == Some("Audio/Sink")
+                    && p.get("node.name").and_then(Value::as_str) == Some(sink.as_str())
+            })
+            .and_then(|p| p.get("node.description").and_then(Value::as_str))
+            .unwrap_or("系统声音");
+        result.push(Device::mixed("mix", format!("麦克风 + {description}")));
+    }
+    for node in nodes {
+        let p = &node["info"]["props"];
+        if p["media.class"].as_str() != Some("Audio/Sink")
+            || p["node.virtual"].as_bool() == Some(true)
+            || p["device.class"].as_str() != Some("sound")
+        {
+            continue;
+        }
+        let Some(name) = p["node.name"].as_str() else {
+            continue;
+        };
+        result.push(Device::system(
+            format!("{name}.monitor"),
+            p["node.description"].as_str().unwrap_or(name),
+        ));
+    }
     Ok(result)
+}
+
+/// Node name of the server-side default playback device.
+#[cfg(target_os = "linux")]
+fn default_sink() -> Option<String> {
+    let from_pactl = Command::new("pactl")
+        .args(["get-default-sink"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .filter(|s| !s.is_empty());
+    if from_pactl.is_some() {
+        return from_pactl;
+    }
+    // Without libpulse tools, fall back to the first hardware sink in pw-dump.
+    let output = Command::new("pw-dump").output().ok()?;
+    let data: Value = serde_json::from_slice(&output.stdout).ok()?;
+    data.as_array()?
+        .iter()
+        .filter_map(|node| node["info"]["props"].as_object())
+        .find(|p| {
+            p.get("media.class").and_then(Value::as_str) == Some("Audio/Sink")
+                && p.get("node.virtual").and_then(Value::as_bool) != Some(true)
+        })
+        .and_then(|p| p.get("node.name").and_then(Value::as_str))
+        .map(str::to_owned)
+}
+
+/// Whether a PipeWire node name is currently published by the server.
+#[cfg(target_os = "linux")]
+fn node_exists(name: &str) -> bool {
+    let Ok(output) = Command::new("pw-dump").output() else {
+        return false;
+    };
+    let Ok(data) = serde_json::from_slice::<Value>(&output.stdout) else {
+        return false;
+    };
+    data.as_array().is_some_and(|nodes| {
+        nodes
+            .iter()
+            .any(|node| node["info"]["props"]["node.name"].as_str() == Some(name))
+    })
+}
+
+/// Input devices this ffmpeg build can open. `pipewire` is the modern alias and
+/// counts as PulseAudio support because it speaks the same protocol.
+#[cfg(target_os = "linux")]
+fn ffmpeg_input_devices() -> String {
+    Command::new("ffmpeg")
+        .args(["-hide_banner", "-devices"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_lowercase())
+        .unwrap_or_default()
 }
 
 pub fn spawn_capture(
@@ -70,6 +391,10 @@ pub fn spawn_capture(
     replay_seconds: Option<u64>,
     log: &Path,
 ) -> Result<crate::capture::Capture> {
+    if let (Some(path), Some(seconds)) = (input, replay_seconds) {
+        let (executable, initial_burst) = replay_ffmpeg()?;
+        return replay_capture(path, seconds, log, &executable, initial_burst);
+    }
     if replay_seconds.is_none() {
         if let Some(path) =
             input.filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("wav")))
@@ -83,6 +408,61 @@ pub fn spawn_capture(
     }
     let mut cmd = if let Some(input) = input {
         ffmpeg_input(input, replay_seconds)
+    } else if device == "mix" {
+        // A remote meeting plays the other participants through the speakers
+        // while the local microphone picks up the room. Recording either one
+        // alone loses half the conversation, so mix both with a fixed gain and
+        // no normalization: a silent side must not amplify its own noise floor.
+        #[cfg(target_os = "linux")]
+        {
+            // The monitor source is created on demand and does not appear in
+            // `pw-dump`, so the precondition to check is its owning sink.
+            let sink = default_sink().context("找不到系统播放设备；请确认 PipeWire 正在运行")?;
+            // Fail here with an actionable message instead of a take that
+            // silently records nothing when the sink vanished or ffmpeg was
+            // built without the PulseAudio input device.
+            anyhow::ensure!(
+                node_exists(&sink),
+                "默认播放设备 {sink} 不存在；请确认 PipeWire 与音频服务正常"
+            );
+            anyhow::ensure!(
+                ffmpeg_input_devices().contains("pulse"),
+                "ffmpeg 未编译 PulseAudio 输入支持，无法混录系统声音"
+            );
+            let monitor = format!("{sink}.monitor");
+            let mut c = child_command("ffmpeg");
+            c.args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-nostdin",
+                // Local capture only: no playlist or container may open a URL.
+                "-protocol_whitelist",
+                "file,pipe",
+                "-f",
+                "pulse",
+                "-i",
+                "default",
+                "-f",
+                "pulse",
+                "-i",
+                &monitor,
+                "-filter_complex",
+                "[0:a]volume=1.0[mic];[1:a]volume=1.0[sys];[mic][sys]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0",
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-f",
+                "s16le",
+                "pipe:1",
+            ]);
+            c
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            bail!("麦克风与系统声音混录目前仅在 Linux（PipeWire）上可用")
+        }
     } else {
         let mut c = child_command("pw-record");
         c.args([
@@ -288,6 +668,44 @@ pub fn export_wav_range(dir: &Path, target: &Path, start: u64, end: u64) -> Resu
 mod tests {
     use super::*;
 
+    /// A meeting capture must not silently drop the other side of the call.
+    /// The device list is built from a real `pw-dump` fixture kept in the
+    /// repository so this stays checkable on a machine without audio devices.
+    #[test]
+    fn linux_devices_offer_a_mixed_capture_before_monitors() {
+        use serde_json::Value;
+
+        let fixture = include_str!("../../../tests/fixtures/pw-dump-minimal.json");
+        let data: Value = serde_json::from_str(fixture).unwrap();
+        let nodes = data.as_array().unwrap();
+        let sinks: Vec<&Value> = nodes
+            .iter()
+            .filter(|node| node["info"]["props"]["media.class"].as_str() == Some("Audio/Sink"))
+            .collect();
+        assert_eq!(
+            sinks.len(),
+            2,
+            "fixture keeps a hardware sink and a virtual one"
+        );
+        let hardware: Vec<&Value> = sinks
+            .iter()
+            .copied()
+            .filter(|node| node["info"]["props"]["node.virtual"].as_bool() != Some(true))
+            .collect();
+        assert_eq!(
+            hardware.len(),
+            1,
+            "virtual filter sinks must not be offered"
+        );
+        let name = hardware[0]["info"]["props"]["node.name"].as_str().unwrap();
+        assert_eq!(name, "alsa_output.test.analog-stereo");
+        // The monitor id the capture path targets is the sink name plus `.monitor`.
+        assert_eq!(
+            format!("{name}.monitor"),
+            "alsa_output.test.analog-stereo.monitor"
+        );
+    }
+
     fn has_ffmpeg() -> bool {
         Command::new("ffmpeg")
             .arg("-version")
@@ -295,6 +713,167 @@ mod tests {
             .stderr(Stdio::null())
             .status()
             .is_ok_and(|s| s.success())
+    }
+
+    #[test]
+    fn paced_replay_preserves_pcm_without_an_initial_read_burst() -> Result<()> {
+        assert_paced_replay(false)
+    }
+
+    #[test]
+    fn forced_legacy_replay_preserves_pcm_and_the_same_initial_burst_limit() -> Result<()> {
+        assert_paced_replay(true)
+    }
+
+    fn assert_paced_replay(force_legacy: bool) -> Result<()> {
+        if !has_ffmpeg() {
+            eprintln!("FFmpeg is not installed; paced replay integration check skipped");
+            return Ok(());
+        }
+        let root = tempfile::tempdir()?;
+        let input = root.path().join("one-second.wav");
+        let samples: Vec<i16> = (0..16000)
+            .map(|n| ((n as f32 * 440. * std::f32::consts::TAU / 16000.).sin() * 8000.) as i16)
+            .collect();
+        fs::write(&input, wav_bytes(&samples)?)?;
+        let expected: Vec<u8> = samples
+            .iter()
+            .cycle()
+            .take(48000)
+            .flat_map(|sample| sample.to_le_bytes())
+            .collect();
+        let log = root.path().join("replay.log");
+        let mut capture = if force_legacy {
+            let (executable, _) = replay_ffmpeg()?;
+            replay_capture(&input, 3, &log, &executable, false)?
+        } else {
+            spawn_capture("auto", Some(&input), Some(3), &log)?
+        };
+        let mut reader = capture.stdout.take().unwrap();
+        let mut pcm = Vec::new();
+        let mut buffer = [0u8; 640];
+        let mut first_delivery = None;
+        let mut max_lead = Duration::ZERO;
+        loop {
+            let n = reader.read(&mut buffer)?;
+            if n == 0 {
+                break;
+            }
+            let now = Instant::now();
+            let first = *first_delivery.get_or_insert(now);
+            pcm.extend_from_slice(&buffer[..n]);
+            let supplied = Duration::from_secs_f64(pcm.len() as f64 / 32000.);
+            max_lead = max_lead.max(supplied.saturating_sub(now.duration_since(first)));
+        }
+        assert!(
+            capture.wait()?,
+            "FFmpeg replay failed: {}",
+            fs::read_to_string(&log).unwrap_or_else(|_| "capture log unavailable".into())
+        );
+        assert_eq!(pcm, expected);
+        // Covers one 200ms persistence block plus scheduling/IO jitter, while
+        // rejecting the roughly 500ms initial burst of the default -re path.
+        assert!(max_lead <= Duration::from_millis(250), "{max_lead:?}");
+        Ok(())
+    }
+
+    #[test]
+    fn replay_feature_cache_tracks_executable_replacement_and_retries_probe_failure() -> Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let executable = root.path().join("ffmpeg-fixture");
+        fs::write(&executable, b"original")?;
+        let cache = FfmpegFeatures::default();
+        let mut calls = 0;
+        assert!(!cache.initial_burst(&executable, || {
+            calls += 1;
+            bail!("fixture probe failure")
+        }));
+        assert!(cache.0.lock().unwrap().is_empty());
+        assert!(cache.initial_burst(&executable, || {
+            calls += 1;
+            Ok(true)
+        }));
+        assert!(cache.initial_burst(&executable, || panic!("unchanged executable was reprobed")));
+        assert_eq!(calls, 2);
+
+        let modified = executable.metadata()?.modified()?;
+        let replacement = root.path().join("replacement");
+        fs::write(&replacement, b"replaced")?;
+        File::options()
+            .write(true)
+            .open(&replacement)?
+            .set_times(fs::FileTimes::new().set_modified(modified))?;
+        fs::remove_file(&executable)?;
+        fs::rename(replacement, &executable)?;
+        assert!(!cache.initial_burst(&executable, || {
+            calls += 1;
+            Ok(false)
+        }));
+        assert!(!cache.initial_burst(&executable, || panic!("legacy result was not cached")));
+        assert_eq!(calls, 3);
+        assert_eq!(cache.0.lock().unwrap().len(), 1);
+
+        assert!(!cache.initial_burst(&root.path().join("different-executable"), || Ok(false)));
+        assert!(!cache.initial_burst(&executable, || panic!(
+            "another path changed cache identity"
+        )));
+        Ok(())
+    }
+
+    #[test]
+    fn replay_feature_probe_does_not_cache_an_executable_changed_during_probe() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let executable = root.path().join("ffmpeg-fixture");
+        fs::write(&executable, b"first")?;
+        let cache = FfmpegFeatures::default();
+        assert!(!cache.initial_burst(&executable, || {
+            fs::write(&executable, b"changed executable")?;
+            Ok(true)
+        }));
+        assert!(cache.0.lock().unwrap().is_empty());
+        assert!(cache.initial_burst(&executable, || Ok(true)));
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "child fixture invoked only by the bounded feature-probe test"]
+    fn replay_probe_child() {
+        if std::env::var_os("OMASCRIBE_TEST_FFMPEG_PROBE").is_some() {
+            std::thread::sleep(Duration::from_secs(30));
+        }
+    }
+
+    #[test]
+    fn replay_feature_probe_timeout_reaps_its_child_without_collecting_output() -> Result<()> {
+        let child = child_command(std::env::current_exe()?)
+            .args(["--exact", "audio::tests::replay_probe_child", "--ignored"])
+            .env("OMASCRIBE_TEST_FFMPEG_PROBE", "1")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?;
+        let pid = child.id();
+        assert!(wait_ffmpeg_probe(child, Duration::from_millis(40)).is_err());
+        #[cfg(unix)]
+        unsafe {
+            let mut status = 0;
+            assert_eq!(libc::waitpid(pid as i32, &mut status, libc::WNOHANG), -1);
+            assert_eq!(
+                std::io::Error::last_os_error().raw_os_error(),
+                Some(libc::ECHILD)
+            );
+        }
+        #[cfg(windows)]
+        {
+            let mut processes = sysinfo::System::new();
+            processes.refresh_processes(
+                sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]),
+                true,
+            );
+            assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
+        }
+        Ok(())
     }
 
     #[test]

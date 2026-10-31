@@ -1,0 +1,237 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+  "commits": {
+    "harness": "8a617c9c827d94335cdd0a137f4f859fa0b253c4",
+    "vulkan": "79c199fec4697c420eec667595d0020c67e16a72",
+    "worker_test": "127e616bae2f839381b09faa316bc6079c7ee7d3",
+    "library_content_followup": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd"
+  },
+  "release": {
+    "stable": "0.3.4",
+    "version_0_3_5_published": false,
+    "q16_minutes_quality": "still failing; no model rerun in this work"
+  },
+  "scope": {
+    "harness": "Use the actual post-append/save cursor; stop after the first requested generation job with no progress. Preserve diagnostics, failed coverage and all incurred costs. Do not change production writer, fixtures or two-send job budget.",
+    "vulkan": "Bind explicitly selected Vulkan driver manifests, flat directory membership, resolvable library identities and their entire streaming SHA256 outside the hardware cache. Reject Unresolved before reuse/issuance of configuration binding. No weak timestamp-content cache; default discovery remains on the existing path.",
+    "worker_tests": "Capture the original Child identity before release; Windows tests retain OwnedHandle and require zero-time WAIT_OBJECT_0 after cleanup. Unix retains waitpid/ECHILD. Production worker cleanup bytes are unchanged."
+  },
+  "local_validation": {
+    "core_passed": 529,
+    "core_ignored": 12,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "python_run": 144,
+    "python_skipped": 1,
+    "strict_workspace_clippy": true,
+    "format": true,
+    "vulkan_original_module_red_failed": 2,
+    "configuration_binding_red_failed": 1,
+    "harness_corrected_red_failed": 2,
+    "harness_regressions_passed": 8,
+    "mac_lifecycle_targeted_passed": 9,
+    "fifo_child_executed_by_bounded_parent": true
+  },
+  "worker_production_prefix": {
+    "boundary": "before #[cfg(test)] mod tests",
+    "bytes": 32105,
+    "sha256": "effcb0c6b5069a064bd8e8f8d73ffe7e2b9efe9092d4e1791e9a42f3a8dbc5f1",
+    "equals_original_failed_ci_source_8a617c9": true
+  },
+  "limits": [
+    "Vulkan file observation does not establish default ICD discovery, layers, actual loaded libraries, GPU driverUUID or hardware qualification.",
+    "Bare library names, ambiguous/slash-only Windows relative libraries, relative manifests, missing, malformed or oversized explicit inputs cannot receive qualification. Default discovery remains on the existing path and is not claimed observed.",
+    "Full content hashing addresses the observed closed-writer same-length mutation; it does not prove native loaded-library identity or an atomic snapshot under unobservable concurrent mmap writes. Default/layer discovery remains open.",
+    "Explicit override snapshots now add potentially large complete-library reads. Their cost has not been measured, is not a speedup claim, and remains a performance qualification follow-up; normal discovery and non-Vulkan paths add no such IO.",
+    "Counts and bytes are bounded, not arbitrary filesystem/network I/O latency. No driver is loaded by these snapshots.",
+    "The original Windows CI failure is retained. It does not establish a production leak, PID reuse or enumeration lag. The new exact-source Windows checks now pass the original assertion and Windows-only controls; this is hosted-runner validation, not GPU hardware or installer acceptance.",
+    "Mock CLI tests demonstrate fewer duplicate harness jobs; no new real Q16 run or measured whole-application speedup is claimed. All original real inference costs remain.",
+    "No new model inference, SDK/GPU component build, installer or release was performed. Development release CLI remains the previous 52c2 build and was not used for these source tests."
+  ],
+  "official_sources": [
+    {
+      "claim": "Driver-selector precedence and relative-versus-filename library paths",
+      "url": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md"
+    },
+    {
+      "claim": "Loader implementation consulted for directory suffix and Windows path combination",
+      "url": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/loader/loader.c"
+    },
+    {
+      "claim": "Terminated process object becomes signaled and can remain valid via owned handles",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/procthread/terminating-a-process"
+    },
+    {
+      "claim": "Zero-time wait checks object signal state without sleeping",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject"
+    }
+  ],
+  "raw_evidence": {
+    "artifacts/minutes-harness-progress-2026-10-31/summary.json": {
+      "bytes": 2965,
+      "sha256": "a5448294f425e0b55128961a665e3e4edb11e4733908535286e7db3f32e3bed4"
+    },
+    "artifacts/minutes-harness-progress-2026-10-31/root-review-green.log": {
+      "bytes": 106,
+      "sha256": "04e4d170edc749537f9b49333e16e6dc9549f6cd57372f7e4a5333159ad1c3f5"
+    },
+    "artifacts/minutes-harness-progress-2026-10-31/windows-8a617c9-original.log": {
+      "bytes": 183155,
+      "sha256": "786020366adcbad42aad45d30d5f1ff0f07e9a673037ba19b57586000e5be20b"
+    },
+    "artifacts/gpu-driver-audit-2026-10-31/audit-summary.json": {
+      "bytes": 4354,
+      "sha256": "68e1bbb7799a879170ee612aa9629f2e3ab35e9a21d308a234df8514350fe824"
+    },
+    "artifacts/gpu-driver-audit-2026-10-31/same-path-manifest-red.log": {
+      "bytes": 1594,
+      "sha256": "44992028f6be7bafe9046044863837b57c2169395960b9401e3e3c82c93cc50a"
+    },
+    "artifacts/gpu-driver-audit-2026-10-31/same-path-manifest-final.log": {
+      "bytes": 1963,
+      "sha256": "4e64df633015e8d7b08bd9307822548f23e91ec157f16dc3ba393e5169fd0e2d"
+    },
+    "artifacts/worker-reap-probe-2026-10-31/summary.json": {
+      "bytes": 2246,
+      "sha256": "679f2f832c3a415ab9297a1ed6afed3ad6361254686a80965211f2e4e3919c00"
+    },
+    "artifacts/worker-reap-probe-2026-10-31/baseline.json": {
+      "bytes": 754,
+      "sha256": "13da97703318f454470c8a7a012ba1fd7183d2f681551041086c0f1ee8c0786b"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/binding-red.log": {
+      "bytes": 957,
+      "sha256": "1ee196a0c653b2edd19c83cd570795d570263c1687c6c1897c15bf64c9d84f8e"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/final-core-asr-tests.log": {
+      "bytes": 59455,
+      "sha256": "9d74d7cbe023e1d0fb909792e8a4ec8f1ce81d8e407919689b8c342fe9ef1fb0"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/final-clippy.log": {
+      "bytes": 291,
+      "sha256": "f20a377b68d8e36c793665091eca26d84fabdea7d1a9abcb7dc602df464cb8b7"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/final-fmt.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/python-tests.log": {
+      "bytes": 485,
+      "sha256": "a645093a556e8b13d910b246d055a63e708264f754dea6d8d90463e8275f5679"
+    },
+    "artifacts/hotword-calibration-2026-10-31/glyph-native-audit.json": {
+      "bytes": 13685,
+      "sha256": "667d9112da924d29dcbd840e64b67901727f49e0be24c7b7b6f4dd7013147567"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/windows-127e616-original.log": {
+      "bytes": 186115,
+      "sha256": "b35038de278d7e24bc3198fc4d9b03f42639fb8b911a1b92e30ea3254fb7b524"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/source-check-runs.json": {
+      "bytes": 24640,
+      "sha256": "f0c5dfcc404bb18a8c9fa8036cf34fc268d4549212402d3686944019da0596c2"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/library-streaming-audit.json": {
+      "bytes": 3466,
+      "sha256": "b7c6cedd1a44e0cfe07141ee6e8024990c8eca22567907090310cf3c4bd81a39"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/library-streaming-selector-green.log": {
+      "bytes": 2437,
+      "sha256": "ee53bbee542456f4879c925364649f62c74f65903120e429a815bba8c5f9677c"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/content-core-asr-tests.log": {
+      "bytes": 59929,
+      "sha256": "35508a5e79cb41584b73aa3bbdc71dee3dd6a6840bc6930371ef49eb272018d7"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/content-clippy.log": {
+      "bytes": 291,
+      "sha256": "17e961e4b0352d64a9711336a541c78cfc4f98cac00cc668972bd08ba74edc27"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/content-fmt.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/source-f8c2478-check-runs-final.json": {
+      "bytes": 24640,
+      "sha256": "9d40072b3db8e65e796b02378464934730a8c520109032f9afe0a60d97b41874"
+    },
+    "artifacts/vulkan-driver-files-2026-10-31/windows-f8c2478-final.log": {
+      "bytes": 210820,
+      "sha256": "bdb538479c0600672dc552adae5e14f1d4daf140777130013c7e70b358df7503"
+    }
+  },
+  "library_streaming_budget": {
+    "per_library_bytes": 536870912,
+    "per_snapshot_library_bytes": 1073741824,
+    "buffer_bytes": 65536,
+    "over_limit_behavior": "Unresolved; never truncated success",
+    "extra_io": "Every explicit override capture reads the resolved libraries in full; no new library IO for default discovery, CUDA, CPU, Metal or MLX.",
+    "cost_measured": false,
+    "speedup_claim": false
+  },
+  "rejected_intermediate_source": {
+    "source": "127e616bae2f839381b09faa316bc6079c7ee7d3",
+    "windows_ci": {
+      "run": 41165236967,
+      "job": 124431300176,
+      "core_passed": 524,
+      "core_failed": 1,
+      "core_ignored": 10
+    },
+    "failure": "Root integration assertion: same-path same-length driver-a to driver-b in-place write retained identical metadata-only configuration binding.",
+    "new_worker_exit_probe_and_original_pending_wait": "passed in this CI; the original 8a failure remains unexplained",
+    "action": "Keep the same assertion and add complete library-content hashing; no sleeps, retries, fixture weakening or test removal."
+  },
+  "source_ci": {
+    "catalog": {
+      "conclusion": "skipped",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941819/job/124434082086"
+    },
+    "build": {
+      "conclusion": "skipped",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941819/job/124433432417"
+    },
+    "windows-core": {
+      "conclusion": "success",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941819/job/124433431189"
+    },
+    "prepare": {
+      "conclusion": "success",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941819/job/124433411940"
+    },
+    "validate": {
+      "conclusion": "success",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941820/job/124433411882"
+    },
+    "ubuntu22": {
+      "conclusion": "success",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941812/job/124433411878"
+    },
+    "linux": {
+      "conclusion": "success",
+      "head_sha": "f8c24782e8a4abfa15175d19d29766bd53f9a1cd",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41165941797/job/124433411798"
+    }
+  },
+  "windows_final": {
+    "core_passed": 529,
+    "core_ignored": 10,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "original_same_path_driver_assertion": "PASS",
+    "original_pending_wait_lifecycle": "PASS",
+    "new_live_handle_control": "PASS",
+    "actual_gpu_hardware": false,
+    "installer_upgrade": false
+  }
+}

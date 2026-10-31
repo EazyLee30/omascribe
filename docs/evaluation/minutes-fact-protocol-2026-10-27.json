@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "Rejected source-bound fact protocol research; test-only",
+  "application_revision": "2461aeb8a9222b1392c04f585e26d47f2ca74073",
+  "source_identity": {
+    "git_revision_at_review": "2461aeb8a9222b1392c04f585e26d47f2ca74073",
+    "inference_source_tree_dirty": false,
+    "source_sha_matches_rebuilt_product_cli": true,
+    "note": "Ignored probe used the already-built test object: its cached compile revision names parent25b8828; exact source SHA equals the clean2461aeb rebuild. No performance comparison uses that cached revision."
+  },
+  "compile_revision_cached": "25b882833ec3f162dcbea02e48580bbe9f84603a",
+  "compile_source_sha256": "14eaa4306992b0c2c39421c73144999ab8a79760cdb593c6fcffd904c7757c7c",
+  "runtime_executable_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+  "model": [
+    {
+      "bytes": 1107409472,
+      "name": "Qwen3-1.7B-Q4_K_M.gguf",
+      "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf"
+    }
+  ],
+  "complete": true,
+  "passed": false,
+  "promotion_eligible": false,
+  "expected_cases": 3,
+  "passed_cases": 1,
+  "cases": [
+    {
+      "case": "en_amount",
+      "passed": false,
+      "error": "Fact state has no matching original-language evidence"
+    },
+    {
+      "case": "zh_amount_owner",
+      "passed": false,
+      "error": "Two updates target the same fact"
+    },
+    {
+      "case": "en_completion",
+      "passed": true,
+      "error": null
+    }
+  ],
+  "requests": 8,
+  "input_tokens": 2227,
+  "output_tokens": 1378,
+  "request_errors": 0,
+  "failed_cases_keep_all_repair_requests": true,
+  "backend_evidence": [
+    {
+      "case": "en_amount",
+      "runtime_log_sha256": "1198501eb656f312450794cf91e3c34d8feaac2381b4d82321148be4064c7546",
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ],
+      "positive_offload": true
+    },
+    {
+      "case": "zh_amount_owner",
+      "runtime_log_sha256": "d76f4ca723ef8a9e0dd8a426ab51ada85de6bcb04ea253a8bf96d7aaa5ff2fda",
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ],
+      "positive_offload": true
+    },
+    {
+      "case": "en_completion",
+      "runtime_log_sha256": "afba13c3a49953fee65220e5bce60d0912ceeba659ae815dffdec081e316ffc5",
+      "offloaded_layers": [
+        [
+          29,
+          29
+        ]
+      ],
+      "positive_offload": true
+    }
+  ],
+  "cleanup": {
+    "worker_released": true,
+    "owned_model_links_cleaned": true
+  },
+  "raw": {
+    "path": "artifacts/benchmarks/fact-protocol-2461aeb/report.json",
+    "sha256": "f7af9c024f9c38e98df828366325626ce65886207f316433d1ad744bfe6f2e41",
+    "request_path": "artifacts/benchmarks/fact-protocol-2461aeb/requests.json",
+    "request_sha256": "e31204980981b22b8d752ae85d8cb81f0e8bd90cfb312dcab6a5356e5f770acd"
+  },
+  "isolation": "facts module is behind cfg(test). No production generator entry, persistence, product switch, new dependencies, models or SDK bundles.",
+  "findings": [
+    "English budget extraction still assigns a state unsupported by its cited clause even with schema constraints; both attempts rejected.",
+    "Chinese amount/owner correction emits two updates to one fact; rejected after bounded repair.",
+    "Completion probe passes current pattern/ID/citation checks; semantic topic assignment remains weaker than full entailment and has not passed a full corpus.",
+    "Literal enums and current source spans constrain surface form but do not establish subject identity, independent-topic preservation or state/source entailment."
+  ],
+  "prior_development_probes": {
+    "paths": [
+      "artifacts/benchmarks/fact-protocol-dev-1",
+      "artifacts/benchmarks/fact-protocol-dev-2",
+      "artifacts/benchmarks/fact-protocol-dev-3",
+      "artifacts/benchmarks/fact-protocol-dev-4",
+      "artifacts/benchmarks/fact-protocol-dev-5",
+      "artifacts/benchmarks/fact-protocol-dev-6"
+    ],
+    "classification": "Uncommitted prompt/schema iterations; fail-fast, incomplete case sets, earlier requests/source variants not all archived. Retained diagnostics only, not comparable quality/performance acceptance.",
+    "notable_rejected_output": "One earlier English draft invented $5000 from a bare5000. Current test-only document guard rejects unspoken literal currency prefixes."
+  },
+  "next_gate": "Reduce source/state/target choices before generation and test ambiguous independent subjects, omitted fields and correction transitions. Persistent revision history, transactional article/state commit and full-corpus comparison remain unimplemented.",
+  "limits": [
+    "Three fictional local protocol cases, not the full21-case minutes corpus.",
+    "No speed/resource advantage claimed; all8 requests, bounded repairs and negative results retained.",
+    "Exact model/template semantics not guaranteed by llama.cpp JSON schema.",
+    "No product default, release or Windows/Linux acceptance change."
+  ]
+}

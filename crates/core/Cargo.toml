@@ -1,6 +1,6 @@
 [package]
 name = "omascribe-core"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2021"
 license = "MIT"
 
@@ -28,5 +28,18 @@ minisign-verify = "0.3"
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 cpal = "=0.16.0"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "=0.61.3", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_System_LibraryLoader"] }
+
+[target.'cfg(all(target_os = "macos", target_arch = "aarch64"))'.dependencies]
+# Runtime CPU-feature detection keeps the software fallback on other hardware.
+sha2 = { version = "0.10", features = ["asm-aarch64"] }
+
 [dev-dependencies]
 tempfile = "3"
+
+[target.'cfg(target_os = "windows")'.dev-dependencies]
+windows = { version = "=0.61.3", features = ["Win32_System_Threading"] }
+
+[build-dependencies]
+sha2 = "0.10"

@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "candidate_source": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "frozen_branch": "codex/release-0.3.5-candidate-8",
+  "release_accepted": false,
+  "scope": "Source-aligned platform checkpoint; peer report bytes and source revisions verified, remote host tests not rerun on Mac.",
+  "mac": {
+    "full_automatic_cases": 61,
+    "original_passes": 61,
+    "source_identity_unchanged": true,
+    "report": "apple-candidate8-quality-2026-10-29.json",
+    "native_window_recording_installer_pending": true
+  },
+  "windows": {
+    "hardware": "Windows x86_64 / GTX1650 / driver621.01",
+    "semantic_cases": 3,
+    "original_passes": 3,
+    "semantics": "Friday negation, recording IN notes/local retention and ALICE→UN VIDEO CARD retained; notes-only adds no recording.",
+    "native_preview": "Realtek level-only preview controls, native30s deadline, release on leaving settings and device/language persistence pass. No speech or saved audio.",
+    "windows": "DOM/invoke companion/transcript language and hardware-delivery checks pass; no physical mouse/screenshot acceptance.",
+    "fallback": "Verified owned CUDA child terminated in isolation; observed CUDA→CPU, active certificate removal and source/citation retention. Separate CPU generation passes. Not actual OOM.",
+    "components": "Previously signed CUDA payload reused and reverified, not newly downloaded or rebuilt.",
+    "evidence": [
+      {
+        "name": "windows-candidate8-semantic-2026-10-29.json",
+        "revision": "c7b434dbbe003f84e0b967d58f5697047b1a447c",
+        "path": "artifacts/peer-windows-candidate8-semantic-2026-10-29.json",
+        "sha256": "8d12e45c97729781b4fa674962a7c82db1f4bce1a63688ad0269bce8b5d856ad",
+        "url": "https://github.com/EazyLee30/omascribe/blob/c7b434dbbe003f84e0b967d58f5697047b1a447c/docs/evaluation/windows-candidate8-semantic-2026-10-29.json"
+      },
+      {
+        "name": "windows-candidate8-native-2026-10-28.json",
+        "revision": "c7b434dbbe003f84e0b967d58f5697047b1a447c",
+        "path": "artifacts/peer-windows-candidate8-native-2026-10-28.json",
+        "sha256": "575380fee7a29e2bb56186f32fd6e5c4425b17e4ed9840d6edb874241ca70bed",
+        "url": "https://github.com/EazyLee30/omascribe/blob/c7b434dbbe003f84e0b967d58f5697047b1a447c/docs/evaluation/windows-candidate8-native-2026-10-28.json"
+      },
+      {
+        "name": "windows-candidate8-fallback-2026-10-29.json",
+        "revision": "c7b434dbbe003f84e0b967d58f5697047b1a447c",
+        "path": "artifacts/peer-windows-candidate8-fallback-2026-10-29.json",
+        "sha256": "4127fa5e03ae1ae92e334097de6c83400f913232c0d45d2140cb7b33bf574e3e",
+        "url": "https://github.com/EazyLee30/omascribe/blob/c7b434dbbe003f84e0b967d58f5697047b1a447c/docs/evaluation/windows-candidate8-fallback-2026-10-29.json"
+      }
+    ],
+    "comment_url": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6474074807",
+    "pending": [
+      "Physical meeting recording/stop and actual ASR/name accuracy",
+      "Visual mouse window manipulation",
+      "Fresh component download and installer/upgrade/model retention acceptance"
+    ]
+  },
+  "linux": {
+    "source_ci": "Candidate8 Linux and shared validation CI pass",
+    "hardware_audio_window_installer": "No new candidate-specific actual hardware/native/install acceptance supplied"
+  },
+  "shared_open_items": [
+    "Caption 刘老师/setup becomes gendered Mr. Liu/assigning; root owns shared fix, avoid parallel duplicate implementation.",
+    "Ordinary festival remains untranslated; incomplete-state/prose/pronoun clarity remain under bounded review.",
+    "Natural ASR, native Mac window/audio and final installer/upgrade gates remain open."
+  ],
+  "coordination": "Keep candidate8 immutable. Shared fixes require a new candidate; reuse signed GPU components and installed models. No SDK/component/installer rebuild requested for these textual fixes.",
+  "housekeeping": {
+    "task_owned_separate_cargo_cache_removed": true,
+    "reported_allocated_kib_before": 793932,
+    "source_logs_models_and_raw_evidence_retained": true,
+    "physical_free_space_gain_not_measured": true
+  }
+}

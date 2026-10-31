@@ -1,3 +1,6 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
+
 const en = {
   unavailable: "Unavailable",
   writerLowMemory:
@@ -189,7 +192,7 @@ const en = {
   asr: "Bilingual transcription",
   llm: "Local note model",
   installed: "Ready",
-  missing: "Missing — run bin/setup",
+  missing: "Missing — run scripts/bin/setup",
   storage: "Meeting storage",
   memory: "Available memory",
   shortcuts: "Keyboard shortcuts",
@@ -216,7 +219,7 @@ const en = {
   autoHelp:
     "Automatically composes new transcript and keyword changes. Updates are coalesced to keep recording smooth; edited paragraphs stay yours.",
   termHelp:
-    "Terms guide note retrieval in this version; they do not bias the recognizer.",
+    "Names in notes and enabled glossary entries guide recognition and supported spelling corrections. Raw recognition history and your edits are preserved.",
   about: "Oma from Omarchy. Scribe for the words worth keeping.",
   notesWorking: "Working locally…",
   deleteText: "Clear text",
@@ -413,7 +416,7 @@ const zh: typeof en = {
   asr: "中英双语转写",
   llm: "本地笔记模型",
   installed: "已就绪",
-  missing: "缺少文件，请运行 bin/setup",
+  missing: "缺少文件，请运行 scripts/bin/setup",
   storage: "会议存储位置",
   memory: "可用内存",
   shortcuts: "键盘快捷键",
@@ -438,7 +441,8 @@ const zh: typeof en = {
   recovered: "录音已恢复，可点击「重新转写」继续处理。",
   autoHelp:
     "结合新转写和关键词自动整理，合并频繁变化以保障录音流畅。人工编辑的段落会保留。",
-  termHelp: "此版本的术语用于笔记检索，尚不参与语音识别偏置。",
+  termHelp:
+    "笔记名称和已启用术语可辅助识别，并校正有依据的拼写；原始识别记录和人工修改会保留。",
   about: "Oma 来自 Omarchy，Scribe 记录值得留下的话。",
   notesWorking: "正在本地整理…",
   deleteText: "清空内容",
@@ -633,7 +637,7 @@ const tw: typeof en = {
   asr: "中英雙語轉寫",
   llm: "本機筆記模型",
   installed: "已就緒",
-  missing: "缺少檔案，請執行 bin/setup",
+  missing: "缺少檔案，請執行 scripts/bin/setup",
   storage: "會議儲存位置",
   memory: "可用記憶體",
   shortcuts: "鍵盤快捷鍵",
@@ -658,7 +662,8 @@ const tw: typeof en = {
   recovered: "錄音已復原，可點選「重新轉寫」繼續處理。",
   autoHelp:
     "結合新轉寫和關鍵字自動整理，合併頻繁變更以保障錄音流暢。人工編輯的段落會保留。",
-  termHelp: "此版本的術語用於筆記檢索，尚不參與語音辨識偏置。",
+  termHelp:
+    "筆記名稱和啟用的術語可輔助辨識及有依據的拼寫校正；原始辨識記錄與人工修改會保留。",
   about: "Oma 來自 Omarchy，Scribe 記錄值得留下的話。",
   notesWorking: "正在本機整理…",
   deleteText: "清空內容",
@@ -669,13 +674,41 @@ const tw: typeof en = {
 };
 export type Key = keyof typeof en;
 export type Locale = "en" | "zh-CN" | "zh-TW";
-export let locale: Locale =
-  (localStorage.getItem("omascribe-locale") as Locale) || "en";
-export function t(key: Key): string {
-  return ({ en, "zh-CN": zh, "zh-TW": tw }[locale] || en)[key];
-}
-export function setLocale(value: Locale) {
+const validLocale = (value: unknown): value is Locale =>
+  value === "en" || value === "zh-CN" || value === "zh-TW";
+const storedLocale = localStorage.getItem("omascribe-locale");
+export let locale: Locale = validLocale(storedLocale) ? storedLocale : "en";
+document.documentElement.lang = locale;
+const localeListeners = new Set<() => void>();
+function receiveLocale(value: unknown) {
+  if (!validLocale(value) || value === locale) return;
   locale = value;
   localStorage.setItem("omascribe-locale", value);
   document.documentElement.lang = value;
+  for (const callback of localeListeners) callback();
+}
+// WebView2 windows keep their own module state. Storage and Tauri events cover
+// both browser previews and native windows, including already-open companions.
+window.addEventListener("storage", (event) => {
+  if (event.key === "omascribe-locale") receiveLocale(event.newValue);
+});
+const localeChannel = isTauri()
+  ? listen<Locale>("ui-locale", (event) => receiveLocale(event.payload))
+  : Promise.resolve();
+export async function onLocaleChange(callback: () => void) {
+  await localeChannel;
+  localeListeners.add(callback);
+  callback();
+  return () => localeListeners.delete(callback);
+}
+export function t(key: Key): string {
+  return ({ en, "zh-CN": zh, "zh-TW": tw }[locale] || en)[key];
+}
+export async function setLocale(value: Locale) {
+  if (!validLocale(value)) return;
+  receiveLocale(value);
+  if (isTauri()) {
+    await localeChannel;
+    await emit("ui-locale", value);
+  }
 }

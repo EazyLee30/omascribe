@@ -76,3 +76,38 @@ The real Tauri/WebKit flow passed 11 checks, including two separate finished rec
 The Rust suite includes 12 tests: SSE completion/truncation/error handling, source/uncertainty validation, transactional cancellation, legacy recording recovery, sample-exact append and WAV export across chunk boundaries. The two Python harness unit tests also pass.
 
 A separate public-speech regression imported the same sherpa example into two takes, restarting the app between them. All 321,700 samples (20.106 seconds) were retained; the first WAV and a saved transcript correction were unchanged. New segment IDs and timestamps continued monotonically. A full retranscription also respected the take boundary and left both WAVs unchanged. This verifies data integrity, not recognition accuracy. [Machine-readable result](validation/multitake-v0.1.1.json).
+
+## CPU writing-model comparison (2026-10-26)
+
+Apple M5, macOS 27.0.1 arm64, Rust 1.99 debug CLI; Qwen3 Q4_K_M, one CPU thread, 2,048 context and 4,096 MiB process ceiling. Both models ran the same 18 fictional minutes cases twice, reversing model order. Inputs include phased corrections, exact citations, owner/deadline/negation checks, output language and protected human paragraphs. Every model/CLI/runtime digest was verified, including revalidation after the comparison. [Machine-readable summary](evaluation/minutes-models-2026-10-26.json) binds the complete local raw report by SHA-256.
+
+| Model | Passed cases per trial | All-case time per trial | Sampled CPU per trial | Peak summed tree RSS |
+| --- | --- | --- | --- | --- |
+| 1.7B | 18 / 18, both trials | 243.9 / 245.8 s | 230.3 / 232.8 s | 2,526.8 / 2,526.5 MiB |
+| 0.6B | 16 / 18, both trials | 118.0 / 118.8 s | 106.1 / 108.0 s | 1,173.3 / 1,173.4 MiB |
+
+All failed/repaired work is included. The 1.7B arm made 21 attempts with one rejected draft/repair per trial. The 0.6B arm made 26 attempts with eight rejected drafts and four repairs per trial. In `bilingual_scope` and `zh_minutes_from_en`, 0.6B repeatedly emitted English despite the Chinese output request. The validator rejected those drafts and left sources pending; no wrong-language document was accepted. The quality gate therefore keeps the 1.7B default. These results do not establish that 0.6B can replace it or that a cross-model escalation policy works.
+
+Case time includes CLI/workspace work and all requests; model downloads and asset hashing are outside the measured case loop. Each generation command opens a CLI, so this does not measure a continuously warm meeting worker. CPU is a 250-ms sampled lower bound; summed RSS may double-count shared pages. PSS, GPU memory and energy were unavailable. The corpus predates the additional Windows name fixture in PR #2; integrated validation must rerun the current full corpus. Pattern/coverage/citation checks are targeted regressions, not general semantic accuracy, ASR speed or a release/battery benchmark.
+
+## Apple Metal baseline (2026-10-27)
+
+The same 1.7B weights and 18 fictional fixtures ran on Apple M5 / 24 GiB / macOS 27.0.1, using production balanced batching, one thread, 2,048 context and the pinned llama runtime. Both backends passed all cases in both reversed-order trials, including one rejected draft and its repair in each arm. Every actual Metal model command proved 29/29 layers offloaded; shortcut-only mic checks were counted separately. [Bound summary and raw report hashes](evaluation/apple-metal-2026-10-27.json).
+
+| Backend | Usable complete-suite times | Sampled CPU | Peak summed tree RSS |
+| --- | --- | --- | --- |
+| CPU | 244.0 s; separate repeated arm 247.7 s | 230.8 / 232.6 s | 2,528.4 / 2,529.0 MiB |
+| Metal | 32.2 / 32.3 s | 10.2 / 10.3 s | 1,489.4 / 1,487.2 MiB |
+
+The original first CPU arm (261.1 s) overlapped another workspace's 22-second `npm ci`, confirmed by timestamps. It remains in the raw quality record but is excluded from isolated performance comparisons; only that arm was repeated with the same inputs and executable. This does not fully control unrelated desktop activity. These times include CLI work, loading, all cases and repairs, not just decoding. Sampled CPU is not energy, and summed RSS is not unique physical unified-memory usage. Metal working-set/free values are not independent VRAM; PSS/GPU allocations/power were unknown. There is no natural-ASR contention, sustained thermal or M1–M4 result yet. The Windows PR's additional fixture/source changes still require Mac integration validation. No new backend/model default or stable release is admitted by this baseline.
+
+## Pinned public ASR baseline (2026-10-27)
+
+The current CPU worker ran both catalog-pinned Zipformers on eight held-out FLEURS read utterances, two reproducibly spliced language-switch clips, silence and quiet synthetic noise. All 24 cases completed with valid timelines; silence/noise emitted no words. [Machine-readable result](evaluation/asr-public-2026-10-27.json) and [exact public manifest](evaluation/fleurs-manifest-2026-10-27.json) retain source/model/worker hashes, edit breakdowns and small-sample bootstrap intervals. Google FLEURS is CC BY 4.0; attribution and source archive revision are in the manifest.
+
+| Model | Mandarin CER (4 clips) | English WER (4 clips) | Constructed-switch MER (2 clips) |
+| --- | --- | --- | --- |
+| Zipformer small | 32.45% | 34.21% | 29.94% |
+| Zipformer bilingual | 28.19% | 32.89% | 30.54% |
+
+This establishes a reproducible baseline, not a quality improvement. Individual clips have substantially higher error rates; the fixed 45% aggregate smoke ceiling only detects severe regressions. The larger model was not uniformly better on the switching clips and is not promoted. Read speech and splices do not establish natural mixed-language meetings, proper-name recall or speaker accuracy. This single ordered run's sampled resources/RTF are descriptive, not a controlled comparative performance or visible-caption latency experiment. No private recording was used. After successful validation, the 815 MB source download archives and borrowed model copies were released while the selected WAVs, references and diagnostics remained available.

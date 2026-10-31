@@ -1,0 +1,297 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "status": "Source name locality fixed; article spelling-slot candidate rejected and reverted; release blocked",
+  "retained_source": "c2c32a0c90ab60bbe7ef88e8ae94d30898d53f0b",
+  "retained_fix_commit": "609f75f",
+  "source_equals_retained_fix": true,
+  "retained_change": {
+    "file": "crates/core/src/translation/names.rs",
+    "sha256": "0729b2858b647cb2c28418c1381312a59c462dd4e1cffe3983062289ad4b1e62",
+    "behavior": "Technical-name eligibility and token scan are local to each literal source line. Han/lowercase in another line no longer admits ordinary all-caps English words. No new sentence boundary or factual permission is inferred.",
+    "red": "One real cross-line name-set failure; same-line technical identifier control passes. First invalid-control run is retained separately.",
+    "preserved": [
+      "Same-line API/CUDA/mixed-case identifiers",
+      "Explicit reported labels and original bytes",
+      "Existing name budgets, reported-name guard, source text, models and inference quotas"
+    ]
+  },
+  "checks": {
+    "core_passed": 500,
+    "core_ignored": 11,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "retained_cli_build": {
+      "profile": "release",
+      "revision_at_compile": "c2c32a0c90ab60bbe7ef88e8ae94d30898d53f0b",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "065f53d7c9be1bddda666eee24fefe3c9e6e2b52fa7a1e5161508c7d39b81efd",
+      "target": "aarch64-apple-darwin"
+    },
+    "retained_model_runs_after_revert": 0,
+    "exact_source_ci": {
+      "schema": 1,
+      "source": "c2c32a0c90ab60bbe7ef88e8ae94d30898d53f0b",
+      "scope": "Exact retained source CI only; no model quality, hardware or installer acceptance",
+      "runs": [
+        {
+          "id": 41156615925,
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/41156615925",
+          "jobs": [
+            {
+              "name": "linux",
+              "status": "completed",
+              "conclusion": "success",
+              "id": 124404698748
+            }
+          ]
+        },
+        {
+          "id": 41156615926,
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/41156615926",
+          "jobs": [
+            {
+              "name": "validate",
+              "status": "completed",
+              "conclusion": "success",
+              "id": 124404698585
+            }
+          ]
+        },
+        {
+          "id": 41156615927,
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/41156615927",
+          "jobs": [
+            {
+              "name": "ubuntu22",
+              "status": "completed",
+              "conclusion": "success",
+              "id": 124404699276
+            }
+          ]
+        },
+        {
+          "id": 41156615974,
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/41156615974",
+          "jobs": [
+            {
+              "name": "prepare",
+              "status": "completed",
+              "conclusion": "success",
+              "id": 124404698863
+            },
+            {
+              "name": "windows-core",
+              "status": "completed",
+              "conclusion": "success",
+              "id": 124404727883
+            },
+            {
+              "name": "build",
+              "status": "completed",
+              "conclusion": "skipped",
+              "id": 124404728741
+            },
+            {
+              "name": "catalog",
+              "status": "completed",
+              "conclusion": "skipped",
+              "id": 124405304040
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "rejected_candidate": {
+    "source": "a9bc04ae979c6bcf01f85f428b78693fae6f39a3",
+    "revert": "c2c32a0c90ab60bbe7ef88e8ae94d30898d53f0b",
+    "mechanism": "Only original full-prompt name-error second send: per-source observed spans become local markers under linear raw-prose grammar, decoded to original bytes before unchanged amount/budget/name/fact/replacement/language/Scope checks. No copy/completion permit, global name legend, ASCII ban, extra request or enlarged context.",
+    "static_checks": {
+      "core_passed": 504,
+      "core_ignored": 11,
+      "asr_passed": 9,
+      "cli_passed": 2,
+      "integration_passed": 29,
+      "clippy": "PASS",
+      "fmt": "PASS"
+    },
+    "result": "FAIL; stopped after one original manual Q16 invocation, no tuning or rerun",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "compile_input_sha256": "f516e6ae9f1f9c0a77a896f645076642ec6b3cf8bab3444234ca61914e25e7d9",
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "policy": {
+      "base_preferences": {},
+      "case_preferences": {
+        "minutes_language": "zh"
+      },
+      "automatic_schedule": false,
+      "preparation": false,
+      "incremental": false,
+      "chat_sends_per_batch": 2,
+      "output_tokens": 440,
+      "context_size": 2048,
+      "seed": 42
+    },
+    "costs": {
+      "trace_error_count": 0,
+      "trace_errors": {},
+      "observed_attempted_requests": 4,
+      "observed_generation_rows": 4,
+      "unmeasured_response_costs": 0,
+      "attempted_requests": 4,
+      "observed_responses": 4,
+      "completed_responses": 4,
+      "validation_failures": 4,
+      "request_ms": 10511,
+      "observed_request_ms": 10511,
+      "input_tokens": 1834,
+      "output_tokens": 634,
+      "cached_tokens": 400,
+      "prefill_ms": 858.551,
+      "decode_ms": 9641.658
+    },
+    "total_input_output_tokens": 2468,
+    "seconds": 13.105,
+    "independent_full_review": {
+      "chinese_article": false,
+      "music_synthesized_without_repetition": false,
+      "compose_music_copies_each_batch": 3,
+      "slot_repair_music_copies_each_batch": 2,
+      "slot_repair_preserves_both_selected_schools_and_two_person_labels": true,
+      "all_three_reported_spellings_covered": false,
+      "source6_selected": false,
+      "uncertainty_review": "Both repairs retain English MAY HAVE/MAY BE plus UNTIL ... NIGHT; one copy has LATE, another uses LAY. Professor clauses retain 如果/似乎. No observed completion-strengthening claim; this is literal preservation in a failed mixed-language draft, not validated Chinese semantics.",
+      "attribution_review": "No explicit new reporter response/decision or professor assigned to music observed in raw lines. Actor guard rejects the normalized concatenation; do not label that rejection itself as proved hallucination. Spelling success does not prove person-to-claim attribution.",
+      "actual_cursor": 0,
+      "actual_articles": 0,
+      "actual_document_history": 0,
+      "all_six_original_sources_unchanged": true,
+      "actual_citations_checked": 0,
+      "original_empty_note_unchanged": true,
+      "scope": "Both harness batches reselect1..5 because nothing commits. Source6 and its third spelling never reach generation. Four completed model responses are all rejected; additional review requests0 does not mean the trial incurred0 requests."
+    },
+    "additional_reviewer_model_requests": 0,
+    "interpretation": "Markers preserve selected name spellings but do not make a coherent Chinese article. Repeated English remains. Both batches select1-5; cursor0, no article/history, so source6 is not tested. Actor rejection is not by itself proof of a new fabricated claim. Current final source has not received a new model-quality promotion."
+  },
+  "cleanup": {
+    "status": "complete",
+    "original_models_unchanged": true,
+    "runtime_unchanged": true,
+    "owned_clones_removed": 6,
+    "signals_sent": 0,
+    "physical_reclaimed_bytes": null,
+    "raw_and_database_retained": true
+  },
+  "release": "Stable0.3.4;0.3.5 unpublished. Full core quality, recording/ASR/platform/installer and research gates remain open. CUDA/Vulkan remain separate optional downloads; no installers or GPU components rebuilt.",
+  "witnesses": [
+    {
+      "path": "artifacts/name-codec-2026-10-31/red.log",
+      "sha256": "aebb67d64c0bb2e33521c71f7a697b9447db646db81e06392f93d0abbfbd5c3e"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/initial-invalid-control.log",
+      "sha256": "3841129a9393db6df194ed302078908981062cfc11e6730cce9624fa2964ef48"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-names-only.patch",
+      "sha256": "2ac14dae3f3a3ae41e2389507fff8ca77944d9e5c210a7ec7c298c5b9b05aa82"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-tests.log",
+      "sha256": "53606bd14186253f2a46d44a9c80edd79e11afc6d62c8ecda6780012ebeed450"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-clippy.log",
+      "sha256": "66760e85b620e7087e30cf90192aaa751c6dd7c2e32b75ac6cb6c3300ea61d42"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-build-cli.log",
+      "sha256": "3833869f26033694ea943b0680e24ef78d5bd49e6505d6603781ebf320acd4b9"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/retained-cli-build-info.json",
+      "sha256": "493383ac915b6195b7adb5dc996f41602ca6523c32bcf869ceb59fb289ec4009"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/run-trial.py",
+      "sha256": "70a5810c3058ed3ef48c9445abaddb58f1e314fa67b130cbd21d561662dbfa9a"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/runner-diff.patch",
+      "sha256": "9bcbaa0a7465b74e3db85b0299304415803d809fe9e984bbd9f30fc8f7479258"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/fixture-binding.json",
+      "sha256": "02835bac82de7132c65665adcbb3ed3128c9d44e603c6c4cce8009811485a151"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/cli-build-info.json",
+      "sha256": "b31f4bc3304f0f7c41a55870b3b5fbb43f68b0278ffec83bb01378b8b25e3fa3"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/rejected-candidate.patch",
+      "sha256": "21edc97e0ce820f1699e876e97d0b1df1cc63c9c326a033aed438b150e30fa7f"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/candidate-tests.log",
+      "sha256": "cd08329bec0b6985ce4de7b75efdea6a651b78e84e5468c58d669b6e609031be"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/candidate-clippy.log",
+      "sha256": "abdda28d3368b432cebb12299b9e5ff838df37515ca61cfb515001be91833364"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/candidate-clippy-final.log",
+      "sha256": "d718945f582a05502b92eca2a1ea2da3b4e38531a6e3a7712938d039cec1c52e"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/candidate-fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/invalid-package-command.log",
+      "sha256": "5ed5ce04679b57f7eb22edaac313abda481e352244d54d9e3fc11bcbcbe2f688"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/build-cli.log",
+      "sha256": "04388fdc2a3fc72bcc311261a96c3df22bb629cfbfaabe2e43372694f006977a"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/state.json",
+      "sha256": "bdf960aa3bdb83372d4e8b0f36387b322cb4775669a0044de3c6d235e6eed406"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/report.json",
+      "sha256": "4cc342c678579c5e00fe6108a3e3d92bae6e90018eacd6cfe2e9f9d4d8f28177"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/actual-review.json",
+      "sha256": "3a36ce74dfb13278937a106c18b567c443f22e771c72f09cd618dac64030de4d"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/cleanup.json",
+      "sha256": "f354ab64057371cf8719d017091ace70ed32ed414696f426210ff60e7232f362"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/last-generation.json",
+      "sha256": "d3e45e297967940a6c2f2f9b1b2b620e0485c733bbb6d091b79f8eae24f26024"
+    },
+    {
+      "path": "artifacts/q16-name-slots-2026-10-31/trial/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-2/last-generation.json",
+      "sha256": "88a7d222c5ec49b73405dddfcc5fa129753412bba0b3b6184d9868056e4e8551"
+    },
+    {
+      "path": "artifacts/name-codec-2026-10-31/exact-source-ci.json",
+      "sha256": "166d84d8fc71b89a703c38b56e1af07393ebc8f5ba278765f9f856faf74ca954"
+    }
+  ]
+}

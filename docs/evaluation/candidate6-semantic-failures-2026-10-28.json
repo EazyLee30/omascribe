@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "candidate_source": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "recorded_utc": "2026-10-27T18:02:52.181876+00:00",
+  "release_eligible": false,
+  "manual_semantic_acceptance": false,
+  "explanation": "The33 automated case passes check targeted patterns/revisions/names/language and do not prove action/role/scope semantics. Earlier manual review classified these outputs as awkward wording; that was insufficient for semantic release acceptance.",
+  "confirmed_local_failures": [
+    {
+      "case": "en_owner_and_deadline",
+      "evidence": "actual retained Mac candidate6 output",
+      "automated_pass": true,
+      "manual_semantic_pass": false,
+      "problem": "Caption changes the requested action from sending a report to publishing, and renders its title awkwardly.",
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "c7ee58d8-26a3-45cf-943e-126c74794bb1:1:1",
+          "meeting_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "62fefddf298d3e4f8df33d98a3fa43493e84f6d6962b22bb64e0eda24bae5245",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1:1:1",
+          "target": "zh",
+          "text": "Morgan 将于周四发布释放报告。我们尚未批准启动日期。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "459c8006-9a88-4f02-adcc-bed08a82549d",
+          "kind": "section",
+          "meeting_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+              "revision": 1,
+              "segment_id": "c7ee58d8-26a3-45cf-943e-126c74794bb1:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "raw_report_sha256": "c3440fcc7ac51823854b612029f766829a7d5adb46421ac06663958c264281fd",
+      "snapshot_sha256": "43b8dae9e0c5c1807a82d662a5d6c685bab78c37cdd40d59be192f3271a58c69"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "evidence": "actual retained Mac candidate6 output",
+      "automated_pass": true,
+      "manual_semantic_pass": false,
+      "problem": "Caption and final minutes render task responsibility as possessing the report.",
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "64f81492-1c25-4586-ba60-d48432b303c5:1:1",
+          "meeting_id": "64f81492-1c25-4586-ba60-d48432b303c5",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "end_ms": 20000,
+          "id": "64f81492-1c25-4586-ba60-d48432b303c5:1:2",
+          "meeting_id": "64f81492-1c25-4586-ba60-d48432b303c5",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 10000,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "8ef75e4ec556f2b5bd8f704d8934af4c57406973f07c1274dd1a79fec3c0b981",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:1",
+          "target": "zh",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+        },
+        {
+          "cache_key": "8359b62e93aa512cfe90468ff43900ad015bb8918b89f3141c0eb51c1f218996",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:2",
+          "target": "zh",
+          "text": "Morgan 拥有延迟报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "37e17e7a-f1cf-44fa-8a2a-238e9120faf3",
+          "kind": "section",
+          "meeting_id": "64f81492-1c25-4586-ba60-d48432b303c5",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+              "revision": 1,
+              "segment_id": "64f81492-1c25-4586-ba60-d48432b303c5:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan 拥有延迟报告，并将于周四交付。"
+        }
+      ],
+      "raw_report_sha256": "fb21885996aca8d459c7c81c40f5ff80c98878995fec690d09f141782de16edd",
+      "snapshot_sha256": "3c762eb30d4edc73ca045773e73c087856dddd7789d5e919d0a209e2c050a85f"
+    }
+  ],
+  "peer_reported_failures": {
+    "source": "Windows CUDA same-candidate fictional fixture review, full raw results pending",
+    "comments": [
+      "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6449462710",
+      "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6449583209"
+    ],
+    "reported": [
+      "only scope limit omitted",
+      "unimplemented toolbar request rendered as existing capability",
+      "character/word error rates confused and extra sentence error rate added",
+      "responsibility direction reversed"
+    ],
+    "status": "Author-confirmed reports; exact output snapshots requested, not independently replayed on this Mac",
+    "automatic_run_completed": true,
+    "review_summary": {
+      "passed": 11,
+      "confirmed_issues": 13,
+      "uncertain_or_disputed": 9,
+      "source": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6449771538"
+    }
+  },
+  "next": "Capture exact failed captions/articles and add source-action/role/scope negatives before a bounded shared production repair. Do not rerun or relabel already completed source checks as semantic passes.",
+  "review_actors": "Assistant inspection and cross-review of saved fictional outputs; not an independent human study."
+}

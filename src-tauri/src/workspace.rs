@@ -71,6 +71,59 @@ pub fn delete_model(engine: State<AppState>, id: String) -> Reply<()> {
     engine.delete_model(&id).map_err(err)
 }
 #[tauri::command]
+pub async fn acceleration_components(
+    engine: State<'_, AppState>,
+) -> Reply<omascribe_core::components::CatalogStatus> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.acceleration_components())
+        .await
+        .map_err(err)
+}
+#[tauri::command]
+pub async fn check_acceleration_components(
+    engine: State<'_, AppState>,
+) -> Reply<omascribe_core::components::CatalogStatus> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.check_acceleration_components())
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+#[tauri::command]
+pub fn download_acceleration_component(engine: State<AppState>, id: String) -> Reply<()> {
+    engine
+        .inner()
+        .download_acceleration_component(&id)
+        .map_err(err)
+}
+#[tauri::command]
+pub async fn remove_acceleration_component(
+    engine: State<'_, AppState>,
+    id: String,
+    version: String,
+) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.remove_acceleration_component(&id, &version))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+#[tauri::command]
+pub async fn verify_acceleration(engine: State<'_, AppState>, id: String) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.verify_acceleration(&id).map_err(err))
+        .await
+        .map_err(err)?
+}
+#[tauri::command]
+pub fn disable_acceleration(engine: State<AppState>) -> Reply<()> {
+    engine.disable_acceleration().map_err(err)
+}
+#[tauri::command]
+pub fn cancel_acceleration_download(engine: State<AppState>, id: String) {
+    engine.cancel_acceleration_download(&id)
+}
+#[tauri::command]
 pub async fn hardware_profile(engine: State<'_, AppState>) -> Reply<Hardware> {
     let e = engine.inner().clone();
     tauri::async_runtime::spawn_blocking(move || omascribe_core::models::hardware(&e.root))
@@ -125,8 +178,11 @@ pub fn assign_speaker(
         .map_err(err)
 }
 #[tauri::command]
-pub fn diarize(engine: State<AppState>, id: String, count: Option<u32>) -> Reply<()> {
-    engine.inner().diarize_with_count(&id, count).map_err(err)
+pub async fn diarize(engine: State<'_, AppState>, id: String, count: Option<u32>) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.diarize_with_count(&id, count).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 pub fn cancel_diarization(engine: State<AppState>) {

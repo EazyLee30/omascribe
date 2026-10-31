@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="OmaScribe — a local notebook for your conversations" width="100%">
+  <img src="src/assets/banner.svg" alt="OmaScribe — a local notebook for your conversations" width="100%">
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">繁體中文</a>
+  <a href="README.md">English</a> · <a href="docs/i18n/README.zh-CN.md">简体中文</a> · <a href="docs/i18n/README.zh-TW.md">繁體中文</a>
 </p>
 <p align="center">
   <a href="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml"><img src="https://github.com/EazyLee30/omascribe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -83,15 +83,15 @@ Install a current stable [Rust toolchain](https://www.rust-lang.org/tools/instal
 ```bash
 git clone https://github.com/EazyLee30/omascribe.git
 cd omascribe
-bin/build          # One compile job by default, suitable for an 8 GB machine
-bin/setup          # Download verified models and build pinned llama.cpp and native caption support
-bin/install        # Install to your user account and app launcher
+scripts/bin/build          # One compile job by default, suitable for an 8 GB machine
+scripts/bin/setup          # Download verified models and build pinned llama.cpp and native caption support
+scripts/bin/install        # Install to your user account and app launcher
 ~/.local/bin/omascribe
 ```
 
 Setup needs a network connection, roughly 1.6 GB of model downloads, and additional space for build caches. **After setup, recording, transcription, editing, inference, and export run offline.** No account or API key is required. Models are not stored in Git. Native installers include the verified models; Linux source installs download them during setup.
 
-`OMASCRIBE_BUILD_JOBS=2 bin/build` allows a faster build on a machine with more headroom. Compiling on a fanless MacBook can make it warm and temporarily slow the desktop.
+`OMASCRIBE_BUILD_JOBS=2 scripts/bin/build` allows a faster build on a machine with more headroom. Compiling on a fanless MacBook can make it warm and temporarily slow the desktop.
 
 ## Use it
 
@@ -146,7 +146,7 @@ Current boundaries:
 
 - Microphone capture and file import; no system-audio mixer yet. Optional local speaker separation runs after transcription (up to two hours).
 - Mandarin/English ASR is a small, older model. Names, far-field speech, overlap, and code-switching need your own evaluation.
-- Keywords guide **note retrieval**, not ASR hotword bias, in this release.
+- Names in notes and enabled glossary terms guide local recognition and supported spelling corrections as well as note retrieval. Raw ASR history and human edits are preserved; unintelligible fragments are not replaced with an unspoken note word.
 - Small-model writing can omit facts or misread a correction. Generated paragraphs need review; edited paragraphs are never automatically rewritten.
 - On-device translation fills in after recording and writing go idle and never alters the originals; small models can still misread negation or numbers in a translation.
 - On Linux, floating-window edge placement integrates with Hyprland and screen captions require Wayland layer-shell. macOS/Windows use native always-on-top caption windows; behavior across full-screen Spaces and multiple monitors needs physical-device testing.
@@ -156,8 +156,8 @@ Current boundaries:
 
 ## Project notes
 
-- [Architecture](docs/ARCHITECTURE.md) · [Models, hashes, and licenses](docs/MODELS.md)
-- [Contributing](CONTRIBUTING.md) · [Privacy and security](SECURITY.md)
+- [Repository map](docs/REPOSITORY.md) · [Architecture](docs/ARCHITECTURE.md) · [Models, hashes, and licenses](docs/MODELS.md)
+- [Contributing](.github/CONTRIBUTING.md) · [Privacy and security](.github/SECURITY.md)
 - Inspired by the user-guided note interaction in [Google Foresight](https://developers.google.com/edge/foresight); this is an independent Rust/Tauri implementation.
 - Built with [Tauri](https://tauri.app/), [Tiptap](https://tiptap.dev/), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [llama.cpp](https://github.com/ggml-org/llama.cpp), and [Qwen](https://huggingface.co/Qwen).
 

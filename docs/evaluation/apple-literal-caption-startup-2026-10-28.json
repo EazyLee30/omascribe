@@ -1,0 +1,864 @@
+{
+  "schema": 1,
+  "kind": "literal_caption_startup_pair",
+  "identities": {
+    "baseline": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "d52a1a6a5a2f402e0274cea6df5b7fff6acdc8b63c248b2bc7971e3c1cbc2fff",
+        "target": "aarch64-apple-darwin"
+      },
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "cfc9b6ffb82751b81194f7935ab52d8152a011c4da40715141a9a2ea1ec4e16d",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "candidate": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "08ad6222fd18dda636c021deeb204c1ce09a9374",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "ad18c25cb2980336284bf6afbf38abec9ca4486823a894d18baac21cfa9c521e",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "1bf0346505ecb5ec971d436b76f8c14cb35a5b8cbfc7a0619cb9709730b18864",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "18f77771aa3e9e856b7153724180437d03dbdc07d1a36e4c2f2e2e6f79496b77",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "5b4a3516e71f1197a53ea86af08385429d4d321a",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    }
+  },
+  "preferences": {
+    "llm_model": "qwen3-1.7b",
+    "inference_backend": "metal",
+    "threads": 1,
+    "context_size": 2048,
+    "memory_budget_mib": 4096,
+    "resource_mode": "balanced",
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": false,
+    "translation_mode": "bilingual",
+    "diarization": false,
+    "use_memory": false,
+    "use_knowledge": false
+  },
+  "model_files": [
+    {
+      "name": "Qwen3-1.7B-Q4_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
+      "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "bytes": 1107409472
+    }
+  ],
+  "results": [
+    {
+      "trial": 1,
+      "case": "literal_only",
+      "variant": "baseline",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "和",
+        "or"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 831
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "worker": 1,
+        "chunk": 3,
+        "literal_caption": 3,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "5487861e4379a0461c598a5f2138bc715aa53a29d3fdb358c276b8b35d5ea1ef",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "6ae6e8f2-5676-4152-9c3d-aed9b932dd96"
+        ],
+        "code": 0,
+        "seconds": 1.376,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 5,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.805321829,
+          "peak_tree_rss_mib": 1209.28125,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "6ae6e8f2-5676-4152-9c3d-aed9b932dd96"
+        ],
+        "code": 0,
+        "seconds": 0.457,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.274397279,
+          "peak_tree_rss_mib": 11.3125,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 1,
+      "case": "literal_only",
+      "variant": "candidate",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "和",
+        "or"
+      ],
+      "workers": [],
+      "trace_phases": {
+        "started": 1,
+        "chunk": 3,
+        "literal_caption": 3,
+        "batch": 1,
+        "finished": 1
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "c4a2edb7-e69c-48e2-b5e7-6076b682a4f4"
+        ],
+        "code": 0,
+        "seconds": 0.457,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.27095425500000003,
+          "peak_tree_rss_mib": 13.109375,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "c4a2edb7-e69c-48e2-b5e7-6076b682a4f4"
+        ],
+        "code": 0,
+        "seconds": 0.442,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.27108788300000003,
+          "peak_tree_rss_mib": 11.390625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 1,
+      "case": "mixed_factual",
+      "variant": "baseline",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "Budget of 3000 yuan has not been approved.",
+        "和",
+        "Morgan 将于周四发送报告。"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 422
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "worker": 1,
+        "chunk": 5,
+        "literal_caption": 2,
+        "generation": 3,
+        "validation_failed": 1,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "085256f2758c56105133e83b824f9d79f4103963c0e6faaf3369c946ef087767",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "8a74d493-ce47-4878-93c2-cae5ef92e7b0"
+        ],
+        "code": 0,
+        "seconds": 1.874,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 7,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.93803946,
+          "peak_tree_rss_mib": 1472.6875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "8a74d493-ce47-4878-93c2-cae5ef92e7b0"
+        ],
+        "code": 0,
+        "seconds": 0.463,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.279314631,
+          "peak_tree_rss_mib": 11.390625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 1,
+      "case": "mixed_factual",
+      "variant": "candidate",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "Budget of 3000 yuan has not been approved.",
+        "和",
+        "Morgan 将于周四发送报告。"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 413
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "chunk": 5,
+        "literal_caption": 2,
+        "worker": 1,
+        "generation": 3,
+        "validation_failed": 1,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "4c8bab40c79975270fb64a54771c50a0d112e028b36fb414715f8239a7234d7e",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "7a9ddfd1-4e39-4164-b2e8-f3c550623880"
+        ],
+        "code": 0,
+        "seconds": 1.782,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 7,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.947135132,
+          "peak_tree_rss_mib": 1472.765625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "7a9ddfd1-4e39-4164-b2e8-f3c550623880"
+        ],
+        "code": 0,
+        "seconds": 0.453,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.275462082,
+          "peak_tree_rss_mib": 11.375,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 2,
+      "case": "literal_only",
+      "variant": "candidate",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "和",
+        "or"
+      ],
+      "workers": [],
+      "trace_phases": {
+        "started": 1,
+        "chunk": 3,
+        "literal_caption": 3,
+        "batch": 1,
+        "finished": 1
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "180b5ccc-08ed-47b4-b28b-5610dd861280"
+        ],
+        "code": 0,
+        "seconds": 0.453,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.270757914,
+          "peak_tree_rss_mib": 13.109375,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "180b5ccc-08ed-47b4-b28b-5610dd861280"
+        ],
+        "code": 0,
+        "seconds": 0.448,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.271090578,
+          "peak_tree_rss_mib": 11.421875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 2,
+      "case": "literal_only",
+      "variant": "baseline",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "和",
+        "or"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 422
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "worker": 1,
+        "chunk": 3,
+        "literal_caption": 3,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "c503fe4f349f5fe5262a7494cb7b6b3758b29533e1904c2ecf4cacdf589a7aea",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "0298780b-075d-4c16-a70b-6b8d5c479bd1"
+        ],
+        "code": 0,
+        "seconds": 0.955,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 4,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.6887937559999999,
+          "peak_tree_rss_mib": 1439.625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "0298780b-075d-4c16-a70b-6b8d5c479bd1"
+        ],
+        "code": 0,
+        "seconds": 0.441,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.27423223900000004,
+          "peak_tree_rss_mib": 11.421875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 2,
+      "case": "mixed_factual",
+      "variant": "candidate",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "Budget of 3000 yuan has not been approved.",
+        "和",
+        "Morgan 将于周四发送报告。"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 422
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "chunk": 5,
+        "literal_caption": 2,
+        "worker": 1,
+        "generation": 3,
+        "validation_failed": 1,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "e9b34118b98a508c59d87caec88c9b883b1390e831b158261f08952af4c45cce",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "3fc3e962-4165-4f10-bb34-17fa5e875a61"
+        ],
+        "code": 0,
+        "seconds": 1.834,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 7,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.950127969,
+          "peak_tree_rss_mib": 1472.59375,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/optimized-cli",
+          "translate",
+          "3fc3e962-4165-4f10-bb34-17fa5e875a61"
+        ],
+        "code": 0,
+        "seconds": 0.457,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.27976810799999996,
+          "peak_tree_rss_mib": 11.390625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    },
+    {
+      "trial": 2,
+      "case": "mixed_factual",
+      "variant": "baseline",
+      "errors": [],
+      "texts": [
+        "Hmm",
+        "Budget of 3000 yuan has not been approved.",
+        "和",
+        "Morgan 将于周四发送报告。"
+      ],
+      "workers": [
+        {
+          "backend": "metal",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 422
+        }
+      ],
+      "trace_phases": {
+        "started": 1,
+        "worker": 1,
+        "chunk": 5,
+        "literal_caption": 2,
+        "generation": 3,
+        "validation_failed": 1,
+        "batch": 1,
+        "finished": 1
+      },
+      "runtime_log": {
+        "sha256": "60fe0edbca9277f91b7c490d11c99690620d165599f484d93b6f36b1587328da",
+        "offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ]
+      },
+      "process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "118d8aac-1b4a-41bf-889b-f2e3c7c700b8"
+        ],
+        "code": 0,
+        "seconds": 1.823,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 7,
+          "processes_seen": 2,
+          "cpu_seconds_sampled": 0.958132192,
+          "peak_tree_rss_mib": 1473.296875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "cached_process": {
+        "command": [
+          "/Users/eazylee/build/omascribe/artifacts/lazy-caption-worker/candidate6-cli",
+          "translate",
+          "118d8aac-1b4a-41bf-889b-f2e3c7c700b8"
+        ],
+        "code": 0,
+        "seconds": 0.453,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 2,
+          "processes_seen": 1,
+          "cpu_seconds_sampled": 0.277379972,
+          "peak_tree_rss_mib": 11.390625,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "model_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "measurement": "CLI-inclusive wall time and sampled process-tree CPU/RSS; not energy or unique physical/GPU memory. Page cache not flushed; not a cold-disk or whole-meeting benchmark.",
+  "summary": {
+    "literal_only": {
+      "baseline": {
+        "median_wall_seconds": 1.1655,
+        "worker_start_events": 2
+      },
+      "candidate": {
+        "median_wall_seconds": 0.455,
+        "worker_start_events": 0
+      }
+    },
+    "mixed_factual": {
+      "baseline": {
+        "median_wall_seconds": 1.8485,
+        "worker_start_events": 2
+      },
+      "candidate": {
+        "median_wall_seconds": 1.808,
+        "worker_start_events": 2
+      }
+    }
+  },
+  "scope": "Eight actual CLI commands in two reversed-order trials plus8 unchanged-cache commands. Literal-only and one short mixed factual batch; not full corpus, live recording, native or release acceptance.",
+  "raw_report_sha256": "578350437bfd50824d383ddbba79302898888a2c6f610409d62c9feed3ec8cd8",
+  "candidate_product_source": "08ad6222fd18dda636c021deeb204c1ce09a9374",
+  "harness_revision": "5b4a351",
+  "source_checks": {
+    "core_passed": 179,
+    "core_ignored": 7,
+    "model_identifier_tests": 7,
+    "workspace_all_targets_ui_test_strict_clippy": true,
+    "unchanged_frontend_assets_reused": true,
+    "logs": {
+      "before.log": "aa56c6fe1d678c9636fd8c9bc3508d5ed32d226fc9f37e6c5cc58b01d5890691",
+      "after.log": "befb061ac62a128e048a1004790055d23cf7a2fa08a7e7fa2dd1b8ae80b47f21",
+      "core.log": "877ae1bcd2c9e7dd0ee6b0038da7640f911fd6fb4f28bf2bd6ca42dd22364db5",
+      "clippy-reused-frontend.log": "741061d6b903d7b06094bae1a2c2de1e99ef8eb12a455dab75e7ad0e2a1d5dfc"
+    }
+  },
+  "prior_failure": {
+    "stage": "benchmark setup before any translation",
+    "reason": "Real schema was not initialized before fixture seed; corrected by separate diagnose preparation in5b4a351.",
+    "log_sha256": "906bd41af0b15babc9e499fcb0c6bd29e0cde504472193c89ee3b9959e15ea20",
+    "no_performance_claim": true
+  },
+  "limitations": [
+    "Baseline product identity is its compiled source/executable hash; shared harness checkout is the candidate, explicitly separated in identities.",
+    "No full model, GPU SDK or installer rebuilt/downloaded. Same pinned1.7B/runtime, threads1/context2048/TTL0; OS page cache not controlled.",
+    "No general memory/energy or whole-meeting speedup claim: process-tree RSS may double-count shared pages and CPU is a sampled lower bound.",
+    "The frozen candidate6 branch and its verified binaries remain unchanged; optimized CLI stored separately and original primary CLI restored.",
+    "Current C6 semantic failures are not repaired by worker laziness. Shared action/role/scope fixes take priority; this change remains independent."
+  ],
+  "test_fixture_isolation_followup": {
+    "scope": "Only cfg(test) fixture paths changed after the measured production source08ad622; no production behavior or benchmark rerun claim.",
+    "reason": "Prevent tests from consulting host-bundled models/runtime, without changing global environment variables.",
+    "translation_tests_passed": 8,
+    "core_all_targets_strict_clippy": true,
+    "logs": {
+      "isolated-tests.log": "c9ecc8abcc6ca54894b9f3b318194e7cecac1b39af8005c16b80de154fe3d30e",
+      "isolated-clippy.log": "65acd602e0223f1488c280b9f96446c07c2c7d71a5c7ee3cdcc2a1d150781b3b"
+    }
+  }
+}

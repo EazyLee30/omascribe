@@ -1,0 +1,4024 @@
+{
+  "schema": 1,
+  "candidate_source": "3a6b38f0e546419c6c55c58c36dded630a7d8b4d",
+  "frozen_branch": "codex/release-0.3.5-candidate-7",
+  "release_eligible": false,
+  "full_semantic_acceptance": false,
+  "scope": "One fixed-source complete51-case fictional automatic bilingual corpus. This is not physical ASR, installer, energy or broad semantic acceptance.",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "3a6b38f0e546419c6c55c58c36dded630a7d8b4d",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "c7cae6811c0db3fb99118f0320df0addfcf5769746d68eb67fee3873fec3aaa4",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "3a6b38f0e546419c6c55c58c36dded630a7d8b4d",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "identity_unchanged_after_run": true,
+  "freeze_sha256": "4f4ba919de218c880c87f408559bd6d3846f10b402703134fb343ea9731c5591",
+  "source_after_sha256": "87bde03061fba77f77efbf4d9b41318d3277e763f19da08ebd7b530f8bbb982d",
+  "fixture_sha256": "21101741884016b235675acbda8611cfc5c4ee6f15399347bfd59916bfa72711",
+  "automated": {
+    "total": 51,
+    "passed": 50,
+    "failed": 1,
+    "failed_cases": [
+      "zh_windows_uppercase_asr"
+    ]
+  },
+  "assistant_semantic_review": {
+    "kind": "Assistant inspection of fictional source/captions/minutes; not human review. Targeted judgments do not prove general entailment.",
+    "counts": {
+      "needs_review": 3,
+      "affected_scope_pass": 38,
+      "known_lexical_issue": 3,
+      "confirmed_issue": 4,
+      "name_spelling_issue": 2,
+      "automatic_failure": 1
+    },
+    "blocking_cases": [
+      "zh_named_speakers",
+      "zh_long_context_state",
+      "en_incremental_separate_topics",
+      "zh_incremental_withdrawal",
+      "zh_windows_uppercase_asr"
+    ],
+    "note": "Affected-scope pass is a targeted assistant judgment, not full semantic or human acceptance. Every case reviewed; complete source/phase artifacts retained locally."
+  },
+  "confirmed_semantic_failures": [
+    {
+      "case": "zh_named_speakers",
+      "old_automatic_pass_retained": true,
+      "review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Caption changes unmarked submission schedule 结果周四提交 into completed was submitted on Thursday. Source lacks completion evidence. Minutes retain source schedule and mapped speakers."
+      },
+      "source": {
+        "end_ms": 10000,
+        "id": "701415a4-43d9-4949-9c97-2dbd76a12d06:1:1",
+        "meeting_id": "701415a4-43d9-4949-9c97-2dbd76a12d06",
+        "revision": 1,
+        "run": 1,
+        "seq": 1,
+        "speaker": "speaker-1",
+        "speaker_manual": false,
+        "start_ms": 0,
+        "text": "实时转写的延迟测试由我负责，结果周四提交。"
+      },
+      "caption": {
+        "cache_key": "125a76462f727fda6343affbfb7856448afe3261f8316bfc63dc02fecda1adb8",
+        "model": "qwen3-1.7b",
+        "revision": 1,
+        "segment_id": "701415a4-43d9-4949-9c97-2dbd76a12d06:1:1",
+        "target": "en",
+        "text": "The real-time transcription delay test I am responsible for was submitted on Thursday."
+      },
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "2d3c09c5-4333-4b30-9b05-943977fcefbc",
+          "kind": "section",
+          "meeting_id": "701415a4-43d9-4949-9c97-2dbd76a12d06",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。",
+              "revision": 1,
+              "segment_id": "701415a4-43d9-4949-9c97-2dbd76a12d06:1:2",
+              "speaker_name": "陈明",
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "实时转写的延迟测试由我负责，结果周四提交。",
+              "revision": 1,
+              "segment_id": "701415a4-43d9-4949-9c97-2dbd76a12d06:1:1",
+              "speaker_name": "林悦",
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "林悦负责实时转写的延迟测试，结果周四提交。陈明负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+        }
+      ]
+    },
+    {
+      "case": "zh_long_context_state",
+      "old_automatic_pass_retained": true,
+      "review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Metrics and Chinese minutes preserve source, but seq10 caption invents Lin Yuejian from 林悦先 and changes 先在周四提交 into submitted on Thursday; actor spelling/completion evidence lacking."
+      },
+      "source": {
+        "end_ms": 100000,
+        "id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:10",
+        "meeting_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143",
+        "revision": 1,
+        "run": 1,
+        "seq": 10,
+        "speaker": null,
+        "speaker_manual": false,
+        "start_ms": 90000,
+        "text": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+      },
+      "caption": {
+        "cache_key": "9262044182ec9f452c5c15121433ab05b75acb4c53b07d8dcb85b47d3fcb60b6",
+        "model": "qwen3-1.7b",
+        "revision": 1,
+        "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:10",
+        "target": "en",
+        "text": "Final confirmation: Public release has not been approved, and Lin Yuejian submitted the test report on Thursday."
+      },
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "ad4c1180-ec91-46f6-916e-fbf8f550bfcf",
+          "kind": "section",
+          "meeting_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143",
+          "sources": [
+            {
+              "end_ms": 90000,
+              "quote": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:9",
+              "speaker_name": null,
+              "start_ms": 80000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 20000,
+              "quote": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 70000,
+              "quote": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:7",
+              "speaker_name": null,
+              "start_ms": 60000
+            },
+            {
+              "end_ms": 50000,
+              "quote": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 100000,
+              "quote": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:10",
+              "speaker_name": null,
+              "start_ms": 90000
+            },
+            {
+              "end_ms": 60000,
+              "quote": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:6",
+              "speaker_name": null,
+              "start_ms": 50000
+            },
+            {
+              "end_ms": 80000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "7ef6bcc2-8f16-41e9-9aa3-69e946872143:1:8",
+              "speaker_name": null,
+              "start_ms": 70000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        }
+      ]
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "old_automatic_pass_retained": true,
+      "review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Final minutes preserve current 5000 unapproved budget, independent Riley task and deadlines. Caption of owns the budget review renders 拥有预算审核权, changing task responsibility to authority."
+      },
+      "source": {
+        "end_ms": 10000,
+        "id": "614f7daa-f42d-4af4-9f33-33b58ca84316:1:1",
+        "meeting_id": "614f7daa-f42d-4af4-9f33-33b58ca84316",
+        "revision": 1,
+        "run": 1,
+        "seq": 1,
+        "speaker": null,
+        "speaker_manual": false,
+        "start_ms": 0,
+        "text": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+      },
+      "caption": {
+        "cache_key": "835b1d2780179664ece0ac14759c8464e98767731445effc36b9b58e21c80547",
+        "model": "qwen3-1.7b",
+        "revision": 1,
+        "segment_id": "614f7daa-f42d-4af4-9f33-33b58ca84316:1:1",
+        "target": "zh",
+        "text": "Morgan 拥有预算审核权。3000的金额尚未批准。审核截止日期为周四。"
+      },
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "2fab8689-eaf3-4bdf-a6ec-db4d62364233",
+          "kind": "section",
+          "meeting_id": "614f7daa-f42d-4af4-9f33-33b58ca84316",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.",
+              "revision": 1,
+              "segment_id": "614f7daa-f42d-4af4-9f33-33b58ca84316:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline.",
+              "revision": 1,
+              "segment_id": "614f7daa-f42d-4af4-9f33-33b58ca84316:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.",
+              "revision": 1,
+              "segment_id": "614f7daa-f42d-4af4-9f33-33b58ca84316:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+        }
+      ]
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "old_automatic_pass_retained": true,
+      "review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Final minutes preserve withdrawn Friday/date undecided/5000 and unfinished page. Seq3 caption changes next-Wednesday test-link sending into reservation-page release; object/action drift."
+      },
+      "source": {
+        "end_ms": 30000,
+        "id": "24c4ad07-e023-47e5-b1e9-afdc49862fca:1:3",
+        "meeting_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca",
+        "revision": 1,
+        "run": 1,
+        "seq": 3,
+        "speaker": null,
+        "speaker_manual": false,
+        "start_ms": 20000,
+        "text": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+      },
+      "caption": {
+        "cache_key": "9d3dff9209aa5ba872ea5f0f9dee22de7f6a3ce14ce9d50039a62a41a95dbfdf",
+        "model": "qwen3-1.7b",
+        "revision": 1,
+        "segment_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca:1:3",
+        "target": "en",
+        "text": "陈老师 is responsible for the tour reservation page, which will be released on Wednesday next week, and the page is still not completed."
+      },
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "0c398002-e71e-4376-94ed-2438b8247b08",
+          "kind": "section",
+          "meeting_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。",
+              "revision": 1,
+              "segment_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 30000,
+              "quote": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+              "revision": 1,
+              "segment_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。",
+              "revision": 1,
+              "segment_id": "24c4ad07-e023-47e5-b1e9-afdc49862fca:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "展览暂定周五开放，刘老师负责布置。周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        }
+      ]
+    }
+  ],
+  "failed_settlement": {
+    "case": "zh_windows_uppercase_asr",
+    "review": {
+      "status": "automatic_failure",
+      "blocking": true,
+      "note": "Original120s settle exits1 at120.176s. Four captions persisted; seq5 remains deferred after source-name then target-language failures. Minutes cursor5 and a fragmented mixed-language article exist in SQLite despite report capture failing. Do not call document absent or diagnose raw rejected caption without preserved raw response."
+    },
+    "persisted_sources": [
+      {
+        "id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:1",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "run": 1,
+        "seq": 1,
+        "start_ms": 0,
+        "end_ms": 10000,
+        "revision": 1,
+        "speaker_manual": false,
+        "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A"
+      },
+      {
+        "id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:2",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "run": 1,
+        "seq": 2,
+        "start_ms": 10000,
+        "end_ms": 20000,
+        "revision": 1,
+        "speaker_manual": false,
+        "text": "LICE WILL CHECK THE ENVY A CARD"
+      },
+      {
+        "id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:3",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "run": 1,
+        "seq": 3,
+        "start_ms": 20000,
+        "end_ms": 30000,
+        "revision": 1,
+        "speaker_manual": false,
+        "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+      },
+      {
+        "id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:4",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "run": 1,
+        "seq": 4,
+        "start_ms": 30000,
+        "end_ms": 40000,
+        "revision": 1,
+        "speaker_manual": false,
+        "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN"
+      },
+      {
+        "id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:5",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "run": 1,
+        "seq": 5,
+        "start_ms": 40000,
+        "end_ms": 50000,
+        "revision": 1,
+        "speaker_manual": false,
+        "text": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+      }
+    ],
+    "persisted_captions": [
+      {
+        "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:1",
+        "revision": 1,
+        "target": "zh",
+        "model": "qwen3-1.7b",
+        "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。",
+        "cache_key": "9fc306f65dc51ccd2091e30f935128d3e4592c9bf13ac7795949b1a011404348"
+      },
+      {
+        "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:2",
+        "revision": 1,
+        "target": "zh",
+        "model": "qwen3-1.7b",
+        "text": "LICE 将检查 ENVY A CARD",
+        "cache_key": "2b7b56a3748f05031260348d4ac0c123697e27272a57446e10c6f63b5d914871"
+      },
+      {
+        "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:4",
+        "revision": 1,
+        "target": "zh",
+        "model": "qwen3-1.7b",
+        "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元",
+        "cache_key": "99f247e96e020ddc03e4fa89b7ffcf56f1949e86a35e0d4c258cfe450390f510"
+      },
+      {
+        "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:3",
+        "revision": 1,
+        "target": "zh",
+        "model": "qwen3-1.7b",
+        "text": "星期五不是截止日期，会议记录应留在此电脑上",
+        "cache_key": "664e91d95397ac3acaeb7a8fc64982e30324d601a5b5bb5fa1b1b4979cd9b4a5"
+      }
+    ],
+    "persisted_minutes": [
+      {
+        "focus": "会议纪要",
+        "id": "b29949e9-ae38-4cad-bc81-af7a3e85638d",
+        "meeting_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+        "kind": "section",
+        "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE将检查ENVY A CARD FRIDAY不是截止日期记录，会议笔记中应保持在本计算机上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 IT未被批准，ALICE将检查UN VIDEO CARD",
+        "sources": [
+          {
+            "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:5",
+            "revision": 1,
+            "start_ms": 40000,
+            "end_ms": 50000,
+            "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+            "speaker_name": null
+          },
+          {
+            "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:2",
+            "revision": 1,
+            "start_ms": 10000,
+            "end_ms": 20000,
+            "quote": "LICE WILL CHECK THE ENVY A CARD",
+            "speaker_name": null
+          },
+          {
+            "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:1",
+            "revision": 1,
+            "start_ms": 0,
+            "end_ms": 10000,
+            "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+            "speaker_name": null
+          },
+          {
+            "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:4",
+            "revision": 1,
+            "start_ms": 30000,
+            "end_ms": 40000,
+            "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+            "speaker_name": null
+          },
+          {
+            "segment_id": "607c9d2e-c1cc-414f-aa0e-c1c59e62b794:1:3",
+            "revision": 1,
+            "start_ms": 20000,
+            "end_ms": 30000,
+            "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+            "speaker_name": null
+          }
+        ],
+        "status": "pending",
+        "stale": false
+      }
+    ],
+    "persisted_notes_cursor": 5,
+    "missing_caption_sequences": [
+      5
+    ],
+    "last_generation_sha256": "12cc52d2f6dfc71feb3fa9b981aa87184c18670bb1dbac5d5bacbf53ca4b7588",
+    "failure_trace": [
+      {
+        "at": "2026-10-28T10:13:24.934659+00:00",
+        "elapsed_ms": 2781,
+        "job": "b2bf2281-2652-4d25-b444-d9c603f8b2db",
+        "metrics": {
+          "kind": "source_name",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:13:25.336704+00:00",
+        "elapsed_ms": 3183,
+        "job": "b2bf2281-2652-4d25-b444-d9c603f8b2db",
+        "metrics": {
+          "kind": "target_language",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:13:53.383474+00:00",
+        "elapsed_ms": 1088,
+        "job": "0844fad5-f6a9-42cb-9757-6974cd12f61f",
+        "metrics": {
+          "kind": "source_name",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:13:53.773740+00:00",
+        "elapsed_ms": 1478,
+        "job": "0844fad5-f6a9-42cb-9757-6974cd12f61f",
+        "metrics": {
+          "kind": "target_language",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:14:23.199032+00:00",
+        "elapsed_ms": 767,
+        "job": "e084ff3d-9206-4c6b-b8f8-de4545387fc2",
+        "metrics": {
+          "kind": "source_name",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:14:23.597248+00:00",
+        "elapsed_ms": 1165,
+        "job": "e084ff3d-9206-4c6b-b8f8-de4545387fc2",
+        "metrics": {
+          "kind": "target_language",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:14:53.542150+00:00",
+        "elapsed_ms": 981,
+        "job": "27c135cd-a6a4-417f-9751-3c299b06b3a4",
+        "metrics": {
+          "kind": "source_name",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-28T10:14:53.948959+00:00",
+        "elapsed_ms": 1388,
+        "job": "27c135cd-a6a4-417f-9751-3c299b06b3a4",
+        "metrics": {
+          "kind": "target_language",
+          "reason": "chunk_evidence_mismatch"
+        },
+        "phase": "validation_failed",
+        "schema": 1,
+        "task": "translation"
+      }
+    ],
+    "trace_sha256": "996ad8c334ad2145a053c97a1974408e54eb0b3bffac9a2c619888f2174e3978"
+  },
+  "case_results": [
+    {
+      "case": "zh_budget_guess",
+      "automated_pass": true,
+      "seconds": 6.934,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_budget_guess.json",
+      "raw_report_sha256": "fe3f4149165408af822017e14dae6960c8da1405e628eebe80a084ffa4907ab7",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a1205a7d-cd4a-4d01-b0e5-d4d4e476966b",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.926,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.354460692,
+              "peak_tree_rss_mib": 1456.890625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "03a35f18117f08e5d4b420d11536b69019243c6982c20679f6f6a09f2eff1138"
+        }
+      ],
+      "assistant_review": {
+        "status": "needs_review",
+        "note": "Minutes preserve unset budget and Thursday/Friday arrangement. Caption uses Mr. Zhang for 张老师; honorific/gender wording is uncertain and is not claimed fully faithful."
+      }
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "automated_pass": true,
+      "seconds": 6.921,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_owner_and_deadline.json",
+      "raw_report_sha256": "cf318dde1b1528a0ec95f853c75d87bf56851f7bd641bb795472689869238b30",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ed868191-4149-429c-a508-3df9f98a7a80",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.915,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.4468957000000002,
+              "peak_tree_rss_mib": 1485.265625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "dc18347fb2d90accf16a46936b3ee3459dd6e51b56977b71dc649f1dfb354cec"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Caption sends report Thursday, preserves Morgan and unapproved launch date; minutes preserve source action."
+      }
+    },
+    {
+      "case": "zh_correction",
+      "automated_pass": true,
+      "seconds": 7.336,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_correction.json",
+      "raw_report_sha256": "0e815071c42c1809c228672900ad9580c5287e82e8961905b601784da0ed273f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a82778e5-eba6-4015-b3f2-26ec91f9b616",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.332,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.4513377,
+              "peak_tree_rss_mib": 1456.71875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "aafca9be944d2271f8ea75686f8306bd4cb6382800f7e514398d8b88bdfdb2c1"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Final 2000 and 王华 replace provisional 3000/李明; history remains explicitly ordered. Captions transliterate generic Chinese names."
+      }
+    },
+    {
+      "case": "bilingual_scope",
+      "automated_pass": true,
+      "seconds": 7.293,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/bilingual_scope.json",
+      "raw_report_sha256": "fe22c2af697ec76dafb0944d6a140ea710433b95a4f0305cc9732923b251d814",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "cf5e0a48-5654-4ed6-ba41-085cb2dd5475",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.286,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.575192872,
+              "peak_tree_rss_mib": 1487.078125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "2f0c16dd0363d6e1530f1433f130fa1d250d0343447031adf71f173b10612531"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Only microphone/transcription scope and next-version system-audio deferral remain; Friday test preserved."
+      }
+    },
+    {
+      "case": "zh_calendar_citations",
+      "automated_pass": true,
+      "seconds": 7.332,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_calendar_citations.json",
+      "raw_report_sha256": "34ba6fff89922293a1597e8baec837a9919d1322c4624d94c96515f2bc8c4fdf",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "6ad339ab-90a7-4832-b454-242b73626b3d",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.323,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.447412596,
+              "peak_tree_rss_mib": 1455.96875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "9e049f5946b04500b94adb775f5abd5fdbbbfaa46073337f525ae187fe3251d8"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "2024-05-08 and continued recording workflow preserved."
+      }
+    },
+    {
+      "case": "zh_connected_minutes",
+      "automated_pass": true,
+      "seconds": 8.163,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_connected_minutes.json",
+      "raw_report_sha256": "07ad3cd27eddadc1e42ceb08ef44134f07dac024439437723f9bd547dd368e76",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "50724f95-63b7-4084-b266-8e7bf772dfdf",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 8.156,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 31,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.230445412,
+              "peak_tree_rss_mib": 1488.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "af36da3da2dcbba1d5d1a1d5bf93af70c156def7e6a39a0ab8997119c54d8a53"
+        }
+      ],
+      "assistant_review": {
+        "status": "known_lexical_issue",
+        "note": "Toolbar request, incomplete adjustments and fragmentation complaint preserved; caption still renders 小标 as small brackets/quotes. Not declared full semantic pass."
+      }
+    },
+    {
+      "case": "zh_product_spelling",
+      "automated_pass": true,
+      "seconds": 7.326,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_product_spelling.json",
+      "raw_report_sha256": "e57bf490fd15858edd27b42de5d458a9b181b681e0ff660ae864054fc646f57e",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "b05479a6-5281-47af-8c6a-f2e66cf5b6a2",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.319,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.632434048,
+              "peak_tree_rss_mib": 1492.25,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "2e18cacf107bf79a9b9aece5b654b1a8ed3140139f5ce329ede21f314d745afa"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "OmaScribe source correction, caption/minutes spelling and unfinished optimization preserved."
+      }
+    },
+    {
+      "case": "zh_empty_greetings",
+      "automated_pass": true,
+      "seconds": 6.084,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_empty_greetings.json",
+      "raw_report_sha256": "41db3d5527b66d5232d75b41ee5b2bd8ee2fa8630ba656e342b8652cc2b0b6d5",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 0 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "f35d0397-a1c0-454b-a821-9e7bc985beac",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.076,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 23,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.9939752480000001,
+              "peak_tree_rss_mib": 1482.765625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "95df17c21cbeabb8d02e7ed77747c032a700d8e261cab68b1140a8a4327845c6"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Greeting captions retained, no minutes invented."
+      }
+    },
+    {
+      "case": "zh_phased_correction",
+      "automated_pass": true,
+      "seconds": 12.986,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_phased_correction.json",
+      "raw_report_sha256": "3f80d78665c1e1d1f0743c92f1f8811b7427c32dca84eac46f8a684b3fe00379",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "c7d6349f-c937-441b-82b8-cf692a17e131",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.091,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.344497338,
+              "peak_tree_rss_mib": 1456.84375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "b6a3bdfff01aaf669e6a42c7ec7f6622c275c4fa611bb799f7512b27815147e9"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "c7d6349f-c937-441b-82b8-cf692a17e131",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.881,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 23,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.470984874,
+              "peak_tree_rss_mib": 1457.78125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "eb3449025098b308ab5135c32010353be9b62f345279c3dab5096d53d1770384"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Latest 2000/王华, retired 李明, raw audio retention, optional model download and no upload retained in final output; prior budget retained as history."
+      }
+    },
+    {
+      "case": "zh_named_speakers",
+      "automated_pass": true,
+      "seconds": 7.145,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_named_speakers.json",
+      "raw_report_sha256": "8cd02440d40bec76a3832de5f19f29905f2467fca88260ff8378c47e4954224f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "701415a4-43d9-4949-9c97-2dbd76a12d06",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.135,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.423710742,
+              "peak_tree_rss_mib": 1457.25,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "4e10ebf087c45ef1ed043358b2d25923d402c4668c44d5c6f2b14b3bb49543ce"
+        }
+      ],
+      "assistant_review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Caption changes unmarked submission schedule 结果周四提交 into completed was submitted on Thursday. Source lacks completion evidence. Minutes retain source schedule and mapped speakers."
+      }
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "automated_pass": true,
+      "seconds": 7.151,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_minutes_from_zh.json",
+      "raw_report_sha256": "2ba6d2153ea9ec9041db1d040ad5e814a590d60e39cf5ef8ff02478e01a16b24",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "e23de200-0c0e-4243-8d5a-82ba6a3e9a38",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.141,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.409457736,
+              "peak_tree_rss_mib": 1458.265625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "fa055cac23f2cc6dd25244ee85ae30c7bea05134b99fe7134f28dc403034215e"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Offline-only scope, manual model download, no uploads and unfinished system audio preserved."
+      }
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "automated_pass": true,
+      "seconds": 7.161,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_minutes_from_en.json",
+      "raw_report_sha256": "2b00671572fcdca1c7b90773c8d65a19fd6d8c6699280da6e4e2eab0b0726c15",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "e41667ac-4e51-4203-b578-f6afd89aaac2",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.152,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.604576636,
+              "peak_tree_rss_mib": 1485.375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "931536cb8e484bc15ea71bec54d059e7ac277dfe501c5f7178cf50582edc0804"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Internal-test readiness, unapproved public release, Morgan responsibility and future Thursday delivery retained."
+      }
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "automated_pass": true,
+      "seconds": 6.89,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_actual_report_publication.json",
+      "raw_report_sha256": "74a969a02693292cb5ed59485d4e829710704013daf52ae7f26ef8eb7f68ec05",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "8c7ccecb-5517-4093-941f-03669ac89270",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.885,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.310274032,
+              "peak_tree_rss_mib": 1485.0625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "a7cd615aa735b8b0ff0785d319c02e0224a5174db192b021b2a1c5f4841dc44c"
+        }
+      ],
+      "assistant_review": {
+        "status": "known_lexical_issue",
+        "note": "Actual publish action, Morgan and Thursday preserved. Caption duplicates 发布 in 发布发布报告; minutes readable."
+      }
+    },
+    {
+      "case": "zh_report_delivery_variant",
+      "automated_pass": true,
+      "seconds": 6.931,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_report_delivery_variant.json",
+      "raw_report_sha256": "bf84f29be0ef1ab4bcafe1e6ee5540b5b69543a9dc2908f0fbfbd20aab860d8f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "4388f8f4-aa41-4041-bd61-36e3266ca8cd",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.924,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.4166898079999999,
+              "peak_tree_rss_mib": 1484.703125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "0ec34da730f056e6e792555649be7279e3bf6b6ac644e671949fe87691c3f32e"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Nora delivers latency report Friday, deployment remains unapproved."
+      }
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "automated_pass": true,
+      "seconds": 6.93,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_physical_report_ownership.json",
+      "raw_report_sha256": "600efe9f3865baa545f137cad968ee7f688d654e39b446623d8f92ecd1e58863",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "8c2371d1-6a23-42c8-905a-097b398dde58",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.922,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.356556944,
+              "peak_tree_rss_mib": 1455.03125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "fb3fd6a63bb6d7d3baef9e02d9ad885c969ca44a5f2dc4e99604bac158bb69fa"
+        }
+      ],
+      "assistant_review": {
+        "status": "known_lexical_issue",
+        "note": "Physical ownership and future delivery preserved; original paper report rendered 原始论文报告 rather than paper-copy wording."
+      }
+    },
+    {
+      "case": "zh_long_context_state",
+      "automated_pass": true,
+      "seconds": 19.108,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_long_context_state.json",
+      "raw_report_sha256": "28cbd5555a78193853a9b0f5c9fcb36dca8f36a04230303d2a21dba64a7c1ca9",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "7ef6bcc2-8f16-41e9-9aa3-69e946872143",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 9.01,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 34,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.0572094400000003,
+              "peak_tree_rss_mib": 1475.359375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "65cdeee1c28944beb0c8152aa3432a7f3b4a5546679ab4787f847b8ade87b9b7"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 10,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "7ef6bcc2-8f16-41e9-9aa3-69e946872143",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 10.084,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 38,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.631632432,
+              "peak_tree_rss_mib": 1480.421875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "db532400c744043df94b570fd9d4a646de0b00d55ea5f90a68b1ad0becd0238d"
+        }
+      ],
+      "assistant_review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Metrics and Chinese minutes preserve source, but seq10 caption invents Lin Yuejian from 林悦先 and changes 先在周四提交 into submitted on Thursday; actor spelling/completion evidence lacking."
+      }
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "automated_pass": true,
+      "seconds": 12.039,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_human_paragraph_protected.json",
+      "raw_report_sha256": "79e624051f7538ad7d00fd4385cc9d4a32bdcc7699c0947b8de49fe1ee3dcc70",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ae0bf51b-3879-4309-b348-464873aa4594",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.904,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.193761334,
+              "peak_tree_rss_mib": 1454.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "55e1012b0aaa95ddd5afdfa998624a09558ca43b54cc9ae8b7e394988a6a4171"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ae0bf51b-3879-4309-b348-464873aa4594",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.116,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 19,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.368735634,
+              "peak_tree_rss_mib": 1486.265625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "4055ea62562e5cc8f812d7094cbf084d5cc21f76f0826b6b922bbcdd14b31f88"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Human paragraph retained verbatim, no consent/upload/budget reversal; automatic paragraph repeats budget status, a prose-quality limitation."
+      }
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "automated_pass": true,
+      "seconds": 7.322,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_note_name_spelling.json",
+      "raw_report_sha256": "1fb1a96e156e52124de2b355094a375a1603bf6df8931b71d69c380bcd0a3a51",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "184cadbb-95a9-427d-bf20-21118ec65d10",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.316,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.594401236,
+              "peak_tree_rss_mib": 1493.6875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "1383d988600ef2eb13d4adcdcfcf420f7c1a490074a2420b8db9a759258ed0ef"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Note-derived OmaScribe spelling corrects observed source aliases, pending delay/speaker/subtitles retained."
+      }
+    },
+    {
+      "case": "en_generic_note_name",
+      "automated_pass": true,
+      "seconds": 7.137,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_generic_note_name.json",
+      "raw_report_sha256": "045000109481402609dc5ab80d6b6ce270a0639b801cdefb996aaff6e84a0aca",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "b313e4b9-bb36-4c6e-a7b1-0bb19315d9f6",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.13,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.376122406,
+              "peak_tree_rss_mib": 1492.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "75b54c3967fa9371218b33f547650a69338c12c0cedba8d8c61f6dff3f448cc2"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "PixelLedger spelling corrected without changing failed import or deferred investigation."
+      }
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "automated_pass": true,
+      "seconds": 7.161,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_name_context_is_not_evidence.json",
+      "raw_report_sha256": "96cab3b5b2a1fda1389072575815bea6d44b269490bd80be7ab939c9f55b7e5d",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "fb5a29da-8dc9-4dd1-9c28-b9e643b2bb57",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.152,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.491293492,
+              "peak_tree_rss_mib": 1493.09375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "0ac02099a95cdf0b3ae25ce8020c8a66297e6ee3ac0e17089f0743470e0cd564"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "No unspoken product/budget inferred from note; microphone-only discussion and undecided choices retained."
+      }
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "automated_pass": true,
+      "seconds": 7.99,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_noisy_name_no_added_topics.json",
+      "raw_report_sha256": "ceae7d1e8123acee84d64520e29aa92cf0731af343e3d38fe2a9a08532f4106f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "bffe86fc-c754-4100-b596-0c92ca34b1d1",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.98,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 30,
+              "processes_seen": 4,
+              "cpu_seconds_sampled": 1.9227252700000002,
+              "peak_tree_rss_mib": 1495.640625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "16b80afb135859381d648cc1ff00412b030aa307d96e0fa81947c969c0045a8c"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Noisy fragments do not invent minutes topics; actual PixelLedger issue and uncertainty retained."
+      }
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "automated_pass": true,
+      "seconds": 7.356,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_windows_gpu_keyword_lines.json",
+      "raw_report_sha256": "4fcac7471205b3342ed3fffd6ad9ee4e67f1407b39e6faa8055f9a0be677b0b0",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "73b26ec1-7819-442f-8a95-ff4570828357",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.349,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.642425936,
+              "peak_tree_rss_mib": 1491.109375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "d4b6b543893d6b9a05288c01d4d08c7818cb6e781836ffadcfbde12e0a04ffc2"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "OmaScribe/gtx1650/nvidia preserved, current failure and unfinished optimization remain."
+      }
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "automated_pass": true,
+      "seconds": 20.631,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_incremental_separate_topics.json",
+      "raw_report_sha256": "c43532170170e72b968849d47ba1bf81fb9aacb3673bb97c77bce3238f66a25f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "614f7daa-f42d-4af4-9f33-33b58ca84316",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.112,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.529930758,
+              "peak_tree_rss_mib": 1484.03125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "de35bb565bed6ab7cf4e764920552244f385016f71316c4978acefec1cd34ea5"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "614f7daa-f42d-4af4-9f33-33b58ca84316",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.237,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 16,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.070914572,
+              "peak_tree_rss_mib": 1457.328125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "981057c8813326190f71f63bffbcb3f87a34a4a28005d976f74bd5a7b726336a"
+        },
+        {
+          "phase": 3,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "614f7daa-f42d-4af4-9f33-33b58ca84316",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.021,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 19,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.29751189,
+              "peak_tree_rss_mib": 1487.046875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "1cbacf03e2e2dec0715d8c97f169822eb9609fa1e93667d638cd270affa47d81"
+        },
+        {
+          "phase": 4,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 4,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "614f7daa-f42d-4af4-9f33-33b58ca84316",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.235,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 16,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.082224582,
+              "peak_tree_rss_mib": 1485.9375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "b01f82dc05dc958aa7985177b31780a1467e4d3ba2c2d9c466756ddf5fdf237a"
+        }
+      ],
+      "assistant_review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Final minutes preserve current 5000 unapproved budget, independent Riley task and deadlines. Caption of owns the budget review renders 拥有预算审核权, changing task responsibility to authority."
+      }
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "automated_pass": true,
+      "seconds": 16.802,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_incremental_withdrawal.json",
+      "raw_report_sha256": "b643c057d3809b276617cc1d70542553310b258545d9048a1f00ac0deabed9dc",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "24c4ad07-e023-47e5-b1e9-afdc49862fca",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.902,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.264309942,
+              "peak_tree_rss_mib": 1457.3125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "5cf3071c93adda33deb69b31a213fc938352be6846554cab0cd223f4a22ef762"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "24c4ad07-e023-47e5-b1e9-afdc49862fca",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.616,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 18,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.119262826,
+              "peak_tree_rss_mib": 1457.0,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "d92b040230b9c44014b10ceb96d2e91fc61d3f460e8266e0130327e4462ef90e"
+        },
+        {
+          "phase": 3,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "24c4ad07-e023-47e5-b1e9-afdc49862fca",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 5.268,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 20,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.437762196,
+              "peak_tree_rss_mib": 1489.765625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "a590439a8f0f3d5ea151d88ca3b4884418cf1378225c1c9e2cced6dcb6f767a3"
+        }
+      ],
+      "assistant_review": {
+        "status": "confirmed_issue",
+        "blocking": true,
+        "note": "Final minutes preserve withdrawn Friday/date undecided/5000 and unfinished page. Seq3 caption changes next-Wednesday test-link sending into reservation-page release; object/action drift."
+      }
+    },
+    {
+      "case": "en_incremental_completion",
+      "automated_pass": true,
+      "seconds": 10.944,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_incremental_completion.json",
+      "raw_report_sha256": "f4ebbe3cd81df62dea68c12099c4204e5bb458e9224fd82ec28be56c7b807077",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "fe6433f4-2e29-4776-b95b-245019f2b441",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.919,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.21650314,
+              "peak_tree_rss_mib": 1482.59375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "e6e575f03b6a6ef6b2fe85748ecb6b5d0ac51f3af63c947d947d528b4c0bc017"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "fe6433f4-2e29-4776-b95b-245019f2b441",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.012,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 15,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.030274866,
+              "peak_tree_rss_mib": 1485.359375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "bedcc6602e920bf83821c9490210465eef59d0ad1f1f7a836d14e5a6502dce92"
+        }
+      ],
+      "assistant_review": {
+        "status": "name_spelling_issue",
+        "note": "Actual completion and retired pending task handled correctly in minutes; final caption transliterates supplied Morgan as 莫根."
+      }
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "automated_pass": true,
+      "seconds": 7.14,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_sparse_unapproved.json",
+      "raw_report_sha256": "d5a10a2f6635fa9911c6dc6fc6a0d7d524da52810118844609220b08396a5392",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ac27b9fb-87fe-468b-af99-eb94fde57557",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.132,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.3818846619999998,
+              "peak_tree_rss_mib": 1492.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "608cf4757d4a5e34196943bccccbd7cb9731df8f77a774ecc412ddc1a2c3cfba"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Amount3000 remains unapproved, no extra meeting conclusions."
+      }
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "automated_pass": true,
+      "seconds": 7.115,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_sparse_unapproved_passive.json",
+      "raw_report_sha256": "11a201a6601faeb4feb1760f79fdb983cea68cd1e39bbd86f9eda367729e920c",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "673270ba-1d94-407e-9d25-a3a67cf05b53",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.108,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.422244252,
+              "peak_tree_rss_mib": 1492.71875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "2f181d1f7cf7165cfa987d2243d93cf05e8e741d034c5dcb5cfd91ca40499c14"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Negative passive approval retained, no extra meeting conclusions."
+      }
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "automated_pass": true,
+      "seconds": 7.178,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_explicit_meeting_closure.json",
+      "raw_report_sha256": "3c307149aedea80198fa132206855bfcd3e3022acd550baaa142af69f6438f8b",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "84a4a51a-ecbb-4a1f-a534-c1b8c4349de8",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.169,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.394904178,
+              "peak_tree_rss_mib": 1489.328125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "c0c9bfff308e6cb6b5c5c70074c034e0a84d02fd7ae399dc85f8dccd0e302270"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Actual closure and no-further-action are preserved when explicitly stated."
+      }
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "automated_pass": true,
+      "seconds": 7.284,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_budget_invoice_same_amount.json",
+      "raw_report_sha256": "7c2c32a0b4939d9e892f68692554a1aff3ead315b5ec40070dd4500c930d30c3",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "dae26109-b83a-4f0d-ab52-9eb08a38415d",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.277,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.728874472,
+              "peak_tree_rss_mib": 1490.28125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "ec190528fb8b6d725929bcd5dd172fb7216c3245e99a0b3d163e355fd2b782d4"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Independent invoice3000 remains while latest budget5000 is unapproved; old budget3000 not reused as current."
+      }
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "automated_pass": true,
+      "seconds": 11.148,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_completion_independent_pending.json",
+      "raw_report_sha256": "c57fd61e6d434d9080af85ae982122590c5959692f339c9993812158359b4e44",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "92c97862-e528-4a3a-b16b-c283fba084f9",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.121,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.3548375620000002,
+              "peak_tree_rss_mib": 1484.40625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "e5741287eb7010b04bf7db78a5ff3c6c1881ed5b29475f571ed296798bf61ecb"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "92c97862-e528-4a3a-b16b-c283fba084f9",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 4.017,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 16,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.027375184,
+              "peak_tree_rss_mib": 1485.984375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "6c58ea6a0b06599e3356d347429ed02244470601b43c273230dd4a737bea0c81"
+        }
+      ],
+      "assistant_review": {
+        "status": "name_spelling_issue",
+        "note": "Upload completed with Morgan; independent invoice/Riley/Friday remains pending. Captions transliterate Riley and later Morgan, but English minutes retain task identities."
+      }
+    },
+    {
+      "case": "zh_incremental_completion",
+      "automated_pass": true,
+      "seconds": 10.53,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_incremental_completion.json",
+      "raw_report_sha256": "af35d6afc2b6e2bb00e316e7575fb8f7ddf201b406760e1ab5d94696026ee868",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "237e90ce-7c34-4996-aa64-f99a8327d0dd",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.905,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.213016448,
+              "peak_tree_rss_mib": 1455.671875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "7dc745296f9ef7abd359b0128f530b64a9d77ac231c75602f9d87cc3c8858c0a"
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "237e90ce-7c34-4996-aa64-f99a8327d0dd",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 3.61,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 14,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.943359304,
+              "peak_tree_rss_mib": 1456.234375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "e798fa86050db50e8c67bae71c4340f6429481aafbf51c34b55e7e27f0958aff"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Upload completion updates only matching task; invoice stays pending."
+      }
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "automated_pass": true,
+      "seconds": 7.962,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_windows_long_acceptance.json",
+      "raw_report_sha256": "dd8ccf3d7b056e917504c8ef106bbef72fd2d25e12198e57aebf13ca1abfe4a1",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "c0bd6c16-6da4-4db1-91f2-62d59d97d3e8",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.952,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 30,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.983180532,
+              "peak_tree_rss_mib": 1493.140625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "acc8f15e4243513a2c8f093dd0bcae61bc2ed045335ca1b8f84df72ee742f4c1"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Thursday-not-Friday, unapproved3000, Alice/NVIDIA GTX1650, local retention and optional/tested GPU components preserved. 接受检查 wording is awkward."
+      }
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "automated_pass": true,
+      "seconds": 7.963,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_windows_long_acceptance.json",
+      "raw_report_sha256": "2c70b8247c4fc9306ecf3ccd6709e151019237df2da520e21a95838986ac4135",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 3,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "9822c586-c25e-4d9b-ac01-b1540f28b096",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.957,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 30,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.045075668,
+              "peak_tree_rss_mib": 1492.78125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "31ac3f0e61e1f1ddbed335d5b95c68f69cb6386d96b9e653fccc34251989026c"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "English minutes preserve exact Thursday-not-Friday, unapproved3000, Alice/device and local/optional component policy; Chinese caption acceptance wording is awkward."
+      }
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "automated_pass": false,
+      "seconds": 120.645,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/release035-candidate7-full-auto/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_windows_uppercase_asr.json",
+      "raw_report_sha256": "2f5ed07c992485933f7bf949baacd62293ea0ff86e7a3fda0b1ed023492f1a0e",
+      "final_state_origin": "Persisted isolated SQLite after failed command; process output was not a snapshot.",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "process-failed",
+          "coverage": null,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "607c9d2e-c1cc-414f-aa0e-c1c59e62b794",
+              "120"
+            ],
+            "code": 1,
+            "seconds": 120.176,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 451,
+              "processes_seen": 6,
+              "cpu_seconds_sampled": 5.191815416,
+              "peak_tree_rss_mib": 1525.5,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "assistant_review": {
+        "status": "automatic_failure",
+        "blocking": true,
+        "note": "Original120s settle exits1 at120.176s. Four captions persisted; seq5 remains deferred after source-name then target-language failures. Minutes cursor5 and a fragmented mixed-language article exist in SQLite despite report capture failing. Do not call document absent or diagnose raw rejected caption without preserved raw response."
+      }
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "automated_pass": true,
+      "seconds": 17.383,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_recorded_mixed_prose_fidelity.json",
+      "raw_report_sha256": "b7294d3257ae59726cfb5e8f539443d0d4758c1dd8192493f8458a256972cfab",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 6,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "5d280a99-40ff-45d6-8e66-748fa85129eb",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 17.373,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 66,
+              "processes_seen": 4,
+              "cpu_seconds_sampled": 4.303331512,
+              "peak_tree_rss_mib": 1524.859375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "c2f1fdbc8b60f51d122511859f3fb8ab25ad6fa8a2f7c042b48152cd99ec652f"
+        }
+      ],
+      "assistant_review": {
+        "status": "needs_review",
+        "note": "Ambiguous original institution/person spellings retained rather than guessed; final prose repeats near-identical source variants. First English caption ends at 夜幕降临 for LAY INTO THE NIGHT, and festival remains untranslated in another caption. Wording/timing need further review. These seeded historical ASR strings are not new ASR audio accuracy evidence."
+      }
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "automated_pass": true,
+      "seconds": 6.908,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_mixed_script_task_owner.json",
+      "raw_report_sha256": "2390c6b46c76f4c67ee0c52b62264b8cf4ced5c6b7c2a203fe4054ceb16dae94",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "78f14108-907b-4f88-9e22-dbcd80d3772d",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.903,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.32569016,
+              "peak_tree_rss_mib": 1482.203125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "bdc4034466a8017058ca212b39ca2237e032d81a7776ba9e717110f25080cdad"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Alice spelling and responsibility for checking GPU preserved."
+      }
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "automated_pass": true,
+      "seconds": 6.85,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_phase_exclusive_scope.json",
+      "raw_report_sha256": "5ee91a819d6a6f8b7c74d1fdf732d71e062d33a09ed54e130647a2a164afa180",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "d1856878-ba12-4a77-83ee-483ce233cef3",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.845,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.2183984479999999,
+              "peak_tree_rss_mib": 1457.71875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "823eb20b9465e65b22c45144c81e85cc9434915ae3934f1c35c99927bc521517"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Only microphone scope and next-version system audio preserved."
+      }
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "automated_pass": true,
+      "seconds": 6.967,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_phase_nonexclusive_scope.json",
+      "raw_report_sha256": "d7f595cd019fa0336cef53217e6bd29b0bbf6115d125927908986920ee9dd124",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a918794b-0eb8-4a0b-92a2-068dc6a215c7",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.958,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.2191023520000002,
+              "peak_tree_rss_mib": 1455.625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "3d221579b5cd1d4c9b6aa59575839a52a4d51fdebd5b397f8e74dcd5995936a8"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Source without only remains nonexclusive."
+      }
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "automated_pass": true,
+      "seconds": 7.071,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_toolbar_existing_state.json",
+      "raw_report_sha256": "53accb649ca0167fa291a6f15ed495bcb8f0eff44f51e96ef6308f24af2799e5",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "632cf359-d6e0-4197-9e80-dab070ee54de",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.064,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.27963672,
+              "peak_tree_rss_mib": 1457.84375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "075ee190337f0e0fd672a2cc058fa0649e5a34daea35b066a64812f3e57c4353"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Existing toolbar placement preserved as fact with no secondary-menu hiding."
+      }
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "automated_pass": true,
+      "seconds": 7.117,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_toolbar_requested_state.json",
+      "raw_report_sha256": "ec720333d3142c39b2979ff12221d71c41bdf7f6722326f34fc44349322baf19",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 2,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "e4de0857-54df-453d-87b4-3cae06aa1f8e",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.11,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.670672312,
+              "peak_tree_rss_mib": 1478.21875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "a0065f8450493cb198d84a210a9d7dc1d32c73b0d91cb53a60e8a5c89d3c803d"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Toolbar entries remain a request, adjustments remain unfinished."
+      }
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "automated_pass": true,
+      "seconds": 7.347,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_compound_scope_and_request.json",
+      "raw_report_sha256": "9192f1e9f34f29635b8b2bef43cd6a0d8d991803f9581ede9fcc61884850f48c",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "cbf48de6-7bb2-4881-992b-6ee0d0c65fcf",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.337,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.8260590799999998,
+              "peak_tree_rss_mib": 1478.984375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "659f58bcfbc57e5fcc4cac82f8fcf7c37a48190bc7085847d38f7110cdd23d97"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Compound input preserves only-phase scope, toolbar request, both features and not-yet-complete state."
+      }
+    },
+    {
+      "case": "en_named_download_owner",
+      "automated_pass": true,
+      "seconds": 7.567,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_named_download_owner.json",
+      "raw_report_sha256": "71fa4d6146a1e0a76084c24ef7ffee00bd25e0e0f827a918307c2f4912ea19e1",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "240e5d3b-41b7-4d09-a480-9294952a681d",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.56,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 29,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.64574454,
+              "peak_tree_rss_mib": 1484.15625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "99200a62c3b55a117932ae38088f1a7b716a5fe835d444829ceffb3f5b5e4c69"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "陈明 responsibility direction and required consent preserved."
+      }
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "automated_pass": true,
+      "seconds": 7.335,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_other_named_task_owner.json",
+      "raw_report_sha256": "69065d7d25a56173abb80eed9385fa5021e81be56127ca98dcea2d9875e73d7b",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "7a18fa37-fd50-4b29-8e04-1109d4b0462b",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.329,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 28,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.602546976,
+              "peak_tree_rss_mib": 1479.078125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "34a01ac89a18ea803dfefd874a22f7919b56275603036ae392c240c360e64972"
+        }
+      ],
+      "assistant_review": {
+        "status": "needs_review",
+        "note": "李华 responsibility and build qualifier preserved; publication condition uses it with an ambiguous referent. Not declared general role/condition pass."
+      }
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "automated_pass": true,
+      "seconds": 6.937,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_future_named_task_owner.json",
+      "raw_report_sha256": "8deb7713e17d185c8576a1ab6653c8aefbc761f657f5f2b62e11dad144b77220",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "21d085fc-1182-4386-b673-22ce6149c23a",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.93,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.362992088,
+              "peak_tree_rss_mib": 1484.890625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "0fcb00f38c85c0a38c25a52a58dd6a67cecd19ac2c08540ee2038c0aad24029f"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Future 陈明 download responsibility preserved, user consent not yet obtained."
+      }
+    },
+    {
+      "case": "en_generic_task_actor",
+      "automated_pass": true,
+      "seconds": 6.929,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_generic_task_actor.json",
+      "raw_report_sha256": "ce15013ac3bcfa2dcd9a213ffc0dfcb0f3c41a2ec1e1c7dfaa8e2fae68b96636",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "bfa9731c-5019-4ddb-95c1-c70986df8564",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.921,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.454900308,
+              "peak_tree_rss_mib": 1475.640625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "bf9ba4e6023fa12bacf10ff53afd190b4d6e6dd309cf551193b31f281f54d2a1"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Server remains generic build-task handler, no human intervention required."
+      }
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "automated_pass": true,
+      "seconds": 7.099,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_metric_report_requirements.json",
+      "raw_report_sha256": "9dd17e7adcccc5692f84d481aa82de16696cfbb37cee4246f742593921b63dce",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "4cbbb6bb-2702-48f0-b534-98e7492541ca",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.09,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.549314184,
+              "peak_tree_rss_mib": 1502.203125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "18c00dde08813a575cbdadb81d9c94ac2e295370a4396eb441233d3b11441f97"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "CER/WER, latency and cannot-only-report-success requirement preserved without SER."
+      }
+    },
+    {
+      "case": "en_word_metric_only",
+      "automated_pass": true,
+      "seconds": 6.911,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_word_metric_only.json",
+      "raw_report_sha256": "5bc12fddd19b5a84daf68f0de0b518217bbe54d0759e29244f5c5d5f64285bd0",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "b7f5b8bc-2a69-4c85-9bc6-48eb3cf29789",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.904,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.219359684,
+              "peak_tree_rss_mib": 1456.140625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "ab3865f8940d61408a63f71bc99082890c93d0b2b678a6bbf4783d67eb8a71ab"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Only WER plus delay retained, no CER/SER invention."
+      }
+    },
+    {
+      "case": "en_sentence_metric_allowed",
+      "automated_pass": true,
+      "seconds": 6.949,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_sentence_metric_allowed.json",
+      "raw_report_sha256": "a2a049bcdd31b34532dda91659312bc8be69f2454d2c23a9795e473a4c6978bb",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "8bdb5065-d0a0-4f25-b331-b85752568ff6",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.943,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.190228832,
+              "peak_tree_rss_mib": 1457.015625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "d50b5d506d728035371f5656b6a320c177900a81bc2ccea268586a7b02d2fc22"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Actual requested SER preserved with delay and report requirement."
+      }
+    },
+    {
+      "case": "en_closed_metric_request",
+      "automated_pass": true,
+      "seconds": 6.926,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_closed_metric_request.json",
+      "raw_report_sha256": "6d949329c368a529cb13fed7fe6ebd26a4412771abd4c1c1e6a16cecd0854b8e",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "6d2070de-463c-4229-b1bf-d6574aa51e6e",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.918,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.31124155,
+              "peak_tree_rss_mib": 1457.375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "5e68f47b1914c0b5d891637859d9a0409f36a5f53f412f53a6afda1018945f93"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "Closed CER/WER list ends with no invented second sentence."
+      }
+    },
+    {
+      "case": "zh_metric_acronyms",
+      "automated_pass": true,
+      "seconds": 6.94,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/zh_metric_acronyms.json",
+      "raw_report_sha256": "7bfc26bd501cfc654a5244d3ecdf21b2301bd4641fea50c9cc1dcafa49fcf95f",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a70b534c-04ed-4c96-a24a-5435504f80c8",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.934,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.237257196,
+              "peak_tree_rss_mib": 1482.53125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "500c0fb97d1c219b4a120f87ed1d2dd475c7013d1a95f2bb60e8d8333e10d9db"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "CER/WER symbols preserved adjacent to Chinese, latency and not-only-success retained."
+      }
+    },
+    {
+      "case": "en_metric_with_following_fact",
+      "automated_pass": true,
+      "seconds": 6.906,
+      "errors": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate7-full-auto/en_metric_with_following_fact.json",
+      "raw_report_sha256": "e92f991072a39b06fa689311e35ea2b93e0474437537f803697994a21aec787b",
+      "final_state_origin": "Final command stdout snapshot",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "a0c8973f-2e80-4622-af4e-e6a56fabea31",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 6.9,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.4448005240000001,
+              "peak_tree_rss_mib": 1476.75,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot_sha256": "2b2704ec0ddd4dd6370f73e974fbd43afaf504767b53c186bbc427f72f86b42f"
+        }
+      ],
+      "assistant_review": {
+        "status": "affected_scope_pass",
+        "note": "CER/WER and local-cache fact preserved in both caption and minutes without SER."
+      }
+    }
+  ],
+  "runtime_logs": [
+    {
+      "case": "zh_budget_guess",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "52f1888a097c6d45cec2f31ac107d4aae2a36b44c654f575e41ead8c2952cbbe",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "279dcd171bfd86c6adaa1936ace2a777be3e1d449cbf1c2e380a94444e4198ea",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_correction",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "0ca69f909fc607f82de715cc60bec48707d84537f913bb8516c4edd521514f6f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "bilingual_scope",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "29da05c05a9b8cff53aefb32f37d0223ac5c437ad2da0b2c6893f3ecec3e1e85",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_calendar_citations",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "6d81bf0ff594c8f9f12e74e36da0038088db9143db188861814641452caa0f26",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_connected_minutes",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "7bc07e6ca27e72af70a5337d83cfc934a031362d0c55386cae88d0a9aaed7146",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_product_spelling",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "ecee3bc7ca9dc5704a570367bfee1663eb91ea0828c71247d0588166ba6b4ae9",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_empty_greetings",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "8e89c625eec2f82fd9f2c04033938a04d0e9ff134b6ddbea86ddda864f210aa2",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_phased_correction",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "bc5b5e687733de0926c4acc25995fbca451e80473afcf3c4f538ee5db6711dea",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_phased_correction",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "045d854c5ccdac068e2d31c885b8fd3f6764ba064864f1e6a562ceec96e2482d",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_named_speakers",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "e6b925937e412da94fecf3123cc35fadbc36db3f8583f04c09236bf206b5a247",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "93b8999b74078d21d275f807b43b6b9ec04ed393e666f09589b0e2920f447982",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "debb44db135863a8e6bac15e8852c7dcd2e7459901d575e9e711f06c8b4ef00c",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "1f9a39ec69b7a9499d961b64231b49e8cede8d9798d0a64152452c93aae9af1b",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_report_delivery_variant",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "cc04a0b1a1c67eb8c16130269f9a3a6632fad78ada4f3d162febe722851352d8",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "53d6dee7ece3418ece6adefdd5e68fe1ee4fe3291ef95a95ef29a1accf29ec41",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_long_context_state",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "68b1dd80a3a9ad44d4fda854e0b4dc0633af93b1f5557551d140223e0596c5dd",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_long_context_state",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "5f0aed093eeb9cd7583a6f2c10beeb0918705f1d821ddf4ac068bd43062428cc",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "07421ce926e0f1057b5ce1af8f401dfafd17082273eb0da75f328c973e2bb805",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "82650199247ff1026821a5b092d805489095e905f6e2146a183da5969a835147",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "02b3bdc8a99f45b516c86ae48a64a29b13646f410a4690a68abfa4818a4112ee",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_generic_note_name",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "a4a6a591bb24cd07e7dfbc6f60bb93c13453bb2cab41038a022fcc8d4c6deb3f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "34349c3b02075db3e1b17e16bd495e2fef5fc1b91d95869b66a81082351fa165",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "cc40d97fbb0a6b578c2b0347d95790c826698bc0e4b9866b41de8ed8ce58256a",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "9633dc22eafe2af56bb1dd50492048b7705a39445a3dcd8db86e1990a05f11ed",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "3b9d5dbf935bf2e97d778a6fbbdba6a9f6ec42b45b6becfe4865edbb3c8c0e54",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "6f144a5b040c454b260115f4b9585b0f5f22d9b8ac2f5033fa959cadc53c4cb2",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "phase": 3,
+      "batch": 1,
+      "sha256": "0709f94a9a0115f185d885f228a2e844c3fb8e68f155177a01fe9099a69e9dd3",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "phase": 4,
+      "batch": 1,
+      "sha256": "471722fec26a7c0b6eb48598021a03077c2670620ac3a60e5fc45e2bc7d3f13d",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "0ebc3030aa0b3fce0d11b464af5a683b3673cccfbcf84e721f08ec1409d3012f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "4b4602b94016e0a65f11b59e127b00f60d83ee93671949d66b70f4862d477c11",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "phase": 3,
+      "batch": 1,
+      "sha256": "61a644612350c632a6e6fed947beecc172b23725ce2597a068b327c8d189fbc6",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_completion",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "5cc2357143e309ba188e231479b9e6be6c1f5e66b63554d430f562fd4acd8fea",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_incremental_completion",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "a72798a9509bbe91c15cc5c9003e5fa4629d012fc22396914f9c1c6869a02bc3",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "262f386db9440db156de302337453c2d2d12b4ecd897a95a33925d2bc814559c",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "522c4cdcf2590084384f4e4b6f2cf787d8315a9b5ac218ba76807e63d841a47f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "e088a8d8309b14922bb46d86569829e5e09d6410822b1718cf6f8245dac7e85f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "cea5215ffc898a9c2d41dbf1dce9efd4fcf3ccc48e8998c021884064f82731de",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "bb9dc82934e06f553ab444e55606bedf02dbeb8585a2bac90551c6b9294e354f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "ed580b2c76e1e88bce1e36103782ff12efac169a4dcb9487d14cc563ef196629",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_incremental_completion",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "cf80812a426c13a600caf80880c7ffece97d84c885d53cf626bcfe1c69eec375",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_incremental_completion",
+      "phase": 2,
+      "batch": 1,
+      "sha256": "4cb90e1d2e7989c798b4965b3728826c6964743f0fba878d3088eea16908048f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "a3a841110728501a69a6642294e06e7a5e9eaa6275c051a346edf79756c71a71",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "25003b8591c05744b74bfc5df78aaf48e0ddd65aff6d73f1e255f4efac8950af",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "4faacd7e579c4f0b1c07ce4cc9427338e3f0ff77ccb138b228cb6d3edd69ebb0",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "62dbbeccd0a7a31f970a85fb3dfc3c178f19306289e50e0c162864fe327c60b5",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "4701d23fc2330d0ca026d5833e8b66a9a1a4789a5f84400aaf1c812573875453",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "9a2824f95bcecceed0b882e10537009f7b4d84409b53b2af05cd7dd98b65e328",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "357cf724f0c6f720a468c20b02a46d0bc435f8bd1d3d0a86e91025d5426b02cc",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "33c7fd874e9a4b51704ab23a260dec8ba9f0377f36e0dee41fe569109dc64b53",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "0889185ca49169af02c70b96eca98bad91591ede4df3749ca55068722924a734",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "37c7160ae16fb4aa1c88860165b281e16834ead40bf12c32d03ae43143f5e4c6",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_named_download_owner",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "6ce963b8b7ca77178788284934b9d5ba86fffd69e6a1d6291095c1aeccd131d1",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "d911776de0807613f810f370309656290ec7f1643bea1002ec48efc8f9d0e26a",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "3cbfe1cad2d366215fc6d07ce6431d0c7c4cc57f9525291ee1dc59d4e8b6daa9",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_generic_task_actor",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "249083694fef37bfbdaa9891b4248b821b099f7131e6af7e58ba031bb916b8a0",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "df9c03f76dc07378b175b22513e547d9e726ace13e66406a0af8e8b74d632bec",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_word_metric_only",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "516916a74a1bf5357061c3d174ffbdff44c03310434bad468514c86470788f28",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_sentence_metric_allowed",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "683dd05b085210258199a4c8c3fe8a9c090cc89aad486dca1bec57196f510746",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_closed_metric_request",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "2395547fbb86c10abc0d06d760f2f60984cbcfc117db0826350022ffa7c76031",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_metric_acronyms",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "312d6466be5b29651d01c49ef8823ef8ea838e3dbe615ec7c72b3101fd678f19",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_metric_with_following_fact",
+      "phase": 1,
+      "batch": 1,
+      "sha256": "47948a4e017645c9e5f59331053068c323c52c92212ce9eb2370eff73655b49d",
+      "m5_metal_29_of_29": true
+    }
+  ],
+  "cost_observations": {
+    "evaluated_process_steps": 62,
+    "sum_process_seconds": 545.27,
+    "method": "Actual settle/generate process steps; excludes seeding/diagnostic driver work. Not a paired performance comparison.",
+    "sampled_cpu_seconds_lower_bound": 96.344,
+    "peak_sampled_tree_rss_mib": 1525.5,
+    "gpu_memory_mib": null,
+    "energy_joules": null,
+    "trace_event_counts": {
+      "started": 133,
+      "worker": 132,
+      "chunk": 144,
+      "generation": 208,
+      "batch": 70,
+      "finished": 133,
+      "retrieval": 63,
+      "article_state": 63,
+      "article_prompt": 62,
+      "validation_failed": 34,
+      "literal_caption": 2,
+      "article_repair": 2
+    },
+    "trace_scope": "All retained per-phase/per-batch traces; failed and repaired work included. RSS may double count shared pages, CPU sampling misses short-lived work. No speedup/energy-saving percentage claimed."
+  },
+  "cleanup": {
+    "model_directories_released": 51,
+    "source_model_store_retained": true,
+    "raw_evidence_retained": true,
+    "reclaimed_disk_bytes": null,
+    "no_owned_model_process_left": true
+  },
+  "windows_targeted_crosscheck": {
+    "source_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+    "report_revision": "d5aa285a400f9fb867e2d74588ac7794bd58a021",
+    "report_url": "https://github.com/EazyLee30/omascribe/blob/d5aa285a400f9fb867e2d74588ac7794bd58a021/docs/evaluation/windows-c8c1171-targeted-2026-10-28.json",
+    "report_sha256": "3b27f5934fe762415c59cda2711558302112503acc79ac30892b3ff7e854c3f2",
+    "passed_cases": [
+      "en_metric_report_requirements",
+      "en_metric_with_following_fact"
+    ],
+    "hardware": "GTX1650, driver621.01, actualCUDA29/29",
+    "seconds": [
+      15.219,
+      8.906
+    ],
+    "scope": "Preceding identical production source, targeted2 seeded cases and reused verified signed component. Not same-build candidate7 full corpus/ASR/installation acceptance; unused ASR worker is cross-build.",
+    "rebuild_or_new_download": false
+  },
+  "next": [
+    "Preserve rejected candidate7 and these exact failure outputs; do not re-run full matrix during development.",
+    "Bounded shared repair for submission state/actor spelling, review responsibility and test-link action/object binding; add independent caption negatives first.",
+    "Capture the currently unretained rejected uppercase-caption response in an isolated opt-in diagnostic before choosing a fix; existing metadata only proves name/language deferral, not its precise raw cause.",
+    "Keep retry/time budgets fixed; examine repeated unchanged content failures as a resource-efficiency defect.",
+    "Lexical/prose polish, natural ASR names, native physical input, install/upgrade and fullP0-P3/G1-G2 remain open."
+  ],
+  "limits": [
+    "No model/runtime/SDK/component rebuild; only validationCLI compiled at frozenSHA. No installer/release or stable component promotion.",
+    "The four new confirmed semantic failures had old automatic patternPASS; that record is retained, not retroactively relabeled.",
+    "51 cases include historicalASR strings seeded as text; no new audio recognition was performed."
+  ],
+  "static_source_checks": {
+    "candidate_head": "3a6b38f0e546419c6c55c58c36dded630a7d8b4d",
+    "linux_ci": "https://github.com/EazyLee30/omascribe/actions/runs/40668734474",
+    "windows_core_prepare": "https://github.com/EazyLee30/omascribe/actions/runs/40668734448",
+    "website": "https://github.com/EazyLee30/omascribe/actions/runs/40668734542",
+    "all_source_checks_passed": true,
+    "gpu_build_catalog_skipped": true,
+    "prior_identical_production_source_mac_core": {
+      "source": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+      "passed": 207,
+      "ignored": 7,
+      "harness_passed": 23,
+      "strict_clippy": true
+    },
+    "candidate_diff_from_c8_in_crates_tests_cargo_catalogs": "empty; intervening change is evidence/development documentation"
+  }
+}

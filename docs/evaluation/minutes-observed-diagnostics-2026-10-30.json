@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "parent_source": "4b495be",
+  "status": "Production observed-state diagnostics corrected; Q16 producer and release gates remain open",
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "013ea2121730061dbd8b140981ae06b0492c4c09a8b07b7eeddcb5076c37e23a",
+    "crates/core/src/notes/diagnostic.rs": "c1d6e1bceb88a9346f347f90a4befcba3ebb925bf642115a489b78d9ee22009f"
+  },
+  "original_witness": {
+    "source": "5d82499239ce2714fba6905e39242c84e4df19f5",
+    "report_sha256": "468532b9fe9926e315a096b7b56a19df0ab157f8d7dfd91464547908bb88a5b8",
+    "actual_cursor": 5,
+    "proposed_diagnostic_cursor": 6,
+    "final_attempt_error": "attribution rejection",
+    "old_trace_validation_failures": 0
+  },
+  "changes": [
+    "All three real document transaction paths mark committed only after commit_document_with_state returns Ok. Report finalization reads the actual database cursor; an unknown/deleted meeting yields null, never a proposed target.",
+    "Source preparation, composition, incomplete-response, cancellation and transaction-failure reports retain observed state. The final attempt validation error is surfaced at the top level.",
+    "Each failed request attempt produces one metadata-only validation_failed event, including the final request that exhausts the shared two-call budget. Repeated diagnostic writes cannot double count it.",
+    "Final diagnostic/trace collection runs even if preflight or job finalization fails. A later job bookkeeping error cannot erase a successful document transaction.",
+    "No model prompts, input, factual validation, request limit, generation policy, GPU components or installer changed."
+  ],
+  "checks": {
+    "core_passed": 449,
+    "core_ignored": 8,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "diff_check": "PASS",
+    "independent_read_only_review": "No introduced blocker"
+  },
+  "red_to_green": "Real mic-only document transaction initially failed the new committed-state assertion (0 passed/1 failed); success, cancellation and SQL commit failure now follow actual DB state. Separate final-quota trace/privacy and unknown-cursor controls pass.",
+  "witnesses": [
+    {
+      "path": "artifacts/minutes-diagnostics-2026-10-30/red.log",
+      "sha256": "deaaf93025c43096d7b1f7e9ff45e5532795229a7e15dfbec372a1c16d74bb33"
+    },
+    {
+      "path": "artifacts/minutes-diagnostics-2026-10-30/focused.log",
+      "sha256": "be277ac4e73d54b60fa5a2114a9f464a00c48a1481b8e9bcf3f3ba29755a3b93"
+    },
+    {
+      "path": "artifacts/minutes-diagnostics-2026-10-30/core-complete.log",
+      "sha256": "2958d48578a6ce1a5356f7a9ffca0f7ec3ce5b8563b2a2b2abfb7fb626196eb6"
+    },
+    {
+      "path": "artifacts/minutes-diagnostics-2026-10-30/clippy-workspace.log",
+      "sha256": "ba41b043d51a4dc63b7a48e8829ef6fcd61e750649fe372262993425fd43749d"
+    }
+  ],
+  "limits": [
+    "The existing Q16 model replay remains FAIL. This patch fixes reports and accounting, not the lost sentence/source boundaries or prose repetition.",
+    "No new model evaluation, runtime/SDK/model download, native installer or GPU package build performed. No performance or energy gain inferred.",
+    "CUDA/Vulkan remain separately delivered optional components; default worker keep-alive remains zero. All P0/P1/P2/P3/G1/G2 requirements and unreleased0.3.5 gates remain active."
+  ]
+}

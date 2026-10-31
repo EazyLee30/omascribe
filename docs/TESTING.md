@@ -5,15 +5,19 @@ Use fictional text or licensed public speech. Do not commit microphone audio, pe
 ## Deterministic checks
 
 ```bash
-bin/test
+scripts/bin/test
 cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 
 Rust tests cover sample-exact chunk boundaries, pause/resume append behavior, interrupted-recording recovery, the single-writer lock, Chinese/English retrieval, pending-prefix coverage, evidence rejection and atomic document updates. The Python tests ensure the model harness fails on missing required facts, unsupported claims and forged citations.
 
+Push checked source changes promptly; installer and optional GPU builds need not finish before a source push. Ordinary pull-request CI retains application checks, Windows core/ASR tests, CPU worker linking and component packaging contracts. The four-platform/backend SDK build matrix runs only with the `build-acceleration-components` PR label or a manual **Optional acceleration components** workflow dispatch. Remove the label after the intended build to avoid rebuilding it on every push. Skipped builds are not validation evidence; record the successful run and complete native-input revision when reusing earlier results. Publishing still requires the full matrix, archive/member verification and passing application CI for the exact publication commit.
+
+For isolated Windows Vulkan development, use the `build-windows-vulkan` PR label. It selects only Windows Vulkan and skips catalog assembly/publication. The full-build label takes precedence when both labels are present; manual dispatch always builds all four targets. Remove the targeted label after the intended run. A successful targeted archive does not satisfy the full publication gates.
+
 ## Real local writing model
 
-After `bin/setup`, build the CLI and run:
+After `scripts/bin/setup`, build the CLI and run:
 
 ```bash
 cargo build -p omascribe-core
@@ -22,6 +26,20 @@ python3 tests/evaluate.py --cli target/debug/omascribe-cli \
 ```
 
 The harness uses production retrieval → writer → validation → storage with an isolated database. Eighteen scenarios cover later corrections across phases, language selection, named speakers, pure mic checks, source closure beyond nine passages, and human-protected paragraphs. Inputs, drafts, validation failures, citations, timing and token usage survive failed cases. Output paths must be fresh. These targeted checks do not establish general meeting quality.
+
+For a paired CPU model comparison, prepare the catalog-pinned 0.6B and 1.7B files in an isolated model store, then run:
+
+```bash
+python3 tests/compare_minutes_models.py --model-store /absolute/path/to/model-store --runtime /absolute/path/to/runtime --output artifacts/benchmarks/minutes-models.json
+```
+
+It verifies every model file's hash/length, fingerprints the local llama runtime, and runs both models sequentially in two reversed-order trials. CPU backend, one thread, 2,048 context, 4,096 MiB ceiling, zero keep-alive, networking off and private libraries off are held constant. `--trials 1` is an initial comparison; `--case NAME` is a diagnostic subset. Neither admits a default model. Each generation command opens a CLI, so this does not benchmark cross-command worker retention. Failed cases and all within-request repair attempts remain in the cost totals; missing token/resource values stay unknown. No cross-model fallback is simulated.
+
+On native arm64 macOS, add `--apple-backends` to compare CPU and Metal with the **same 1.7B weights** (0.6B is not needed). This uses the untuned production batch policy, CPU 64 / Metal 128, and reverses backend order for the second trial. Both arms use diagnostic log verbosity 4 with fictional inputs: the pinned llama runtime hides layer-offload metadata at its default verbosity 3. Each actual Metal generation needs positive layer-offload evidence and a matching generation backend; a CPU fallback or missing log makes the comparison incomplete. A mic-check shortcut cannot count as a model execution. Per-command log hashes, model/runtime/CLI/source identities, repairs, token timings and sampled resources remain in the result. Device working-set/free estimates are unified-memory figures, not independent VRAM; separate startup, GPU allocations and energy are not measured. This is a quality/resource baseline, not a kernel microbenchmark, production fallback test or proof across M1–M5.
+
+With optional `psutil` installed, harness commands sample their descendants every 250 ms without command lines. Reported CPU is a sampled lower bound, summed RSS may double-count shared pages, and PSS is available only on supporting platforms with sufficient access. Very short children and the final interval can be missed. GPU memory and energy stay unknown. Without the dependency, resource fields are explicitly null. Model downloads and asset hashing occur before the measured case loop; raw case/generation times and whole-arm setup time remain separate.
+
+When `OMASCRIBE_TEST_MODEL_STORE` supplies reusable weights, a fresh harness-created `workspace/model-store` is marked and scheduled for cleanup when that Python process exits. Source weights, text/JSON/SQLite/audio failure evidence and pre-existing model stores are retained. The cleanup marker must match the creating process's owner token; a cleanup result is recorded beside the released directory. Hardlink logical bytes do not equal physical space reclaimed. After a forcibly terminated test, inspect its owned temporary copies and remove them once no worker uses them. Clear completed generated screenshots and transfer caches during task cleanup; keep current-run inputs until validation finishes.
 
 For the unified offline ASR/minutes harness, public corpus preparation, baseline comparisons, hotword compatibility and optional 30-minute stress runs, see [CORE-HARNESS.md](CORE-HARNESS.md).
 
@@ -74,11 +92,33 @@ omascribe-cli replay /path/to/public-sample.wav 3600
 
 Replay paces the input and loops it through the real capture/ASR/scheduler path. Run `tests/monitor.py PID /tmp/resources.jsonl` to sample process-tree PSS, available system memory and thermal zones without collecting command lines. A repeated clip establishes stability of that input path, not Chinese CER, English WER, speaker handling or meeting comprehension. Use independent human references for accuracy evaluation; never treat ASR output as its own ground truth.
 
+For the experimental per-stream hotword lifecycle, build the current ASR worker and use a disposable output:
+
+```bash
+python3 tests/prepare_hotword_fixtures.py --directory artifacts/fixtures/sherpa-public
+python3 tests/benchmark_hotword_lifecycle.py --model /path/to/zipformer-small --output artifacts/benchmarks/hotwords.json
+python3 tests/evaluate_hotword_updates.py --model /path/to/zipformer-small --fixtures artifacts/fixtures/sherpa-public --output artifacts/benchmarks/hotwords-boundaries.json
+```
+
+Preparation is an explicit download; the two evaluation scripts only use local assets. They select both legacy and experimental modes themselves. `--shared` can supply a compatible tokenizer directory when the selected model lacks one. Fresh result paths preserve earlier evidence. The lifecycle report measures initialization/reconfiguration and child resources, not speech accuracy. The boundary regression checks real public-audio transcript equivalence, finalization and sample-exact pause/resume, plus silence/noise. It does not replace independent CER/WER/MER, visible latency or name anti-case evaluation. The application keeps the old path unless `OMASCRIBE_ASR_STREAM_HOTWORDS=1` is explicitly set.
+
 See [BENCHMARKS.md](BENCHMARKS.md) for the measured scope, software versions and limitations.
+
+## Lexical retrieval cost
+
+Build the core test executable once with `cargo test -p omascribe-core --lib --no-run --message-format=json`, then pass its `executable` path to:
+
+```bash
+python3 tests/benchmark_retrieval.py --test-binary /absolute/path/to/core-test-executable --output artifacts/benchmarks/lexical.json
+```
+
+The harness compares the frozen full-vocabulary scorer, query-local counts and an experimental incremental index in separate children, twice in reverse order, at 1,000 and 5,000 fictional passages. Nine calls include appends, an old-source revision and removal. Every mode must match input/ranking digests and preserve the source. Timings include cold and rejected index construction; child CPU/RSS includes fixture generation and validation, excluding compilation. Results identify the compiler/profile and source/binary digests. These lexical checks do not measure ASR, model generation, semantic minutes quality or energy.
+
+Query-local counting retains no corpus vocabulary between calls. `OMASCRIBE_RETRIEVAL_CACHE=1` explicitly enables the separate experimental index: one Engine/meeting/run, at most 8,192 documents and 8 MiB of conservative retained-allocation accounting. This is not a process-RSS bound. Text and revision must both match; removals, run/meeting switches and committed meeting deletion discard derived entries. Over-budget inputs use query-local counting and do not repeatedly attempt indexing until the corpus substantially shrinks or the scope changes. The index remains off by default because the initial comparison found higher cold/total cost and resident memory despite slightly faster warm queries. Restart without the flag to use the normal path.
 
 ## Multiple takes and readable files
 
-After `bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
+After `scripts/bin/setup` and a workspace build, run `python3 tests/multitake.py --cli target/debug/omascribe-cli`. The harness imports the public sherpa sample twice into one isolated meeting, restarts between takes, and checks sample-exact append, stable IDs and a human correction, cumulative timestamps, two playable WAVs and refreshed text mirrors. It never opens the real meeting workspace. The unit suite also covers legacy migration, recovery and a WAV range crossing a 30-second chunk boundary.
 
 SSE unit cases cover Unicode chunks, usage events, normal completion, premature EOF, token-limit termination, error events and oversized data. `tests/evaluate.py` uses the real server and validates the complete streamed generation/validation/commit path.
 

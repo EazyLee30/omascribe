@@ -1,0 +1,354 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+  "immutable_branch": "codex/release-0.3.5-candidate-14",
+  "status": "rejected",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "stable_release": "0.3.4",
+  "run": {
+    "url": "https://github.com/EazyLee30/omascribe/actions/runs/40921374918",
+    "status": "completed",
+    "conclusion": "failure",
+    "publish_requested": false,
+    "jobs": [
+      {
+        "name": "linux-gate",
+        "id": 123615201049,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "build (windows-2022, x86_64-pc-windows-msvc, nsis)",
+        "id": 123615277708,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "build (macos-15-intel, x86_64-apple-darwin, app,dmg)",
+        "id": 123615277764,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "build (macos-15, aarch64-apple-darwin, app,dmg)",
+        "id": 123615278020,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "build (ubuntu-22.04, x86_64-unknown-linux-gnu, appimage,deb)",
+        "id": 123615278036,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "publish",
+        "id": 123645459259,
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  "scope": "Actual installed-candidate extraction/asset tests and default manual document path on GitHub native runners. Failed before complete launch/update acceptance. Not a physical microphone/GPU/Omarchy test.",
+  "linux_failure": "Original Ubuntu22 receipt mutation and old-FFmpeg tests failed; later a710e97 source fix passed actual Ubuntu22 checks, separately recorded in linux-compatibility-2026-10-30.json. The frozen candidate remains FAIL.",
+  "manual_quality_failure": {
+    "shared_behavior": "After the second generation, all music/festival content disappeared while all six sources remained cited, validation_error stayed null and cursor advanced5->6. Existing source/citation coverage was insufficient to prove prose retained history.",
+    "arm_first_batch": "Preserved the prior music/festival and professor topics, then lost music in batch2.",
+    "cpu_first_batch": "Intel and Windows already weakened may have finished to a finished assertion in batch1, then omitted the entire topic in batch2.",
+    "automatic_comparison": "Local same-candidate automatic bilingual68/68 is retained in its original scope; cached translations were reused for three English passages. Manual translation-off has no such cached texts and is a supported product path. Do not change native smoke to auto mode to hide this failure.",
+    "constraints": [
+      "Do not loosen original fixture, required/forbidden rules or request budget.",
+      "Source identities and citation lists alone are not factual coverage.",
+      "Do not append old prose blindly: new statements can retract earlier claims without changing old source revisions.",
+      "Existing experimental delta prompting or BM25 overlap do not prove semantic preservation."
+    ],
+    "platforms": [
+      {
+        "target": "aarch64-apple-darwin",
+        "passed": false,
+        "completed_document_cases": 35,
+        "passed_document_cases": 34,
+        "execution": "explicit-generation",
+        "preference_overrides": {},
+        "fixture_minutes_language": "zh",
+        "translation_mode_default": "off",
+        "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+        "environment": {
+          "cli_build": {
+            "profile": "release",
+            "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "2585c100b9dd7c07decd664a3c4ea80f2ce08b91b9db2c98ce16fd3e7aec2dff",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-15.8.2-arm64-arm-64bit",
+          "machine": "arm64",
+          "python": "3.12.10",
+          "cli_sha256": "af57346d8cbdff5140d474916d2c11c8d0436ac10ac37886c752d07bca3b44ab",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "errors": [
+          "Missing: (?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+        ],
+        "case_seconds": 128.725,
+        "batches": [
+          {
+            "batch": 1,
+            "cursor_before": 0,
+            "cursor_after": 5,
+            "backend": "metal",
+            "requests": 2,
+            "prose": "记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜 当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性 记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜 邓迪大学的 PAN MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性 记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜",
+            "validation_error": null,
+            "selected_count": 5,
+            "draft": {
+              "sections": [
+                {
+                  "body": "记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜 当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性 记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜 邓迪大学的 PAN MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性 记住即使主舞台的音乐已经结束， festival 中可能还有部分区域将持续演奏直到深夜",
+                  "sources": [2, 4, 5, 1, 3],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          },
+          {
+            "batch": 2,
+            "cursor_before": 5,
+            "cursor_after": 6,
+            "backend": "metal",
+            "requests": 1,
+            "prose": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+            "validation_error": null,
+            "selected_count": 6,
+            "draft": {
+              "sections": [
+                {
+                  "body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+                  "sources": [2, 4, 6, 1, 3, 5],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          }
+        ],
+        "report_sha256": "ad008cb85e902abf8a409658c3d0482b771a529df3c88a2fd12138a1015c8fc0",
+        "raw_report": "artifacts/candidate14-2026-10-30/native-mac-arm-failure/validation/zh_recorded_mixed_prose_fidelity.json",
+        "raw_job_log_sha256": "e4f79ee8f8777597438e360e47ae68b499372bdb61bb5e23d3fb4c7a5b814cc4"
+      },
+      {
+        "target": "x86_64-apple-darwin",
+        "passed": false,
+        "completed_document_cases": 35,
+        "passed_document_cases": 34,
+        "execution": "explicit-generation",
+        "preference_overrides": {},
+        "fixture_minutes_language": "zh",
+        "translation_mode_default": "off",
+        "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+        "environment": {
+          "cli_build": {
+            "profile": "release",
+            "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+            "target": "x86_64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "2585c100b9dd7c07decd664a3c4ea80f2ce08b91b9db2c98ce16fd3e7aec2dff",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-15.7.9-x86_64-i386-64bit",
+          "machine": "x86_64",
+          "python": "3.12.10",
+          "cli_sha256": "0f6b23d327a5d3a31e0aa66b7ddbfd5f590099e58121651be6b11a8fa35fb1d1",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "errors": [
+          "Missing: (?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+        ],
+        "case_seconds": 63.263,
+        "batches": [
+          {
+            "batch": 1,
+            "cursor_before": 0,
+            "cursor_after": 5,
+            "backend": "cpu",
+            "requests": 1,
+            "prose": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台结束，但 festival 的某些部分仍将持续演奏至深夜。",
+            "validation_error": null,
+            "selected_count": 5,
+            "draft": {
+              "sections": [
+                {
+                  "body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台结束，但 festival 的某些部分仍将持续演奏至深夜。",
+                  "sources": [4, 2, 5, 1, 3],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          },
+          {
+            "batch": 2,
+            "cursor_before": 5,
+            "cursor_after": 6,
+            "backend": "cpu",
+            "requests": 1,
+            "prose": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+            "validation_error": null,
+            "selected_count": 6,
+            "draft": {
+              "sections": [
+                {
+                  "body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+                  "sources": [2, 4, 6, 1, 3, 5],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          }
+        ],
+        "report_sha256": "e899b7ac58df5b0b9a687d5aea1296e0aaad884b13e514ec4faf9ce63d2be1da",
+        "raw_report": "artifacts/candidate14-2026-10-30/native-mac-intel-failure/validation/zh_recorded_mixed_prose_fidelity.json",
+        "raw_job_log_sha256": "65e2137ac0f8126e71a96d6e81073685f42b4233e48219b8debca11f4a8098bb"
+      },
+      {
+        "target": "x86_64-pc-windows-msvc",
+        "passed": false,
+        "completed_document_cases": 35,
+        "passed_document_cases": 34,
+        "execution": "explicit-generation",
+        "preference_overrides": {},
+        "fixture_minutes_language": "zh",
+        "translation_mode_default": "off",
+        "fixture_sha256": "19d9c9c7354b5ae20a391e307aa580bc2c5ba13a92a1ff0e79711117a5151890",
+        "environment": {
+          "cli_build": {
+            "profile": "release",
+            "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+            "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+            "schema": 1,
+            "source_sha256": "f9e3d55b215536c5d381a4e9f3507e3380974b5aee8ed5cf25d176d8b480ed3a",
+            "target": "x86_64-pc-windows-msvc"
+          },
+          "core_and_harness_source_sha256": "135818b1de3ab6d0d19c69be61c643d557f52208cd00c0c0e6f7d31a5ff884df",
+          "inference_source_tree_dirty": false,
+          "platform": "Windows-2022Server-10.0.20348-SP0",
+          "machine": "AMD64",
+          "python": "3.12.10",
+          "cli_sha256": "7cbbaac691e7ce12425098342a0ecc6ea2660e0e5c4908435755f5ede67c6a10",
+          "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+          "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+          "suite_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "errors": [
+          "Missing: (?:可能|或许|也许)[^，。；,.;!?！？]{0,15}(?:结束|完毕)|即使[^，。；,.;!?！？]{0,20}(?:音乐|舞台)[^，。；,.;!?！？]{0,10}结束"
+        ],
+        "case_seconds": 53.75,
+        "batches": [
+          {
+            "batch": 1,
+            "cursor_before": 0,
+            "cursor_after": 5,
+            "backend": "cpu",
+            "requests": 1,
+            "prose": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台已经结束，但 festival 中可能有部分区域仍将持续播放音乐直到深夜。",
+            "validation_error": null,
+            "selected_count": 5,
+            "draft": {
+              "sections": [
+                {
+                  "body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台已经结束，但 festival 中可能有部分区域仍将持续播放音乐直到深夜。",
+                  "sources": [4, 2, 5, 1, 3],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          },
+          {
+            "batch": 2,
+            "cursor_before": 5,
+            "cursor_after": 6,
+            "backend": "cpu",
+            "requests": 1,
+            "prose": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+            "validation_error": null,
+            "selected_count": 6,
+            "draft": {
+              "sections": [
+                {
+                  "body": "当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 邓迪大学的潘 MALE FERGUSTON 教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+                  "sources": [2, 4, 6, 1, 3, 5],
+                  "title": "会议纪要"
+                }
+              ]
+            },
+            "reused_translation_passages": [0],
+            "finished": [
+              {
+                "committed": true,
+                "items": 1
+              }
+            ]
+          }
+        ],
+        "report_sha256": "5957fcd00e01eac2800886894e6f0e5a02cee9667e5256cd6960b70bc1627e0e",
+        "raw_report": "artifacts/candidate14-2026-10-30/native-windows-failure/validation/zh_recorded_mixed_prose_fidelity.json",
+        "raw_job_log_sha256": "5154b014099c5980f0b78a45ffc0a85e32df072f4336939d4563acb8ab7ed0ad"
+      }
+    ]
+  },
+  "next_action": "Reproduce the committed topic loss at the production history-retention boundary; develop bounded source-to-prose preservation/repair while retaining correction and retraction cases. Keep old article/cursor unchanged on failed validation; no stable publication before both manual and automatic paths pass.",
+  "no_new_installer_or_model_study_started": true
+}

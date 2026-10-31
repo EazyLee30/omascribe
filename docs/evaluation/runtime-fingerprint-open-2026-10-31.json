@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "status": "OPEN_PROVEN_NOT_FIXED",
+  "observed_source": "88ff00939798f9ce787ada0b6e1c7e10a0a4caae",
+  "production_status": "Fingerprint cache remains unchanged in this production revision. The isolated failing test was preserved as a patch/log then removed from the working source; this does not mark the bug fixed.",
+  "compiled_red": {
+    "method": "Actual Fingerprints::file called on a self-created9-byte file before and after an equal-size write with restored mtime. It returned the old hash.",
+    "test_exit": 101,
+    "log_sha256": "74fbd644ab8f0f9ceedc0a3d2fa783f69b10aaf43db861a0492854e016cdf699",
+    "patch_sha256": "244877dc0f7a5a30c25f7c00f51d9c05ef56746f4bf2f17b4d311627b6dc776a"
+  },
+  "affected_contract": "Runtime hashes feed worker reuse and translation environment/cache keys; unknown runtime currently can become stable JSON null. No actual incorrect meeting output was demonstrated in this probe.",
+  "hot_path_constraint": "Snapshots call cached captions under the Store lock. Rehashing a full runtime on every600ms snapshot is not an accepted fix.",
+  "required_followup": [
+    "Separate admission-time complete bounded observation outside Store/prefs/global map locks from frequent current-receipt checks.",
+    "Use reliable ordinary-mutation observers/ownership for each OS, with exact release before component removal.",
+    "Unknown observations must make reuse ineligible, without breaking source display or literal captions.",
+    "Recheck model/runtime/configuration at generation and commit; do not treat a weak epoch as full driver/runtime identity."
+  ],
+  "native_mac_probe": {
+    "status": "PASS_4_LOCAL_MAC_KQUEUE_PROBES",
+    "self_created_file_cases": 4,
+    "observed": [
+      "Read-only access produced no event",
+      "Same-size/restored-mtime write produced event",
+      "Same-size/mtime replacement produced event",
+      "Write through outside hardlink produced event"
+    ],
+    "method": "Native kqueue EVFILT_VNODE via Python select, registration before access/mutation and zero-timeout poll",
+    "evidence_sha256": "aba7f71bcdb6fea9ef8c5896c0f04c0ef82ab009c40eb4276cce33ae224b8e44",
+    "scope": "This Mac only; not a runtime cache implementation, cold/warm benchmark, or Windows/Linux acceptance."
+  },
+  "references": [
+    {
+      "title": "Apple kernel queues guide",
+      "url": "https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/KernelQueues/KernelQueues.html",
+      "supports": "Per-file vnode mutation notification mechanism and ownership of watched descriptors."
+    },
+    {
+      "title": "Apple kqueue manual",
+      "url": "https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kqueue.2.html",
+      "supports": "Zero-timeout polling, vnode event flags, aggregated events and unsupported/partial filesystem limitations."
+    }
+  ],
+  "cleanup": "All self-created probe files and descriptors closed; no original model/runtime file, SDK or process was touched. Initial Python context-manager API error and its correction remain in artifacts.",
+  "limits": [
+    "No cache fix, retry hold, whole runtime/dependency/driver identity closure, mmap/network filesystem guarantee or speed/resource saving is claimed.",
+    "Original Q16 and broader hardware/installation/release gates remain open."
+  ]
+}

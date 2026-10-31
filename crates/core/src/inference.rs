@@ -1,8 +1,14 @@
 //! Local inference policy. A resource budget is an admission/monitoring policy, not an OS quota.
 use crate::{models, preferences::Preferences, Engine};
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+mod selector_env;
+pub(crate) use selector_env::SelectorEnv;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -10,6 +16,8 @@ pub enum Backend {
     Cpu,
     Metal,
     Mlx,
+    Cuda,
+    Vulkan,
 }
 impl Backend {
     pub fn name(self) -> &'static str {
@@ -17,8 +25,40 @@ impl Backend {
             Self::Cpu => "cpu",
             Self::Metal => "metal",
             Self::Mlx => "mlx",
+            Self::Cuda => "cuda",
+            Self::Vulkan => "vulkan",
         }
     }
+    pub fn optional_gpu(self) -> bool {
+        matches!(self, Self::Cuda | Self::Vulkan)
+    }
+}
+#[derive(Debug, Clone)]
+pub(crate) struct LaunchSpec {
+    pub backend: Backend,
+    pub directory: PathBuf,
+    pub device: Option<String>,
+    pub identity: String,
+    pub selectors: SelectorEnv,
+}
+pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<LaunchSpec> {
+    if prefs.inference_backend == "auto" {
+        if let Some(spec) = crate::acceleration::selected(engine, prefs) {
+            return Ok(spec);
+        }
+    }
+    let backend = resolve(prefs, &engine.runtime_dir)?;
+    Ok(LaunchSpec {
+        backend,
+        directory: engine.runtime_dir.join(if backend == Backend::Mlx {
+            "mlx"
+        } else {
+            "llama"
+        }),
+        device: None,
+        identity: String::new(),
+        selectors: SelectorEnv::capture(backend),
+    })
 }
 pub fn apple_silicon() -> bool {
     cfg!(all(target_os = "macos", target_arch = "aarch64"))
@@ -115,14 +155,36 @@ pub fn server_command(
     port: u16,
     token: &str,
 ) -> Result<(Command, Backend)> {
-    let backend = resolve(prefs, &engine.runtime_dir)?;
+    let spec = launch_spec(engine, prefs)?;
+    server_command_with_spec(engine, prefs, port, token, &spec)
+}
+pub(crate) fn server_command_with_spec(
+    engine: &Engine,
+    prefs: &Preferences,
+    port: u16,
+    token: &str,
+    spec: &LaunchSpec,
+) -> Result<(Command, Backend)> {
+    let receipt = engine.verified_model(&prefs.llm_model)?;
+    server_command_with_model(engine, prefs, port, token, spec, &receipt)
+}
+pub(crate) fn server_command_with_model(
+    engine: &Engine,
+    prefs: &Preferences,
+    port: u16,
+    token: &str,
+    spec: &LaunchSpec,
+    receipt: &crate::model_integrity::Receipt,
+) -> Result<(Command, Backend)> {
+    receipt.check_current()?;
+    let backend = spec.backend;
     let budget = budget_mib(prefs);
     let mut command = if backend == Backend::Mlx {
         let mut c = crate::platform::child_command(engine.runtime_dir.join("mlx/venv/bin/python3"));
         c.arg("-I")
             .arg(engine.runtime_dir.join("mlx/runner.py"))
             .arg("--model")
-            .arg(engine.model_directory(&prefs.llm_model)?)
+            .arg(receipt.directory())
             .args([
                 "--port",
                 &port.to_string(),
@@ -134,11 +196,12 @@ pub fn server_command(
             .env("OMASCRIBE_RUNTIME_TOKEN", token);
         c
     } else {
+        let directory = spec
+            .directory
+            .canonicalize()
+            .context("Local runtime directory unavailable")?;
         let mut c = crate::platform::child_command(
-            engine
-                .runtime_dir
-                .join("llama")
-                .join(crate::platform::executable("llama-server")),
+            directory.join(crate::platform::executable("llama-server")),
         );
         let threads = if prefs.resource_mode == "eco" {
             prefs.threads.min(2)
@@ -153,7 +216,12 @@ pub fn server_command(
             _ => ("128", "128"),
         };
         c.arg("-m")
-            .arg(engine.model_file(&prefs.llm_model)?)
+            .arg(
+                receipt
+                    .directory()
+                    .join(&crate::models::model(&prefs.llm_model)?.files[0].name)
+                    .canonicalize()?,
+            )
             .args([
                 "--host",
                 "127.0.0.1",
@@ -170,7 +238,11 @@ pub fn server_command(
                 "--parallel",
                 "1",
                 "--n-gpu-layers",
-                if backend == Backend::Metal { "99" } else { "0" },
+                if backend == Backend::Metal || backend.optional_gpu() {
+                    "99"
+                } else {
+                    "0"
+                },
                 "--batch-size",
                 batch,
                 "--ubatch-size",
@@ -187,9 +259,25 @@ pub fn server_command(
                 "--no-warmup",
                 "--offline",
             ])
-            .env("LD_LIBRARY_PATH", engine.runtime_dir.join("llama"));
+            .env("LD_LIBRARY_PATH", &directory)
+            .env_remove("GGML_BACKEND_PATH")
+            .current_dir(&directory);
+        if backend == Backend::Metal {
+            // The pinned runtime exposes actual model-layer offload at level 4.
+            // Level 5 includes request contents and is not needed for admission.
+            c.args(["--log-verbosity", "4"]);
+        }
         if backend == Backend::Cpu {
             c.args(["--device", "none"]);
+        } else if let Some(device) = &spec.device {
+            c.args(["--device", device]);
+        }
+        if backend.optional_gpu() {
+            // The pinned runtime maps model/backend INFO (including the layer
+            // offload proof) to verbosity 4. Default 3 hides it and causes a
+            // false CPU-fallback verdict. Level 5 also logs request contents;
+            // keep production diagnostics below that level.
+            c.args(["--log-verbosity", "4"]);
         }
         c
     };
@@ -200,12 +288,64 @@ pub fn server_command(
         .env("DO_NOT_TRACK", "1")
         .env("OMP_NUM_THREADS", "1")
         .env("OPENBLAS_NUM_THREADS", "1");
+    spec.selectors.apply(backend, &mut command)?;
     Ok((command, backend))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cuda_server_command_uses_only_the_captured_selector_values() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let prefs = Preferences {
+            memory_budget_mib: 1024,
+            ..Default::default()
+        };
+        // A synthetic integrity receipt is enough to inspect the production
+        // command builder; these bytes are never passed to a native runtime.
+        let mut model = models::model(&prefs.llm_model)?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(b"good"));
+        let directory = root.path().join("model-store").join(&model.id);
+        std::fs::create_dir_all(&directory)?;
+        std::fs::write(directory.join(&model.files[0].name), b"good")?;
+        let receipt = engine.model_integrity.verify(&directory, &model)?;
+        let runtime = root.path().join("cuda");
+        std::fs::create_dir(&runtime)?;
+        let mut spec = LaunchSpec {
+            backend: Backend::Cuda,
+            directory: runtime,
+            device: Some("CUDA0".into()),
+            identity: "synthetic-certificate".into(),
+            selectors: SelectorEnv::cuda(Some("0,1".into()), None),
+        };
+        let (command, backend) =
+            server_command_with_model(&engine, &prefs, 12345, "synthetic-token", &spec, &receipt)?;
+        assert_eq!(backend, Backend::Cuda);
+        let env: std::collections::BTreeMap<_, _> = command.get_envs().collect();
+        assert_eq!(
+            env[std::ffi::OsStr::new("CUDA_VISIBLE_DEVICES")],
+            Some(std::ffi::OsStr::new("0,1"))
+        );
+        assert_eq!(env[std::ffi::OsStr::new("CUDA_DEVICE_ORDER")], None);
+        let args: Vec<_> = command.get_args().collect();
+        assert!(args.windows(2).any(|pair| pair == ["--device", "CUDA0"]));
+        spec.selectors = SelectorEnv::capture(Backend::Cpu);
+        assert!(server_command_with_model(
+            &engine,
+            &prefs,
+            12345,
+            "synthetic-token",
+            &spec,
+            &receipt
+        )
+        .is_err());
+        Ok(())
+    }
     #[test]
     fn auto_keeps_legacy_cpu_runtime_and_explicit_unavailable_backend_fails() {
         let root = tempfile::tempdir().unwrap();

@@ -15,6 +15,30 @@ use std::{
 };
 use uuid::Uuid;
 
+fn replace_hotword_file(dir: &Path, name: &str, contents: &[u8]) -> Result<()> {
+    let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
+    let result = fs::write(&temp, contents).and_then(|_| fs::rename(&temp, dir.join(name)));
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result.context("无法更新转写热词文件")
+}
+
+/// Startup and boundary refresh use one bounded wire format. Diagnostics contain
+/// only counts; display spellings and the original note remain unchanged.
+fn publish_hotwords(dir: &Path, candidates: &[String]) -> Result<PathBuf> {
+    let encoded = crate::asr_hotwords::encode_words(candidates);
+    replace_hotword_file(dir, "hotwords.txt", encoded.words.as_bytes())?;
+    // An unavailable diagnostic must not turn a successful note/context save
+    // into an error. As with the worker's asr-config.json, it is best effort.
+    if let Ok(metadata) = serde_json::to_vec_pretty(&serde_json::json!({
+        "schema": 1, "encoding": "uppercase_complete_utf8_terms", "stats": encoded.stats
+    })) {
+        let _ = replace_hotword_file(dir, "hotwords-input.json", &metadata);
+    }
+    Ok(dir.join("hotwords.txt"))
+}
+
 pub struct Active {
     pub id: String,
     pub take_number: Option<u32>,
@@ -30,12 +54,32 @@ pub struct Active {
     pub resumable: bool,
     transition: Mutex<()>,
     pub samples: AtomicU64,
+    /// Session sleep/idle hold. Present only while frames are arriving.
+    hold: Mutex<Option<crate::inhibit::Inhibitor>>,
 }
+
+impl Active {
+    /// Hold the desktop awake for as long as this take is capturing.
+    fn hold_awake(&self) {
+        let mut hold = self.hold.lock().unwrap();
+        if hold.as_ref().is_none_or(|inhibitor| !inhibitor.held()) {
+            *hold = Some(crate::inhibit::Inhibitor::acquire());
+        }
+    }
+    /// Release the hold on pause, finish and failure.
+    fn release_awake(&self) {
+        if let Some(mut inhibitor) = self.hold.lock().unwrap().take() {
+            inhibitor.release();
+        }
+    }
+}
+
 pub struct Engine {
     pub root: PathBuf,
     pub preferences: Mutex<crate::preferences::Preferences>,
     pub context_revision: AtomicU64,
     pub downloads: crate::models::Downloads,
+    pub component_downloads: crate::models::Downloads,
     pub config_lock: Mutex<()>,
     pub diarization_pid: AtomicU32,
     pub diarization_cancelled: Mutex<std::collections::HashSet<String>>,
@@ -46,15 +90,23 @@ pub struct Engine {
     pub active: Mutex<Option<Arc<Active>>>,
     pub note_busy: AtomicBool,
     pub maintenance: AtomicBool,
-    pub note_failures: AtomicU32,
+    pub(crate) legacy_minutes_failures: Mutex<crate::minutes_schedule::LegacyFailures>,
     pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
     pub llm_pid: AtomicU32,
+    pub(crate) inference_pool: crate::inference_worker::WorkerPool,
+    pub(crate) inference_fingerprints: crate::inference_cache::Fingerprints,
+    pub(crate) model_integrity: crate::model_integrity::Cache,
+    pub(crate) retrieval_cache: crate::notes::RetrievalCache,
+    pub(crate) acceleration: Mutex<crate::acceleration::State>,
+    microphone_monitor: crate::microphone::MicrophoneMonitor,
     notes_target: Mutex<Option<String>>,
     _lock: File,
 }
 impl Drop for Engine {
     fn drop(&mut self) {
+        self.microphone_monitor.stop();
+        self.inference_pool.invalidate();
         let _ = fs2::FileExt::unlock(&self._lock);
     }
 }
@@ -104,6 +156,7 @@ impl Engine {
             preferences: Mutex::new(preferences),
             context_revision: AtomicU64::new(0),
             downloads: crate::models::Downloads::default(),
+            component_downloads: crate::models::Downloads::default(),
             config_lock: Mutex::new(()),
             diarization_pid: AtomicU32::new(0),
             diarization_cancelled: Mutex::new(Default::default()),
@@ -115,10 +168,16 @@ impl Engine {
             active: Mutex::new(None),
             note_busy: AtomicBool::new(false),
             maintenance: AtomicBool::new(false),
-            note_failures: AtomicU32::new(0),
+            legacy_minutes_failures: Default::default(),
             files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
             llm_pid: AtomicU32::new(0),
+            inference_pool: Default::default(),
+            inference_fingerprints: Default::default(),
+            model_integrity: Default::default(),
+            retrieval_cache: Default::default(),
+            acceleration: Default::default(),
+            microphone_monitor: Default::default(),
             notes_target: Mutex::new(None),
             _lock: lock,
         });
@@ -127,9 +186,14 @@ impl Engine {
     }
     pub fn start_scheduler(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
+        // Live catch-up remains experimental. After ASR stops, successful batches
+        // drain pending work without reapplying the live 45s coalescing interval.
+        let catchup = std::env::var("OMASCRIBE_MINUTES_CATCHUP").as_deref() == Ok("1");
+        let stop_drain = std::env::var("OMASCRIBE_POST_CAPTURE_DRAIN").as_deref() != Ok("0");
         thread::spawn(move || {
             let mut attempted = std::collections::HashMap::<String, Instant>::new();
-            let mut in_flight: Option<String> = None;
+            let mut minute_schedule = crate::minutes_schedule::Schedule::default();
+            let mut in_flight: Option<(String, bool, crate::minutes_schedule::Dispatch)> = None;
             let mut translation_attempts = std::collections::HashMap::<String, Instant>::new();
             let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
             loop {
@@ -138,10 +202,42 @@ impl Engine {
                 if engine.note_busy.load(Ordering::SeqCst) {
                     continue;
                 }
-                if let Some(id) = in_flight.take() {
-                    attempted.insert(id, Instant::now());
+                if let Some((id, update_live_clock, dispatch)) = in_flight.take() {
+                    if update_live_clock {
+                        attempted.insert(id.clone(), Instant::now());
+                    }
+                    if let Ok(snapshot) = engine.snapshot(&id) {
+                        let input = engine.minutes_retry_input(&snapshot).ok();
+                        let completion = dispatch.take_completion();
+                        minute_schedule.finished_for_input(
+                            &snapshot.meeting,
+                            input.as_ref(),
+                            completion.as_ref(),
+                            Instant::now(),
+                        );
+                    } else {
+                        let deleted = engine
+                            .store
+                            .lock()
+                            .unwrap()
+                            .conn
+                            .query_row(
+                                "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                                [&id],
+                                |row| row.get::<_, bool>(0),
+                            )
+                            .unwrap_or(false);
+                        if deleted {
+                            minute_schedule.forget(&id);
+                        } else {
+                            minute_schedule.finish_unavailable(&id, &dispatch, Instant::now());
+                        }
+                    }
                 }
                 let status = engine.status.lock().unwrap().clone();
+                let capture_active = status.recording || status.paused || status.transcribing;
+                let quality =
+                    catchup && engine.preferences.lock().unwrap().resource_mode == "quality";
                 if status.diarization_busy {
                     continue;
                 }
@@ -167,10 +263,40 @@ impl Engine {
                         }
                     }
                 }
+                minute_schedule.retain(&ids);
                 for id in ids {
                     let Ok(snapshot) = engine.snapshot(&id) else {
                         continue;
                     };
+                    let pending_minutes = notes::needs_update(&snapshot);
+                    let own_active = capture_active && status.meeting_id.as_deref() == Some(&id);
+                    let retry_input = if pending_minutes
+                        && snapshot.meeting.auto_notes
+                        && (engine
+                            .legacy_minutes_failures
+                            .lock()
+                            .unwrap()
+                            .count(&snapshot.meeting)
+                            > 0
+                            || minute_schedule.penalized(&snapshot.meeting))
+                    {
+                        engine.minutes_retry_input(&snapshot).ok()
+                    } else {
+                        None
+                    };
+                    minute_schedule.observe_with_input(
+                        &snapshot.meeting,
+                        own_active,
+                        retry_input.as_ref(),
+                    );
+                    engine
+                        .legacy_minutes_failures
+                        .lock()
+                        .unwrap()
+                        .observe_input(&snapshot.meeting, retry_input.as_ref());
+                    if !own_active && (!snapshot.meeting.auto_notes || !pending_minutes) {
+                        minute_schedule.forget(&id);
+                    }
                     let translation_due = (status.meeting_id.as_deref() == Some(&id)
                         || engine.notes_target.lock().unwrap().as_deref() == Some(&id))
                         && crate::translation::pending(&snapshot)
@@ -188,14 +314,49 @@ impl Engine {
                                 )
                         });
                     let minutes_due = snapshot.meeting.auto_notes
-                        && notes::needs_update(&snapshot)
-                        && attempted
-                            .get(&id)
-                            .is_none_or(|t| t.elapsed() > Duration::from_secs(45));
-                    if translation_due && (!minutes_due || !translation_attempts.contains_key(&id))
-                    {
+                        && pending_minutes
+                        && if catchup || stop_drain && !capture_active {
+                            minute_schedule.due(&id, capture_active, quality, Instant::now())
+                        } else {
+                            engine.legacy_minutes_due_for_input(
+                                &snapshot.meeting,
+                                retry_input.as_ref(),
+                                attempted.get(&id).copied(),
+                                Instant::now(),
+                            )
+                        }
+                        && !snapshot
+                            .notes
+                            .iter()
+                            .filter_map(|n| {
+                                chrono::DateTime::parse_from_rfc3339(&n.updated_at).ok()
+                            })
+                            .any(|t| chrono::Utc::now().signed_duration_since(t).num_seconds() < 5);
+                    if translation_due {
                         translation_attempts.insert(id.clone(), Instant::now());
-                        if engine.translate_pending(&id).unwrap_or(false) {
+                        let dispatch = minutes_due.then(|| {
+                            crate::minutes_schedule::Dispatch::new(
+                                snapshot.meeting.run,
+                                retry_input
+                                    .clone()
+                                    .or_else(|| engine.minutes_retry_input(&snapshot).ok()),
+                            )
+                        });
+                        if engine
+                            .translate_with_minutes_dispatch(&id, minutes_due, dispatch.clone())
+                            .unwrap_or(false)
+                        {
+                            if let Some(dispatch) = dispatch {
+                                attempted.insert(id.clone(), Instant::now());
+                                minute_schedule.started_for_dispatch(
+                                    &snapshot.meeting,
+                                    &dispatch,
+                                    Instant::now(),
+                                );
+                                // Default live translation chains historically
+                                // coalesce from launch, plain minutes from finish.
+                                in_flight = Some((id.clone(), catchup, dispatch));
+                            }
                             break;
                         }
                     }
@@ -222,35 +383,73 @@ impl Engine {
                             }
                         }
                     }
-                    if !snapshot.meeting.auto_notes || !notes::needs_update(&snapshot) {
-                        continue;
-                    }
-                    // Coalesce bursts, retry failed jobs without advancing their coverage, and never
-                    // require an explicit UI action. A finished recording gets the next free slot.
-                    if attempted.get(&id).is_some_and(|t| {
-                        t.elapsed()
-                            < Duration::from_secs(
-                                45 * 2u64.pow(engine.note_failures.load(Ordering::SeqCst).min(3)),
-                            )
-                    }) {
-                        continue;
-                    }
-                    let editing = snapshot
-                        .notes
-                        .iter()
-                        .filter_map(|n| chrono::DateTime::parse_from_rfc3339(&n.updated_at).ok())
-                        .any(|t| chrono::Utc::now().signed_duration_since(t).num_seconds() < 5);
-                    if editing {
+                    if !minutes_due {
                         continue;
                     }
                     attempted.insert(id.clone(), Instant::now());
-                    if engine.generate_notes(&id).is_ok() {
-                        in_flight = Some(id);
+                    let dispatch = crate::minutes_schedule::Dispatch::new(
+                        snapshot.meeting.run,
+                        retry_input.or_else(|| engine.minutes_retry_input(&snapshot).ok()),
+                    );
+                    let launched = engine
+                        .generate_notes_dispatch(&id, Some(dispatch.clone()))
+                        .is_ok();
+                    minute_schedule.started_for_dispatch(
+                        &snapshot.meeting,
+                        &dispatch,
+                        Instant::now(),
+                    );
+                    if launched {
+                        in_flight = Some((id, true, dispatch));
+                    } else {
+                        dispatch.complete_observed(false, None);
+                        let completion = dispatch.take_completion();
+                        minute_schedule.finished_for_input(
+                            &snapshot.meeting,
+                            dispatch.input.as_ref(),
+                            completion.as_ref(),
+                            Instant::now(),
+                        );
                     }
                     break;
                 }
             }
         });
+    }
+    fn minutes_retry_input(
+        &self,
+        snapshot: &Snapshot,
+    ) -> Result<crate::minutes_schedule::InputDigest> {
+        let prefs = self.preferences.lock().unwrap().clone();
+        crate::minutes_schedule::InputDigest::from_snapshot(
+            snapshot,
+            &prefs,
+            self.context_revision.load(Ordering::SeqCst),
+        )
+    }
+    fn legacy_minutes_due_for_input(
+        &self,
+        meeting: &Meeting,
+        input: Option<&crate::minutes_schedule::InputDigest>,
+        attempted: Option<Instant>,
+        now: Instant,
+    ) -> bool {
+        self.legacy_minutes_failures
+            .lock()
+            .unwrap()
+            .observe_input(meeting, input);
+        self.legacy_minutes_due(meeting, attempted, now)
+    }
+    fn legacy_minutes_due(
+        &self,
+        meeting: &Meeting,
+        attempted: Option<Instant>,
+        now: Instant,
+    ) -> bool {
+        let failures = self.legacy_minutes_failures.lock().unwrap().count(meeting);
+        attempted.is_none_or(|at| {
+            now.saturating_duration_since(at) > Duration::from_secs(45 * 2u64.pow(failures))
+        })
     }
     pub fn audio_dir(&self, id: &str) -> Result<PathBuf> {
         Uuid::parse_str(id).context("无效的会议编号")?;
@@ -305,7 +504,7 @@ impl Engine {
             m.duration_ms = m.duration_ms.max(runtime.elapsed_ms);
         }
         Ok(Snapshot {
-            translations: crate::translation::cached(&db, &m, &prefs)?,
+            translations: crate::translation::cached(self, &db, &m, &prefs)?,
             translation_mode: prefs.translation_mode,
             segments: db.segments(&m)?,
             notes: db.notes(id)?,
@@ -336,7 +535,7 @@ impl Engine {
             bail!("文档超过 200,000 字符，请拆分后保存；原有内容未改动");
         }
         let db = self.store.lock().unwrap();
-        db.meeting(id)?;
+        let meeting = db.meeting(id)?;
         let nid = note_id.unwrap_or_else(|| Uuid::new_v4().to_string());
         Uuid::parse_str(&nid)?;
         let existing = db.notes(id)?;
@@ -363,9 +562,10 @@ impl Engine {
             anchor_ms: anchor,
             updated_at: chrono::Utc::now().to_rfc3339(),
         };
+        let spelling_edit = db.note_spelling_edit(&meeting, &existing, &n)?;
         db.save_note(&n)?;
         drop(db);
-        self.correct_terminology(id)?;
+        self.correct_terminology_after_note(id, spelling_edit)?;
         self.refresh_live_hotwords()?;
         *self.notes_target.lock().unwrap() = Some(id.to_owned());
         Ok(n)
@@ -374,13 +574,7 @@ impl Engine {
         let id = self.active.lock().unwrap().as_ref().map(|a| a.id.clone());
         if let Some(id) = id {
             let dir = self.audio_dir(&id)?;
-            let words = self.terminology(&id)?.hotwords.join("\n").to_uppercase();
-            let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
-            fs::write(&temp, words)?;
-            if let Err(error) = fs::rename(&temp, dir.join("hotwords.txt")) {
-                let _ = fs::remove_file(temp);
-                return Err(error.into());
-            }
+            publish_hotwords(&dir, &self.terminology(&id)?.recognition_hotwords())?;
         }
         Ok(())
     }
@@ -416,6 +610,32 @@ impl Engine {
     ) -> Result<()> {
         self.start_capture(id, device, input, None)
     }
+    pub fn microphone_level(&self) -> crate::microphone::InputLevel {
+        self.microphone_monitor.status()
+    }
+    pub fn start_microphone_preview(
+        &self,
+        device: String,
+    ) -> Result<crate::microphone::InputLevel> {
+        let _config = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        let status = self.status.lock().unwrap().clone();
+        if status.recording || status.paused || status.transcribing {
+            bail!("Finish recording and transcription before testing the microphone");
+        }
+        if !audio::devices()?
+            .iter()
+            .any(|input| input.id == device && input.kind == "microphone")
+        {
+            bail!("Select an available microphone input before testing");
+        }
+        self.microphone_monitor
+            .start(device, &self.root.join("microphone-preview.log"))
+    }
+    pub fn stop_microphone_preview(&self) -> crate::microphone::InputLevel {
+        self.microphone_monitor.stop();
+        self.microphone_monitor.status()
+    }
     /// Paced file replay exercises the same writer, ASR, scheduler and persistence as a meeting.
     pub fn replay_audio(self: &Arc<Self>, id: &str, input: PathBuf, seconds: u64) -> Result<()> {
         if seconds == 0 || seconds > 14_400 {
@@ -430,10 +650,42 @@ impl Engine {
         input: Option<PathBuf>,
         replay_seconds: Option<u64>,
     ) -> Result<()> {
+        self.require_available()?;
+        {
+            let status = self.status.lock().unwrap();
+            if status.diarization_busy {
+                bail!("Cancel speaker analysis before starting another recording");
+            }
+            if status.recording || status.paused || status.transcribing {
+                bail!("请先结束当前录音或转写");
+            }
+        }
+        let asr_model = self.preferences.lock().unwrap().asr_model.clone();
+        // Stream model hashes without holding configuration, active or store locks.
+        let verified = self.verified_asr_model(&asr_model)?;
         let _config = self.config_lock.lock().unwrap();
         self.require_available()?;
-        if self.status.lock().unwrap().diarization_busy {
-            bail!("Cancel speaker analysis before starting another recording");
+        let prefs = self.preferences.lock().unwrap().clone();
+        if prefs.asr_model != asr_model {
+            bail!("ASR model configuration changed; try starting again");
+        }
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
+        {
+            let status = self.status.lock().unwrap();
+            if status.diarization_busy {
+                bail!("Cancel speaker analysis before starting another recording");
+            }
+            if status.recording || status.paused || status.transcribing {
+                bail!("请先结束当前录音或转写");
+            }
+        }
+        self.microphone_monitor.stop();
+        // start_capture already owns config_lock; this only checks whether a
+        // calibration needs cancellation, without restoring persisted state.
+        if self.acceleration_test_running() {
+            self.cancel_notes();
         }
         let mut active_guard = self.active.lock().unwrap();
         if active_guard.as_ref().is_some_and(|a| {
@@ -443,7 +695,7 @@ impl Engine {
         }
         let mut m = self.store.lock().unwrap().meeting(id)?;
         if !self.diagnostics().asr_ready || !self.worker_path().exists() {
-            bail!("离线转写模型或运行时尚未准备好，请运行 bin/setup");
+            bail!("离线转写模型或运行时尚未准备好，请运行 scripts/bin/setup");
         }
         if let Some(ref p) = input {
             if !p.is_file() {
@@ -485,6 +737,7 @@ impl Engine {
             resumable: input.is_none(),
             transition: Mutex::new(()),
             samples: AtomicU64::new(initial),
+            hold: Mutex::new(None),
         });
         if let Err(error) = self.store.lock().unwrap().save_take(&RecordingTake {
             id: Uuid::new_v4().to_string(),
@@ -517,9 +770,15 @@ impl Engine {
         };
         *active_guard = Some(active.clone());
         drop(active_guard);
-        if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq) {
+        // Hold only for a real capture. File imports and replay finish quickly and
+        // should not keep a laptop awake.
+        if live {
+            active.hold_awake();
+        }
+        if let Err(e) = self.spawn_asr(active.clone(), m.run, initial, next_seq, &prefs, verified) {
             let _ = child.kill();
             let _ = child.wait();
+            active.release_awake();
             active.capture_done.store(true, Ordering::SeqCst);
             active.worker_done.store(true, Ordering::SeqCst);
             self.finish_take(&active, true)?;
@@ -573,6 +832,9 @@ impl Engine {
                 status.level = 0.;
                 return;
             }
+            // Capture is over, whatever the outcome: never keep the machine
+            // awake because a take ended abnormally.
+            active.release_awake();
             active.capture_done.store(true, Ordering::SeqCst);
             active.paused.store(false, Ordering::SeqCst);
             let _ = fs::remove_file(dir.join("capture.paused"));
@@ -630,7 +892,13 @@ impl Engine {
         run: u32,
         start_sample: u64,
         next_seq: u32,
+        prefs: &crate::preferences::Preferences,
+        verified: Vec<crate::model_integrity::Receipt>,
     ) -> Result<()> {
+        let primary = verified.first().context("Missing verified ASR model")?;
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
         let dir = self.audio_dir(&active.id)?;
         let boundaries = self
             .store
@@ -643,17 +911,11 @@ impl Engine {
             .map(|end| end.to_string())
             .collect::<Vec<_>>()
             .join(",");
-        let prefs = self.preferences.lock().unwrap().clone();
-        let hotwords = dir.join("hotwords.txt");
-        fs::write(
-            &hotwords,
-            self.terminology(&active.id)?
-                .hotwords
-                .join("\n")
-                .to_uppercase(),
-        )?;
-        let mut child = audio::child_command(self.worker_path())
-            .arg(self.model_directory(&prefs.asr_model)?)
+        let hotwords =
+            publish_hotwords(&dir, &self.terminology(&active.id)?.recognition_hotwords())?;
+        let mut command = audio::child_command(self.worker_path());
+        command
+            .arg(primary.directory())
             .arg(&dir)
             .arg(start_sample.to_string())
             .arg(next_seq.to_string())
@@ -661,19 +923,40 @@ impl Engine {
             .arg(hotwords)
             // The quality model has the same token inventory but no bundled tokenizer.
             // The worker verifies the inventories before reusing this local asset.
-            .arg(self.model_directory("zipformer-small").unwrap_or_default())
+            .arg(
+                verified
+                    .get(1)
+                    .map(|receipt| receipt.directory())
+                    .unwrap_or_else(|| Path::new("")),
+            )
             .env("OMASCRIBE_ASR_THREADS", prefs.threads.to_string())
             .env("OMP_NUM_THREADS", "1")
             .env("OPENBLAS_NUM_THREADS", "1")
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(File::create(dir.join(format!("asr-{run}.log")))?)
-            .spawn()?;
+            .stderr(File::create(dir.join(format!("asr-{run}.log")))?);
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
+        let mut child = command.spawn()?;
+        if let Err(error) = verified
+            .iter()
+            .try_for_each(|receipt| receipt.check_current())
+        {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
+        let Some(output) = child.stdout.take() else {
+            let _ = child.kill();
+            let _ = child.wait();
+            bail!("无法连接转写进程");
+        };
         active.worker_pid.store(child.id(), Ordering::SeqCst);
-        let output = child.stdout.take().context("无法连接转写进程")?;
         let engine = self.clone();
         thread::spawn(move || {
             let mut complete = false;
+            let mut integrity_error = None;
             let mut partial_terms = engine.terminology(&active.id).ok();
             let mut terms_refreshed = Instant::now();
             for line in BufReader::new(output).lines() {
@@ -681,6 +964,22 @@ impl Engine {
                 let Ok(event) = serde_json::from_str::<AsrEvent>(&line) else {
                     continue;
                 };
+                // Recheck before persistent output and completion. Partial captions
+                // remain free of per-event filesystem work.
+                if matches!(
+                    &event,
+                    AsrEvent::Ready | AsrEvent::Segment { .. } | AsrEvent::Done { .. }
+                ) {
+                    if let Err(error) = verified
+                        .iter()
+                        .try_for_each(|receipt| receipt.check_current())
+                    {
+                        integrity_error = Some(format!("{error:#}"));
+                        complete = false;
+                        let _ = child.kill();
+                        break;
+                    }
+                }
                 match event {
                     AsrEvent::Ready => {}
                     AsrEvent::Partial { text } => {
@@ -698,6 +997,11 @@ impl Engine {
                         let mut s = engine.status.lock().unwrap();
                         s.processed_ms = processed_ms;
                         s.asr_rtf = rtf;
+                    }
+                    AsrEvent::Boundary { processed_ms, .. } => {
+                        let mut status = engine.status.lock().unwrap();
+                        status.processed_ms = processed_ms;
+                        status.partial.clear();
                     }
                     AsrEvent::Segment {
                         seq,
@@ -740,6 +1044,13 @@ impl Engine {
                 }
             }
             let exit = child.wait();
+            if let Err(error) = verified
+                .iter()
+                .try_for_each(|receipt| receipt.check_current())
+            {
+                integrity_error = Some(format!("{error:#}"));
+                complete = false;
+            }
             active.worker_pid.store(0, Ordering::SeqCst);
             let _transition = active.transition.lock().unwrap();
             let db = engine.store.lock().unwrap();
@@ -760,7 +1071,9 @@ impl Engine {
             let mut s = engine.status.lock().unwrap();
             s.transcribing = false;
             s.partial.clear();
-            if !complete || exit.as_ref().is_ok_and(|x| !x.success()) {
+            if let Some(error) = integrity_error {
+                s.error = Some(error);
+            } else if !complete || exit.as_ref().is_ok_and(|x| !x.success()) {
                 s.error = Some("转写进程中断，录音仍独立保存；结束后可重新转写".into());
             }
             active.worker_done.store(true, Ordering::SeqCst);
@@ -785,6 +1098,8 @@ impl Engine {
         if active.capture_running.load(Ordering::SeqCst) {
             platform::stop_process(pid, true);
         }
+        // A pause may last a long time; let the desktop idle again.
+        active.release_awake();
         Ok(())
     }
     pub fn resume_recording(self: &Arc<Self>) -> Result<()> {
@@ -813,6 +1128,7 @@ impl Engine {
         *active.capture_stop.lock().unwrap() = Some(child.stop.clone());
         active.paused.store(false, Ordering::SeqCst);
         let _ = fs::remove_file(dir.join("capture.paused"));
+        active.hold_awake();
         let db = self.store.lock().unwrap();
         let mut meeting = db.meeting(&active.id)?;
         meeting.status = "recording".into();
@@ -840,6 +1156,7 @@ impl Engine {
             platform::stop_process(pid, true);
         } else if active.paused.swap(false, Ordering::SeqCst) {
             let dir = self.audio_dir(&active.id)?;
+            active.release_awake();
             self.finish_take(active, false)?;
             let db = self.store.lock().unwrap();
             let mut meeting = db.meeting(&active.id)?;
@@ -857,8 +1174,23 @@ impl Engine {
         Ok(())
     }
     pub fn retranscribe(self: &Arc<Self>, id: &str) -> Result<()> {
-        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
         self.configuration_idle()?;
+        if self.note_busy.load(Ordering::SeqCst) {
+            bail!("请先等待或取消笔记生成");
+        }
+        let asr_model = self.preferences.lock().unwrap().asr_model.clone();
+        let verified = self.verified_asr_model(&asr_model)?;
+        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        self.configuration_idle()?;
+        let prefs = self.preferences.lock().unwrap().clone();
+        if prefs.asr_model != asr_model {
+            bail!("ASR model configuration changed; try retranscribing again");
+        }
+        for receipt in &verified {
+            receipt.check_current()?;
+        }
         let mut guard = self.active.lock().unwrap();
         if guard.as_ref().is_some_and(|a| {
             !a.capture_done.load(Ordering::SeqCst) || !a.worker_done.load(Ordering::SeqCst)
@@ -902,6 +1234,7 @@ impl Engine {
             resumable: false,
             transition: Mutex::new(()),
             samples: AtomicU64::new(samples),
+            hold: Mutex::new(None),
         });
         *guard = Some(active.clone());
         drop(guard);
@@ -911,18 +1244,48 @@ impl Engine {
             transcribing: true,
             ..Default::default()
         };
-        self.spawn_asr(active, m.run, 0, 1)
+        if let Err(error) = self.spawn_asr(active.clone(), m.run, 0, 1, &prefs, verified) {
+            active.worker_done.store(true, Ordering::SeqCst);
+            self.status.lock().unwrap().transcribing = false;
+            m.status = "interrupted".into();
+            self.store.lock().unwrap().save_meeting(&m)?;
+            return Err(error);
+        }
+        Ok(())
     }
     pub fn generate_notes(self: &Arc<Self>, id: &str) -> Result<()> {
+        self.generate_notes_dispatch(id, None)
+    }
+    fn generate_notes_dispatch(
+        self: &Arc<Self>,
+        id: &str,
+        dispatch: Option<crate::minutes_schedule::Dispatch>,
+    ) -> Result<()> {
         self.correct_terminology(id)?;
         let _config = self.config_lock.lock().unwrap();
         self.require_available()?;
         if self.status.lock().unwrap().diarization_busy {
             bail!("Wait for speaker analysis to finish");
         }
-        self.store.lock().unwrap().meeting(id)?;
+        let launch_run = {
+            let db = self.store.lock().unwrap();
+            let meeting = db.meeting(id)?;
+            if dispatch
+                .as_ref()
+                .is_some_and(|dispatch| dispatch.run != meeting.run)
+            {
+                bail!("会议录音轮次已更新，稍后自动整理");
+            }
+            meeting.run
+        };
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("已有笔记正在生成");
+        }
+        if let Some(dispatch) = &dispatch {
+            if let Err(error) = self.register_minutes_dispatch(id, dispatch) {
+                self.note_busy.store(false, Ordering::SeqCst);
+                return Err(error);
+            }
         }
         self.note_cancel.store(false, Ordering::SeqCst);
         {
@@ -933,25 +1296,109 @@ impl Engine {
         let engine = self.clone();
         let id = id.to_string();
         thread::spawn(move || {
-            let result = notes::generate(&engine, &id);
-            engine.llm_pid.store(0, Ordering::SeqCst);
-            engine.note_busy.store(false, Ordering::SeqCst);
-            let mut s = engine.status.lock().unwrap();
-            s.notes_busy = false;
-            if result.is_ok() {
-                engine.note_failures.store(0, Ordering::SeqCst);
+            if let Some(dispatch) = dispatch {
+                let (result, input) = notes::generate_in_run_observed(&engine, &id, launch_run);
+                let succeeded = result.is_ok();
+                engine.finish_minutes_observed(&id, launch_run, &dispatch, input.as_ref(), result);
+                dispatch.complete_observed(succeeded, input);
             } else {
-                engine.note_failures.fetch_add(1, Ordering::SeqCst);
+                let result = notes::generate_in_run(&engine, &id, launch_run);
+                engine.finish_minutes(&id, launch_run, result);
             }
-            s.notes_status = match result {
-                Ok(n) => format!("文档已同步 · {n} 个章节"),
-                Err(e) => format!("{e:#}"),
-            };
+            engine.note_busy.store(false, Ordering::SeqCst);
         });
         Ok(())
     }
+    /// The caller already owns note_busy; keep Store outermost through registration.
+    pub(crate) fn register_minutes_dispatch(
+        &self,
+        meeting: &str,
+        dispatch: &crate::minutes_schedule::Dispatch,
+    ) -> Result<()> {
+        let db = self.store.lock().unwrap();
+        let current = db.meeting(meeting)?;
+        let deleted: bool = db.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+            [meeting],
+            |row| row.get(0),
+        )?;
+        if deleted || current.run != dispatch.run {
+            bail!("会议录音轮次或删除状态已更新，稍后自动整理");
+        }
+        self.legacy_minutes_failures
+            .lock()
+            .unwrap()
+            .register_dispatch(&current, dispatch);
+        Ok(())
+    }
+    pub(crate) fn finish_minutes_observed(
+        &self,
+        meeting: &str,
+        launch_run: u32,
+        dispatch: &crate::minutes_schedule::Dispatch,
+        input: Option<&crate::minutes_schedule::InputDigest>,
+        result: Result<usize>,
+    ) {
+        self.finish_minutes_metadata(meeting, launch_run, Some(dispatch), input, result)
+    }
+    pub(crate) fn finish_minutes(&self, meeting: &str, launch_run: u32, result: Result<usize>) {
+        self.finish_minutes_for_input(meeting, launch_run, None, result)
+    }
+    pub(crate) fn finish_minutes_for_input(
+        &self,
+        meeting: &str,
+        launch_run: u32,
+        input: Option<&crate::minutes_schedule::InputDigest>,
+        result: Result<usize>,
+    ) {
+        self.finish_minutes_metadata(meeting, launch_run, None, input, result)
+    }
+    fn finish_minutes_metadata(
+        &self,
+        meeting: &str,
+        launch_run: u32,
+        dispatch: Option<&crate::minutes_schedule::Dispatch>,
+        input: Option<&crate::minutes_schedule::InputDigest>,
+        result: Result<usize>,
+    ) {
+        {
+            // Use the same Store→metadata order as deletion. An old run or a
+            // deleted meeting cannot recreate or clear the live retry state.
+            let db = self.store.lock().unwrap();
+            if let Ok(current) = db.meeting(meeting) {
+                let visible = db
+                    .conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [meeting],
+                        |row| row.get::<_, bool>(0),
+                    )
+                    .is_ok_and(|deleted| !deleted);
+                if current.run == launch_run && visible {
+                    let mut failures = self.legacy_minutes_failures.lock().unwrap();
+                    if let Some(dispatch) = dispatch {
+                        failures.finished_dispatch(&current, dispatch, input, result.is_ok());
+                    } else if input.is_some() {
+                        failures.finished_for_input(&current, input, result.is_ok());
+                    } else {
+                        failures.finished(&current, result.is_ok());
+                    }
+                }
+            }
+        }
+        let mut status = self.status.lock().unwrap();
+        status.notes_busy = false;
+        status.notes_status = match result {
+            Ok(n) => format!("文档已同步 · {n} 个章节"),
+            Err(e) => format!("{e:#}"),
+        };
+    }
+    pub fn inference_worker_status(&self) -> crate::WorkerStatus {
+        self.inference_pool.status()
+    }
     pub fn cancel_notes(&self) {
         self.note_cancel.store(true, Ordering::SeqCst);
+        self.inference_pool.invalidate();
         let pid = self.llm_pid.load(Ordering::SeqCst);
         if pid > 0 {
             platform::stop_process(pid, false);
@@ -1043,23 +1490,12 @@ impl Engine {
             "tokens.txt",
         ];
         let mem = platform::available_memory_mib();
-        let accent_path = PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
-            .join(".local/state/omarchy/current/theme/colors.toml");
-        let accent = fs::read_to_string(accent_path)
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .find(|l| l.trim_start().starts_with("accent ="))
-                    .map(|l| {
-                        l.split('=')
-                            .nth(1)
-                            .unwrap_or("")
-                            .trim()
-                            .trim_matches('"')
-                            .to_string()
-                    })
-            })
-            .filter(|s| s.starts_with('#') && s.len() == 7)
+        // Follow the live Omarchy theme when there is one; otherwise keep the
+        // built-in accent so the app is not styled by a stale copied color.
+        let theme = crate::desktheme::current();
+        let accent = theme
+            .as_ref()
+            .map(|t| t.accent.clone())
             .unwrap_or_else(|| "#e5b866".into());
         Diagnostics {
             data_dir: self.root.to_string_lossy().into_owned(),
@@ -1085,14 +1521,21 @@ impl Engine {
             ),
             available_memory_mib: mem,
             accent,
+            desktop_theme: theme,
             version: env!("CARGO_PKG_VERSION").into(),
         }
     }
     pub fn shutdown(&self) {
+        self.microphone_monitor.stop();
         self.cancel_all_downloads();
         let _ = self.stop_recording();
         self.cancel_notes();
+        // Drop the session hold immediately; shutdown must not wait for a drain.
+        if let Some(active) = self.active.lock().unwrap().as_ref() {
+            active.release_awake();
+        }
         platform::stop_process(self.diarization_pid.load(Ordering::SeqCst), false);
+        self.model_integrity.clear();
         for _ in 0..30 {
             if self
                 .active
@@ -1118,6 +1561,628 @@ impl Engine {
 pub fn timestamp(ms: u64) -> String {
     let s = ms / 1000;
     format!("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60)
+}
+
+#[cfg(test)]
+mod legacy_minutes_retry_tests {
+    use super::*;
+
+    fn changed_retry_input(mutation: &str, legacy: bool) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Actual changed retry input")?;
+        let source = Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "CEDARLEDGER测试尚未完成。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let before = engine.snapshot(&meeting.id)?;
+        let old_input = engine.minutes_retry_input(&before)?;
+        let at = Instant::now();
+        let mut schedule = crate::minutes_schedule::Schedule::default();
+        schedule.observe_with_input(&before.meeting, false, Some(&old_input));
+        for _ in 0..3 {
+            // Seed real scheduling failures only; no fabricated model-quality result.
+            engine.finish_minutes_for_input(
+                &meeting.id,
+                meeting.run,
+                Some(&old_input),
+                Err(anyhow::anyhow!("controlled scheduler failure")),
+            );
+            schedule.started(&before.meeting, at);
+            schedule.finished(&before.meeting, at);
+        }
+        match mutation {
+            "note" => {
+                engine.save_note(
+                    &meeting.id,
+                    None,
+                    "CedarLedger\n另需核对导出格式。",
+                    "document",
+                    0,
+                )?;
+            }
+            "source" => {
+                engine.edit_segment(&source.id, "CEDARLEDGER转写尚未完成，导出格式也需核对。", 1)?
+            }
+            "append" => {
+                let mut appended = source.clone();
+                appended.id = format!("{}:1:2", meeting.id);
+                appended.seq = 2;
+                appended.start_ms = 1000;
+                appended.end_ms = 2000;
+                appended.text = "导出格式也需核对。".into();
+                engine.store.lock().unwrap().save_segment(&appended)?;
+            }
+            "language" | "model" => {
+                let mut prefs = engine.preferences.lock().unwrap().clone();
+                if mutation == "language" {
+                    prefs.minutes_language = "en".into();
+                } else {
+                    prefs.llm_model = "qwen3-0.6b".into();
+                }
+                engine.update_preferences(prefs)?;
+            }
+            _ => unreachable!(),
+        }
+        let after = engine.snapshot(&meeting.id)?;
+        assert!(notes::needs_update(&after));
+        let input = engine.minutes_retry_input(&after)?;
+        assert_ne!(old_input, input);
+        if legacy {
+            assert!(!engine.legacy_minutes_due_for_input(
+                &after.meeting,
+                Some(&input),
+                Some(at),
+                at + Duration::from_secs(2)
+            ));
+            assert!(
+                engine.legacy_minutes_due_for_input(
+                    &after.meeting,
+                    Some(&input),
+                    Some(at),
+                    at + Duration::from_secs(46)
+                ),
+                "{mutation}: old failures still penalize changed input"
+            );
+        } else {
+            schedule.observe_with_input(&after.meeting, false, Some(&input));
+            assert!(!schedule.due(&meeting.id, false, false, at + Duration::from_secs(2)));
+            assert!(
+                schedule.due(&meeting.id, false, false, at + Duration::from_secs(46)),
+                "{mutation}: old failures still penalize changed input"
+            );
+        }
+        let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM inference_jobs",
+            [],
+            |row| row.get(0),
+        )?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
+    #[test]
+    fn changed_real_note_source_and_preferences_clear_only_legacy_failure_penalty() -> Result<()> {
+        for mutation in ["note", "source", "language", "model", "append"] {
+            changed_retry_input(mutation, true)?;
+        }
+        Ok(())
+    }
+    #[test]
+    fn changed_real_note_source_and_preferences_clear_only_schedule_failure_penalty() -> Result<()>
+    {
+        for mutation in ["note", "source", "language", "model", "append"] {
+            changed_retry_input(mutation, false)?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn restored_same_run_rejects_old_registered_callback_and_manual_does_not_steal_slot(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let m = engine.create_meeting("restore callback")?;
+        let input = engine.minutes_retry_input(&engine.snapshot(&m.id)?)?;
+        let old = crate::minutes_schedule::Dispatch::new(m.run, Some(input.clone()));
+        engine.note_busy.store(true, Ordering::SeqCst);
+        engine.register_minutes_dispatch(&m.id, &old)?;
+        engine.note_busy.store(false, Ordering::SeqCst);
+        engine.set_meeting_deleted(&m.id, true)?;
+        engine.set_meeting_deleted(&m.id, false)?;
+        engine.finish_minutes_observed(
+            &m.id,
+            m.run,
+            &old,
+            Some(&input),
+            Err(anyhow::anyhow!("controlled late scheduler completion")),
+        );
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 0);
+        let live = crate::minutes_schedule::Dispatch::new(m.run, Some(input.clone()));
+        engine.note_busy.store(true, Ordering::SeqCst);
+        engine.register_minutes_dispatch(&m.id, &live)?;
+        engine.note_busy.store(false, Ordering::SeqCst);
+        engine.finish_minutes_observed(
+            &m.id,
+            m.run,
+            &old,
+            Some(&input),
+            Err(anyhow::anyhow!("controlled replaced completion")),
+        );
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().count(&m), 0);
+        engine.finish_minutes_observed(
+            &m.id,
+            m.run,
+            &live,
+            Some(&input),
+            Err(anyhow::anyhow!("controlled active completion")),
+        );
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().count(&m), 1);
+        live.complete_observed(false, Some(input.clone()));
+        let other = engine.create_meeting("manual unrelated task")?;
+        engine.finish_minutes(&other.id, other.run, Ok(0));
+        let completed = live.take_completion().unwrap();
+        assert!(!completed.succeeded);
+        assert_eq!(completed.input, Some(input));
+        Ok(())
+    }
+    #[test]
+    fn busy_dispatch_rejection_does_not_replace_registered_owner() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let m = engine.create_meeting("busy registration")?;
+        let input = engine.minutes_retry_input(&engine.snapshot(&m.id)?)?;
+        let active = crate::minutes_schedule::Dispatch::new(m.run, Some(input.clone()));
+        engine.note_busy.store(true, Ordering::SeqCst);
+        engine.register_minutes_dispatch(&m.id, &active)?;
+        let rejected = crate::minutes_schedule::Dispatch::new(m.run, Some(input.clone()));
+        assert!(engine
+            .generate_notes_dispatch(&m.id, Some(rejected))
+            .is_err());
+        engine.note_busy.store(false, Ordering::SeqCst);
+        engine.finish_minutes_observed(
+            &m.id,
+            m.run,
+            &active,
+            Some(&input),
+            Err(anyhow::anyhow!("controlled registered failure")),
+        );
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().count(&m), 1);
+        assert_eq!(engine.inference_worker_status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn digest_tracks_selected_document_and_exact_sources_without_ui_or_touch_drift() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let m = engine.create_meeting("digest")?;
+        let source = Segment {
+            id: format!("{}:1:1", m.id),
+            meeting_id: m.id.clone(),
+            run: m.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "缓存仍待核对。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let a = engine.save_note(&m.id, None, "同样的文档内容", "document", 0)?;
+        let b = engine.save_note(&m.id, None, "同样的文档内容", "document", 0)?;
+        let before = engine.snapshot(&m.id)?;
+        let key = engine.minutes_retry_input(&before)?;
+        assert_eq!(notes::document_notes(&before.notes)[0].id, b.id);
+        engine.save_note(&m.id, Some(b.id.clone()), &b.content, "document", 0)?;
+        assert_eq!(key, engine.minutes_retry_input(&engine.snapshot(&m.id)?)?);
+        engine.save_note(&m.id, Some(a.id.clone()), &a.content, "document", 0)?;
+        let selected = engine.snapshot(&m.id)?;
+        assert_eq!(notes::document_notes(&selected.notes)[0].id, a.id);
+        let selected_key = engine.minutes_retry_input(&selected)?;
+        assert_ne!(key, selected_key);
+        let mut prefs = engine.preferences.lock().unwrap().clone();
+        prefs.appearance.accent = "#123456".into();
+        engine.update_preferences(prefs)?;
+        {
+            let mut status = engine.status.lock().unwrap();
+            status.meeting_id = Some(m.id.clone());
+            status.elapsed_ms = 9999;
+            status.notes_status = "unrelated UI status".into();
+            status.partial = "unrelated draft".into();
+        }
+        assert_eq!(
+            selected_key,
+            engine.minutes_retry_input(&engine.snapshot(&m.id)?)?
+        );
+        for mutate in [
+            |s: &mut Segment| s.text.push_str("新内容"),
+            |s: &mut Segment| s.start_ms += 1,
+            |s: &mut Segment| s.speaker_manual = true,
+            |s: &mut Segment| s.speaker = Some("voice1".into()),
+        ] {
+            let mut changed = selected.clone();
+            mutate(&mut changed.segments[0]);
+            assert_ne!(selected_key, engine.minutes_retry_input(&changed)?);
+        }
+        Ok(())
+    }
+    #[test]
+    fn checked_caption_text_changes_digest_but_hashmap_order_does_not() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let m = engine.create_meeting("cached captions")?;
+        let mut snapshot = engine.snapshot(&m.id)?;
+        let first = crate::translation::Translation {
+            segment_id: "one".into(),
+            revision: 1,
+            target: "zh".into(),
+            model: "qwen3-1.7b".into(),
+            text: "缓存仍待核对。".into(),
+            cache_key: "checked-one".into(),
+        };
+        let second = crate::translation::Translation {
+            segment_id: "two".into(),
+            text: "预算尚未批准。".into(),
+            cache_key: "checked-two".into(),
+            ..first.clone()
+        };
+        snapshot
+            .translations
+            .insert(first.segment_id.clone(), first.clone());
+        snapshot
+            .translations
+            .insert(second.segment_id.clone(), second.clone());
+        let key = engine.minutes_retry_input(&snapshot)?;
+        snapshot.translations.clear();
+        snapshot
+            .translations
+            .insert(second.segment_id.clone(), second);
+        snapshot
+            .translations
+            .insert(first.segment_id.clone(), first);
+        assert_eq!(key, engine.minutes_retry_input(&snapshot)?);
+        snapshot.translations.get_mut("one").unwrap().text = "缓存已核对。".into();
+        assert_ne!(key, engine.minutes_retry_input(&snapshot)?);
+        Ok(())
+    }
+    #[test]
+    fn legacy_card_timestamp_reordering_does_not_change_digest() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let m = engine.create_meeting("cards")?;
+        let a = engine.save_note(&m.id, None, "第一条", "note", 0)?;
+        engine.save_note(&m.id, None, "第二条", "note", 0)?;
+        let key = engine.minutes_retry_input(&engine.snapshot(&m.id)?)?;
+        engine.save_note(&m.id, Some(a.id), "第一条", "note", 0)?;
+        assert_eq!(key, engine.minutes_retry_input(&engine.snapshot(&m.id)?)?);
+        Ok(())
+    }
+
+    #[test]
+    fn failed_meeting_does_not_delay_another_meetings_default_live_retry() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let bad = engine.create_meeting("Bad meeting")?;
+        let good = engine.create_meeting("Good meeting")?;
+        let attempted = Instant::now();
+        for _ in 0..3 {
+            engine.finish_minutes(
+                &bad.id,
+                bad.run,
+                Err(anyhow::anyhow!("controlled minutes failure")),
+            );
+        }
+        // This is the helper used by the scheduler's default live else branch,
+        // not the opt-in catch-up Schedule::due path. No model is invoked.
+        assert!(engine.legacy_minutes_due(
+            &good,
+            Some(attempted),
+            attempted + Duration::from_secs(46),
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn successful_meeting_does_not_clear_another_meetings_default_retry_backoff() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let bad = engine.create_meeting("Bad meeting")?;
+        let good = engine.create_meeting("Good meeting")?;
+        let attempted = Instant::now();
+        for _ in 0..3 {
+            engine.finish_minutes(
+                &bad.id,
+                bad.run,
+                Err(anyhow::anyhow!("controlled minutes failure")),
+            );
+        }
+        engine.finish_minutes(&good.id, good.run, Ok(0));
+        assert!(!engine.legacy_minutes_due(
+            &bad,
+            Some(attempted),
+            attempted + Duration::from_secs(91),
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn manual_results_keep_ok_err_semantics_without_frontier_inference() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut one = engine.create_meeting("Manual one")?;
+        let two = engine.create_meeting("Manual two")?;
+        for meeting in [&one, &two] {
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        }
+        // Ok(0) clears only its own meeting even without cursor/fingerprint progress.
+        engine.finish_minutes(&one.id, one.run, Ok(0));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            0
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            1
+        );
+        // An Err remains a failure even if persistence progressed before the error.
+        one.notes_cursor += 5;
+        engine.store.lock().unwrap().save_meeting(&one)?;
+        engine.finish_minutes(&one.id, one.run, Err(anyhow::anyhow!("after commit")));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            1
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            1
+        );
+        engine.finish_minutes(&two.id, two.run, Ok(1));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            1
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            0
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_delay_keeps_strict_threshold_cap_and_original_attempt_clock() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Timing")?;
+        let attempted = Instant::now();
+        for failures in 0..8 {
+            let delay = Duration::from_secs(45 * 2_u64.pow(failures.min(3)));
+            assert!(engine.legacy_minutes_due(&meeting, None, attempted));
+            assert!(!engine.legacy_minutes_due(&meeting, Some(attempted), attempted + delay));
+            assert!(engine.legacy_minutes_due(
+                &meeting,
+                Some(attempted),
+                attempted + delay + Duration::from_nanos(1)
+            ));
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        }
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            3
+        );
+        engine.finish_minutes(&meeting.id, meeting.run, Ok(0));
+        let finished = attempted + Duration::from_secs(60);
+        let now = attempted + Duration::from_secs(46);
+        // The caller's clock remains authoritative: translation chains pass
+        // their original launch clock; plain minutes pass their finish clock.
+        assert!(engine.legacy_minutes_due(&meeting, Some(attempted), now));
+        assert!(!engine.legacy_minutes_due(&meeting, Some(finished), now));
+        assert!(engine.legacy_minutes_due(
+            &meeting,
+            Some(finished),
+            finished + Duration::from_secs(46)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn new_run_ignores_late_success_and_failure_without_retaining_old_runs() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Runs")?;
+        let old_run = meeting.run;
+        for _ in 0..3 {
+            engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("old")));
+        }
+        meeting.run += 1;
+        engine.store.lock().unwrap().save_meeting(&meeting)?;
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("late old")));
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("new")));
+        engine.finish_minutes(&meeting.id, old_run, Ok(1));
+        engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("late old")));
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            1
+        );
+        for _ in 0..20 {
+            meeting.run += 1;
+            engine.store.lock().unwrap().save_meeting(&meeting)?;
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("new run")));
+            let failures = engine.legacy_minutes_failures.lock().unwrap();
+            assert_eq!(failures.count(&meeting), 1);
+            assert_eq!(failures.tracked(), 1);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn deleting_meeting_clears_metadata_and_late_results_cannot_restore_it() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Deleted")?;
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 1);
+        engine.set_meeting_deleted(&meeting.id, true)?;
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 0);
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("late")));
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 0);
+        engine.set_meeting_deleted(&meeting.id, false)?;
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn async_minutes_reject_launch_run_before_model_or_job_admission() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Queued minutes")?;
+        let launch_run = meeting.run;
+        meeting.run += 1;
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_meeting(&meeting)?;
+            db.save_note(&UserNote {
+                id: "new-run-note".into(),
+                meeting_id: meeting.id.clone(),
+                content: "**Project Owl**".into(),
+                kind: "document".into(),
+                anchor_ms: 0,
+                updated_at: "2026-10-31".into(),
+            })?;
+            db.save_segment(&Segment {
+                id: "new-run-source".into(),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "Project Owl is awaiting review.".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })?;
+        }
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(notes::needs_update(&snapshot));
+        let error = notes::generate_in_run(&engine, &meeting.id, launch_run).unwrap_err();
+        assert_eq!(error.to_string(), "会议录音轮次已更新，稍后自动整理");
+        let db = engine.store.lock().unwrap();
+        let jobs: u32 = db
+            .conn
+            .query_row("SELECT count(*) FROM inference_jobs", [], |r| r.get(0))?;
+        assert_eq!(jobs, 0);
+        assert_eq!(db.meeting(&meeting.id)?.notes_cursor, 0);
+        assert!(db.suggestions(&meeting.id)?.is_empty());
+        assert!(!engine.root.join("last-generation.json").exists());
+        let rows: Vec<serde_json::Value> =
+            fs::read_to_string(engine.root.join("inference-trace.jsonl"))?
+                .lines()
+                .map(serde_json::from_str)
+                .collect::<std::result::Result<_, _>>()?;
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0]["phase"], "started");
+        assert_eq!(rows[1]["phase"], "finished");
+        assert_eq!(rows[1]["metrics"]["committed"], false);
+        assert_eq!(rows[1]["metrics"]["items"], 0);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod hotword_publication_tests {
+    use super::*;
+
+    #[test]
+    fn serialized_hotwords_fit_worker_contract_and_updates_clear_old_context() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let pcm = vec![42u8; 32_000];
+        fs::write(dir.path().join("000000.pcm"), &pcm)?;
+        let mut candidates: Vec<_> = (0..79)
+            .map(|i| format!("{}{}", "界".repeat(79), char::from_u32(0x4e00 + i).unwrap()))
+            .collect();
+        candidates.push("Bob".into());
+        let path = publish_hotwords(dir.path(), &candidates)?;
+        let wire = fs::read_to_string(&path)?;
+        assert!(wire.len() <= crate::asr_hotwords::MAX_WORD_BYTES);
+        assert_eq!(crate::asr_hotwords::validate_words(&wire)?, wire);
+        assert_eq!(wire.lines().count(), 67);
+        assert!(wire.ends_with("\nBOB"));
+        assert!(wire
+            .lines()
+            .all(|line| candidates.iter().any(|word| word.to_uppercase() == line)));
+        let stats: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.path().join("hotwords-input.json"))?)?;
+        assert_eq!(stats["stats"]["accepted_terms"], 67);
+        assert_eq!(stats["stats"]["dropped_by_reason"]["byte_limit"], 13);
+        assert_eq!(stats["stats"]["wire_bytes"], wire.len());
+        assert!(!stats.to_string().contains("BOB"));
+        assert!(!stats.to_string().contains('界'));
+
+        assert_eq!(publish_hotwords(dir.path(), &[])?, path);
+        assert_eq!(fs::read_to_string(path)?, "");
+        let stats: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.path().join("hotwords-input.json"))?)?;
+        assert_eq!(stats["stats"]["accepted_terms"], 0);
+        assert_eq!(fs::read(dir.path().join("000000.pcm"))?, pcm);
+        assert!(!fs::read_dir(dir.path())?.any(|entry| entry
+            .unwrap()
+            .path()
+            .extension()
+            .is_some_and(|ext| ext == "next")));
+        Ok(())
+    }
+
+    #[test]
+    fn failed_hotword_publication_preserves_existing_target_and_cleans_stage() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let target = dir.path().join("hotwords.txt");
+        fs::create_dir(&target)?;
+        fs::write(target.join("keep"), b"previous target")?;
+        assert!(publish_hotwords(dir.path(), &["OmaScribe".into()]).is_err());
+        assert_eq!(fs::read(target.join("keep"))?, b"previous target");
+        assert_eq!(fs::read_dir(dir.path())?.count(), 1);
+        Ok(())
+    }
 }
 
 #[cfg(test)]

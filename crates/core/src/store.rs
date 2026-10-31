@@ -7,8 +7,72 @@ pub struct Store {
     pub conn: Connection,
 }
 impl Store {
+    /// Own the correction's entire SQLite transaction, while the caller holds
+    /// the store lock. The already-saved user note is outside this boundary.
+    pub(crate) fn with_terminology_savepoint<T>(
+        &mut self,
+        operation: impl FnOnce(&mut Self) -> Result<T>,
+    ) -> Result<T> {
+        anyhow::ensure!(self.conn.is_autocommit(), "术语同步不能覆盖已有数据库事务");
+        self.conn
+            .execute_batch("SAVEPOINT omascribe_terminology_correction")?;
+        struct Rollback<'a> {
+            store: &'a mut Store,
+            active: bool,
+        }
+        impl Rollback<'_> {
+            fn rollback(&mut self) -> Result<()> {
+                if self.active && !self.store.conn.is_autocommit() {
+                    // This guard started the sole outer transaction. A full
+                    // rollback also removes any unfinished inner savepoints.
+                    self.store.conn.execute_batch("ROLLBACK")?;
+                }
+                self.active = false;
+                Ok(())
+            }
+        }
+        impl Drop for Rollback<'_> {
+            fn drop(&mut self) {
+                if let Err(error) = self.rollback() {
+                    use std::io::Write as _;
+                    // A failed stderr write must not panic during unwinding.
+                    let _ = writeln!(
+                        std::io::stderr(),
+                        "OmaScribe terminology rollback failed: {error:#}"
+                    );
+                }
+            }
+        }
+        let mut guard = Rollback {
+            store: self,
+            active: true,
+        };
+        let result = operation(&mut *guard.store).and_then(|value| {
+            // RELEASE can itself fail (for example a deferred foreign key).
+            // Keep rollback ownership until SQLite confirms the commit.
+            guard
+                .store
+                .conn
+                .execute_batch("RELEASE omascribe_terminology_correction")?;
+            guard.active = false;
+            Ok(value)
+        });
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => match guard.rollback() {
+                Ok(()) => Err(error),
+                Err(rollback) => {
+                    let context =
+                        format!("术语同步失败：{error:#}；数据库回滚也失败：{rollback:#}");
+                    Err(error.context(context))
+                }
+            },
+        }
+    }
+
     pub fn open(path: &Path) -> Result<Self> {
         let conn = Connection::open(path)?;
+        let previous_version: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;
             CREATE TABLE IF NOT EXISTS meetings(id TEXT PRIMARY KEY, json TEXT NOT NULL);
@@ -22,9 +86,43 @@ impl Store {
             CREATE TABLE IF NOT EXISTS inference_jobs(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, started_at TEXT NOT NULL, input TEXT NOT NULL, outcome TEXT, elapsed_ms INTEGER);
             CREATE TABLE IF NOT EXISTS recording_takes(id TEXT PRIMARY KEY, meeting_id TEXT NOT NULL, number INTEGER NOT NULL, json TEXT NOT NULL, UNIQUE(meeting_id,number));
             CREATE TABLE IF NOT EXISTS translations(segment_id TEXT NOT NULL,revision INTEGER NOT NULL,target TEXT NOT NULL,model TEXT NOT NULL,json TEXT NOT NULL, PRIMARY KEY(segment_id,revision,target,model));
+            CREATE TABLE IF NOT EXISTS translation_parts(segment_id TEXT PRIMARY KEY,cache_key TEXT NOT NULL,json TEXT NOT NULL);
+            CREATE TRIGGER IF NOT EXISTS translation_parts_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id BEGIN
+              DELETE FROM translation_parts WHERE segment_id=OLD.id;
+            END;
+            CREATE TRIGGER IF NOT EXISTS translation_parts_delete AFTER DELETE ON segments BEGIN
+              DELETE FROM translation_parts WHERE segment_id=OLD.id;
+            END;
             CREATE TABLE IF NOT EXISTS deleted_meetings(id TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS library_entries(id TEXT PRIMARY KEY,json TEXT NOT NULL,updated_at TEXT NOT NULL);
-            PRAGMA user_version=5;")?;
+            CREATE TABLE IF NOT EXISTS term_checks(segment_id TEXT PRIMARY KEY,run INTEGER NOT NULL,revision INTEGER NOT NULL,terms_key TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS cache_dependencies(meeting_id TEXT NOT NULL,kind TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(meeting_id,kind));
+            CREATE TRIGGER IF NOT EXISTS actor_source_insert AFTER INSERT ON segments BEGIN
+              INSERT INTO cache_dependencies SELECT NEW.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=NEW.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
+            CREATE TRIGGER IF NOT EXISTS actor_source_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id OR OLD.seq!=NEW.seq BEGIN
+              INSERT INTO cache_dependencies SELECT OLD.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=OLD.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+              INSERT INTO cache_dependencies SELECT NEW.meeting_id,'source-generation','1' WHERE NEW.meeting_id!=OLD.meeting_id AND NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=NEW.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
+            CREATE TRIGGER IF NOT EXISTS actor_source_delete AFTER DELETE ON segments BEGIN
+              INSERT INTO cache_dependencies SELECT OLD.meeting_id,'source-generation','1' WHERE NOT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=OLD.meeting_id) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=CAST(value AS INTEGER)+1;
+            END;
+            CREATE TABLE IF NOT EXISTS term_queue(segment_id TEXT PRIMARY KEY,meeting_id TEXT NOT NULL,run INTEGER NOT NULL,seq INTEGER NOT NULL,revision INTEGER NOT NULL);
+            CREATE INDEX IF NOT EXISTS term_queue_scope ON term_queue(meeting_id,run,seq,segment_id);
+            CREATE TRIGGER IF NOT EXISTS term_source_insert AFTER INSERT ON segments BEGIN
+              INSERT INTO term_queue VALUES(NEW.id,NEW.meeting_id,NEW.run,NEW.seq,COALESCE(json_extract(NEW.json,'$.revision'),1)) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision;
+            END;
+            CREATE TRIGGER IF NOT EXISTS term_source_update AFTER UPDATE ON segments WHEN OLD.json!=NEW.json OR OLD.run!=NEW.run OR OLD.meeting_id!=NEW.meeting_id OR OLD.seq!=NEW.seq BEGIN
+              INSERT INTO term_queue VALUES(NEW.id,NEW.meeting_id,NEW.run,NEW.seq,COALESCE(json_extract(NEW.json,'$.revision'),1)) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision;
+            END;
+            CREATE TRIGGER IF NOT EXISTS term_source_delete AFTER DELETE ON segments BEGIN
+              DELETE FROM term_queue WHERE segment_id=OLD.id;
+              DELETE FROM term_checks WHERE segment_id=OLD.id;
+            END;
+            PRAGMA user_version=8;")?;
+        if previous_version < 6 {
+            conn.execute("INSERT OR IGNORE INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s JOIN meetings m ON m.id=s.meeting_id WHERE s.run=json_extract(m.json,'$.run')", [])?;
+        }
         conn.execute("UPDATE inference_jobs SET outcome='{\"status\":\"interrupted\"}' WHERE outcome IS NULL", [])?;
         Ok(Self { conn })
     }
@@ -66,6 +164,51 @@ impl Store {
             &[&m.id, &m.run],
         )
     }
+    /// Revisit changed evidence only. LIMIT bounds temporary Rust allocations for long meetings.
+    pub(crate) fn terminology_candidates(&self, m: &Meeting) -> Result<Vec<Segment>> {
+        self.json_query("SELECT s.json FROM term_queue q JOIN segments s ON s.id=q.segment_id WHERE q.meeting_id=?1 AND q.run=?2 ORDER BY q.seq,q.segment_id LIMIT 128", &[&m.id, &m.run])
+    }
+    pub(crate) fn schedule_terminology(&self, m: &Meeting, key: &str) -> Result<()> {
+        if self.cache_dependency(&m.id, "terms")? != key {
+            self.conn.execute("INSERT INTO term_queue SELECT s.id,s.meeting_id,s.run,s.seq,COALESCE(json_extract(s.json,'$.revision'),1) FROM segments s LEFT JOIN term_checks c ON c.segment_id=s.id WHERE s.meeting_id=?1 AND s.run=?2 AND (c.segment_id IS NULL OR c.run!=s.run OR c.revision!=json_extract(s.json,'$.revision') OR c.terms_key!=?3) ON CONFLICT(segment_id) DO UPDATE SET meeting_id=excluded.meeting_id,run=excluded.run,seq=excluded.seq,revision=excluded.revision",params![m.id,m.run,key])?;
+        }
+        Ok(())
+    }
+    pub(crate) fn mark_terminology_batch(&mut self, segments: &[Segment], key: &str) -> Result<()> {
+        let tx = self.conn.savepoint()?;
+        {
+            let mut mark = tx.prepare("INSERT INTO term_checks VALUES(?1,?2,?3,?4) ON CONFLICT(segment_id) DO UPDATE SET run=excluded.run,revision=excluded.revision,terms_key=excluded.terms_key")?;
+            let mut dequeue = tx
+                .prepare("DELETE FROM term_queue WHERE segment_id=?1 AND run=?2 AND revision=?3")?;
+            for segment in segments {
+                mark.execute(params![segment.id, segment.run, segment.revision, key])?;
+                dequeue.execute(params![segment.id, segment.run, segment.revision])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+    pub(crate) fn cache_dependency(&self, meeting: &str, kind: &str) -> Result<String> {
+        use rusqlite::OptionalExtension;
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT value FROM cache_dependencies WHERE meeting_id=?1 AND kind=?2",
+                params![meeting, kind],
+                |r| r.get(0),
+            )
+            .optional()?
+            .unwrap_or_default())
+    }
+    pub(crate) fn set_cache_dependency(
+        &self,
+        meeting: &str,
+        kind: &str,
+        value: &str,
+    ) -> Result<()> {
+        self.conn.execute("INSERT INTO cache_dependencies VALUES(?1,?2,?3) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=excluded.value WHERE value!=excluded.value",params![meeting,kind,value])?;
+        Ok(())
+    }
     pub fn recent_segments(&self, meeting: &Meeting, limit: u32) -> Result<Vec<Segment>> {
         let limit = limit.clamp(1, 20);
         let mut segments: Vec<Segment> = self.json_query(
@@ -96,7 +239,7 @@ impl Store {
         if s.revision != expected_revision {
             bail!("转写已更新，请刷新后再修改");
         }
-        let tx = self.conn.transaction()?;
+        let tx = self.conn.savepoint()?;
         tx.execute(
             "INSERT OR IGNORE INTO segment_history VALUES(?1,?2,?3)",
             params![s.id, s.revision, original],
@@ -166,10 +309,16 @@ impl Store {
             .into_iter()
             .find(|s| s.id == id)
             .context("找不到笔记建议")?;
+        let human_edit = text.is_some();
         if let Some(text) = text {
             s.text = text;
         }
-        s.status = status.to_owned();
+        s.status = if human_edit && status == "pending" {
+            "accepted"
+        } else {
+            status
+        }
+        .to_owned();
         self.save_suggestion(&s)
     }
     pub fn start_job(&self, id: &str, meeting: &str, input: &serde_json::Value) -> Result<()> {
@@ -197,8 +346,19 @@ impl Store {
         before: &Snapshot,
         selected: &[Segment],
         cursor: u32,
+        sections: Vec<Suggestion>,
+        cancelled: bool,
+    ) -> Result<usize> {
+        self.commit_document_with_state(before, selected, cursor, sections, cancelled, None)
+    }
+    pub(crate) fn commit_document_with_state(
+        &mut self,
+        before: &Snapshot,
+        selected: &[Segment],
+        cursor: u32,
         mut sections: Vec<Suggestion>,
         cancelled: bool,
+        state_environment: Option<&str>,
     ) -> Result<usize> {
         if cancelled {
             bail!("任务已取消，待处理内容已保留");
@@ -206,16 +366,39 @@ impl Store {
         let mut current = self.meeting(&before.meeting.id)?;
         let now = self.segments(&current)?;
         let notes = self.notes(&current.id)?;
+        // Derive spelling context once at commit, not on every UI fingerprint
+        // query. A changed supporting source must not seal an old name repair.
+        let actors = |segments: &[Segment], meeting: &Meeting| {
+            crate::terminology::Terms::new(&[], &[])
+                .with_actor_spellings(
+                    segments.iter().map(|s| s.text.as_str()),
+                    meeting.speaker_names.values().map(String::as_str),
+                )
+                .actor_spellings_digest()
+        };
         if current.run != before.meeting.run
             || selected
                 .iter()
                 .any(|s| !now.iter().any(|n| n.id == s.id && n.revision == s.revision))
             || crate::notes::fingerprint(&notes, &now, 0)
                 != crate::notes::fingerprint(&before.notes, &before.segments, 0)
+            || actors(&now, &current) != actors(&before.segments, &before.meeting)
         {
             bail!("原文或关键词已更新，稍后自动重新整理");
         }
         let existing = self.suggestions(&current.id)?;
+        if state_environment.is_some()
+            && (current.notes_fingerprint != before.meeting.notes_fingerprint
+                || crate::notes::incremental::document_hash(&existing)
+                    != crate::notes::incremental::document_hash(&before.suggestions)
+                || crate::notes::incremental::source_hash(&now, before.meeting.notes_cursor)
+                    != crate::notes::incremental::source_hash(
+                        &before.segments,
+                        before.meeting.notes_cursor,
+                    ))
+        {
+            bail!("旧纪要或历史原话已更新，本轮增量结果未提交");
+        }
         // Recompose only unlocked paragraphs whose entire evidence is in this request.
         // IDs are assigned here, never by the language model. Archive the old document below.
         let replaceable: Vec<&Suggestion> = existing
@@ -309,6 +492,26 @@ impl Store {
             "UPDATE meetings SET json=?2 WHERE id=?1",
             params![current.id, serde_json::to_string(&current)?],
         )?;
+        let state = if let Some(environment) = state_environment {
+            let document = {
+                let mut q = tx.prepare("SELECT json FROM suggestions WHERE meeting_id=?1")?;
+                let rows = q.query_map([&current.id], |r| r.get::<_, String>(0))?;
+                rows.map(|row| Ok(serde_json::from_str::<Suggestion>(&row?)?))
+                    .collect::<Result<Vec<_>>>()?
+            };
+            crate::notes::incremental::seal(environment, &current, &now, &notes, &document)
+        } else {
+            None
+        };
+        if let Some(state) = state {
+            tx.execute("INSERT INTO cache_dependencies VALUES(?1,?2,?3) ON CONFLICT(meeting_id,kind) DO UPDATE SET value=excluded.value",
+                params![current.id,crate::notes::incremental::KEY,serde_json::to_string(&state)?])?;
+        } else {
+            tx.execute(
+                "DELETE FROM cache_dependencies WHERE meeting_id=?1 AND kind=?2",
+                params![current.id, crate::notes::incremental::KEY],
+            )?;
+        }
         tx.commit()?;
         Ok(count)
     }
@@ -326,6 +529,128 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn terminology_savepoint_rolls_back_when_outer_release_fails() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("release-failure.sqlite3"))?;
+        db.conn.execute_batch(
+            "CREATE TABLE fixture_parent(id INTEGER PRIMARY KEY);
+             CREATE TABLE fixture_child(parent_id INTEGER REFERENCES fixture_parent(id)
+                 DEFERRABLE INITIALLY DEFERRED);",
+        )?;
+        db.set_cache_dependency("fixture", "terms", "before")?;
+        let error = db
+            .with_terminology_savepoint(|db| {
+                db.set_cache_dependency("fixture", "terms", "uncommitted")?;
+                db.conn
+                    .execute("INSERT INTO fixture_child VALUES(404)", [])?;
+                assert!(!db.conn.is_autocommit());
+                Ok(())
+            })
+            .expect_err("the deferred foreign key fails only at outer RELEASE");
+        assert!(error.downcast_ref::<rusqlite::Error>().is_some());
+        assert!(format!("{error:#}").contains("FOREIGN KEY constraint failed"));
+        assert!(db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "before");
+        assert_eq!(
+            db.conn
+                .query_row("SELECT COUNT(*) FROM fixture_child", [], |r| r
+                    .get::<_, i64>(0))?,
+            0
+        );
+        let completed = db.with_terminology_savepoint(|db| {
+            db.set_cache_dependency("fixture", "terms", "after")?;
+            Ok(42)
+        })?;
+        assert_eq!(completed, 42);
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "after");
+        assert!(db.conn.is_autocommit());
+        Ok(())
+    }
+
+    #[test]
+    fn terminology_savepoint_never_owns_an_existing_transaction() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("existing-transaction.sqlite3"))?;
+        db.conn.execute_batch("BEGIN")?;
+        db.set_cache_dependency("fixture", "terms", "callers-write")?;
+        let mut called = false;
+        assert!(db
+            .with_terminology_savepoint(|_| {
+                called = true;
+                Ok(())
+            })
+            .is_err());
+        assert!(!called);
+        assert!(!db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "callers-write");
+        db.conn.execute_batch("ROLLBACK")?;
+        assert!(db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "");
+        Ok(())
+    }
+
+    #[test]
+    fn terminology_savepoint_drop_rolls_back_a_panicking_operation() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("panic-rollback.sqlite3"))?;
+        db.set_cache_dependency("fixture", "terms", "before")?;
+        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _: Result<()> = db.with_terminology_savepoint(|db| {
+                db.set_cache_dependency("fixture", "terms", "uncommitted")?;
+                panic!("fixture terminology operation panic");
+            });
+        }));
+        assert!(unwound.is_err());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "before");
+        assert!(db.conn.is_autocommit());
+        db.with_terminology_savepoint(|_| Ok(()))?;
+        assert!(db.conn.is_autocommit());
+        Ok(())
+    }
+
+    #[test]
+    fn terminology_queue_migrates_legacy_data_and_preserves_newer_work() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Legacy migration")?;
+        let mut source = Segment {
+            id: "legacy-source".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "Original evidence".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        drop(engine);
+        let path = root.path().join("meetings.sqlite3");
+        {
+            let conn = Connection::open(&path)?;
+            conn.execute_batch("DROP TRIGGER term_source_insert; DROP TRIGGER term_source_update; DROP TRIGGER term_source_delete; DROP TABLE term_queue; DROP TABLE term_checks; DROP TABLE cache_dependencies; PRAGMA user_version=5;")?;
+        }
+        let mut db = Store::open(&path)?;
+        assert_eq!(db.terminology_candidates(&meeting)?.len(), 1);
+        let old = source.clone();
+        source.text = "Newer evidence".into();
+        source.revision = 2;
+        db.save_segment(&source)?;
+        db.mark_terminology_batch(&[old], "terms-fixture")?;
+        // An acknowledgement for rev 1 cannot remove queued rev 2.
+        assert_eq!(db.terminology_candidates(&meeting)?[0].revision, 2);
+        assert_eq!(db.segments(&meeting)?[0].text, "Newer evidence");
+        db.mark_terminology_batch(&[source], "terms-fixture")?;
+        assert!(db.terminology_candidates(&meeting)?.is_empty());
+        drop(db);
+        let reopened = Store::open(&path)?;
+        assert!(reopened.terminology_candidates(&meeting)?.is_empty());
+        Ok(())
+    }
     #[test]
     fn corrections_preserve_history_and_mark_accepted_notes_stale() -> Result<()> {
         let tmp = tempfile::tempdir()?;
@@ -378,6 +703,72 @@ mod tests {
 #[cfg(test)]
 mod document_tests {
     use super::*;
+    #[test]
+    fn source_actor_context_is_checked_once_at_commit_without_rejecting_unrelated_text(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let m = engine.create_meeting("Actor context fixture")?;
+        let source = |id: &str, seq, text: &str| Segment {
+            id: id.into(),
+            meeting_id: m.id.clone(),
+            run: 1,
+            seq,
+            start_ms: 0,
+            end_ms: 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let provider = source("actor", 1, "工具由林悦负责测试。");
+        let date = source("date", 2, "林悦先在周四提交报告。");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&provider)?;
+            db.save_segment(&date)?;
+        }
+        let before = engine.snapshot(&m.id)?;
+        let section = Suggestion {
+            id: String::new(),
+            meeting_id: m.id.clone(),
+            kind: "section".into(),
+            focus: "提交安排".into(),
+            text: "林悦将在周四提交报告。".into(),
+            sources: vec![Source {
+                segment_id: date.id.clone(),
+                revision: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                quote: date.text.clone(),
+                speaker_name: None,
+            }],
+            status: "pending".into(),
+            stale: false,
+        };
+        let mut db = engine.store.lock().unwrap();
+        db.edit_segment(&provider.id, "工具由陈明负责测试。", 1)?;
+        assert!(db
+            .commit_document(
+                &before,
+                std::slice::from_ref(&date),
+                2,
+                vec![section.clone()],
+                false
+            )
+            .is_err());
+        assert!(db.suggestions(&m.id)?.is_empty());
+        db.edit_segment(&provider.id, "工具由林悦负责测试。", 2)?;
+        drop(db);
+        let before = engine.snapshot(&m.id)?;
+        let mut db = engine.store.lock().unwrap();
+        db.save_segment(&source("cache", 3, "缓存保存在本机。"))?;
+        assert_eq!(
+            db.commit_document(&before, &[date], 2, vec![section], false)?,
+            1
+        );
+        Ok(())
+    }
     #[test]
     fn document_commit_is_atomic_and_rejects_midflight_edits() -> Result<()> {
         let root = tempfile::tempdir()?;

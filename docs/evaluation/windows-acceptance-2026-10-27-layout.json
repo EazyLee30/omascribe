@@ -1,0 +1,424 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "step": 1,
+  "passed": true,
+  "minutes_source_commit": "be5e16dde4b7ab35c70a5b5b8c059ab731956d97",
+  "shared_head": "e255dc70a68785ba8e19f5145f6807043b028c61",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "164371e285a499e9261afa5239d1d563a1aadb57",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "1449f88edb4e402c06b34a5989439f61be4521ee278af76991add60806537186",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "d03d1de394df03b8a2373a9904ea38b964da15288c4edbd24f5873aabb9d0e4e",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "49909d29207070db79c3f77fe1facdde9840f25cd3626cb1b549a50eabc69c13",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "be5e16dde4b7ab35c70a5b5b8c059ab731956d97",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_sha256": "93809b7032e43f41fa2533eb879851324586ecefcc091429333fe151ae680bb9",
+  "cases": [
+    {
+      "case": "zh_budget_guess",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_correction",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_calendar_citations",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_connected_minutes",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_product_spelling",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_empty_greetings",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_phased_correction",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_named_speakers",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "zh_long_context_state",
+      "passed": true,
+      "coverage": 10,
+      "errors": []
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "coverage": 3,
+      "errors": []
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    },
+    {
+      "case": "en_generic_note_name",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "passed": true,
+      "coverage": 1,
+      "errors": []
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "passed": true,
+      "coverage": 5,
+      "errors": []
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "passed": true,
+      "coverage": 2,
+      "errors": []
+    }
+  ],
+  "checks": {
+    "minutes_19_passed": true,
+    "core_tests": {
+      "passed": 99,
+      "ignored_opt_in": 5
+    },
+    "python_tests": 43,
+    "frontend_build": "passed",
+    "prettier": "passed",
+    "asr_tests": 3,
+    "clippy_default_app": "passed",
+    "clippy_ui_test": "passed"
+  },
+  "native_ui": {
+    "passed": true,
+    "identity": {
+      "support_revision": "be5e16dde4b7ab35c70a5b5b8c059ab731956d97",
+      "app_sha256": "4fce0b6e9c25bf1379e63800e36371ff277096d7b2757611cc2ab1df1dc61bcd",
+      "fixture_sha256": "72a1d3c0e3fdec620587447a987ca1a52c0e9a6aaa00b4024c510cc7797fa366",
+      "probe_sha256": {
+        "ui_test_probe.rs": "2f054f04a7e002fb4605265e378c3074c3db702a566eafb2374ebb972c3bb2fb",
+        "ui_test_probe.js": "99ef8015b34641aee3e88175f24a3ae07d428d7f1fa9d2919d60212b56da7b30"
+      },
+      "app_version": "0.3.4",
+      "exit_code": 0,
+      "debugger_port": false,
+      "private_workspace": true,
+      "test_support_source_committed": true
+    },
+    "checks": [
+      "Open native companion/transcript follow five language changes and preserve expansion",
+      "Native hardware reaches settings while activation still requires component verification"
+    ],
+    "languages": [
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "en",
+          "start": "Start recording"
+        },
+        "locale": "en",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "Live captions",
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-CN",
+          "start": "开始录音"
+        },
+        "locale": "zh-CN",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "实时字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-TW",
+          "start": "開始錄音"
+        },
+        "locale": "zh-TW",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-TW",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "即時字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-TW",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "en",
+          "start": "Start recording"
+        },
+        "locale": "en",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "Live captions",
+          "errors": [],
+          "expanded": null,
+          "lang": "en",
+          "start": null
+        }
+      },
+      {
+        "companion": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": "true",
+          "lang": "zh-CN",
+          "start": "开始录音"
+        },
+        "locale": "zh-CN",
+        "main": {
+          "captionLabel": null,
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        },
+        "transcript": {
+          "captionLabel": "实时字幕",
+          "errors": [],
+          "expanded": null,
+          "lang": "zh-CN",
+          "start": null
+        }
+      }
+    ],
+    "windows": [
+      {
+        "label": "main",
+        "maximized": false,
+        "position": [
+          208,
+          208
+        ],
+        "size": [
+          1160,
+          780
+        ],
+        "visible": true
+      },
+      {
+        "label": "transcript",
+        "maximized": false,
+        "position": [
+          1364,
+          60
+        ],
+        "size": [
+          540,
+          420
+        ],
+        "visible": true
+      },
+      {
+        "label": "companion",
+        "maximized": false,
+        "position": [
+          1540,
+          686
+        ],
+        "size": [
+          380,
+          340
+        ],
+        "visible": true
+      }
+    ],
+    "method": "native ui-test feature / fixed cross-window DOM probes",
+    "gpu_names": [
+      "NVIDIA GeForce GTX 1650"
+    ],
+    "limits": [
+      "Functional native-window checks; screenshots are separate visual evidence.",
+      "No settings download/activation claim before a signed candidate catalog is available."
+    ],
+    "prior_attempts": [
+      {
+        "report": "report-first.json",
+        "passed": false,
+        "failure": "Fixture clicked Models before the settings language re-render completed; all five language assertions had passed. Fixture now waits for the selector."
+      },
+      {
+        "report": "report-second.json",
+        "passed": true,
+        "note": "Pre-commit probe run; superseded by clean-support rerun."
+      }
+    ],
+    "debugger": "none",
+    "production_support": "Fixed probes are absent unless ui-test is compiled.",
+    "stderr_observation": "On process shutdown WebView2 logs Failed to unregister class Chrome_WidgetWin_0, Error=1412. Exit code is 0; fixed DOM probes recorded no script errors. Raw log retained locally."
+  },
+  "new_shared_merge": {
+    "support_commit": "be5e16dde4b7ab35c70a5b5b8c059ab731956d97",
+    "shared_head": "e255dc70a68785ba8e19f5145f6807043b028c61",
+    "python_tests": 43,
+    "production_core_frontend_model_delta_from_164371e": "none",
+    "full_19_after_new_harness": {
+      "passed": true,
+      "cases": 19,
+      "raw_report": "artifacts/benchmarks/windows-acceptance-20261027-shared-e255-minutes.json"
+    },
+    "checks": {
+      "core": {
+        "passed": 99,
+        "ignored_opt_in": 5
+      },
+      "asr": {
+        "passed": 3,
+        "warning": "The default local ASR test link emitted LNK4098 (LIBCMT conflict); the test binary passed. This is not the separate pinned static-CRT ASR acceptance artifact."
+      },
+      "python": 43,
+      "clippy_ui_test": "passed",
+      "clippy_default_app": "passed",
+      "remote_linux_ci": "passed",
+      "remote_windows_core": "queued behind the existing component matrix"
+    },
+    "reused_cli_build": "CLI compile revision remains 164371e with source SHA-256 1449f88edb4e402c06b34a5989439f61be4521ee278af76991add60806537186. No core/frontend/model/component input changed; current suite revision is be5e16d, and inference sources are clean."
+  },
+  "limits": [
+    "Functional acceptance only; native window screenshots supplied by the user are separate visual evidence.",
+    "No GPU download, install, activation, restart or fallback claim before a signed candidate catalog is available."
+  ],
+  "previous_layout_minutes": {
+    "minutes_source_commit": "164371e285a499e9261afa5239d1d563a1aadb57",
+    "shared_head": "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "164371e285a499e9261afa5239d1d563a1aadb57",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "1449f88edb4e402c06b34a5989439f61be4521ee278af76991add60806537186",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "f94463fdb96d00aef85102f0995035eb3acfe94f09a6cd8fa4e474f6fc07098f",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "49909d29207070db79c3f77fe1facdde9840f25cd3626cb1b549a50eabc69c13",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "164371e285a499e9261afa5239d1d563a1aadb57",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture_sha256": "93809b7032e43f41fa2533eb879851324586ecefcc091429333fe151ae680bb9",
+    "passed_cases": 19
+  }
+}

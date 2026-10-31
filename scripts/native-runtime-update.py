@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Build and validate signed runtime-only updates, retaining models outside the app."""
 import argparse, hashlib, json, os, pathlib, platform, shutil, subprocess, tempfile
+from runtime_inventory import assert_base_names, assert_base_runtime
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 LABELS={'aarch64-apple-darwin':'macOS-AppleSilicon','x86_64-apple-darwin':'macOS-Intel','x86_64-pc-windows-msvc':'Windows-x64','x86_64-unknown-linux-gnu':'Linux-x64'}
 def run(*args,**kwargs): return subprocess.run([str(a) for a in args],check=True,**kwargs)
 def assert_runtime_inventory(listing):
     paths = [line.removeprefix("Path = ").strip() for line in listing.splitlines() if line.startswith("Path = ")]
     assert len(paths) > 1, "Unable to inspect NSIS contents"
+    assert_base_names(paths[1:])
     for name in paths[1:]:
         parts = pathlib.PureWindowsPath(name).parts
         assert not any(p.lower() == "models" for p in parts), "Runtime payload contains model directory"
@@ -19,6 +21,7 @@ def main():
     assets=ROOT/'build-assets/native'; slim=ROOT/'build-assets/runtime-only'
     shutil.rmtree(slim,ignore_errors=True)
     shutil.copytree(assets,slim,ignore=shutil.ignore_patterns('models'))
+    assert_base_runtime(slim)
     assert not (slim/'models').exists()
     config=json.loads((ROOT/'src-tauri/tauri.release.conf.json').read_text())
     config['bundle']['resources']={'../build-assets/runtime-only/':'native/'}

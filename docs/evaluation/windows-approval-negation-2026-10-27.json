@@ -1,0 +1,575 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "windows_shared2461_targeted_validation",
+  "passed": false,
+  "targeted_negation_checks_passed": true,
+  "promotion_eligible": false,
+  "application_source": "328608113a070214f335b20aa39e461b755140bd",
+  "shared_source": "2461aeb8a9222b1392c04f585e26d47f2ca74073",
+  "runtime_change": "Approval-negation validation recognizes not approved and unapproved; existing unit also rejects affirmative approved.",
+  "fact_prototype": {
+    "compilation": "cfg(test) only",
+    "product_generator_connected": false,
+    "native_model_probe_invoked": false
+  },
+  "approval_negation": {
+    "raw_report_sha256": "8b8e14d94690994a1974aa596e05081b48c6033ec96e5d3f8dba603912e6834b",
+    "report": {
+      "schema": 1,
+      "kind": "windows_real_model_english_approval_negation_smoke",
+      "passed": true,
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "328608113a070214f335b20aa39e461b755140bd",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "schema": 1,
+          "source_sha256": "8517e176443263b2cd44c20677f825de3ff2d62653a383c71472965f94bdf240",
+          "target": "x86_64-pc-windows-msvc"
+        },
+        "core_and_harness_source_sha256": "66e4011b901119591f2b7a818e7740bc8944421eb20d9fbfb6fc531610bb4e1b",
+        "inference_source_tree_dirty": false,
+        "platform": "Windows-10-10.0.19045-SP0",
+        "machine": "AMD64",
+        "python": "3.12.14",
+        "cli_sha256": "9d03250612d69d7ae5beda960e60a7e3b72534121ed2781a7afd90afa2c66958",
+        "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+        "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+        "suite_revision": "328608113a070214f335b20aa39e461b755140bd",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 2,
+        "context_size": 2048,
+        "inference_backend": "cpu",
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "minutes_language": "en",
+        "llm_keep_alive_seconds": 0
+      },
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "incremental_enabled": false,
+      "catchup_enabled": false,
+      "fact_protocol_native_probe_invoked": false,
+      "results": [
+        {
+          "source_wording": "not approved",
+          "passed": true,
+          "errors": [],
+          "cursor": 1,
+          "sections": [
+            {
+              "focus": "Meeting minutes",
+              "id": "1d9d85d7-c2a1-405d-97c6-c1a5e09577bf",
+              "kind": "section",
+              "meeting_id": "fc99e0e0-3718-4bec-b9d7-147606f33813",
+              "sources": [
+                {
+                  "end_ms": 10000,
+                  "quote": "The Budget of 3000 is not approved.",
+                  "revision": 2,
+                  "segment_id": "fc99e0e0-3718-4bec-b9d7-147606f33813:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "The Budget of 3000 was not approved. The meeting concluded with the final status indicating that the Budget remains unapproved, and no further action has been taken. The meeting did not discuss any other topics, and no changes or corrections were made to the original data."
+            }
+          ],
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 7922,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          },
+          "last-generation.json_sha256": "f894aee3badd34943c57524282429cc3fabc5b4df68211a3fc6194e360feb7e1",
+          "inference-trace.jsonl_sha256": "99faf402a9d1f70a3073a721dd76cb734ec2860457e89cf1fdc87bc2233fdf06"
+        },
+        {
+          "source_wording": "unapproved",
+          "passed": true,
+          "errors": [],
+          "cursor": 1,
+          "sections": [
+            {
+              "focus": "Meeting minutes",
+              "id": "f7ad8d8d-5289-4bc0-9976-f77020474ec9",
+              "kind": "section",
+              "meeting_id": "f89f4cda-671f-4041-a365-14ff49f097a8",
+              "sources": [
+                {
+                  "end_ms": 10000,
+                  "quote": "The Budget of 3000 is unapproved.",
+                  "revision": 2,
+                  "segment_id": "f89f4cda-671f-4041-a365-14ff49f097a8:1:1",
+                  "speaker_name": null,
+                  "start_ms": 0
+                }
+              ],
+              "stale": false,
+              "status": "pending",
+              "text": "The Budget of 3000 is unapproved."
+            }
+          ],
+          "runtime": {
+            "asr_rtf": 0.0,
+            "diarization_busy": false,
+            "diarization_meeting_id": null,
+            "diarization_status": "",
+            "elapsed_ms": 0,
+            "error": null,
+            "level": 0.0,
+            "meeting_id": null,
+            "notes_busy": false,
+            "notes_elapsed_ms": 4938,
+            "notes_status": "文档已同步 · 1 个章节",
+            "partial": "",
+            "paused": false,
+            "processed_ms": 0,
+            "recording": false,
+            "transcribing": false,
+            "translation_busy": false,
+            "translation_status": ""
+          },
+          "last-generation.json_sha256": "3ead91b06acafd5205f9baa0a40accdcd92585e8159d3a2e905b6955fff503e9",
+          "inference-trace.jsonl_sha256": "8b13a4e10a53014ed749cacc7f607d5b563d94208f86d3d7e16c3119e0810d0d"
+        }
+      ],
+      "limits": [
+        "Two fictional source wordings, not a complete22-case suite, paired cost study, GPU retest or product fact-ledger validation."
+      ],
+      "code_binary_catalog_unchanged": true
+    }
+  },
+  "manual_fact_review": {
+    "passed": false,
+    "source_wording": "not approved",
+    "source": "The budget of 3000 is not approved.",
+    "note_context": "Budget",
+    "unsupported_claims": [
+      "The meeting concluded",
+      "no further action has been taken",
+      "The meeting did not discuss any other topics",
+      "no changes or corrections were made to the original data"
+    ],
+    "decision": "Reject full-summary quality despite correct negation/amount. Narrow regex pass is not a source-grounding pass."
+  },
+  "native": {
+    "identity": {
+      "app_sha256": "55a1bda92725210df2e12a96903989166c181008e5b50c906c787913eec6c95f",
+      "source": "328608113a070214f335b20aa39e461b755140bd",
+      "fixture_sha256": "72a1d3c0e3fdec620587447a987ca1a52c0e9a6aaa00b4024c510cc7797fa366",
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "exit_code": 0
+    },
+    "raw_report_sha256": "0716fd669f7a88574fe51b1adf3623ac7183019a4fa7ea4a2a083cc4dccec014",
+    "report": {
+      "checks": [
+        "Open native companion/transcript follow five language changes and preserve expansion",
+        "Native hardware reaches settings while activation still requires component verification"
+      ],
+      "hardware": {
+        "apple_silicon": false,
+        "arch": "x86_64",
+        "available_memory_mib": 6156,
+        "backends": [
+          "cpu"
+        ],
+        "cores": 8,
+        "cpu": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz",
+        "free_disk_bytes": 134303051776,
+        "gpus": {
+          "cuda_driver_version": 13050,
+          "devices": [
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:1453c7ca",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            },
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:00028e70",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            },
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:00028197",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            }
+          ],
+          "error": null,
+          "schema": 1,
+          "status": "detected"
+        },
+        "os": "Windows 10 Pro",
+        "platform": "windows",
+        "recommended": {
+          "appearance": {
+            "accent": "#d83b36",
+            "background": "",
+            "font": "system",
+            "font_size": 13,
+            "foreground": "",
+            "mode": "system",
+            "theme": "neutral"
+          },
+          "asr_model": "zipformer-small",
+          "auto_notes": true,
+          "context_size": 2048,
+          "diarization": false,
+          "inference_backend": "auto",
+          "llm_keep_alive_seconds": 0,
+          "llm_model": "qwen3-1.7b",
+          "memory_budget_mib": 0,
+          "minutes_language": "auto",
+          "resource_mode": "balanced",
+          "speaker_count": 0,
+          "threads": 2,
+          "translation_mode": "off",
+          "use_knowledge": false,
+          "use_memory": false
+        },
+        "resource_presets": [
+          {
+            "id": "eco",
+            "name": "eco",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-small",
+              "auto_notes": true,
+              "context_size": 2048,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-0.6b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "eco",
+              "speaker_count": 0,
+              "threads": 1,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          },
+          {
+            "id": "balanced",
+            "name": "balanced",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-small",
+              "auto_notes": true,
+              "context_size": 2048,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-1.7b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "balanced",
+              "speaker_count": 0,
+              "threads": 2,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          },
+          {
+            "id": "quality",
+            "name": "quality",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-bilingual",
+              "auto_notes": true,
+              "context_size": 4096,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-4b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "quality",
+              "speaker_count": 0,
+              "threads": 4,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          }
+        ],
+        "tier": "balanced",
+        "total_memory_mib": 16291
+      },
+      "languages": [
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "en",
+            "start": "Start recording"
+          },
+          "locale": "en",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "Live captions",
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-CN",
+            "start": "开始录音"
+          },
+          "locale": "zh-CN",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "实时字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-TW",
+            "start": "開始錄音"
+          },
+          "locale": "zh-TW",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-TW",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "即時字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-TW",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "en",
+            "start": "Start recording"
+          },
+          "locale": "en",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "Live captions",
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-CN",
+            "start": "开始录音"
+          },
+          "locale": "zh-CN",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "实时字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          }
+        }
+      ],
+      "limits": [
+        "Functional native-window checks; screenshots are separate visual evidence.",
+        "No settings download/activation claim before a signed candidate catalog is available."
+      ],
+      "method": "native ui-test feature / fixed cross-window DOM probes",
+      "passed": true,
+      "windows": [
+        {
+          "label": "main",
+          "maximized": false,
+          "position": [
+            78,
+            78
+          ],
+          "size": [
+            1160,
+            780
+          ],
+          "visible": true
+        },
+        {
+          "label": "companion",
+          "maximized": false,
+          "position": [
+            1540,
+            686
+          ],
+          "size": [
+            380,
+            340
+          ],
+          "visible": true
+        },
+        {
+          "label": "transcript",
+          "maximized": false,
+          "position": [
+            1364,
+            60
+          ],
+          "size": [
+            540,
+            420
+          ],
+          "visible": true
+        }
+      ]
+    }
+  },
+  "checks": {
+    "core_passed": 122,
+    "core_ignored": 6,
+    "python_passed": 63,
+    "core_all_targets_clippy": "passed",
+    "native_ui_test_all_targets_clippy": "passed"
+  },
+  "assets_verified_at_close": {
+    "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5"
+  },
+  "limits": [
+    "Two fictional English wordings on the production legacy CPU notes path; not a full22-case rerun, general fact/status guarantee or cost comparison.",
+    "Both narrow wording checks pass, but manual review rejects the first output for unsupported meeting/action/meta assertions. Overall quality remains false.",
+    "No pre-change same-case control was run here. Unsupported boilerplate is observed on the current legacy path; this is not evidence that c0293a2 introduced it.",
+    "The fact protocol remains test-only and its native-model probe was not invoked. Unit/protocol compilation does not establish a production fact ledger.",
+    "Prior incremental18/22 rejection stays bound to b0ab6cb, not measured on this new source. Both experiments remain off by default and no promotion is inferred.",
+    "Formal GPU/native Settings/worker-fault and recording evidence keep earlier source identities. No GPU/SDK rebuild or stable publication in this checkpoint.",
+    "Asset hashes above were read at close. No physical microphone, real allocation OOM or new recording-performance acceptance."
+  ]
+}

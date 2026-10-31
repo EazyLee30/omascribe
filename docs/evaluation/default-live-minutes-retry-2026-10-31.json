@@ -1,0 +1,186 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source_commit": "61b62d7a7c5d523ec34be4360508f251200af25b",
+  "base_commit": "775910045555bb284829bedd17690378f4717a86",
+  "status": "Default live scheduling isolation fixed; no model-quality or release promotion",
+  "scope": "Only the default live legacy retry branch (also used if post-capture drain is explicitly disabled). Existing catchup and post-capture drain policies, original launch/finish attempt clocks, public CLI generation, prompts/models/quotas and platform DTOs remain unchanged.",
+  "red": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "omascribe-core",
+      "--lib",
+      "engine::legacy_minutes_retry_tests",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "passed": 0,
+    "failed": 2,
+    "production_branch": "engine default legacy else calls the same extracted helper, initially using original Engine global counter",
+    "cases": [
+      "A failures incorrectly defer B at +46s",
+      "B success incorrectly clears A backoff at +91s"
+    ]
+  },
+  "behavior": [
+    "Ok clears only the same meeting/run, including Ok(0) without persisted frontier change",
+    "Err increments only the same live meeting/run, even when persistence already advanced",
+    "45/90/180/360 second capped exponential delay retains strict > and no-attempt immediate eligibility",
+    "Existing attempted launch/finish clocks and catch-up/post-capture Schedule policies unchanged",
+    "Outdated run and deleted meeting results cannot mutate live retry metadata",
+    "Each meeting retains at most one run; success and product meeting deletion remove it",
+    "Both async minutes callers bind launch run before the first generation snapshot; existing later Scope remains",
+    "Stale launch early rejection has explicit terminal committed=false/items=0 trace and zero requests/jobs/articles"
+  ],
+  "locking": "Store then independent legacy metadata Mutex in result/deletion; default eligibility holds metadata only. No metadata-to-Store nesting.",
+  "limits": [
+    "Fake-clock production eligibility and persistence controls, not measured wall-time/model quality or whole-app speed",
+    "Ordinary start_capture appends a take without incrementing run. The stale-run case is an explicit launch identity defense, not a reproduced ordinary new-take race",
+    "No LM/model execution, SDK/runtime download/build, installer build, source commit or push by this task"
+  ],
+  "checks": {
+    "core_passed": 498,
+    "core_ignored": 11,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "source_config_identities_unchanged": 160,
+    "additional_model_requests_for_scheduler_checks": 0,
+    "affected_default_controls": 7,
+    "original_schedule_controls": 3,
+    "recycle_controls": 2,
+    "translation_chain_controls": 1
+  },
+  "interpretation": "Configured retry eligibility is now independent per meeting/run. Two fake-clock tests directly call the helper used by the production default branch. They do not measure end-to-end wall-time, energy or whole-meeting throughput. Ok(0) resets its own counter even without frontier change; Err counts even if storage advanced. Manual retries remain outside this scheduler gate.",
+  "launch_run_limit": "Ordinary start_capture appends a take without incrementing meeting.run; retranscribe increments run with existing idle/config gates. Early stale-launch rejection is an identity defense tested without models, not a reproduced ordinary new-take race. Its trace explicitly finishes uncommitted/items0 before any request or database inference job.",
+  "source_files_sha256": {
+    "crates/core/src/engine.rs": "c0ae42c382b32b60ff455bdd7bb1eebf3c7b307f390ecb50b7cceca0b3035bcd",
+    "crates/core/src/minutes_schedule.rs": "180896464e27099d80c18792545424785884285121c4f425d7db1c7f51a402eb",
+    "crates/core/src/notes.rs": "18055114c4574051fcfb3b6d9999d820504027e877b267df4846f44c3542eab4",
+    "crates/core/src/translation.rs": "83c1934a9bee3447069d330be3307e16de56e655d3a150c567a890bc8157f210",
+    "crates/core/src/recycle.rs": "7deac046fcfef6c926e561ca96870e045c2a203240aebd5890e5470987c6eadc"
+  },
+  "quality_gate": "The one current-default manual Q16 run at e81/e77 remains FAIL (4requests/2474tokens,actual cursor0/no article). This scheduler fix was not used to retune or rerun that case. See default-writer-current-2026-10-31.json.",
+  "release": "Stable0.3.4;0.3.5 unpublished. Full research objective and ASR/recording/platform/installer/model-quality gates remain active.",
+  "witnesses": [
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/affected-commands.json",
+      "sha256": "8fcc3a0834da76a98b20a7dd500d77934f2e20dfc3efa920a0dbb7ac1ee44715"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/build-cli.log",
+      "sha256": "54ac2c3001a4759d97c880cd7b57d0bbb1895adc3b81316530e9f624358142a4"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/cli-build-info.json",
+      "sha256": "56166e12a4fd9752f6da26d686fb6f9f1742bffadec58322422e112e40fa1a7f"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/clippy.log",
+      "sha256": "b173e8e529e20ba194f0ed71fec8434b5b45183d2135f324fe40b2653bf658ee"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/core-asr.log",
+      "sha256": "183035dd4645bbc913dfbc99af380f06103035f05ac1349b0e816bb908f320f1"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/evidence.json",
+      "sha256": "ec3489cfd1e615dbf9f4c6acff17914bc24ad6db9a169084d8cd556370dd6dbe"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/final.patch",
+      "sha256": "e057b2e1933170715aa80c327d92d6aee88eb710c2e8199436e7e19e6dc0c8e3"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/green-command.json",
+      "sha256": "d80dffb6954a78e283e139339eac10ba05d352afbdf5d33b3505d9a18900493d"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/green-final.log",
+      "sha256": "371f6fcd1b9ffb961436fe8da40ac1e2fd064fbf207a5120c5b2fe4169e5eb1f"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/green.log",
+      "sha256": "4051f075307535664185eea92ea6622f2dbf1aa56c50efdb307bce1782a04b40"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/recycle.log",
+      "sha256": "2d6cf77910e4d72598a3bccc20aa63914eac808967ec1611c615f806d02e6399"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/red-command.json",
+      "sha256": "d80dffb6954a78e283e139339eac10ba05d352afbdf5d33b3505d9a18900493d"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/red-source.json",
+      "sha256": "3e61be17ff9d7b8b8c06c7f8787e5f6e9aee810cd9b1f216f00838ad0c0a7b10"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/red.log",
+      "sha256": "946046e3bc05de6ebbaa75afda25964de1d6e437dfb4831218eb5257d5f22e78"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/red.patch",
+      "sha256": "2db088ad609e58c15ec70a53bbf5f07a76213e48cc1458a9b3f3987c602e30fc"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/schedule.log",
+      "sha256": "6ae6158088f61a8e3c9544573e18b1cffa2290327dc77e844a5ef47af4b9ba74"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/source-after.json",
+      "sha256": "cdf5827eb1adade87284334e9a6cf52a2d833951de5456b65b83e90162e1066e"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/source-before.json",
+      "sha256": "cdf5827eb1adade87284334e9a6cf52a2d833951de5456b65b83e90162e1066e"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/terminal-run-guard-command.json",
+      "sha256": "ae2f9de0c5e40b09dd67b5fd7812a86239e756f5caef243e700d231fcfbf5f47"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/terminal-run-guard.log",
+      "sha256": "353cf9a62563f4912050c017896a91e7d2e89e25b116134d8ae68905827fc63e"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/translation-chain.log",
+      "sha256": "42f686b7e35bd86938878c57abcc8fc9ab308f6127c6e746fc6e85addd67a9bd"
+    },
+    {
+      "path": "artifacts/legacy-minutes-retry-2026-10-31/exact-source-ci.json",
+      "sha256": "f373ad5c48e13342d30241e640f09066c0a019727e657aece2c13325498e0a04"
+    }
+  ],
+  "final_cli_build": {
+    "profile": "release",
+    "revision_at_compile": "61b62d7a7c5d523ec34be4360508f251200af25b",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "schema": 1,
+    "source_sha256": "4f457278c8c3938c094a0789bee24fd57466500efdfa6cf4b284a0d79c4b96dc",
+    "target": "aarch64-apple-darwin",
+    "cli_sha256": "c1f64f9b2d3b973cec80f0fd186c7b00857a35dbf7c819b18b2681a0b5be71e7"
+  },
+  "platform_ci": {
+    "source": "61b62d7a7c5d523ec34be4360508f251200af25b",
+    "checks": {
+      "linux": "SUCCESS",
+      "ubuntu22": "SUCCESS",
+      "prepare": "SUCCESS",
+      "validate": "SUCCESS",
+      "windows-core": "SUCCESS",
+      "build": "SKIPPED",
+      "catalog": "SKIPPED"
+    },
+    "hardware_acceptance": false
+  }
+}

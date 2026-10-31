@@ -3,6 +3,18 @@ use anyhow::{bail, Context, Result};
 use serde_json::Value;
 use std::io::{BufRead, Read};
 
+/// A successful server response exhausted its token budget. Callers must keep
+/// drafts uncommitted, but must not misclassify this as a failed GPU transport.
+#[derive(Debug)]
+pub(crate) struct OutputLimit;
+impl std::fmt::Display for OutputLimit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("纪要输出不完整，本轮保留待处理内容")
+    }
+}
+impl std::error::Error for OutputLimit {}
+
+#[cfg(test)]
 pub fn read(reader: impl BufRead, mut progress: impl FnMut(usize)) -> Result<(String, Value)> {
     read_observed(reader, |text| progress(text.chars().count()))
 }
@@ -41,6 +53,12 @@ pub fn read_observed(
         if !event["usage"].is_null() {
             usage = event["usage"].clone();
         }
+        if event["timings"].is_object() {
+            if !usage.is_object() {
+                usage = serde_json::json!({});
+            }
+            usage["timings"] = event["timings"].clone();
+        }
         if let Some(part) = event["choices"][0]["delta"]["content"].as_str() {
             text.push_str(part);
             if text.len() > 262_144 {
@@ -49,6 +67,9 @@ pub fn read_observed(
             progress(&text);
         }
         if let Some(reason) = event["choices"][0]["finish_reason"].as_str() {
+            if reason == "length" {
+                return Err(OutputLimit.into());
+            }
             if reason != "stop" {
                 bail!("纪要输出不完整，本轮保留待处理内容");
             }
@@ -81,6 +102,18 @@ mod tests {
     }
     #[test]
     fn truncation_error_and_unbounded_data_cannot_commit() {
+        let error = read(
+            "data: {\"choices\":[{\"finish_reason\":\"length\"}]}\n".as_bytes(),
+            |_| {},
+        )
+        .unwrap_err();
+        assert!(error.is::<OutputLimit>());
+        let disconnected = read(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n".as_bytes(),
+            |_| {},
+        )
+        .unwrap_err();
+        assert!(!disconnected.is::<OutputLimit>());
         for stream in [
             "data: [DONE]\n",
             "data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n",
