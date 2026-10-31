@@ -1191,12 +1191,6 @@ pub(crate) fn source_name_mask(
 ) -> String {
     names::Names::new(terms, source).mask(body)
 }
-pub(crate) fn source_spelling_spans(
-    source: &str,
-    terms: &crate::terminology::Terms,
-) -> Option<Vec<std::ops::Range<usize>>> {
-    names::spelling_spans(source, terms)
-}
 pub(crate) fn validate_reported_name_spellings(
     source: &str,
     body: &str,

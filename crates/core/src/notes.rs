@@ -15,7 +15,6 @@ mod language;
 pub(crate) use language::validate_with_source as validate_language_with_source;
 mod lexical;
 mod metrics;
-mod name_slots;
 mod qualifiers;
 pub(crate) use metrics::{prefix as metric_prefix, Mismatch as MetricMismatch};
 pub(crate) use qualifiers::{
@@ -432,7 +431,6 @@ fn generate_inner(
     let mut attempts = Vec::<Value>::new();
     let mut translation_repair: Option<language::Repair> = None;
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
-    let mut name_repair: Option<name_slots::Plan> = None;
     let mut prepared_sources: Option<Value> = None;
     let mut prepared_evidence: Option<source_language::Prepared> = None;
     // Keep original selected evidence separate from translated prompt passages
@@ -519,9 +517,6 @@ fn generate_inner(
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"source_languages","strict":true,"schema":plan.schema()}});
         } else if let Some(plan) = &relation_repair {
-            request["temperature"] = json!(0.0);
-            request["grammar"] = plan.grammar().into();
-        } else if let Some(plan) = &name_repair {
             request["temperature"] = json!(0.0);
             request["grammar"] = plan.grammar().into();
         } else if let Some(plan) = &translation_repair {
@@ -647,19 +642,16 @@ fn generate_inner(
             prepared_evidence = Some(prepared);
             continue;
         }
-        let composition =
-            if relation_repair.is_none() && translation_repair.is_none() && name_repair.is_none() {
-                Some(writer::body_with_evidence(
-                    &raw_body,
-                    messages[1]["content"].as_str().unwrap_or("{}"),
-                ))
-            } else {
-                None
-            };
+        let composition = if relation_repair.is_none() && translation_repair.is_none() {
+            Some(writer::body_with_evidence(
+                &raw_body,
+                messages[1]["content"].as_str().unwrap_or("{}"),
+            ))
+        } else {
+            None
+        };
         let prose = if let Some(plan) = &relation_repair {
             plan.body(&raw_body)
-        } else if let Some(plan) = &name_repair {
-            plan.body(&raw_body, &context.segments)
         } else if let Some(plan) = &translation_repair {
             plan.body(&raw_body)
         } else {
@@ -780,7 +772,7 @@ fn generate_inner(
         attempts.push(json!({
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "week_qualifier_corrections":week_qualifier_corrections,
-            "mode":if relation_repair.is_some() {"translate_source_relations"} else if name_repair.is_some() {"compose_name_slots"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
+            "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),
@@ -836,25 +828,6 @@ fn generate_inner(
                     trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates(),"source_slots":plan.source_slots()}));
                     messages = plan.messages.clone();
                     relation_repair = Some(plan);
-                } else if let Some(plan) = (delta.is_none() && error.to_string().contains("名称"))
-                    .then(|| {
-                        let (system, input) = writer::prompt_mode(
-                            snapshot,
-                            &context,
-                            &json!({}),
-                            &prefs.minutes_language,
-                            false,
-                        );
-                        name_slots::Plan::new(&system, &input, &context.segments, &terms)
-                    })
-                    .flatten()
-                {
-                    trace.event(
-                        "article_repair",
-                        json!({"mode":"name_slots","name_slots":plan.count()}),
-                    );
-                    messages = plan.messages.clone();
-                    name_repair = Some(plan);
                 } else if error.to_string().contains("输出语言") {
                     let prose = checked_prose.as_deref().context("Missing checked prose")?;
                     let plan = language::repair_messages_with_source(
