@@ -282,7 +282,30 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
         .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
     let mut accepted_words = HashSet::new();
     let mut words = Vec::new();
+    let mut marked_spans = note_asr_marked_spans(&note.content).peekable();
     for word in latin.find_iter(&note.content) {
+        // A complete marked Unicode/long token must not leave an ASCII prefix
+        // as a separate correction name or recognition hint.
+        while marked_spans
+            .peek()
+            .is_some_and(|span| span.end() <= word.start())
+        {
+            marked_spans.next();
+        }
+        if marked_spans.peek().is_some_and(|span| {
+            span.start() <= word.start()
+                && word.end() <= span.end()
+                && (note.content[..word.start()]
+                    .chars()
+                    .next_back()
+                    .is_some_and(char::is_alphanumeric)
+                    || note.content[word.end()..]
+                        .chars()
+                        .next()
+                        .is_some_and(char::is_alphanumeric))
+        }) {
+            continue;
+        }
         let line_start = note.content[..word.start()]
             .rfind('\n')
             .map_or(0, |i| i + 1);
@@ -328,6 +351,49 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
         }
     }
     words
+}
+
+/// Explicit complete spans may bias recognition without becoming literal name
+/// obligations or correction aliases. Preserve every character and token.
+fn note_asr_marked_spans(content: &str) -> impl Iterator<Item = regex::Match<'_>> {
+    static MARKED: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static PHRASE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static SHORT: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static SINGLE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    // Consume an entire marked run before checking its size. A rejected long
+    // label's closing ** must not pair with the next valid label's opening **.
+    // Notes already have a fixed input ceiling; this match borrows the text.
+    let marked = MARKED.get_or_init(|| Regex::new(r"\*\*(?P<value>[^*\r\n]*)\*\*").unwrap());
+    let phrase = PHRASE
+        .get_or_init(|| Regex::new(r"^[\p{Latin}\p{Nd}]+(?: +[\p{Latin}\p{Nd}]+)+$").unwrap());
+    let short = SHORT.get_or_init(|| Regex::new(r"^(?:\p{Latin}\p{Nd}|\p{Nd}\p{Latin})$").unwrap());
+    let single = SINGLE.get_or_init(|| Regex::new(r"^[\p{Latin}\p{Nd}]+$").unwrap());
+    marked
+        .captures_iter(content)
+        .filter_map(|capture| capture.name("value"))
+        .filter(move |span| {
+            let value = span.as_str();
+            let count = value
+                .chars()
+                .take(crate::asr_hotwords::MAX_WORD_CHARS + 1)
+                .count();
+            (1..=crate::asr_hotwords::MAX_WORD_CHARS).contains(&count)
+                && model_identifier(value).is_none()
+                && (short.is_match(value)
+                    || phrase.is_match(value) && value.chars().any(char::is_uppercase)
+                    || count >= 3
+                        && single.is_match(value)
+                        && value.chars().any(|c| !c.is_ascii() && c.is_alphabetic()))
+        })
+}
+
+fn note_asr_marked_spellings(content: &str) -> Vec<&str> {
+    let mut seen = HashSet::new();
+    note_asr_marked_spans(content)
+        .map(|span| span.as_str())
+        .filter(|value| seen.insert(value.to_lowercase()))
+        .take(crate::asr_hotwords::MAX_WORDS)
+        .collect()
 }
 
 impl Terms {
@@ -378,15 +444,23 @@ impl Terms {
         let note_spellings: Vec<_> = crate::notes::document_notes(notes)
             .into_iter()
             .map(|note| {
+                let asr_spellings = note_asr_marked_spellings(&note.content);
+                let words = note_words(note);
                 (
                     note,
                     note_honorific_spellings(&note.content),
-                    note_words(note),
+                    words,
+                    asr_spellings,
                 )
             })
             .collect();
         let mut active_spellings = HashSet::new();
-        for (note, honorifics, words) in &note_spellings {
+        let mut active_asr_spellings = HashSet::new();
+        for (note, honorifics, words, asr_spellings) in &note_spellings {
+            for spelling in asr_spellings {
+                active_spellings.insert(spelling.to_lowercase());
+                active_asr_spellings.insert(spelling.to_lowercase());
+            }
             active_spellings.extend(honorifics.iter().map(|name| name.to_lowercase()));
             active_spellings.extend(
                 words
@@ -497,7 +571,7 @@ impl Terms {
             }
         }
         // User-written names supply spelling/casing, never facts or inferred aliases.
-        for (n, honorifics, words) in note_spellings {
+        for (n, honorifics, words, asr_spellings) in note_spellings {
             for name in honorifics {
                 if !explicit.contains(&name.to_lowercase()) {
                     add(name, name);
@@ -572,6 +646,13 @@ impl Terms {
                     if named || n.kind == "term" {
                         approximate.push(name.to_owned());
                     }
+                }
+            }
+            for spelling in asr_spellings {
+                // Existing glossary ownership (including disputed aliases)
+                // stays authoritative. Never revive a conflicting corrector.
+                if !explicit.contains(&spelling.to_lowercase()) {
+                    hotwords.push(spelling.to_owned());
                 }
             }
         }
@@ -671,7 +752,9 @@ impl Terms {
             .chain(&writer_names)
             .chain(&caption_names)
             .map(|name| {
-                let priority = if active_names.contains(name) {
+                let priority = if active_names.contains(name)
+                    || active_asr_spellings.contains(&name.to_lowercase())
+                {
                     0
                 } else if glossary_names.contains(name) {
                     1
@@ -2124,6 +2207,276 @@ mod tests {
             anchor_ms: 0,
             updated_at: String::new(),
         }
+    }
+
+    fn document_asr_admission_reaches_wire(content: &str, expected: &str) -> Result<()> {
+        let directory = tempfile::tempdir()?;
+        let engine = Engine::open(directory.path().into())?;
+        let meeting = engine.create_meeting("Marked ASR admission")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        let before = engine.terminology(&meeting.id)?.fingerprint();
+        let saved = engine.save_note(&meeting.id, None, content, "document", 0)?;
+        assert_eq!(saved.content, content);
+        let terms = engine.terminology(&meeting.id)?;
+        let wire = crate::asr_hotwords::encode_words(&terms.recognition_hotwords());
+        assert_eq!(wire.words, expected);
+        assert_eq!(crate::asr_hotwords::validate_words(&wire.words)?, expected);
+        assert_eq!(
+            terms.fingerprint(),
+            before,
+            "ASR-only hints do not create name mappings"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn document_marked_asr_admission_chandra_reaches_wire() -> Result<()> {
+        document_asr_admission_reaches_wire(
+            "**Chandra Shekhar Solanki**",
+            "CHANDRA SHEKHAR SOLANKI",
+        )
+    }
+
+    #[test]
+    fn document_marked_asr_admission_lakkha_reaches_wire() -> Result<()> {
+        document_asr_admission_reaches_wire("**Lakkha Singh**", "LAKKHA SINGH")
+    }
+
+    #[test]
+    fn document_marked_asr_admission_short_identifier_reaches_wire() -> Result<()> {
+        document_asr_admission_reaches_wire("**F1**", "F1")
+    }
+
+    #[test]
+    fn invalid_marked_span_does_not_consume_a_following_complete_hint() {
+        for invalid in ["A".repeat(81), String::new(), "é".into(), "éé".into()] {
+            let content = format!("**{invalid}** **Lakkha Singh**");
+            assert_eq!(note_asr_marked_spellings(&content), ["Lakkha Singh"]);
+        }
+        assert!(Terms::new(&[note("**é** **éé**")], &[])
+            .recognition_hotwords()
+            .is_empty());
+    }
+
+    #[test]
+    fn frozen_name_calibration_documents_reach_the_complete_asr_wire() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/hotword-calibration-en.json"
+        ))
+        .unwrap();
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 100);
+        let mut missing = Vec::new();
+        for case in cases {
+            for (arm, field) in [
+                ("positive", "expected_name"),
+                ("negative", "forbidden_name"),
+            ] {
+                let note = note(case[arm]["note"].as_str().unwrap());
+                let expected = case[arm][field].as_str().unwrap().to_uppercase();
+                let terms = Terms::new(&[note], &[]);
+                let wire = crate::asr_hotwords::encode_words(&terms.recognition_hotwords());
+                assert!(crate::asr_hotwords::validate_words(&wire.words).is_ok());
+                if !wire.words.lines().any(|word| word == expected) {
+                    missing.push(format!(
+                        "{} {arm}: {expected}",
+                        case["name"].as_str().unwrap()
+                    ));
+                }
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "Frozen document admission misses: {missing:?}"
+        );
+    }
+
+    #[test]
+    fn marked_asr_only_spans_do_not_become_name_or_fact_permissions() {
+        let empty = Terms::new(&[], &[]);
+        for (content, expected) in [
+            ("**Chandra Shekhar Solanki**", "Chandra Shekhar Solanki"),
+            ("**Cabo da Roca district**", "Cabo da Roca district"),
+            ("**University of São Paulo**", "University of São Paulo"),
+            ("**New  York**", "New  York"),
+            ("**Budget review**", "Budget review"),
+            ("**F1**", "F1"),
+            ("**Chişinău**", "Chişinău"),
+            ("**ASUNCIÓN**", "ASUNCIÓN"),
+        ] {
+            let terms = Terms::new(&[note(content)], &[]);
+            assert!(
+                terms.recognition_hotwords().contains(&expected.to_owned()),
+                "{content}"
+            );
+            assert_eq!(terms.fingerprint(), empty.fingerprint(), "{content}");
+            assert!(terms.writer_names.is_empty(), "{content}");
+            assert!(terms.caption_names.is_empty(), "{content}");
+            assert!(terms.approximate.is_empty(), "{content}");
+            assert!(terms.names.is_empty(), "{content}");
+            for source in [
+                "Chandra is speaking.",
+                "CHANDRA is speaking.",
+                "CHANDRA SHEKHAR SOLANKI remains unconfirmed.",
+                "The Budget review is not approved.",
+            ] {
+                assert_eq!(terms.normalize(source), source, "{content}");
+                assert_eq!(
+                    crate::translation::source_name_mask(source, source, &terms),
+                    crate::translation::source_name_mask(source, source, &empty),
+                    "{content}"
+                );
+            }
+        }
+        let terms = Terms::new(&[note("**Budget review**")], &[]);
+        assert!(terms
+            .validate_writer_names("The Budget review is not approved.", "预算审查未获批准。")
+            .is_ok());
+    }
+
+    #[test]
+    fn marked_unicode_words_do_not_leave_partial_ascii_names_or_hints() {
+        let terms = Terms::new(&[note("**Chişinău** **CHIŞINĂU** **ASUNCIÓN**")], &[]);
+        let wire = crate::asr_hotwords::encode_words(&terms.recognition_hotwords());
+        assert_eq!(
+            wire.words.lines().collect::<Vec<_>>(),
+            ["ASUNCIÓN", "CHIŞINĂU"]
+        );
+        assert!(terms.names.is_empty());
+        assert!(terms.writer_names.is_empty());
+        assert!(terms.caption_names.is_empty());
+        assert!(terms.approximate.is_empty());
+        assert_eq!(
+            terms.normalize("CHI and ASUNCI remain unconfirmed."),
+            "CHI and ASUNCI remain unconfirmed."
+        );
+        let separate = Terms::new(&[note("CHI\n**CHIŞINĂU**")], &[]);
+        assert_eq!(separate.normalize("chi"), "CHI");
+        assert!(separate.hotwords.contains(&"CHI".to_owned()));
+        let mut declared = note("ExplicitTerm");
+        declared.kind = "term".into();
+        assert_eq!(
+            Terms::new(&[declared], &[]).normalize("EXPLICITTERM"),
+            "ExplicitTerm"
+        );
+    }
+
+    #[test]
+    fn unmarked_generic_malformed_or_native_control_text_adds_no_new_asr_span() {
+        for content in [
+            "Chandra Shekhar Solanki",
+            "**offline transcription**",
+            "**in**",
+            "**11**",
+            "**F**",
+            "**New\nYork**",
+            "**New\tYork**",
+            "**New York :99999**",
+            "**New York\0**",
+            "**New York-**",
+        ] {
+            assert!(note_asr_marked_spellings(content).is_empty(), "{content}");
+        }
+        for content in [
+            "Chandra Shekhar Solanki",
+            "**offline transcription**",
+            "**in**",
+        ] {
+            assert!(
+                Terms::new(&[note(content)], &[])
+                    .recognition_hotwords()
+                    .is_empty(),
+                "{content}"
+            );
+        }
+        assert_eq!(
+            Terms::new(&[note("**FBI**")], &[]).recognition_hotwords(),
+            ["FBI"]
+        );
+        assert!(note_asr_marked_spellings("**GTX 1650**").is_empty());
+        assert_eq!(
+            Terms::new(&[note("**GTX 1650**")], &[]).recognition_hotwords(),
+            Terms::new(&[note("GTX 1650")], &[]).recognition_hotwords()
+        );
+    }
+
+    #[test]
+    fn marked_asr_only_spans_keep_note_priority_and_explicit_glossary_ownership() {
+        let entries = glossary(80);
+        let plain = Terms::new(&[], &entries);
+        let terms = Terms::new(&[note("**Chandra Shekhar Solanki**")], &entries);
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), 80);
+        assert_eq!(hints[0], "Chandra Shekhar Solanki");
+        assert_eq!(terms.fingerprint(), plain.fingerprint());
+        let mut entries = entries;
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "Node.js".into(),
+            aliases: "Chandra Shekhar Solanki".into(),
+            ..Default::default()
+        });
+        let explicit = Terms::new(&[note("**Chandra Shekhar Solanki**")], &entries);
+        assert_eq!(explicit.normalize("CHANDRA SHEKHAR SOLANKI"), "Node.js");
+        assert_eq!(
+            explicit.recognition_hotwords()[0],
+            "Chandra Shekhar Solanki"
+        );
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "Other.Name".into(),
+            aliases: "Chandra Shekhar Solanki".into(),
+            ..Default::default()
+        });
+        let conflicts = Terms::new(&[note("**Chandra Shekhar Solanki**")], &entries);
+        assert_eq!(
+            conflicts.normalize("CHANDRA SHEKHAR SOLANKI"),
+            "CHANDRA SHEKHAR SOLANKI"
+        );
+        assert!(!conflicts
+            .recognition_hotwords()
+            .iter()
+            .any(|word| word.eq_ignore_ascii_case("Chandra Shekhar Solanki")));
+        entries.last_mut().unwrap().enabled = false;
+        let enabled = Terms::new(&[note("**Chandra Shekhar Solanki**")], &entries);
+        assert_eq!(enabled.normalize("CHANDRA SHEKHAR SOLANKI"), "Node.js");
+    }
+
+    #[test]
+    fn marked_asr_spans_share_the_unchanged_word_and_complete_utf8_byte_budgets() {
+        let names: Vec<_> = (0..80)
+            .map(|i| {
+                format!(
+                    "{} {}{}{}",
+                    "Ａ".repeat(39),
+                    "Ｂ".repeat(38),
+                    char::from_u32(0xff10 + i / 10).unwrap(),
+                    char::from_u32(0xff10 + i % 10).unwrap()
+                )
+            })
+            .collect();
+        assert!(names.iter().all(|name| name.chars().count() == 80));
+        let content = names
+            .iter()
+            .map(|name| format!("**{name}**"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let terms = Terms::new(&[note(&content)], &[]);
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), crate::asr_hotwords::MAX_WORDS);
+        let wire = crate::asr_hotwords::encode_words(&hints);
+        assert_eq!(wire.stats.accepted_terms, 66);
+        assert_eq!(wire.stats.dropped_by_reason.byte_limit, 14);
+        assert!(wire.words.len() <= crate::asr_hotwords::MAX_WORD_BYTES);
+        assert!(wire
+            .words
+            .lines()
+            .all(|word| names.iter().any(|name| word == name)));
+        assert_eq!(
+            crate::asr_hotwords::validate_words(&wire.words).unwrap(),
+            wire.words
+        );
+        assert_eq!(terms.fingerprint(), Terms::new(&[], &[]).fingerprint());
     }
     #[test]
     fn note_names_handle_split_asr_spelling_without_consuming_other_words() {
