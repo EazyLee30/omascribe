@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source_commit": "e9d816728d05a0519f90a5c532a607dd53d66571",
+  "base_commit": "3a0cdcf2c482be612ad360f96c094c0c148f6805",
+  "status": "P0 terminal diagnostic provenance fixed; generation quality and retry policy unchanged",
+  "problem": "After a real first-draft spelling rejection, a later Scope or resource stop could leave validation_error in the attempt history. Report.finish inferred the final outcome from that stale field and incorrectly wrote validation_rejected.",
+  "behavior": {
+    "terminal_provenance": "Private typed metadata is set only when returning the actual source-preparation validation error, final prose validation error, or incomplete-response error after ready/cancel/resource/time checks.",
+    "observed_result": "Report.finish receives the actual final Result. An unclassified later error remains deferred; no resource/transport category is guessed from text.",
+    "fallback": "Each real with_cpu_fallback operation clears provenance before budget/admission. The wrapper has no intervening fallible spawn/prepare path.",
+    "persistence": "A failing finish_job clears provenance; actual committed, cancelled and commit_failed priorities remain. A successful commit is not undone by a later diagnostic/job-write failure.",
+    "attempt_history": "Original validation_error, attempts, usage and deduplicated validation_failed trace events stay intact. No new draft/error-body trace fields.",
+    "error_identity": "Original anyhow errors are moved back unchanged, without marker wrappers or new display/context text."
+  },
+  "behavioral_red": {
+    "schema": 1,
+    "status": "COMPILED_BEHAVIOR_RED_before_production_fix",
+    "source": "3a0cdcf2c482be612ad360f96c094c0c148f6805",
+    "command": "cargo test -p omascribe-core later_ -- --nocapture",
+    "exit_code": 101,
+    "result": {
+      "passed": 7,
+      "failed": 2,
+      "ignored": 0,
+      "failed_controls": [
+        "notes::diagnostic::tests::later_resource_stop_is_not_the_first_draft_validation_rejection",
+        "notes::diagnostic::tests::later_scope_stop_is_not_the_first_draft_validation_rejection"
+      ]
+    },
+    "observed": {
+      "actual": "validation_rejected",
+      "expected": "deferred",
+      "source": "actual Terms.validate_writer_names first error retained after real Scope.check or Generation.ready resource stop",
+      "models_run": 0
+    },
+    "log_sha256": "cf18d57e0da61028ac60b0dde77522dcbee1e3601fb8648813ccdec288143e5c",
+    "patch_sha256": "01ceb93c39de8568a8fe941cd77d7d8e279a748a0bd53addbe5794c08863c75f",
+    "limitation": "Control proves production diagnostic terminal-cause misclassification; not a new model run or quality claim. No hold/cache/prompt/validator/parameter changes."
+  },
+  "checks": [
+    {
+      "command": "cargo test -p omascribe-core later_ -- --nocapture",
+      "phase": "RED",
+      "exit_code": 101,
+      "passed": 7,
+      "failed": 2
+    },
+    {
+      "command": "cargo test -p omascribe-core notes::diagnostic::tests -- --nocapture",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "command": "cargo test -p omascribe-core",
+      "exit_code": 0,
+      "core_passed": 555,
+      "core_ignored": 12,
+      "cli_passed": 2,
+      "integration_passed": [
+        8,
+        2,
+        19
+      ]
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo fmt --all --check",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "c4abd6879153cab67f1a83ac585e60755ef2e41ef74be934518338ef6c8b1a86",
+    "crates/core/src/notes/diagnostic.rs": "a87949e08ffc5569210f6cf01ba567cc214166c505864f8f9d25818233f3c2ac",
+    "Cargo.lock": "5e13ec454deb5ff235d0529da0b4121fa52199f637dd87fd0003de0e93804d2f"
+  },
+  "scope_limits": [
+    "Only notes.rs and notes/diagnostic.rs changed. Request objects, templates, validators, parameters, quotas, scheduler and default model are unchanged.",
+    "Tests use real temporary Engine/store, real spelling validator, real Scope check after note edit and Generation.ready resource-stop control. They do not prove model quality or native hardware pressure behavior.",
+    "Additional actual fallback-counter/Budget and real SQLite write-failure controls check provenance resets; neither is a real GPU failure test.",
+    "No model/native qualification, Q16 rerun, model download, SDK/GPU archive/installer build, or release CLI rebuild. The prior restored CLI is not the new source identity and must be rebuilt before future real-model testing.",
+    "The proposed automatic same-input hold/failure cache was not implemented: complete runtime/component/driver invalidation identity is not closed. InputDigest and weak worker epoch are not substituted for that requirement.",
+    "Existing reports/failures/costs are not rewritten. Q16 and0.3.5 release gates remain open."
+  ],
+  "independent_review": "Parent verified every frozen source/artifact SHA and read production changes. Separate read-only reviewer checked all terminal/fallback/commit points and reported no blocking issue.",
+  "witnesses": [
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-freeze.json",
+      "sha256": "90104e0f42578976faa054be2093def1f39f31a840dd3be0054d23634f8821c4"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-red.json",
+      "sha256": "5f1b6d72025f6730e552aa644c07395632c313c97114d05a1fb1b8a3b7db8199"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-red-owned.patch",
+      "sha256": "01ceb93c39de8568a8fe941cd77d7d8e279a748a0bd53addbe5794c08863c75f"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-red.log",
+      "sha256": "cf18d57e0da61028ac60b0dde77522dcbee1e3601fb8648813ccdec288143e5c"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-green-owned.patch",
+      "sha256": "29a2051bdc4f45f49f60016de2fb52119f504750fbb46c4c617daf7a1dc87883"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/diagnostic-green.log",
+      "sha256": "058623d5f824e33f052ab9cc53930f1ede2746590dcacb817d1930b5ee87a5b0"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/core-green.log",
+      "sha256": "ce3d936b752de9f8278d76c2effad1da8aa35babc941e118a638b3facde0c4c4"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/workspace-clippy.log",
+      "sha256": "a035b15763fd5c1c56e5b8be17d669a88bd12ef96ebda9e4ad3458c6895d26db"
+    },
+    {
+      "path": "artifacts/minutes-auto-budget-policy-2026-10-31/design.json",
+      "sha256": "1a5ebe93e6eef6420049fb652ab67aff3a28f652a2f8e2f0f9bef745911a6ae6"
+    }
+  ],
+  "release": "Stable0.3.4;0.3.5 unpublished; this is diagnostics fidelity, not a Q16 or whole-resource optimization completion claim."
+}
