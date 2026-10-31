@@ -1,0 +1,55 @@
+{
+  "source_revision": "8a617c9c827d94335cdd0a137f4f859fa0b253c4",
+  "local_date": "2026-10-31",
+  "platform": "Windows 10 Pro 10.0.19045 build 19045, x86_64",
+  "github_ci": {
+    "run_id": 41164426952,
+    "windows_core_job_id": 124428837250,
+    "core_passed": 512,
+    "core_failed": 1,
+    "core_ignored": 10,
+    "asr_passed": 9,
+    "failed_test": "inference_worker::tests::lifecycle_pending_wait_does_not_confirm_exit_or_hold_the_pool_lock",
+    "failure": "Windows assert_reaped: a fresh sysinfo process snapshot contained the old PID after the reaping thread joined.",
+    "unknowns": ["old PID and process creation identity", "mode of the three internal scenarios", "underlying Child::wait result", "identity and exit status of the snapshotted PID"]
+  },
+  "implementation_observation": {
+    "production": "Server::drop calls try_wait, kill if necessary, and child.wait; success contributes to exit confirmation.",
+    "windows_test": "assert_reaped relies on a fresh sysinfo 0.37.2 CreateToolhelp32Snapshot lookup by PID without checking the occupant's creation identity.",
+    "interpretation": "The CI assertion alone does not distinguish a still-running original child, an exited-but-enumerated process, PID reuse, or wait failure."
+  },
+  "local_single_test": {
+    "source_worktree_clean": true,
+    "command": "cargo +1.99.0 test -p omascribe-core --lib --locked inference_worker::tests::lifecycle_pending_wait_does_not_confirm_exit_or_hold_the_pool_lock -- --exact",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 522,
+    "internal_scenarios": 3,
+    "log_sha256": "a4edd27947b64ddc289afa4ca275cc1f348804b86bf2dd7d91ccb14c8f294105",
+    "test_binary_sha256": "752cdcbb95f3b2500faf39188efb8fbc896b17b775ebb197d7a1722605d9482c"
+  },
+  "local_owned_process_probes": {
+    "first_paired_experiment": {
+      "trials": 10,
+      "same_owned_children_waited_and_exit_code_not_still_active": 10,
+      "observed_pid_after_wait_with_original_and_extra_handle": 0,
+      "observed_pid_after_closing_original_with_extra_handle_retained": 0,
+      "observed_pid_after_closing_both_handles": 0,
+      "script_sha256": "b196d419c9b5061eedc1103f4248506b3549a114bcd168d1f4229e16b5378435"
+    },
+    "second_independent_arm_experiment": {
+      "without_extra_handle": {"trials": 20, "original_handle_waited_exit_code_and_creation_identity_confirmed": 20, "observed_pid_after_wait": 0},
+      "with_extra_handle": {"trials": 20, "original_handle_waited_exit_code_and_creation_identity_confirmed": 20, "observed_pid_after_wait": 0},
+      "snapshot_pid_identity_note": "On a snapshot hit, probe would inspect occupant creation time to distinguish same process or PID reuse. No hits occurred in either arm; neither case was reproduced.",
+      "script_sha256": "26018879da328473b58299d04f43fb46b7ec1b9c874e610240504f053579852f"
+    },
+    "ownership": "Each subprocess was created, terminated and waited by its own probe. No unrelated process was terminated or inspected by PID."
+  },
+  "limits": [
+    "The original Windows CI failure remains; a single isolated local pass is not the 523-test CI load and cannot overturn or explain that failure.",
+    "Local probes did not reproduce a post-wait snapshot entry with or without an additional handle; that does not rule out CI-specific conditions or establish its cause.",
+    "No shared production source, user model, microphone or GPU component was modified or exercised.",
+    "These tests do not establish hardware, installation, release or cross-platform behavior."
+  ]
+}
