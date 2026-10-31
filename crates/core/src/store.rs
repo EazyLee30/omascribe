@@ -7,6 +7,69 @@ pub struct Store {
     pub conn: Connection,
 }
 impl Store {
+    /// Own the correction's entire SQLite transaction, while the caller holds
+    /// the store lock. The already-saved user note is outside this boundary.
+    pub(crate) fn with_terminology_savepoint<T>(
+        &mut self,
+        operation: impl FnOnce(&mut Self) -> Result<T>,
+    ) -> Result<T> {
+        anyhow::ensure!(self.conn.is_autocommit(), "术语同步不能覆盖已有数据库事务");
+        self.conn
+            .execute_batch("SAVEPOINT omascribe_terminology_correction")?;
+        struct Rollback<'a> {
+            store: &'a mut Store,
+            active: bool,
+        }
+        impl Rollback<'_> {
+            fn rollback(&mut self) -> Result<()> {
+                if self.active && !self.store.conn.is_autocommit() {
+                    // This guard started the sole outer transaction. A full
+                    // rollback also removes any unfinished inner savepoints.
+                    self.store.conn.execute_batch("ROLLBACK")?;
+                }
+                self.active = false;
+                Ok(())
+            }
+        }
+        impl Drop for Rollback<'_> {
+            fn drop(&mut self) {
+                if let Err(error) = self.rollback() {
+                    use std::io::Write as _;
+                    // A failed stderr write must not panic during unwinding.
+                    let _ = writeln!(
+                        std::io::stderr(),
+                        "OmaScribe terminology rollback failed: {error:#}"
+                    );
+                }
+            }
+        }
+        let mut guard = Rollback {
+            store: self,
+            active: true,
+        };
+        let result = operation(&mut *guard.store).and_then(|value| {
+            // RELEASE can itself fail (for example a deferred foreign key).
+            // Keep rollback ownership until SQLite confirms the commit.
+            guard
+                .store
+                .conn
+                .execute_batch("RELEASE omascribe_terminology_correction")?;
+            guard.active = false;
+            Ok(value)
+        });
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => match guard.rollback() {
+                Ok(()) => Err(error),
+                Err(rollback) => {
+                    let context =
+                        format!("术语同步失败：{error:#}；数据库回滚也失败：{rollback:#}");
+                    Err(error.context(context))
+                }
+            },
+        }
+    }
+
     pub fn open(path: &Path) -> Result<Self> {
         let conn = Connection::open(path)?;
         let previous_version: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
@@ -112,7 +175,7 @@ impl Store {
         Ok(())
     }
     pub(crate) fn mark_terminology_batch(&mut self, segments: &[Segment], key: &str) -> Result<()> {
-        let tx = self.conn.transaction()?;
+        let tx = self.conn.savepoint()?;
         {
             let mut mark = tx.prepare("INSERT INTO term_checks VALUES(?1,?2,?3,?4) ON CONFLICT(segment_id) DO UPDATE SET run=excluded.run,revision=excluded.revision,terms_key=excluded.terms_key")?;
             let mut dequeue = tx
@@ -176,7 +239,7 @@ impl Store {
         if s.revision != expected_revision {
             bail!("转写已更新，请刷新后再修改");
         }
-        let tx = self.conn.transaction()?;
+        let tx = self.conn.savepoint()?;
         tx.execute(
             "INSERT OR IGNORE INTO segment_history VALUES(?1,?2,?3)",
             params![s.id, s.revision, original],
@@ -466,6 +529,87 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn terminology_savepoint_rolls_back_when_outer_release_fails() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("release-failure.sqlite3"))?;
+        db.conn.execute_batch(
+            "CREATE TABLE fixture_parent(id INTEGER PRIMARY KEY);
+             CREATE TABLE fixture_child(parent_id INTEGER REFERENCES fixture_parent(id)
+                 DEFERRABLE INITIALLY DEFERRED);",
+        )?;
+        db.set_cache_dependency("fixture", "terms", "before")?;
+        let error = db
+            .with_terminology_savepoint(|db| {
+                db.set_cache_dependency("fixture", "terms", "uncommitted")?;
+                db.conn
+                    .execute("INSERT INTO fixture_child VALUES(404)", [])?;
+                assert!(!db.conn.is_autocommit());
+                Ok(())
+            })
+            .expect_err("the deferred foreign key fails only at outer RELEASE");
+        assert!(error.downcast_ref::<rusqlite::Error>().is_some());
+        assert!(format!("{error:#}").contains("FOREIGN KEY constraint failed"));
+        assert!(db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "before");
+        assert_eq!(
+            db.conn
+                .query_row("SELECT COUNT(*) FROM fixture_child", [], |r| r
+                    .get::<_, i64>(0))?,
+            0
+        );
+        let completed = db.with_terminology_savepoint(|db| {
+            db.set_cache_dependency("fixture", "terms", "after")?;
+            Ok(42)
+        })?;
+        assert_eq!(completed, 42);
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "after");
+        assert!(db.conn.is_autocommit());
+        Ok(())
+    }
+
+    #[test]
+    fn terminology_savepoint_never_owns_an_existing_transaction() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("existing-transaction.sqlite3"))?;
+        db.conn.execute_batch("BEGIN")?;
+        db.set_cache_dependency("fixture", "terms", "callers-write")?;
+        let mut called = false;
+        assert!(db
+            .with_terminology_savepoint(|_| {
+                called = true;
+                Ok(())
+            })
+            .is_err());
+        assert!(!called);
+        assert!(!db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "callers-write");
+        db.conn.execute_batch("ROLLBACK")?;
+        assert!(db.conn.is_autocommit());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "");
+        Ok(())
+    }
+
+    #[test]
+    fn terminology_savepoint_drop_rolls_back_a_panicking_operation() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut db = Store::open(&root.path().join("panic-rollback.sqlite3"))?;
+        db.set_cache_dependency("fixture", "terms", "before")?;
+        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _: Result<()> = db.with_terminology_savepoint(|db| {
+                db.set_cache_dependency("fixture", "terms", "uncommitted")?;
+                panic!("fixture terminology operation panic");
+            });
+        }));
+        assert!(unwound.is_err());
+        assert_eq!(db.cache_dependency("fixture", "terms")?, "before");
+        assert!(db.conn.is_autocommit());
+        db.with_terminology_savepoint(|_| Ok(()))?;
+        assert!(db.conn.is_autocommit());
+        Ok(())
+    }
+
     #[test]
     fn terminology_queue_migrates_legacy_data_and_preserves_newer_work() -> Result<()> {
         let root = tempfile::tempdir()?;

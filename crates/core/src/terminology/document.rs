@@ -304,7 +304,7 @@ impl Store {
         if changes.is_empty() {
             return Ok(0);
         }
-        let tx = self.conn.transaction()?;
+        let tx = self.conn.savepoint()?;
         let mut current_meeting: Meeting = serde_json::from_str(&tx.query_row(
             "SELECT json FROM meetings WHERE id=?1",
             [&meeting.id],
@@ -544,6 +544,36 @@ mod checkpoint_tests {
     fn rejected_fingerprint_ack_rolls_back_article_sources_and_history() -> Result<()> {
         let (_root, engine, note, before) = seed()?;
         let old_history = history(&engine, &note.meeting_id)?;
+        let table_state = || -> Result<Vec<Vec<String>>> {
+            let db = engine.store.lock().unwrap();
+            let mut state = Vec::new();
+            for table in [
+                "segment_history",
+                "segment_text_edits",
+                "term_queue",
+                "term_checks",
+                "cache_dependencies",
+            ] {
+                let mut query = db
+                    .conn
+                    .prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))?;
+                let columns = query.column_count();
+                for row in query.query_map([], |row| {
+                    (0..columns)
+                        .map(|column| {
+                            row.get::<_, rusqlite::types::Value>(column)
+                                .map(|v| format!("{v:?}"))
+                        })
+                        .collect::<rusqlite::Result<Vec<_>>>()
+                })? {
+                    let mut row = row?;
+                    row.insert(0, table.to_owned());
+                    state.push(row);
+                }
+            }
+            Ok(state)
+        };
+        let old_tables = table_state()?;
         engine.store.lock().unwrap().conn.execute_batch(
             "CREATE TRIGGER reject_spelling_ack BEFORE UPDATE ON meetings
              WHEN COALESCE(json_extract(NEW.json,'$.notes_fingerprint'),'') != ''
@@ -560,23 +590,27 @@ mod checkpoint_tests {
             .expect_err("the new nonempty acknowledgement must fail after clear succeeds");
         assert!(format!("{error:#}").contains("fixture fingerprint acknowledgement failed"));
         let after = engine.snapshot(&note.meeting_id)?;
-        assert!(after.meeting.notes_fingerprint.is_empty());
+        assert_eq!(
+            after.meeting.notes_fingerprint,
+            before.meeting.notes_fingerprint
+        );
         assert_eq!(after.meeting.notes_cursor, before.meeting.notes_cursor);
         assert!(notes::needs_update(&after));
         assert_eq!(
-            after.segments[0].text,
-            SOURCE.replace("CEDARLEDGER", "CedarLedger")
+            after.notes[0].content,
+            NOTE.replace("CEDARLEDGER", "CedarLedger")
         );
-        assert_eq!(after.segments[0].revision, 2);
-        let mut expected = before.suggestions;
-        for section in &mut expected {
-            section.stale = true;
-        }
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
         assert_eq!(
             serde_json::to_value(&after.suggestions)?,
-            serde_json::to_value(&expected)?
+            serde_json::to_value(&before.suggestions)?
         );
+        assert_eq!(table_state()?, old_tables);
         assert_eq!(history(&engine, &note.meeting_id)?, old_history);
+        assert!(engine.store.lock().unwrap().conn.is_autocommit());
         let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
             "SELECT COUNT(*) FROM inference_jobs",
             [],

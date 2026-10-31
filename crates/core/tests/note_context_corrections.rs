@@ -48,6 +48,45 @@ fn section(meeting: &str, evidence: &Segment, text: &str) -> Suggestion {
     }
 }
 
+/// Exclude the already-persisted user note; every derived terminology table
+/// must roll back together, including source-trigger cache invalidations.
+fn terminology_rows(
+    engine: &Engine,
+) -> Result<std::collections::BTreeMap<String, Vec<Vec<String>>>> {
+    let db = engine.store.lock().unwrap();
+    let mut state = std::collections::BTreeMap::new();
+    for table in [
+        "meetings",
+        "segments",
+        "segment_history",
+        "segment_text_edits",
+        "term_queue",
+        "term_checks",
+        "cache_dependencies",
+        "suggestions",
+        "document_history",
+        "translations",
+        "translation_parts",
+    ] {
+        let mut query = db
+            .conn
+            .prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))?;
+        let columns = query.column_count();
+        let rows = query
+            .query_map([], |row| {
+                (0..columns)
+                    .map(|column| {
+                        row.get::<_, rusqlite::types::Value>(column)
+                            .map(|value| format!("{value:?}"))
+                    })
+                    .collect::<rusqlite::Result<Vec<_>>>()
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        state.insert(table.to_owned(), rows);
+    }
+    Ok(state)
+}
+
 fn explicit_term(title: &str, aliases: &str) -> Entry {
     Entry {
         kind: "term".into(),
@@ -448,6 +487,8 @@ fn a_document_write_failure_rolls_back_body_sources_and_history_together() -> Re
         vec![section(&meeting.id, &raw, &raw.text)],
         false,
     )?;
+    let clean = engine.snapshot(&meeting.id)?;
+    let original_rows = terminology_rows(&engine)?;
     engine.store.lock().unwrap().conn.execute_batch(
         "CREATE TRIGGER reject_spelling_document BEFORE UPDATE ON suggestions
          WHEN json_extract(NEW.json,'$.stale')=0
@@ -457,18 +498,159 @@ fn a_document_write_failure_rolls_back_body_sources_and_history_together() -> Re
         .save_note(&meeting.id, None, "CedarLedger", "document", 0)
         .is_err());
     let after = engine.snapshot(&meeting.id)?;
-    assert_eq!(after.segments[0].text, "CedarLedger仍未完成。");
-    assert_eq!(after.segments[0].revision, 2);
+    assert_eq!(after.notes[0].content, "CedarLedger");
+    assert_eq!(after.segments[0].text, raw.text);
+    assert_eq!(after.segments[0].revision, 1);
     assert_eq!(after.suggestions[0].text, raw.text);
     assert_eq!(after.suggestions[0].sources[0].quote, raw.text);
     assert_eq!(after.suggestions[0].sources[0].revision, 1);
-    assert!(after.suggestions[0].stale);
+    assert!(!after.suggestions[0].stale);
+    assert_eq!(
+        serde_json::to_value(&after.suggestions)?,
+        serde_json::to_value(&clean.suggestions)?
+    );
+    assert_eq!(terminology_rows(&engine)?, original_rows);
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
     let history: i64 = engine.store.lock().unwrap().conn.query_row(
         "SELECT COUNT(*) FROM document_history",
         [],
         |r| r.get(0),
     )?;
     assert_eq!(history, 1);
+    Ok(())
+}
+
+#[test]
+fn retrying_same_note_after_document_write_failure_replays_spelling_without_generation(
+) -> Result<()> {
+    // Use real save/store/revision paths and an existing editor note ID. The
+    // article is synthetic source-backed prose, not a generated quality claim.
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let meeting = engine.create_meeting("Retry interrupted note spelling sync")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let note = engine.save_note(&meeting.id, None, "local test\n\nbudget", "document", 0)?;
+    let raw = segment(&meeting.id, 1, CEDAR_SOURCE);
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    let before = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        1,
+        vec![section(&meeting.id, &raw, CEDAR_PROSE)],
+        false,
+    )?;
+    let clean = engine.snapshot(&meeting.id)?;
+    assert!(!notes::needs_update(&clean));
+    assert!(!clean.meeting.auto_notes);
+    let original_rows = terminology_rows(&engine)?;
+    let saved_content = "local test\n\nbudget\n\nCedarLedger";
+    engine.store.lock().unwrap().conn.execute_batch(
+        "CREATE TRIGGER reject_retry_spelling_document BEFORE UPDATE ON suggestions
+         WHEN json_extract(NEW.json,'$.stale')=0
+         BEGIN SELECT RAISE(ABORT,'fixture spelling replay write failed'); END;",
+    )?;
+    let error = engine
+        .save_note(
+            &meeting.id,
+            Some(note.id.clone()),
+            saved_content,
+            "document",
+            0,
+        )
+        .expect_err("the first article replay must actually fail");
+    assert!(format!("{error:#}").contains("fixture spelling replay write failed"));
+    let interrupted = engine.snapshot(&meeting.id)?;
+    assert_eq!(interrupted.notes[0].id, note.id);
+    assert_eq!(interrupted.notes[0].content, saved_content);
+    assert_eq!(interrupted.segments[0].revision, 1);
+    assert_eq!(interrupted.segments[0].text, CEDAR_SOURCE);
+    assert_eq!(interrupted.suggestions[0].text, CEDAR_PROSE);
+    assert_eq!(interrupted.suggestions[0].sources[0].quote, CEDAR_SOURCE);
+    assert_eq!(interrupted.suggestions[0].sources[0].revision, 1);
+    assert!(!interrupted.suggestions[0].stale);
+    assert_eq!(interrupted.meeting.notes_cursor, 1);
+    assert_eq!(
+        interrupted.meeting.notes_fingerprint,
+        clean.meeting.notes_fingerprint
+    );
+    assert!(
+        notes::needs_update(&interrupted),
+        "the new note remains saved"
+    );
+    assert_eq!(terminology_rows(&engine)?, original_rows);
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
+    assert_eq!(inference_jobs(&engine)?, 0);
+    let history_count = || -> Result<i64> {
+        Ok(engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM document_history WHERE meeting_id=?1",
+            [&meeting.id],
+            |row| row.get(0),
+        )?)
+    };
+    assert_eq!(history_count()?, 1);
+    engine
+        .store
+        .lock()
+        .unwrap()
+        .conn
+        .execute_batch("DROP TRIGGER reject_retry_spelling_document;")?;
+
+    // Match the UI's retry: same note ID/content after the failed IPC reply.
+    engine.save_note(
+        &meeting.id,
+        Some(note.id.clone()),
+        saved_content,
+        "document",
+        0,
+    )?;
+    let retried = engine.snapshot(&meeting.id)?;
+    assert!(!retried.meeting.auto_notes);
+    assert_eq!(retried.meeting.notes_cursor, 1);
+    assert!(retried.meeting.notes_fingerprint.is_empty());
+    assert!(
+        notes::needs_update(&retried),
+        "a new focus is not a spelling-only acknowledgement"
+    );
+    assert_eq!(retried.segments[0].revision, 2);
+    assert_eq!(
+        retried.segments[0].text,
+        CEDAR_SOURCE.replace("CEDARLEDGER", "CedarLedger")
+    );
+    let article = &retried.suggestions[0];
+    assert_eq!(article.id, clean.suggestions[0].id);
+    assert_eq!(
+        article.text,
+        CEDAR_PROSE.replace("CEDARLEDGER", "CedarLedger"),
+        "a successful retry must complete the interrupted spelling replay"
+    );
+    assert_eq!(article.status, "pending");
+    assert!(!article.stale);
+    assert_eq!(article.sources.len(), 1);
+    assert_eq!(article.sources[0].segment_id, raw.id);
+    assert_eq!(article.sources[0].revision, 2);
+    assert_eq!(article.sources[0].quote, retried.segments[0].text);
+    assert_eq!(article.sources[0].start_ms, raw.start_ms);
+    assert_eq!(article.sources[0].end_ms, raw.end_ms);
+    assert_eq!(history_count()?, 2);
+    let archived: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id DESC LIMIT 1",
+        [&meeting.id],
+        |row| row.get(0),
+    )?;
+    let archived: Vec<Suggestion> = serde_json::from_str(&archived)?;
+    assert_eq!(archived[0].text, CEDAR_PROSE);
+    assert_eq!(archived[0].sources[0].quote, CEDAR_SOURCE);
+    assert_eq!(archived[0].sources[0].revision, 1);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
+    let completed_rows = terminology_rows(&engine)?;
+
+    engine.save_note(&meeting.id, Some(note.id), saved_content, "document", 0)?;
+    assert_eq!(history_count()?, 2, "completed replay is idempotent");
+    assert_eq!(terminology_rows(&engine)?, completed_rows);
+    assert_eq!(engine.snapshot(&meeting.id)?.segments[0].revision, 2);
+    assert_eq!(inference_jobs(&engine)?, 0);
     Ok(())
 }
 

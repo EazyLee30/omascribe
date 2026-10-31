@@ -1366,122 +1366,125 @@ impl Engine {
             pause();
         }
         let mut db = self.store.lock().unwrap();
-        // Derive the environment under the same guard used for all source,
-        // citation and terms-key writes; an older worker cannot restore a
-        // spelling snapshot captured before a concurrent note/glossary save.
-        let terms = Terms::new(&db.notes(meeting)?, &db.terminology_entries()?);
-        let mut m = db.meeting(meeting)?;
-        let mut before_document = None;
-        let mut document_sources = HashSet::new();
-        let mut source_changes = Vec::new();
-        let mut changed = 0;
-        let terms_key = terms.fingerprint();
-        db.schedule_terminology(&m, &terms_key)?;
-        loop {
-            let candidates = db.terminology_candidates(&m)?;
-            if candidates.is_empty() {
-                break;
-            }
-            let mut checked = Vec::with_capacity(candidates.len());
-            for mut s in candidates {
-                let origin: Option<String> = db.conn.query_row(
-                "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
-                [&s.id], |r| r.get(0),
-            ).optional()?;
-                if origin.as_deref() == Some("human") {
-                    checked.push(s);
-                    continue;
+        let changed = db.with_terminology_savepoint(|db| {
+            // Derive the environment under the same guard used for all source,
+            // citation and terms-key writes; an older worker cannot restore a
+            // spelling snapshot captured before a concurrent note/glossary save.
+            let terms = Terms::new(&db.notes(meeting)?, &db.terminology_entries()?);
+            let mut m = db.meeting(meeting)?;
+            let mut before_document = None;
+            let mut document_sources = HashSet::new();
+            let mut source_changes = Vec::new();
+            let mut changed = 0;
+            let terms_key = terms.fingerprint();
+            db.schedule_terminology(&m, &terms_key)?;
+            loop {
+                let candidates = db.terminology_candidates(&m)?;
+                if candidates.is_empty() {
+                    break;
                 }
-                let original: Option<String> = db
-                    .conn
-                    .query_row(
-                        "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
-                        [&s.id],
-                        |r| r.get(0),
-                    )
-                    .optional()?;
-                let original: crate::Segment = original
-                    .map(|s| serde_json::from_str(&s))
-                    .transpose()?
-                    .unwrap_or_else(|| s.clone());
-                // Legacy revisions lack provenance. Keep unknown edits; speaker-only changes and
-                // old exact-alias corrections can safely migrate. New edits carry explicit origin.
-                if origin.is_none()
-                    && s.text != original.text
-                    && terms.normalize_exact(&original.text) != s.text
-                {
-                    checked.push(s);
-                    continue;
-                }
-                let (text, replacements) = terms.normalize_with_changes(&original.text);
-                if text != s.text {
-                    if before_document.is_none() {
-                        let snapshot = db.suggestions(meeting)?;
-                        document_sources = snapshot
-                            .iter()
-                            .filter(|section| section.status == "pending" && !section.stale)
-                            .flat_map(|section| {
-                                section.sources.iter().map(|s| s.segment_id.clone())
-                            })
-                            .collect();
-                        before_document = Some(snapshot);
+                let mut checked = Vec::with_capacity(candidates.len());
+                for mut s in candidates {
+                    let origin: Option<String> = db.conn.query_row(
+                    "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
+                    [&s.id], |r| r.get(0),
+                ).optional()?;
+                    if origin.as_deref() == Some("human") {
+                        checked.push(s);
+                        continue;
                     }
-                    let before = document_sources.contains(&s.id).then(|| s.clone());
-                    db.edit_segment_text(&s.id, &text, s.revision, "terminology")?;
-                    s.revision += 1;
-                    s.text = text;
-                    if let Some(before) = before {
-                        // The authoritative target always comes from archived ASR.
-                        // A later spelling edit must replay from the revision the
-                        // article actually cites, rather than an older alias that
-                        // disappeared during an earlier automatic correction.
-                        let (current, current_replacements) =
-                            terms.normalize_with_changes(&before.text);
-                        let replacements = if current == s.text {
-                            current_replacements
-                        } else {
-                            replacements
-                        };
-                        source_changes.push(document::SourceChange {
-                            before,
-                            after: s.clone(),
-                            replacements,
-                        });
+                    let original: Option<String> = db
+                        .conn
+                        .query_row(
+                            "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
+                            [&s.id],
+                            |r| r.get(0),
+                        )
+                        .optional()?;
+                    let original: crate::Segment = original
+                        .map(|s| serde_json::from_str(&s))
+                        .transpose()?
+                        .unwrap_or_else(|| s.clone());
+                    // Legacy revisions lack provenance. Keep unknown edits; speaker-only changes and
+                    // old exact-alias corrections can safely migrate. New edits carry explicit origin.
+                    if origin.is_none()
+                        && s.text != original.text
+                        && terms.normalize_exact(&original.text) != s.text
+                    {
+                        checked.push(s);
+                        continue;
                     }
-                    changed += 1;
+                    let (text, replacements) = terms.normalize_with_changes(&original.text);
+                    if text != s.text {
+                        if before_document.is_none() {
+                            let snapshot = db.suggestions(meeting)?;
+                            document_sources = snapshot
+                                .iter()
+                                .filter(|section| section.status == "pending" && !section.stale)
+                                .flat_map(|section| {
+                                    section.sources.iter().map(|s| s.segment_id.clone())
+                                })
+                                .collect();
+                            before_document = Some(snapshot);
+                        }
+                        let before = document_sources.contains(&s.id).then(|| s.clone());
+                        db.edit_segment_text(&s.id, &text, s.revision, "terminology")?;
+                        s.revision += 1;
+                        s.text = text;
+                        if let Some(before) = before {
+                            // The authoritative target always comes from archived ASR.
+                            // A later spelling edit must replay from the revision the
+                            // article actually cites, rather than an older alias that
+                            // disappeared during an earlier automatic correction.
+                            let (current, current_replacements) =
+                                terms.normalize_with_changes(&before.text);
+                            let replacements = if current == s.text {
+                                current_replacements
+                            } else {
+                                replacements
+                            };
+                            source_changes.push(document::SourceChange {
+                                before,
+                                after: s.clone(),
+                                replacements,
+                            });
+                        }
+                        changed += 1;
+                    }
+                    checked.push(s);
                 }
-                checked.push(s);
+                db.mark_terminology_batch(&checked, &terms_key)?;
             }
-            db.mark_terminology_batch(&checked, &terms_key)?;
-        }
-        db.set_cache_dependency(meeting, "terms", &terms_key)?;
-        if changed > 0 {
-            let reusable = if let (Some(edit), Some(before)) = (&note_edit, &before_document) {
-                edit.reusable_fingerprint(
-                    &m,
-                    &db.notes(meeting)?,
-                    before,
-                    &db.segments(&m)?,
-                    &source_changes,
-                    changed,
-                )?
-            } else {
-                None
-            };
-            m.notes_fingerprint.clear();
-            db.save_meeting(&m)?;
-            for mut s in db.suggestions(meeting)? {
-                if s.status == "pending" {
-                    // Regenerate against corrected, revisioned evidence; never patch prose
-                    // while leaving its citations attached to the old words.
-                    s.stale = true;
-                    db.save_suggestion(&s)?;
+            db.set_cache_dependency(meeting, "terms", &terms_key)?;
+            if changed > 0 {
+                let reusable = if let (Some(edit), Some(before)) = (&note_edit, &before_document) {
+                    edit.reusable_fingerprint(
+                        &m,
+                        &db.notes(meeting)?,
+                        before,
+                        &db.segments(&m)?,
+                        &source_changes,
+                        changed,
+                    )?
+                } else {
+                    None
+                };
+                m.notes_fingerprint.clear();
+                db.save_meeting(&m)?;
+                for mut s in db.suggestions(meeting)? {
+                    if s.status == "pending" {
+                        // Regenerate against corrected, revisioned evidence; never patch prose
+                        // while leaving its citations attached to the old words.
+                        s.stale = true;
+                        db.save_suggestion(&s)?;
+                    }
+                }
+                if let Some(before) = before_document {
+                    db.repair_terminology_documents(&m, &before, &source_changes, reusable)?;
                 }
             }
-            if let Some(before) = before_document {
-                db.repair_terminology_documents(&m, &before, &source_changes, reusable)?;
-            }
-        }
+            Ok(changed)
+        })?;
         drop(db);
         if changed > 0 {
             self.sync_meeting_files(meeting);
