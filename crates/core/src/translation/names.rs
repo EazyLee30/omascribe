@@ -241,15 +241,16 @@ impl Names {
             }));
         }
         // Mixed-case technical identifiers are unambiguous spellings; do not
-        // apply this to every word in an all-caps sentence.
-        if source
-            .chars()
-            .any(|c| c.is_ascii_lowercase() || ('\u{3400}'..='\u{9fff}').contains(&c))
-        {
-            static WORD: OnceLock<Regex> = OnceLock::new();
-            let word = WORD.get_or_init(|| Regex::new(r"\b[A-Za-z][A-Za-z0-9_-]{2,39}\b").unwrap());
+        // activate an all-caps source line using another line's Han/lowercase
+        // context. Lines remain literal; this does not infer sentence scope.
+        static WORD: OnceLock<Regex> = OnceLock::new();
+        let word = WORD.get_or_init(|| Regex::new(r"\b[A-Za-z][A-Za-z0-9_-]{2,39}\b").unwrap());
+        for line in source.lines().filter(|line| {
+            line.chars()
+                .any(|c| c.is_ascii_lowercase() || ('\u{3400}'..='\u{9fff}').contains(&c))
+        }) {
             values.extend(
-                word.find_iter(&source)
+                word.find_iter(line)
                     .map(|m| m.as_str())
                     .filter(|s| {
                         s.chars().filter(char::is_ascii_uppercase).count() >= 2
@@ -763,6 +764,75 @@ mod tests {
             }],
             &[],
         )
+    }
+
+    #[test]
+    fn line_local_technical_gate_does_not_freeze_another_sources_all_caps_prose() {
+        let terms = Terms::new(&[], &[]);
+        let english = "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT";
+        let first = "当迪大学的 PAMELA FURGO森教授指出记者如果公布照片似乎存在风险。";
+        let second = "邓迪大学的潘 MALE FERGUSON教授指出报告仍待核实。";
+        for source in [
+            [english, first, second].join("\n"),
+            [first, english, second].join("\r\n"),
+            [first, second, english].join("\n"),
+        ] {
+            let names = Names::new(&terms, &source);
+            let expected: BTreeSet<_> =
+                ["当迪大学", "邓迪大学", "PAMELA FURGO森", "潘 MALE FERGUSON"]
+                    .into_iter()
+                    .collect();
+            assert_eq!(
+                names
+                    .spellings()
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<BTreeSet<_>>(),
+                expected
+            );
+            for label in ["PAMELA FURGO森", "潘 MALE FERGUSON"] {
+                assert!(names
+                    .spans(&source)
+                    .into_iter()
+                    .any(|span| &source[span] == label));
+            }
+            assert!(
+                !names.1,
+                "ordinary source words must not exhaust the name budget"
+            );
+        }
+    }
+
+    #[test]
+    fn line_local_technical_gate_keeps_existing_same_line_identifiers_and_reported_bytes() {
+        let terms = Terms::new(&[], &[]);
+        for source in [
+            "中文接口 API 与 CUDA 尚未完成，OpenGLApi 和 ModelX2 仍待测试。",
+            "中文接口 API 与 CUDA 尚未完成。\ncheck OpenGLApi and ModelX2 locally.",
+        ] {
+            let names = Names::new(&terms, source);
+            for identifier in ["API", "CUDA", "OpenGLApi", "ModelX2"] {
+                assert!(
+                    names.spellings().iter().any(|name| name == identifier),
+                    "missing {identifier}: {}",
+                    names.hint()
+                );
+            }
+        }
+        let source =
+            "北岭大学的 LENA FARO森教授指出仍待确认。\n研究所的沈 MALE DUNSTON博士表示尚未完成。";
+        let names = Names::new(&terms, source);
+        for label in ["LENA FARO森", "沈 MALE DUNSTON"] {
+            assert!(names
+                .spans(source)
+                .into_iter()
+                .any(|span| &source[span] == label));
+        }
+        assert!(names
+            .validate(
+                "Professor LENA FARO森 of 北岭大学 and Doctor 沈 MALE DUNSTON await confirmation."
+            )
+            .is_ok());
     }
 
     #[test]
