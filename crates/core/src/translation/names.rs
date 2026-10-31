@@ -168,6 +168,45 @@ pub(super) fn validate_reported(
 }
 
 pub(super) struct Names(Vec<String>, bool);
+pub(super) fn spelling_spans(source: &str, terms: &Terms) -> Option<Vec<Range<usize>>> {
+    let names = Names::new(terms, source);
+    names.validate(source).ok()?;
+    let reported: Vec<_> = reported_ranges(source).collect();
+    let mut ranges = Vec::new();
+    for name in names.spellings() {
+        // A reported label can also be an ordinary grammatical word elsewhere
+        // (Professor If / If approved). Only its observed title/report frame
+        // supplies a name span; other occurrences must remain visible prose.
+        if reported.iter().any(|range| &source[range.clone()] == name) {
+            ranges.extend(
+                reported
+                    .iter()
+                    .filter(|range| &source[(*range).clone()] == name)
+                    .cloned(),
+            );
+        } else {
+            ranges.extend(source.match_indices(name).filter_map(|(start, text)| {
+                let end = start + text.len();
+                let left = name.starts_with(|c: char| c.is_ascii_alphanumeric())
+                    && source[..start].ends_with(|c: char| c.is_ascii_alphanumeric());
+                let right = name.ends_with(|c: char| c.is_ascii_alphanumeric())
+                    && source[end..].starts_with(|c: char| c.is_ascii_alphanumeric());
+                (!left && !right).then_some(start..end)
+            }));
+        }
+    }
+    ranges.sort_by_key(|range| (range.start, std::cmp::Reverse(range.end)));
+    let mut end = 0;
+    ranges.retain(|range| {
+        if range.start < end {
+            false
+        } else {
+            end = range.end;
+            true
+        }
+    });
+    Some(ranges)
+}
 fn json_grammar(orders: &str) -> String {
     format!(
         r#"root ::= "{{" space "\"translation\"" space ":" space "\"" translation "\"" space "}}" space
