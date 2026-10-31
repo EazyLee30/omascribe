@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source_commit": "6217c0f3889c86701e3d09b7c48099ca7842044e",
+  "base_commit": "864dc69c6bd25918e5ddbce211e8370ee17b57d3",
+  "status": "Scheduling repair locally verified and source committed; model-quality and release gates remain open",
+  "problem": "A real note/source/preferences change could retain an earlier input failure multiplier and wait up to360seconds. The previous active frontier did not identify pending note changes.",
+  "behavior": {
+    "changed_input": "Clear only the prior failure multiplier, preserving the existing attempt/finish clock and normal45second coalescing. A new rejected attempt still counts normally.",
+    "actual_admission": "notes::generate_in_run_observed returns (original Result<usize>,Option<InputDigest>). The optional slot is populated only after existing snapshot and actual cloned prefs are available and existing Scope::new passed. Manual wrappers provide no slot.",
+    "automatic_paths": [
+      "ordinary scheduled minutes",
+      "translation followed by minutes"
+    ],
+    "identity": "Per-dispatch existing Arc completion slot has a Weak allocation identity registered with Legacy and Schedule; registration occurs only after successful note_busy ownership and immediately before spawn. Slot is published before busy is released.",
+    "deletion": "Completion cannot create a missing Legacy registration. Delete/restore same run and same digest still rejects an old slot. New dispatch with same input has a different allocation identity.",
+    "progress": "A known Err cannot turn a user-edited fingerprint into successful fast drain; a successful persisted frontier can retain fast drain.",
+    "unknown": "No actual key is invented before Scope. Translation that never enters minutes does not add a Legacy LLM failure. Existing unknown/no-progress timing remains.",
+    "spelling_replay": "Existing fully covered same-document pure spelling replay still leaves needs_update=false and does not force a generation.",
+    "resources": "Hash existing in-memory input only for pending penalized auto work, an automatic dispatch/admission or its completion. Healthy synchronized history receives no added digest. Scheduling state retains digests, capped counts and Weak job identities; no source bodies or model responses."
+  },
+  "original_behavioral_red": {
+    "command": "cargo test -p omascribe-core changed_real_note_source_and_preferences_clear_only -- --nocapture",
+    "compiled": true,
+    "tests_failed": 2,
+    "failure": "Actual temp Engine.save_note changed input and left needs_update true, but the existing Legacy/Schedule due gates still refused original-clock+46seconds under old360second penalty. +2seconds was correctly not due.",
+    "log_sha256": "e947cd9ac0f4d77ee4c7fd63f4f9a37ddc0c1584bf9a40552326523482128363",
+    "source_diff_sha256": "f1724aa1c960900fcf3a2d9422f23dd296f5a4558991183f7689870da420273a",
+    "not_model_quality": "The controlled Err seeds scheduler metadata only; no model output is fabricated."
+  },
+  "new_controls": [
+    "Actual temp Engine.save_note then real Scope construction and shared production capture helper observes the fresh post-edit key; source snapshot remains byte-identical during observation.",
+    "Checked-caption typed snapshot fixture changes actual key; this is metadata data, not a model translation-quality claim.",
+    "Stale expected run returns unknown before Scope, without worker/job admission.",
+    "Actual admission differs from scheduled after translation; current unchanged records failure1 rather than inheriting old3; user current changed after admission restores45second coalescing and no immediate retry.",
+    "Per-dispatch Weak identity rejects wrong same-run/same-digest slot while accepting its own different actual key.",
+    "Real Engine set_meeting_deleted(true), restore same run, then old callback cannot recreate retry entries; replacement dispatch remains independent.",
+    "Real busy dispatcher rejection does not replace the registered owner; public manual completion does not overwrite automatic completion slot.",
+    "Unknown actual retains existing bounded backoff; healthy observations create no Legacy failure entry.",
+    "Existing actual Engine note/source/model/language/ASR-append changes, theme/timestamp exclusions, active-document selection, source tuple identity, successful fast-drain,delete/run and pure spelling replay controls still pass."
+  ],
+  "checks": {
+    "core": {
+      "command": "cargo test -p omascribe-core",
+      "exit": 0,
+      "library_passed": 551,
+      "library_ignored": 12,
+      "cli_passed": 2,
+      "model_identifier_terms_passed": 8,
+      "native_model_integrity_passed": 2,
+      "note_context_corrections_passed": 19,
+      "log": "core-tests.log",
+      "sha256": "f7be596fddaec8d13b156b29b8cd1e0d13cc537fcf336a3ca205e1f0c6732ee8"
+    },
+    "strict_workspace_clippy": {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "exit": 0,
+      "log": "clippy.log",
+      "sha256": "f29e30dc75546839e608d3db8832404911b489e2228b802f8e0020dccbb2f692"
+    },
+    "fmt_diff": {
+      "command": "cargo fmt --all -- --check; git diff --check",
+      "exit": 0,
+      "log": "fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "model_calls": 0,
+    "Q16_runs": 0,
+    "release_cli_rebuilds": 0,
+    "new_flags": 0,
+    "committed": true,
+    "cross_platform": "See exact-head PR checks; local checks above do not stand in for Windows/Linux or hardware execution."
+  },
+  "source_files": {
+    "crates/core/src/minutes_schedule.rs": {
+      "bytes": 30394,
+      "sha256": "2b0fd71cc3b7d6be5419dd87329c9e25a8a4d5b1ef00a81d81e09bd38a8c0043"
+    },
+    "crates/core/src/engine.rs": {
+      "bytes": 93678,
+      "sha256": "f9a39b90983fb538451db57838754c29864f34ca5e185c3b69f860139b7a83aa"
+    },
+    "crates/core/src/translation.rs": {
+      "bytes": 113497,
+      "sha256": "c720ffa964350990aac76db90571ea79f736f673a615c1d1300326c5c1de11e4"
+    },
+    "crates/core/src/notes.rs": {
+      "bytes": 57790,
+      "sha256": "b4d8c33500d4b70885d5ebbd4e4029a3865570bf83bfe0693464aaeb84f7d724"
+    }
+  },
+  "cargo_lock_sha256": "5e13ec454deb5ff235d0529da0b4121fa52199f637dd87fd0003de0e93804d2f",
+  "independent_review": "Parent verified current source/check-log hashes and read the production diff. A separate read-only concurrency reviewer checked these same four hashes and reported no blocking findings. Metadata controls do not prove model quality or zero I/O through instrumentation; helper purity and unchanged request generation were checked in source.",
+  "limits": [
+    "This is penalty reset and job attribution only; it is not persistent same-failure suppression, complete model/runtime identity, or a Q16 generation-quality fix.",
+    "Unknown/pre-Scope admission still follows original timing; no input identity is invented. A translation transport/resource failure that never starts minutes has no actual minutes key and does not count a new Legacy LLM failure; Schedule retains original no-progress timing.",
+    "Runtime resource/accuracy improvement is not measured or claimed. No full model/recording or installer test was run.",
+    "The current release CLI was not rebuilt; it must be rebuilt before any future real-model candidate test."
+  ],
+  "release": "Stable0.3.4;0.3.5 unpublished. Q16 still fails and is not rerun or relabeled by this scheduling repair. No GPU SDK/component/model download, release CLI rebuild or installer build.",
+  "witnesses": [
+    {
+      "path": "artifacts/minutes-penalty-admission-2026-10-31/frozen-review.json",
+      "sha256": "165857d974e3bef54325252f79d656ec94b2768c5644fd85da993f2931853a83"
+    },
+    {
+      "path": "artifacts/minutes-penalty-input-2026-10-31/frozen-review.json",
+      "sha256": "6104707acf51aee97ff971620800822c28d4fecb812beab7167e8130ed66996f"
+    }
+  ]
+}
