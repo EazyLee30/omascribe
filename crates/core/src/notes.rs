@@ -359,22 +359,22 @@ fn generate_inner(
     )?;
     let mut trimmed_background = 0;
     let mut trimmed_passages = 0;
-    let prepare_sources = source_language::configured();
-    let (content, mut prompt_tokens, compose_messages) = loop {
+    let (system, content, mut prompt_tokens) = loop {
         let (system, content) = delta.as_ref().map_or_else(
             || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
             |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
         );
-        let messages = writer::compose_messages(
-            &system,
-            &content,
-            writer::chinese(snapshot, &prefs.minutes_language),
-            delta.is_some(),
-            prepare_sources,
-        );
-        let count = message_tokens(agent, base, auth, &messages)?;
+        let tokens: Value = agent
+            .post(&format!("{base}/tokenize"))
+            .set("Authorization", auth)
+            .send_json(json!({"content":format!("{system}\n{content}")}))?
+            .into_json()?;
+        let count = tokens["tokens"]
+            .as_array()
+            .context("Invalid tokenizer response")?
+            .len();
         if count <= prefs.context_size as usize - 1148 {
-            break (content, count, messages);
+            break (system, content, count);
         }
         if delta.take().is_some() {
             trace.event(
@@ -422,6 +422,10 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
+    let compose_messages = vec![
+        json!({"role":"system","content":system}),
+        json!({"role":"user","content":content}),
+    ];
     let mut messages = compose_messages.clone();
     let mut verified = None;
     let mut attempts = Vec::<Value>::new();
@@ -450,7 +454,7 @@ fn generate_inner(
     // Default to the existing writer and its bounded factual/language repair.
     // Source preparation remains an explicit experiment: it spends one of the
     // same two requests before composition and has not passed the manual gate.
-    let mut source_plan = if prepare_sources && delta.is_none() {
+    let mut source_plan = if source_language::configured() && delta.is_none() {
         source_language::Plan::new(
             &content,
             &context.segments,
@@ -522,8 +526,7 @@ fn generate_inner(
         }
         trace.event(
             "request_started",
-            json!({"attempt":request_attempt,"endpoint":"chat","stage":request_stage,
-                "message_count":request["messages"].as_array().map(Vec::len)}),
+            json!({"attempt":request_attempt,"endpoint":"chat","stage":request_stage}),
         );
         let response = agent
             .post(&format!("{base}/v1/chat/completions"))
@@ -916,15 +919,25 @@ fn generate_inner(
                     } else {
                         "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
                     };
-                    messages = writer::compose_messages(
-                        &format!("{repair_system} {hint}"),
-                        &serde_json::to_string(&repair)?,
-                        writer::chinese(snapshot, &prefs.minutes_language),
-                        delta.is_some(),
-                        prepare_sources,
-                    );
+                    messages = vec![
+                        json!({"role":"system","content":format!("{repair_system} {hint}")}),
+                        json!({"role":"user","content":serde_json::to_string(&repair)?}),
+                    ];
                 }
-                prompt_tokens = message_tokens(agent, base, auth, &messages)?;
+                let repair_input = messages
+                    .iter()
+                    .filter_map(|m| m["content"].as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let tokens: Value = agent
+                    .post(&format!("{base}/tokenize"))
+                    .set("Authorization", auth)
+                    .send_json(json!({"content":repair_input}))?
+                    .into_json()?;
+                prompt_tokens = tokens["tokens"]
+                    .as_array()
+                    .context("Invalid tokenizer response")?
+                    .len();
                 if prompt_tokens > prefs.context_size as usize - 598 {
                     return Err(error.context("复核超出上下文预算，待处理内容已保留"));
                 }
@@ -1171,96 +1184,6 @@ mod diagnostic_tests {
             assert_eq!(diagnostic_value["cursor_after"], actual, "{outcome}");
             assert_eq!(actual, u32::from(outcome == "committed"));
         }
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod task_reminder_tests {
-    use super::*;
-    use std::{
-        io::{BufRead, Read, Write},
-        net::TcpListener,
-        time::Duration,
-    };
-
-    #[test]
-    fn tokenizer_observes_complete_reminder_before_compose_fit_decision() -> Result<()> {
-        let system = "system";
-        let empty = json!({"transcript":[{"id":1,"text":"","speaker":null}]}).to_string();
-        let content = json!({"transcript":[{"id":1,"text":"x".repeat(899 - system.len() - 1 - empty.len()),"speaker":null}]}).to_string();
-        let old_input = format!("{system}\n{content}");
-        assert_eq!(old_input.chars().count(), 899);
-        let messages = writer::compose_messages(system, &content, true, false, false);
-        let expected_input = format!("{old_input}\n{}", messages[2]["content"].as_str().unwrap());
-        let listener = TcpListener::bind("127.0.0.1:0")?;
-        listener.set_nonblocking(true)?;
-        let base = format!("http://{}", listener.local_addr()?);
-        let observed = std::thread::spawn(move || -> Result<String> {
-            let deadline = Instant::now() + Duration::from_secs(5);
-            let stream = loop {
-                match listener.accept() {
-                    Ok((stream, _)) => break stream,
-                    Err(error)
-                        if error.kind() == std::io::ErrorKind::WouldBlock
-                            && Instant::now() < deadline =>
-                    {
-                        std::thread::sleep(Duration::from_millis(5))
-                    }
-                    Err(error) => return Err(error.into()),
-                }
-            };
-            stream.set_read_timeout(Some(Duration::from_secs(3)))?;
-            stream.set_write_timeout(Some(Duration::from_secs(3)))?;
-            let mut reader = BufReader::new(stream);
-            let mut line = String::new();
-            reader.read_line(&mut line)?;
-            assert!(line.starts_with("POST /tokenize "));
-            let mut length = None;
-            let mut header_bytes = 0;
-            loop {
-                line.clear();
-                let bytes = reader.read_line(&mut line)?;
-                header_bytes += bytes;
-                anyhow::ensure!(
-                    bytes > 0 && header_bytes <= 8192,
-                    "incomplete fixture headers"
-                );
-                if line == "\r\n" {
-                    break;
-                }
-                if let Some(value) = line.to_ascii_lowercase().strip_prefix("content-length:") {
-                    length = Some(value.trim().parse::<usize>()?);
-                }
-            }
-            let length = length.context("Missing fixture request length")?;
-            anyhow::ensure!(length <= 65_536, "fixture request exceeds budget");
-            let mut payload = vec![0; length];
-            reader.read_exact(&mut payload)?;
-            let request: Value = serde_json::from_slice(&payload)?;
-            let input = request["content"]
-                .as_str()
-                .context("Missing tokenizer input")?
-                .to_owned();
-            // A deterministic protocol fixture, not a model tokenizer or a quality assertion.
-            let response = json!({"tokens":vec![0;input.chars().count()]}).to_string();
-            let mut stream = reader.into_inner();
-            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", response.len(), response)?;
-            Ok(input)
-        });
-        let agent = ureq::AgentBuilder::new()
-            .try_proxy_from_env(false)
-            .timeout(Duration::from_secs(3))
-            .build();
-        let count = message_tokens(&agent, &base, "Bearer fixture", &messages)?;
-        let actual = observed.join().expect("fixture server panicked")?;
-        assert_eq!(actual, expected_input);
-        assert_eq!(count, expected_input.chars().count());
-        assert!(
-            count > 2048 - 1148,
-            "the final reminder must be included before fitting"
-        );
-        assert_eq!(messages[1]["content"], content);
         Ok(())
     }
 }
