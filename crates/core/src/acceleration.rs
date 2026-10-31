@@ -357,9 +357,10 @@ pub(crate) fn with_cpu_fallback<T>(
     let result = operation();
     if result.is_err()
         && !result.as_ref().is_err_and(|error| {
-            error
-                .chain()
-                .any(|e| e.to_string().starts_with("model:integrity:"))
+            crate::inference_cache::integrity_error(error)
+                || error
+                    .chain()
+                    .any(|e| e.to_string().starts_with("model:integrity:"))
         })
         && !engine.note_cancel.load(Ordering::SeqCst)
         && (engine.acceleration.lock().unwrap().failed_requests != before

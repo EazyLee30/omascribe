@@ -195,12 +195,14 @@ impl Drop for SessionLease {
         let Some(engine) = self.engine.upgrade() else {
             return;
         };
-        let model_current = session.check_model().is_ok();
-        if !model_current {
+        let model_current = session.check_model_receipt().is_ok();
+        let runtime_current = session.check_runtime_receipt().is_ok();
+        if !model_current || !runtime_current {
             engine.inference_pool.invalidate();
         }
         if !self.usable.get()
             && model_current
+            && runtime_current
             && !engine.note_cancel.load(Ordering::SeqCst)
             && !session.resource_stop.load(Ordering::SeqCst)
             && !session.timed_out.load(Ordering::SeqCst)
@@ -213,6 +215,7 @@ impl Drop for SessionLease {
             }
         }
         let otherwise_healthy = model_current
+            && runtime_current
             && self.usable.get()
             && session.healthy()
             && !engine.note_cancel.load(Ordering::SeqCst)
@@ -249,6 +252,8 @@ impl Drop for SessionLease {
         }
         let reason = if !model_current {
             ReleaseReason::ModelChanged
+        } else if !runtime_current {
+            ReleaseReason::RuntimeChanged
         } else if session.resource_stop.load(Ordering::SeqCst) {
             if session.budget_stop.load(Ordering::SeqCst) {
                 ReleaseReason::ProcessBudget
@@ -293,10 +298,37 @@ impl SessionLease {
 }
 impl LocalSession {
     pub(crate) fn check_model(&self) -> Result<()> {
+        self.check_model_receipt()?;
+        self.check_runtime_receipt()
+    }
+    fn check_model_receipt(&self) -> Result<()> {
         if let Some(receipt) = &self.model_receipt {
             receipt.check_current()?;
         }
         Ok(())
+    }
+    fn check_runtime_receipt(&self) -> Result<()> {
+        if let Some(receipt) = &self.runtime_receipt {
+            receipt.check_current()?;
+        }
+        Ok(())
+    }
+    fn record_runtime(
+        &self,
+        engine: &Engine,
+        prefs: &crate::preferences::Preferences,
+    ) -> Result<()> {
+        self.check_model()?;
+        crate::inference_cache::record_runtime(
+            engine,
+            prefs,
+            self.runtime_spec
+                .as_ref()
+                .context("Loaded runtime specification unavailable")?,
+            self.runtime_receipt
+                .as_ref()
+                .context("Loaded runtime receipt unavailable")?,
+        )
     }
     fn healthy(&mut self) -> bool {
         !self.resource_stop.load(Ordering::SeqCst)
@@ -305,6 +337,7 @@ impl LocalSession {
             && matches!(self.server.child.try_wait(), Ok(None))
     }
 }
+#[cfg(test)]
 fn worker_key(
     engine: &Engine,
     prefs: &crate::preferences::Preferences,
@@ -313,6 +346,26 @@ fn worker_key(
     spec: &crate::inference::LaunchSpec,
     model_identity: &str,
 ) -> Result<String> {
+    Ok(worker_identity(engine, prefs, meeting, run, spec, model_identity)?.0)
+}
+
+fn runtime_entry(engine: &Engine, spec: &crate::inference::LaunchSpec) -> std::path::PathBuf {
+    if spec.backend == crate::inference::Backend::Mlx {
+        engine.runtime_dir.join("mlx/runner.py")
+    } else {
+        spec.directory
+            .join(crate::platform::executable("llama-server"))
+    }
+}
+
+fn worker_identity(
+    engine: &Engine,
+    prefs: &crate::preferences::Preferences,
+    meeting: &str,
+    run: u32,
+    spec: &crate::inference::LaunchSpec,
+    model_identity: &str,
+) -> Result<(String, crate::inference_cache::RuntimeReceipt)> {
     use sha2::{Digest, Sha256};
     // Appending a recording creates a take without changing the transcription run.
     // Read only its indexed number; do not deserialize a meeting's audio history.
@@ -327,15 +380,22 @@ fn worker_key(
             |row| row.get::<_, Option<u32>>(0),
         )?
         .unwrap_or_default();
+    // The temporary Store guard above is gone before any cold runtime read.
+    let runtime = engine
+        .inference_fingerprints
+        .refresh(&runtime_entry(engine, spec))?;
     let key = json!({
-        "schema":"worker-cuda-selectors-v1", "selectors":spec.selectors.digest(),
+        "schema":"worker-runtime-receipt-v2", "selectors":spec.selectors.digest(),
         "model":prefs.llm_model,"verified_assets":model_identity,
         "backend":spec.backend.name(),"component":spec.identity,"device":spec.device,"runtime":std::fs::read(spec.directory.join("build-info.json")).ok(),
-        "executable":engine.inference_fingerprints.file(&spec.directory.join(if spec.backend == crate::inference::Backend::Mlx {"runner.py".into()} else {crate::platform::executable("llama-server")})),
+        "executable":runtime.digest(),
         "threads":prefs.threads,"context":prefs.context_size,"mode":prefs.resource_mode,
         "budget":crate::inference::budget_mib(prefs),"meeting":meeting,"run":run,"take":take,
     });
-    Ok(format!("{:x}", Sha256::digest(serde_json::to_vec(&key)?)))
+    Ok((
+        format!("{:x}", Sha256::digest(serde_json::to_vec(&key)?)),
+        runtime,
+    ))
 }
 pub(crate) fn open_session(
     engine: &Arc<Engine>,
@@ -343,7 +403,13 @@ pub(crate) fn open_session(
     meeting: &str,
     run: u32,
 ) -> Result<SessionLease> {
-    admission_attempt(engine, || open_session_inner(engine, prefs, meeting, run))
+    admission_attempt(engine, || {
+        let session = open_session_inner(engine, prefs, meeting, run)?;
+        // CPU fallback recurses with changed preferences. Bind its actual spec
+        // under the original caller configuration as well, never infer it from prefs.
+        session.record_runtime(engine, prefs)?;
+        Ok(session)
+    })
 }
 fn admission_attempt(
     engine: &Engine,
@@ -380,7 +446,14 @@ fn open_session_inner(
         }
     };
     let spec = crate::inference::launch_spec(engine, prefs)?;
-    let key = worker_key(engine, prefs, meeting, run, &spec, receipt.fingerprint())?;
+    let (key, runtime) =
+        match worker_identity(engine, prefs, meeting, run, &spec, receipt.fingerprint()) {
+            Ok(identity) => identity,
+            Err(error) => {
+                engine.inference_pool.invalidate();
+                return Err(error);
+            }
+        };
     if spec.backend == crate::inference::Backend::Metal
         && engine.inference_pool.metal_rejected(&key)
     {
@@ -389,7 +462,13 @@ fn open_session_inner(
         return open_session_inner(engine, &cpu, meeting, run);
     }
     let result = checkout(engine, key.clone(), Duration::from_secs(ttl.into()), || {
-        spawn_session(engine, prefs, &spec, Some(Duration::from_secs(ttl.into())))
+        spawn_session(
+            engine,
+            prefs,
+            &spec,
+            Some(Duration::from_secs(ttl.into())),
+            Some(runtime),
+        )
     });
     if result
         .as_ref()
@@ -420,6 +499,7 @@ fn reject_metal(engine: &Engine, key: &str, request: bool) {
 fn retryable_start_failure(engine: &Engine, error: &anyhow::Error) -> bool {
     !engine.note_cancel.load(Ordering::SeqCst)
         && !engine.maintenance.load(Ordering::SeqCst)
+        && !crate::inference_cache::integrity_error(error)
         && !error.chain().any(|error| {
             let message = error.to_string();
             message.starts_with("writer:resource-")
@@ -453,8 +533,10 @@ fn checkout(
             } else {
                 ReleaseReason::TtlExpired
             })
-        } else if idle.session.check_model().is_err() {
+        } else if idle.session.check_model_receipt().is_err() {
             Some(ReleaseReason::ModelChanged)
+        } else if idle.session.check_runtime_receipt().is_err() {
+            Some(ReleaseReason::RuntimeChanged)
         } else if !idle.session.healthy() {
             Some(ReleaseReason::WorkerUnhealthy)
         } else {
@@ -683,6 +765,8 @@ impl Drop for Server {
 
 pub(crate) struct LocalSession {
     model_receipt: Option<crate::model_integrity::Receipt>,
+    runtime_receipt: Option<crate::inference_cache::RuntimeReceipt>,
+    runtime_spec: Option<crate::inference::LaunchSpec>,
     pub agent: ureq::Agent,
     pub base: String,
     pub auth: String,
@@ -701,15 +785,25 @@ pub(crate) fn spawn_session_with_spec(
     spec: &crate::inference::LaunchSpec,
 ) -> Result<LocalSession> {
     // Calibration sessions are not pooled launches or lifecycle evidence.
-    spawn_session(engine, prefs, spec, None)
+    spawn_session(engine, prefs, spec, None, None)
 }
 fn spawn_session(
     engine: &Arc<Engine>,
     prefs: &crate::preferences::Preferences,
     spec: &crate::inference::LaunchSpec,
     pooled: Option<Duration>,
+    prepared_runtime: Option<crate::inference_cache::RuntimeReceipt>,
 ) -> Result<LocalSession> {
     let receipt = engine.verified_model(&prefs.llm_model)?;
+    let runtime_receipt = match prepared_runtime {
+        Some(receipt) => {
+            receipt.check_current()?;
+            receipt
+        }
+        None => engine
+            .inference_fingerprints
+            .refresh(&runtime_entry(engine, spec))?,
+    };
     let budget = crate::inference::budget_mib(prefs);
     let estimate = crate::models::model(&prefs.llm_model)?.memory_mib
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4;
@@ -736,6 +830,8 @@ fn spawn_session(
         )?,
     )?;
     let log = File::create(engine.root.join("llm-runtime.log"))?;
+    receipt.check_current()?;
+    runtime_receipt.check_current()?;
     let child = command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -852,6 +948,7 @@ fn spawn_session(
     let auth = format!("Bearer {token}");
     let start = Instant::now();
     loop {
+        runtime_receipt.check_current()?;
         if resource_stop.load(Ordering::SeqCst) {
             if budget_stop.load(Ordering::SeqCst) {
                 bail!("writer:resource-budget-hit:{budget}");
@@ -887,8 +984,13 @@ fn spawn_session(
     }
 
     receipt.check_current()?;
+    runtime_receipt.check_current()?;
+    // Direct calibration launches bypass checkout but need the same actual binding.
+    crate::inference_cache::record_runtime(engine, prefs, spec, &runtime_receipt)?;
     Ok(LocalSession {
         model_receipt: Some(receipt),
+        runtime_receipt: Some(runtime_receipt),
+        runtime_spec: Some(spec.clone()),
         agent,
         base,
         auth,
@@ -1103,6 +1205,8 @@ mod tests {
         engine.llm_pid.store(child.id(), Ordering::SeqCst);
         Ok(LocalSession {
             model_receipt: None,
+            runtime_receipt: None,
+            runtime_spec: None,
             agent: ureq::AgentBuilder::new().try_proxy_from_env(false).build(),
             base: String::new(),
             auth: String::new(),
@@ -1748,6 +1852,280 @@ mod tests {
         assert!(!retryable_start_failure(&engine, &transport));
         Ok(())
     }
+    fn runtime_fixture(
+        engine: &Arc<Engine>,
+        directory: &std::path::Path,
+        backend: crate::inference::Backend,
+    ) -> Result<(std::path::PathBuf, crate::inference::LaunchSpec)> {
+        std::fs::create_dir_all(directory)?;
+        let path = directory.join(crate::platform::executable("llama-server"));
+        std::fs::write(&path, b"original")?;
+        let spec = crate::inference::LaunchSpec {
+            backend,
+            directory: directory.to_owned(),
+            device: None,
+            identity: "synthetic-runtime".into(),
+            selectors: crate::inference::SelectorEnv::capture(backend),
+        };
+        assert_eq!(runtime_entry(engine, &spec), path);
+        Ok((path, spec))
+    }
+
+    #[test]
+    fn runtime_identity_error_is_typed_and_never_a_startup_cpu_retry() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let spec = crate::inference::LaunchSpec {
+            backend: crate::inference::Backend::Cpu,
+            directory: root.path().join("missing-runtime"),
+            device: None,
+            identity: String::new(),
+            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Cpu),
+        };
+        let error = worker_key(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )
+        .err()
+        .context("missing runtime unexpectedly admitted")?
+        .context("wrapped context");
+        assert!(crate::inference_cache::integrity_error(&error));
+        assert!(!retryable_start_failure(&engine, &error));
+        let text_only = anyhow::anyhow!("runtime:integrity: text is not a typed error");
+        assert!(!crate::inference_cache::integrity_error(&text_only));
+        assert!(retryable_start_failure(&engine, &text_only));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn mlx_runtime_identity_uses_the_executed_runner_not_spec_directory() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        Arc::get_mut(&mut engine).unwrap().runtime_dir = root.path().join("actual-runtime");
+        let actual = engine.runtime_dir.join("mlx/runner.py");
+        std::fs::create_dir_all(actual.parent().unwrap())?;
+        std::fs::write(&actual, b"actual runner, never executed")?;
+        let spec = crate::inference::LaunchSpec {
+            backend: crate::inference::Backend::Mlx,
+            directory: root.path().join("unused-spec-directory"),
+            device: None,
+            identity: String::new(),
+            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Mlx),
+        };
+        assert_eq!(runtime_entry(&engine, &spec), actual);
+        worker_key(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        assert!(engine.inference_fingerprints.current(&actual).is_some());
+        assert!(!spec.directory.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn actual_cpu_runtime_can_be_registered_under_original_requested_preferences() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("runtime metadata fixture")?;
+        let (_path, mut actual) = runtime_fixture(
+            &engine,
+            &root.path().join("runtime"),
+            crate::inference::Backend::Cpu,
+        )?;
+        actual.identity.clear();
+        let runtime = engine
+            .inference_fingerprints
+            .refresh(&runtime_entry(&engine, &actual))?;
+        let requested = crate::preferences::Preferences {
+            inference_backend: "metal".into(),
+            ..Default::default()
+        };
+        let cpu = crate::preferences::Preferences {
+            inference_backend: "cpu".into(),
+            ..requested.clone()
+        };
+        let mut session = fake(&engine)?;
+        session.backend = crate::inference::Backend::Cpu;
+        session.runtime_receipt = Some(runtime);
+        session.runtime_spec = Some(actual);
+        session.record_runtime(&engine, &cpu)?;
+        {
+            let db = engine.store.lock().unwrap();
+            assert!(
+                crate::inference_cache::environment(&engine, &db, &meeting, &requested).is_err()
+            );
+        }
+        // This is the helper used after the real recursive checkout returns to
+        // public open_session; it does not launch or claim a model-quality result.
+        session.record_runtime(&engine, &requested)?;
+        {
+            let db = engine.store.lock().unwrap();
+            crate::inference_cache::environment(&engine, &db, &meeting, &requested)?;
+        }
+        assert_eq!(session.backend, crate::inference::Backend::Cpu);
+        assert_eq!(
+            session.runtime_spec.as_ref().unwrap().backend,
+            crate::inference::Backend::Cpu
+        );
+        drop(session);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn same_size_restored_mtime_runtime_changes_worker_key_and_rejects_old_receipt() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let (path, spec) = runtime_fixture(
+            &engine,
+            &root.path().join("runtime"),
+            crate::inference::Backend::Cpu,
+        )?;
+        let modified = std::fs::metadata(&path)?.modified()?;
+        let (first, old) = worker_identity(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        let reads = engine.inference_fingerprints.hashed_bytes();
+        let stable = worker_key(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        assert_eq!(first, stable);
+        assert_eq!(engine.inference_fingerprints.hashed_bytes(), reads);
+        std::fs::write(&path, b"modified")?;
+        File::open(&path)?.set_times(std::fs::FileTimes::new().set_modified(modified))?;
+        let error = old.check_current().unwrap_err();
+        assert!(crate::inference_cache::integrity_error(&error));
+        let second = worker_key(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        assert_ne!(first, second);
+        assert_eq!(engine.inference_fingerprints.hashed_bytes(), reads + 8);
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn runtime_mutation_reaps_gpu_lease_without_blacklist_or_cpu_retry() -> Result<()> {
+        for backend in [
+            crate::inference::Backend::Metal,
+            crate::inference::Backend::Cuda,
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let (path, spec) = runtime_fixture(&engine, &root.path().join("runtime"), backend)?;
+            let modified = std::fs::metadata(&path)?.modified()?;
+            let (key, runtime) = worker_identity(
+                &engine,
+                &Default::default(),
+                "unused",
+                1,
+                &spec,
+                "synthetic-model",
+            )?;
+            let mut calls = 0;
+            let result = crate::acceleration::with_cpu_fallback(&engine, || {
+                calls += 1;
+                let session = checkout(&engine, key.clone(), Duration::from_secs(30), || {
+                    let mut session = fake(&engine)?;
+                    session.backend = backend;
+                    session.runtime_receipt = Some(runtime.clone());
+                    Ok(session)
+                })?;
+                session.begin_request()?;
+                std::fs::write(&path, b"modified")?;
+                File::open(&path)?.set_times(std::fs::FileTimes::new().set_modified(modified))?;
+                session.complete_request()
+            });
+            let error = result.unwrap_err();
+            assert!(crate::inference_cache::integrity_error(&error));
+            assert_eq!(calls, 1);
+            assert!(!engine.inference_pool.metal_rejected(&key));
+            assert_eq!(engine.inference_pool.metal_failed_requests(), 0);
+            assert_ne!(engine.acceleration_status().state, "cpu_fallback");
+            let status = engine.inference_pool.status();
+            assert!(!status.leased && status.idle_pid.is_none());
+            let release = status.lifecycle.last_release.context("missing release")?;
+            assert_eq!(release.reason, "runtime_changed");
+            assert!(release.exit_confirmed);
+            assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn revoked_runtime_is_checked_before_next_request_without_model_or_io_reload() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let (path, spec) = runtime_fixture(
+            &engine,
+            &root.path().join("runtime"),
+            crate::inference::Backend::Metal,
+        )?;
+        let (key, runtime) = worker_identity(
+            &engine,
+            &Default::default(),
+            "unused",
+            1,
+            &spec,
+            "synthetic-model",
+        )?;
+        let reads = engine.inference_fingerprints.hashed_bytes();
+        let session = checkout(&engine, key.clone(), Duration::from_secs(30), || {
+            let mut session = fake(&engine)?;
+            session.backend = crate::inference::Backend::Metal;
+            session.runtime_receipt = Some(runtime.clone());
+            Ok(session)
+        })?;
+        {
+            let _blocked = engine
+                .inference_fingerprints
+                .block_directory(path.parent().unwrap());
+            let error = session.begin_request().unwrap_err();
+            assert!(crate::inference_cache::integrity_error(&error));
+        }
+        drop(session);
+        assert_eq!(engine.inference_fingerprints.hashed_bytes(), reads);
+        assert!(!engine.inference_pool.metal_rejected(&key));
+        assert_eq!(
+            engine
+                .inference_pool
+                .status()
+                .lifecycle
+                .last_release
+                .unwrap()
+                .reason,
+            "runtime_changed"
+        );
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        Ok(())
+    }
+
     #[test]
     fn metal_failure_scope_changes_with_runtime_model_configuration_and_take() -> Result<()> {
         let root = tempfile::tempdir()?;
@@ -1845,7 +2223,12 @@ mod tests {
                 &model_identity
             )?
         );
-        std::fs::write(&executable, b"different runtime fixture")?;
+        {
+            let _blocked = engine
+                .inference_fingerprints
+                .block_directory(&spec.directory);
+            std::fs::write(&executable, b"different runtime fixture")?;
+        }
         assert_ne!(
             first,
             worker_key(

@@ -505,6 +505,16 @@ impl Engine {
     }
 }
 
+#[cfg(test)]
+type BeforeComponentRemove = Option<Box<dyn FnOnce() -> Result<()>>>;
+#[cfg(test)]
+thread_local! {
+    // Deterministic error after the real removal gate has revoked receipts;
+    // avoids permission-based deletion failures that root/Windows can bypass.
+    static BEFORE_COMPONENT_REMOVE: std::cell::RefCell<BeforeComponentRemove> =
+        const { std::cell::RefCell::new(None) };
+}
+
 fn remove_component(
     engine: &Engine,
     id: &str,
@@ -559,9 +569,14 @@ fn remove_component(
         }
     }
     engine.inference_pool.invalidate();
+    let _runtime_removal = engine.inference_fingerprints.block_directory(&path)?;
+    #[cfg(test)]
+    if let Some(interrupt) = BEFORE_COMPONENT_REMOVE.with(|slot| slot.borrow_mut().take()) {
+        interrupt()?;
+    }
     crate::acceleration::forget_component(engine, id, version)?;
     if path.exists() {
-        fs::remove_dir_all(path)?;
+        fs::remove_dir_all(&path)?;
     }
     engine.component_downloads.status.lock().unwrap().remove(id);
     Ok(())
@@ -778,6 +793,164 @@ mod tests {
         }))?)
     }
     #[test]
+    fn removal_releases_cloned_runtime_receipts_and_preserves_other_directories() -> Result<()> {
+        let (_root, engine, index, path) = removal_fixture()?;
+        fs::create_dir_all(&path)?;
+        fixture_marker(&path, &index)?;
+        let runtime = path.join("llama-server");
+        fs::write(&runtime, b"good")?;
+        let receipt = engine.inference_fingerprints.refresh(&runtime)?;
+        let held_clone = receipt.clone();
+        assert_eq!(receipt.digest(), format!("{:x}", Sha256::digest(b"good")));
+        receipt.check_current()?;
+        held_clone.check_current()?;
+        assert!(engine.inference_fingerprints.current(&runtime).is_some());
+
+        let other = path.parent().unwrap().join("acceleration-other");
+        fs::create_dir(&other)?;
+        let other_runtime = other.join("llama-server");
+        fs::write(&other_runtime, b"keep")?;
+        let other_receipt = engine.inference_fingerprints.refresh(&other_runtime)?;
+        let other_clone = other_receipt.clone();
+        let component = &index.components[0];
+        // No runtime is executed. On Windows the still-live receipt clones
+        // would otherwise retain deny-delete handles and block this removal.
+        remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+        assert!(!path.exists());
+        assert!(receipt.check_current().is_err());
+        assert!(held_clone.check_current().is_err());
+        assert!(engine.inference_fingerprints.current(&runtime).is_none());
+        other_receipt.check_current()?;
+        other_clone.check_current()?;
+        assert!(engine
+            .inference_fingerprints
+            .current(&other_runtime)
+            .is_some());
+        assert_eq!(fs::read(&other_runtime)?, b"keep");
+
+        // Successful removal must not leave the version permanently blocked.
+        // A new installation needs a new receipt, never the revoked old clone.
+        fs::create_dir(&path)?;
+        fs::write(&runtime, b"good")?;
+        fixture_marker(&path, &index)?;
+        let replacement = engine.inference_fingerprints.refresh(&runtime)?;
+        replacement.check_current()?;
+        assert!(receipt.check_current().is_err());
+        remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+        assert!(replacement.check_current().is_err());
+        other_receipt.check_current()?;
+        Ok(())
+    }
+
+    #[test]
+    fn failed_removal_unblocks_fresh_runtime_observation_but_not_old_receipts() -> Result<()> {
+        let (_root, engine, index, path) = removal_fixture()?;
+        fs::create_dir_all(&path)?;
+        let runtime = path.join("llama-server");
+        fs::write(&runtime, b"good")?;
+        fixture_marker(&path, &index)?;
+        let receipt = engine.inference_fingerprints.refresh(&runtime)?;
+        let held_clone = receipt.clone();
+        let component = &index.components[0];
+        let certificate = engine.root.join("accelerators/active.json");
+        let certificate_bytes = fixture_certificate(&index)?;
+        fs::write(&certificate, &certificate_bytes)?;
+        engine.component_downloads.status.lock().unwrap().insert(
+            component.id.clone(),
+            Download {
+                state: "failed".into(),
+                ..Default::default()
+            },
+        );
+        BEFORE_COMPONENT_REMOVE.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(|| {
+                Err(anyhow::anyhow!("fixture component removal interrupted"))
+            }));
+        });
+        let error = remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))
+            .expect_err("the one-shot fixture interrupts after revocation");
+        assert!(format!("{error:#}").contains("fixture component removal interrupted"));
+        assert_eq!(fs::read(&runtime)?, b"good");
+        assert_eq!(fs::read(&certificate)?, certificate_bytes);
+        assert!(engine
+            .component_downloads
+            .status
+            .lock()
+            .unwrap()
+            .contains_key(&component.id));
+        assert!(receipt.check_current().is_err());
+        assert!(held_clone.check_current().is_err());
+        assert!(engine.inference_fingerprints.current(&runtime).is_none());
+        // The error return dropped its directory guard. A complete fresh
+        // observation may publish again; old cloned authority stays revoked.
+        let fresh = engine.inference_fingerprints.refresh(&runtime)?;
+        fresh.check_current()?;
+        assert!(receipt.check_current().is_err());
+        remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+        assert!(!path.exists());
+        assert!(!certificate.exists());
+        assert!(fresh.check_current().is_err());
+        assert!(!engine
+            .component_downloads
+            .status
+            .lock()
+            .unwrap()
+            .contains_key(&component.id));
+        Ok(())
+    }
+
+    #[test]
+    fn removal_revokes_evicted_runtime_owners_before_filesystem_deletion() -> Result<()> {
+        let (_root, engine, index, path) = removal_fixture()?;
+        fs::create_dir_all(&path)?;
+        let runtime = path.join("llama-server");
+        fs::write(&runtime, b"good")?;
+        fixture_marker(&path, &index)?;
+        let pressure = engine.root.join("runtime-cache-pressure");
+        fs::create_dir(&pressure)?;
+        let others: Vec<_> = (0..16)
+            .map(|i| pressure.join(format!("runtime-{i}")))
+            .collect();
+        // Finish fixture mutations before observing any parent directory.
+        for other in &others {
+            fs::write(other, b"warm")?;
+        }
+        let receipt = engine.inference_fingerprints.refresh(&runtime)?;
+        let held_clone = receipt.clone();
+        // Seventeen distinct files exceed the existing sixteen-entry warm
+        // cache. Eviction must not destroy a live owner's authority by itself.
+        for other in &others {
+            engine.inference_fingerprints.refresh(other)?;
+        }
+        assert!(engine.inference_fingerprints.current(&runtime).is_none());
+        receipt.check_current()?;
+        held_clone.check_current()?;
+        BEFORE_COMPONENT_REMOVE.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(|| {
+                Err(anyhow::anyhow!(
+                    "fixture removal interrupted after cache eviction"
+                ))
+            }));
+        });
+        let component = &index.components[0];
+        let error = remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))
+            .expect_err("the interruption keeps the original runtime file present");
+        assert!(format!("{error:#}").contains("fixture removal interrupted after cache eviction"));
+        assert_eq!(fs::read(&runtime)?, b"good");
+        // File disappearance cannot explain this rejection: only explicit
+        // directory revocation can invalidate the already-evicted live clone.
+        assert!(receipt.check_current().is_err());
+        assert!(held_clone.check_current().is_err());
+        assert!(engine.inference_fingerprints.current(&runtime).is_none());
+        let fresh = engine.inference_fingerprints.refresh(&runtime)?;
+        fresh.check_current()?;
+        remove_component(&engine, &component.id, &index.version, || Ok(index.clone()))?;
+        assert!(!path.exists());
+        assert!(fresh.check_current().is_err());
+        Ok(())
+    }
+
+    #[test]
     fn damaged_and_partial_versions_can_be_removed_before_verified_reinstallation() -> Result<()> {
         for damage in [
             "same_size",
@@ -864,6 +1037,9 @@ mod tests {
             let (_root, engine, index, path) = removal_fixture()?;
             fs::create_dir_all(&path)?;
             fs::write(path.join("keep"), b"not removed")?;
+            let runtime = path.join("keep");
+            let receipt = engine.inference_fingerprints.refresh(&runtime)?;
+            let held_clone = receipt.clone();
             let certificate = engine.root.join("accelerators/active.json");
             let original_certificate = fixture_certificate(&index)?;
             fs::write(&certificate, &original_certificate)?;
@@ -895,9 +1071,15 @@ mod tests {
             );
             assert!(path.join("keep").exists(), "{busy}");
             assert_eq!(fs::read(certificate)?, original_certificate, "{busy}");
+            receipt.check_current()?;
+            held_clone.check_current()?;
+            assert!(engine.inference_fingerprints.current(&runtime).is_some());
         }
         let (_root, engine, index, path) = removal_fixture()?;
         fs::create_dir_all(&path)?;
+        let runtime = path.join("keep");
+        fs::write(&runtime, b"not removed")?;
+        let receipt = engine.inference_fingerprints.refresh(&runtime)?;
         for (id, version) in [
             ("fixture-gpu", "acceleration-stale"),
             ("unknown", index.version.as_str()),
@@ -906,6 +1088,8 @@ mod tests {
         ] {
             assert!(remove_component(&engine, id, version, || Ok(index.clone())).is_err());
             assert!(path.exists());
+            receipt.check_current()?;
+            assert!(engine.inference_fingerprints.current(&runtime).is_some());
         }
         // The public entry point never trusts an unsigned cached catalog.
         fs::write(engine.root.join("acceleration-index.json"), b"{}")?;
@@ -913,6 +1097,8 @@ mod tests {
             .remove_acceleration_component("fixture-gpu", &index.version)
             .is_err());
         assert!(path.exists());
+        receipt.check_current()?;
+        assert!(engine.inference_fingerprints.current(&runtime).is_some());
         Ok(())
     }
     #[test]

@@ -47,6 +47,8 @@ pub(crate) fn scope(
     snapshot: &Snapshot,
     prefs: &crate::preferences::Preferences,
 ) -> Result<String> {
+    // Experimental admission only; this function holds no Store/preferences guard.
+    crate::inference_cache::refresh_environment(engine, prefs)?;
     static TEMPLATE: OnceLock<String> = OnceLock::new();
     let template = TEMPLATE.get_or_init(|| {
         digest(&(

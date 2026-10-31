@@ -426,6 +426,7 @@ fn refresh_opened_environment<'a>(
     environment: &mut String,
     opened_environment: String,
     pending: impl Iterator<Item = &'a mut PendingTranslation>,
+    terms: &crate::terminology::Terms,
 ) -> Result<()> {
     if *environment == opened_environment {
         return Ok(());
@@ -433,12 +434,42 @@ fn refresh_opened_environment<'a>(
     // A rejected component may have fallen back to CPU while opening the lease.
     // Reload every pending cursor under that new identity, never its old repair.
     for (passage, target, key, progress, repair) in pending {
+        // Deterministic whole-source captions have their own identity and no
+        // model partial state. A model fallback cannot rebind them.
+        if literal_caption(&passage.text, target, terms).is_some() {
+            continue;
+        }
         *key = crate::inference_cache::translation_key(&opened_environment, passage, target);
         *progress = chunks::Progress::load(db, passage, key)?;
         *repair = None;
     }
     *environment = opened_environment;
     Ok(())
+}
+
+fn current_environment(
+    engine: &Engine,
+    db: &Store,
+    meeting: &Meeting,
+    prefs: &Preferences,
+) -> Result<Option<String>> {
+    match crate::inference_cache::environment(engine, db, meeting, prefs) {
+        Ok(environment) => Ok(Some(environment)),
+        Err(error) if crate::inference_cache::integrity_error(&error) => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+fn current_terms(db: &Store, meeting: &Meeting) -> Result<crate::terminology::Terms> {
+    Ok(
+        crate::terminology::Terms::new(&db.notes(&meeting.id)?, &db.terminology_entries()?)
+            .with_actor_spellings(
+                db.segments(meeting)?
+                    .iter()
+                    .map(|source| source.text.as_str()),
+                meeting.speaker_names.values().map(String::as_str),
+            ),
+    )
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Translation {
@@ -471,6 +502,7 @@ pub fn cached(
         return Ok(HashMap::new());
     }
     let mut environment = None;
+    let mut terms = None;
     let mut q=db.conn.prepare("SELECT t.json,s.json FROM translations t JOIN segments s ON s.id=t.segment_id WHERE s.meeting_id=?1 AND s.run=?2 AND t.revision=json_extract(s.json,'$.revision') AND t.model=?3")?;
     let rows = q.query_map(
         rusqlite::params![meeting.id, meeting.run, prefs.llm_model],
@@ -489,17 +521,29 @@ pub fn cached(
             && target_language(&prefs.translation_mode, &s.text) == Some(t.target.as_str())
             && !t.cache_key.is_empty()
         {
-            if environment.is_none() {
-                environment = Some(crate::inference_cache::environment(
-                    engine, db, meeting, prefs,
-                )?);
+            if terms.is_none() {
+                terms = Some(current_terms(db, meeting)?);
             }
-            if t.cache_key
-                == crate::inference_cache::translation_key(
-                    environment.as_deref().unwrap(),
-                    &s,
-                    &t.target,
-                )
+            // Exact rederivation is independent of any old runtime identity.
+            // This also safely migrates nonempty legacy literal keys: no old
+            // generated wording is accepted merely because a runtime is absent.
+            if literal_caption(&s.text, &t.target, terms.as_ref().unwrap())
+                .is_some_and(|text| text == t.text)
+            {
+                result.insert(t.segment_id.clone(), t);
+                continue;
+            }
+            if environment.is_none() {
+                environment = Some(current_environment(engine, db, meeting, prefs)?);
+            }
+            if environment
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .is_some_and(|environment| {
+                    t.cache_key
+                        == crate::inference_cache::translation_key(environment, &s, &t.target)
+                })
             {
                 result.insert(t.segment_id.clone(), t);
             }
@@ -631,12 +675,22 @@ fn run_inner(
         .unwrap()
         .cache_dependency(meeting, "translation-turn")?;
     rotate_after(&mut passages, &last);
-    let mut environment = crate::inference_cache::environment(
-        engine,
-        &engine.store.lock().unwrap(),
-        &snapshot.meeting,
-        &prefs,
-    )?;
+    // Complete deterministic captions first, preserving the rotated order of
+    // all other passages. Missing runtime files must not starve literal work.
+    let (mut literals, generated): (Vec<_>, Vec<_>) = passages.into_iter().partition(|passage| {
+        target_language(&prefs.translation_mode, &passage.text)
+            .and_then(|target| literal_caption(&passage.text, target, &terms))
+            .is_some()
+    });
+    literals.extend(generated);
+    let passages = literals;
+    let (mut environment, literal_environment) = {
+        let db = engine.store.lock().unwrap();
+        (
+            current_environment(engine, &db, &snapshot.meeting, &prefs)?.unwrap_or_default(),
+            crate::inference_cache::literal_environment(&db, &snapshot.meeting, &prefs)?,
+        )
+    };
     let mut session: Option<crate::inference_worker::SessionLease> = None;
     let started = Instant::now();
     let mut startup_elapsed = Duration::ZERO;
@@ -646,8 +700,24 @@ fn run_inner(
     let mut queue: VecDeque<PendingTranslation> = VecDeque::new();
     for passage in passages {
         let target = target_language(&prefs.translation_mode, &passage.text).unwrap();
-        let key = crate::inference_cache::translation_key(&environment, &passage, target);
-        let progress = chunks::Progress::load(&engine.store.lock().unwrap(), &passage, &key)?;
+        let literal = literal_caption(&passage.text, target, &terms).is_some();
+        let identity = if literal {
+            &literal_environment
+        } else {
+            &environment
+        };
+        // Empty identity is only an in-memory unknown sentinel. It is never a
+        // model cache key, persisted partial or permission to commit output.
+        let key = if identity.is_empty() {
+            String::new()
+        } else {
+            crate::inference_cache::translation_key(identity, &passage, target)
+        };
+        let progress = if literal || key.is_empty() {
+            chunks::Progress::default()
+        } else {
+            chunks::Progress::load(&engine.store.lock().unwrap(), &passage, &key)?
+        };
         queue.push_back((passage, target, key, progress, None::<&str>));
     }
     // Each selected passage gets one turn before a long passage gets its next chunk.
@@ -676,6 +746,31 @@ fn run_inner(
             None
         };
         if literal.is_none() && session.is_none() {
+            // Cold runtime observation is admission work, outside Store and
+            // preferences guards. A typed unknown error keeps the existing
+            // deferred scheduling path rather than a repeated empty success.
+            crate::inference_cache::refresh_environment(engine, &prefs)?;
+            {
+                let db = engine.store.lock().unwrap();
+                let current_meeting = db.meeting(meeting)?;
+                if current_meeting.run != snapshot.meeting.run {
+                    break;
+                }
+                let cached = cached(engine, &db, &current_meeting, &prefs)?;
+                queue.retain(|pending| !cached.contains_key(&pending.0.id));
+                if cached.contains_key(&pending.0.id) {
+                    continue;
+                }
+                let refreshed_environment =
+                    crate::inference_cache::environment(engine, &db, &snapshot.meeting, &prefs)?;
+                refresh_opened_environment(
+                    &db,
+                    &mut environment,
+                    refreshed_environment,
+                    std::iter::once(&mut pending).chain(queue.iter_mut()),
+                    &terms,
+                )?;
+            }
             let opening = Instant::now();
             let worker = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
             // Preserve the existing post-startup recording work allowance while
@@ -695,8 +790,10 @@ fn run_inner(
                 &mut environment,
                 opened_environment,
                 std::iter::once(&mut pending).chain(queue.iter_mut()),
+                &terms,
             )?;
         }
+        let literal_mode = literal.is_some();
         let (passage, target, key, mut progress, repair) = pending;
         let language = if target == "zh" {
             "简体中文"
@@ -925,6 +1022,12 @@ fn run_inner(
             continue;
         }
         progress = validated?;
+        if !literal_mode {
+            session
+                .as_ref()
+                .context("Missing translation worker")?
+                .check_model()?;
+        }
         let current_prefs = engine.preferences.lock().unwrap();
         if current_prefs.translation_mode != prefs.translation_mode
             || current_prefs.llm_model != prefs.llm_model
@@ -933,10 +1036,20 @@ fn run_inner(
         }
         let mut db = engine.store.lock().unwrap();
         let current_meeting = db.meeting(meeting)?;
-        if current_meeting.run != snapshot.meeting.run
-            || crate::inference_cache::environment(engine, &db, &current_meeting, &current_prefs)?
-                != environment
-        {
+        if current_meeting.run != snapshot.meeting.run {
+            break;
+        }
+        let expected_environment = if literal_mode {
+            &literal_environment
+        } else {
+            &environment
+        };
+        let observed_environment = if literal_mode {
+            crate::inference_cache::literal_environment(&db, &current_meeting, &current_prefs)?
+        } else {
+            crate::inference_cache::environment(engine, &db, &current_meeting, &current_prefs)?
+        };
+        if expected_environment.is_empty() || observed_environment != *expected_environment {
             break;
         }
         let current: String = db.conn.query_row(
@@ -947,7 +1060,15 @@ fn run_inner(
         let current: crate::Segment = serde_json::from_str(&current)?;
         if current.revision == passage.revision
             && current.run == snapshot.meeting.run
-            && crate::inference_cache::translation_key(&environment, &current, target) == key
+            && crate::inference_cache::translation_key(expected_environment, &current, target)
+                == key
+            && (!literal_mode
+                || literal_caption(
+                    &current.text,
+                    target,
+                    &current_terms(&db, &current_meeting)?,
+                )
+                .is_some_and(|text| text == progress.text))
         {
             let tx = db.conn.transaction()?;
             if progress.end == passage.text.len() {
@@ -1273,6 +1394,280 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn runtime_fixture() -> Result<(tempfile::TempDir, Arc<Engine>, Preferences)> {
+        let root = tempfile::tempdir()?;
+        let mut engine = Engine::open(root.path().into())?;
+        let isolated = Arc::get_mut(&mut engine).context("Fresh fixture engine must be unique")?;
+        isolated.models = root.path().join("no-models");
+        isolated.runtime_dir = root.path().join("fixture-runtime");
+        let prefs = {
+            let mut prefs = engine.preferences.lock().unwrap();
+            prefs.inference_backend = "cpu".into();
+            prefs.translation_mode = "bilingual".into();
+            prefs.clone()
+        };
+        Ok((root, engine, prefs))
+    }
+
+    fn observe_fixture_runtime(engine: &Engine, prefs: &Preferences) -> Result<std::path::PathBuf> {
+        let executable = engine
+            .runtime_dir
+            .join("llama")
+            .join(crate::platform::executable("llama-server"));
+        std::fs::create_dir_all(executable.parent().unwrap())?;
+        std::fs::write(&executable, b"runtime fixture A")?;
+        crate::inference_cache::refresh_environment(engine, prefs)?;
+        Ok(executable)
+    }
+
+    fn cache_fixture_source(meeting: &Meeting, seq: u32, text: &str) -> crate::Segment {
+        crate::Segment {
+            id: format!("{}:cache:{seq}", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq,
+            start_ms: u64::from(seq - 1) * 1000,
+            end_ms: u64::from(seq) * 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        }
+    }
+
+    fn store_fixture_translation(
+        db: &Store,
+        source: &crate::Segment,
+        prefs: &Preferences,
+        text: &str,
+        key: String,
+    ) -> Result<()> {
+        let translation = Translation {
+            segment_id: source.id.clone(),
+            revision: source.revision,
+            target: "zh".into(),
+            model: prefs.llm_model.clone(),
+            text: text.into(),
+            cache_key: key,
+        };
+        db.conn.execute(
+            "INSERT INTO translations VALUES(?1,?2,?3,?4,?5)",
+            rusqlite::params![
+                translation.segment_id,
+                translation.revision,
+                translation.target,
+                translation.model,
+                serde_json::to_string(&translation)?
+            ],
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn unknown_runtime_rejects_model_rows_but_rederives_legacy_literal_captions() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let executable = observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Runtime cache isolation")?;
+        let model = cache_fixture_source(&meeting, 1, "Alice will check the report on Thursday.");
+        let literal = cache_fixture_source(&meeting, 2, "AND");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&model)?;
+            db.save_segment(&literal)?;
+            let environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            store_fixture_translation(
+                &db,
+                &model,
+                &prefs,
+                "Alice将在周四检查报告。",
+                crate::inference_cache::translation_key(&environment, &model, "zh"),
+            )?;
+            store_fixture_translation(&db, &literal, &prefs, "和", "nonempty-legacy-key".into())?;
+        }
+        assert_eq!(engine.snapshot(&meeting.id)?.translations.len(), 2);
+        let hashed = engine.inference_fingerprints.hashed_bytes();
+        for _ in 0..5 {
+            assert_eq!(engine.snapshot(&meeting.id)?.translations.len(), 2);
+        }
+        assert_eq!(engine.inference_fingerprints.hashed_bytes(), hashed);
+        {
+            let _blocked = engine
+                .inference_fingerprints
+                .block_directory(executable.parent().unwrap())?;
+            std::fs::remove_file(&executable)?;
+        }
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(!snapshot.translations.contains_key(&model.id));
+        assert_eq!(snapshot.translations[&literal.id].text, "和");
+        assert!(pending(&snapshot));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn a_later_explicit_name_revokes_literal_caption_permission() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let meeting = engine.create_meeting("Literal name permission")?;
+        let literal = cache_fixture_source(&meeting, 1, "AND");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&literal)?;
+            store_fixture_translation(&db, &literal, &prefs, "和", "legacy-literal-key".into())?;
+        }
+        assert_eq!(
+            engine.snapshot(&meeting.id)?.translations[&literal.id].text,
+            "和"
+        );
+        engine.save_note(&meeting.id, None, "AND", "term", 0)?;
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(!snapshot.translations.contains_key(&literal.id));
+        assert!(pending(&snapshot));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_runtime_defers_model_work_after_committing_mixed_literal_work() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let meeting = engine.create_meeting("Mixed captions without a runtime")?;
+        let model = cache_fixture_source(&meeting, 1, "Alice will check the report on Thursday.");
+        let literal = cache_fixture_source(&meeting, 2, "AND");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&model)?;
+            db.save_segment(&literal)?;
+            // Even a plausible private prefix is not a literal source cache.
+            db.conn.execute(
+                "INSERT INTO translation_parts VALUES(?1,?2,?3)",
+                rusqlite::params![literal.id, "", r#"{"end":1,"text":"错误前缀"}"#],
+            )?;
+        }
+        let result = run(&engine, &meeting.id);
+        assert!(result
+            .as_ref()
+            .is_err_and(crate::inference_cache::integrity_error));
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(snapshot.translations[&literal.id].text, "和");
+        assert!(!snapshot.translations.contains_key(&model.id));
+        assert!(pending(&snapshot));
+        assert_eq!(snapshot.segments[0].text, model.text);
+        let db = engine.store.lock().unwrap();
+        assert_eq!(
+            snapshot.translations[&literal.id].cache_key,
+            crate::inference_cache::translation_key(
+                &crate::inference_cache::literal_environment(&db, &snapshot.meeting, &prefs)?,
+                &literal,
+                "zh"
+            )
+        );
+        let parts: i64 = db.conn.query_row(
+            "SELECT COUNT(*) FROM translation_parts WHERE segment_id=?1",
+            [&literal.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(parts, 0);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert_eq!(engine.inference_fingerprints.hashed_bytes(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn cold_runtime_refresh_rechecks_saved_model_rows_before_opening_a_worker() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let executable = observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Cold cache recheck")?;
+        let source = cache_fixture_source(&meeting, 1, "Alice will check the report on Thursday.");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&source)?;
+            let environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            store_fixture_translation(
+                &db,
+                &source,
+                &prefs,
+                "Alice将在周四检查报告。",
+                crate::inference_cache::translation_key(&environment, &source, "zh"),
+            )?;
+        }
+        {
+            let _blocked = engine
+                .inference_fingerprints
+                .block_directory(executable.parent().unwrap())?;
+        }
+        assert!(pending(&engine.snapshot(&meeting.id)?));
+        assert_eq!(run(&engine, &meeting.id)?, 0);
+        assert!(!pending(&engine.snapshot(&meeting.id)?));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn changed_runtime_cannot_reuse_saved_model_text_or_partial_progress() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let executable = observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Runtime content changed")?;
+        let source = cache_fixture_source(&meeting, 1, "Alice will check the report on Thursday.");
+        let old_environment = {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&source)?;
+            let environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            let key = crate::inference_cache::translation_key(&environment, &source, "zh");
+            store_fixture_translation(
+                &db,
+                &source,
+                &prefs,
+                "Alice将在周四检查报告。",
+                key.clone(),
+            )?;
+            db.conn.execute(
+                "INSERT INTO translation_parts VALUES(?1,?2,?3)",
+                rusqlite::params![source.id, key, r#"{"end":6,"text":"旧运行时前缀"}"#],
+            )?;
+            environment
+        };
+        let modified = std::fs::metadata(&executable)?.modified()?;
+        #[cfg(windows)]
+        let _blocked = engine
+            .inference_fingerprints
+            .block_directory(executable.parent().unwrap())?;
+        std::fs::write(&executable, b"runtime fixture B")?;
+        std::fs::File::options()
+            .write(true)
+            .open(&executable)?
+            .set_modified(modified)?;
+        #[cfg(windows)]
+        drop(_blocked);
+        assert!(engine.snapshot(&meeting.id)?.translations.is_empty());
+        crate::inference_cache::refresh_environment(&engine, &prefs)?;
+        let db = engine.store.lock().unwrap();
+        let new_environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+        assert_ne!(old_environment, new_environment);
+        let old_key = crate::inference_cache::translation_key(&old_environment, &source, "zh");
+        let mut pending = (
+            source.clone(),
+            "zh",
+            old_key.clone(),
+            chunks::Progress::load(&db, &source, &old_key)?,
+            Some("old repair"),
+        );
+        assert_eq!(pending.3.end, 6);
+        let mut environment = old_environment;
+        refresh_opened_environment(
+            &db,
+            &mut environment,
+            new_environment,
+            std::iter::once(&mut pending),
+            &current_terms(&db, &meeting)?,
+        )?;
+        assert_ne!(pending.2, old_key);
+        assert_eq!(pending.3.end, 0);
+        assert!(pending.3.text.is_empty());
+        assert_eq!(pending.4, None);
+        assert!(cached(&engine, &db, &meeting, &prefs)?.is_empty());
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
 
     #[test]
     fn conditional_role_failures_share_the_minutes_veto_and_private_repair_category() {
@@ -1972,10 +2367,27 @@ mod tests {
             prefs.clone()
         };
         let meeting = engine.create_meeting("Simulated component fallback")?;
+        let runtime = engine.runtime_dir.join("llama");
+        std::fs::create_dir_all(&runtime)?;
+        let executable = runtime.join(crate::platform::executable("llama-server"));
+        std::fs::write(&executable, b"runtime fixture A")?;
+        let runtime_receipt = engine.inference_fingerprints.refresh(&executable)?;
         let active = root.path().join("accelerators/active.json");
         std::fs::create_dir_all(active.parent().unwrap())?;
-        // Only the fingerprint input is simulated; no certificate or worker is used.
-        std::fs::write(&active, json!({"binding":"a".repeat(64)}).to_string())?;
+        let binding = "a".repeat(64);
+        // This is only a current-provenance hint on Windows/Linux. It is not
+        // a launch certificate and this control never calls launch_spec.
+        std::fs::write(&active, json!({"binding":binding}).to_string())?;
+        // Only actual launch metadata is controlled. No fake certificate is
+        // authorized, runtime executed, or model/driver probed by this test.
+        let mut spec = crate::inference::LaunchSpec {
+            backend: crate::inference::Backend::Cuda,
+            directory: runtime,
+            device: Some("CUDA0".into()),
+            identity: binding,
+            selectors: crate::inference::SelectorEnv::capture(crate::inference::Backend::Cuda),
+        };
+        crate::inference_cache::record_runtime(&engine, &prefs, &spec, &runtime_receipt)?;
         let db = engine.store.lock().unwrap();
         let mut sources = Vec::new();
         for (index, text) in [
@@ -2023,6 +2435,18 @@ mod tests {
             queue.push_back((source, "zh", key, progress, Some("old environment repair")));
         }
         let mut current = queue.pop_front().unwrap();
+        let literal_key = crate::inference_cache::translation_key(
+            &crate::inference_cache::literal_environment(&db, &meeting, &prefs)?,
+            &literal_source,
+            "zh",
+        );
+        queue.push_back((
+            literal_source.clone(),
+            "zh",
+            literal_key.clone(),
+            chunks::Progress::default(),
+            None,
+        ));
         let literal = Translation {
             segment_id: literal_source.id.clone(),
             revision: 1,
@@ -2048,12 +2472,19 @@ mod tests {
             &mut environment,
             unchanged,
             std::iter::once(&mut current).chain(queue.iter_mut()),
+            &crate::terminology::Terms::new(&[], &[]),
         )?;
         assert_eq!(current.3.text, "旧GPU片段");
         assert_eq!(current.4, Some("old environment repair"));
 
-        // Startup rejection removes the active component before a CPU lease succeeds.
+        // Startup fallback publishes the real CPU launch under the original
+        // requested auto configuration, before any translated result commits.
+        spec.backend = crate::inference::Backend::Cpu;
         std::fs::remove_file(active)?;
+        spec.device = None;
+        spec.identity.clear();
+        spec.selectors = crate::inference::SelectorEnv::capture(crate::inference::Backend::Cpu);
+        crate::inference_cache::record_runtime(&engine, &prefs, &spec, &runtime_receipt)?;
         let cpu_environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
         assert_ne!(environment, cpu_environment);
         let old_keys = [current.2.clone(), queue[0].2.clone()];
@@ -2074,6 +2505,7 @@ mod tests {
             &mut environment,
             cpu_environment.clone(),
             std::iter::once(&mut current).chain(queue.iter_mut()),
+            &crate::terminology::Terms::new(&[], &[]),
         )?;
         assert_eq!(environment, cpu_environment);
         for (pending, old_key) in std::iter::once(&current).chain(queue.iter()).zip(old_keys) {
@@ -2088,8 +2520,11 @@ mod tests {
         assert!(current.3.text.is_empty());
         assert_eq!(queue[0].3.end, cpu_partial.end);
         assert_eq!(queue[0].3.text, cpu_partial.text);
-        // Earlier literal rows remain stored, but the new snapshot identity rejects them.
-        assert!(!cached(&engine, &db, &meeting, &prefs)?.contains_key(&literal_source.id));
+        assert_eq!(queue.back().unwrap().2, literal_key);
+        assert_eq!(queue.back().unwrap().3.end, 0);
+        assert!(queue.back().unwrap().3.text.is_empty());
+        // Exact current literal rederivation does not depend on a model fallback.
+        assert!(cached(&engine, &db, &meeting, &prefs)?.contains_key(&literal_source.id));
 
         let next = checked_progress(
             r#"{"translation":"Alice将在周四检查报告。"}"#,
@@ -2615,8 +3050,8 @@ mod tests {
         );
         assert_eq!(target_language("zh-en", "Already English"), None);
         assert_eq!(target_language("en-zh", "已经是中文"), None);
-        let root = tempfile::tempdir()?;
-        let e = Engine::open(root.path().into())?;
+        let (_root, e, mut prefs) = runtime_fixture()?;
+        observe_fixture_runtime(&e, &prefs)?;
         let m = e.create_meeting("Languages")?;
         let mut s = crate::Segment {
             id: "source".into(),
@@ -2630,10 +3065,7 @@ mod tests {
             speaker: None,
             speaker_manual: false,
         };
-        let prefs = Preferences {
-            translation_mode: "bilingual".into(),
-            ..Default::default()
-        };
+        prefs.translation_mode = "bilingual".into();
         let db = e.store.lock().unwrap();
         db.save_segment(&s)?;
         let environment = crate::inference_cache::environment(&e, &db, &m, &prefs)?;
