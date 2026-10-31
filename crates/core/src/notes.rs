@@ -26,6 +26,7 @@ pub(crate) use recording_retention::{
     anchor as retention_anchor, negative_deadline, Mismatch as RecordingRetentionMismatch,
 };
 mod submission;
+mod topic_partition;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
 pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionMismatch};
@@ -75,6 +76,19 @@ impl Generation<'_> {
         timed_out: bool,
         budget: u64,
     ) -> Result<()> {
+        self.check_stops(engine, resource_stop, budget_stop, timed_out, budget)?;
+        self.requests.ensure_remaining()?;
+        self.scope.check(engine, selected)
+    }
+
+    fn check_stops(
+        &self,
+        engine: &Engine,
+        resource_stop: bool,
+        budget_stop: bool,
+        timed_out: bool,
+        budget: u64,
+    ) -> Result<()> {
         if engine.note_cancel.load(Ordering::SeqCst) || engine.maintenance.load(Ordering::SeqCst) {
             bail!("已优先处理录音与字幕，纪要稍后自动继续");
         }
@@ -87,8 +101,7 @@ impl Generation<'_> {
         if timed_out {
             bail!("本轮整理超过计算预算，原文已保留，稍后自动重试");
         }
-        self.requests.ensure_remaining()?;
-        self.scope.check(engine, selected)
+        Ok(())
     }
 }
 
@@ -186,6 +199,7 @@ fn generate_for_run(
     let job = Uuid::new_v4().to_string();
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
+    let topic_mode = topic_partition::Mode::capture();
     let snapshot = engine.snapshot(meeting)?;
     // Async tasks belong to their launch run. Reject a launch whose run no
     // longer matches the first snapshot, before model admission or job creation.
@@ -272,7 +286,7 @@ fn generate_for_run(
                 context.clone(),
                 &prefs,
                 &work,
-                (delta.clone(), state_environment.as_deref()),
+                (delta.clone(), state_environment.as_deref(), topic_mode),
             )
         });
         let outcome = match &result {
@@ -302,10 +316,14 @@ fn generate_inner(
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
     work: &Generation<'_>,
-    article: (Option<incremental::Delta>, Option<&str>),
+    article: (
+        Option<incremental::Delta>,
+        Option<&str>,
+        topic_partition::Mode,
+    ),
 ) -> Result<usize> {
     let trace = work.trace;
-    let (mut delta, state_environment) = article;
+    let (mut delta, state_environment, topic_mode) = article;
     trace.event(
         "article_state",
         json!({"mode":if delta.is_some(){"delta"}else{"full"},"enabled":state_environment.is_some(),
@@ -491,7 +509,7 @@ fn generate_inner(
     // Default to the existing writer and its bounded factual/language repair.
     // Source preparation remains an explicit experiment: it spends one of the
     // same two requests before composition and has not passed the manual gate.
-    let mut source_plan = if source_language::configured() && delta.is_none() {
+    let mut source_plan = if topic_mode.source_preparation() && delta.is_none() {
         source_language::Plan::new(
             &content,
             &context.segments,
@@ -508,14 +526,55 @@ fn generate_inner(
             bail!("来源语言准备超出上下文预算，待处理内容已保留");
         }
     }
+    let topic_plan = match topic_partition::admit(
+        topic_mode,
+        state_environment.is_some(),
+        &context,
+        &content,
+        snapshot,
+        &terms,
+        writer::chinese(snapshot, &prefs.minutes_language),
+    )? {
+        topic_partition::Admission::Original(reason) => {
+            if let Some(reason) = reason {
+                trace.event(
+                    "article_state",
+                    json!({"mode":"topic_partition","status":"fallback","reason":reason}),
+                );
+            }
+            None
+        }
+        topic_partition::Admission::Planned(plan) => Some(plan),
+    };
     trace.event(
         "article_prompt",
         json!({"mode":if source_plan.is_some(){"prepare_sources"}else if delta.is_some(){"delta"}else{"full"},
         "input_tokens":prompt_tokens,"source_preparation":source_plan.as_ref().map(|plan|plan.metrics()),
         "reused_translation_passages":language::reused_count(&content, &context.segments, snapshot)}),
     );
+    if let Some(plan) = topic_plan {
+        trace.event(
+            "article_state",
+            json!({"mode":"topic_partition","status":"planned","selected":context.segments.len()}),
+        );
+        verified = topic_partition::generate(
+            plan,
+            engine,
+            snapshot,
+            work,
+            &session,
+            topic_partition::Request {
+                context: &context,
+                content: &content,
+                prefs,
+                terms: &terms,
+                messages: &compose_messages,
+            },
+        )?;
+    }
     // Preparation, composition, repair and CPU fallback share two chat sends.
-    for attempt in 0..2 {
+    let ordinary_attempts = if verified.is_some() { 0 } else { 2 };
+    for attempt in 0..ordinary_attempts {
         engine.status.lock().unwrap().notes_status = if attempt == 0 {
             "writer:reading"
         } else {
@@ -1206,7 +1265,7 @@ mod diagnostic_tests {
                 retrieval::retrieve(&snapshot, None),
                 &prefs,
                 &work,
-                (None, None),
+                (None, None, topic_partition::Mode::default()),
             );
             diagnostic.finish(&engine, &result);
             assert_eq!(result.is_ok(), outcome == "committed", "{outcome}");
