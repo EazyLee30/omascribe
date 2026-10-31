@@ -30,6 +30,9 @@ impl Engine {
             tx.execute("DELETE FROM deleted_meetings WHERE id=?1", [id])?;
         }
         tx.commit()?;
+        if deleted {
+            self.legacy_minutes_failures.lock().unwrap().forget(id);
+        }
         drop(db);
         if deleted {
             self.retrieval_cache.clear_meeting(id);

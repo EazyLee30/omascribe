@@ -6,6 +6,36 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Default live retries preserve task Ok/Err semantics. Keep this separate
+/// from catch-up/post-capture scheduling's persisted-frontier progress tracking.
+/// Each meeting retains at most one run, and successful tasks retain nothing.
+#[derive(Default)]
+pub(crate) struct LegacyFailures(HashMap<String, (u32, u32)>);
+impl LegacyFailures {
+    pub fn count(&self, meeting: &Meeting) -> u32 {
+        self.0
+            .get(&meeting.id)
+            .filter(|(run, _)| *run == meeting.run)
+            .map_or(0, |(_, failures)| *failures)
+    }
+    /// The caller holds Store and has checked the live run/deletion state.
+    pub fn finished(&mut self, meeting: &Meeting, succeeded: bool) {
+        if succeeded {
+            self.forget(&meeting.id);
+        } else {
+            let failures = self.count(meeting).saturating_add(1).min(3);
+            self.0.insert(meeting.id.clone(), (meeting.run, failures));
+        }
+    }
+    pub fn forget(&mut self, id: &str) {
+        self.0.remove(id);
+    }
+    #[cfg(test)]
+    pub fn tracked(&self) -> usize {
+        self.0.len()
+    }
+}
+
 #[derive(Clone, PartialEq, Eq)]
 struct Frontier {
     run: u32,

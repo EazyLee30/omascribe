@@ -90,7 +90,7 @@ pub struct Engine {
     pub active: Mutex<Option<Arc<Active>>>,
     pub note_busy: AtomicBool,
     pub maintenance: AtomicBool,
-    pub note_failures: AtomicU32,
+    pub(crate) legacy_minutes_failures: Mutex<crate::minutes_schedule::LegacyFailures>,
     pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
     pub llm_pid: AtomicU32,
@@ -168,7 +168,7 @@ impl Engine {
             active: Mutex::new(None),
             note_busy: AtomicBool::new(false),
             maintenance: AtomicBool::new(false),
-            note_failures: AtomicU32::new(0),
+            legacy_minutes_failures: Default::default(),
             files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
             llm_pid: AtomicU32::new(0),
@@ -271,14 +271,11 @@ impl Engine {
                         && if catchup || stop_drain && !capture_active {
                             minute_schedule.due(&id, capture_active, quality, Instant::now())
                         } else {
-                            attempted.get(&id).is_none_or(|t| {
-                                t.elapsed()
-                                    > Duration::from_secs(
-                                        45 * 2u64.pow(
-                                            engine.note_failures.load(Ordering::SeqCst).min(3),
-                                        ),
-                                    )
-                            })
+                            engine.legacy_minutes_due(
+                                &snapshot.meeting,
+                                attempted.get(&id).copied(),
+                                Instant::now(),
+                            )
                         }
                         && !snapshot
                             .notes
@@ -342,6 +339,17 @@ impl Engine {
                 }
             }
         });
+    }
+    fn legacy_minutes_due(
+        &self,
+        meeting: &Meeting,
+        attempted: Option<Instant>,
+        now: Instant,
+    ) -> bool {
+        let failures = self.legacy_minutes_failures.lock().unwrap().count(meeting);
+        attempted.is_none_or(|at| {
+            now.saturating_duration_since(at) > Duration::from_secs(45 * 2u64.pow(failures))
+        })
     }
     pub fn audio_dir(&self, id: &str) -> Result<PathBuf> {
         Uuid::parse_str(id).context("无效的会议编号")?;
@@ -1152,7 +1160,7 @@ impl Engine {
         if self.status.lock().unwrap().diarization_busy {
             bail!("Wait for speaker analysis to finish");
         }
-        self.store.lock().unwrap().meeting(id)?;
+        let launch_run = self.store.lock().unwrap().meeting(id)?.run;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("已有笔记正在生成");
         }
@@ -1165,17 +1173,33 @@ impl Engine {
         let engine = self.clone();
         let id = id.to_string();
         thread::spawn(move || {
-            let result = notes::generate(&engine, &id);
-            engine.finish_minutes(result);
+            let result = notes::generate_in_run(&engine, &id, launch_run);
+            engine.finish_minutes(&id, launch_run, result);
             engine.note_busy.store(false, Ordering::SeqCst);
         });
         Ok(())
     }
-    pub(crate) fn finish_minutes(&self, result: Result<usize>) {
-        if result.is_ok() {
-            self.note_failures.store(0, Ordering::SeqCst);
-        } else {
-            self.note_failures.fetch_add(1, Ordering::SeqCst);
+    pub(crate) fn finish_minutes(&self, meeting: &str, launch_run: u32, result: Result<usize>) {
+        {
+            // Use the same Store→metadata order as deletion. An old run or a
+            // deleted meeting cannot recreate or clear the live retry state.
+            let db = self.store.lock().unwrap();
+            if let Ok(current) = db.meeting(meeting) {
+                let visible = db
+                    .conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [meeting],
+                        |row| row.get::<_, bool>(0),
+                    )
+                    .is_ok_and(|deleted| !deleted);
+                if current.run == launch_run && visible {
+                    self.legacy_minutes_failures
+                        .lock()
+                        .unwrap()
+                        .finished(&current, result.is_ok());
+                }
+            }
         }
         let mut status = self.status.lock().unwrap();
         status.notes_busy = false;
@@ -1352,6 +1376,270 @@ impl Engine {
 pub fn timestamp(ms: u64) -> String {
     let s = ms / 1000;
     format!("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60)
+}
+
+#[cfg(test)]
+mod legacy_minutes_retry_tests {
+    use super::*;
+
+    #[test]
+    fn failed_meeting_does_not_delay_another_meetings_default_live_retry() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let bad = engine.create_meeting("Bad meeting")?;
+        let good = engine.create_meeting("Good meeting")?;
+        let attempted = Instant::now();
+        for _ in 0..3 {
+            engine.finish_minutes(
+                &bad.id,
+                bad.run,
+                Err(anyhow::anyhow!("controlled minutes failure")),
+            );
+        }
+        // This is the helper used by the scheduler's default live else branch,
+        // not the opt-in catch-up Schedule::due path. No model is invoked.
+        assert!(engine.legacy_minutes_due(
+            &good,
+            Some(attempted),
+            attempted + Duration::from_secs(46),
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn successful_meeting_does_not_clear_another_meetings_default_retry_backoff() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let bad = engine.create_meeting("Bad meeting")?;
+        let good = engine.create_meeting("Good meeting")?;
+        let attempted = Instant::now();
+        for _ in 0..3 {
+            engine.finish_minutes(
+                &bad.id,
+                bad.run,
+                Err(anyhow::anyhow!("controlled minutes failure")),
+            );
+        }
+        engine.finish_minutes(&good.id, good.run, Ok(0));
+        assert!(!engine.legacy_minutes_due(
+            &bad,
+            Some(attempted),
+            attempted + Duration::from_secs(91),
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn manual_results_keep_ok_err_semantics_without_frontier_inference() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut one = engine.create_meeting("Manual one")?;
+        let two = engine.create_meeting("Manual two")?;
+        for meeting in [&one, &two] {
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        }
+        // Ok(0) clears only its own meeting even without cursor/fingerprint progress.
+        engine.finish_minutes(&one.id, one.run, Ok(0));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            0
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            1
+        );
+        // An Err remains a failure even if persistence progressed before the error.
+        one.notes_cursor += 5;
+        engine.store.lock().unwrap().save_meeting(&one)?;
+        engine.finish_minutes(&one.id, one.run, Err(anyhow::anyhow!("after commit")));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            1
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            1
+        );
+        engine.finish_minutes(&two.id, two.run, Ok(1));
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&one),
+            1
+        );
+        assert_eq!(
+            engine.legacy_minutes_failures.lock().unwrap().count(&two),
+            0
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_delay_keeps_strict_threshold_cap_and_original_attempt_clock() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Timing")?;
+        let attempted = Instant::now();
+        for failures in 0..8 {
+            let delay = Duration::from_secs(45 * 2_u64.pow(failures.min(3)));
+            assert!(engine.legacy_minutes_due(&meeting, None, attempted));
+            assert!(!engine.legacy_minutes_due(&meeting, Some(attempted), attempted + delay));
+            assert!(engine.legacy_minutes_due(
+                &meeting,
+                Some(attempted),
+                attempted + delay + Duration::from_nanos(1)
+            ));
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        }
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            3
+        );
+        engine.finish_minutes(&meeting.id, meeting.run, Ok(0));
+        let finished = attempted + Duration::from_secs(60);
+        let now = attempted + Duration::from_secs(46);
+        // The caller's clock remains authoritative: translation chains pass
+        // their original launch clock; plain minutes pass their finish clock.
+        assert!(engine.legacy_minutes_due(&meeting, Some(attempted), now));
+        assert!(!engine.legacy_minutes_due(&meeting, Some(finished), now));
+        assert!(engine.legacy_minutes_due(
+            &meeting,
+            Some(finished),
+            finished + Duration::from_secs(46)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn new_run_ignores_late_success_and_failure_without_retaining_old_runs() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Runs")?;
+        let old_run = meeting.run;
+        for _ in 0..3 {
+            engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("old")));
+        }
+        meeting.run += 1;
+        engine.store.lock().unwrap().save_meeting(&meeting)?;
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("late old")));
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("new")));
+        engine.finish_minutes(&meeting.id, old_run, Ok(1));
+        engine.finish_minutes(&meeting.id, old_run, Err(anyhow::anyhow!("late old")));
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            1
+        );
+        for _ in 0..20 {
+            meeting.run += 1;
+            engine.store.lock().unwrap().save_meeting(&meeting)?;
+            engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("new run")));
+            let failures = engine.legacy_minutes_failures.lock().unwrap();
+            assert_eq!(failures.count(&meeting), 1);
+            assert_eq!(failures.tracked(), 1);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn deleting_meeting_clears_metadata_and_late_results_cannot_restore_it() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Deleted")?;
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("controlled")));
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 1);
+        engine.set_meeting_deleted(&meeting.id, true)?;
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 0);
+        engine.finish_minutes(&meeting.id, meeting.run, Err(anyhow::anyhow!("late")));
+        assert_eq!(engine.legacy_minutes_failures.lock().unwrap().tracked(), 0);
+        engine.set_meeting_deleted(&meeting.id, false)?;
+        assert_eq!(
+            engine
+                .legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .count(&meeting),
+            0
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn async_minutes_reject_launch_run_before_model_or_job_admission() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Queued minutes")?;
+        let launch_run = meeting.run;
+        meeting.run += 1;
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_meeting(&meeting)?;
+            db.save_note(&UserNote {
+                id: "new-run-note".into(),
+                meeting_id: meeting.id.clone(),
+                content: "**Project Owl**".into(),
+                kind: "document".into(),
+                anchor_ms: 0,
+                updated_at: "2026-10-31".into(),
+            })?;
+            db.save_segment(&Segment {
+                id: "new-run-source".into(),
+                meeting_id: meeting.id.clone(),
+                run: meeting.run,
+                seq: 1,
+                start_ms: 0,
+                end_ms: 1000,
+                text: "Project Owl is awaiting review.".into(),
+                revision: 1,
+                speaker: None,
+                speaker_manual: false,
+            })?;
+        }
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert!(notes::needs_update(&snapshot));
+        let error = notes::generate_in_run(&engine, &meeting.id, launch_run).unwrap_err();
+        assert_eq!(error.to_string(), "会议录音轮次已更新，稍后自动整理");
+        let db = engine.store.lock().unwrap();
+        let jobs: u32 = db
+            .conn
+            .query_row("SELECT count(*) FROM inference_jobs", [], |r| r.get(0))?;
+        assert_eq!(jobs, 0);
+        assert_eq!(db.meeting(&meeting.id)?.notes_cursor, 0);
+        assert!(db.suggestions(&meeting.id)?.is_empty());
+        assert!(!engine.root.join("last-generation.json").exists());
+        let rows: Vec<serde_json::Value> =
+            fs::read_to_string(engine.root.join("inference-trace.jsonl"))?
+                .lines()
+                .map(serde_json::from_str)
+                .collect::<std::result::Result<_, _>>()?;
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0]["phase"], "started");
+        assert_eq!(rows[1]["phase"], "finished");
+        assert_eq!(rows[1]["metrics"]["committed"], false);
+        assert_eq!(rows[1]["metrics"]["items"], 0);
+        Ok(())
+    }
 }
 
 #[cfg(test)]

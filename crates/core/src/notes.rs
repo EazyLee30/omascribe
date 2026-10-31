@@ -139,11 +139,34 @@ fn source_repair(
 }
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
+    generate_for_run(engine, meeting, None)
+}
+
+pub(crate) fn generate_in_run(
+    engine: &Arc<Engine>,
+    meeting: &str,
+    expected_run: u32,
+) -> Result<usize> {
+    generate_for_run(engine, meeting, Some(expected_run))
+}
+
+fn generate_for_run(
+    engine: &Arc<Engine>,
+    meeting: &str,
+    expected_run: Option<u32>,
+) -> Result<usize> {
     let started = Instant::now();
     let job = Uuid::new_v4().to_string();
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
     let snapshot = engine.snapshot(meeting)?;
+    // Async tasks belong to their launch run. Reject a launch whose run no
+    // longer matches the first snapshot, before model admission or job creation.
+    // The existing generation Scope guards subsequent source/run changes.
+    if expected_run.is_some_and(|run| run != snapshot.meeting.run) {
+        trace.finish(false, Some(0));
+        bail!("会议录音轮次已更新，稍后自动整理");
+    }
     let diagnostic = diagnostic::Report::new(
         &engine.root,
         meeting,

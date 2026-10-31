@@ -539,6 +539,7 @@ impl Engine {
         }
         let engine = self.clone();
         let id = meeting.to_owned();
+        let launch_run = snapshot.meeting.run;
         std::thread::spawn(move || {
             let _batch = engine.inference_pool.batch();
             let result = run(&engine, &id);
@@ -554,8 +555,8 @@ impl Engine {
             }
             if continue_minutes {
                 engine.status.lock().unwrap().notes_busy = true;
-                let minutes_result = notes::generate(&engine, &id);
-                engine.finish_minutes(minutes_result);
+                let minutes_result = notes::generate_in_run(&engine, &id, launch_run);
+                engine.finish_minutes(&id, launch_run, minutes_result);
             }
             engine.note_busy.store(false, Ordering::SeqCst);
         });
