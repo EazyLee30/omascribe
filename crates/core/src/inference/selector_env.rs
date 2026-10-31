@@ -252,6 +252,31 @@ mod tests {
     }
 
     #[test]
+    fn same_path_vulkan_in_place_library_change_preserving_size_and_mtime_is_observed() -> Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let library = root.path().join("driver.bin");
+        let before = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(before.ensure_driver_files_verified().is_ok());
+        let metadata = std::fs::metadata(&library)?;
+        assert_eq!(std::fs::read(&library)?, b"driver-a");
+        std::fs::write(&library, b"driver-b")?;
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&library)?
+            .set_times(std::fs::FileTimes::new().set_modified(metadata.modified()?))?;
+        let after_metadata = std::fs::metadata(&library)?;
+        assert_eq!(metadata.len(), after_metadata.len());
+        assert_eq!(metadata.modified()?, after_metadata.modified()?);
+        assert_eq!(std::fs::read(&library)?, b"driver-b");
+        let after = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(after.ensure_driver_files_verified().is_ok());
+        assert_ne!(before.digest(), after.digest());
+        Ok(())
+    }
+
+    #[test]
     fn missing_or_unresolvable_vulkan_drivers_cannot_reuse_a_snapshot() -> Result<()> {
         let root = tempfile::tempdir()?;
         let manifest = driver_fixture(root.path())?;

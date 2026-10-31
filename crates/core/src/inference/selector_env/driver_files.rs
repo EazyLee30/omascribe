@@ -1,9 +1,11 @@
 //! Bounded observations of explicitly selected Vulkan ICD manifests.
 //!
 //! This does not discover default ICDs or prove which library a loader opened.
-//! Manifest bytes are hashed on each snapshot. Libraries use observable file
-//! identity, not a full content hash: mmap or unobservable timestamp-quantum
-//! writes remain outside this certificate input.
+//! Manifest bytes and every resolved library's complete contents are hashed on
+//! each snapshot, without trusting timestamps as a content cache. Held-file and
+//! path identity are checked around the reads. This is not an immutable native
+//! loader snapshot: later changes or concurrent unobservable mmap writes remain
+//! outside the guarantee.
 use anyhow::{ensure, Result};
 use serde::{de::IgnoredAny, Deserialize};
 use sha2::{Digest, Sha256};
@@ -21,6 +23,49 @@ const MAX_MANIFESTS: usize = 64;
 const MAX_DIRECTORY_ENTRIES: usize = 128;
 const MAX_MANIFEST_BYTES: u64 = 64 * 1024;
 const MAX_SELECTOR_BYTES: usize = 32 * 1024;
+const MAX_LIBRARY_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_SNAPSHOT_LIBRARY_BYTES: u64 = 1024 * 1024 * 1024;
+const LIBRARY_BUFFER_BYTES: usize = 64 * 1024;
+
+#[derive(Default)]
+struct LibraryBytes {
+    used: u64,
+}
+
+impl LibraryBytes {
+    fn hash(&mut self, input: &mut impl Read, expected_bytes: u64) -> Result<[u8; 32]> {
+        ensure!(expected_bytes <= MAX_LIBRARY_BYTES);
+        let next = self
+            .used
+            .checked_add(expected_bytes)
+            .ok_or_else(|| anyhow::anyhow!("driver library byte budget exceeded"))?;
+        ensure!(next <= MAX_SNAPSHOT_LIBRARY_BYTES);
+        // A one-byte sentinel rejects growth, rather than treating truncation
+        // at the metadata size or byte ceiling as successful full hashing.
+        let mut input = input.take(expected_bytes + 1);
+        let mut observed = 0;
+        let mut hash = Sha256::new();
+        let mut buffer = [0; LIBRARY_BUFFER_BYTES];
+        loop {
+            let read = input.read(&mut buffer)?;
+            if read == 0 {
+                break;
+            }
+            observed += read as u64;
+            ensure!(
+                observed <= expected_bytes,
+                "driver library grew while reading"
+            );
+            hash.update(&buffer[..read]);
+        }
+        ensure!(
+            observed == expected_bytes,
+            "driver library shortened while reading"
+        );
+        self.used = next;
+        Ok(hash.finalize().into())
+    }
+}
 
 #[derive(Deserialize)]
 struct Manifest {
@@ -106,8 +151,9 @@ fn observe(value: &std::ffi::OsStr) -> Result<String> {
     let paths: Vec<_> = std::env::split_paths(value).take(MAX_PATHS + 1).collect();
     ensure!(!paths.is_empty() && paths.len() <= MAX_PATHS);
     let mut hash = Sha256::new();
-    hash.update(b"explicit-vulkan-driver-files-v1\0");
+    hash.update(b"explicit-vulkan-driver-files-v2\0");
     let mut count = 0;
+    let mut libraries = LibraryBytes::default();
     for path in paths {
         // Listing and workers use the component directory, not the GUI cwd.
         ensure!(path.is_absolute(), "relative manifest scope is unknown");
@@ -124,19 +170,24 @@ fn observe(value: &std::ffi::OsStr) -> Result<String> {
                 // All entry names bind membership; only flat JSONs are read.
                 field(&mut hash, entry.file_name().as_encoded_bytes());
                 if entry.path().extension() == Some(std::ffi::OsStr::new("json")) {
-                    manifest(&entry.path(), &mut hash, &mut count)?;
+                    manifest(&entry.path(), &mut hash, &mut count, &mut libraries)?;
                 }
             }
             check_snapshot(&directory, &path, true, &before)?;
         } else {
-            manifest(&path, &mut hash, &mut count)?;
+            manifest(&path, &mut hash, &mut count, &mut libraries)?;
         }
     }
     ensure!(count > 0, "no explicit manifests were observed");
     Ok(format!("{:x}", hash.finalize()))
 }
 
-fn manifest(path: &Path, hash: &mut Sha256, count: &mut usize) -> Result<()> {
+fn manifest(
+    path: &Path,
+    hash: &mut Sha256,
+    count: &mut usize,
+    libraries: &mut LibraryBytes,
+) -> Result<()> {
     *count += 1;
     ensure!(*count <= MAX_MANIFESTS);
     let (mut file, before) = open_snapshot(path, false)?;
@@ -171,13 +222,15 @@ fn manifest(path: &Path, hash: &mut Sha256, count: &mut usize) -> Result<()> {
             .ok_or_else(|| anyhow::anyhow!("manifest has no parent"))?
             .join(library)
     };
-    let (library_file, library_stamp) = open_snapshot(&library, false)?;
+    let (mut library_file, library_stamp) = open_snapshot(&library, false)?;
+    let library_hash = libraries.hash(&mut library_file, library_stamp.bytes)?;
     check_snapshot(&library_file, &library, false, &library_stamp)?;
     check_snapshot(&file, path, false, &before)?;
     field(hash, path.as_os_str().as_encoded_bytes());
     stamp(hash, &before);
     field(hash, &Sha256::digest(&bytes));
     stamp(hash, &library_stamp);
+    field(hash, &library_hash);
     Ok(())
 }
 
@@ -299,4 +352,70 @@ fn file_stamp(file: &File, canonical: PathBuf, directory: bool) -> Result<FileSt
         modified: metadata.modified()?,
         native,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct NeverRead;
+    impl Read for NeverRead {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            panic!("an over-budget library must be rejected before reading");
+        }
+    }
+
+    struct ShortReads(std::io::Cursor<Vec<u8>>);
+    impl Read for ShortReads {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            assert!(buffer.len() <= LIBRARY_BUFFER_BYTES);
+            let size = buffer.len().min(17);
+            self.0.read(&mut buffer[..size])
+        }
+    }
+
+    #[test]
+    fn library_hash_observes_tail_changes_across_complete_short_reads() -> Result<()> {
+        let mut content = vec![b'a'; LIBRARY_BUFFER_BYTES * 2 + 17];
+        let bytes = content.len() as u64;
+        let mut budget = LibraryBytes::default();
+        let before = budget.hash(
+            &mut ShortReads(std::io::Cursor::new(content.clone())),
+            bytes,
+        )?;
+        *content.last_mut().unwrap() = b'b';
+        let after = budget.hash(&mut ShortReads(std::io::Cursor::new(content)), bytes)?;
+        assert_ne!(before, after);
+        assert_eq!(budget.used, bytes * 2);
+        Ok(())
+    }
+
+    #[test]
+    fn library_and_snapshot_byte_ceilings_reject_before_reading() {
+        let mut first = LibraryBytes::default();
+        assert!(first.hash(&mut NeverRead, MAX_LIBRARY_BYTES + 1).is_err());
+        assert_eq!(first.used, 0);
+        let mut total = LibraryBytes {
+            used: MAX_SNAPSHOT_LIBRARY_BYTES - 1,
+        };
+        assert!(total.hash(&mut NeverRead, 2).is_err());
+        assert_eq!(total.used, MAX_SNAPSHOT_LIBRARY_BYTES - 1);
+        let mut overflow = LibraryBytes { used: u64::MAX };
+        assert!(overflow.hash(&mut NeverRead, 1).is_err());
+    }
+
+    #[test]
+    fn library_hash_never_accepts_a_truncated_or_growing_stream() {
+        for (content, expected) in [
+            (b"short".as_slice(), 6),
+            (b"grown".as_slice(), 4),
+            (&[1], 0),
+        ] {
+            let mut budget = LibraryBytes::default();
+            assert!(budget
+                .hash(&mut std::io::Cursor::new(content), expected)
+                .is_err());
+            assert_eq!(budget.used, 0);
+        }
+    }
 }
