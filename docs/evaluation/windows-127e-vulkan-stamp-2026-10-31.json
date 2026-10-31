@@ -1,0 +1,59 @@
+{
+  "source_revision": "127e616bae2f839381b09faa316bc6079c7ee7d3",
+  "local_date": "2026-10-31",
+  "github_ci": {
+    "run_id": 41165236967,
+    "windows_core_job_id": 124431300176,
+    "core_passed": 524,
+    "core_failed": 1,
+    "core_ignored": 10,
+    "asr_passed": 9,
+    "failed_test": "acceleration::tests::same_path_vulkan_driver_changes_invalidate_cached_trial_before_certificate_write",
+    "failure": "The binding before and after same-path synthetic driver-a to driver-b replacement was unexpectedly equal at acceleration.rs:771; later certificate checks were not reached.",
+    "ci_file_stamps_recorded": false
+  },
+  "source_analysis": {
+    "file": "crates/core/src/inference/selector_env/driver_files.rs",
+    "behavior": "Explicit Vulkan manifest bytes are freshly SHA-256 hashed. The driver library is not content-hashed: canonical path, byte size, generic modified time, volume serial, 128-bit file ID, LastWriteTime and ChangeTime are folded into the selector digest. Snapshot handles deny concurrent writes only while open; they are closed before a later selector capture.",
+    "distinction": "This is not a cached driver library content hash. The separately cached hardware inventory is not the file identity observation used in this test."
+  },
+  "local_synthetic_probe": {
+    "platform": "Windows 10 Pro 10.0.19045 build 19045, x86_64",
+    "fixture": "100 newly created independent synthetic 8-byte files; driver-a overwritten in place with driver-b at the same path.",
+    "trials": 100,
+    "all_equivalent_stamp_fields_unchanged": 42,
+    "fields": [
+      "canonical path",
+      "file byte size",
+      "generic modified time",
+      "volume serial",
+      "128-bit file ID",
+      "LastWriteTime",
+      "ChangeTime"
+    ],
+    "api": "Windows GetFileInformationByHandleEx FileIdInfo/FileBasicInfo and ordinary filesystem metadata",
+    "observation_handles_closed_before_write": true,
+    "script_sha256": "e78ab5f11f7d93cf27e6557eabe5082c8a229ad849d52130054e1d98f5a1dbb7",
+    "temporary_directories_remaining": 0,
+    "real_drivers_or_user_models_touched": false
+  },
+  "limits": [
+    "CI did not log the two FileStamp values, so the exact cause of that run is not established.",
+    "The 42/100 result is one local synthetic experiment, not a failure probability across machines or filesystems.",
+    "The Python probe recreates comparable metadata fields but does not call the Rust production selector or certificate code.",
+    "No actual driver tampering, certificate issuance, GPU, model, installer or release acceptance was tested.",
+    "No shared production source or user data was changed.",
+    "The local single test used an independent clean target and passed once; it does not establish why the same test failed in the original GitHub CI."
+  ],
+  "local_fixed_source_single_test": {
+    "command": "cargo +1.99.0 test -p omascribe-core --lib --locked acceleration::tests::same_path_vulkan_driver_changes_invalidate_cached_trial_before_certificate_write -- --exact",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 534,
+    "source_worktree_clean_before_and_after": true,
+    "single_test_binary_sha256": "6da78430a594443338d9295b2f060680e9d63448cafacf4771e547fc08e92779",
+    "log_sha256": "0ac25a8b89c73a31f9e39a071218f5f7cc194a523ca7bcecbba77fa2e0029a99",
+    "limit": "One isolated synthetic test passed locally; CI ran a different concurrently scheduled full suite and the CI failure remains unexplained."
+  }
+}
