@@ -1390,3 +1390,152 @@ fn spelling_only_edit_cannot_seal_incomplete_dirty_or_protected_minutes() -> Res
     }
     Ok(())
 }
+
+fn public_prose_before_appended_name() -> String {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/fixtures/hotword-calibration-en.json"
+    )))
+    .unwrap();
+    [
+        "fleurs_en_hotword_042",
+        "fleurs_en_hotword_012",
+        "fleurs_en_hotword_076",
+    ]
+    .iter()
+    .map(|name| {
+        fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == *name)
+            .unwrap()["raw_reference"]
+            .as_str()
+            .unwrap()
+    })
+    .collect::<Vec<_>>()
+    .join("\n\n")
+}
+
+fn appended_name_after_public_prose_updates_source_and_article(
+    canonical: &str,
+    captured: &str,
+    mixed: bool,
+) -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let meeting = engine.create_meeting("Appended name after ordinary public prose")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let public = public_prose_before_appended_name();
+    let prefix = if mixed {
+        format!("录音\n\n{public}")
+    } else {
+        public
+    };
+    let note = engine.save_note(&meeting.id, None, &prefix, "document", 0)?;
+    let raw = segment(
+        &meeting.id,
+        1,
+        &format!("{captured}尚未完成，预算仍未批准。"),
+    );
+    let expected = raw.text.replace(captured, canonical);
+    // The existing spelling rule already handles this captured form when the
+    // same name is at the front. No new alias or phonetic inference is needed.
+    let mut front = note.clone();
+    front.content = format!("{canonical}\n\n{prefix}");
+    assert_eq!(
+        omascribe_core::terminology::Terms::new(&[front], &[]).normalize(&raw.text),
+        expected
+    );
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    assert_eq!(engine.correct_terminology(&meeting.id)?, 0);
+    let before = engine.snapshot(&meeting.id)?;
+    let sections = notes::validate(
+        &serde_json::json!({"sections":[{"title":"会议纪要","body":raw.text,"sources":[1]}]})
+            .to_string(),
+        &before.segments,
+        &meeting.id,
+    )?;
+    engine
+        .store
+        .lock()
+        .unwrap()
+        .commit_document(&before, &before.segments, 1, sections, false)?;
+    let clean = engine.snapshot(&meeting.id)?;
+    assert!(!notes::needs_update(&clean));
+    assert_eq!(clean.segments[0].text, raw.text);
+    assert_eq!(clean.segments[0].revision, 1);
+    assert_eq!(inference_jobs(&engine)?, 0);
+
+    // These three original reference paragraphs are unchanged. The sole user
+    // edit appends one already-authorized name to the same document ID.
+    let content = format!("{prefix}\n\n{canonical}");
+    assert!(content.chars().count() < 1000);
+    let saved = engine.save_note(&meeting.id, Some(note.id.clone()), &content, "document", 0)?;
+    let after = engine.snapshot(&meeting.id)?;
+    assert_eq!(saved.id, note.id);
+    assert_eq!(after.notes[0].content, content);
+    assert!(!after.meeting.auto_notes);
+    assert_eq!(after.meeting.notes_cursor, 1);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    assert_eq!(
+        after.segments[0].text, expected,
+        "ordinary prose must not exclude a later already-authorized name from the bounded candidate list"
+    );
+    assert_eq!(after.segments[0].revision, 2);
+    assert_eq!(after.suggestions[0].id, clean.suggestions[0].id);
+    assert_eq!(after.suggestions[0].text, expected);
+    assert_eq!(after.suggestions[0].status, "pending");
+    assert!(!after.suggestions[0].stale);
+    assert_eq!(after.suggestions[0].sources[0].segment_id, raw.id);
+    assert_eq!(after.suggestions[0].sources[0].quote, expected);
+    assert_eq!(after.suggestions[0].sources[0].revision, 2);
+    assert_eq!(after.suggestions[0].sources[0].start_ms, raw.start_ms);
+    assert_eq!(after.suggestions[0].sources[0].end_ms, raw.end_ms);
+    assert!(engine
+        .terminology(&meeting.id)?
+        .recognition_hotwords()
+        .iter()
+        .any(|word| word == canonical));
+    let archived: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+        [&raw.id],
+        |row| row.get(0),
+    )?;
+    assert_eq!(serde_json::from_str::<Segment>(&archived)?.text, raw.text);
+    let old_article: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id DESC LIMIT 1",
+        [&meeting.id],
+        |row| row.get(0),
+    )?;
+    let old_article: Vec<Suggestion> = serde_json::from_str(&old_article)?;
+    assert_eq!(old_article[0].text, raw.text);
+    assert_eq!(old_article[0].sources[0].quote, raw.text);
+    assert_eq!(old_article[0].sources[0].revision, 1);
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
+    Ok(())
+}
+
+#[test]
+fn appended_name_after_unadmitted_prose_updates_omascribe() -> Result<()> {
+    appended_name_after_public_prose_updates_source_and_article("OmaScribe", "ALMA SCRIBE", false)
+}
+
+#[test]
+fn appended_name_after_unadmitted_prose_updates_other_product() -> Result<()> {
+    appended_name_after_public_prose_updates_source_and_article(
+        "PixelLedger",
+        "PIXEL LEDGRE",
+        false,
+    )
+}
+
+#[test]
+fn appended_name_after_unadmitted_prose_updates_omascribe_in_mixed_note() -> Result<()> {
+    appended_name_after_public_prose_updates_source_and_article("OmaScribe", "ALMA SCRIBE", true)
+}
+
+#[test]
+fn appended_name_after_unadmitted_prose_updates_other_product_in_mixed_note() -> Result<()> {
+    appended_name_after_public_prose_updates_source_and_article("PixelLedger", "PIXEL LEDGRE", true)
+}

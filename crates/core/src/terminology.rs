@@ -274,83 +274,118 @@ struct NoteWord<'a> {
 
 /// The same bounded note admission serves glossary selection and normalization.
 fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
+    const MAX_NOTE_CHARS: usize = 200_000;
+    const LIMIT: usize = crate::asr_hotwords::MAX_WORDS;
     static LATIN: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let latin = LATIN.get_or_init(|| Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap());
-    let chinese_context = note
+    let mut chinese_context = false;
+    // Match save_note's existing input ceiling. Direct/imported oversized
+    // inputs abstain here, rather than admitting a clipped name or marker.
+    // This bounds this extractor, not all other Terms inputs or asset IO.
+    for (index, c) in note.content.chars().enumerate() {
+        if index == MAX_NOTE_CHARS {
+            return Vec::new();
+        }
+        chinese_context |= ('\u{3400}'..='\u{9fff}').contains(&c);
+    }
+    let keywords: HashSet<_> = note
         .content
-        .chars()
-        .any(|c| ('\u{3400}'..='\u{9fff}').contains(&c));
-    let mut accepted_words = HashSet::new();
-    let mut words = Vec::new();
+        .lines()
+        .map(|line| line.trim().trim_matches(['*', '-', '#', ' ']))
+        // An ASCII regex candidate cannot equal a longer/Unicode line.
+        .filter(|line| line.len() <= 40 && line.is_ascii())
+        .collect();
+    let bold: HashSet<_> = latin
+        .find_iter(&note.content)
+        .filter_map(|hit| {
+            let word = hit.as_str().trim_end_matches(['.', '-']);
+            let start = hit.start();
+            let end = start + word.len();
+            // Preserve literal contains("**word**") permission, including
+            // ***Word*** and **One**Two** overlapping marker boundaries.
+            (start >= 2
+                && note.content.get(start - 2..start) == Some("**")
+                && note.content.get(end..end + 2) == Some("**"))
+            .then_some(word)
+        })
+        .collect();
+    let mut strong_seen = HashSet::new();
+    let mut weak_seen = HashSet::new();
+    let mut strong = Vec::new();
+    let mut weak = Vec::new();
     let mut marked_spans = note_asr_marked_spans(&note.content).peekable();
-    for word in latin.find_iter(&note.content) {
-        // A complete marked Unicode/long token must not leave an ASCII prefix
-        // as a separate correction name or recognition hint.
-        while marked_spans
-            .peek()
-            .is_some_and(|span| span.end() <= word.start())
-        {
-            marked_spans.next();
-        }
-        if marked_spans.peek().is_some_and(|span| {
-            span.start() <= word.start()
-                && word.end() <= span.end()
-                && (note.content[..word.start()]
-                    .chars()
-                    .next_back()
-                    .is_some_and(char::is_alphanumeric)
-                    || note.content[word.end()..]
-                        .chars()
-                        .next()
-                        .is_some_and(char::is_alphanumeric))
-        }) {
-            continue;
-        }
-        let line_start = note.content[..word.start()]
-            .rfind('\n')
-            .map_or(0, |i| i + 1);
-        let line_end = note.content[word.end()..]
-            .find('\n')
-            .map_or(note.content.len(), |i| word.end() + i);
-        let line = note.content[line_start..line_end]
-            .trim()
-            .trim_matches(['*', '-', '#', ' ']);
+    let mut offset = 0;
+    'lines: for raw_line in note.content.split_inclusive('\n') {
+        let base = offset;
+        offset += raw_line.len();
+        let line = raw_line.trim().trim_matches(['*', '-', '#', ' ']);
         if model_identifier(line).is_some() {
             continue;
         }
-        let word = word.as_str().trim_end_matches(['.', '-']);
-        if accepted_words.contains(word) {
-            continue;
-        }
-        if accepted_words.len() >= 80 {
-            break;
-        }
-        accepted_words.insert(word.to_owned());
-        if ["nbsp", "amp", "http", "https"].contains(&word.to_lowercase().as_str()) {
-            continue;
-        }
-        // Standalone keywords may provide lowercase spellings. Concept headings
-        // remain ASR focus; strong identifiers and explicit terms remain names.
-        let keyword_line = note
-            .content
-            .lines()
-            .any(|line| line.trim().trim_matches(['*', '-', '#', ' ']) == word);
-        let identifier = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
-            || word.chars().any(|c| c.is_ascii_digit())
-            || word.eq_ignore_ascii_case("omascribe");
-        let concept = note.kind != "term"
-            && !identifier
-            && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
-        let named = identifier
-            || !concept
-                && (keyword_line
-                    || word.starts_with(char::is_uppercase)
-                        && note.content.contains(&format!("**{word}**")));
-        if note.kind == "term" || chinese_context || named || concept && keyword_line {
-            words.push(NoteWord { word, named });
+        for hit in latin.find_iter(raw_line) {
+            let start = base + hit.start();
+            let end = base + hit.end();
+            // A complete marked Unicode/long token must not leave an ASCII
+            // prefix as a separate correction name or recognition hint.
+            while marked_spans.peek().is_some_and(|span| span.end() <= start) {
+                marked_spans.next();
+            }
+            if marked_spans.peek().is_some_and(|span| {
+                span.start() <= start
+                    && end <= span.end()
+                    && (note.content[..start]
+                        .chars()
+                        .next_back()
+                        .is_some_and(char::is_alphanumeric)
+                        || note.content[end..]
+                            .chars()
+                            .next()
+                            .is_some_and(char::is_alphanumeric))
+            }) {
+                continue;
+            }
+            let word = hit.as_str().trim_end_matches(['.', '-']);
+            if strong_seen.contains(word) || weak_seen.contains(word) {
+                continue;
+            }
+            if ["nbsp", "amp", "http", "https"]
+                .iter()
+                .any(|ignored| word.eq_ignore_ascii_case(ignored))
+            {
+                continue;
+            }
+            // These are the existing permission rules; priority changes only
+            // which authorized candidates occupy the unchanged output budget.
+            let keyword_line = keywords.contains(word);
+            let identifier = word.chars().skip(1).any(|c| c.is_ascii_uppercase())
+                || word.chars().any(|c| c.is_ascii_digit())
+                || word.eq_ignore_ascii_case("omascribe");
+            let concept = note.kind != "term"
+                && !identifier
+                && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
+            let named = identifier
+                || !concept
+                    && (keyword_line
+                        || word.starts_with(char::is_uppercase) && bold.contains(word));
+            if note.kind == "term" || chinese_context || named || concept && keyword_line {
+                if named || note.kind == "term" {
+                    strong_seen.insert(word);
+                    strong.push(NoteWord { word, named });
+                    if strong.len() == LIMIT {
+                        break 'lines;
+                    }
+                } else if weak.len() < LIMIT {
+                    weak_seen.insert(word);
+                    weak.push(NoteWord { word, named });
+                }
+            }
         }
     }
-    words
+    // At most80 retained candidates per class; rejected scanned tokens do not
+    // allocate a seen entry. Each bounded input is indexed/scanned linearly.
+    strong.extend(weak);
+    strong.truncate(LIMIT);
+    strong
 }
 
 /// Explicit complete spans may bias recognition without becoming literal name
@@ -2210,6 +2245,108 @@ mod tests {
             anchor_ms: 0,
             updated_at: String::new(),
         }
+    }
+
+    fn ordinary_ascii_candidates() -> String {
+        (b'a'..=b'd')
+            .flat_map(|a| (b'a'..=b'z').map(move |b| format!("ordinary{}{}", a as char, b as char)))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    #[test]
+    fn ordinary_tokens_leave_room_for_a_late_name_at_the_note_input_bound() {
+        let prefix = ordinary_ascii_candidates();
+        let mut content = format!("{prefix} ");
+        while content.len() + "ordinary ".len() + "OmaScribe".len() <= 200_000 {
+            content.push_str("ordinary ");
+        }
+        content.push_str("OmaScribe");
+        assert!((199_990..=200_000).contains(&content.len()));
+        let data = note(&content);
+        let words = note_words(&data);
+        assert_eq!(words.len(), 1);
+        assert_eq!(words[0].word, "OmaScribe");
+        assert!(words[0].named);
+        let terms = Terms::new(&[data], &[]);
+        assert_eq!(terms.writer_names, ["OmaScribe"]);
+        assert_eq!(terms.recognition_hotwords(), ["OmaScribe"]);
+        assert_eq!(
+            terms.normalize("ALMA SCRIBE尚未完成。"),
+            "OmaScribe尚未完成。"
+        );
+    }
+
+    #[test]
+    fn mixed_focus_uses_remaining_slots_without_becoming_name_permission() {
+        let content = format!("录音 {} OmaScribe", ordinary_ascii_candidates());
+        let data = note(&content);
+        let words = note_words(&data);
+        assert_eq!(words.len(), 80);
+        assert_eq!(words[0].word, "OmaScribe");
+        assert!(words[0].named);
+        assert!(words[1..].iter().all(|word| !word.named));
+        let terms = Terms::new(&[data], &[]);
+        assert_eq!(terms.writer_names, ["OmaScribe"]);
+        assert_eq!(terms.caption_names, ["OmaScribe"]);
+        assert_eq!(terms.approximate, ["OmaScribe"]);
+        assert_eq!(terms.recognition_hotwords().len(), 80);
+        terms
+            .validate_writer_names("ordinaryaa is not approved.", "普通事项尚未批准。")
+            .unwrap();
+    }
+
+    #[test]
+    fn indexed_note_permissions_preserve_global_and_overlapping_markers() {
+        let content =
+            "Word One Two Pine are ordinary here.\r\n\r\n***Word*** **One**Two**\r\nPine\r\n";
+        let data = note(content);
+        let words = note_words(&data);
+        assert_eq!(
+            words.iter().map(|word| word.word).collect::<Vec<_>>(),
+            ["Word", "One", "Two", "Pine"]
+        );
+        assert!(words.iter().all(|word| word.named));
+        for content in ["before **Word.** after", "before **Word--** after"] {
+            assert!(note_words(&note(content)).is_empty(), "{content}");
+        }
+    }
+
+    #[test]
+    fn oversized_note_words_abstain_without_clipping_a_name_or_marker() {
+        for ending in ["OmaScribe", "**PixelLedger**", "**Chişinău**"] {
+            let content = format!("{}{ending}", " ".repeat(200_000));
+            assert!(note_words(&note(&content)).is_empty(), "{ending}");
+        }
+        // This is only note_words' explicit boundary; the other Terms input
+        // selectors keep their existing independent contracts.
+    }
+
+    #[test]
+    fn late_name_priority_does_not_revoke_an_explicit_alias_conflict() {
+        let content = format!("录音 {} CedarLedger", ordinary_ascii_candidates());
+        let entries = [
+            Entry {
+                kind: "term".into(),
+                title: "CedarLedger".into(),
+                aliases: "CEDAR LEDGRE".into(),
+                ..Default::default()
+            },
+            Entry {
+                kind: "term".into(),
+                title: "OtherLedger".into(),
+                aliases: "CEDAR LEDGRE".into(),
+                ..Default::default()
+            },
+        ];
+        assert_eq!(
+            Terms::new(&[note(&content)], &[]).normalize("CEDAR LEDGRE尚未完成。"),
+            "CedarLedger尚未完成。"
+        );
+        assert_eq!(
+            Terms::new(&[note(&content)], &entries).normalize("CEDAR LEDGRE尚未完成。"),
+            "CEDAR LEDGRE尚未完成。"
+        );
     }
 
     fn document_asr_admission_reaches_wire(content: &str, expected: &str) -> Result<()> {
