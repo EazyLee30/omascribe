@@ -195,6 +195,7 @@ fn binding(
     )
 }
 fn configuration_binding(configuration: &Value, selectors: &SelectorEnv) -> Result<String> {
+    selectors.ensure_driver_files_verified()?;
     // The inexpensive environment identity lives outside the cached hardware
     // inventory, so its thirty-second lifetime cannot conceal selector edits.
     // Keep the legacy private field name to preserve existing CUDA bindings;
@@ -716,6 +717,66 @@ mod tests {
         assert_eq!(certificate.binding, key);
         assert_eq!(certificate.device, "Vulkan0");
         assert_eq!(hardware_key(&engine)?, "same-vulkan-inventory");
+        Ok(())
+    }
+
+    #[test]
+    fn unresolved_explicit_vulkan_driver_cannot_receive_a_configuration_binding() {
+        let configuration =
+            json!({"schema":2,"hardware":"same-cached-inventory","device":"Vulkan0"});
+        let selectors = SelectorEnv::vulkan(&[(
+            "VK_DRIVER_FILES",
+            Some("unresolved-relative-driver.json".into()),
+        )]);
+        assert!(
+            configuration_binding(&configuration, &selectors).is_err(),
+            "An unresolved explicit driver cannot reuse or issue acceleration qualification"
+        );
+        assert!(configuration_binding(&configuration, &SelectorEnv::vulkan(&[])).is_ok());
+        assert!(configuration_binding(&configuration, &SelectorEnv::cuda(None, None)).is_ok());
+    }
+
+    #[test]
+    fn same_path_vulkan_driver_changes_invalidate_cached_trial_before_certificate_write(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        engine.acceleration.lock().unwrap().hardware =
+            Some((Instant::now(), "same-cached-vulkan-hardware".into()));
+        let library = root.path().join("driver.bin");
+        let manifest = root.path().join("driver.json");
+        fs::write(&library, b"driver-a")?;
+        let relative_library = if cfg!(windows) {
+            ".\\driver.bin"
+        } else {
+            "./driver.bin"
+        };
+        let manifest_text = |version| {
+            json!({"file_format_version":"1.0.0","ICD":{"library_path":relative_library,"api_version":version}}).to_string()
+        };
+        fs::write(&manifest, manifest_text("1.2.0"))?;
+        let capture =
+            || SelectorEnv::vulkan(&[("VK_DRIVER_FILES", Some(manifest.as_os_str().into()))]);
+        let before = capture();
+        let configuration =
+            json!({"schema":2,"hardware":hardware_key(&engine)?,"device":"Vulkan0"});
+        let original = configuration_binding(&configuration, &before)?;
+        assert_eq!(original, configuration_binding(&configuration, &capture())?);
+        let mut trial = fixed_trial(&original, before);
+        trial.component_id = "synthetic-vulkan".into();
+        trial.device = "Vulkan0".into();
+        fs::write(&library, b"driver-b")?;
+        let library_changed = capture();
+        let changed = configuration_binding(&configuration, &library_changed)?;
+        assert_ne!(original, changed);
+        assert!(finish_verification(&engine, trial, &changed, &library_changed).is_err());
+        assert!(!certificate_path(&engine).exists());
+        assert!(!engine.root.join("last-acceleration-test.json").exists());
+        fs::write(&manifest, manifest_text("1.3.0"))?;
+        assert_ne!(changed, configuration_binding(&configuration, &capture())?);
+        fs::remove_file(&library)?;
+        assert!(configuration_binding(&configuration, &capture()).is_err());
+        assert_eq!(hardware_key(&engine)?, "same-cached-vulkan-hardware");
         Ok(())
     }
 

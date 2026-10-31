@@ -1,9 +1,13 @@
 //! Bind GPU selection to the exact selector values passed to a child.
-//! Same-path manifest/library changes and unknown layer inputs remain unfinished.
+//! Explicit Vulkan driver files are observed separately from selector strings.
+//! Default driver discovery, loaded libraries and unknown layers remain unfinished.
 use super::Backend;
 use anyhow::{ensure, Result};
 use sha2::{Digest, Sha256};
 use std::{ffi::OsString, fmt, process::Command};
+
+mod driver_files;
+use driver_files::DriverFiles;
 
 const CUDA_KEYS: [&str; 2] = ["CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER"];
 
@@ -51,6 +55,7 @@ enum Scope {
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) struct SelectorEnv {
     scope: Scope,
+    driver_files: DriverFiles,
 }
 
 impl fmt::Debug for SelectorEnv {
@@ -76,15 +81,25 @@ impl SelectorEnv {
     }
 
     fn capture_from(backend: Backend, mut lookup: impl FnMut(&str) -> Option<OsString>) -> Self {
+        let scope = match backend {
+            Backend::Cuda => Scope::Cuda(CUDA_KEYS.map(lookup)),
+            Backend::Vulkan => Scope::Vulkan(VULKAN_KEYS.iter().map(|key| lookup(key)).collect()),
+            _ => Scope::Unscoped,
+        };
+        let driver_files = match &scope {
+            Scope::Vulkan(values) => DriverFiles::capture(VULKAN_KEYS, values),
+            _ => DriverFiles::default(),
+        };
         Self {
-            scope: match backend {
-                Backend::Cuda => Scope::Cuda(CUDA_KEYS.map(lookup)),
-                Backend::Vulkan => {
-                    Scope::Vulkan(VULKAN_KEYS.iter().map(|key| lookup(key)).collect())
-                }
-                _ => Scope::Unscoped,
-            },
+            scope,
+            driver_files,
         }
+    }
+
+    /// The default discovery path is unchanged and is not claimed as observed.
+    /// Explicit overrides must be resolvable before a certificate can be used.
+    pub(crate) fn ensure_driver_files_verified(&self) -> Result<()> {
+        self.driver_files.ensure_verified()
     }
 
     fn values(&self) -> (&'static [&'static str], &[Option<OsString>]) {
@@ -99,7 +114,7 @@ impl SelectorEnv {
         let mut hash = Sha256::new();
         // Keep the existing CUDA and CPU/Metal/MLX byte protocol unchanged.
         hash.update(if matches!(self.scope, Scope::Vulkan(_)) {
-            b"vulkan-selector-env-v1\0".as_slice()
+            b"vulkan-selector-env-v2\0".as_slice()
         } else {
             b"cuda-selector-env-v1\0".as_slice()
         });
@@ -122,6 +137,9 @@ impl SelectorEnv {
             }
         } else {
             hash.update([0]);
+        }
+        if matches!(self.scope, Scope::Vulkan(_)) {
+            self.driver_files.update_digest(&mut hash);
         }
         format!("{:x}", hash.finalize())
     }
@@ -155,6 +173,7 @@ impl SelectorEnv {
     pub(crate) fn cuda(visible: Option<OsString>, order: Option<OsString>) -> Self {
         Self {
             scope: Scope::Cuda([visible, order]),
+            driver_files: DriverFiles::default(),
         }
     }
 
@@ -173,6 +192,284 @@ impl SelectorEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn relative_driver_library() -> &'static str {
+        if cfg!(windows) {
+            r".\driver.bin"
+        } else {
+            "./driver.bin"
+        }
+    }
+
+    fn driver_json(library: &str, api_version: &str) -> Vec<u8> {
+        serde_json::to_vec(&serde_json::json!({
+            "file_format_version":"1.0.0",
+            "ICD":{"library_path":library,"api_version":api_version}
+        }))
+        .unwrap()
+    }
+
+    fn driver_fixture(root: &std::path::Path) -> Result<std::path::PathBuf> {
+        let manifest = root.join("driver.json");
+        std::fs::write(root.join("driver.bin"), b"driver-a")?;
+        std::fs::write(&manifest, driver_json(relative_driver_library(), "1.2.0"))?;
+        Ok(manifest)
+    }
+
+    fn driver_snapshot(key: &str, path: &std::path::Path) -> SelectorEnv {
+        SelectorEnv::vulkan(&[(key, Some(path.as_os_str().to_owned()))])
+    }
+
+    #[test]
+    fn same_path_vulkan_manifest_edits_change_the_snapshot() -> Result<()> {
+        for key in ["VK_DRIVER_FILES", "VK_ICD_FILENAMES", "VK_ADD_DRIVER_FILES"] {
+            let root = tempfile::tempdir()?;
+            let manifest = driver_fixture(root.path())?;
+            let before = driver_snapshot(key, &manifest);
+            assert_eq!(before, driver_snapshot(key, &manifest));
+            std::fs::write(&manifest, driver_json(relative_driver_library(), "1.3.0"))?;
+            assert_ne!(before.digest(), driver_snapshot(key, &manifest).digest());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn same_path_vulkan_driver_replacement_changes_the_snapshot() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let before = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        let library = root.path().join("driver.bin");
+        let modified = std::fs::metadata(&library)?.modified()?;
+        std::fs::remove_file(&library)?;
+        let replacement = std::fs::File::create(&library)?;
+        std::fs::write(&library, b"driver-b")?;
+        replacement.set_times(std::fs::FileTimes::new().set_modified(modified))?;
+        drop(replacement);
+        let after = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(after.ensure_driver_files_verified().is_ok());
+        assert_ne!(before.digest(), after.digest());
+        Ok(())
+    }
+
+    #[test]
+    fn missing_or_unresolvable_vulkan_drivers_cannot_reuse_a_snapshot() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let before = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(before.ensure_driver_files_verified().is_ok());
+        std::fs::remove_file(&manifest)?;
+        let missing = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert_ne!(before.digest(), missing.digest());
+        assert!(missing.ensure_driver_files_verified().is_err());
+        assert_eq!(missing, driver_snapshot("VK_DRIVER_FILES", &manifest));
+        std::fs::write(&manifest, br#"{"ICD":{"library_path":"driver.bin"}}"#)?;
+        let unresolved = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(unresolved.ensure_driver_files_verified().is_err());
+        assert_eq!(unresolved, driver_snapshot("VK_DRIVER_FILES", &manifest));
+        let error = unresolved
+            .ensure_driver_files_verified()
+            .unwrap_err()
+            .to_string();
+        assert!(!error.contains(root.path().to_str().unwrap()));
+        assert!(!error.contains("driver.bin"));
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_vulkan_precedence_and_unobserved_default_are_distinct() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        for selected in ["VK_DRIVER_FILES", "VK_ICD_FILENAMES"] {
+            let mut values = vec![("VK_ADD_DRIVER_FILES", Some("missing.json".into()))];
+            if selected == "VK_DRIVER_FILES" {
+                values.push(("VK_ICD_FILENAMES", Some("also-missing.json".into())));
+            }
+            values.push((selected, Some(manifest.as_os_str().to_owned())));
+            assert!(SelectorEnv::vulkan(&values)
+                .ensure_driver_files_verified()
+                .is_ok());
+        }
+        let empty_override = SelectorEnv::vulkan(&[
+            ("VK_DRIVER_FILES", Some(OsString::new())),
+            ("VK_ICD_FILENAMES", Some(manifest.as_os_str().to_owned())),
+        ]);
+        assert!(empty_override.ensure_driver_files_verified().is_err());
+        assert!(
+            driver_snapshot("VK_DRIVER_FILES", std::path::Path::new("relative.json"))
+                .ensure_driver_files_verified()
+                .is_err()
+        );
+        assert!(SelectorEnv::vulkan(&[])
+            .ensure_driver_files_verified()
+            .is_ok());
+        for backend in [Backend::Cpu, Backend::Metal, Backend::Mlx, Backend::Cuda] {
+            assert!(SelectorEnv::capture(backend)
+                .ensure_driver_files_verified()
+                .is_ok());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_vulkan_directory_membership_and_removed_library_are_observed() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let before = driver_snapshot("VK_DRIVER_FILES", root.path());
+        assert!(before.ensure_driver_files_verified().is_ok());
+        assert_eq!(before, driver_snapshot("VK_DRIVER_FILES", root.path()));
+        let added = root.path().join("second.json");
+        std::fs::copy(&manifest, &added)?;
+        let changed = driver_snapshot("VK_DRIVER_FILES", root.path());
+        assert!(changed.ensure_driver_files_verified().is_ok());
+        assert_ne!(before, changed);
+        std::fs::remove_file(root.path().join("driver.bin"))?;
+        assert!(driver_snapshot("VK_DRIVER_FILES", root.path())
+            .ensure_driver_files_verified()
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_vulkan_manifest_and_path_limits_fail_without_guessing() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        std::fs::write(&manifest, vec![b' '; 64 * 1024 + 1])?;
+        assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+            .ensure_driver_files_verified()
+            .is_err());
+        let many = std::env::join_paths(std::iter::repeat_n(manifest.as_path(), 17))?;
+        assert!(SelectorEnv::vulkan(&[("VK_DRIVER_FILES", Some(many))])
+            .ensure_driver_files_verified()
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_vulkan_duplicate_or_native_shadow_fields_are_unresolved() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let library = serde_json::to_string(relative_driver_library())?;
+        let driver = format!(r#"{{"library_path":{library}}}"#);
+        for input in [
+            format!(r#"{{"ICD":{driver},"ICD":{driver}}}"#),
+            format!(r#"{{"ICD":{{"library_path":{library},"library_path":{library}}}}}"#),
+            format!(r#"{{"icd":{driver},"ICD":{driver}}}"#),
+            format!(r#"{{"ICD":{{"LIBRARY_PATH":{library},"library_path":{library}}}}}"#),
+            format!(r#"{{"ICD\u0000shadow":{driver},"ICD":{driver}}}"#),
+            format!(
+                r#"{{"ICD":{{"library_path\u0000shadow":{library},"library_path":{library}}}}}"#
+            ),
+        ] {
+            std::fs::write(&manifest, input)?;
+            assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+                .ensure_driver_files_verified()
+                .is_err());
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn explicit_vulkan_library_symlink_retarget_is_observed() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let library = root.path().join("driver.bin");
+        std::fs::rename(&library, root.path().join("first.bin"))?;
+        std::os::unix::fs::symlink("first.bin", &library)?;
+        let before = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(before.ensure_driver_files_verified().is_ok());
+        std::fs::write(root.path().join("second.bin"), b"driver-b")?;
+        std::fs::remove_file(&library)?;
+        std::os::unix::fs::symlink("second.bin", &library)?;
+        assert_ne!(before, driver_snapshot("VK_DRIVER_FILES", &manifest));
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    #[ignore = "owned FIFO fixture child; never loads a driver"]
+    fn vulkan_fifo_probe_child() -> Result<()> {
+        let root =
+            std::path::PathBuf::from(std::env::var_os("OMASCRIBE_VULKAN_FIFO_PROBE").unwrap());
+        for path in [root.join("blocked.json"), root.join("library.json"), root] {
+            assert!(driver_snapshot("VK_DRIVER_FILES", &path)
+                .ensure_driver_files_verified()
+                .is_err());
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn explicit_vulkan_fifos_fail_in_a_bounded_owned_probe() -> Result<()> {
+        use std::os::unix::ffi::OsStrExt;
+        let root = tempfile::tempdir()?;
+        for name in ["blocked.json", "blocked.bin"] {
+            let path = root.path().join(name);
+            let path = std::ffi::CString::new(path.as_os_str().as_bytes())?;
+            // Both FIFO paths belong only to this temporary test directory.
+            ensure!(unsafe { libc::mkfifo(path.as_ptr(), 0o600) } == 0);
+        }
+        std::fs::write(
+            root.path().join("library.json"),
+            br#"{"ICD":{"library_path":"./blocked.bin"}}"#,
+        )?;
+        let mut command = Command::new(std::env::current_exe()?);
+        command
+            .args([
+                "--exact",
+                "inference::selector_env::tests::vulkan_fifo_probe_child",
+                "--ignored",
+                "--nocapture",
+            ])
+            .env("OMASCRIBE_VULKAN_FIFO_PROBE", root.path());
+        let output =
+            crate::probe::capture(&mut command, std::time::Duration::from_secs(5), 16 * 1024)?;
+        ensure!(String::from_utf8(output)?.contains("1 passed"));
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn explicit_vulkan_windows_relative_slash_only_library_is_unresolved() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+            .ensure_driver_files_verified()
+            .is_ok());
+        std::fs::write(&manifest, driver_json("./driver.bin", "1.2.0"))?;
+        assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+            .ensure_driver_files_verified()
+            .is_err());
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn explicit_vulkan_windows_open_writer_cannot_reuse_a_snapshot() -> Result<()> {
+        use std::os::windows::fs::OpenOptionsExt;
+        use windows::Win32::Storage::FileSystem::{
+            FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
+        };
+        let root = tempfile::tempdir()?;
+        let manifest = driver_fixture(root.path())?;
+        let before = driver_snapshot("VK_DRIVER_FILES", &manifest);
+        assert!(before.ensure_driver_files_verified().is_ok());
+        for path in [root.path().join("driver.bin"), manifest.clone()] {
+            let writer = std::fs::OpenOptions::new()
+                .write(true)
+                .share_mode(FILE_SHARE_READ.0 | FILE_SHARE_WRITE.0 | FILE_SHARE_DELETE.0)
+                .open(path)?;
+            assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+                .ensure_driver_files_verified()
+                .is_err());
+            drop(writer);
+            assert!(driver_snapshot("VK_DRIVER_FILES", &manifest)
+                .ensure_driver_files_verified()
+                .is_ok());
+        }
+        Ok(())
+    }
 
     #[test]
     fn selectors_distinguish_unset_empty_order_and_non_unicode_without_logging_values() {
