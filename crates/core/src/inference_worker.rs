@@ -1126,34 +1126,78 @@ mod tests {
         session.retention_memory = Some(Some(2048));
         Ok(session)
     }
-    fn assert_reaped(pid: u32) {
-        #[cfg(unix)]
-        unsafe {
-            let mut status = 0;
-            assert_eq!(libc::waitpid(pid as i32, &mut status, libc::WNOHANG), -1);
-            assert_eq!(
-                std::io::Error::last_os_error().raw_os_error(),
-                Some(libc::ECHILD)
-            );
+    struct ReapProbe {
+        pid: u32,
+        #[cfg(windows)]
+        handle: std::os::windows::io::OwnedHandle,
+    }
+    impl ReapProbe {
+        fn new(child: &Child) -> Result<Self> {
+            Ok(Self {
+                pid: child.id(),
+                #[cfg(windows)]
+                handle: {
+                    use std::os::windows::io::AsHandle;
+                    child.as_handle().try_clone_to_owned()?
+                },
+            })
         }
         #[cfg(windows)]
-        {
-            let mut processes = sysinfo::System::new();
-            processes.refresh_processes(
-                sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]),
-                true,
-            );
-            assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
+        fn wait_state(&self) -> windows::Win32::Foundation::WAIT_EVENT {
+            use std::os::windows::io::AsRawHandle;
+            use windows::Win32::{Foundation::HANDLE, System::Threading::WaitForSingleObject};
+            // Retain the original process object across Child::wait and Drop.
+            // A fresh PID lookup could name a different process or an object
+            // that is still enumerable after its execution has terminated.
+            unsafe { WaitForSingleObject(HANDLE(self.handle.as_raw_handle()), 0) }
         }
+        fn assert_reaped(self) {
+            #[cfg(unix)]
+            unsafe {
+                let mut status = 0;
+                assert_eq!(
+                    libc::waitpid(self.pid as i32, &mut status, libc::WNOHANG),
+                    -1
+                );
+                assert_eq!(
+                    std::io::Error::last_os_error().raw_os_error(),
+                    Some(libc::ECHILD)
+                );
+            }
+            #[cfg(windows)]
+            assert_eq!(
+                self.wait_state(),
+                windows::Win32::Foundation::WAIT_OBJECT_0,
+                "the original child process {} must be signaled after cleanup",
+                self.pid
+            );
+        }
+    }
+    #[cfg(windows)]
+    #[test]
+    fn lifecycle_exit_probe_rejects_a_live_child_and_confirms_its_terminated_object() -> Result<()>
+    {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let session = fake(&engine)?;
+        let probe = ReapProbe::new(&session.server.child)?;
+        assert_eq!(
+            probe.wait_state(),
+            windows::Win32::Foundation::WAIT_TIMEOUT,
+            "a live child must not satisfy the exit probe"
+        );
+        drop(session);
+        probe.assert_reaped();
+        Ok(())
     }
     #[test]
     fn lifecycle_zero_ttl_lease_and_final_batch_confirm_real_child_exit() -> Result<()> {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let first = retained_lease(&engine, 0)?;
-        let first_pid = first.server.child.id();
+        let first_probe = ReapProbe::new(&first.server.child)?;
         drop(first);
-        assert_reaped(first_pid);
+        first_probe.assert_reaped();
         let status = engine.inference_pool.status();
         assert_eq!(status.lifecycle.lease_releases, 1);
         assert_eq!(status.lifecycle.last_release.unwrap().reason, "lease_end");
@@ -1161,6 +1205,7 @@ mod tests {
         let nested = engine.inference_pool.batch();
         let second = retained_lease(&engine, 0)?;
         let pid = second.server.child.id();
+        let probe = ReapProbe::new(&second.server.child)?;
         drop(second);
         drop(nested);
         assert_eq!(engine.inference_pool.status().idle_pid, Some(pid));
@@ -1168,7 +1213,7 @@ mod tests {
         assert!(reused.reused);
         drop(reused);
         drop(batch);
-        assert_reaped(pid);
+        probe.assert_reaped();
         let status = engine.inference_pool.status();
         assert_eq!(status.lifecycle.releases, 2);
         assert_eq!(status.lifecycle.batch_releases, 1);
@@ -1185,9 +1230,11 @@ mod tests {
             let root = tempfile::tempdir()?;
             let engine = Engine::open(root.path().into())?;
             let batch = engine.inference_pool.batch();
-            drop(retained_lease(&engine, ttl)?);
+            let session = retained_lease(&engine, ttl)?;
+            let probe = ReapProbe::new(&session.server.child)?;
+            drop(session);
             let initial = engine.inference_pool.status();
-            let pid = initial.idle_pid.unwrap();
+            assert_eq!(initial.idle_pid, Some(probe.pid));
             let lifetime = Duration::from_secs(if ttl == 0 { 2 } else { ttl });
             // Backdate only the fixture clock; actual child termination/reaping
             // still executes the same production reaper with a real process.
@@ -1198,7 +1245,7 @@ mod tests {
                 idle.expires = Instant::now();
             }
             engine.inference_pool.reap_idle(Instant::now());
-            assert_reaped(pid);
+            probe.assert_reaped();
             let final_status = engine.inference_pool.status();
             assert!(final_status.confirms_idle_exit_since(&initial));
             assert_eq!(final_status.lifecycle.ttl_releases, u64::from(ttl != 0));
@@ -1227,6 +1274,7 @@ mod tests {
         let mut session = checkout(&engine, "short-real-clock".into(), ttl, || fake(&engine))?;
         session.retention_memory = Some(Some(2048));
         let pid = session.server.child.id();
+        let probe = ReapProbe::new(&session.server.child)?;
         drop(session);
         let initial = engine.inference_pool.status();
         assert_eq!(initial.idle_pid, Some(pid));
@@ -1251,7 +1299,7 @@ mod tests {
             thread::sleep(remaining.min(Duration::from_millis(5)));
         }
         engine.inference_pool.reap_idle(Instant::now());
-        assert_reaped(pid);
+        probe.assert_reaped();
         let final_status = engine.inference_pool.status();
         assert!(final_status.confirms_idle_exit_since(&initial));
         let release = final_status.lifecycle.last_release.unwrap();
@@ -1275,6 +1323,7 @@ mod tests {
             let engine = Engine::open(root.path().into())?;
             let session = retained_lease(&engine, 10)?;
             let pid = session.server.child.id();
+            let probe = ReapProbe::new(&session.server.child)?;
             session.begin_request()?;
             assert!(stop_from_watchdog(
                 Some(&engine),
@@ -1308,7 +1357,7 @@ mod tests {
                 assert!(engine.note_cancel.load(Ordering::SeqCst));
             }
             drop(session);
-            assert_reaped(pid);
+            probe.assert_reaped();
             let status = engine.inference_pool.status();
             assert_eq!(
                 status.lifecycle.resource_stops,
@@ -1328,7 +1377,7 @@ mod tests {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let mut session = retained_lease(&engine, 0)?;
-        let pid = session.server.child.id();
+        let probe = ReapProbe::new(&session.server.child)?;
         // Inject an unknown wait result only after real kill/wait has run, so
         // the negative telemetry test cannot leak a real child process.
         session
@@ -1338,7 +1387,7 @@ mod tests {
             .server
             .force_unconfirmed_exit = true;
         drop(session);
-        assert_reaped(pid);
+        probe.assert_reaped();
         let first = engine.inference_pool.status();
         assert!(
             !first
@@ -1370,9 +1419,9 @@ mod tests {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let direct = fake(&engine)?;
-        let direct_pid = direct.server.child.id();
+        let probe = ReapProbe::new(&direct.server.child)?;
         drop(direct);
-        assert_reaped(direct_pid);
+        probe.assert_reaped();
         assert_eq!(engine.inference_pool.status().lifecycle.releases, 0);
         let result = checkout(&engine, "startup".into(), Duration::from_secs(10), || {
             let mut startup = fake(&engine)?;
@@ -1451,6 +1500,7 @@ mod tests {
             let (continue_tx, continue_rx) = mpsc::channel();
             let mut old = retained_lease(&engine, 10)?;
             let old_pid = old.server.child.id();
+            let old_probe = ReapProbe::new(&old.server.child)?;
             let old_stop = Arc::clone(&old.server.stop);
             old.session.as_mut().unwrap().server.before_reap = Some(Box::new(move || {
                 // Even an assertion failure/disconnected test controller must
@@ -1505,7 +1555,7 @@ mod tests {
             }
             continue_tx.send(())?;
             reaping.join().unwrap();
-            assert_reaped(old_pid);
+            old_probe.assert_reaped();
             let final_status = engine.inference_pool.status();
             let release = final_status.lifecycle.last_release.as_ref().unwrap();
             assert_eq!(release.pid, old_pid);
