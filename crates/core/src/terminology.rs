@@ -19,6 +19,7 @@ pub struct Terms {
     matcher: Option<Regex>,
     names: BTreeMap<String, String>,
     ambiguous: BTreeSet<String>,
+    ambiguous_matcher: Option<Regex>,
     ambiguous_compacts: HashSet<String>,
     model_aliases: HashSet<String>,
     pub hotwords: Vec<String>,
@@ -336,7 +337,7 @@ impl Terms {
         model_aliases.sort_unstable();
         let payload = if !self.ambiguous.is_empty() {
             serde_json::to_vec(&(
-                "terms-v7-ambiguous-spellings",
+                "terms-v8-ambiguous-spellings",
                 &self.names,
                 &self.approximate,
                 &self.caption_names,
@@ -633,6 +634,23 @@ impl Terms {
         for key in &ambiguous {
             names.remove(key);
         }
+        // The regex engine uses Unicode case folding, which is broader than
+        // lowercase keys (for example long s matches S). Keep the alternative
+        // identity in a separate matcher instead of guessing it from hit text.
+        let ambiguous_matcher = (!ambiguous.is_empty()).then(|| {
+            let mut aliases: Vec<_> = ambiguous.iter().collect();
+            aliases.sort_by_key(|alias| std::cmp::Reverse(alias.len()));
+            RegexBuilder::new(
+                &aliases
+                    .iter()
+                    .map(|alias| regex::escape(alias))
+                    .collect::<Vec<_>>()
+                    .join("|"),
+            )
+            .case_insensitive(true)
+            .build()
+            .unwrap()
+        });
         let ambiguous_compacts = ambiguous
             .iter()
             .filter(|alias| {
@@ -712,6 +730,7 @@ impl Terms {
             matcher,
             names,
             ambiguous,
+            ambiguous_matcher,
             ambiguous_compacts,
             model_aliases,
             hotwords,
@@ -907,11 +926,9 @@ impl Terms {
             .find_iter(text)
             .collect();
         let protected: Vec<_> = self
-            .matcher
+            .ambiguous_matcher
             .iter()
-            .filter(|_| !self.ambiguous.is_empty())
             .flat_map(|matcher| matcher.find_iter(text))
-            .filter(|hit| self.ambiguous.contains(&hit.as_str().to_lowercase()))
             .filter(|hit| {
                 !(hit
                     .as_str()
@@ -3163,6 +3180,28 @@ mod tests {
                 "CedarLedger remains untested."
             );
         }
+    }
+
+    #[test]
+    fn unicode_casefolded_ambiguous_alias_is_opaque_to_ascii_near_matching() {
+        let entries: Vec<_> = ["Cribelyx", "NimbusArchive"]
+            .into_iter()
+            .map(|title| Entry {
+                kind: "term".into(),
+                title: title.into(),
+                aliases: "Scribely".into(),
+                ..Default::default()
+            })
+            .collect();
+        let terms = Terms::new(&[], &entries);
+        // Unicode case folding matches long s to S; lowercasing does not.
+        let source = "ſcribely remains untested.";
+        assert_eq!(terms.normalize(source), source);
+        assert_eq!(terms.normalize_near_names(source), source);
+        assert_eq!(
+            terms.normalize("Cribely is pending."),
+            "Cribelyx is pending."
+        );
     }
 
     #[test]
