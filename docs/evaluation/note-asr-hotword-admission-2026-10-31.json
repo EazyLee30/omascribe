@@ -1,0 +1,365 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+  "stable_version": "0.3.4",
+  "release_0_3_5_published": false,
+  "release_admission": false,
+  "change": "Complete explicitly marked multiword Latin names, two-character letter-digit identifiers and Unicode Latin words reach the existing production ASR hotword wire. They do not create correction aliases, writer-name obligations or factual permission.",
+  "validation": {
+    "core_passed": 514,
+    "core_ignored": 11,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 29,
+    "python_run": 136,
+    "python_skipped": 1,
+    "strict_workspace_clippy": true,
+    "fmt": true,
+    "diff_check": true
+  },
+  "source_ci": {
+    "catalog": {
+      "conclusion": "skipped",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853214/job/124424425467"
+    },
+    "build": {
+      "conclusion": "skipped",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853214/job/124424013389"
+    },
+    "windows-core": {
+      "conclusion": "success",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853214/job/124424012215"
+    },
+    "linux": {
+      "conclusion": "success",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853227/job/124423987466"
+    },
+    "ubuntu22": {
+      "conclusion": "success",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853215/job/124423987208"
+    },
+    "prepare": {
+      "conclusion": "success",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853214/job/124423987166"
+    },
+    "validate": {
+      "conclusion": "success",
+      "head_sha": "52c2b955ec361b39aa94b6439684dbbbc19bc0c6",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/41162853213/job/124423987017"
+    }
+  },
+  "calibration": {
+    "corpus": "100 fixed official FLEURS English read-speech clips",
+    "independent_audio_clusters": 100,
+    "asr_calls": 300,
+    "model_free_reference_calls": 100,
+    "audio_seconds": 1083.56,
+    "execution_passed": true,
+    "full_corpus_complete": true,
+    "identities_unchanged": true,
+    "quality_gate_passed": null,
+    "aggregates": {
+      "comparison_valid": true,
+      "interpretation": "observed paired measurements; not an approved quality gate",
+      "arms": {
+        "baseline": {
+          "attempted": 100,
+          "successful": 100,
+          "layers": {
+            "acoustic_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.38068906848149725,
+              "name_recall": 0.3,
+              "forbidden_insertion_rate": 0
+            },
+            "corrected_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.38068906848149725,
+              "name_recall": 0.3,
+              "forbidden_insertion_rate": 0
+            }
+          }
+        },
+        "positive": {
+          "attempted": 100,
+          "successful": 100,
+          "layers": {
+            "acoustic_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.35559336452573376,
+              "name_recall": 0.44,
+              "forbidden_insertion_rate": 0
+            },
+            "corrected_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.3543173117822203,
+              "name_recall": 0.47,
+              "forbidden_insertion_rate": 0
+            }
+          }
+        },
+        "negative": {
+          "attempted": 100,
+          "successful": 100,
+          "layers": {
+            "acoustic_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.3675031901318588,
+              "name_recall": 0.3,
+              "forbidden_insertion_rate": 0
+            },
+            "corrected_metrics": {
+              "measured": 100,
+              "expected": 100,
+              "wer": 0.3675031901318588,
+              "name_recall": 0.3,
+              "forbidden_insertion_rate": 0
+            }
+          }
+        }
+      },
+      "paired": {
+        "acoustic_metrics": {
+          "positive_name_recall": {
+            "observed_delta": 0.14,
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "discordant_counts": {
+              "gain": 14,
+              "loss": 0,
+              "both": 30,
+              "neither": 56,
+              "unknown": 0
+            },
+            "cluster_bootstrap_95": [
+              0.08,
+              0.21
+            ],
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000,
+            "direction": "higher is better"
+          },
+          "negative_forbidden_insertion": {
+            "observed_delta": 0,
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "discordant_counts": {
+              "gain": 0,
+              "loss": 0,
+              "both": 0,
+              "neither": 100,
+              "unknown": 0
+            },
+            "cluster_bootstrap_95": [
+              0.0,
+              0.0
+            ],
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000,
+            "direction": "lower is better"
+          },
+          "positive_wer": {
+            "observed_delta": -0.025095703955763504,
+            "cluster_bootstrap_95": [
+              -0.037768491884681704,
+              -0.01077204511245276
+            ],
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "direction": "lower is better",
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000
+          },
+          "negative_wer": {
+            "observed_delta": -0.013185878349638452,
+            "cluster_bootstrap_95": [
+              -0.0241984920233132,
+              0.00039432283545140517
+            ],
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "direction": "lower is better",
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000
+          }
+        },
+        "corrected_metrics": {
+          "positive_name_recall": {
+            "observed_delta": 0.17,
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "discordant_counts": {
+              "gain": 17,
+              "loss": 0,
+              "both": 30,
+              "neither": 53,
+              "unknown": 0
+            },
+            "cluster_bootstrap_95": [
+              0.1,
+              0.24
+            ],
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000,
+            "direction": "higher is better"
+          },
+          "negative_forbidden_insertion": {
+            "observed_delta": 0,
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "discordant_counts": {
+              "gain": 0,
+              "loss": 0,
+              "both": 0,
+              "neither": 100,
+              "unknown": 0
+            },
+            "cluster_bootstrap_95": [
+              0.0,
+              0.0
+            ],
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000,
+            "direction": "lower is better"
+          },
+          "positive_wer": {
+            "observed_delta": -0.026371756699276903,
+            "cluster_bootstrap_95": [
+              -0.039197822366324034,
+              -0.011894507115127123
+            ],
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "direction": "lower is better",
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000
+          },
+          "negative_wer": {
+            "observed_delta": -0.013185878349638452,
+            "cluster_bootstrap_95": [
+              -0.0241984920233132,
+              0.00039432283545140517
+            ],
+            "measured_clusters": 100,
+            "expected_clusters": 100,
+            "direction": "lower is better",
+            "bootstrap_seed": 1729,
+            "bootstrap_resamples": 2000
+          }
+        }
+      }
+    }
+  },
+  "interpretation": [
+    "All three arms use the same new source, fixed model, single thread and Legacy mode; these are not old-version versus new-version measurements.",
+    "Baseline uses greedy search; both supplied-note arms use modified beam search. Positive-versus-negative is the available same-decoder comparison.",
+    "Raw complete-name recall is 30/100 baseline, 44/100 positive, 30/100 negative. Corrected recall is 30,47,30; 53 positive names remain missed.",
+    "The designated unspoken negative name appeared in 0/100 negative arms; this does not prove absence of other invented text or all possible false positives.",
+    "English public read speech and imported WAVs do not establish Chinese, code-switching, natural meetings, live microphone, speaker attribution, captions, minutes, other hardware or install/upgrade acceptance.",
+    "Sampled RSS/CPU and decoder RTF are bounded observations with uncontrolled OS page caches, not whole-application resource reductions or real-time performance.",
+    "Previous six-arm smoke FAIL report remains unchanged; its prepared-PCM comparison was invalid for production PcmReader preprocessing. The independent offline review confirms all six archived PCM/WAV payloads match the canonical decoder while separately retaining missing-hotword and real recognition failures.",
+    "The original manual mixed-language minutes case Q16 still fails; 0.3.5 has not been released.",
+    "The negative hint arm trades one recalled name for one missed name relative to baseline; its unchanged total must not be called absence of regressions. A zero negative-name count is not zero population risk and its all-zero bootstrap interval is degenerate."
+  ],
+  "raw_evidence": {
+    "artifacts/hotword-calibration-2026-10-31/admission-core-asr-tests.log": {
+      "bytes": 58180,
+      "sha256": "6fcc05666ee74bd32e4c2b7ee1cf02944da051f6c9fa01aaddd9b145ffc826ca"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-python-tests.log": {
+      "bytes": 477,
+      "sha256": "e77fcb15d87c6e6f0ffa22baa7525896c605256e77df41d63429effc2ce8508b"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-clippy.log": {
+      "bytes": 291,
+      "sha256": "8d0ad20202eae3e4585271b20b14a0995723dd75e01772be7535abc6befae142"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-fmt.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-source-binding.json": {
+      "bytes": 797,
+      "sha256": "b39c943bbab31f7b427a8f50465d30d36336daa6698b31486655c2fc263f2a11"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-source-check-runs.json": {
+      "bytes": 24640,
+      "sha256": "3171912186e30f166e9d4a8f6e960ecdad595dfec086d23c7afa0aa763693118"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-red.log": {
+      "bytes": 1644,
+      "sha256": "96b88b89c3ae402387891ee19a32a1f1699d73162f60097aaa0ec2a91b79ab35"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-fixture-preflight.log": {
+      "bytes": 1058,
+      "sha256": "f72b6f42a7ef619208c17cc5df2138aaef7a50ba852abd38fe99213f131181d4"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-green.log": {
+      "bytes": 6365,
+      "sha256": "957c1cffe4f1128a08da56a80014546b4d9d52981f4de293365ac2ca854f0553"
+    },
+    "artifacts/hotword-calibration-2026-10-31/admission-span-boundary.log": {
+      "bytes": 436,
+      "sha256": "9ad229bd498db1f6228839cca44deb9e4c86fa0b5d1ee41928f0cc3cd6f0b6e9"
+    },
+    "artifacts/hotword-calibration-2026-10-31/smoke/report.json": {
+      "bytes": 80181,
+      "sha256": "9b37c2d0f6fd3773693555a320e7ac466b5e1c7db09ff32501b4bf98966ba398"
+    },
+    "artifacts/hotword-calibration-2026-10-31/smoke-original-offline-review.json": {
+      "bytes": 21377,
+      "sha256": "d48dda3be31887c8a0e9d37081bd147ba765b001c115aea870439c536b56c949"
+    },
+    "artifacts/hotword-calibration-2026-10-31/full-52c2/report.json": {
+      "bytes": 3736218,
+      "sha256": "12248a8b1a349ac9f71f7eab3b7d6d31c2c6c04ea3d5420507f075fcf637c65c"
+    },
+    "artifacts/hotword-calibration-2026-10-31/full-52c2/remaining-name-misses.json": {
+      "bytes": 23334,
+      "sha256": "7b6b29d0e2af7fdd2ee67f14e42538134c18a0e5536a366772e1d115cebf2686"
+    },
+    "artifacts/hotword-calibration-2026-10-31/full-52c2/independent-review.json": {
+      "bytes": 235068,
+      "sha256": "150b4ea8e144627638af170f69dadee8a5d51db31613bb08a8c154e60cacb1a4"
+    },
+    "artifacts/hotword-calibration-2026-10-31/full-52c2/cleanup.json": {
+      "bytes": 2675,
+      "sha256": "a300eb3b803b370d529e6979c8e736132bebbc529e7b888437bda65c7c1525ac"
+    }
+  },
+  "independent_review": {
+    "raw_databases": 300,
+    "canonical_references": 100,
+    "recording_pcm_wav_matches": 300,
+    "optional_task_tables_empty": 300,
+    "positive_vs_negative_same_decoder": {
+      "raw_name_gain": 14,
+      "raw_name_loss": 0,
+      "corrected_name_gain": 17,
+      "corrected_name_loss": 0
+    },
+    "negative_vs_baseline": {
+      "raw_name_gain": 1,
+      "raw_name_loss": 1
+    },
+    "remaining_positive_complete_name_misses": 53
+  },
+  "cleanup": {
+    "task_owned_model_and_worker_clones_released_logical_bytes": 86708395,
+    "original_models_unchanged": true,
+    "physical_space_reclaimed_not_measured": true,
+    "raw_audio_databases_logs_retained": true
+  }
+}

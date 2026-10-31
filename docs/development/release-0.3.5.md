@@ -4,7 +4,9 @@
 
 ## 固定范围与当前状态
 
-最新共享源码 `c2c32a0` 已推送，仅保留 `609f75f` 的来源名称局部性修复：别行中文不再使 REMEMBER/FINISHED 等全大写普通词占用专名保护预算；API/CUDA、同一行技术标识符及报道姓名原始字节保持。真实红测后500核心/11忽略、ASR9、CLI2、29集成及严格Clippy/格式通过，开发CLI已匹配重建；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI均成功，GPU build/catalog跳过。独立姓名标记成文候选 `a9bc04a` 单次原Q16仍FAIL：4请求/2468tokens/13.105秒，姓名恢复但英文重复、未中文成文，真实cursor0/article0/history0，源6未选入。已止损撤回候选，不增请求/改语料/调门槛；六模型副本和借用链接已清，原模型/runtime和失败证据不变。**0.3.5未发布，纪要质量仍阻塞。** [保留修复、拒绝候选、全文审查与清理](../evaluation/source-name-locality-2026-10-31.json)。
+最新共享源码 `52c2b95` 已推送：修复完整粗体多词名称、F1及Unicode拉丁名称未进入ASR热词的问题，仅扩展识别提示，不增加纪要事实或纠词别名权限。514核心/11忽略、ASR9、CLI2、29集成、136 Python/1跳过、严格workspace Clippy与格式通过；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI成功，GPU build/catalog跳过。固定100条FLEURS英语朗读音频的300次ASR与100次模型无关解码参考全部完成，源码/CLI/worker/模型/语料身份前后一致。相同新源码中，空笔记、正确名称、未说出名称三组完整名称原ASR命中分别30/44/30，纠词后30/47/30；负例指定名称插入0/100，仍有53个正确名称未命中。空笔记为greedy，两笔记臂同为modified beam，不能当作新旧版本提升，也不代表中文实录、纪要或实体设备验收。旧六臂原FAIL完整保留，独立离线复核确认其PCM比较口径错误与3个入口缺失是两件事。**0.3.5仍未发布，稳定版0.3.4；Q16纪要正文质量继续阻塞。** [实际对照、源码检查与未完成边界](../evaluation/note-asr-hotword-admission-2026-10-31.json)。
+
+上一共享源码 `c2c32a0` 已推送，仅保留 `609f75f` 的来源名称局部性修复：别行中文不再使 REMEMBER/FINISHED 等全大写普通词占用专名保护预算；API/CUDA、同一行技术标识符及报道姓名原始字节保持。真实红测后500核心/11忽略、ASR9、CLI2、29集成及严格Clippy/格式通过，开发CLI已匹配重建；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI均成功，GPU build/catalog跳过。独立姓名标记成文候选 `a9bc04a` 单次原Q16仍FAIL：4请求/2468tokens/13.105秒，姓名恢复但英文重复、未中文成文，真实cursor0/article0/history0，源6未选入。已止损撤回候选，不增请求/改语料/调门槛；六模型副本和借用链接已清，原模型/runtime和失败证据不变。**0.3.5未发布，纪要质量仍阻塞。** [保留修复、拒绝候选、全文审查与清理](../evaluation/source-name-locality-2026-10-31.json)。
 
 上一共享源码 `61b62d7` 已推送：默认录音中纪要退避由全局失败数改为会议+run独立计数，保留Err/Ok(0)、45/90/180/360秒上限及严格时间边界，手动重试可用；成功只清自身，删除/旧轮次结果不污染当前计数，catchup/停录drain与原attempt时点不变。两条真实生产默认分支红测转绿，498核心/11忽略、ASR9、CLI2、29集成、严格workspace Clippy/格式及160源码身份检查通过；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI成功，GPU build/catalog跳过，开发CLI已匹配重建且未再跑模型。陈旧launch防御不是普通新take的已复现race；本修复无模型请求、不改生成质量门。[退避原反例、锁顺序、边界与平台检查](../evaluation/default-live-minutes-retry-2026-10-31.json)。
 
