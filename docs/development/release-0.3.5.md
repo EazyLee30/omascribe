@@ -4,7 +4,9 @@
 
 ## 固定范围与当前状态
 
-最新共享源码 `eea96f0` 保留明确教授/博士结构的逐源姓名拼写保护和纪要单向新拼写veto（允许省略旧名字，不赋予发言/任务权限、不改ASR词典），并把Vulkan17项及Linux7项选择/搜索输入绑定同一listing/trial/worker/key/资格快照。相同环境复用、旧CUDA/CPU/Metal摘要保持，实际driver/ICD文件身份仍开放。最终481核心/10忽略、ASR9、CLI2、26集成、严格workspace Clippy/格式通过；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI成功，GPU build/catalog跳过。最终测试CLI已重建为eea，不再保留未验证提示作为默认开发二进制。
+最新共享源码 `e77f911` 已推送：修复冲突别名经近拼写、拼接及型号派生重新启用的误改，保留唯一显式别名归属，覆盖80项预算外冲突与Unicode大小写折叠。后来出现冲突时安全恢复原ASR，无法证明可逆的旧纪要标为待核。纪要上下文改为读取实际候选及关联笔记，保留知识排名/最新正文/原预算；合成库新旧上下文同值，返回Entry容量24.06MB→0.42MB、warm读取中位67.60→58.49ms，仅属该步骤观察，不是整应用内存/推理提速。491核心/11忽略、ASR9、CLI2、29集成、严格workspace Clippy/格式通过；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI成功，GPU build/catalog跳过，matching CLI两例0新增任务通过。未新增模型请求、安装包或GPU组件重编；原Q16语义门仍未通过，**0.3.5未发布**。[实际CLI、原始反例、容量口径、平台检查与Windows独立时序证据](../evaluation/ambiguous-alias-writer-lookup-2026-10-31.json)。
+
+上一共享源码 `eea96f0` 保留明确教授/博士结构的逐源姓名拼写保护和纪要单向新拼写veto（允许省略旧名字，不赋予发言/任务权限、不改ASR词典），并把Vulkan17项及Linux7项选择/搜索输入绑定同一listing/trial/worker/key/资格快照。相同环境复用、旧CUDA/CPU/Metal摘要保持，实际driver/ICD文件身份仍开放。最终481核心/10忽略、ASR9、CLI2、26集成、严格workspace Clippy/格式通过；同SHA Windows-core/Linux/Ubuntu22/prepare/validate CI成功，GPU build/catalog跳过。最终测试CLI已重建为eea，不再保留未验证提示作为默认开发二进制。
 
 唯一一次原手动Q16在先前源码 `819a23c` 仍FAIL：2compose/1131tokens/17.523秒，实际提交cursor5→6、1篇纪要/history2、六引用精确，但PAMELA错误归属音乐，音乐节被改成“迪大学的演出”，两校名丢失。人名字面保住不能证明关系正确；“即使”仍在，完成状态强化未获证明，不列为失败。该轮全局姓名提示字段已按止损撤回，writer精确恢复7f58468；没有改原语料/门槛、增加请求或重跑模型。六副本/借用链接已清，原资产不变。**Q16语义质量仍未通过，0.3.5未发布。** [原始提交、审查更正、保留修复与撤回](../evaluation/reported-names-vulkan-2026-10-30.json)。
 
@@ -70,6 +72,8 @@ P1 PR13已合入共享开发分支，不是main或正式发行。M5原六臂资�
 | Q17 | 并发保存或纠词任务使新专名回退 | 主线程/共享保存与术语 | 前端实际persist/flushNotes的4异步控制、core笔记/词库两种确定性并发红绿测通过；源/纪要/引用/key不回退，人工与另会议保护、原ASR及0推理保持。不能代替任意音近声学识别或全部编辑并发路径。[证据](../evaluation/note-context-selectors-2026-10-30.json)。 |
 | G1-S | CUDA设备选择环境变化复用旧资格/worker | 主线程/共享组件；Windows/Linux最小复核 | CUDA_VISIBLE_DEVICES/DEVICE_ORDER固定快照绑定list/trial/worker/key/cert，原真实worker-key隔离红测和命令/资格控制通过；旧资格重新测试，复用已装组件。Vulkan扩展见G1-V；实际userspace驱动身份、实体GPU和安装升级仍开放。[证据](../evaluation/note-context-selectors-2026-10-30.json)。 |
 | Q18 | 明确报道结构中的混合姓名被改写 | 主线程/共享字幕与纪要 | 原Terms接受姓名内新增空格的红测后，保留逐源caption与正文单向精确拼写veto、明确canonical映射、历史可省略/不赋予claim许可控制。仅明确教授/博士及列出的英文结构，非全NER；失败的全局提示已移除。[范围与证据](../evaluation/reported-names-vulkan-2026-10-30.json)。 |
+| Q19 | 冲突别名被模糊匹配或型号派生猜回 | 主线程/共享术语；三端复核 | e77f911保留冲突opaque span/Unicode casefold与80项外复核，唯一显式literal归属不撤。实际CLI原误改与Unicode反例、五项原red及两个型号优先级中间回归均保留；后来冲突恢复原ASR，无法授权逆改的纪要标stale，0推理。不能代替任意音近识别或完全未入选词条的保护。[证据](../evaluation/ambiguous-alias-writer-lookup-2026-10-31.json)。 |
+| P1-W | 每次纪要上下文物化全库历史正文 | 主线程/共享上下文 | 定向读取候选，保持原40/8/3预算、知识全候选排序、关联最新正文、导入ID shadow与稳定顺序。4项同值/可见性控制、一次合成warm读取/返回容量观察通过；不是总分配、RSS或整会提速。[口径与原始测量](../evaluation/ambiguous-alias-writer-lookup-2026-10-31.json)。 |
 | G1-V | Vulkan环境改变复用旧ordinal资格 | 主线程/共享组件；Windows/Linux复核 | 17项通用+Linux7选择/搜索输入固定快照，3真实worker-key隔离红测转绿；同scope命令/资格控制、原CUDA摘要兼容通过。相同路径JSON/目录/实际动态库/未知layer env仍开放；不是实际GPU验收。[证据与官方接口](../evaluation/reported-names-vulkan-2026-10-30.json)。 |
 | G1-R | 损坏组件无法恢复 | 主线程/共享组件；Windows/Linux验收 | f946f64的296核心、8项模拟交互及Windows/Linux CI通过。Windows隔离原生DOM/invoke已验证确认取消保留、确认移除目标版本、签名候选12,674,455B重下载/校验及重装后测试才启用；首次缺helper超时保留，补同源helper后续测。未测已有active撤销/跨版本保留、实体鼠标和正式安装升级；Linux实机仍待验收。候选9不移动。[范围与证据](../evaluation/component-recovery-2026-10-29.json)。 |
 
