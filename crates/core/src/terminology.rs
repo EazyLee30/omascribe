@@ -3,7 +3,7 @@ use crate::{library::Entry, Engine, UserNote};
 use anyhow::Result;
 use regex::{Regex, RegexBuilder};
 use rusqlite::OptionalExtension;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 mod document;
 pub(crate) use document::NoteSpellingEdit;
 
@@ -18,6 +18,8 @@ thread_local! {
 pub struct Terms {
     matcher: Option<Regex>,
     names: BTreeMap<String, String>,
+    ambiguous: BTreeSet<String>,
+    ambiguous_compacts: HashSet<String>,
     model_aliases: HashSet<String>,
     pub hotwords: Vec<String>,
     recognition_aliases: Vec<(String, String)>,
@@ -332,7 +334,17 @@ impl Terms {
         use sha2::{Digest, Sha256};
         let mut model_aliases: Vec<_> = self.model_aliases.iter().collect();
         model_aliases.sort_unstable();
-        let payload = if model_aliases.is_empty() {
+        let payload = if !self.ambiguous.is_empty() {
+            serde_json::to_vec(&(
+                "terms-v7-ambiguous-spellings",
+                &self.names,
+                &self.approximate,
+                &self.caption_names,
+                &self.writer_names,
+                &model_aliases,
+                &self.ambiguous,
+            ))
+        } else if model_aliases.is_empty() {
             serde_json::to_vec(&(
                 "terms-v5-writer-names",
                 &self.names,
@@ -579,9 +591,57 @@ impl Terms {
                 }
             }
         }
-        for key in conflicts {
-            names.remove(&key);
+        // Candidate budgets cannot give a selected spelling sole ownership of
+        // an alias also claimed by an eligible entry outside that budget.
+        for entry in entries.iter().filter(eligible) {
+            for alias in std::iter::once(entry.title.as_str())
+                .chain(entry.aliases.split([',', '，', ';', '；', '\n', '|']))
+            {
+                let key = alias.trim().to_lowercase();
+                if names
+                    .get(&key)
+                    .is_some_and(|selected| selected != entry.title.trim())
+                {
+                    conflicts.insert(key);
+                }
+                if let Some((prefix, digits)) = model_identifier(alias.trim()) {
+                    let compact = format!("{prefix}{digits}").to_lowercase();
+                    let spaced = format!("{prefix} {digits}").to_lowercase();
+                    let selected_owner = names.get(&compact).or_else(|| names.get(&spaced));
+                    if (model_aliases.contains(&compact) || model_aliases.contains(&spaced))
+                        && selected_owner.is_some_and(|owner| owner != entry.title.trim())
+                    {
+                        // Check only a model family already admitted into the
+                        // selected map; an unselected claimant must also revoke
+                        // its generated digit/spacing aliases, not just one key.
+                        for variant in model_spellings(alias.trim()).unwrap() {
+                            let key = variant.to_lowercase();
+                            if model_aliases.contains(&key)
+                                && (!explicit.contains(&key) || conflicts.contains(&key))
+                                && names
+                                    .get(&key)
+                                    .is_some_and(|selected| selected != entry.title.trim())
+                            {
+                                conflicts.insert(key);
+                            }
+                        }
+                    }
+                }
+            }
         }
+        let ambiguous: BTreeSet<_> = conflicts.into_iter().collect();
+        for key in &ambiguous {
+            names.remove(key);
+        }
+        let ambiguous_compacts = ambiguous
+            .iter()
+            .filter(|alias| {
+                alias
+                    .chars()
+                    .all(|c| c.is_ascii_alphabetic() || c == ' ' || c == '-')
+            })
+            .map(|alias| alias.chars().filter(char::is_ascii_alphabetic).collect())
+            .collect();
         // A note may name an explicit glossary alias. Resolve priority through
         // the final, non-conflicting map without changing canonical spelling.
         let active_names: HashSet<_> = active_spellings
@@ -604,7 +664,9 @@ impl Terms {
             })
             .collect();
         model_aliases.retain(|key| names.contains_key(key));
-        let mut aliases: Vec<_> = names.keys().collect();
+        // Keep ambiguous literals in the matcher as opaque, unchanged spans:
+        // shorter aliases inside them must not acquire replacement authority.
+        let mut aliases: Vec<_> = names.keys().chain(&ambiguous).collect();
         aliases.sort_by_key(|s| std::cmp::Reverse(s.len()));
         let matcher = (!aliases.is_empty()).then(|| {
             RegexBuilder::new(
@@ -649,6 +711,8 @@ impl Terms {
         Self {
             matcher,
             names,
+            ambiguous,
+            ambiguous_compacts,
             model_aliases,
             hotwords,
             recognition_aliases,
@@ -842,6 +906,28 @@ impl Terms {
             .get_or_init(|| Regex::new(r"[A-Za-z0-9_]+").unwrap())
             .find_iter(text)
             .collect();
+        let protected: Vec<_> = self
+            .matcher
+            .iter()
+            .filter(|_| !self.ambiguous.is_empty())
+            .flat_map(|matcher| matcher.find_iter(text))
+            .filter(|hit| self.ambiguous.contains(&hit.as_str().to_lowercase()))
+            .filter(|hit| {
+                !(hit
+                    .as_str()
+                    .starts_with(|c: char| c.is_ascii_alphanumeric())
+                    && text[..hit.start()]
+                        .chars()
+                        .next_back()
+                        .is_some_and(|c| c.is_ascii_alphanumeric())
+                    || hit.as_str().ends_with(|c: char| c.is_ascii_alphanumeric())
+                        && text[hit.end()..]
+                            .chars()
+                            .next()
+                            .is_some_and(|c| c.is_ascii_alphanumeric()))
+            })
+            .map(|hit| hit.range())
+            .collect();
         let mut out = String::new();
         let (mut cursor, mut i) = (0, 0);
         while i < words.len() {
@@ -863,6 +949,24 @@ impl Terms {
                     .collect::<String>()
                     .to_ascii_lowercase();
                 if compact.len() < 7 || !compact.bytes().all(|c| c.is_ascii_alphabetic()) {
+                    continue;
+                }
+                let first_protected = protected.partition_point(|r| r.end <= span[0].start());
+                if protected
+                    .get(first_protected)
+                    .is_some_and(|r| r.start < span[count - 1].end())
+                    || !self.ambiguous_compacts.is_empty()
+                        && (0..count).any(|start| {
+                            (start + 1..=count).any(|end| {
+                                let joined = span[start..end]
+                                    .iter()
+                                    .map(|word| word.as_str())
+                                    .collect::<String>()
+                                    .to_ascii_lowercase();
+                                self.ambiguous_compacts.contains(&joined)
+                            })
+                        })
+                {
                     continue;
                 }
                 // Never turn an already recognized *different* name into a nearby name.
@@ -3015,6 +3119,185 @@ mod tests {
         assert_eq!(
             Terms::new(&[], &entries).normalize("项目没有完成"),
             "项目没有完成"
+        );
+    }
+    #[test]
+    fn ambiguous_aliases_are_not_reenabled_by_near_spelling_or_concatenation() {
+        for alias in ["CedarLedge", "Cedar Ledge", "Cedar-Ledge"] {
+            let entries = vec![
+                Entry {
+                    kind: "term".into(),
+                    title: "CedarLedger".into(),
+                    aliases: alias.into(),
+                    ..Default::default()
+                },
+                Entry {
+                    kind: "term".into(),
+                    title: "NimbusArchive".into(),
+                    aliases: alias.to_ascii_uppercase(),
+                    ..Default::default()
+                },
+            ];
+            let terms = Terms::new(&[note("CedarLedgePilot")], &entries);
+            for spelling in [
+                "CedarLedge",
+                "cedarledge",
+                "CEDAR LEDGE",
+                "CEDAR-LEDGE",
+                "Cedar Ledge Pilot",
+            ] {
+                let source = format!("{spelling} remains untested.");
+                assert_eq!(terms.normalize(&source), source, "alias={alias}");
+                assert_eq!(terms.normalize_near_names(&source), source, "alias={alias}");
+                let draft = serde_json::json!({"sections":[{"body":source}]}).to_string();
+                let normalized: serde_json::Value =
+                    serde_json::from_str(&terms.normalize_draft(&draft).unwrap()).unwrap();
+                assert_eq!(normalized["sections"][0]["body"], source, "alias={alias}");
+            }
+            assert_eq!(
+                terms.normalize("CEDARLEDGER remains untested."),
+                "CedarLedger remains untested."
+            );
+            assert_eq!(
+                terms.normalize("CedarLedgr remains untested."),
+                "CedarLedger remains untested."
+            );
+        }
+    }
+
+    #[test]
+    fn ambiguous_canonical_and_chinese_alias_spans_protect_their_full_spelling() {
+        let terms = Terms::new(
+            &[note("CedarLedger")],
+            &[
+                Entry {
+                    kind: "term".into(),
+                    title: "CedarLedge".into(),
+                    aliases: "松账本".into(),
+                    ..Default::default()
+                },
+                Entry {
+                    kind: "term".into(),
+                    title: "NimbusArchive".into(),
+                    aliases: "CedarLedge,松账本".into(),
+                    ..Default::default()
+                },
+                Entry {
+                    kind: "term".into(),
+                    title: "Delta".into(),
+                    aliases: "松账".into(),
+                    ..Default::default()
+                },
+            ],
+        );
+        for source in ["CedarLedge remains untested.", "松账本尚未完成。"] {
+            assert_eq!(terms.normalize_exact(source), source);
+            assert_eq!(terms.normalize(source), source);
+        }
+        assert_eq!(terms.normalize("松账尚未完成。"), "Delta尚未完成。");
+        assert_eq!(
+            terms.normalize("CEDARLEDGER remains untested."),
+            "CedarLedger remains untested."
+        );
+    }
+
+    #[test]
+    fn ambiguous_alias_fingerprint_tracks_conflicts_without_blocking_duplicate_canonical() {
+        let first = Entry {
+            kind: "term".into(),
+            title: "CedarLedger".into(),
+            aliases: "CedarLedge".into(),
+            ..Default::default()
+        };
+        let second = Entry {
+            kind: "term".into(),
+            title: "NimbusArchive".into(),
+            aliases: "CEDARLEDGE".into(),
+            ..Default::default()
+        };
+        let conflicting = Terms::new(&[], &[first.clone(), second.clone()]);
+        let reversed = Terms::new(&[], &[second.clone(), first.clone()]);
+        let without = Terms::new(
+            &[],
+            &[
+                Entry {
+                    aliases: String::new(),
+                    ..first.clone()
+                },
+                Entry {
+                    aliases: String::new(),
+                    ..second
+                },
+            ],
+        );
+        assert_ne!(conflicting.fingerprint(), without.fingerprint());
+        assert_eq!(conflicting.fingerprint(), reversed.fingerprint());
+        let duplicates = Terms::new(&[], &[first.clone(), first]);
+        assert_eq!(
+            duplicates.normalize("CEDARLEDGE remains untested."),
+            "CedarLedger remains untested."
+        );
+    }
+
+    #[test]
+    fn ambiguous_alias_outside_the_candidate_cap_still_revokes_selected_ownership() {
+        let mut entries = vec![Entry {
+            kind: "term".into(),
+            title: "CedarLedger".into(),
+            aliases: "CedarLedge".into(),
+            ..Default::default()
+        }];
+        entries.extend(glossary(79));
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "NimbusArchive".into(),
+            aliases: "CEDARLEDGE".into(),
+            ..Default::default()
+        });
+        for notes in [vec![], vec![note("CedarLedge")], vec![note("CedarLedger")]] {
+            let terms = Terms::new(&notes, &entries);
+            assert_eq!(terms.hotwords.len(), 80);
+            for source in [
+                "CedarLedge remains untested.",
+                "CEDAR LEDGE remains untested.",
+            ] {
+                assert_eq!(terms.normalize(source), source);
+                assert!(terms.spellings(source).is_empty());
+            }
+            assert_eq!(
+                terms.normalize("CEDARLEDGER remains untested."),
+                "CedarLedger remains untested."
+            );
+        }
+    }
+
+    #[test]
+    fn ambiguous_model_alias_outside_the_cap_cannot_revive_through_derived_spellings() {
+        let mut entries = vec![Entry {
+            kind: "term".into(),
+            title: "CanonicalA".into(),
+            aliases: "MX2750".into(),
+            ..Default::default()
+        }];
+        entries.extend(glossary(79));
+        entries.push(Entry {
+            kind: "term".into(),
+            title: "CanonicalB".into(),
+            aliases: "MX2750".into(),
+            ..Default::default()
+        });
+        let terms = Terms::new(&[], &entries);
+        for spelling in model_spellings("MX2750").unwrap() {
+            let source = format!("{spelling} remains untested.");
+            assert_eq!(terms.normalize(&source), source);
+        }
+        assert!(!terms
+            .recognition_hotwords()
+            .iter()
+            .any(|hint| hint.to_ascii_uppercase().starts_with("MX")));
+        assert_eq!(
+            terms.normalize("CanonicalA remains untested."),
+            "CanonicalA remains untested."
         );
     }
     #[test]

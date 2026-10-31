@@ -21,6 +21,30 @@ fn glossary_term(title: &str, aliases: &str) -> Entry {
 }
 
 #[test]
+fn distinct_explicit_model_spellings_keep_their_declared_owners() {
+    let terms = Terms::new(
+        &[],
+        &[
+            glossary_term("GraphicsInventory", "MX2750"),
+            glossary_term("OrderInventory", "MX 2750"),
+        ],
+    );
+    assert_eq!(
+        terms.normalize("MX2750 is pending."),
+        "GraphicsInventory is pending."
+    );
+    assert_eq!(
+        terms.normalize("MX 2750 is pending."),
+        "OrderInventory is pending."
+    );
+    // Neither literal spelling assigns the shared spoken form to one owner.
+    assert_eq!(
+        terms.normalize("MX 二七五零 is pending."),
+        "MX 二七五零 is pending."
+    );
+}
+
+#[test]
 fn standalone_model_keeps_all_digits_and_accepts_spaced_or_compact_spelling() {
     let spaced = Terms::new(&[note("GTX 1650")], &[]);
     assert!(spaced.hotwords.iter().any(|term| term == "GTX 1650"));

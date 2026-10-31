@@ -58,6 +58,84 @@ fn explicit_term(title: &str, aliases: &str) -> Entry {
 }
 
 #[test]
+fn ambiguous_alias_note_preserves_asr_and_existing_minutes_without_a_guess() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    engine.save_library_entry(explicit_term("CedarLedger", "CedarLedge"))?;
+    engine.save_library_entry(explicit_term("NimbusArchive", "CEDARLEDGE"))?;
+    let meeting = engine.create_meeting("Ambiguous spelling is not a correction")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let raw = segment(&meeting.id, 1, "CedarLedge remains untested.");
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    let before = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        1,
+        vec![section(&meeting.id, &raw, &raw.text)],
+        false,
+    )?;
+    engine.save_note(&meeting.id, None, "CedarLedge", "document", 0)?;
+    let after = engine.snapshot(&meeting.id)?;
+    assert_eq!(after.segments[0].text, raw.text);
+    assert_eq!(after.segments[0].revision, 1);
+    assert_eq!(after.suggestions[0].text, raw.text);
+    assert_eq!(after.suggestions[0].sources[0].quote, raw.text);
+    assert_eq!(after.suggestions[0].sources[0].revision, 1);
+    assert!(!after.suggestions[0].stale);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn ambiguous_alias_added_later_restores_archived_asr_without_guessing_reverse_prose() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let meeting = engine.create_meeting("A later alias conflict revokes the automatic guess")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let raw = segment(&meeting.id, 1, "CedarLedge remains untested.");
+    let canonical = segment(&meeting.id, 2, "CedarLedger remains pending.");
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    engine.store.lock().unwrap().save_segment(&canonical)?;
+    let before = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        2,
+        vec![section(&meeting.id, &raw, &raw.text)],
+        false,
+    )?;
+    engine.save_library_entry(explicit_term("CedarLedger", "CedarLedge"))?;
+    let unique = engine.snapshot(&meeting.id)?;
+    assert_eq!(unique.segments[0].text, "CedarLedger remains untested.");
+    assert_eq!(unique.segments[0].revision, 2);
+    assert!(!unique.suggestions[0].stale);
+    let old_article = unique.suggestions[0].clone();
+    engine.save_library_entry(explicit_term("NimbusArchive", "CedarLedge"))?;
+    let after = engine.snapshot(&meeting.id)?;
+    assert_eq!(after.segments[0].text, raw.text);
+    assert_eq!(after.segments[0].revision, 3);
+    assert_eq!(after.segments[1].text, canonical.text);
+    assert_eq!(after.segments[1].revision, 1);
+    assert_eq!(after.suggestions[0].text, old_article.text);
+    assert_eq!(
+        after.suggestions[0].sources[0].quote,
+        old_article.sources[0].quote
+    );
+    assert_eq!(after.suggestions[0].sources[0].revision, 2);
+    assert!(after.suggestions[0].stale);
+    let archived: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+        [&raw.id],
+        |row| row.get(0),
+    )?;
+    assert_eq!(serde_json::from_str::<Segment>(&archived)?.text, raw.text);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
 fn note_and_confirmed_aliases_update_source_backed_minutes_evidence() -> Result<()> {
     let root = tempfile::tempdir()?;
     let engine = Engine::open(root.path().into())?;
