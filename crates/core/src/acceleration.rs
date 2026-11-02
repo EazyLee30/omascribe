@@ -376,24 +376,33 @@ pub(crate) fn offloaded(log: &str) -> bool {
         .unwrap()
         .is_match(log)
 }
-fn choose_device(listing: &str, backend: Backend, required_mib: u64) -> Result<String> {
+fn choose_device(
+    listing: &str,
+    backend: Backend,
+    required_mib: u64,
+    integrated: &[&str],
+) -> Result<String> {
     let prefix = match backend {
         Backend::Cuda => "CUDA",
         Backend::Vulkan => "Vulkan",
         _ => bail!("Unsupported GPU device"),
     };
-    let pattern =
-        regex::Regex::new(r"^\s*([A-Za-z]+[0-9]+):.*\([0-9]+ MiB, ([0-9]+) MiB free\)\s*$")?;
+    let pattern = regex::Regex::new(
+        r"^\s*([A-Za-z]+[0-9]+):\s*(.*?)\s*\([0-9]+ MiB, ([0-9]+) MiB free\)\s*$",
+    )?;
     listing
         .lines()
         .filter_map(|line| pattern.captures(line))
         .filter_map(|c| {
             let id = c[1].to_string();
-            let free = c[2].parse::<u64>().ok()?;
-            (id.starts_with(prefix) && free >= required_mib).then_some((free, id))
+            let free = c[3].parse::<u64>().ok()?;
+            // Vulkan lists a hybrid laptop's iGPU with its shared system-memory pool,
+            // which can exceed the discrete GPU's free VRAM. Prefer the discrete GPU.
+            let discrete = !integrated.contains(&&c[2]);
+            (id.starts_with(prefix) && free >= required_mib).then_some((discrete, free, id))
         })
         .max()
-        .map(|(_, id)| id)
+        .map(|(_, _, id)| id)
         .context("No compatible GPU with enough free memory; CPU remains available")
 }
 fn trial(engine: &Arc<Engine>, prefs: &Preferences, spec: &LaunchSpec) -> Result<Trial> {
@@ -549,11 +558,8 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
     let kind = backend(&component)?;
     let selectors = SelectorEnv::capture(kind);
-    if kind == Backend::Cuda
-        && crate::hardware::detect(&engine.root, &engine.runtime_dir)
-            .cuda_driver_version
-            .is_some_and(|v| v < 12000)
-    {
+    let inventory = crate::hardware::detect(&engine.root, &engine.runtime_dir);
+    if kind == Backend::Cuda && inventory.cuda_driver_version.is_some_and(|v| v < 12000) {
         bail!("The installed NVIDIA driver does not support CUDA 12. Update the NVIDIA driver or test the Vulkan component; CPU remains available.");
     }
     let mut command = device_list_command(&directory, &component.entrypoint, kind, &selectors)?;
@@ -561,7 +567,13 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     let required = crate::models::model(&prefs.llm_model)?.memory_mib
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4
         + 256;
-    let device = choose_device(&String::from_utf8(listing)?, kind, required)?;
+    let integrated: Vec<&str> = inventory
+        .devices
+        .iter()
+        .filter(|d| d.integrated == Some(true))
+        .map(|d| d.name.as_str())
+        .collect();
+    let device = choose_device(&String::from_utf8(listing)?, kind, required, &integrated)?;
     let key = binding(engine, &prefs, &component, &directory, &device, &selectors)?;
     engine.inference_pool.invalidate();
     let cpu_spec = LaunchSpec {
@@ -1531,10 +1543,29 @@ mod tests {
     #[test]
     fn device_selection_requires_real_backend_free_memory_and_offload() -> Result<()> {
         let listing = "Available devices:\n CUDA0: GTX (4096 MiB, 3500 MiB free)\n CUDA1: Another (8192 MiB, 7000 MiB free)\n Vulkan0: AMD (8192 MiB, 6000 MiB free)\n";
-        assert_eq!(choose_device(listing, Backend::Cuda, 4000)?, "CUDA1");
-        assert_eq!(choose_device(listing, Backend::Vulkan, 2000)?, "Vulkan0");
-        assert!(choose_device(listing, Backend::Cuda, 9000).is_err());
-        assert!(choose_device("CUDA0: unknown memory", Backend::Cuda, 2000).is_err());
+        assert_eq!(choose_device(listing, Backend::Cuda, 4000, &[])?, "CUDA1");
+        assert_eq!(
+            choose_device(listing, Backend::Vulkan, 2000, &[])?,
+            "Vulkan0"
+        );
+        assert!(choose_device(listing, Backend::Cuda, 9000, &[]).is_err());
+        assert!(choose_device("CUDA0: unknown memory", Backend::Cuda, 2000, &[]).is_err());
+        // Actual `--list-devices` output on an RTX 3060 Laptop / Iris Xe hybrid laptop.
+        let hybrid = "Available devices:\n  Vulkan0: NVIDIA GeForce RTX 3060 Laptop GPU (5994 MiB, 5226 MiB free)\n  Vulkan1: Intel(R) Iris(R) Xe Graphics (8002 MiB, 7346 MiB free)\n";
+        let igpu = ["Intel(R) Iris(R) Xe Graphics"];
+        assert_eq!(
+            choose_device(hybrid, Backend::Vulkan, 2000, &[])?,
+            "Vulkan1"
+        );
+        assert_eq!(
+            choose_device(hybrid, Backend::Vulkan, 2000, &igpu)?,
+            "Vulkan0"
+        );
+        // The iGPU remains a candidate when the discrete GPU cannot fit the model.
+        assert_eq!(
+            choose_device(hybrid, Backend::Vulkan, 6000, &igpu)?,
+            "Vulkan1"
+        );
         assert!(!offloaded("offloaded 0/29 layers to GPU"));
         assert!(offloaded("llama_model_load: offloaded 29/29 layers to GPU"));
         assert!(!correct_facts(
