@@ -17,9 +17,49 @@ from runtime_inventory import assert_base_names
 spec = importlib.util.spec_from_file_location("components", ROOT / "scripts/acceleration-components.py")
 components = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(components)
+native_spec = importlib.util.spec_from_file_location("native_package", ROOT / "scripts/native-package.py")
+native_package = importlib.util.module_from_spec(native_spec)
+native_spec.loader.exec_module(native_package)
 
 
 class AccelerationPackagingTests(unittest.TestCase):
+    def test_bundled_format_two_contract_excludes_optional_backends_and_dynamic_loading(self):
+        for target, windows, macos in [
+            ("aarch64-apple-darwin", False, True),
+            ("x86_64-apple-darwin", False, True),
+            ("x86_64-pc-windows-msvc", True, False),
+            ("x86_64-unknown-linux-gnu", False, False),
+        ]:
+            with self.subTest(target=target):
+                metadata, flags = native_package.base_runtime_recipe(target, windows=windows, macos=macos)
+                values = dict(flag.removeprefix("-D").split("=", 1) for flag in flags)
+                self.assertEqual(metadata["format"], 2)
+                self.assertEqual(metadata["revision"], native_package.LOCK["llama_cpp"]["revision"])
+                self.assertEqual(metadata["optional_gpu_backends"], [])
+                for feature in ["BUILD_SHARED_LIBS", "GGML_BACKEND_DL", "GGML_OPENMP", "GGML_BLAS", "GGML_CUDA", "GGML_HIP", "GGML_VULKAN", "GGML_SYCL", "LLAMA_CURL", "LLAMA_OPENSSL"]:
+                    self.assertEqual(values[feature], "OFF", feature)
+                self.assertEqual(values["LLAMA_BUILD_SERVER"], "ON")
+
+    def test_bundled_metal_descriptor_matches_embedded_library_and_native_platform_flags(self):
+        for target, windows, macos in [
+            ("aarch64-apple-darwin", False, True),
+            ("x86_64-apple-darwin", False, True),
+            ("x86_64-pc-windows-msvc", True, False),
+            ("x86_64-unknown-linux-gnu", False, False),
+        ]:
+            with self.subTest(target=target):
+                metadata, flags = native_package.base_runtime_recipe(target, windows=windows, macos=macos)
+                values = dict(flag.removeprefix("-D").split("=", 1) for flag in flags)
+                expected_metal = target == "aarch64-apple-darwin"
+                self.assertEqual(metadata["metal"], expected_metal)
+                for feature in ["GGML_METAL", "GGML_METAL_EMBED_LIBRARY", "GGML_ACCELERATE"]:
+                    self.assertEqual(values[feature], "ON" if expected_metal else "OFF")
+                if windows:
+                    self.assertEqual(values["CMAKE_MSVC_RUNTIME_LIBRARY"], "MultiThreaded")
+                    self.assertEqual(values["LLAMA_STATIC"], "ON")
+                if macos:
+                    self.assertEqual(values["CMAKE_OSX_DEPLOYMENT_TARGET"], "11.0")
+
     def runtime(self, folder, backend="vulkan", target="linux-x86_64"):
         folder.mkdir()
         (folder / ("llama-server.exe" if target.startswith("windows") else "llama-server")).write_bytes(b"fictional fixture, never execute")
