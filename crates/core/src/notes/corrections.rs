@@ -80,36 +80,62 @@ fn amount_pattern() -> &'static Regex {
         r"(?P<prefix>[$€£¥]?)\s*(?P<value>\d+(?:[.,]\d+)*)(?P<suffix>\s*(?:元|人民币|USD\b|EUR\b|GBP\b|CNY\b|RMB\b|dollars?\b|euros?\b|pounds?\b))?"
     )).unwrap())
 }
+fn chinese_pending_clause(text: &str) -> bool {
+    [
+        "还没有确定",
+        "尚未确定",
+        "仍未确定",
+        "还未确定",
+        "未确定",
+        "未批准",
+        "尚未批准",
+        "仍未批准",
+        "没有批准",
+        "还没有批准",
+        "还未批准",
+        "待确认",
+        "未获批",
+        "尚未获批",
+        "还没确定",
+        "暂未确定",
+        "但仍未确定",
+        "但未确定",
+    ]
+    .contains(&text)
+}
+/// A single bare pending-state clause can continue a standalone budget across
+/// a Chinese comma. Never reach through another clause or infer a wider scope.
+fn pending_clause_end(
+    text: &str,
+    clause: Range<usize>,
+    amount: Range<usize>,
+    uncertain: &Regex,
+) -> usize {
+    let end = clause.end;
+    if clause.start != 0
+        || !text[..amount.start].trim().is_empty()
+        || text[amount.end..end].trim() != "，"
+        || uncertain.is_match(text)
+        || text.contains([
+            '\n', '\r', '?', '？', '"', '\'', '“', '”', '‘', '’', '「', '」', '『', '』',
+        ])
+    {
+        return end;
+    }
+    let tail = &text[end..];
+    let content_end = tail.find(boundary).unwrap_or(tail.len());
+    if !chinese_pending_clause(tail[..content_end].trim()) {
+        return end;
+    }
+    end + content_end + tail[content_end..].chars().next().map_or(0, char::len_utf8)
+}
 fn simple_clause(text: &str, matched: Range<usize>) -> bool {
     let rest = format!("{} {}", &text[..matched.start], &text[matched.end..]);
     if rest.chars().any(|c| ('\u{3400}'..='\u{9fff}').contains(&c)) {
         let rest = rest.trim_matches(|c: char| {
             c.is_whitespace() || c.is_ascii_punctuation() || "，。；".contains(c)
         });
-        return [
-            "",
-            "还没有确定",
-            "尚未确定",
-            "仍未确定",
-            "还未确定",
-            "未确定",
-            "未批准",
-            "尚未批准",
-            "仍未批准",
-            "没有批准",
-            "还没有批准",
-            "还未批准",
-            "待确认",
-            "未获批",
-            "尚未获批",
-            "还没确定",
-            "暂未确定",
-            "但仍未确定",
-            "但未确定",
-            "算",
-            "安排",
-        ]
-        .contains(&rest);
+        return rest.is_empty() || chinese_pending_clause(rest) || ["算", "安排"].contains(&rest);
     }
     rest.to_lowercase()
         .split(|c: char| !c.is_ascii_alphabetic())
@@ -201,12 +227,16 @@ pub(super) fn budget_view(segments: &[Segment]) -> Option<BudgetView> {
                 .map_or(s.text.len(), |p| {
                     value.end() + p + s.text[value.end() + p..].chars().next().unwrap().len_utf8()
                 });
+            let matched = captures.get(0)?;
+            if matched.end() > end {
+                return None;
+            }
+            let end = pending_clause_end(&s.text, start..end, matched.range(), uncertain);
             let clause = &s.text[start..end];
             // Alternatives, dates or additional numeric attributes are intentionally not guessed.
             if numbers().find_iter(clause).count() != 1 {
                 return None;
             }
-            let matched = captures.get(0)?;
             if !simple_clause(clause, matched.start() - start..matched.end() - start) {
                 return None;
             }
@@ -434,5 +464,110 @@ mod tests {
         assert!(view
             .validate("预算3000元仍未确定，发票5000元待核对。")
             .is_err());
+    }
+
+    #[test]
+    fn chinese_comma_pending_budget_keeps_latest_amount_and_original_evidence() {
+        for (old, corrected) in [
+            ("预算3000元尚未确定。", "预算改为5000元，仍未确定。"),
+            ("预算3000元，尚未确定。", "预算改为5000元，但仍未确定。"),
+            ("预算3000元尚未确定。", "预算改为5000元，仍未批准。"),
+            (" 预算3000元，尚未确定。", " 预算改为5000元 ，仍未确定。"),
+        ] {
+            let segments = vec![source(1, old), source(2, corrected)];
+            let original = segments.iter().map(|s| s.text.clone()).collect::<Vec<_>>();
+            let view = budget_view(&segments).expect("bare pending status belongs to this budget");
+            assert!(!view.text(0, old).contains("3000"));
+            assert!(view.validate("预算3000元仍未确定。").is_err());
+            assert!(view.validate("预算5000元仍未确定。").is_ok());
+            assert!(super::super::writer::document(
+                "预算3000元仍未确定。",
+                &segments,
+                &Default::default(),
+            )
+            .is_err());
+            assert!(super::super::writer::document(
+                "预算5000元仍未确定。",
+                &segments,
+                &Default::default(),
+            )
+            .is_ok());
+            assert_eq!(
+                segments.iter().map(|s| &s.text).collect::<Vec<_>>(),
+                original.iter().collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn chinese_comma_never_binds_other_topics_conditions_questions_or_quotes() {
+        for corrected in [
+            "预算改为5000元，发票仍未确定。",
+            "预算改为5000元，如果批准再执行。",
+            "预算改为5000元，仍未确定5000元。",
+            "预算改为5000元，是否仍未确定？",
+            "预算改为5000元，仍未确定？",
+            "预算改为5000元，‘仍未确定’。",
+            "如果需要，预算改为5000元，仍未确定。",
+            "假如需要，预算改为5000元，仍未确定。",
+            "when needed，预算改为5000元，仍未确定。",
+            "他说，预算改为5000元，仍未确定。",
+            "预算改为5000元，仍未确定，如果批准再执行。",
+            "预算改为5000元，报告，仍未确定。",
+            "预算改为5000元，，仍未确定。",
+            "预算改为5000元，仍未确定预算。",
+            "预算改为5000元，仍未确定：",
+            "预算改为5000元，\n仍未确定。",
+            ">预算改为5000元，仍未确定。",
+            "`预算改为5000元`，仍未确定。",
+            "预算改为5000元`，仍未确定。",
+            "[预算改为5000元]，仍未确定。",
+            "(预算改为5000元)，仍未确定。",
+        ] {
+            let segments = vec![source(1, "预算3000元尚未确定。"), source(2, corrected)];
+            assert!(budget_view(&segments).is_none(), "{corrected}");
+        }
+        assert!(budget_view(&[
+            source(1, "预算3000元尚未确定。"),
+            source(2, "预算改为5000元。"),
+            source(3, "仍未确定。"),
+        ])
+        .is_none());
+    }
+
+    #[test]
+    fn chinese_comma_pending_budget_preserves_another_topics_identical_amount() {
+        let segments = vec![
+            source(1, "预算3000元尚未确定。"),
+            source(2, "预算改为5000元，仍未确定，发票金额仍为3000元。"),
+        ];
+        let view = budget_view(&segments).expect("explicit budget plus independent invoice");
+        assert!(view
+            .validate("预算5000元仍未确定，发票金额3000元待核对。")
+            .is_ok());
+        assert!(view
+            .validate("预算3000元仍未确定，发票金额5000元待核对。")
+            .is_err());
+        assert_eq!(view.text(1, &segments[1].text), segments[1].text);
+    }
+
+    #[test]
+    fn multiline_budget_units_never_cross_clause_ranges() {
+        for corrected in [
+            "预算改为5000\n元，仍未确定。",
+            "预算改为5000 \r\n元，仍未确定。",
+        ] {
+            assert!(
+                budget_view(&[source(1, "预算3000元尚未确定。"), source(2, corrected),]).is_none()
+            );
+        }
+        assert!(budget_view(&[
+            source(1, "The budget amount is 3000 USD, not approved."),
+            source(
+                2,
+                "The budget amount is corrected to 5000\nUSD, still not approved."
+            ),
+        ])
+        .is_none());
     }
 }
