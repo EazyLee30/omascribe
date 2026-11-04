@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-04",
   "parent_commit": "8935628d101138c0aec2e8f2ef4825ba99446f0c",
-  "status": "LOCAL_CORE_AND_BROWSER_PASS_WORKSPACE_CHECK_PENDING",
+  "status": "LOCAL_AND_CROSS_PLATFORM_SOURCE_CHECKS_PASS_NATIVE_ACCEPTANCE_PENDING",
   "source_sha256": {
     "crates/core/src/components.rs": "3c45168b8a3f895b10c1ac1cfe1c590c505df33913faa6f5a000b02de67ab1c6",
     "crates/core/src/acceleration.rs": "850f20e57add9a6674f2eaf377c1d9e861f89fa661f70321b123282846b50e94",
@@ -32,7 +32,51 @@
     "chromium_controls": "passed",
     "frontend_build": "passed",
     "format_and_diff": "passed",
-    "workspace_clippy": "pending"
+    "workspace_clippy": "passed",
+    "platform_ci": [
+      {
+        "id": 126577473979,
+        "name": "catalog",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 126576212729,
+        "name": "build",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 126576210858,
+        "name": "windows-core",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 126576115759,
+        "name": "prepare",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 126576110275,
+        "name": "ubuntu22",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 126576109520,
+        "name": "validate",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 126576109398,
+        "name": "linux",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
   },
   "evidence": {
     "directory": "artifacts/component-retained-2026-11-04/",
@@ -55,6 +99,9 @@
     "browser-tests.log": "e10c3efb335181b3f025e2d109fb09a0d3d63d55407804bda4bc2242ddb062af",
     "frontend-build.log": "caa01de965002c5109d878d03e7e40fc3203aa2522a6ef305a72fe9074e35389",
     "packaging-tests.log": "35aefc2510ed05dce75af470d06966d05da015b40ffd84fb5ff918c8693b391f",
-    "format-tests.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d"
-  }
+    "format-tests.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d",
+    "workspace-clippy.log": "45857be7bd15df04b5fe87700dbd0a536be506c8a7f34c9e66581819b77e9582",
+    "source-check-runs.json": "58a0fa22cbf3236c05e4b216f289417dde09b89085aeececcf5c7fa0720e5cca"
+  },
+  "source_commit": "57321622e541f56155d7f4bcbc44b396749b0fc3"
 }
