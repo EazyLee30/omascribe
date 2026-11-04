@@ -355,6 +355,63 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn execution_access_time_preserves_an_unchanged_runtime_receipt() -> Result<()> {
+        use std::os::unix::fs::MetadataExt;
+        let (_root, path) = fixture();
+        fs::copy("/usr/bin/true", &path)?;
+        let old_access = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000);
+        File::open(&path)?.set_times(fs::FileTimes::new().set_accessed(old_access))?;
+        let before = fs::metadata(&path)?;
+        let receipt = Receipt::observe(&path, |_| {})?;
+        receipt.check_current()?;
+        let observed = fs::metadata(&path)?;
+        assert!(std::process::Command::new(&path).status()?.success());
+        let after = fs::metadata(&path)?;
+        eprintln!(
+            "execution atime {}→{}, identity before={:?}, after={:?}",
+            before.atime(),
+            after.atime(),
+            Identity::from_metadata(&before),
+            Identity::from_metadata(&after)
+        );
+        assert!(
+            (after.atime(), after.atime_nsec()) > (observed.atime(), observed.atime_nsec()),
+            "execution must advance access time after the cold hash"
+        );
+        assert_eq!(
+            Identity::from_metadata(&before),
+            Identity::from_metadata(&after)
+        );
+        receipt.check_current()?;
+        receipt.check_current()?;
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn attribute_notifications_still_reject_changed_permissions_and_modified_time() -> Result<()> {
+        use std::os::unix::fs::PermissionsExt;
+        for permission_change in [false, true] {
+            let (_root, path) = fixture();
+            let receipt = Receipt::observe(&path, |_| {})?;
+            if permission_change {
+                fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
+            } else {
+                File::open(&path)?
+                    .set_times(fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH))?;
+            }
+            assert!(receipt.check_current().is_err());
+            assert!(receipt
+                .check_current()
+                .unwrap_err()
+                .to_string()
+                .contains("invalidated"));
+        }
+        Ok(())
+    }
+
     #[test]
     fn missing_nonregular_and_oversized_inputs_never_hash() -> Result<()> {
         let (root, path) = fixture();

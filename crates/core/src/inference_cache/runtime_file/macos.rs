@@ -10,6 +10,7 @@ use std::{
 
 pub(super) struct Observer {
     queue: OwnedFd,
+    file_ident: libc::uintptr_t,
 }
 impl Observer {
     pub(super) fn open(parent: &File, file: &File) -> Result<Self> {
@@ -64,7 +65,10 @@ impl Observer {
             "cannot register runtime vnode observer: {}",
             io::Error::last_os_error()
         );
-        Ok(Self { queue })
+        Ok(Self {
+            queue,
+            file_ident: file.as_raw_fd() as libc::uintptr_t,
+        })
     }
     #[cfg(test)]
     pub(super) fn swap_descriptor(&mut self, replacement: OwnedFd) -> OwnedFd {
@@ -73,20 +77,22 @@ impl Observer {
 
     // Receipt's mutex serializes consumption and makes every error/event sticky.
     pub(super) fn check_current(&self) -> Result<()> {
-        // SAFETY: zero is valid for the kevent output record written by the kernel.
-        let mut event: libc::kevent = unsafe { std::mem::zeroed() };
+        // Two vnode registrations can each have one queued record. Inspect
+        // both so an access-time notification cannot hide a simultaneous write.
+        // SAFETY: zero is valid for kevent output records written by the kernel.
+        let mut events: [libc::kevent; 2] = unsafe { std::mem::zeroed() };
         let timeout = libc::timespec {
             tv_sec: 0,
             tv_nsec: 0,
         };
-        // SAFETY: queue is retained; output is one valid record; zero timeout never waits.
+        // SAFETY: queue is retained; output has space for two records; timeout never waits.
         let count = unsafe {
             libc::kevent(
                 self.queue.as_raw_fd(),
                 ptr::null(),
                 0,
-                &mut event,
-                1,
+                events.as_mut_ptr(),
+                events.len() as i32,
                 &timeout,
             )
         };
@@ -94,10 +100,21 @@ impl Observer {
             return Err(io::Error::last_os_error())
                 .context("cannot inspect runtime vnode observer");
         }
-        ensure!(
-            count == 0,
-            "runtime vnode observer received a mutation or error event"
-        );
+        for event in &events[..count as usize] {
+            // exec can update access time and emit NOTE_ATTRIB while dev/inode,
+            // size, mtime and ctime remain unchanged. Receipt still compares
+            // the held and named identities. Keep every other file/parent event
+            // and EV_ERROR/EV_EOF or unknown flags as a sticky failure.
+            let access_attribute = event.ident == self.file_ident
+                && event.filter == libc::EVFILT_VNODE
+                && event.fflags == libc::NOTE_ATTRIB
+                && event.flags & !(libc::EV_ADD | libc::EV_ENABLE | libc::EV_CLEAR) == 0
+                && event.data == 0;
+            ensure!(
+                access_attribute,
+                "runtime vnode observer received a mutation or error event"
+            );
+        }
         Ok(())
     }
 }
