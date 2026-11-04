@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "source": "dfe2e341b8f9b51c84ff2a923dee5b2038f32a1a",
+  "status": "LIMITED_MAC_AUTOMATIC_PAUSE_INTEGRATED_LOCAL_AND_SOURCE_CI_PASS_NATIVE_ACCEPTANCE_OPEN",
+  "behavior": "Pause only unchanged automatic minutes after the ordinary job consumes two complete responses and ends at an explicit final ValidationRejected. This is a process-local retry policy, not reuse of a generated result or a quality fix.",
+  "eligibility": [
+    "Official default Apple-arm64 app bundle, pinned format2 static recipe, GGUF CPU/Metal actual backend matching the configured nominal backend; no fallback, optional component, loader/resource override or active generation experiment.",
+    "Bind actual admitted model and runtime observations, both bundle descriptors and runtime-directory members. The scheduling InputDigest alone cannot establish execution identity. Unknown observations retain ordinary backoff.",
+    "Cold bounded observations run outside Store/preferences/pool locks. Retained pause metadata contains digests, not model/runtime handles or prose; warm checks do not read file contents or hash them. At most 16 pauses are retained."
+  ],
+  "retry_and_safety": [
+    "Both automatic entry paths use the actual notes admission, including translation continuation. Manual generation bypasses the gate and clears the pause only after acquiring note_busy.",
+    "Changed notes, sources, captions, generation settings or background revision release the old input pause; changed, revoked or unavailable model/runtime observations also release it. Existing coalescing clocks remain.",
+    "Cancellation, resource/transport/Scope failures, incomplete output, commit/job-write failures and unknown execution cannot create a pause. Dispatch ownership protects deletion/run changes; a suppressed continuation preserves the pause without adding a failure."
+  ],
+  "original_failures": {
+    "direct_red": {
+      "source": "143749e8586dc84c075833eb4375d77ca8d46e21",
+      "failed_controls": 1,
+      "observation": "The real Engine/Scope/Dispatch and production validator/report control reached the final assertion: unchanged complete semantic rejection re-entered automatic generation after backoff. Tiny model/runtime bytes were never executed."
+    },
+    "earlier_cargo_failure": "The separate original-admission-red.log stopped earlier at loader environment is unobserved because Cargo injected DYLD lookup state. It is not the behavioral RED. Only isolated test children clean that environment; product eligibility has no Cargo exception.",
+    "windows": {
+      "source": "6e744ec88af2ca09e465c3bb1382ec7fb7fae55d",
+      "failure": "automatic_pause_invalidates_real_input_and_observed_files encountered Windows sharing violation OS32; the raw failure remains retained.",
+      "test_revision": "580c4ae followed by the Context import at dfe2e341. All platforms attempt the direct write first. Only Windows error 32 may prove unchanged bytes and retained pause, then exercise actual cache revocation, replace the owned file and require the same resume assertion. Other errors propagate; product sharing policy is unchanged."
+    }
+  },
+  "checks": {
+    "core_passed": 623,
+    "ignored_explicit_model_tests": 12,
+    "cli_passed": 2,
+    "integration_passed": [8, 2, 24],
+    "strict_workspace_clippy": "passed offline at the final source",
+    "independent_source_review": "passed, including linked-llama rejection and Windows protection/revocation controls",
+    "platform_ci": {
+      "source": "dfe2e341b8f9b51c84ff2a923dee5b2038f32a1a",
+      "windows_core": "success",
+      "windows_url": "https://github.com/EazyLee30/omascribe/actions/runs/41931586076/job/126929593634",
+      "linux": "success",
+      "linux_url": "https://github.com/EazyLee30/omascribe/actions/runs/41931586155/job/126929541904",
+      "ubuntu22": "success",
+      "ubuntu22_url": "https://github.com/EazyLee30/omascribe/actions/runs/41931586177/job/126929541575",
+      "prepare": "success",
+      "validate": "success",
+      "build": "skipped",
+      "catalog": "skipped"
+    }
+  },
+  "limits": [
+    "Windows/Linux/MLX, custom runtimes, unsupported dependencies and unknown identities retain previous backoff. The bundled format2 producer contract and declared system-load inspection do not prove arbitrary native-code closure or immutable mmap/remote-filesystem identity.",
+    "No model, ASR, download, installer build or installed-app positive eligibility run was performed for this change. No measured request, memory, latency or energy saving is claimed.",
+    "Q16 article fidelity/availability, Q9 real-audio name recall and same-source three-platform native/installation acceptance remain open. 0.3.5 is not released."
+  ],
+  "evidence_directory": "artifacts/automatic-minutes-rejection-2026-11-05",
+  "raw_sha256": {
+    "original-admission-direct-red.log": "d3cdb8c274ae9a832b9cc01a83adb2153b7dd6b3b56ddeab01c8e4a18cf61f9a",
+    "original-admission-red.log": "3b3185f1b8ecad065b9f012cd92d29c0baa2634167c410d3fd320dce8f6fa79b",
+    "windows-6e744ec-failure.log": "c02521c387d921e3723d9aa1e6ec087505057cf90dc46ea7b3725d54b00076e4",
+    "windows-control-fix-core.log": "858572c19eb2452ac1192794224ed1e7be2301e870026b211b5fd08f6a02e118",
+    "windows-control-fix-core-rerun.log": "c680e47cc5ed412486a07e90ace5d0b8923d3e443a1f2f2884531c76e02d9d30",
+    "windows-control-fix-clippy.log": "6e6c1550bbf6622e77e1505c1ec5b8e14d03b3606728dc2568a125f011c76eb1"
+  },
+  "source_sha256": {
+    "crates/core/src/engine.rs": "b3a01cc0f2c514a62833884ca7eb2b7ee5ec8a8bc52344e40bc2226228c0ffc5",
+    "crates/core/src/notes.rs": "79604ba393345aa89af1dd9ea5fed4c8b449e036939b2bf3174fc8643474a60e",
+    "crates/core/src/notes/diagnostic.rs": "7e68f9ba4ef99c6283287e0034fbb86323b4b80c7bb58d7a2d6675355f194834",
+    "crates/core/src/minutes_schedule.rs": "e7cc2b4fd11c5292a2e8ab199262f73836bc82a225c2af34451b887ce3a439a9",
+    "crates/core/src/inference_worker/rejection.rs": "e985e6cdff585f30f67b893dbaba91083703cfd94d4fac69c300c92b5b1df154"
+  },
+  "release_published": false
+}
