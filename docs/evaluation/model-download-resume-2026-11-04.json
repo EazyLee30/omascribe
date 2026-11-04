@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "parent_commit": "dfd45ee3a76510de36727da1b4bfcc3ccee6bb74",
+  "status": "LOCAL_REGRESSIONS_AND_STRICT_WORKSPACE_PASS_CI_PENDING",
+  "source_sha256": {
+    "crates/core/src/models.rs": "b2ef2106cea6653a9a7b55dd8af1cf0b01a173496740b46ff06d2b29d1e2a1f4"
+  },
+  "observed_problem": {
+    "candidate_download_seconds": 545.6104438749608,
+    "terminal": "TLS peer closed without close_notify",
+    "observed_bytes_before_retry": 48963761,
+    "observed_bytes_after_retry": 2413524,
+    "same_live_cli": true,
+    "result": "Three attempts exhausted; original installation was untouched and incomplete stage was removed."
+  },
+  "behavior": [
+    "Within the existing three-attempt installation, rehash owned prefix and request its exact remaining byte range.",
+    "Strict206 Content-Range, identity encoding and response-length admission precede writes.",
+    "HTTP200 ignoring Range restarts the full file safely.",
+    "Clean short EOF is retryable; full-length wrong SHA is terminal.",
+    "Exact final size and SHA precede atomic model publication.",
+    "Complete valid prefix needs no further HTTP request."
+  ],
+  "checks": {
+    "original_red": "One real local HTTP interrupted-body test failed against original source.",
+    "models": 9,
+    "core": 597,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "strict_workspace_clippy": "passed",
+    "fmt_and_diff": "passed",
+    "platform_ci": "pending"
+  },
+  "coverage": [
+    "Actual two-asset install with two disconnections, exact Range2-/4- and total progress11+8=19.",
+    "Ignored Range200 reset.",
+    "Invalid offsets, total, end, encoding and length rejected.",
+    "Wrong full SHA prevents publication.",
+    "No Content-Length short body resumes.",
+    "Complete-prefix noGET."
+  ],
+  "limits": [
+    "Resume is confined to the same live installation task; cross-restart partial recovery remains open.",
+    "Optional accelerator downloads use a separate path and are outside this patch.",
+    "Full public transfer with the repaired downloader remains pending.",
+    "Qwen3.5 2B is present only in an isolated admission branch; no model-quality or speed result exists.",
+    "Real GPU, Q9/Q16 quality and native installer/upgrade gates remain open."
+  ],
+  "evidence_directory": "artifacts/model-resume-2026-11-04",
+  "raw_sha256": {
+    "original-red.log": "25717f3f33e164d9a36ceafd1ae256c990805b32f0672888c8851ca0cbd50272",
+    "final-focused-green.log": "649b9ab6ccfcbbff217b3d4e411fa542fa6317bf73d12af35cebed0aa4a13e22",
+    "final-core-all.log": "b2e1d3b81a87d16ac17298a9d7825e0ddcac5af6c359b0c24b9743787823f0bb",
+    "final-workspace-clippy.log": "c91c9b7915e7516f64d4b54dfe9e4e23ba977189ef249f25cbce2426f5bd9fb0",
+    "rustup-partial-cleanup.json": "9d54f6c797c342737f6a36dc0fb1e52d5c2a8ec9107bffc2fe3f94e3e7ef7e9f"
+  },
+  "model_generation_runs": 0,
+  "installer_built": false,
+  "release_published": false
+}

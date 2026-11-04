@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -479,10 +479,7 @@ fn download(
             bail!("Download cancelled");
         }
         engine.require_model_network()?;
-        if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
-            p.downloaded = baseline;
-        }
-        match download_once(engine, id, asset, target, cancel) {
+        match download_once(engine, id, asset, target, cancel, baseline) {
             Ok(()) => return Ok(()),
             Err(e)
                 if attempt < 2
@@ -511,11 +508,48 @@ fn download_once(
     asset: &Asset,
     target: &Path,
     cancel: &AtomicBool,
+    baseline: u64,
 ) -> Result<()> {
     if cancel.load(Ordering::SeqCst) {
         bail!("Download cancelled");
     }
-    // A queued worker must recheck the device-local policy before opening HTTP.
+    // Only this live install owns the staging path. Retries can resume its
+    // prefix, but no partial download is adopted across separate install jobs.
+    engine.require_model_network()?;
+    let mut out = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(target)?;
+    let mut hasher = Sha256::new();
+    let mut bytes = 0u64;
+    let mut buf = [0u8; 128 * 1024];
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            bail!("Download cancelled");
+        }
+        let n = out.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        bytes += n as u64;
+        if bytes > asset.bytes {
+            bail!("Downloaded file exceeds catalog size");
+        }
+        hasher.update(&buf[..n]);
+    }
+    if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
+        p.downloaded = baseline + bytes;
+    }
+    if bytes == asset.bytes {
+        if format!("{:x}", hasher.finalize()) != asset.sha256 {
+            bail!("Checksum mismatch; model was not installed");
+        }
+        out.sync_all()?;
+        return Ok(());
+    }
+    // Recheck policy after prefix hashing before opening another connection.
     engine.require_model_network()?;
     let agent = ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(20))
@@ -524,15 +558,49 @@ fn download_once(
     if cancel.load(Ordering::SeqCst) {
         bail!("Download cancelled");
     }
-    let response = agent
-        .get(&asset.url)
-        .call()
-        .context("Model download failed")?;
+    let mut request = agent.get(&asset.url).set("Accept-Encoding", "identity");
+    if bytes > 0 {
+        request = request.set("Range", &format!("bytes={bytes}-"));
+    }
+    let response = request.call().context("Model download failed")?;
+    if response
+        .header("Content-Encoding")
+        .is_some_and(|encoding| !encoding.eq_ignore_ascii_case("identity"))
+    {
+        bail!("Encoded model response cannot be verified as a byte range");
+    }
+    let remaining = match response.status() {
+        206 => {
+            if bytes == 0
+                || !response
+                    .header("Content-Range")
+                    .is_some_and(|range| valid_content_range(range, bytes, asset.bytes))
+            {
+                bail!("Model response has an invalid byte range");
+            }
+            asset.bytes - bytes
+        }
+        200 => asset.bytes,
+        _ => bail!("Unexpected model download response"),
+    };
+    if response
+        .header("Content-Length")
+        .is_some_and(|length| length.parse::<u64>().ok() != Some(remaining))
+    {
+        bail!("Model response size differs from the pinned asset");
+    }
+    // Some origins ignore Range and return the whole file. Only a validated
+    // full response may replace the prefix; never append it to partial bytes.
+    if response.status() == 200 && bytes > 0 {
+        out.set_len(0)?;
+        out.seek(SeekFrom::Start(0))?;
+        bytes = 0;
+        hasher = Sha256::new();
+        if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
+            p.downloaded = baseline;
+        }
+    }
     let mut reader = response.into_reader();
-    let mut out = File::create(target)?;
-    let mut hasher = Sha256::new();
-    let mut bytes = 0u64;
-    let mut buf = [0u8; 128 * 1024];
     loop {
         if cancel.load(Ordering::SeqCst) {
             bail!("Download cancelled");
@@ -548,14 +616,35 @@ fn download_once(
         out.write_all(&buf[..n])?;
         hasher.update(&buf[..n]);
         if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
-            p.downloaded += n as u64;
+            p.downloaded = baseline + bytes;
         }
     }
     out.sync_all()?;
-    if bytes != asset.bytes || format!("{:x}", hasher.finalize()) != asset.sha256 {
+    if bytes != asset.bytes {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "Model response ended before the pinned file size",
+        )
+        .into());
+    }
+    if format!("{:x}", hasher.finalize()) != asset.sha256 {
         bail!("Checksum mismatch; model was not installed");
     }
     Ok(())
+}
+fn valid_content_range(header: &str, start: u64, total: u64) -> bool {
+    let Some((range, size)) = header
+        .strip_prefix("bytes ")
+        .and_then(|v| v.split_once('/'))
+    else {
+        return false;
+    };
+    let Some((first, last)) = range.split_once('-') else {
+        return false;
+    };
+    first.parse::<u64>().ok() == Some(start)
+        && last.parse::<u64>().ok() == total.checked_sub(1)
+        && size.parse::<u64>().ok() == Some(total)
 }
 fn install(engine: &Engine, spec: &Model, stage: &Path, cancel: &AtomicBool) -> Result<()> {
     if cancel.load(Ordering::SeqCst) {
@@ -811,6 +900,273 @@ mod tests {
         );
         assert!(!stage.exists());
     }
+    fn download_fixture_engine() -> (tempfile::TempDir, Arc<Engine>) {
+        let root = tempfile::tempdir().unwrap();
+        let engine = Engine::open(root.path().into()).unwrap();
+        engine
+            .set_network_policy(crate::network::NetworkPolicy {
+                allow_model_downloads: true,
+                ..Default::default()
+            })
+            .unwrap();
+        engine.downloads.status.lock().unwrap().insert(
+            "fixture".into(),
+            Download {
+                downloaded: 11,
+                total: 19,
+                ..Default::default()
+            },
+        );
+        (root, engine)
+    }
+
+    fn download_http_fixture(
+        responses: Vec<(String, Vec<u8>)>,
+    ) -> (String, std::thread::JoinHandle<Result<Vec<String>>>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let mut requests = Vec::new();
+            for (headers, body) in responses {
+                let deadline = std::time::Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error)
+                            if error.kind() == std::io::ErrorKind::WouldBlock
+                                && std::time::Instant::now() < deadline =>
+                        {
+                            std::thread::sleep(Duration::from_millis(10));
+                        }
+                        Err(error) => return Err(error.into()),
+                    }
+                };
+                stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+                let mut request = Vec::new();
+                let mut byte = [0u8; 1];
+                while !request.ends_with(b"\r\n\r\n") && request.len() < 8192 {
+                    stream.read_exact(&mut byte)?;
+                    request.push(byte[0]);
+                }
+                requests.push(String::from_utf8(request)?.to_lowercase());
+                write!(stream, "HTTP/1.1 {headers}\r\nConnection: close\r\n\r\n")?;
+                stream.write_all(&body)?;
+            }
+            Ok(requests)
+        });
+        (format!("http://{address}/model"), server)
+    }
+
+    fn download_fixture_model(url: String) -> Model {
+        Model {
+            id: "fixture".into(),
+            name: "fixture".into(),
+            kind: "llm".into(),
+            format: "gguf".into(),
+            license: "fixture".into(),
+            source: String::new(),
+            memory_mib: 1,
+            bundled: false,
+            archive: None,
+            files: vec![Asset {
+                name: "test.gguf".into(),
+                url,
+                sha256: format!("{:x}", Sha256::digest(b"goodfile")),
+                bytes: 8,
+            }],
+        }
+    }
+
+    #[test]
+    fn model_download_retries_resume_owned_prefix_with_exact_ranges() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        engine
+            .downloads
+            .status
+            .lock()
+            .unwrap()
+            .get_mut("fixture")
+            .unwrap()
+            .downloaded = 0;
+        let (url, server) = download_http_fixture(vec![
+            (
+                "200 OK\r\nContent-Length: 11".into(),
+                b"first-asset".to_vec(),
+            ),
+            ("200 OK\r\nContent-Length: 8".into(), b"go".to_vec()),
+            (
+                "206 Partial Content\r\nContent-Length: 6\r\nContent-Range: bytes 2-7/8".into(),
+                b"od".to_vec(),
+            ),
+            (
+                "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8".into(),
+                b"file".to_vec(),
+            ),
+        ]);
+        let mut spec = download_fixture_model(url.clone());
+        spec.files.insert(
+            0,
+            Asset {
+                name: "first.gguf".into(),
+                url,
+                sha256: format!("{:x}", Sha256::digest(b"first-asset")),
+                bytes: 11,
+            },
+        );
+        let stage = root.path().join("model-store/.resume");
+        let result = install(&engine, &spec, &stage, &AtomicBool::new(false));
+        let requests = server.join().unwrap()?;
+        eprintln!("retry requests: {requests:?}; result: {result:?}");
+        result?;
+        assert_eq!(requests.len(), 4);
+        assert!(!requests[0].contains("\r\nrange:"));
+        assert!(!requests[1].contains("\r\nrange:"));
+        assert!(requests[2].contains("\r\nrange: bytes=2-\r\n"));
+        assert!(requests[3].contains("\r\nrange: bytes=4-\r\n"));
+        assert!(requests
+            .iter()
+            .all(|request| request.contains("\r\naccept-encoding: identity\r\n")));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/first.gguf"))?,
+            b"first-asset"
+        );
+        assert!(!stage.exists());
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_retries_clean_short_eof_without_content_length() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![
+            ("200 OK".into(), b"go".to_vec()),
+            (
+                "206 Partial Content\r\nContent-Range: bytes 2-7/8".into(),
+                b"odfile".to_vec(),
+            ),
+        ]);
+        let stage = root.path().join("model-store/.resume");
+        let result = install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        );
+        let requests = server.join().unwrap()?;
+        result?;
+        assert_eq!(requests.len(), 2);
+        assert!(requests[1].contains("\r\nrange: bytes=2-\r\n"));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_restarts_safely_when_origin_ignores_range() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![(
+            "200 OK\r\nContent-Length: 8".into(),
+            b"goodfile".to_vec(),
+        )]);
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"good")?;
+        install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        )?;
+        let requests = server.join().unwrap()?;
+        assert!(requests[0].contains("\r\nrange: bytes=4-\r\n"));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_rejects_wrong_ranges_encoding_and_checksum_without_publication() -> Result<()> {
+        for headers in [
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 3-7/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-6/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/9",
+            "206 Partial Content\r\nContent-Length: 4",
+            "206 Partial Content\r\nContent-Length: 5\r\nContent-Range: bytes 4-7/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8\r\nContent-Encoding: gzip",
+        ] {
+            let (root, engine) = download_fixture_engine();
+            let (url, server) = download_http_fixture(vec![(headers.into(), b"file".to_vec())]);
+            let stage = root.path().join("model-store/.resume");
+            fs::create_dir_all(&stage)?;
+            let target = stage.join("test.gguf");
+            fs::write(&target, b"good")?;
+            assert!(install(&engine, &download_fixture_model(url), &stage, &AtomicBool::new(false)).is_err(), "{headers}");
+            assert_eq!(server.join().unwrap()?.len(), 1);
+            assert_eq!(fs::read(&target)?, b"good", "invalid response changed the prefix: {headers}");
+            assert!(!root.path().join("model-store/fixture").exists());
+        }
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![(
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8".into(),
+            b"FAIL".to_vec(),
+        )]);
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"good")?;
+        let error = install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("Checksum mismatch"));
+        assert_eq!(server.join().unwrap()?.len(), 1);
+        assert!(!root.path().join("model-store/fixture").exists());
+        Ok(())
+    }
+
+    #[test]
+    fn complete_model_prefix_is_verified_without_another_request() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+        listener.set_nonblocking(true)?;
+        let spec = download_fixture_model(format!("http://{}/model", listener.local_addr()?));
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"goodfile")?;
+        install(&engine, &spec, &stage, &AtomicBool::new(false))?;
+        assert_eq!(
+            listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
     #[test]
     fn running_jobs_prevent_model_changes_and_selected_model_deletion() {
         let root = tempfile::tempdir().unwrap();
