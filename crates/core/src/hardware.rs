@@ -2,6 +2,9 @@
 use serde::{Deserialize, Serialize};
 use std::{path::Path, time::Duration};
 
+#[cfg(any(target_os = "linux", all(test, unix)))]
+mod cuda;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GpuInventory {
     pub schema: u32,
@@ -90,7 +93,7 @@ pub fn native_inventory() -> GpuInventory {
     }
     #[cfg(target_os = "linux")]
     {
-        linux_inventory(Path::new("/sys/bus/pci/devices"))
+        linux_inventory_with_cuda(Path::new("/sys/bus/pci/devices"), cuda::driver_version)
     }
     #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
@@ -103,6 +106,16 @@ pub fn native_inventory() -> GpuInventory {
             driver_identity: None,
         }
     }
+}
+
+#[cfg(any(target_os = "linux", test))]
+fn linux_inventory_with_cuda(pci: &Path, query: impl FnOnce() -> Option<i32>) -> GpuInventory {
+    let mut inventory = linux_inventory(pci);
+    // Only the isolated helper queries the driver, and only for NVIDIA hosts.
+    if inventory.devices.iter().any(|d| d.vendor == "nvidia") {
+        inventory.cuda_driver_version = query().filter(|version| *version > 0);
+    }
+    inventory
 }
 
 #[cfg(any(target_os = "linux", test))]
@@ -272,6 +285,44 @@ fn windows_inventory() -> GpuInventory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn linux_cuda_capability_is_queried_only_for_detected_nvidia() -> anyhow::Result<()> {
+        let root = tempfile::tempdir()?;
+        assert_eq!(
+            linux_inventory_with_cuda(root.path(), || panic!("No GPU must not load CUDA"))
+                .cuda_driver_version,
+            None
+        );
+        let path = root.path().join("display");
+        std::fs::create_dir(&path)?;
+        std::fs::write(path.join("class"), "0x030200")?;
+        std::fs::write(path.join("device"), "0x1234")?;
+        std::fs::write(path.join("vendor"), "0x1002")?;
+        assert_eq!(
+            linux_inventory_with_cuda(root.path(), || panic!("AMD must not load CUDA"))
+                .cuda_driver_version,
+            None
+        );
+        std::fs::write(path.join("vendor"), "0x10de")?;
+        for version in [
+            None,
+            Some(0),
+            Some(-1),
+            Some(11080),
+            Some(12000),
+            Some(13000),
+        ] {
+            let inventory = linux_inventory_with_cuda(root.path(), || version);
+            assert_eq!(inventory.cuda_driver_version, version.filter(|v| *v > 0));
+            assert_eq!(inventory.devices[0].vendor, "nvidia");
+            assert_eq!(
+                inventory.driver_identity.as_deref(),
+                Some("linux_kernel_only")
+            );
+        }
+        Ok(())
+    }
+
     #[test]
     fn linux_detects_both_vendors_without_vendor_command_line_tools() -> anyhow::Result<()> {
         let root = tempfile::tempdir()?;

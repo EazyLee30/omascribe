@@ -8,6 +8,7 @@ use sha2::{Digest, Sha256};
 
 const KEY: &str = "source-actor-context-v1";
 const GENERATION: &str = "source-generation";
+const SOURCE_TEXTS_SQL: &str = "SELECT json_extract(json,'$.text') FROM segments WHERE meeting_id=?1 AND run=?2 AND json_extract(json,'$.meeting_id')=?1 AND json_extract(json,'$.run')=?2 ORDER BY seq";
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -31,18 +32,29 @@ fn generation(db: &Store, meeting: &str) -> Result<String> {
 fn scan(db: &Store, meeting: &Meeting) -> Result<String> {
     // The meeting/run index excludes other meetings and previous recognition
     // runs. This full derivation occurs only after a relevant generation change.
-    let mut stmt = db.conn.prepare(
-        "SELECT json_extract(json,'$.text') FROM segments WHERE meeting_id=?1 AND run=?2 AND json_extract(json,'$.meeting_id')=?1 AND json_extract(json,'$.run')=?2 ORDER BY seq",
-    )?;
-    let texts = stmt
-        .query_map(params![meeting.id, meeting.run], |r| r.get::<_, String>(0))?
-        .collect::<rusqlite::Result<Vec<_>>>()?;
-    Ok(Terms::new(&[], &[])
-        .with_actor_spellings(
-            texts.iter().map(String::as_str),
-            meeting.speaker_names.values().map(String::as_str),
-        )
-        .actor_spellings_digest())
+    let mut stmt = db.conn.prepare(SOURCE_TEXTS_SQL)?;
+    let mut rows = stmt.query_map(params![meeting.id, meeting.run], |r| r.get::<_, String>(0))?;
+    let mut first_error = None;
+    let terms = Terms::new(&[], &[]).with_actor_spellings(
+        rows.by_ref().map_while(|row| match row {
+            Ok(text) => Some(text),
+            Err(error) => {
+                first_error = Some(error);
+                None
+            }
+        }),
+        meeting.speaker_names.values().map(String::as_str),
+    );
+    if let Some(error) = first_error {
+        return Err(error.into());
+    }
+    // Extraction stops at the existing actor budget, but every remaining row
+    // must still pass the original String conversion before sealing a digest.
+    // Keep only the current row, not every historical source's owned text.
+    for row in rows {
+        drop(row?);
+    }
+    Ok(terms.actor_spellings_digest())
 }
 pub(crate) fn digest(db: &Store, meeting: &Meeting) -> Result<String> {
     digest_with(db, meeting, || scan(db, meeting))
@@ -136,6 +148,144 @@ mod tests {
             speaker_manual: false,
         }
     }
+
+    // The former production path is retained only as an equivalence oracle.
+    fn eager_reference(db: &Store, meeting: &Meeting) -> Result<String> {
+        let mut stmt = db.conn.prepare(SOURCE_TEXTS_SQL)?;
+        let texts = stmt
+            .query_map(params![meeting.id, meeting.run], |row| {
+                row.get::<_, String>(0)
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(Terms::new(&[], &[])
+            .with_actor_spellings(
+                texts.iter().map(String::as_str),
+                meeting.speaker_names.values().map(String::as_str),
+            )
+            .actor_spellings_digest())
+    }
+
+    fn full_actor_prefix() -> String {
+        (b'A'..=b'L')
+            .map(|letter| format!("测试任务由Actor{}负责检查。", char::from(letter)))
+            .collect::<String>()
+    }
+
+    #[test]
+    fn streaming_scan_preserves_eager_source_order_and_manual_anchor_semantics() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let db = Store::open(&temp.path().join("streaming.sqlite3"))?;
+        let mut m = meeting("manual-order", 1);
+        m.speaker_names.insert("speaker-2".into(), "林悦".into());
+        m.speaker_names.insert("speaker-1".into(), "Morgan".into());
+        m.speaker_names
+            .insert("speaker-3".into(), "NotSpoken".into());
+        for (index, text) in [
+            "这是没有名称的普通转写。",
+            "林悦先在周四提交测试报告。",
+            "Riley will run the review. Morgan owns the original report.",
+            "Riley will run the review. MORGAN CONFIRMS THE UPLOAD IS COMPLETE.",
+            "离线转写工具由张敬先负责测试。",
+        ]
+        .iter()
+        .enumerate()
+        {
+            db.save_segment(&source(
+                &m,
+                &format!("manual-{index}"),
+                index as u32 + 1,
+                text,
+            ))?;
+        }
+        assert_eq!(scan(&db, &m)?, eager_reference(&db, &m)?);
+        assert_eq!(digest(&db, &m)?, eager_reference(&db, &m)?);
+
+        let capped = meeting("capped-order", 1);
+        let prefix = full_actor_prefix();
+        assert_eq!(
+            Terms::new(&[], &[])
+                .with_actor_spellings([prefix.as_str()], std::iter::empty::<&str>())
+                .actor_spellings()
+                .len(),
+            12
+        );
+        db.save_segment(&source(&capped, "capped-first", 1, &prefix))?;
+        let prefix_digest = scan(&db, &capped)?;
+        for index in 0..64 {
+            db.save_segment(&source(
+                &capped,
+                &format!("capped-tail-{index}"),
+                index + 2,
+                "Nora will run the review. 这部分晚于已满的名称上下文。",
+            ))?;
+        }
+        assert_eq!(scan(&db, &capped)?, prefix_digest);
+        assert_eq!(scan(&db, &capped)?, eager_reference(&db, &capped)?);
+        Ok(())
+    }
+
+    #[test]
+    fn invalid_tail_rows_after_actor_cap_cannot_seal_a_digest() -> Result<()> {
+        for kind in ["null", "number", "malformed"] {
+            let temp = tempfile::tempdir()?;
+            let db = Store::open(&temp.path().join("invalid-tail.sqlite3"))?;
+            let m = meeting(kind, 1);
+            db.save_segment(&source(&m, "full-prefix", 1, &full_actor_prefix()))?;
+            let tail = source(&m, "invalid-tail", 2, "Nora will run the review.");
+            db.save_segment(&tail)?;
+            digest(&db, &m)?;
+            let before = db.cache_dependency(&m.id, KEY)?;
+            let before_generation = generation(&db, &m.id)?;
+            let damaged = if kind == "malformed" {
+                // Simulate an already-corrupted/imported database. The normal
+                // term-queue trigger rejects malformed JSON before persistence.
+                db.conn.execute_batch("DROP TRIGGER term_source_update;")?;
+                "{malformed historical source".to_owned()
+            } else {
+                let mut value = serde_json::to_value(&tail)?;
+                value["text"] = if kind == "null" {
+                    serde_json::Value::Null
+                } else {
+                    42.into()
+                };
+                serde_json::to_string(&value)?
+            };
+            db.conn.execute(
+                "UPDATE segments SET json=?2 WHERE id=?1",
+                params![tail.id, damaged],
+            )?;
+            assert_ne!(generation(&db, &m.id)?, before_generation, "{kind}");
+            let expected = eager_reference(&db, &m).unwrap_err().to_string();
+            assert_eq!(scan(&db, &m).unwrap_err().to_string(), expected, "{kind}");
+            assert!(digest(&db, &m).is_err(), "{kind}");
+            assert_eq!(db.cache_dependency(&m.id, KEY)?, before, "{kind}");
+            assert!(digest(&db, &m).is_err(), "{kind}: bad state was sealed");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn streaming_scan_preserves_the_first_row_error_before_the_actor_cap() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let db = Store::open(&temp.path().join("first-error.sqlite3"))?;
+        let m = meeting("first-error", 1);
+        for (index, bad_text) in [serde_json::Value::Null, 42.into()].into_iter().enumerate() {
+            let source = source(&m, &format!("invalid-{index}"), index as u32 + 1, "text");
+            db.save_segment(&source)?;
+            let mut value = serde_json::to_value(&source)?;
+            value["text"] = bad_text;
+            db.conn.execute(
+                "UPDATE segments SET json=?2 WHERE id=?1",
+                params![source.id, serde_json::to_string(&value)?],
+            )?;
+        }
+        let expected = eager_reference(&db, &m).unwrap_err().to_string();
+        assert_eq!(scan(&db, &m).unwrap_err().to_string(), expected);
+        assert!(digest(&db, &m).is_err());
+        assert!(db.cache_dependency(&m.id, KEY)?.is_empty());
+        Ok(())
+    }
+
     #[test]
     fn cache_hits_load_no_source_and_unrelated_changes_keep_actor_identity() -> Result<()> {
         let temp = tempfile::tempdir()?;

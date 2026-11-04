@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "parent_commit": "40b79c1753938d0e6c09793adc1f3cb19066486a",
+  "status": "CORE_FRONTEND_AND_PACKAGING_PASS_WORKSPACE_CLIPPY_RUNNING_CI_PENDING",
+  "source_sha256": {
+    "crates/core/src/hardware.rs": "42f8370a27ed6a759b453f3d9ca6f538f6c6b90cb05e62a107626a1e54cb8ecb",
+    "crates/core/src/hardware/cuda.rs": "8d43ecb3629114b5f53596b9dfdc2b3bb3ff000e82694ade9a8043a6f8297ef9",
+    "crates/core/src/source_context.rs": "05a3bea5f82a174c3c8cf818169d84484b9d4ea389b9cfa9658b804417908dcb",
+    "crates/core/src/terminology.rs": "89160706b8ebe6f081f39dafeab9490d8dee9c54fa74f455f09601365fb213a1",
+    "src/acceleration-ui.ts": "62cdc7ea3cb9e216278cd2096510a2ae4ac30e49d9ba096a3fe286d62e756df3",
+    "tests/acceleration-ui.mjs": "53dbf54b5e925fa1c70a3d55662a3e07450069ecdf7839882ddda30b485ad8db"
+  },
+  "gpu_recommendation": {
+    "observed_failure": "Existing UI recommends CUDA12 for Linux NVIDIA when the CUDA driver capability is null. The added actual Chromium regression fails 1 != 0 against the previous source.",
+    "linux_probe": "Only the isolated hardware helper loads the existing libcuda.so.1 and queries cuDriverGetVersion, and only after NVIDIA enumeration. No cuInit, toolkit or GPU allocation is requested; the existing helper timeout/output bound remains.",
+    "version_admission": "Only CUDA_SUCCESS and a positive API version are known. Missing library/symbol, errors, zero and negative results remain unknown.",
+    "ui": "Known CUDA API >=12000 is a download candidate, older versions block CUDA and recommend Vulkan, unknown does not carry a recommendation but retains manual download/test. Successful faster local model testing remains required for automatic GPU use.",
+    "driver_identity": "The capability is not complete userspace driver provenance; linux_kernel_only identity remains explicit.",
+    "primary_sources": [
+      "https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__VERSION.html",
+      "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html"
+    ]
+  },
+  "source_stream": {
+    "before": "Actor context collected every current-run historical source String before the bounded extractor.",
+    "after": "Consume owned source Strings one at a time, retaining the same 12-name/240-character limit, SQL source order and manual-anchor semantics.",
+    "errors": "After the extraction cap, drain and validate remaining String rows. First errors are preserved and malformed tail data cannot seal a new cache entry.",
+    "scope": "Reduces simultaneously retained Rust historical text to the current row plus bounded actor state. All SQL rows are still read/validated; no total SQL scan, unique process RSS or end-to-end speed reduction is measured."
+  },
+  "checks": {
+    "core": 607,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "new_source_stream_controls": 5,
+    "new_cuda_controls": 3,
+    "real_dynamic_c_fixtures": "passed on macOS Unix loader; no actual GPU",
+    "browser": "16 NVIDIA platform/version combinations plus AMD/Intel and existing retained controls pass",
+    "frontend_build": "passed",
+    "component_packaging": 26,
+    "format_and_diff": "passed",
+    "strict_workspace_clippy": "running; restoring missing crate archives",
+    "platform_ci": "pending"
+  },
+  "limits": [
+    "No actual Linux NVIDIA or Windows GPU test is claimed.",
+    "No change to PR14 UMA classification/device ordering.",
+    "CUDA/Vulkan remain separate signed optional components; no installer or GPU payload was built.",
+    "Q9 real-audio proper-name recall, Q16 minutes fidelity and native installation/upgrade gates remain open.",
+    "No new model generation or model/SDK download in this iteration."
+  ],
+  "evidence_directory": "artifacts/core-resource-2026-11-04",
+  "raw_sha256": {
+    "artifacts/core-resource-2026-11-04/core.log": "50dc4294863a18fc72ecc1d60f5e56eda03aecdcd9811c957b42e57f2055f501",
+    "artifacts/core-resource-2026-11-04/frontend-build.log": "54f64155c27c7197dca7a02b34e50d33c1897aa7bb4ad469b075bc6ad32da199",
+    "artifacts/core-resource-2026-11-04/packaging.log": "25e218e6a4764e00d0a8ffc0d4d5472e23d4ea6c8998072385209a96e8821ad8",
+    "output/playwright/gpu-recommendation-2026-11-04/original-red.log": "2d1e5446fc12b73a7b56e4bf7b81789a8e4b1881556e10051f27da2ed3bd0e0b",
+    "output/playwright/gpu-recommendation-2026-11-04/final-green.log": "cb7e4cff517f4c1196c1c81b946d098e0387c6e156aed697e47eb1e6000126b4"
+  },
+  "release_published": false
+}

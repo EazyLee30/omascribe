@@ -867,9 +867,9 @@ impl Terms {
     ///
     /// This context does not affect the normalizer fingerprint. Translation and
     /// minutes callers must bind actor_spellings_digest to their own identities.
-    pub(crate) fn with_actor_spellings<'a>(
+    pub(crate) fn with_actor_spellings<'a, S: AsRef<str>>(
         mut self,
-        sources: impl IntoIterator<Item = &'a str>,
+        sources: impl IntoIterator<Item = S>,
         anchors: impl IntoIterator<Item = &'a str>,
     ) -> Self {
         fn add(names: &mut Vec<String>, value: &str) {
@@ -891,6 +891,7 @@ impl Terms {
         }
         let mut names = Vec::new();
         for source in sources {
+            let source = source.as_ref();
             for label in &manual {
                 if contains_name(source, label) {
                     add(&mut names, label);
@@ -1906,6 +1907,112 @@ mod tests {
         assert!(terms.caption_spellings("这次只讨论测试报告。").is_empty());
         assert_eq!(terms.normalize("Lin Yuejian"), "Lin Yuejian");
     }
+
+    #[test]
+    fn owned_actor_sources_match_borrowed_sources_and_manual_anchor_order() {
+        let sources = [
+            "这是普通转写，没有明确任务主体。",
+            "林悦先在周四提交测试报告。Morgan owns the original report.",
+            "Riley will run the review. 离线工具由张敬先负责测试。",
+            "Morgan owns the original report. 张敬先在周五提交报告。",
+        ];
+        let anchors = ["林悦", "Morgan", "NotSpoken"];
+        let borrowed = Terms::new(&[], &[]).with_actor_spellings(sources, anchors);
+        let owned = Terms::new(&[], &[])
+            .with_actor_spellings(sources.into_iter().map(str::to_owned), anchors);
+        assert_eq!(borrowed.actor_spellings(), owned.actor_spellings());
+        assert_eq!(
+            borrowed.actor_spellings_digest(),
+            owned.actor_spellings_digest()
+        );
+        assert_eq!(borrowed.fingerprint(), owned.fingerprint());
+        assert_eq!(
+            borrowed.recognition_hotwords(),
+            owned.recognition_hotwords()
+        );
+        assert!(!owned
+            .actor_spellings()
+            .iter()
+            .any(|name| name == "NotSpoken"));
+        for source in sources {
+            assert_eq!(
+                borrowed.caption_spellings(source),
+                owned.caption_spellings(source)
+            );
+            assert_eq!(owned.normalize(source), source);
+        }
+    }
+
+    #[test]
+    fn owned_actor_sources_are_released_and_stop_at_the_existing_caps() {
+        use std::{cell::Cell, rc::Rc};
+
+        struct TrackedSource {
+            text: String,
+            live: Rc<Cell<usize>>,
+        }
+        impl AsRef<str> for TrackedSource {
+            fn as_ref(&self) -> &str {
+                &self.text
+            }
+        }
+        impl Drop for TrackedSource {
+            fn drop(&mut self) {
+                self.live.set(self.live.get() - 1);
+            }
+        }
+        for character_cap in [false, true] {
+            let live = Rc::new(Cell::new(0));
+            let peak = Cell::new(0);
+            let pulled = Cell::new(0);
+            let labels: Vec<_> = (b'A'..=b'Z')
+                .map(|letter| {
+                    if character_cap {
+                        format!("Person{}{}", char::from(letter), "x".repeat(73))
+                    } else {
+                        format!("Actor{}", char::from(letter))
+                    }
+                })
+                .collect();
+            let sources = labels.iter().map(|label| {
+                pulled.set(pulled.get() + 1);
+                live.set(live.get() + 1);
+                peak.set(peak.get().max(live.get()));
+                TrackedSource {
+                    text: if character_cap {
+                        label.clone()
+                    } else {
+                        format!("测试任务由{label}负责检查。")
+                    },
+                    live: live.clone(),
+                }
+            });
+            let anchors: Vec<_> = if character_cap {
+                labels.iter().map(String::as_str).collect()
+            } else {
+                vec![]
+            };
+            let terms = Terms::new(&[], &[]).with_actor_spellings(sources, anchors);
+            assert_eq!(live.get(), 0);
+            assert_eq!(peak.get(), 1);
+            assert_eq!(pulled.get(), if character_cap { 3 } else { 12 });
+            assert_eq!(
+                terms.actor_spellings().len(),
+                if character_cap { 3 } else { 12 }
+            );
+            if character_cap {
+                assert_eq!(
+                    terms
+                        .actor_spellings()
+                        .iter()
+                        .map(|name| name.chars().count())
+                        .sum::<usize>(),
+                    240
+                );
+            }
+        }
+    }
+
     #[test]
     fn actor_context_stays_bounded_and_does_not_revive_an_old_owner() {
         let source = (b'A'..=b'Z')
