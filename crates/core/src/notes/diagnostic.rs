@@ -240,6 +240,7 @@ impl<'a> Report<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Context;
 
     fn clean_observation_child(name: &str) -> Result<bool> {
         const CHILD: &str = "OMASCRIBE_REJECTION_OBSERVATION_CHILD";
