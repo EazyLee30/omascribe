@@ -1,0 +1,246 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "ORIGINAL18_PRESERVED_Q16_AVAILABILITY_DIFFERENCE_OPEN",
+  "sources": {
+    "stable": "2a26798f3aedc58e74c6e121af58c28bd6cf02e9",
+    "candidate": "9f7cd1777884f6635154a053014fa57865ebe279"
+  },
+  "provenance": "Exact stable source rebuilt offline with current Rust 1.99 and existing CPU SDK; not byte-identical published installer proof.",
+  "scope": "Frozen public source only. Private grouped-minutes prototype excluded.",
+  "model": "Existing Qwen3-1.7B Q4_K_M; pinned same full weight bytes and llama runtime in both arms.",
+  "configuration": "Common explicit preferences: 2048 context, threads 1, balanced, auto backend, auto memory budget, translation off; no default-wide performance claim.",
+  "execution_contract": {
+    "input_runs_per_arm_per_case": 1,
+    "alternating_arm_order": true,
+    "stop_case_on_first_no_progress": true,
+    "max_chat_sends_per_job": 2,
+    "retries_or_parameter_tuning": false,
+    "new_models_or_sdks_downloaded": false,
+    "asr_or_audio_exercised": false
+  },
+  "stages": {
+    "q16": {
+      "completed_pair": true,
+      "operational_audit_passed": true,
+      "owned_processes_exited": true,
+      "owned_assets_released": true,
+      "whole_stage_wall_seconds_including_setup_cleanup": 28.662,
+      "classification_counts": {
+        "both_failed_on_same_case": 1
+      },
+      "arms": {
+        "stable": {
+          "fixed_assertion_passed_cases": 0,
+          "cases": 1,
+          "fully_covered_cases": 1,
+          "invalid_current_citation_count": 0,
+          "observed_costs": {
+            "completed_diagnostic_responses_observed": 3,
+            "prompt_tokens_of_observed_responses": 1252,
+            "completion_tokens_of_observed_responses": 343,
+            "diagnostic_attempt_elapsed_ms_including_validation": 5129,
+            "chat_requests_started": null,
+            "request_start_observations_missing_jobs": 2,
+            "cli_command_wall_seconds": 14.126,
+            "sampled_process_cpu_seconds_lower_bound": 1.7501780729999998,
+            "max_sampled_process_tree_rss_mib": 1486.984375,
+            "sampled_tree_rss_mib_seconds_observed_intervals_only": 8573.110325280782,
+            "commands_without_cpu_sample": 1,
+            "rejected_observed_responses": 1
+          }
+        },
+        "candidate": {
+          "fixed_assertion_passed_cases": 0,
+          "cases": 1,
+          "fully_covered_cases": 0,
+          "invalid_current_citation_count": 0,
+          "observed_costs": {
+            "completed_diagnostic_responses_observed": 2,
+            "prompt_tokens_of_observed_responses": 905,
+            "completion_tokens_of_observed_responses": 332,
+            "diagnostic_attempt_elapsed_ms_including_validation": 5107,
+            "chat_requests_started": 2,
+            "request_start_observations_missing_jobs": 0,
+            "cli_command_wall_seconds": 12.206,
+            "sampled_process_cpu_seconds_lower_bound": 1.9491458940000002,
+            "max_sampled_process_tree_rss_mib": 1496.75,
+            "sampled_tree_rss_mib_seconds_observed_intervals_only": 8659.135206375362,
+            "commands_without_cpu_sample": 1,
+            "rejected_observed_responses": 2
+          }
+        }
+      }
+    },
+    "original18": {
+      "completed_pair": true,
+      "operational_audit_passed": true,
+      "owned_processes_exited": true,
+      "owned_assets_released": true,
+      "whole_stage_wall_seconds_including_setup_cleanup": 92.996,
+      "classification_counts": {
+        "preserved_pass": 18
+      },
+      "arms": {
+        "stable": {
+          "fixed_assertion_passed_cases": 18,
+          "cases": 18,
+          "fully_covered_cases": 18,
+          "invalid_current_citation_count": 0,
+          "observed_costs": {
+            "completed_diagnostic_responses_observed": 21,
+            "prompt_tokens_of_observed_responses": 4919,
+            "completion_tokens_of_observed_responses": 974,
+            "diagnostic_attempt_elapsed_ms_including_validation": 16135,
+            "chat_requests_started": null,
+            "request_start_observations_missing_jobs": 21,
+            "cli_command_wall_seconds": 39.699,
+            "sampled_process_cpu_seconds_lower_bound": 9.250561842,
+            "max_sampled_process_tree_rss_mib": 1482.09375,
+            "sampled_tree_rss_mib_seconds_observed_intervals_only": 25493.55255271242,
+            "commands_without_cpu_sample": 21,
+            "rejected_observed_responses": 1
+          }
+        },
+        "candidate": {
+          "fixed_assertion_passed_cases": 18,
+          "cases": 18,
+          "fully_covered_cases": 18,
+          "invalid_current_citation_count": 0,
+          "observed_costs": {
+            "completed_diagnostic_responses_observed": 23,
+            "prompt_tokens_of_observed_responses": 5001,
+            "completion_tokens_of_observed_responses": 1033,
+            "diagnostic_attempt_elapsed_ms_including_validation": 17573,
+            "chat_requests_started": 23,
+            "request_start_observations_missing_jobs": 0,
+            "cli_command_wall_seconds": 46.885,
+            "sampled_process_cpu_seconds_lower_bound": 17.766982735,
+            "max_sampled_process_tree_rss_mib": 1490.953125,
+            "sampled_tree_rss_mib_seconds_observed_intervals_only": 30881.861761028464,
+            "commands_without_cpu_sample": 21,
+            "rejected_observed_responses": 3
+          }
+        }
+      }
+    }
+  },
+  "q16_manual_findings": {
+    "availability_difference": {
+      "stable_frontier": [
+        0,
+        5,
+        6
+      ],
+      "candidate_frontier": [
+        0,
+        0
+      ],
+      "interpretation": "Observed availability difference: stable produced an unsafe article while candidate rejected both drafts and produced none. both_failed_on_same_case is not evidence of no regression."
+    },
+    "stable_final_faults": [
+      "Wrongly attributes the unrelated music statement to PAMELA FURGO森, whose passage only concerns publication of suspect information.",
+      "Turns MAY HAVE FINISHED into 已结束 and loses the conditional existence of sections that may keep playing music.",
+      "Invents unfinished status, future time confirmation and risk-assessment work not supported by the six source passages.",
+      "Final names preserve the noisy source variants; first committed batch truncates 当迪大学 to 迪大学 before the later batch restores it."
+    ],
+    "stable_rejected_draft_faults": "Second batch first draft invents completed status, no remaining items, no uncertainty and a latest correction; old validator rejects that attempt, but the repair still contains the final faults above.",
+    "candidate_draft_faults": [
+      "Both drafts repeat mixed-language transcript instead of producing an integrated Chinese article.",
+      "First draft changes 潘 to PAN; repair restores 潘.",
+      "Both add a space in PAMELA FURGO森 to PAMELA FURGO 森. The reported name guard rejects this spelling difference; both attempts remain uncommitted."
+    ],
+    "candidate_draft_positive": "Preserves English MAY uncertainty and does not attribute music to the professor, unlike stable final prose; this does not qualify an absent final article.",
+    "source6": {
+      "stable_selected_observed": true,
+      "stable_final_active_citation_observed": true,
+      "candidate_selected_observed": false,
+      "candidate_final_active_citation_observed": false,
+      "candidate_reason": "First job selected 1–5 and failed with no progress. Source6 processing was never reached; do not invent a separate missing-source6 protocol error for 0→0."
+    }
+  },
+  "original18_manual_findings": {
+    "automated_classification": "All 18 preserved_pass; no observed fixed-assertion regression or availability failure within this suite.",
+    "fidelity_improvements_observed": [
+      {
+        "case": "zh_correction",
+        "benefit": "Candidate preserves unitless 3000 and explicit corrected 2000元; stable adds 元 to the original unitless 3000."
+      },
+      {
+        "case": "zh_connected_minutes",
+        "benefit": "Candidate preserves that live transcript already displays and that the adjustments are unfinished; stable writes that transcription and caption functions are unfinished."
+      },
+      {
+        "case": "zh_named_speakers",
+        "benefit": "Candidate retains 这周还不能交付 in addition to the unknown delivery date, which stable omits."
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "benefit": "Candidate keeps 好像有问题 uncertainty; stable asserts the allocation problem as definite."
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "benefit": "Candidate avoids stable final prose inventing a meeting conclusion, final status and absence of proposed improvements."
+      }
+    ],
+    "name_correction_evidence": [
+      {
+        "case": "zh_note_name_spelling",
+        "raw": "ALMA SCRIBE",
+        "corrected": "OmaScribe",
+        "revision": 2,
+        "both_arms_observed": true
+      },
+      {
+        "case": "en_generic_note_name",
+        "raw": "PIXEL LEDGRE",
+        "corrected": "PixelLedger",
+        "revision": 2,
+        "both_arms_observed": true
+      },
+      {
+        "case": "zh_product_spelling",
+        "raw": "奥马（OMA）的SCRIB / omascribe",
+        "corrected": "OmaScribe",
+        "revision": 2,
+        "both_arms_observed": true
+      }
+    ],
+    "name_scope_limit": "Names are in the document before generation; both source versions correct transcript and final cited minutes. This does not prove newly saving or editing a note automatically revises already-generated transcript/minutes, nor does it prove acoustic hotword recognition.",
+    "negative_name_control": "zh_name_context_is_not_evidence does not insert note-only OmaScribe, PixelLedger or budget 3000 into unsupported transcript/minutes in either arm.",
+    "human_protection": "Both arms retain the accepted human paragraph across the later phase."
+  },
+  "native_and_ownership_observations": {
+    "q16_worker_identity": "Three llama processes were observed in the expected per-arm owned runtime directories; frozen content hashes and recorded clone provenance bind the identical executable. No ASR process was exercised.",
+    "q16_backend": "Both diagnostics report Metal. Candidate native log explicitly reports Apple M5 and 29/29 layers GPU offload, 2048 context and 128 batch. Stable native logs do not retain an offload-layer count.",
+    "process_exit_and_cleanup": "Both stages report complete owned-process exit and released clone assets. Q16 removed owned-models and both runtime directories were independently observed absent."
+  },
+  "unknowns_and_limits": [
+    "Legacy request-start totals remain unknown where traces are absent; completed diagnostic responses and their usage are observed subsets, not inferred zero hidden costs.",
+    "Diagnostic elapsed_ms includes validation. Pure model compute time is not inferred from it.",
+    "Non-command setup/cleanup CPU, physical unified-memory usage, PSS, GPU allocations and energy remain unknown. Empty metadata command samples are not zero costs.",
+    "Sampled process CPU is a lower bound and summed RSS may double-count shared pages. RSS integrals cover measured intervals only.",
+    "One ordered pair per case with uncontrolled OS/shader/page caches is not a repeatable performance benchmark; more candidate repair responses prevent claiming resource reduction from these results.",
+    "Fixed pattern checks and valid quote/revision/time links do not prove every semantic claim is supported; stable manual faults pass some broad checks.",
+    "No audio/ASR, after-note-save replay, microphone recording, installed upgrade or three-platform acceptance was executed in this paired minutes experiment."
+  ],
+  "release_assessment": {
+    "release_ready_claim": false,
+    "performance_improvement_claim": false,
+    "core_work_complete_claim": false,
+    "original18_remaining_blocker": false,
+    "remaining_concrete_core_issue": "Q16 candidate rejects both drafts and stalls at 0→0 while stable can emit an article. This availability difference is distinct from old semantic faults and remains unresolved for the frozen candidate.",
+    "scope": "Evidence supports preserving original18 behavior with several fidelity benefits. This review does not establish whole-product release readiness or completion of all requested core improvements."
+  },
+  "evidence_directory": "artifacts/stable-candidate-pair-2026-11-04",
+  "raw_sha256": {
+    "artifacts/stable-candidate-pair-2026-11-04/run-pair.py": "89c9aab223d4cf664cd901dd389f1b808d5ddddb3ddeecf9ff951d944c0fac8c",
+    "artifacts/stable-candidate-pair-2026-11-04/frozen-inputs.json": "f15765faa18ccdcb5b38622953764656450c6fc40aaaac352ff4fde43299f2db",
+    "artifacts/stable-candidate-pair-2026-11-04/q16/state.json": "433d453de977adc2d8de3da983d2b1f4d65ff7a90e9ba7c56b1828d257cfdede",
+    "artifacts/stable-candidate-pair-2026-11-04/original18/state.json": "57962ea88bcf1437e707ac7b6faa5b91a5edb29534c4b607f38ae79b9c42a276",
+    "artifacts/stable-candidate-pair-2026-11-04/independent-review.json": "8eeed2771d32cc13aefc72c1472c055783e1509586302553b0860ffae4eb0467",
+    "artifacts/stable-candidate-build-2026-11-04/baseline-built.json": "da9c5a7993427d14f1ce61be0b35469f1cfc82b2e8070f403c697bffbb926650",
+    "artifacts/stable-candidate-build-2026-11-04/candidate-built.json": "528709b2242f6d362ec069ef71edb03277ffb2977adf942501012d077a9be742"
+  },
+  "release_published": false
+}

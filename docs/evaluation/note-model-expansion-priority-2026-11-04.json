@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-04",
   "parent_commit": "cffe7d931b2168e51a5ff415b5bca109f660c1c1",
-  "status": "LOCAL_REGRESSIONS_AND_STRICT_WORKSPACE_PASS_CI_PENDING",
+  "status": "LOCAL_REGRESSIONS_STRICT_WORKSPACE_AND_PLATFORM_CI_PASS",
   "source_sha256": {
     "crates/core/src/terminology.rs": "6eb2a86029bb818111568b70a6725c85465305e7e9c3912bfd87ab1ca7f023ed"
   },
@@ -29,7 +29,54 @@
     ],
     "strict_workspace_clippy": "passed offline",
     "fmt_and_diff": "passed",
-    "platform_ci": "pending"
+    "platform_ci": {
+      "source": "9f7cd1777884f6635154a053014fa57865ebe279",
+      "observed_utc_date": "2026-11-05",
+      "checks": [
+        {
+          "name": "catalog",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445577/job/126678291102"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445577/job/126676956569"
+        },
+        {
+          "name": "windows-core",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445577/job/126676953249"
+        },
+        {
+          "name": "ubuntu22",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445688/job/126676879005"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445834/job/126676878535"
+        },
+        {
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445577/job/126676877606"
+        },
+        {
+          "name": "linux",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41859445671/job/126676877355"
+        }
+      ]
+    }
   },
   "controls": [
     "Exact whole English spoken digits and native CJK hint admitted under the original rules.",
