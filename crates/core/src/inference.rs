@@ -63,7 +63,7 @@ pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<Launch
 pub fn apple_silicon() -> bool {
     cfg!(all(target_os = "macos", target_arch = "aarch64"))
 }
-fn metal_device_available() -> bool {
+pub(crate) fn metal_device_available() -> bool {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     {
         // Virtual Macs may have an arm64 CPU without an exposed Metal device.

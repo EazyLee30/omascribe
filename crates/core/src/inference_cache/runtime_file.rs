@@ -40,6 +40,13 @@ pub(super) struct Receipt {
 
 impl Receipt {
     pub(super) fn observe(path: &Path, mut on_read: impl FnMut(usize)) -> Result<Self> {
+        Self::observe_bounded(path, MAX_RUNTIME_BYTES, &mut on_read)
+    }
+    pub(super) fn observe_bounded(
+        path: &Path,
+        maximum: u64,
+        mut on_read: impl FnMut(usize),
+    ) -> Result<Self> {
         ensure!(
             cfg!(any(target_os = "linux", target_os = "macos", windows)),
             "runtime file observation is unsupported on this platform"
@@ -57,7 +64,7 @@ impl Receipt {
         let (parent, parent_identity) = open_checked(&parent_path, true)?;
         let (mut file, file_identity) = open_checked(&path, false)?;
         ensure!(
-            file_identity.bytes() <= MAX_RUNTIME_BYTES,
+            file_identity.bytes() <= maximum.min(MAX_RUNTIME_BYTES),
             "runtime file exceeds byte limit"
         );
         #[cfg(target_os = "linux")]

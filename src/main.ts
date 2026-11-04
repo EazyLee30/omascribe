@@ -521,6 +521,12 @@ async function refresh() {
   }
 }
 function localizedStatus(status: string) {
+  if (status === "自动整理已暂停：请修改笔记或转写，或点击“整理”重试")
+    return tr(
+      `自动整理已暂停。修改内容或点击“${t("generate")}”重试。`,
+      `Auto notes paused. Edit your content or select ${t("generate")} to retry.`,
+      `自動整理已暫停。修改內容或點擊「${t("generate")}」重試。`,
+    );
   if (
     status.includes("Unsupported speaker attribution:") ||
     status.includes("Ambiguous speaker attribution:")

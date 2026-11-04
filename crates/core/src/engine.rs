@@ -325,6 +325,9 @@ impl Engine {
                                 Instant::now(),
                             )
                         }
+                        && retry_input.as_ref().is_none_or(|input| {
+                            engine.automatic_minutes_admission(&snapshot, input)
+                        })
                         && !snapshot
                             .notes
                             .iter()
@@ -426,6 +429,41 @@ impl Engine {
             &prefs,
             self.context_revision.load(Ordering::SeqCst),
         )
+    }
+    pub(crate) fn automatic_minutes_admission(
+        &self,
+        snapshot: &Snapshot,
+        input: &crate::minutes_schedule::InputDigest,
+    ) -> bool {
+        let rejected = self
+            .legacy_minutes_failures
+            .lock()
+            .unwrap()
+            .rejected(&snapshot.meeting, input);
+        let prefs = self.preferences.lock().unwrap().clone();
+        let Some(witness) = rejected else {
+            return true;
+        };
+        let current = witness.current(self, &prefs);
+        let mut failures = self.legacy_minutes_failures.lock().unwrap();
+        if current
+            && failures
+                .rejected(&snapshot.meeting, input)
+                .is_some_and(|now| Arc::ptr_eq(&now, &witness))
+        {
+            drop(failures);
+            let focused =
+                self.notes_target.lock().unwrap().as_deref() == Some(&snapshot.meeting.id);
+            let mut status = self.status.lock().unwrap();
+            if status.meeting_id.as_deref() == Some(&snapshot.meeting.id)
+                || status.meeting_id.is_none() && focused
+            {
+                status.notes_status = crate::minutes_schedule::AUTOMATIC_PAUSED.into();
+            }
+            return false;
+        }
+        failures.clear_matching_rejected(&snapshot.meeting, input, &witness);
+        true
     }
     fn legacy_minutes_due_for_input(
         &self,
@@ -1267,7 +1305,7 @@ impl Engine {
         if self.status.lock().unwrap().diarization_busy {
             bail!("Wait for speaker analysis to finish");
         }
-        let launch_run = {
+        let launch_meeting = {
             let db = self.store.lock().unwrap();
             let meeting = db.meeting(id)?;
             if dispatch
@@ -1276,8 +1314,9 @@ impl Engine {
             {
                 bail!("会议录音轮次已更新，稍后自动整理");
             }
-            meeting.run
+            meeting
         };
+        let launch_run = launch_meeting.run;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("已有笔记正在生成");
         }
@@ -1286,6 +1325,12 @@ impl Engine {
                 self.note_busy.store(false, Ordering::SeqCst);
                 return Err(error);
             }
+        }
+        if dispatch.is_none() {
+            self.legacy_minutes_failures
+                .lock()
+                .unwrap()
+                .clear_rejected(&launch_meeting);
         }
         self.note_cancel.store(false, Ordering::SeqCst);
         {
@@ -1297,10 +1342,15 @@ impl Engine {
         let id = id.to_string();
         thread::spawn(move || {
             if let Some(dispatch) = dispatch {
-                let (result, input) = notes::generate_in_run_observed(&engine, &id, launch_run);
+                let (result, observation) =
+                    notes::generate_in_run_observed(&engine, &id, launch_run);
                 let succeeded = result.is_ok();
-                engine.finish_minutes_observed(&id, launch_run, &dispatch, input.as_ref(), result);
-                dispatch.complete_observed(succeeded, input);
+                engine.finish_minutes_observation(&id, launch_run, &dispatch, &observation, result);
+                if observation.suppressed {
+                    dispatch.complete_suppressed(observation.input);
+                } else {
+                    dispatch.complete_observed(succeeded, observation.input);
+                }
             } else {
                 let result = notes::generate_in_run(&engine, &id, launch_run);
                 engine.finish_minutes(&id, launch_run, result);
@@ -1331,6 +1381,7 @@ impl Engine {
             .register_dispatch(&current, dispatch);
         Ok(())
     }
+    #[cfg(test)]
     pub(crate) fn finish_minutes_observed(
         &self,
         meeting: &str,
@@ -1339,7 +1390,26 @@ impl Engine {
         input: Option<&crate::minutes_schedule::InputDigest>,
         result: Result<usize>,
     ) {
-        self.finish_minutes_metadata(meeting, launch_run, Some(dispatch), input, result)
+        self.finish_minutes_metadata(
+            meeting,
+            launch_run,
+            Some(dispatch),
+            &notes::Observation {
+                input: input.cloned(),
+                ..Default::default()
+            },
+            result,
+        )
+    }
+    pub(crate) fn finish_minutes_observation(
+        &self,
+        meeting: &str,
+        launch_run: u32,
+        dispatch: &crate::minutes_schedule::Dispatch,
+        observation: &notes::Observation,
+        result: Result<usize>,
+    ) {
+        self.finish_minutes_metadata(meeting, launch_run, Some(dispatch), observation, result)
     }
     pub(crate) fn finish_minutes(&self, meeting: &str, launch_run: u32, result: Result<usize>) {
         self.finish_minutes_for_input(meeting, launch_run, None, result)
@@ -1351,16 +1421,26 @@ impl Engine {
         input: Option<&crate::minutes_schedule::InputDigest>,
         result: Result<usize>,
     ) {
-        self.finish_minutes_metadata(meeting, launch_run, None, input, result)
+        self.finish_minutes_metadata(
+            meeting,
+            launch_run,
+            None,
+            &notes::Observation {
+                input: input.cloned(),
+                ..Default::default()
+            },
+            result,
+        )
     }
     fn finish_minutes_metadata(
         &self,
         meeting: &str,
         launch_run: u32,
         dispatch: Option<&crate::minutes_schedule::Dispatch>,
-        input: Option<&crate::minutes_schedule::InputDigest>,
+        observation: &notes::Observation,
         result: Result<usize>,
     ) {
+        let input = observation.input.as_ref();
         {
             // Use the same Store→metadata order as deletion. An old run or a
             // deleted meeting cannot recreate or clear the live retry state.
@@ -1377,7 +1457,17 @@ impl Engine {
                 if current.run == launch_run && visible {
                     let mut failures = self.legacy_minutes_failures.lock().unwrap();
                     if let Some(dispatch) = dispatch {
-                        failures.finished_dispatch(&current, dispatch, input, result.is_ok());
+                        if observation.suppressed {
+                            failures.finish_suppressed_dispatch(&current, dispatch);
+                        } else {
+                            failures.finished_rejected_dispatch(
+                                &current,
+                                dispatch,
+                                input,
+                                result.is_ok(),
+                                observation.rejected.clone(),
+                            );
+                        }
                     } else if input.is_some() {
                         failures.finished_for_input(&current, input, result.is_ok());
                     } else {

@@ -18,6 +18,7 @@ use std::{
 use uuid::Uuid;
 
 mod lifecycle;
+pub(crate) mod rejection;
 use lifecycle::{millis, ReleaseReason, WorkerLifecycle};
 
 #[derive(Default)]
@@ -171,6 +172,25 @@ pub(crate) struct SessionLease {
     retention_memory: Option<Option<u64>>,
 }
 impl SessionLease {
+    pub(crate) fn rejection_witness(
+        &self,
+        engine: &Engine,
+        prefs: &crate::preferences::Preferences,
+    ) -> Option<rejection::Witness> {
+        // Dynamic Windows/Linux and MLX closures remain unobserved.
+        if !cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+            return None;
+        }
+        rejection::Witness::observe(
+            engine,
+            prefs,
+            self.runtime_spec.as_ref()?,
+            self.model_receipt.as_ref()?,
+            self.runtime_receipt.as_ref()?,
+        )
+        .ok()
+    }
+
     pub fn begin_request(&self) -> Result<()> {
         self.usable.set(false);
         self.check_model()

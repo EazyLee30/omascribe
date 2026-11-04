@@ -32,10 +32,25 @@ struct ObservedRuntime {
     path: PathBuf,
     digest: String,
     receipt: Mutex<Option<runtime_file::Receipt>>,
+    declared_system_loads: Mutex<Option<bool>>,
 }
 #[derive(Clone)]
 pub(crate) struct RuntimeReceipt(Arc<ObservedRuntime>);
 impl RuntimeReceipt {
+    pub(crate) fn declared_system_loads(&self) -> bool {
+        let mut cached = self.0.declared_system_loads.lock().unwrap();
+        if self.check_current().is_err() {
+            return false;
+        }
+        if let Some(value) = *cached {
+            return value;
+        }
+        let value = fs::File::open(&self.0.path).ok().is_some_and(|mut file| {
+            crate::inference_worker::rejection::sealed_macho(&mut file).is_ok()
+        }) && self.check_current().is_ok();
+        *cached = Some(value);
+        value
+    }
     pub(crate) fn digest(&self) -> &str {
         &self.0.digest
     }
@@ -133,7 +148,18 @@ impl Fingerprints {
     pub(crate) fn refresh(&self, path: &Path) -> Result<RuntimeReceipt> {
         self.refresh_with(path, || {})
     }
+    pub(crate) fn refresh_bounded(&self, path: &Path, maximum: u64) -> Result<RuntimeReceipt> {
+        self.refresh_bounded_with(path, Some(maximum), || {})
+    }
     fn refresh_with(&self, path: &Path, before_observe: impl FnOnce()) -> Result<RuntimeReceipt> {
+        self.refresh_bounded_with(path, None, before_observe)
+    }
+    fn refresh_bounded_with(
+        &self,
+        path: &Path,
+        maximum: Option<u64>,
+        before_observe: impl FnOnce(),
+    ) -> Result<RuntimeReceipt> {
         let path = normalized(path).map_err(runtime_error)?;
         if let Some(entry) = self.current(&path) {
             return Ok(entry);
@@ -160,19 +186,25 @@ impl Fingerprints {
             state.epoch
         };
         before_observe();
-        let receipt = runtime_file::Receipt::observe(&path, |bytes| {
+        let observe = |bytes| {
             #[cfg(test)]
             self.hashed
                 .fetch_add(bytes as u64, std::sync::atomic::Ordering::Relaxed);
             #[cfg(not(test))]
             let _ = bytes;
-        })
+        };
+        let receipt = if let Some(maximum) = maximum {
+            runtime_file::Receipt::observe_bounded(&path, maximum, observe)
+        } else {
+            runtime_file::Receipt::observe(&path, observe)
+        }
         .map_err(runtime_error)?;
         receipt.check_current().map_err(runtime_error)?;
         let entry = RuntimeReceipt(Arc::new(ObservedRuntime {
             path: path.clone(),
             digest: receipt.digest().to_owned(),
             receipt: Mutex::new(Some(receipt)),
+            declared_system_loads: Mutex::new(None),
         }));
         let retired = {
             let mut state = self.state.lock().unwrap();

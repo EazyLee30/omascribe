@@ -119,7 +119,10 @@ impl Engine {
     }
     pub fn model_directory(&self, id: &str) -> Result<PathBuf> {
         let spec = model(id)?;
-        let managed = self.root.join("model-store").join(id);
+        self.model_directory_for_spec(spec)
+    }
+    pub(crate) fn model_directory_for_spec(&self, spec: &Model) -> Result<PathBuf> {
+        let managed = self.root.join("model-store").join(&spec.id);
         if complete(&managed, spec) {
             return Ok(managed);
         }

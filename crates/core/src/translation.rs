@@ -619,17 +619,21 @@ impl Engine {
             if continue_minutes {
                 engine.status.lock().unwrap().notes_busy = true;
                 if let Some(dispatch) = &dispatch {
-                    let (minutes_result, input) =
+                    let (minutes_result, observation) =
                         notes::generate_in_run_observed(&engine, &id, launch_run);
                     let succeeded = minutes_result.is_ok();
-                    engine.finish_minutes_observed(
+                    engine.finish_minutes_observation(
                         &id,
                         launch_run,
                         dispatch,
-                        input.as_ref(),
+                        &observation,
                         minutes_result,
                     );
-                    dispatch.complete_observed(succeeded, input);
+                    if observation.suppressed {
+                        dispatch.complete_suppressed(observation.input);
+                    } else {
+                        dispatch.complete_observed(succeeded, observation.input);
+                    }
                 } else {
                     let result = notes::generate_in_run(&engine, &id, launch_run);
                     engine.finish_minutes(&id, launch_run, result);

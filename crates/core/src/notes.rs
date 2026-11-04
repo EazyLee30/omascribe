@@ -150,12 +150,19 @@ pub(crate) fn generate_in_run(
     generate_for_run(engine, meeting, Some(expected_run), None)
 }
 
+#[derive(Default)]
+pub(crate) struct Observation {
+    pub input: Option<crate::minutes_schedule::InputDigest>,
+    pub rejected: Option<crate::inference_worker::rejection::Witness>,
+    pub suppressed: bool,
+}
+
 pub(crate) fn generate_in_run_observed(
     engine: &Arc<Engine>,
     meeting: &str,
     expected_run: u32,
-) -> (Result<usize>, Option<crate::minutes_schedule::InputDigest>) {
-    let mut observed = None;
+) -> (Result<usize>, Observation) {
+    let mut observed = Observation::default();
     let result = generate_for_run(engine, meeting, Some(expected_run), Some(&mut observed));
     (result, observed)
 }
@@ -180,9 +187,12 @@ fn generate_for_run(
     engine: &Arc<Engine>,
     meeting: &str,
     expected_run: Option<u32>,
-    mut observed: Option<&mut Option<crate::minutes_schedule::InputDigest>>,
+    mut observed: Option<&mut Observation>,
 ) -> Result<usize> {
     let started = Instant::now();
+    let incremental_configured =
+        std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1");
+    let source_preparation_configured = source_language::configured();
     let job = Uuid::new_v4().to_string();
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
@@ -201,6 +211,9 @@ fn generate_for_run(
         snapshot.meeting.notes_cursor,
         &trace,
     );
+    if observed.is_some() {
+        diagnostic.observe_automatic(!incremental_configured && !source_preparation_configured);
+    }
     let result = (|| {
         if !needs_update(&snapshot) {
             bail!("纪要已与当前关键词和转写同步");
@@ -227,8 +240,16 @@ fn generate_for_run(
             &snapshot,
             &prefs,
             context_revision,
-            observed.as_deref_mut(),
+            observed.as_deref_mut().map(|value| &mut value.input),
         );
+        if let Some(input) = observed.as_ref().and_then(|value| value.input.as_ref()) {
+            if !engine.automatic_minutes_admission(&snapshot, input) {
+                if let Some(observed) = observed.as_deref_mut() {
+                    observed.suppressed = true;
+                }
+                bail!(crate::minutes_schedule::AUTOMATIC_PAUSED);
+            }
+        }
         let requests = generation::Budget::default();
         let work = Generation {
             trace: &trace,
@@ -237,12 +258,11 @@ fn generate_for_run(
             requests: &requests,
             context_revision,
         };
-        let state_environment =
-            if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1") {
-                Some(incremental::scope(engine, &snapshot, &prefs)?)
-            } else {
-                None
-            };
+        let state_environment = if incremental_configured {
+            Some(incremental::scope(engine, &snapshot, &prefs)?)
+        } else {
+            None
+        };
         let delta = if let Some(environment) = &state_environment {
             let saved = engine
                 .store
@@ -272,7 +292,11 @@ fn generate_for_run(
                 context.clone(),
                 &prefs,
                 &work,
-                (delta.clone(), state_environment.as_deref()),
+                (
+                    delta.clone(),
+                    state_environment.as_deref(),
+                    source_preparation_configured,
+                ),
             )
         });
         let outcome = match &result {
@@ -289,6 +313,9 @@ fn generate_for_run(
         result
     })();
     diagnostic.finish(engine, &result);
+    if let Some(observed) = observed {
+        observed.rejected = diagnostic.rejected_execution(engine, &result);
+    }
     let committed = diagnostic.committed();
     let sections = diagnostic.sections();
     drop(diagnostic);
@@ -302,10 +329,10 @@ fn generate_inner(
     mut context: retrieval::Context,
     prefs: &crate::preferences::Preferences,
     work: &Generation<'_>,
-    article: (Option<incremental::Delta>, Option<&str>),
+    article: (Option<incremental::Delta>, Option<&str>, bool),
 ) -> Result<usize> {
     let trace = work.trace;
-    let (mut delta, state_environment) = article;
+    let (mut delta, state_environment, source_preparation_configured) = article;
     trace.event(
         "article_state",
         json!({"mode":if delta.is_some(){"delta"}else{"full"},"enabled":state_environment.is_some(),
@@ -369,6 +396,7 @@ fn generate_inner(
     engine.status.lock().unwrap().notes_status = "writer:loading".into();
     engine.status.lock().unwrap().notes_elapsed_ms = 0;
     let session = open_session(engine, prefs, meeting, snapshot.meeting.run)?;
+    work.diagnostic.observe_execution(engine, prefs, &session);
     trace.event(
         "worker",
         json!({"reused":session.reused,"startup_ms":session.startup_ms,
@@ -491,7 +519,7 @@ fn generate_inner(
     // Default to the existing writer and its bounded factual/language repair.
     // Source preparation remains an explicit experiment: it spends one of the
     // same two requests before composition and has not passed the manual gate.
-    let mut source_plan = if source_language::configured() && delta.is_none() {
+    let mut source_plan = if source_preparation_configured && delta.is_none() {
         source_language::Plan::new(
             &content,
             &context.segments,
@@ -595,6 +623,9 @@ fn generate_inner(
                 .is_err_and(|e| e.is::<stream::OutputLimit>())
         {
             session.complete_request()?;
+        }
+        if generated.is_ok() {
+            work.diagnostic.completed_response();
         }
         if generated.is_err() {
             attempts.push(json!({"attempt":request_attempt,"stage":request_stage,"draft":partial_draft,"failure":"incomplete_local_response",
@@ -1206,7 +1237,7 @@ mod diagnostic_tests {
                 retrieval::retrieve(&snapshot, None),
                 &prefs,
                 &work,
-                (None, None),
+                (None, None, false),
             );
             diagnostic.finish(&engine, &result);
             assert_eq!(result.is_ok(), outcome == "committed", "{outcome}");
@@ -1309,7 +1340,8 @@ mod admission_metadata_tests {
         // A stale expected run exits before model admission and Scope construction.
         let (result, observed) = generate_in_run_observed(&engine, &id, 2);
         assert!(result.is_err());
-        assert!(observed.is_none());
+        assert!(observed.input.is_none());
+        assert!(observed.rejected.is_none());
         assert_eq!(engine.inference_worker_status().starts, 0);
         let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
             "SELECT COUNT(*) FROM inference_jobs",

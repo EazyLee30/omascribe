@@ -9,6 +9,7 @@ use std::{
     sync::{Arc, Mutex, Weak},
     time::{Duration, Instant},
 };
+pub(crate) const AUTOMATIC_PAUSED: &str = "自动整理已暂停：请修改笔记或转写，或点击“整理”重试";
 
 /// Scheduling-change marker only; never a reusable inference result identity.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -87,6 +88,7 @@ struct Failure {
     count: u32,
     input: Option<InputDigest>,
     registration: Option<Registration>,
+    rejected: Option<Arc<crate::inference_worker::rejection::Witness>>,
 }
 struct Registration {
     owner: Weak<Mutex<Option<AttemptCompletion>>>,
@@ -110,6 +112,7 @@ impl LegacyFailures {
         if let Some(input) = input {
             if entry.input.as_ref().is_some_and(|old| old != input) {
                 entry.count = 0;
+                entry.rejected = None;
             }
             entry.input = Some(input.clone());
         }
@@ -149,6 +152,7 @@ impl LegacyFailures {
                     count,
                     input,
                     registration: None,
+                    rejected: previous.and_then(|entry| entry.rejected.clone()),
                 },
             );
         }
@@ -163,6 +167,7 @@ impl LegacyFailures {
             count: 0,
             input: None,
             registration: None,
+            rejected: None,
         });
         if entry.run != meeting.run {
             *entry = Failure {
@@ -170,11 +175,13 @@ impl LegacyFailures {
                 count: 0,
                 input: None,
                 registration: None,
+                rejected: None,
             };
         }
         if let Some(input) = &dispatch.input {
             if entry.input.as_ref().is_some_and(|old| old != input) {
                 entry.count = 0;
+                entry.rejected = None;
             }
             entry.input = Some(input.clone());
         }
@@ -183,6 +190,7 @@ impl LegacyFailures {
             input: entry.input.clone(),
         });
     }
+    #[cfg(test)]
     pub fn finished_dispatch(
         &mut self,
         meeting: &Meeting,
@@ -190,6 +198,43 @@ impl LegacyFailures {
         actual: Option<&InputDigest>,
         succeeded: bool,
     ) {
+        self.finished_rejected_dispatch(meeting, dispatch, actual, succeeded, None);
+    }
+    pub fn finished_rejected_dispatch(
+        &mut self,
+        meeting: &Meeting,
+        dispatch: &Dispatch,
+        actual: Option<&InputDigest>,
+        succeeded: bool,
+        rejected: Option<crate::inference_worker::rejection::Witness>,
+    ) {
+        let accepted = self.0.get(&meeting.id).is_some_and(|entry| {
+            entry.run == meeting.run
+                && dispatch.run == meeting.run
+                && entry.registration.as_ref().is_some_and(|registration| {
+                    registration.owner.ptr_eq(&dispatch.identity())
+                        && (entry.input == registration.input || entry.input.as_ref() == actual)
+                })
+        });
+        if !accepted {
+            return;
+        }
+        // Bound retained observations independently of the meeting failure map.
+        // Eviction merely restores ordinary retry behavior.
+        if !succeeded
+            && actual.is_some()
+            && rejected.is_some()
+            && self
+                .0
+                .values()
+                .filter(|entry| entry.rejected.is_some())
+                .count()
+                >= 16
+        {
+            for entry in self.0.values_mut() {
+                entry.rejected = None;
+            }
+        }
         let Some(entry) = self
             .0
             .get_mut(&meeting.id)
@@ -213,6 +258,7 @@ impl LegacyFailures {
         if let Some(actual) = actual {
             if entry.input.as_ref().is_some_and(|old| old != actual) {
                 entry.count = 0;
+                entry.rejected = None;
             }
             entry.input = Some(actual.clone());
         }
@@ -220,6 +266,51 @@ impl LegacyFailures {
             self.forget(&meeting.id);
         } else {
             entry.count = entry.count.saturating_add(1).min(3);
+            entry.rejected = rejected.filter(|_| actual.is_some()).map(Arc::new);
+        }
+    }
+    pub fn rejected(
+        &self,
+        meeting: &Meeting,
+        input: &InputDigest,
+    ) -> Option<Arc<crate::inference_worker::rejection::Witness>> {
+        self.0
+            .get(&meeting.id)
+            .filter(|entry| entry.run == meeting.run && entry.input.as_ref() == Some(input))
+            .and_then(|entry| entry.rejected.clone())
+    }
+    pub fn clear_rejected(&mut self, meeting: &Meeting) {
+        if let Some(entry) = self
+            .0
+            .get_mut(&meeting.id)
+            .filter(|entry| entry.run == meeting.run)
+        {
+            entry.rejected = None;
+        }
+    }
+    pub fn clear_matching_rejected(
+        &mut self,
+        meeting: &Meeting,
+        input: &InputDigest,
+        witness: &Arc<crate::inference_worker::rejection::Witness>,
+    ) {
+        if self
+            .rejected(meeting, input)
+            .is_some_and(|current| Arc::ptr_eq(&current, witness))
+        {
+            self.clear_rejected(meeting);
+        }
+    }
+    pub fn finish_suppressed_dispatch(&mut self, meeting: &Meeting, dispatch: &Dispatch) {
+        if let Some(entry) = self.0.get_mut(&meeting.id).filter(|entry| {
+            entry.run == meeting.run
+                && dispatch.run == meeting.run
+                && entry
+                    .registration
+                    .as_ref()
+                    .is_some_and(|r| r.owner.ptr_eq(&dispatch.identity()))
+        }) {
+            entry.registration = None;
         }
     }
     pub fn forget(&mut self, id: &str) {
@@ -242,6 +333,7 @@ pub(crate) struct AttemptCompletion {
     pub run: u32,
     pub input: Option<InputDigest>,
     pub succeeded: bool,
+    suppressed: bool,
     owner: Weak<Mutex<Option<AttemptCompletion>>>,
 }
 impl Dispatch {
@@ -257,10 +349,17 @@ impl Dispatch {
         self.complete_observed(succeeded, self.input.clone());
     }
     pub fn complete_observed(&self, succeeded: bool, input: Option<InputDigest>) {
+        self.complete_kind(succeeded, input, false);
+    }
+    pub fn complete_suppressed(&self, input: Option<InputDigest>) {
+        self.complete_kind(false, input, true);
+    }
+    fn complete_kind(&self, succeeded: bool, input: Option<InputDigest>, suppressed: bool) {
         *self.completion.lock().unwrap() = Some(AttemptCompletion {
             run: self.run,
             input,
             succeeded,
+            suppressed,
             owner: self.identity(),
         });
     }
@@ -461,6 +560,8 @@ impl Schedule {
             }
             entry.failures = if entry.progressed || changed_since_admission {
                 0
+            } else if completed.suppressed {
+                entry.failures
             } else {
                 entry.failures.saturating_add(1).min(3)
             };
