@@ -124,6 +124,10 @@ impl Witness {
         model: &crate::model_integrity::Receipt,
         runtime: &RuntimeReceipt,
     ) -> Result<Self> {
+        ensure!(
+            crate::inference::apple_silicon(),
+            "unsupported execution platform"
+        );
         let native = official_native_directory(engine)?;
         let path = native.join("build-info.json");
         let receipt = engine
