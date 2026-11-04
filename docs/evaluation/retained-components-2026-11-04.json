@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "parent_commit": "8935628d101138c0aec2e8f2ef4825ba99446f0c",
+  "status": "LOCAL_CORE_AND_BROWSER_PASS_WORKSPACE_CHECK_PENDING",
+  "source_sha256": {
+    "crates/core/src/components.rs": "3c45168b8a3f895b10c1ac1cfe1c590c505df33913faa6f5a000b02de67ab1c6",
+    "crates/core/src/acceleration.rs": "850f20e57add9a6674f2eaf377c1d9e861f89fa661f70321b123282846b50e94",
+    "crates/core/src/bin/omascribe-cli.rs": "66e07c865c20bd4435ea4e8925362b130e48f19f779ddbfc1b94c4ac0567f49b",
+    "src-tauri/src/workspace.rs": "83ee34dfc201453a9ebafad7bc832e81f9a77366311cfa1572b2f660b6fc919a",
+    "src/acceleration-ui.ts": "1bafd96a7611bf3541e956707869aeb4c8a37611be0b95cb12636c1ffba5b087",
+    "src/settings.ts": "953338e81a2faeec04b3d30c20caaab286325e298dc91125f61064c37ee3d811",
+    "tests/acceleration-ui.mjs": "070b77f44a6efce1b30c4be94f94eb16e8b6775ad568b355e08634afb8c6b5ba"
+  },
+  "behavior": [
+    "Retain signed installed versions after catalog refresh or loss.",
+    "Bind Test & enable to the rendered component version through UI, Tauri, core and CLI.",
+    "Allow explicit removal of retired runtimes while execution keeps the current runtime pin.",
+    "Preserve receipt revocation, active-job checks and exact-version removal."
+  ],
+  "checks": {
+    "components": 13,
+    "core": 592,
+    "core_ignored": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "acceleration_packaging": 26,
+    "chromium_controls": "passed",
+    "frontend_build": "passed",
+    "format_and_diff": "passed",
+    "workspace_clippy": "pending"
+  },
+  "evidence": {
+    "directory": "artifacts/component-retained-2026-11-04/",
+    "browser_command": "OMASCRIBE_PLAYWRIGHT_MODULE=PATH_TO_INSTALLED_PLAYWRIGHT OMASCRIBE_BROWSER_EXE=PATH_TO_EXISTING_CHROME node tests/acceleration-ui.mjs",
+    "rust_toolchain": "1.99.0"
+  },
+  "limits": [
+    "Synthetic host-target catalog/removal controls replace only the signed reader; existing genuine signature controls retain authentication checks.",
+    "Missing or damaged saved signature metadata remains undiscoverable.",
+    "Catalog polling observes metadata and signatures each second; its resource cost is unmeasured.",
+    "Native Windows/Linux lifecycle, real GPU qualification and installer/upgrade acceptance remain pending.",
+    "Q9 real-audio name recall and Q16 minutes fidelity remain open."
+  ],
+  "model_or_sdk_downloads": false,
+  "release_installer_built": false,
+  "stable_release_published": false,
+  "raw_logs_sha256": {
+    "core-tests-rust199.log": "dd4705f00506483e4cc1058fa4df898897dbca5f7a782152fd4fe7773b6df484",
+    "core-all.log": "612cac4c5dec2f0f8aac12320b34b1781182dc30bf90c8ae1856fac9ce58f718",
+    "browser-tests.log": "e10c3efb335181b3f025e2d109fb09a0d3d63d55407804bda4bc2242ddb062af",
+    "frontend-build.log": "caa01de965002c5109d878d03e7e40fc3203aa2522a6ef305a72fe9074e35389",
+    "packaging-tests.log": "35aefc2510ed05dce75af470d06966d05da015b40ffd84fb5ff918c8693b391f",
+    "format-tests.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d"
+  }
+}

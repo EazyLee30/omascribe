@@ -523,7 +523,7 @@ export async function mountSettings(
           }
           if (
             !(await confirmDelete(
-              `${tr("移除组件", "Remove component", "移除元件")} · ${selected.component.name}`,
+              `${tr("移除组件", "Remove component", "移除元件")} · ${selected.component.name} · ${selected.version}`,
               tr(
                 "移除后需要重新下载和测试才能再次使用。模型与会议内容会保留。",
                 "Download and test it again to use it after removal. Models and meetings will be kept.",
@@ -536,7 +536,10 @@ export async function mountSettings(
           if (!alive) return;
           await invoke("remove_acceleration_component", { id, version });
         } else if (kind === "test") {
-          await invoke("verify_acceleration", { id: button.dataset.id });
+          await invoke("verify_acceleration", {
+            id: button.dataset.id,
+            version: button.dataset.version,
+          });
         } else if (kind === "disable") {
           await invoke("disable_acceleration");
         } else if (kind === "cancel-test") {

@@ -112,6 +112,8 @@ pub struct Status {
     pub version: String,
     pub present: bool,
     pub installed: bool,
+    pub downloadable: bool,
+    pub compatible: bool,
     pub download: Option<Download>,
 }
 #[derive(Serialize)]
@@ -165,10 +167,16 @@ fn trusted_asset(asset: &Asset, version: &str) -> bool {
             )
 }
 fn validate_index(index: &Index) -> Result<()> {
+    validate_inventory(index)?;
+    if index.runtime_revision != pinned_revision() {
+        bail!("Unsupported acceleration runtime");
+    }
+    Ok(())
+}
+fn validate_inventory(index: &Index) -> Result<()> {
     if index.schema != 1
         || !index.version.starts_with("acceleration-")
         || !basename(&index.version)
-        || index.runtime_revision != pinned_revision()
         || index.components.len() > 24
     {
         bail!("Unsupported acceleration catalog");
@@ -228,6 +236,13 @@ fn validate_index(index: &Index) -> Result<()> {
     Ok(())
 }
 fn verify_index_with_key(envelope: &SignedIndex, key: &str) -> Result<Index> {
+    let index = verify_inventory_with_key(envelope, key)?;
+    validate_index(&index)?;
+    Ok(index)
+}
+// Inventory and explicit removal may retain signed older runtimes. Execution
+// and remote catalog admission still require verify_index_with_key above.
+fn verify_inventory_with_key(envelope: &SignedIndex, key: &str) -> Result<Index> {
     if envelope.payload.len() as u64 > MAX_INDEX || envelope.signature.len() > 8192 {
         bail!("Component catalog too large");
     }
@@ -238,7 +253,7 @@ fn verify_index_with_key(envelope: &SignedIndex, key: &str) -> Result<Index> {
         key,
         &index.version,
     )?;
-    validate_index(&index)?;
+    validate_inventory(&index)?;
     Ok(index)
 }
 pub fn cached_index(root: &Path) -> Result<(SignedIndex, Index)> {
@@ -275,17 +290,10 @@ pub(crate) fn installed_component(
     if !basename(id) || version.is_some_and(|v| !basename(v)) {
         bail!("Invalid component identity");
     }
-    let (_, index) = if let Some(version) = version {
-        let path = root
-            .join("accelerators")
-            .join(id)
-            .join(version)
-            .join("component-index.json");
-        let envelope: SignedIndex = serde_json::from_slice(&read_limited(&path, MAX_INDEX * 2)?)?;
-        let index = verify_index_with_key(&envelope, &public_key())?;
-        (envelope, index)
+    let index = if let Some(version) = version {
+        installed_index(root, id, version)?
     } else {
-        cached_index(root)?
+        cached_index(root)?.1
     };
     let component = index
         .components
@@ -298,6 +306,29 @@ pub(crate) fn installed_component(
     }
     let path = location(root, &index, &component);
     Ok((index, component, path))
+}
+// Each installed version retains its signed catalog so a later catalog refresh
+// cannot erase its identity or prevent local testing and removal.
+fn installed_index(root: &Path, id: &str, version: &str) -> Result<Index> {
+    let index = saved_index(root, id, version)?;
+    validate_index(&index)?;
+    Ok(index)
+}
+fn saved_index(root: &Path, id: &str, version: &str) -> Result<Index> {
+    if !basename(id) || !basename(version) {
+        bail!("Invalid component identity");
+    }
+    let path = root
+        .join("accelerators")
+        .join(id)
+        .join(version)
+        .join("component-index.json");
+    let envelope: SignedIndex = serde_json::from_slice(&read_limited(&path, MAX_INDEX * 2)?)?;
+    let index = verify_inventory_with_key(&envelope, &public_key())?;
+    if index.version != version {
+        bail!("Installed component version mismatch");
+    }
+    Ok(index)
 }
 pub(crate) fn exact_directory(component: &Component, directory: &Path) -> Result<()> {
     for entry in fs::read_dir(directory)? {
@@ -357,33 +388,11 @@ fn installed(root: &Path, index: &Index, component: &Component) -> bool {
 
 impl Engine {
     pub fn acceleration_components(&self) -> CatalogStatus {
-        let Ok((_, index)) = cached_index(&self.root) else {
-            return CatalogStatus {
-                state: "catalog_required".into(),
-                components: vec![],
-                verification: self.acceleration_status(),
-            };
-        };
-        // Status restoration takes config_lock. Do it before the download-status
-        // lock, matching configuration actions that acquire them in that order.
-        let verification = self.acceleration_status();
-        let downloads = self.component_downloads.status.lock().unwrap();
-        CatalogStatus {
-            state: "ready".into(),
-            verification,
-            components: index
-                .components
-                .iter()
-                .filter(|c| c.target == target())
-                .map(|c| Status {
-                    component: c.clone(),
-                    version: index.version.clone(),
-                    present: fs::symlink_metadata(location(&self.root, &index, c)).is_ok(),
-                    installed: installed(&self.root, &index, c),
-                    download: downloads.get(&c.id).cloned(),
-                })
-                .collect(),
-        }
+        catalog_status(
+            self,
+            cached_index(&self.root).ok().map(|(_, index)| index),
+            |id, version| saved_index(&self.root, id, version),
+        )
     }
     /// Explicit user action. Fetches only the signed catalog, never uploads inventory or content.
     pub fn check_acceleration_components(&self) -> Result<CatalogStatus> {
@@ -499,10 +508,115 @@ impl Engine {
     /// Local, explicit removal; a damaged installation need not pass its own
     /// completeness or hash checks before it can be removed and downloaded again.
     pub fn remove_acceleration_component(&self, id: &str, version: &str) -> Result<()> {
-        remove_component(self, id, version, || {
-            cached_index(&self.root).map(|(_, index)| index)
+        remove_component(self, id, version, || match cached_index(&self.root) {
+            Ok((_, index))
+                if index.version == version
+                    && index
+                        .components
+                        .iter()
+                        .any(|c| c.id == id && c.target == target()) =>
+            {
+                Ok(index)
+            }
+            _ => saved_index(&self.root, id, version),
         })
     }
+}
+
+fn catalog_status(
+    engine: &Engine,
+    current: Option<Index>,
+    load_installed: impl Fn(&str, &str) -> Result<Index>,
+) -> CatalogStatus {
+    // Restore before the download-status lock, matching configuration actions.
+    let verification = engine.acceleration_status();
+    let downloads = engine.component_downloads.status.lock().unwrap().clone();
+    let mut statuses = Vec::new();
+    if let Some(index) = &current {
+        for component in index.components.iter().filter(|c| c.target == target()) {
+            statuses.push(Status {
+                component: component.clone(),
+                version: index.version.clone(),
+                present: fs::symlink_metadata(location(&engine.root, index, component)).is_ok(),
+                installed: installed(&engine.root, index, component),
+                downloadable: true,
+                compatible: true,
+                download: downloads.get(&component.id).cloned(),
+            });
+        }
+    }
+    append_installed_statuses(&engine.root, &mut statuses, load_installed);
+    CatalogStatus {
+        state: if current.is_some() || !statuses.is_empty() {
+            "ready"
+        } else {
+            "catalog_required"
+        }
+        .into(),
+        components: statuses,
+        verification,
+    }
+}
+
+fn append_installed_statuses(
+    root: &Path,
+    statuses: &mut Vec<Status>,
+    load_installed: impl Fn(&str, &str) -> Result<Index>,
+) {
+    let directory = root.join("accelerators");
+    if !fs::symlink_metadata(&directory).is_ok_and(|m| plain_directory(&m)) {
+        return;
+    }
+    let Ok(components) = fs::read_dir(directory) else {
+        return;
+    };
+    let mut previous = Vec::new();
+    for component in components.flatten() {
+        let id = component.file_name().to_string_lossy().into_owned();
+        if !basename(&id)
+            || !fs::symlink_metadata(component.path()).is_ok_and(|m| plain_directory(&m))
+        {
+            continue;
+        }
+        let Ok(versions) = fs::read_dir(component.path()) else {
+            continue;
+        };
+        for version in versions.flatten() {
+            let name = version.file_name().to_string_lossy().into_owned();
+            if !basename(&name)
+                || !fs::symlink_metadata(version.path()).is_ok_and(|m| plain_directory(&m))
+                || statuses
+                    .iter()
+                    .any(|s| s.component.id == id && s.version == name)
+            {
+                continue;
+            }
+            let Ok(index) = load_installed(&id, &name) else {
+                continue;
+            };
+            let Some(component) = index
+                .components
+                .iter()
+                .find(|c| c.id == id && c.target == target())
+            else {
+                continue;
+            };
+            if index.version != name {
+                continue;
+            }
+            previous.push(Status {
+                component: component.clone(),
+                version: name,
+                present: true,
+                installed: installed(root, &index, component),
+                downloadable: false,
+                compatible: index.runtime_revision == pinned_revision(),
+                download: None,
+            });
+        }
+    }
+    previous.sort_by(|a, b| (&a.component.id, &a.version).cmp(&(&b.component.id, &b.version)));
+    statuses.extend(previous);
 }
 
 #[cfg(test)]
@@ -768,7 +882,7 @@ mod tests {
         let index = Index {
             schema: 1,
             version: "acceleration-fixture-1".into(),
-            runtime_revision: "fixture".into(),
+            runtime_revision: pinned_revision(),
             components: vec![component],
         };
         let path = location(root.path(), &index, &index.components[0]);
@@ -792,6 +906,148 @@ mod tests {
             "report":{"cpu":trial,"gpu":trial,"faster":true}
         }))?)
     }
+    #[test]
+    fn catalog_refresh_keeps_prior_installs_visible_and_removable() -> Result<()> {
+        for damaged in [false, true] {
+            let (_root, engine, old, old_path) = removal_fixture()?;
+            fs::create_dir_all(&old_path)?;
+            fixture_marker(&old_path, &old)?;
+            fs::write(
+                old_path.join("llama-server"),
+                if damaged {
+                    b"bad".as_slice()
+                } else {
+                    b"good".as_slice()
+                },
+            )?;
+            // The production reader verifies the saved signed envelope. This
+            // fixture substitutes only that reader to support the host target.
+            fs::write(
+                old_path.join("component-index.json"),
+                serde_json::to_vec(&old)?,
+            )?;
+            let mut current = old.clone();
+            current.version = "acceleration-fixture-2".into();
+            let current_path = location(&engine.root, &current, &current.components[0]);
+            fs::create_dir_all(&current_path)?;
+            fixture_marker(&current_path, &current)?;
+            fs::write(current_path.join("llama-server"), b"good")?;
+            engine.component_downloads.status.lock().unwrap().insert(
+                old.components[0].id.clone(),
+                Download {
+                    state: "installed".into(),
+                    ..Default::default()
+                },
+            );
+            let read_old = |id: &str, version: &str| -> Result<Index> {
+                Ok(serde_json::from_slice(&fs::read(
+                    engine
+                        .root
+                        .join("accelerators")
+                        .join(id)
+                        .join(version)
+                        .join("component-index.json"),
+                )?)?)
+            };
+            let listed = catalog_status(&engine, Some(current.clone()), read_old);
+            assert_eq!(listed.state, "ready");
+            assert_eq!(listed.components.len(), 2);
+            let new_status = &listed.components[0];
+            assert_eq!(new_status.version, current.version);
+            assert!(new_status.downloadable);
+            assert!(new_status.compatible);
+            assert!(new_status.installed);
+            assert!(new_status.download.is_some());
+            let old_status = &listed.components[1];
+            assert_eq!(old_status.version, old.version);
+            assert!(old_status.present);
+            assert_eq!(old_status.installed, !damaged);
+            assert!(!old_status.downloadable);
+            assert!(old_status.compatible);
+            assert!(old_status.download.is_none());
+            let receipt = engine
+                .inference_fingerprints
+                .refresh(&old_path.join("llama-server"))?;
+            remove_component(
+                &engine,
+                &old_status.component.id,
+                &old_status.version,
+                || read_old(&old_status.component.id, &old_status.version),
+            )?;
+            assert!(!old_path.exists());
+            assert!(receipt.check_current().is_err());
+            assert_eq!(fs::read(current_path.join("llama-server"))?, b"good");
+            let remaining = catalog_status(&engine, Some(current), read_old);
+            assert_eq!(remaining.components.len(), 1);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn missing_catalog_retains_local_installs_without_allowing_downloads() -> Result<()> {
+        let (_root, engine, old, path) = removal_fixture()?;
+        fs::create_dir_all(&path)?;
+        fs::write(path.join("llama-server"), b"good")?;
+        fixture_marker(&path, &old)?;
+        let status = catalog_status(&engine, None, |_, _| Ok(old.clone()));
+        assert_eq!(status.state, "ready");
+        assert_eq!(status.components.len(), 1);
+        assert!(status.components[0].installed);
+        assert!(!status.components[0].downloadable);
+        assert!(status.components[0].download.is_none());
+        // A copied catalog for a different version cannot make a directory
+        // visible or authorize its removal.
+        let mut wrong = old.clone();
+        wrong.version = "acceleration-wrong".into();
+        let rejected = catalog_status(&engine, None, |_, _| Ok(wrong.clone()));
+        assert_eq!(rejected.state, "catalog_required");
+        assert!(rejected.components.is_empty());
+        // The public reader still rejects unsigned metadata and cannot turn
+        // an arbitrary local directory into a downloadable/usable component.
+        fs::write(path.join("component-index.json"), serde_json::to_vec(&old)?)?;
+        assert!(engine.acceleration_components().components.is_empty());
+        assert!(engine
+            .remove_acceleration_component(&old.components[0].id, &old.version)
+            .is_err());
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn retired_runtime_remains_removable_but_cannot_be_enabled() -> Result<()> {
+        let (_root, engine, mut old, path) = removal_fixture()?;
+        old.runtime_revision = "retired-runtime".into();
+        fs::create_dir_all(&path)?;
+        fs::write(path.join("llama-server"), b"good")?;
+        fixture_marker(&path, &old)?;
+        // Start from a genuinely verified structurally valid catalog, then
+        // change only its runtime pin to exercise inventory/execute policy.
+        let fixture =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/component-signature");
+        let key = fs::read_to_string(fixture.join("public.key"))?;
+        let envelope = SignedIndex {
+            payload: fs::read_to_string(fixture.join("payload"))?,
+            signature: fs::read_to_string(fixture.join("payload.sig"))?,
+        };
+        let mut retired = verify_inventory_with_key(&envelope, &key)?;
+        retired.runtime_revision = "retired-runtime".into();
+        validate_inventory(&retired)?;
+        assert!(validate_index(&retired).is_err());
+        // Host-target listing/removal uses the synthetic component reader, as
+        // in the other removal fixtures. Its bytes are never executable.
+        let catalog = catalog_status(&engine, None, |_, _| Ok(old.clone()));
+        assert_eq!(catalog.components.len(), 1);
+        let status = &catalog.components[0];
+        assert!(status.installed);
+        assert!(!status.compatible);
+        assert!(!status.downloadable);
+        remove_component(&engine, &status.component.id, &status.version, || {
+            Ok(old.clone())
+        })?;
+        assert!(!path.exists());
+        Ok(())
+    }
+
     #[test]
     fn removal_releases_cloned_runtime_receipts_and_preserves_other_directories() -> Result<()> {
         let (_root, engine, index, path) = removal_fixture()?;

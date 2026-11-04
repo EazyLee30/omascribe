@@ -1,6 +1,6 @@
 # 0.3.5 发布收敛清单
 
-共享生产源码：[`cff909c`](https://github.com/EazyLee30/omascribe/commit/cff909c281d13f8a87c93e7b280e8cd35f1e201b)，保留专名准入与原子同步修复。稳定版仍为 [0.3.4](https://github.com/EazyLee30/omascribe/releases/tag/v0.3.4)，**尚无 0.3.5 Release 或正式安装包**。[PR #1](https://github.com/EazyLee30/omascribe/pull/1) 保持 draft。
+[开发分支](https://github.com/EazyLee30/omascribe/tree/codex/inference-acceleration) 继续集成运行时、专名准入与原子同步修复，发布候选尚未冻结。稳定版仍为 [0.3.4](https://github.com/EazyLee30/omascribe/releases/tag/v0.3.4)，**尚无 0.3.5 Release 或正式安装包**。[PR #1](https://github.com/EazyLee30/omascribe/pull/1) 保持 draft。
 
 ## 当前阻塞与进行中工作
 
@@ -14,6 +14,8 @@
 ## 已完成范围
 
 以下历史结果保留各自源码身份，不替代当前共享源码的完整验收：
+
+- 组件目录更新或离线后，设置页继续显示保留版本，支持按明确版本测试、移除和切回 CPU。旧运行时组件保留清理入口并提示更新；CUDA/Vulkan 继续独立下载。本地组件 13 项、核心 592 项 / 12 忽略、CLI 2 项、集成 34 项、打包 26 项与 Chromium 控制回归通过。原生 Windows/Linux、真实 GPU 和安装升级仍待验收。[源码指纹、检查与限制](../evaluation/retained-components-2026-11-04.json)。
 
 - `cff909c`：运行时观察凭据、实际 worker／回退缓存身份、literal 隔离及组件删除所有权；本地 589 核心 / 12 忽略、2 CLI、34 集成、ASR 4+18 和严格检查通过。没有模型推理、安装包重建或发布；Q9／Q16 保持开放。[源码与检查](../evaluation/runtime-receipt-2026-10-31.json)。
 

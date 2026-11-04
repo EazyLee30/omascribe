@@ -109,11 +109,18 @@ pub async fn remove_acceleration_component(
         .map_err(err)
 }
 #[tauri::command]
-pub async fn verify_acceleration(engine: State<'_, AppState>, id: String) -> Reply<()> {
+pub async fn verify_acceleration(
+    engine: State<'_, AppState>,
+    id: String,
+    version: Option<String>,
+) -> Reply<()> {
     let e = engine.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || e.verify_acceleration(&id).map_err(err))
-        .await
-        .map_err(err)?
+    tauri::async_runtime::spawn_blocking(move || {
+        e.verify_acceleration_version(&id, version.as_deref())
+            .map_err(err)
+    })
+    .await
+    .map_err(err)?
 }
 #[tauri::command]
 pub fn disable_acceleration(engine: State<AppState>) -> Reply<()> {

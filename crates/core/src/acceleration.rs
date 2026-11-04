@@ -628,6 +628,13 @@ impl Engine {
         self.acceleration.lock().unwrap().status.clone()
     }
     pub fn verify_acceleration(self: &Arc<Self>, id: &str) -> Result<()> {
+        self.verify_acceleration_version(id, None)
+    }
+    pub fn verify_acceleration_version(
+        self: &Arc<Self>,
+        id: &str,
+        version: Option<&str>,
+    ) -> Result<()> {
         self.require_available()?;
         self.configuration_idle()?;
         if self.note_busy.load(Ordering::SeqCst) {
@@ -645,7 +652,7 @@ impl Engine {
         if self.preferences.lock().unwrap().inference_backend != "auto" {
             bail!("Choose Automatic inference before testing optional acceleration");
         }
-        let (index, _, _) = components::installed_component(&self.root, id, None)?;
+        let (index, _, _) = components::installed_component(&self.root, id, version)?;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("Wait for local inference to finish");
         }

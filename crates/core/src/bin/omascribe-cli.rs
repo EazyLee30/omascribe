@@ -160,7 +160,7 @@ fn run() -> Result<()> {
         "inference-status" => serde_json::to_value(engine.inference_worker_status())?,
         "acceleration-components" => serde_json::to_value(engine.acceleration_components())?,
         "verify-acceleration" => {
-            engine.verify_acceleration(arg(2)?)?;
+            engine.verify_acceleration_version(arg(2)?, args.get(3).map(String::as_str))?;
             while engine.note_busy.load(std::sync::atomic::Ordering::SeqCst) {
                 thread::sleep(Duration::from_millis(200));
             }
