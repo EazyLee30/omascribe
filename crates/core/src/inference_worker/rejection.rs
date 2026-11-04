@@ -409,7 +409,7 @@ pub(crate) fn observation_control(
     let runtime = engine.runtime_dir.join("llama");
     fs::create_dir_all(&runtime)?;
     let path = b"/usr/lib/libSystem.B.dylib\0";
-    let size = (24 + path.len() + 7) / 8 * 8;
+    let size = (24 + path.len()).div_ceil(8) * 8;
     let mut bytes = vec![0u8; 32 + size];
     for (at, value) in [
         (0, 0xfeed_facfu32),
