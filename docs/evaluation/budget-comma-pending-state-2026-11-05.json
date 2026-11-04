@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-05",
   "parent_commit": "04b50ff85e3045699b1436ba65505a68ae7f5da2",
-  "status": "LOCAL_REGRESSIONS_STRICT_WORKSPACE_AND_INDEPENDENT_REVIEW_PASS_CI_PENDING",
+  "status": "LOCAL_REGRESSIONS_STRICT_WORKSPACE_INDEPENDENT_REVIEW_AND_PLATFORM_CI_PASS",
   "source_sha256": {
     "crates/core/src/notes/corrections.rs": "763297961038b96f20cbd37060cd84059d707e893d36258c5c93d06caa6ea7ae"
   },
@@ -40,7 +40,53 @@
     ],
     "strict_workspace_clippy": "passed offline",
     "independent_read_only_review": "passed at exact source SHA",
-    "platform_ci": "pending"
+    "platform_ci": {
+      "source": "82866cbf229e56be20ba03420f97dbc32f691904",
+      "checks": [
+        {
+          "name": "catalog",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126717858936"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716132455"
+        },
+        {
+          "name": "windows-core",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716130399"
+        },
+        {
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716007955"
+        },
+        {
+          "name": "ubuntu22",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515713/job/126715992188"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515494/job/126715987974"
+        },
+        {
+          "name": "linux",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515119/job/126715986923"
+        }
+      ]
+    }
   },
   "controls": [
     "Normal writer.document rejects stale budget and accepts corrected pending value; original text remains byte-identical.",

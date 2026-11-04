@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "PRIVATE_GROUPED_Q16_REJECTED_TARGET_LANGUAGE",
+  "private_source": "73e4726e96bcc6271e3cf43257330bb7ba0bf7d3",
+  "production_source": "82866cbf229e56be20ba03420f97dbc32f691904",
+  "private_route": "Opt-in independent paragraphs; excluded from production and catalog.",
+  "model_free_checks": {
+    "core_source": "3e418c457307b123e65a4394b59121dd36a728c1",
+    "core_passed": 623,
+    "ignored_explicit_model_tests": 12,
+    "cli_passed": 2,
+    "integration_passed": 34,
+    "final_source_strict_core_all_targets_clippy": "passed offline at73e4726",
+    "post_test_source_changes": "Equivalent Result::and(completed) and relocation of the unchanged generate function before the test module. No fixture or inference parameter changes."
+  },
+  "scope": {
+    "private_source": "73e4726e96bcc6271e3cf43257330bb7ba0bf7d3",
+    "model": "Existing Qwen3-1.7B Q4_K_M",
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "fixture_unmodified": true,
+    "source_segments": 6,
+    "language": "zh",
+    "transcript_translation_mode": "off"
+  },
+  "verdict": {
+    "operational_audit_passed": true,
+    "semantic_passed": false,
+    "frontier": [
+      0,
+      0
+    ],
+    "final_article_exists": false,
+    "cause": "The only completed group-1 request ignored the explicit Chinese target-language instruction and returned an English near-copy. The language validator rejected it and the runner stopped at first no progress.",
+    "infrastructure_failure_observed": false,
+    "resource_stop_observed": false,
+    "default_promotion": false,
+    "release_ready_claim": false,
+    "resource_gain_claim": false
+  },
+  "single_trial_observations": {
+    "exclusive_claims_in_owned_artifacts": 1,
+    "claim_owner": "f3bce60277754cec9931f712dd35fe85",
+    "batches": 1,
+    "distinct_trace_job_ids": 1,
+    "chat_starts": 1,
+    "completed_responses": 1,
+    "generate_cli_processes": 1,
+    "llama_worker_processes": 1,
+    "repeated_trials_or_second_batch_observed": false,
+    "limits": {
+      "maximum_generate_calls": 2,
+      "per_job_chat_cap": 2,
+      "total_chat_cap": 4,
+      "overall_seconds": 240
+    },
+    "limitation": "Single-claim and trace/process observations describe this owned trial; no inference about unrelated historical experiments."
+  },
+  "actual_request": {
+    "minutes_language_preference": "zh",
+    "system_requests_connected_chinese": true,
+    "system_explicitly_requests_full_english_translation": true,
+    "messages": [
+      "system",
+      "user"
+    ],
+    "selected_source_sequences": [
+      1,
+      3,
+      5
+    ],
+    "source_versions": [
+      1,
+      1,
+      1
+    ],
+    "names_in_first_group": [],
+    "max_tokens": 440,
+    "seed": 42,
+    "temperature": 0.1,
+    "enable_thinking": false,
+    "envelope_matches_trace_and_completed_diagnostic": true,
+    "observed_body_language": "English",
+    "completion_tokens": 44,
+    "output_budget_exhaustion_evidence": false,
+    "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+    "interpretation": "This was not a missing zh setting or an exhausted 440-token output cap. The actual sent object contained the Chinese requirement; grouping did not ensure the model obeyed it."
+  },
+  "actual_response": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED, THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT.",
+  "unreached_and_untested": {
+    "planned_groups_in_first_job": 2,
+    "executed_groups": [
+      1
+    ],
+    "second_group_executed": false,
+    "professor_name_mask_generation_and_restoration_quality_tested": false,
+    "cross_group_assembly_tested": false,
+    "source6_selected": false,
+    "source6_final_active_citation": false,
+    "meaning": "The run stops before Chinese actor-group generation, assembly or a second frontier. It cannot qualify grouping, exact actor/name preservation or source6 handling. Empty final citations are the absence of an article, not evidence of correct final citation quality."
+  },
+  "native_and_process_checks": {
+    "private_cli_and_llama_executable_paths_observed": true,
+    "private_binary_checks": {
+      "candidate-cli": {
+        "sha256": "13410a4e1420731be5b2956c98c0de9fece6b46803a3d9e9e139d094da29ba6b",
+        "bytes": 15516288
+      },
+      "candidate-asr": {
+        "sha256": "6ea58c6d60d83357670c83e0038e6fa55c21c4f92d4061595effc20f8c44cef8",
+        "bytes": 26457456
+      }
+    },
+    "runtime_llama_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+    "backend": "metal",
+    "device": "Apple M5",
+    "offloaded_layers": "29/29",
+    "context": 2048,
+    "batch": 128,
+    "microbatch": 128,
+    "resolved_process_budget_mib": 4096,
+    "worker_reused": false,
+    "worker_startup_ms": 2076,
+    "all_observed_processes_exit_confirmed": true,
+    "remaining_owned_processes_in_records": 0,
+    "asr_executed": false
+  },
+  "observed_costs": {
+    "whole_trial_wall_seconds_including_setup_and_cleanup": 6.806,
+    "preflight_wall_seconds": 0.593,
+    "pre_command_setup_wall_seconds": 1.118,
+    "all_cli_command_wall_seconds": 4.139,
+    "generate_cli_wall_seconds": 3.979,
+    "chat_request_wall_ms_from_trace": 1160,
+    "diagnostic_attempt_elapsed_ms_including_validation": 1166,
+    "prompt_tokens": 269,
+    "completion_tokens": 44,
+    "runtime_reported_prefill_ms": 147.862,
+    "runtime_reported_decode_ms": 1011.325,
+    "sampled_process_cpu_seconds_lower_bound": 1.1049516099999999,
+    "max_sampled_process_tree_rss_mib": 1461.1875,
+    "sampled_rss_mib_seconds_observed_intervals": 1738.725018401704,
+    "commands_without_cpu_sample": 1,
+    "non_command_setup_cleanup_cpu_seconds": null,
+    "pss_mib": null,
+    "physical_unified_memory_mib": null,
+    "gpu_allocations_mib": null,
+    "energy_joules": null,
+    "interpretation": "Shorter failed work is not a resource gain. Only group 1 ran, no article was produced, cache/warmup conditions were uncontrolled, CPU is sampled lower-bound, and summed RSS can double-count shared pages."
+  },
+  "cleanup": {
+    "protected_original_assets": 8,
+    "original_hashes_and_identities_match": true,
+    "owned_model_and_runtime_clones_removed": true,
+    "public_cli_asr_restored_source": "82866cbf229e56be20ba03420f97dbc32f691904",
+    "rejected_private_binary_copies_removed": 2,
+    "rejected_private_binary_logical_bytes": 41973744,
+    "raw_evidence_retained": true,
+    "physical_reclaimed_bytes": null
+  },
+  "next_hypothesis": {
+    "status": "Design hypothesis only; no implementation or new execution requested by this review.",
+    "observation": "Even a separate English-only group with no name markers was copied in English under the correct Chinese request. Partitioning addresses cross-subject mixing but not target-language reliability.",
+    "hypothesis": "Separate source-backed target-language evidence preparation from article composition. A typed translation result can remain keyed by source revision, target language and model, preserve original quote/name bindings, and be reused from cache; article assembly consumes validated target-language evidence instead of repeatedly asking one request to translate, compress, preserve qualifiers and bind actors simultaneously.",
+    "cost_constraint": "Reuse existing valid translations first. Any newly required translation send must stay inside an explicitly frozen request budget; no hidden extra pass, prompt sweep, model substitution or per-group repair loop.",
+    "qualification_limit": "This trial does not establish that the hypothesis works. Name fidelity, conditional meaning and source closure still require independent checks; the failed trial remains immutable."
+  },
+  "evidence_directory": "artifacts/grouped-minutes-admission-2026-11-04",
+  "raw_sha256": {
+    "candidate-built.json": "40e7b66882ad6c1a04184011d733086a8ba11a749bb27d93570048e24867f1de",
+    "frozen-inputs.json": "87aaef5fc10646c5206ea815f1860a325ae10faf50d7dee402774c0d90107138",
+    "run-once.py": "0966984b7fa2ae2fa24a077f12666a2d572b9724e28b565c596d978b51751156",
+    "trial/state.json": "a7426ed689ca7552e960d55ff84316cfd573f7f663324f3c197a484e947406c2",
+    "trial/admission-provenance.json": "860532e7704834adadeeef5f86a59559e5e54e162c525a0a8e84b02de7ab4a65",
+    "trial/batch-1/last-generation.json": "dc4ee11ea51c30362443d7e769ac0d8472a0ac2249771d1e4babcd14d0343d0c",
+    "trial/batch-1/process.json": "cf55a269f24afae5cd36e083ac47737a11212240a53f96f633d3983b1c33a7a5",
+    "independent-trial-review.json": "df40d01bc27f43a2b0008440258a18dbec9bbf586180b06178dc482ff884c452",
+    "rejected-binary-cleanup.json": "0a5ba7683e62146fd13e2af9e336f9644372d4e9cb9bea724a85dbafad49b4fb",
+    "public-restoration.json": "6342681b65e8b517e21ec0e5440eebc0777e86a1e5834a4657e6e924e5b53691",
+    "model-free-3e418c4-core.log": "8a395e51261d723e9acac3e2a85f748c4cc013a43093630cf693aad958aacd53",
+    "model-free-73e4726-clippy.log": "9271e965814d54a544295f43a2e87eab78383128191a23e46ea62ac117e95549"
+  },
+  "release_published": false
+}
