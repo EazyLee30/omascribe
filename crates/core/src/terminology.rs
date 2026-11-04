@@ -489,6 +489,16 @@ impl Terms {
                 )
             })
             .collect();
+        let explicit: HashSet<String> = entries
+            .iter()
+            .filter(|e| e.kind == "term" && e.enabled && !e.deleted)
+            .flat_map(|e| {
+                std::iter::once(e.title.as_str())
+                    .chain(e.aliases.split([',', '，', ';', '；', '\n', '|']))
+            })
+            .map(|s| s.trim().to_lowercase())
+            .collect();
+        let mut reserved_note_models = HashSet::new();
         let mut active_spellings = HashSet::new();
         let mut active_asr_spellings = HashSet::new();
         for (note, honorifics, words, asr_spellings) in &note_spellings {
@@ -512,23 +522,21 @@ impl Terms {
                         break;
                     }
                     models.insert(compact.clone());
+                    let spaced = format!("{prefix} {digits}").to_lowercase();
+                    if reserved_note_models.len() < 80
+                        && !explicit.contains(&compact)
+                        && !explicit.contains(&spaced)
+                    {
+                        reserved_note_models.insert(compact.clone());
+                    }
                     active_spellings.insert(name.to_lowercase());
                     active_spellings.insert(compact);
-                    active_spellings.insert(format!("{prefix} {digits}").to_lowercase());
+                    active_spellings.insert(spaced);
                 }
             }
         }
         let mut glossary_names = HashSet::new();
         let mut expanded_models = HashSet::new();
-        let explicit: HashSet<String> = entries
-            .iter()
-            .filter(|e| e.kind == "term" && e.enabled && !e.deleted)
-            .flat_map(|e| {
-                std::iter::once(e.title.as_str())
-                    .chain(e.aliases.split([',', '，', ';', '；', '\n', '|']))
-            })
-            .map(|s| s.trim().to_lowercase())
-            .collect();
         let mut add = |alias: &str, name: &str| {
             let alias = alias.trim();
             let name = name.trim();
@@ -561,6 +569,13 @@ impl Terms {
             )
             .take(80)
         {
+            // Active glossary owners retain first claim; unrelated global
+            // models cannot consume slots needed by explicit current-note models.
+            let expansion_limit = if active(&e) {
+                80
+            } else {
+                80usize.saturating_sub(reserved_note_models.len())
+            };
             glossary_names.insert(e.title.trim().to_owned());
             hotwords.push(e.title.trim().to_owned());
             writer_names.push(e.title.trim().to_owned());
@@ -586,7 +601,7 @@ impl Terms {
                         format!("{}{digits}", prefix.to_ascii_lowercase()),
                         e.title.to_lowercase(),
                     );
-                    if expanded_models.contains(&key) || expanded_models.len() < 80 {
+                    if expanded_models.contains(&key) || expanded_models.len() < expansion_limit {
                         let is_new = expanded_models.insert(key);
                         if is_new {
                             let variants =
@@ -3172,6 +3187,179 @@ mod tests {
                 ..Default::default()
             })
             .collect()
+    }
+
+    fn eighty_unrelated_global_gpu_entries() -> Vec<Entry> {
+        (1000..1080)
+            .map(|digits| Entry {
+                kind: "term".into(),
+                title: format!("RTX{digits}"),
+                enabled: true,
+                deleted: false,
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn active_note_gpu_survives_eighty_global_model_expansions() {
+        let entries = eighty_unrelated_global_gpu_entries();
+        assert_eq!(entries.len(), 80);
+        let terms = Terms::new(&[note("**GTX1650**")], &entries);
+        assert_eq!(
+            terms.normalize("GTX ONE SIX FIVE ZERO remains untested."),
+            "GTX1650 remains untested."
+        );
+        assert!(terms.writer_names.contains(&"GTX1650".to_owned()));
+        assert!(terms.caption_names.contains(&"GTX1650".to_owned()));
+        let hints = terms.recognition_hotwords();
+        assert_eq!(hints.len(), crate::asr_hotwords::MAX_WORDS);
+        assert!(hints.iter().any(|hint| hint == "GTX 一六五零"));
+        let wire = crate::asr_hotwords::encode_words(&hints);
+        assert_eq!(wire.stats.accepted_terms, crate::asr_hotwords::MAX_WORDS);
+        assert_eq!(
+            crate::asr_hotwords::validate_words(&wire.words).unwrap(),
+            wire.words
+        );
+    }
+
+    #[test]
+    fn active_note_gpu_priority_keeps_existing_authority_and_continuation_guards() {
+        let entries = eighty_unrelated_global_gpu_entries();
+        let terms = Terms::new(&[note("**GTX1650**")], &entries);
+        for source in [
+            "GTX ONE SIX FIVE ZERO SIX remains untested.",
+            "GTX ONE SIX FIVE ZERO POINT FIVE remains untested.",
+            "GTX ONE SIX FIVE ZERO DOLLARS remains untested.",
+            "GTX ONE SIX FIVE ZERO USD remains untested.",
+            "GTX 一六五零元 remains untested.",
+            "GTX 一六五零.5 remains untested.",
+            "GTX1650 Ti remains untested.",
+            "MY_GTX1650_CARD remains untested.",
+            "GTX ONE SIX SIX ZERO remains untested.",
+            "RX ONE SIX FIVE ZERO remains untested.",
+        ] {
+            assert_eq!(terms.normalize(source), source, "{source}");
+        }
+        for (label, source) in [
+            ("**F1**", "F ONE motor racing"),
+            ("**A1**", "A ONE DAY DELAY"),
+            ("RMB 3000", "RMB THREE ZERO ZERO ZERO"),
+        ] {
+            assert_eq!(
+                Terms::new(&[note(label)], &entries).normalize(source),
+                source,
+                "{label}"
+            );
+        }
+        let mut conflicting = entries.clone();
+        for title in ["First GPU", "Second GPU"] {
+            conflicting.push(Entry {
+                kind: "term".into(),
+                title: title.into(),
+                aliases: "GTX1650".into(),
+                enabled: true,
+                ..Default::default()
+            });
+        }
+        let ambiguous = Terms::new(&[note("**GTX1650**")], &conflicting);
+        for source in [
+            "GTX1650 remains untested.",
+            "GTX ONE SIX FIVE ZERO remains untested.",
+        ] {
+            assert_eq!(ambiguous.normalize(source), source, "{source}");
+        }
+        conflicting.last_mut().unwrap().enabled = false;
+        let single_owner = Terms::new(&[note("**GTX1650**")], &conflicting);
+        assert_eq!(
+            single_owner.normalize("GTX ONE SIX FIVE ZERO remains untested."),
+            "First GPU remains untested."
+        );
+    }
+
+    #[test]
+    fn active_note_gpu_save_replays_source_minutes_and_current_citation_after_global_expansions(
+    ) -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let engine = Engine::open(dir.path().into())?;
+        for entry in eighty_unrelated_global_gpu_entries() {
+            engine.save_library_entry(entry)?;
+        }
+        let meeting = engine.create_meeting("Active GPU model priority")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        let saved =
+            engine.save_note(&meeting.id, None, "Review the pending test.", "document", 0)?;
+        let source = crate::Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 100,
+            end_ms: 1100,
+            text: "GTX ONE SIX FIVE ZERO remains untested.".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let before = engine.snapshot(&meeting.id)?;
+        engine.store.lock().unwrap().commit_document(
+            &before,
+            std::slice::from_ref(&source),
+            1,
+            vec![crate::Suggestion {
+                id: String::new(),
+                meeting_id: meeting.id.clone(),
+                kind: "section".into(),
+                focus: String::new(),
+                text: source.text.clone(),
+                status: "pending".into(),
+                stale: false,
+                sources: vec![crate::Source {
+                    segment_id: source.id.clone(),
+                    revision: source.revision,
+                    start_ms: source.start_ms,
+                    end_ms: source.end_ms,
+                    quote: source.text.clone(),
+                    speaker_name: None,
+                }],
+            }],
+            false,
+        )?;
+        let original_section_id = engine.snapshot(&meeting.id)?.suggestions[0].id.clone();
+        engine.save_note(&meeting.id, Some(saved.id), "**GTX1650**", "document", 0)?;
+        let after = engine.snapshot(&meeting.id)?;
+        let corrected = "GTX1650 remains untested.";
+        assert_eq!(after.segments[0].text, corrected);
+        assert_eq!(after.segments[0].revision, 2);
+        let section = &after.suggestions[0];
+        assert_eq!(section.id, original_section_id);
+        assert_eq!(section.text, corrected);
+        assert!(!section.stale);
+        assert_eq!(section.sources.len(), 1);
+        let cited = &section.sources[0];
+        assert_eq!(cited.segment_id, source.id);
+        assert_eq!(cited.revision, 2);
+        assert_eq!(cited.quote, corrected);
+        assert_eq!(
+            (cited.start_ms, cited.end_ms),
+            (source.start_ms, source.end_ms)
+        );
+        assert_eq!(cited.speaker_name, None);
+        let original: String = engine.store.lock().unwrap().conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&source.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(
+            serde_json::from_str::<crate::Segment>(&original)?.text,
+            source.text
+        );
+        assert_eq!(engine.correct_terminology(&meeting.id)?, 0);
+        let hints = engine.terminology(&meeting.id)?.recognition_hotwords();
+        assert_eq!(hints.len(), crate::asr_hotwords::MAX_WORDS);
+        assert!(hints.iter().any(|hint| hint == "GTX 一六五零"));
+        Ok(())
     }
 
     #[test]

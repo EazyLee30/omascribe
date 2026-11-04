@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "parent_commit": "cffe7d931b2168e51a5ff415b5bca109f660c1c1",
+  "status": "LOCAL_REGRESSIONS_AND_STRICT_WORKSPACE_PASS_CI_PENDING",
+  "source_sha256": {
+    "crates/core/src/terminology.rs": "6eb2a86029bb818111568b70a6725c85465305e7e9c3912bfd87ab1ca7f023ed"
+  },
+  "observed_failure": "With80 enabled unrelated global graphics model entries, model expansion slots were exhausted before the current-note GTX1650, removing its numeral aliases and native recognition hint. Both the Terms control and actual Engine save failed against the preceding production source.",
+  "behavior": [
+    "Reserve at most80 distinct explicitly authorized current-note graphics model slots during the existing note pass.",
+    "Active explicit glossary owners retain first claim; unrelated global model expansion uses only remaining capacity.",
+    "Keep the existing graphics-series whitelist, alias ownership, conflict revocation, continuation guards and final80-word wire budget.",
+    "Save-time source, existing pending prose and citation revisions replay together while retaining original source history."
+  ],
+  "checks": {
+    "original_red": {
+      "passed": 1,
+      "failed": 2
+    },
+    "focused_green": 3,
+    "core": 610,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "strict_workspace_clippy": "passed offline",
+    "fmt_and_diff": "passed",
+    "platform_ci": "pending"
+  },
+  "controls": [
+    "Exact whole English spoken digits and native CJK hint admitted under the original rules.",
+    "Extra digits, decimal/unit suffixes, other prefixes and embedded labels remain unchanged.",
+    "Explicit alias conflicts abstain, and a uniquely enabled owner remains authoritative.",
+    "Actual Engine note save updates the same section/current citation to source revision2, preserves time/speaker and raw revision1, and a repeated correction is a no-op."
+  ],
+  "limits": [
+    "This fixes an existing authorized graphics-identifier budget path, not generic F1/A1 numeral authority.",
+    "No new acoustic recognition or model generation was run; original Q9 remaining misses and Q16 quality stay open.",
+    "No model/SDK/component download, native GPU test, installer build or release in this patch."
+  ],
+  "evidence_directory": "artifacts/note-model-priority-2026-11-04",
+  "raw_sha256": {
+    "regression-tests.patch": "5cc63dafa4d195056135920b643d539b3ae4287cb853c9da2d39e9697cf2992f",
+    "original-red.log": "018dbe8427a3caf4954bf1b881defc19766f5794bd528a0e15137eeb004006de",
+    "focused-green.log": "67cf297c7ecaffe20dab66aa0f68bef7df0a64cb7e258eff195e08ed99dcdac0",
+    "core.log": "b318b2796fd3cfb5ce0a004a70e71a9a27b9d7a7b169002393fcdd890ea31ef3",
+    "clippy.log": "68d91f72bcc2ec8cffad4b4f5ff88e2198ffabff3065f0f4a9b0627a46ba17aa"
+  },
+  "release_published": false
+}

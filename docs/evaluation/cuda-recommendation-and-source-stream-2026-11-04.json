@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-04",
   "parent_commit": "40b79c1753938d0e6c09793adc1f3cb19066486a",
-  "status": "CORE_FRONTEND_PACKAGING_AND_PLATFORM_CI_PASS_LOCAL_MAC_CLIPPY_RUNNING",
+  "status": "CORE_FRONTEND_PACKAGING_AND_PLATFORM_CI_PASS",
   "source_sha256": {
     "crates/core/src/hardware.rs": "42f8370a27ed6a759b453f3d9ca6f538f6c6b90cb05e62a107626a1e54cb8ecb",
     "crates/core/src/hardware/cuda.rs": "8d43ecb3629114b5f53596b9dfdc2b3bb3ff000e82694ade9a8043a6f8297ef9",
@@ -44,7 +44,7 @@
     "frontend_build": "passed",
     "component_packaging": 26,
     "format_and_diff": "passed",
-    "strict_workspace_clippy": "running; restoring missing crate archives",
+    "strict_workspace_clippy": "passed; original live handle43251 completed naturally with exit0. Subsequent offline full workspace check also passes; see note-model-expansion-priority evidence.",
     "platform_ci": {
       "catalog": "skipped",
       "build": "skipped",
@@ -70,7 +70,8 @@
     "artifacts/core-resource-2026-11-04/packaging.log": "25e218e6a4764e00d0a8ffc0d4d5472e23d4ea6c8998072385209a96e8821ad8",
     "output/playwright/gpu-recommendation-2026-11-04/original-red.log": "2d1e5446fc12b73a7b56e4bf7b81789a8e4b1881556e10051f27da2ed3bd0e0b",
     "output/playwright/gpu-recommendation-2026-11-04/final-green.log": "cb7e4cff517f4c1196c1c81b946d098e0387c6e156aed697e47eb1e6000126b4",
-    "artifacts/core-resource-2026-11-04/platform-ci.json": "005cd247e6540b4618781f419d9fb0e81a821032063e3605028263c4da9b40f6"
+    "artifacts/core-resource-2026-11-04/platform-ci.json": "005cd247e6540b4618781f419d9fb0e81a821032063e3605028263c4da9b40f6",
+    "artifacts/core-resource-2026-11-04/clippy.log": "b598bac29fc55dd2d7c0a327e2bc8906f64aa61ebfb57f92b53bd362cddc3f3c"
   },
   "release_published": false,
   "production_commit": "6a89a20bacdea89e835cf1a0198904167e76794c"
