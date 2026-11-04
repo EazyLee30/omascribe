@@ -288,6 +288,66 @@ mod tests {
         at: std::time::Instant,
     }
 
+    fn mutate_observed_control(
+        control: &RejectionControl,
+        path: &Path,
+        bytes: &[u8],
+        model: bool,
+    ) -> Result<()> {
+        fn read_optional(path: &Path) -> std::io::Result<Option<Vec<u8>>> {
+            match std::fs::read(path) {
+                Ok(bytes) => Ok(Some(bytes)),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+                Err(error) => Err(error),
+            }
+        }
+        let original = read_optional(path)?;
+        match std::fs::write(path, bytes) {
+            Ok(()) => {}
+            Err(error) if cfg!(windows) && error.raw_os_error() == Some(32) => {
+                // A retained Windows receipt protects the original file. The
+                // witness keeps digests only and must not retain that protection
+                // after the actual cache-revocation lifecycle releases it.
+                assert_eq!(
+                    read_optional(path)?,
+                    original,
+                    "denied write changed observed bytes"
+                );
+                assert!(
+                    !control
+                        .engine
+                        .automatic_minutes_admission(&control.snapshot, &control.input),
+                    "denied write lost the unchanged execution observation"
+                );
+                let directory = path.parent().context("observed mutation has no parent")?;
+                if model {
+                    control.engine.model_integrity.invalidate(directory);
+                    if original.is_some() {
+                        std::fs::remove_file(path)?;
+                    }
+                    std::fs::write(path, bytes)?;
+                } else {
+                    let blocked = control
+                        .engine
+                        .inference_fingerprints
+                        .block_directory(directory)?;
+                    if original.is_some() {
+                        std::fs::remove_file(path)?;
+                    }
+                    std::fs::write(path, bytes)?;
+                    drop(blocked);
+                }
+            }
+            Err(error) => return Err(error.into()),
+        }
+        assert_eq!(
+            std::fs::read(path)?,
+            bytes,
+            "observed mutation was not applied"
+        );
+        Ok(())
+    }
+
     fn rejection_control() -> Result<RejectionControl> {
         use crate::minutes_schedule::{Dispatch, InputDigest, Schedule};
         use std::{sync::Arc, time::Instant};
@@ -498,103 +558,121 @@ mod tests {
         ] {
             let f = rejection_control()?;
             let meeting = &f.snapshot.meeting;
-            match mutation {
-                "note" => {
-                    f.engine.save_note(
-                        &meeting.id,
-                        None,
-                        "OmaScribe\n核对名称。",
-                        "document",
-                        0,
-                    )?;
-                }
-                "source" => {
-                    let s = &f.snapshot.segments[0];
-                    f.engine
-                        .edit_segment(&s.id, "照片可能存在风险，仍需核对。", s.revision)?;
-                }
-                "append" => {
-                    let mut s = f.snapshot.segments[0].clone();
-                    s.id.push_str(":new");
-                    s.seq += 1;
-                    s.text = "另需核对发布范围。".into();
-                    f.engine.store.lock().unwrap().save_segment(&s)?;
-                }
-                "model" | "language" => {
-                    let mut p = f.engine.preferences.lock().unwrap().clone();
-                    if mutation == "model" {
-                        p.llm_model = "qwen3-0.6b".into();
-                    } else {
-                        p.minutes_language = "en".into();
+            let changed = (|| -> Result<bool> {
+                match mutation {
+                    "note" => {
+                        f.engine.save_note(
+                            &meeting.id,
+                            None,
+                            "OmaScribe\n核对名称。",
+                            "document",
+                            0,
+                        )?;
                     }
-                    f.engine.update_preferences(p)?;
-                }
-                "background" => f.engine.invalidate_background()?,
-                "runtime" => {
-                    let path = f
-                        .engine
-                        .runtime_dir
-                        .join("llama")
-                        .join(crate::platform::executable("llama-server"));
-                    let mut bytes = std::fs::read(&path)?;
-                    let last = bytes.len() - 1;
-                    bytes[last] ^= 1;
-                    std::fs::write(path, bytes)?;
-                }
-                "model_file" => {
-                    let m = crate::models::model(&f.engine.preferences.lock().unwrap().llm_model)?
-                        .clone();
-                    std::fs::write(
+                    "source" => {
+                        let s = &f.snapshot.segments[0];
                         f.engine
-                            .root
-                            .join("model-store")
-                            .join(m.id)
-                            .join(&m.files[0].name),
-                        b"evil",
-                    )?;
-                }
-                "descriptor" => {
-                    std::fs::write(f.engine.runtime_dir.join("llama/build-info.json"), b"{}")?
-                }
-                "inventory" => {
-                    std::fs::write(f.engine.runtime_dir.join("llama/added.bin"), b"new")?
-                }
-                "linked_runtime" => {
-                    #[cfg(unix)]
-                    {
-                        let external = f.engine.root.join("custom-llama");
-                        std::fs::rename(f.engine.runtime_dir.join("llama"), &external)?;
-                        std::os::unix::fs::symlink(&external, f.engine.runtime_dir.join("llama"))?;
+                            .edit_segment(&s.id, "照片可能存在风险，仍需核对。", s.revision)?;
                     }
-                    #[cfg(not(unix))]
-                    {
-                        continue;
+                    "append" => {
+                        let mut s = f.snapshot.segments[0].clone();
+                        s.id.push_str(":new");
+                        s.seq += 1;
+                        s.text = "另需核对发布范围。".into();
+                        f.engine.store.lock().unwrap().save_segment(&s)?;
                     }
+                    "model" | "language" => {
+                        let mut p = f.engine.preferences.lock().unwrap().clone();
+                        if mutation == "model" {
+                            p.llm_model = "qwen3-0.6b".into();
+                        } else {
+                            p.minutes_language = "en".into();
+                        }
+                        f.engine.update_preferences(p)?;
+                    }
+                    "background" => f.engine.invalidate_background()?,
+                    "runtime" => {
+                        let path = f
+                            .engine
+                            .runtime_dir
+                            .join("llama")
+                            .join(crate::platform::executable("llama-server"));
+                        let mut bytes = std::fs::read(&path)?;
+                        let last = bytes.len() - 1;
+                        bytes[last] ^= 1;
+                        mutate_observed_control(&f, &path, &bytes, false)?;
+                    }
+                    "model_file" => {
+                        let m =
+                            crate::models::model(&f.engine.preferences.lock().unwrap().llm_model)?
+                                .clone();
+                        mutate_observed_control(
+                            &f,
+                            &f.engine
+                                .root
+                                .join("model-store")
+                                .join(m.id)
+                                .join(&m.files[0].name),
+                            b"evil",
+                            true,
+                        )?;
+                    }
+                    "descriptor" => mutate_observed_control(
+                        &f,
+                        &f.engine.runtime_dir.join("llama/build-info.json"),
+                        b"{}",
+                        false,
+                    )?,
+                    "inventory" => mutate_observed_control(
+                        &f,
+                        &f.engine.runtime_dir.join("llama/added.bin"),
+                        b"new",
+                        false,
+                    )?,
+                    "linked_runtime" => {
+                        #[cfg(unix)]
+                        {
+                            let external = f.engine.root.join("custom-llama");
+                            std::fs::rename(f.engine.runtime_dir.join("llama"), &external)?;
+                            std::os::unix::fs::symlink(
+                                &external,
+                                f.engine.runtime_dir.join("llama"),
+                            )?;
+                        }
+                        #[cfg(not(unix))]
+                        {
+                            return Ok(false);
+                        }
+                    }
+                    "unknown" => {
+                        let block = f
+                            .engine
+                            .inference_fingerprints
+                            .block_directory(&f.engine.runtime_dir.join("llama"))?;
+                        drop(block);
+                    }
+                    "delete_restore" => {
+                        f.engine.set_meeting_deleted(&meeting.id, true)?;
+                        f.engine.set_meeting_deleted(&meeting.id, false)?;
+                        f.engine.finish_minutes_observation(
+                            &meeting.id,
+                            meeting.run,
+                            &f.dispatch,
+                            &f.observation,
+                            Err(spelling_rejection()),
+                        );
+                    }
+                    "run" => {
+                        let mut next = meeting.clone();
+                        next.run += 1;
+                        f.engine.store.lock().unwrap().save_meeting(&next)?;
+                    }
+                    _ => unreachable!(),
                 }
-                "unknown" => {
-                    let block = f
-                        .engine
-                        .inference_fingerprints
-                        .block_directory(&f.engine.runtime_dir.join("llama"))?;
-                    drop(block);
-                }
-                "delete_restore" => {
-                    f.engine.set_meeting_deleted(&meeting.id, true)?;
-                    f.engine.set_meeting_deleted(&meeting.id, false)?;
-                    f.engine.finish_minutes_observation(
-                        &meeting.id,
-                        meeting.run,
-                        &f.dispatch,
-                        &f.observation,
-                        Err(spelling_rejection()),
-                    );
-                }
-                "run" => {
-                    let mut next = meeting.clone();
-                    next.run += 1;
-                    f.engine.store.lock().unwrap().save_meeting(&next)?;
-                }
-                _ => unreachable!(),
+                Ok(true)
+            })();
+            if !changed.with_context(|| format!("automatic pause mutation {mutation}"))? {
+                continue;
             }
             let current = f.engine.snapshot(&meeting.id)?;
             let prefs = f.engine.preferences.lock().unwrap().clone();
