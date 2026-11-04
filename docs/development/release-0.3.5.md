@@ -15,7 +15,7 @@
 
 以下历史结果保留各自源码身份，不替代当前共享源码的完整验收：
 
-- Linux NVIDIA 硬件 helper 读取现有驱动支持的 CUDA API 版本，推荐区分支持、过旧与未知；未知继续保留手动下载／测试，但不显示 CUDA 推荐。长会议名称上下文逐行持有正文，保留 SQL 顺序、名称上限、尾部损坏检查与缓存语义。本地 607 核心 / 12 忽略、2 CLI、34 集成、26 组件打包与浏览器回归通过；工作区静态检查运行中，三端源码 CI 待完成。未运行实际 GPU／新模型或构建安装包。[原红测、范围与检查](../evaluation/cuda-recommendation-and-source-stream-2026-11-04.json)。
+- Linux NVIDIA 硬件 helper 读取现有驱动支持的 CUDA API 版本，推荐区分支持、过旧与未知；未知继续保留手动下载／测试，但不显示 CUDA 推荐。长会议名称上下文逐行持有正文，保留 SQL 顺序、名称上限、尾部损坏检查与缓存语义。本地 607 核心 / 12 忽略、2 CLI、34 集成、26 组件打包与浏览器回归通过；本机 Mac 工作区静态检查仍在补依赖；`6a89a20` 的 Windows-core、Linux、Ubuntu22、prepare、validate 均通过，GPU build/catalog 跳过。未运行实际 GPU／新模型或构建安装包。[原红测、范围与检查](../evaluation/cuda-recommendation-and-source-stream-2026-11-04.json)。
 
 - 修复 macOS 正常执行未变更运行时却被文件观察凭据误拒绝的问题。真实执行引起的访问时间通知现在继续交由文件身份检查判断，写入、权限／时间变化、替换和错误仍使凭据失效。本地 12 项凭据控制、599 核心 / 12 忽略、2 CLI、34 集成及严格工作区检查通过。候选权重已完成传输与校验，但首轮实际入口停在此误报，发送请求为 0；后续实际入口已成功加载模型并观察 Metal 25/25 层，但纪要质量仍失败；同修复 SHA 的 Windows-core、Linux、Ubuntu22、prepare、validate 均通过。[原红测、修复与边界](../evaluation/macos-runtime-execution-2026-11-04.json)。
 
