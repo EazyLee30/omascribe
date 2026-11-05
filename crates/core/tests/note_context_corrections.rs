@@ -1539,3 +1539,79 @@ fn appended_name_after_unadmitted_prose_updates_omascribe_in_mixed_note() -> Res
 fn appended_name_after_unadmitted_prose_updates_other_product_in_mixed_note() -> Result<()> {
     appended_name_after_public_prose_updates_source_and_article("PixelLedger", "PIXEL LEDGRE", true)
 }
+
+#[test]
+fn standalone_recording_focus_preserves_the_spoken_plural_after_note_save() -> Result<()> {
+    for content in ["recording", "**Recording**"] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Recording focus preserves speech")?;
+        let raw = segment(&meeting.id, 1, "The recordings are incomplete.");
+        engine.store.lock().unwrap().save_segment(&raw)?;
+
+        engine.save_note(&meeting.id, None, content, "document", 0)?;
+        let after = engine.snapshot(&meeting.id)?;
+        assert_eq!(
+            after.segments[0].text, raw.text,
+            "a recording topic must not turn the spoken plural into a singular name: {content}"
+        );
+        assert_eq!(after.segments[0].revision, raw.revision, "{content}");
+    }
+    Ok(())
+}
+
+#[test]
+fn standalone_recording_focus_allows_chinese_minutes_without_an_english_name() -> Result<()> {
+    for content in ["recording", "**Recording**"] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Recording focus remains translatable")?;
+        engine.save_note(&meeting.id, None, content, "document", 0)?;
+
+        assert!(
+            engine
+                .terminology(&meeting.id)?
+                .validate_writer_names("The recordings are incomplete.", "录音尚未完成。")
+                .is_ok(),
+            "a recording topic must allow its ordinary Chinese translation: {content}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn recording_focus_keeps_product_names_and_explicit_term_authority() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let meeting = engine.create_meeting("Mixed recording focus and product spellings")?;
+    engine.save_note(
+        &meeting.id,
+        None,
+        "录音 recording\n\nomascribe\n\nnvidia",
+        "document",
+        0,
+    )?;
+    let terms = engine.terminology(&meeting.id)?;
+    let source = "ALMA SCRIBE recordings NVIDIA remain incomplete.";
+    assert_eq!(
+        terms.normalize(source),
+        "OmaScribe recordings nvidia remain incomplete."
+    );
+    assert!(terms
+        .validate_writer_names(source, "OmaScribe 的 nvidia 录音尚未完成。")
+        .is_ok());
+    for missing_name in ["nvidia 录音尚未完成。", "OmaScribe 的录音尚未完成。"] {
+        assert!(terms.validate_writer_names(source, missing_name).is_err());
+    }
+
+    let declared = engine.create_meeting("Explicit recording term remains literal")?;
+    engine.save_note(&declared.id, None, "recording", "term", 0)?;
+    let terms = engine.terminology(&declared.id)?;
+    assert!(terms
+        .validate_writer_names("The recording is incomplete.", "录音尚未完成。")
+        .is_err());
+    assert!(terms
+        .validate_writer_names("The recording is incomplete.", "recording 尚未完成。")
+        .is_ok());
+    Ok(())
+}
