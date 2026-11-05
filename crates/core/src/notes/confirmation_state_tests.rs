@@ -401,3 +401,40 @@ fn confirmation_view_bounds_frames_across_all_selected_sources() {
     assert!(confirmation::View::new(&snapshot.segments[..64], "m", &terms).is_ok());
     assert!(confirmation::View::new(&snapshot.segments, "m", &terms).is_err());
 }
+
+#[test]
+fn ordinary_writer_single_quoted_sentences_cannot_confirm_pending_state() {
+    for quoted in [
+        "Do not treat 'Earlier example. The supplier response is confirmed. End example.' as fact.",
+        "Do not treat 'Earlier example, The supplier response is confirmed, End example' as fact.",
+    ] {
+        let snapshot = snapshot(&["The supplier response is not yet confirmed.", quoted]);
+        assert!(
+            ordinary(
+                &snapshot,
+                &[0, 1],
+                "The supplier response is confirmed.",
+                false,
+                Some(&[2])
+            )
+            .is_err(),
+            "quoted update became a confirmation witness: {quoted}"
+        );
+    }
+}
+
+#[test]
+fn ordinary_writer_confirmation_keeps_contractions_outside_quotation_scope() {
+    let snapshot = snapshot(&[
+        "The supplier response is not yet confirmed.",
+        "The supplier response is confirmed, it's ready.",
+    ]);
+    assert!(ordinary(
+        &snapshot,
+        &[0, 1],
+        "The supplier response is confirmed.",
+        false,
+        Some(&[2])
+    )
+    .is_ok());
+}
