@@ -165,13 +165,20 @@ try {
         await settle();
         return document.querySelector(".confirm-dialog");
       };
+      const close = async (dialog, result) => {
+        if (!dialog) return;
+        await new Promise((resolve) => {
+          dialog.addEventListener("close", resolve, { once: true });
+          dialog.close(result);
+        });
+        await settle();
+      };
       const canceledDialog = await open(missing.version);
       const canceled = {
         shown: Boolean(canceledDialog), text: canceledDialog?.textContent || "",
         cancelFocused: canceledDialog?.querySelector('[value="cancel"]') === document.activeElement,
       };
-      canceledDialog?.close("cancel");
-      await settle();
+      await close(canceledDialog, "cancel");
       canceled.calls = removals().length;
 
       const acceptedDialog = await open(missing.version);
@@ -182,8 +189,7 @@ try {
         shown: Boolean(acceptedDialog), textAfterPoll: acceptedDialog?.textContent || "",
         replacementShown: Boolean(card(replacement.version)),
       };
-      acceptedDialog?.close("delete");
-      await settle();
+      await close(acceptedDialog, "delete");
       accepted.calls = structuredClone(removals());
 
       // The existing healthy retained-version confirmation must keep its semantics.
@@ -198,15 +204,13 @@ try {
       await tick();
       const healthyDialog = await open("acceleration-healthy");
       const healthy = { shown: Boolean(healthyDialog), text: healthyDialog?.textContent || "" };
-      healthyDialog?.close("cancel");
-      await settle();
+      await close(healthyDialog, "cancel");
       healthy.calls = removals().length;
 
       const closedDialog = await open(replacement.version);
       const closed = { shown: Boolean(closedDialog) };
       await handle.close();
-      closedDialog?.close("delete");
-      await settle();
+      await close(closedDialog, "delete");
       closed.calls = structuredClone(removals());
       return {
         id, states, staleActive, busy, testing, canceled, accepted, healthy, closed,
