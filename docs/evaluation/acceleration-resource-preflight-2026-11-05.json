@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "PRODUCTION_INTEGRATED_LOCAL_CHECKS_PASS_SOURCE_CI_PENDING",
+  "source": "182759fc6de80d000855214b576b88458518e65d",
+  "changes": [
+    {
+      "kind": "acceleration_preflight",
+      "production_source": "55deb4e7894e323a34d1099770f631c39aea041b",
+      "private_red_source": "e9c63c7ad2a92ec4dfcc605a2e766edecc4067ca",
+      "private_fix_source": "9215efaa89bf31ba81d2b45dca1d43abcf206a52",
+      "behavior": "Reject explicit non-Automatic inference or unavailable installed components before model integrity reads. Hash eligible weights outside the configuration lock, then recheck configuration, component and busy ownership before any worker start.",
+      "tiny_controls": {
+        "model_bytes": 4,
+        "original_passed": 0,
+        "original_failed": 2,
+        "original_ignored": 1,
+        "original_hashed_bytes_per_rejected_entry": 4,
+        "fixed_hashed_bytes_per_rejected_entry": 0,
+        "fixed_module_passed": 23,
+        "fixed_module_ignored": 3
+      },
+      "public_entry_control": {
+        "model_id": "qwen3-1.7b",
+        "catalog_asset_bytes": 1107409472,
+        "entry": "Engine::verify_acceleration_version, explicit CPU preference",
+        "original_failed": 1,
+        "original_entry_model_bytes_hashed": 1107409472,
+        "fixed_passed": 1,
+        "fixed_entry_model_bytes_hashed": 0,
+        "setup": "Each run cloned the existing asset into an independent owned copy and verified its complete catalog SHA before measuring the public entry. Setup copy/hash I/O is excluded from this entry counter, not claimed zero. Both owned copies were removed after Engine/receipt release; original device/inode, size, mtime and ctime stayed unchanged on this Mac."
+      },
+      "rechecks": "Three 4-byte controls preserve unlocked hashing and reject component removal, backend edits or a different busy owner after hashing. The fixture substitutes the installed-catalog reader only, not signatures, GPU compatibility or execution."
+    },
+    {
+      "kind": "terminal_asr_yield_reap",
+      "production_source": "72f6449ac019814abbf487b7c5f82d4a1a329c0e",
+      "private_red_source": "8f20c637bcda128af42e1edf8ee6fe0fc6112bcc",
+      "private_race_red_source": "f5170a0cec94a1263a709da691ebf3096dcc70f5",
+      "private_fix_source": "e5aac4b0625b10e4619f619a3546b56b8ed361b4",
+      "behavior": "After an accepted terminal watchdog yield, detach only its same-PID idle worker and reap outside locks. Recheck that Server stop reason/closing under the lease-return pool critical section; keep the stop gate through insertion, and explicitly drop guards before Child/session cleanup.",
+      "checks": {
+        "initial_passed": 2,
+        "initial_failed": 1,
+        "return_race_passed": 0,
+        "return_race_failed": 1,
+        "fixed_passed": 4,
+        "original_four_controls_unchanged": true
+      },
+      "scope": "Real model-free child controls establish idle-slot removal, exact-PID exit confirmation and llm_pid clearing. The same session cleanup drops owned tiny admission receipts; Windows deny-write release assertions await same-source CI. Active leases keep their own cleanup; stale closing workers cannot cancel/reap newer PIDs. No epoch bump, TTL increase or scheduler change."
+    }
+  ],
+  "combined_checks": {
+    "first_full_core": {
+      "source": "72f6449ac019814abbf487b7c5f82d4a1a329c0e",
+      "passed": 668,
+      "failed": 1,
+      "ignored": 13,
+      "failure": "Existing local HTTP download fixture read_exact returned OS35 after accepted sockets inherited nonblocking mode. Its isolated rerun passed; the original full failure is retained."
+    },
+    "fixture_only_fix": {
+      "source": "182759fc6de80d000855214b576b88458518e65d",
+      "scope": "Three test-only lines clear accepted-stream nonblocking mode before the existing 2-second read timeout; no downloader product behavior change. Independent local Rust probe observed true before and false after clearing."
+    },
+    "final_core": {
+      "status": "PASS",
+      "passed": 669,
+      "failed": 0,
+      "ignored": 13,
+      "cli_passed": 2,
+      "integration_passed": 34,
+      "terminal_exit_code": 0
+    },
+    "strict_workspace_clippy": "PASS; terminal exit code 0",
+    "fmt": "PASS; terminal exit code 0",
+    "exact_source_ci": "pending; no pass claim"
+  },
+  "limits": [
+    "Zero model inference calls and zero new model/component downloads in this round. Real child controls are test fixtures, not ASR/LLM runs; optional acceleration components remain external.",
+    "The measured reduction is rejected-entry weight hashing only. No end-to-end speed, GPU throughput, energy, peak-memory or VRAM-release claim; accepted SIGTERM alone is not exit proof.",
+    "No native Windows/Linux GPU or installer acceptance follows from host-independent controls. Existing Scope, model/runtime/driver identity and cancellation gates remain; Q9/Q16 and 0.3.5 release gates remain open."
+  ],
+  "raw_sha256": {
+    "artifacts/acceleration-preflight-2026-11-05/original-e9c63c7-targeted.log": "25999dc7539e18279a592b63874339b3cdfd8beca52c271f6d0142df3a1a2e9a",
+    "artifacts/acceleration-preflight-2026-11-05/original-e9c63c7-public-asset.log": "b5a8e1dd8daf6fa6daa360cf9ac64fae517e2d82a8a411a0e85fe16e315380b8",
+    "artifacts/acceleration-preflight-2026-11-05/candidate-9215efa-acceleration.log": "a405eb6b2147129fa43c384e0cc829fd9a676e66b6f7d1d546b51cef36bda85c",
+    "artifacts/acceleration-preflight-2026-11-05/candidate-9215efa-public-asset.log": "5a2bd51b8fe2808b4b7a575dae1dde42ee1e5588969f7503d630ce88a679e588",
+    "artifacts/idle-asr-reap-2026-11-05/original-8f20c63-targeted.log": "5e874760d577f661ca3565dabdf01653b138c74b8d68781b560c3de233e79fe1",
+    "artifacts/idle-asr-reap-2026-11-05/original-f5170a0-return-race.log": "dcc6908e9ed5d5d40eb7bef59d65c2c1100a71a7efc4b9c2d5e2262e832fd77c",
+    "artifacts/idle-asr-reap-2026-11-05/candidate-e5aac4b-targeted.log": "9a90aea2bf89f2c30a6d7be9132036e78a37224893d2ff57d9aebb42d2046bae",
+    "artifacts/acceleration-preflight-2026-11-05/integrated-72f6449-core.log": "396d960a0a9a4cf8121c238a1623b4143f8f0a41ca4a7ae15e1389f9d03826ce",
+    "artifacts/acceleration-preflight-2026-11-05/integrated-72f6449-resume-isolated.log": "9b989ada4805b542c0ad4d34f4a9962255e5ca3ddfa0d546cf91023c0deccef8",
+    "artifacts/acceleration-preflight-2026-11-05/socket-mode-probe.rs": "6904ca713071b70eef94c1e7eab4ab84dfd608bf8dde7c050eba08e81215bd38",
+    "artifacts/acceleration-preflight-2026-11-05/socket-mode-probe.json": "b4507d7d32b90ff0ae14b43d579e58a85bf3c2e42f81c96683b0cabfa078aa12",
+    "artifacts/acceleration-preflight-2026-11-05/integrated-182759f-core.log": "12a2b9efa3b7dbc0672a91cfad8c5c2a912a7748398732554e28dd6aeb4528d7",
+    "artifacts/acceleration-preflight-2026-11-05/integrated-182759f-clippy.log": "5e3f9b1820ca2e2d3b5733ec918c4f2d175f29f70e3abce2bf6043fd6c8e466a",
+    "artifacts/acceleration-preflight-2026-11-05/integrated-182759f-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "release_published": false
+}
