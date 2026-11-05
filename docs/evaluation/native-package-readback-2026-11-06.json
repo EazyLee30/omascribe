@@ -47,5 +47,19 @@
   "local_log_sha256": {
     "python-final.log": "a867d1606d9b796f27bc24c1b9bd8cb968b3985513a8cf730ed486e3509992c5",
     "dmg-control.log": "5d0b20a895f0a3255ff132e6f4c5b6f2344f645bb79e1c880d47c48278017768"
+  },
+  "whole_optional_archive_followup": {
+    "source": "ec2e65af6bdd98e2fd0c0caaf6ce2327a4183f76",
+    "members": [
+      "OmaScribe-cuda-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+      "OmaScribe-vulkan-linux-x86_64-acceleration-ci-40367160891.tar.bz2",
+      "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+      "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+    ],
+    "red_missed": 4,
+    "green_rejected": 4,
+    "python_passed": 172,
+    "python_skipped": 1,
+    "log_sha256": "cee19a8e06a33704ebf047111d9674bfec0015c7b02ea71cace778d2d55b0359"
   }
 }
