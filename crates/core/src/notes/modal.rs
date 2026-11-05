@@ -4,13 +4,16 @@
 use crate::{terminology::Terms, Segment, Source};
 use anyhow::{ensure, Result};
 use regex::Regex;
-use std::{collections::BTreeMap, sync::OnceLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::OnceLock,
+};
 
 const MAX_BYTES: usize = 262_144;
 const MAX_FRAMES: usize = 64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum Field {
+pub(super) enum Field {
     MainStageMusicEnding,
     FestivalPartsPlaying,
 }
@@ -212,6 +215,17 @@ fn frames(text: &str, terms: &Terms) -> Result<Vec<Frame>> {
         }
     }
     Ok(result)
+}
+
+/// Read-only typed object/predicate observations for a bounded report payload.
+/// A mention-only/veto fallback is not a complete field and grants no witness.
+/// This exports no state, modality discharge, or whole-source proof authority.
+pub(super) fn reported_payload_fields(text: &str, terms: &Terms) -> Result<BTreeSet<Field>> {
+    Ok(frames(text, terms)?
+        .into_iter()
+        .filter(|frame| frame.state.is_some())
+        .map(|frame| frame.field)
+        .collect())
 }
 
 impl View {

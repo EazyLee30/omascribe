@@ -77,3 +77,78 @@ fn preserving_music_modals_does_not_authorize_a_new_reporter_relationship() {
         "anonymous music evidence and a separate named photo-risk report cannot be joined into PAMELA reporting music, even when every passage is globally cited"
     );
 }
+
+#[test]
+fn explicit_named_payload_needs_its_own_current_citation_and_unknown_paraphrases_stay_free(
+) -> Result<()> {
+    let named = format!("当迪大学的 PAMELA FURGO森教授指出{}", MUSIC_WITH_BOTH_MAY);
+    let mut texts = ORIGINAL_SOURCES.to_vec();
+    texts.push(&named);
+    let source = snapshot(&texts);
+    let body = format!(
+        "PAMELA FURGO森教授指出，{}{}。",
+        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3]
+    );
+    ordinary(&source, &[0, 1, 2, 3, 4, 5], &body, Some(&[4, 6]))?;
+    assert!(ordinary(&source, &[0, 1, 2, 3, 4, 5], &body, Some(&[1, 2, 3, 4, 5])).is_err());
+    let terms = crate::terminology::Terms::new(&[], &[]);
+    let view = super::attribution_roles::ReportedView::new(&source.segments, "m", &terms)?;
+    let citation = |segment: &crate::Segment| crate::Source {
+        segment_id: segment.id.clone(),
+        revision: segment.revision,
+        start_ms: segment.start_ms,
+        end_ms: segment.end_ms,
+        quote: segment.text.clone(),
+        speaker_name: None,
+    };
+    let own = vec![citation(&source.segments[3]), citation(&source.segments[5])];
+    view.validate(&body, &own, &terms)?;
+    for field in ["revision", "quote", "time"] {
+        let mut stale = own.clone();
+        match field {
+            "revision" => stale[1].revision += 1,
+            "quote" => stale[1].quote = ORIGINAL_SOURCES[0].into(),
+            "time" => stale[1].start_ms += 1,
+            _ => unreachable!(),
+        }
+        assert!(view.validate(&body, &stale, &terms).is_err(), "{field}");
+    }
+    let unknown = snapshot(&["当迪大学的 PAMELA FURGO森教授指出材料仍需核对。"]);
+    ordinary(
+        &unknown,
+        &[0],
+        "当迪大学的 PAMELA FURGO森教授表示材料仍需复核。",
+        None,
+    )?;
+    Ok(())
+}
+
+#[test]
+fn qualified_named_reports_do_not_authorize_bare_reports_across_sentence_stops() -> Result<()> {
+    let named = format!("当迪大学的 PAMELA FURGO森教授指出{}", MUSIC_WITH_BOTH_MAY);
+    let bare = format!(
+        "PAMELA FURGO森教授指出，{}{}。",
+        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3]
+    );
+    for wrapped in [
+        format!("如果{named}"),
+        format!("“{named}”"),
+        format!("Do not treat 'Earlier example. {named} End example.' as fact."),
+    ] {
+        let mut texts = ORIGINAL_SOURCES.to_vec();
+        texts.push(&wrapped);
+        let source = snapshot(&texts);
+        assert!(
+            ordinary(&source, &[0, 1, 2, 3, 4, 5], &bare, None).is_err(),
+            "{wrapped}"
+        );
+    }
+    for wrapped in [format!("如果{named}"), format!("“{named}”")] {
+        let mut texts = ORIGINAL_SOURCES.to_vec();
+        texts.push(&wrapped);
+        let source = snapshot(&texts);
+        let copied = format!("{wrapped}。{}。", ORIGINAL_SOURCES[3]);
+        ordinary(&source, &[0, 1, 2, 3, 4, 5], &copied, Some(&[4, 6]))?;
+    }
+    Ok(())
+}

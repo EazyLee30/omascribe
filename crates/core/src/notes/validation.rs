@@ -1498,6 +1498,13 @@ fn validate_document_inner(
     } else {
         None
     };
+    let reported = if require_prose {
+        Some(super::attribution_roles::ReportedView::new(
+            segments, meeting, terms,
+        )?)
+    } else {
+        None
+    };
     if require_prose {
         completed.validate(
             &draft
@@ -1646,6 +1653,9 @@ fn validate_document_inner(
                     .collect::<Vec<_>>(),
                 terms,
             )?;
+        }
+        if let Some(reported) = &reported {
+            reported.validate(body, &sources, terms)?;
         }
         super::recording_retention::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         super::submission::validate(body, &current_evidence, !require_prose)?;

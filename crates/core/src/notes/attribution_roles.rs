@@ -1,6 +1,7 @@
 //! A local role veto for explicit reports about a conditional participant.
 //! Ordinary role labels are source spans, never new names or inferred identities.
 use crate::terminology::Terms;
+use crate::{Segment, Source};
 use anyhow::{ensure, Result};
 use regex::Regex;
 use std::{collections::BTreeSet, ops::Range, sync::OnceLock};
@@ -17,7 +18,7 @@ const DECISION_VERBS: &[&str] = &["决定", "决议", "选择", "确定"];
 pub(crate) struct Mismatch;
 impl Mismatch {
     pub(crate) fn hint(&self) -> &'static str {
-        "保留原话的发言或决定主体。条件或可能事件中被谈及的人物，不因此成为实际发言或决定者；新增归属须有对应原话支持。"
+        "保留原话的发言或决定主体及其陈述内容。条件或可能事件中被谈及的人物，不因此成为实际发言或决定者；同一个人名不能把别处事实变成其新发言。回到 ORIGINAL SOURCE，新增归属须有该人物在对应原话中的陈述支持。"
     }
 }
 impl std::fmt::Display for Mismatch {
@@ -476,6 +477,287 @@ fn validate_inner(
         }
     }
     Ok(())
+}
+
+// The ordinary role guard above follows conditional participants. This extra
+// view binds a complete literal reported-person label to typed payloads within
+// that person's own statement. It is not general paraphrase entailment.
+const REPORTED_BYTES: usize = 120_000;
+const REPORTED_FRAMES: usize = 64;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum ReportPayload {
+    PhotoDisclosureRisk,
+    Music(super::modal::Field),
+}
+
+struct NamedReport {
+    person: String,
+    predicate: Predicate,
+    fields: BTreeSet<ReportPayload>,
+    qualified: bool,
+    statement: Range<usize>,
+}
+struct ReportAnchor {
+    person: Range<usize>,
+    verb: Range<usize>,
+    modifiers: Range<usize>,
+    clause: Range<usize>,
+}
+
+fn reported_related(text: &str) -> bool {
+    (text.contains("教授") || text.contains("博士"))
+        && REPORT_VERBS.iter().any(|verb| text.contains(verb))
+}
+
+fn reported_quotes(text: &str) -> Vec<Range<usize>> {
+    let mut result = Vec::new();
+    let mut open = None;
+    let mut escaped = false;
+    for (at, ch) in text.char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if open.is_some() && ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if super::confirmation::word_apostrophe(text, at, ch) {
+            continue;
+        }
+        if let Some((start, close)) = open {
+            if ch == close {
+                result.push(start..at + ch.len_utf8());
+                open = None;
+            }
+        } else {
+            let close = match ch {
+                '“' => '”',
+                '‘' => '’',
+                '「' => '」',
+                '『' => '』',
+                '"' | '\'' | '`' => ch,
+                _ => continue,
+            };
+            open = Some((at, close));
+        }
+    }
+    if let Some((start, _)) = open {
+        result.push(start..text.len());
+    }
+    result
+}
+
+fn report_payload_fields(text: &str, terms: &Terms) -> Result<BTreeSet<ReportPayload>> {
+    let mut fields = super::modal::reported_payload_fields(text, terms)?
+        .into_iter()
+        .map(ReportPayload::Music)
+        .collect::<BTreeSet<_>>();
+    static PHOTO_RISK: OnceLock<Regex> = OnceLock::new();
+    // Complete local actor/action/object/risk chain; a bare照片 or a topic
+    // elsewhere in the source is not a photo-disclosure report predicate.
+    let photo = PHOTO_RISK.get_or_init(|| {
+        Regex::new(concat!(
+            r"(?:新闻)?记者[^。.!?！？；;\n]{0,16}(?:公布|公开|发布|披露)",
+            r"[^。.!?！？；;\n]{0,24}(?:照片|相片)",
+            r"[^。.!?！？；;\n]{0,36}(?:危害|危险|风险)"
+        ))
+        .unwrap()
+    });
+    if photo.is_match(&opaque_names(text, terms)) {
+        fields.insert(ReportPayload::PhotoDisclosureRisk);
+    }
+    Ok(fields)
+}
+
+fn named_reports(text: &str, terms: &Terms) -> Result<Vec<NamedReport>> {
+    if !reported_related(text) {
+        return Ok(Vec::new());
+    }
+    ensure!(text.len() <= REPORTED_BYTES, Mismatch);
+    static VERB: OnceLock<Regex> = OnceLock::new();
+    static QUALIFIED: OnceLock<Regex> = OnceLock::new();
+    let verb = VERB.get_or_init(|| {
+        Regex::new(&format!(
+            concat!(
+                r"^[ \t]*(?P<modifiers>(?:(?:随后|接着|明确|进一步|已经|刚刚|计划|准备|没有|并未|从未|如果|假如|可能|也许|或许|否认|再次|也|则|曾|已|将|会|未|不|没|若)[ \t]*){{0,8}})",
+                r"(?P<verb>{})"
+            ),
+            REPORT_VERBS.join("|")
+        ))
+        .unwrap()
+    });
+    let qualified = QUALIFIED.get_or_init(|| {
+        Regex::new(concat!(
+            r"(?i)\b(?:if|unless|whether|assuming|suppose|may|might)\b|",
+            r"如果|假如|除非|一旦|是否|能否|可能|或许|也许|据称|据传|假设|并非|不是|没有|并未|从未|否认|引用|示例|不要|不能"
+        ))
+        .unwrap()
+    });
+    let source_clauses = super::confirmation::sentences(text);
+    let quote_ranges = reported_quotes(text);
+    let syntax = opaque_names(text, terms);
+    let mut anchors = Vec::new();
+    for person in crate::translation::reported_name_occurrences(text)? {
+        let Some(title) = ["教授", "博士"]
+            .into_iter()
+            .find(|title| text[person.end..].starts_with(*title))
+        else {
+            continue;
+        };
+        let after = person.end + title.len();
+        let Some(capture) = verb.captures(&text[after..]) else {
+            continue;
+        };
+        let Some(clause) = source_clauses
+            .iter()
+            .find(|range| range.contains(&person.start))
+        else {
+            continue;
+        };
+        let v = capture.name("verb").expect("report verb").range();
+        let m = capture.name("modifiers").expect("report modifiers").range();
+        ensure!(anchors.len() < REPORTED_FRAMES, Mismatch);
+        anchors.push(ReportAnchor {
+            person,
+            verb: after + v.start..after + v.end,
+            modifiers: after + m.start..after + m.end,
+            clause: clause.clone(),
+        });
+    }
+    anchors.sort_by_key(|anchor| anchor.person.start);
+    let mut result: Vec<NamedReport> = Vec::new();
+    for (index, anchor) in anchors.iter().enumerate() {
+        let mut statement_start = anchor.clause.start;
+        if let Some(previous) = index.checked_sub(1).and_then(|i| anchors.get(i)) {
+            ensure!(previous.verb.end <= anchor.person.start, Mismatch);
+            if previous.clause == anchor.clause
+                && result.last().is_some_and(|report| !report.qualified)
+                && !quoted(&quote_ranges, anchor.person.start)
+            {
+                if let Some((at, ch)) = text[previous.verb.end..anchor.person.start]
+                    .char_indices()
+                    .rev()
+                    .find(|(_, ch)| matches!(ch, '，' | ','))
+                {
+                    statement_start = previous.verb.end + at + ch.len_utf8();
+                }
+            }
+        }
+        let mut end = anchor.clause.end;
+        if let Some(next) = anchors
+            .get(index + 1)
+            .filter(|next| next.clause == anchor.clause)
+        {
+            ensure!(anchor.verb.end <= next.person.start, Mismatch);
+            end = text[anchor.verb.end..next.person.start]
+                .char_indices()
+                .rev()
+                .find(|(_, ch)| matches!(ch, '，' | ','))
+                .map_or(next.person.start, |(at, _)| anchor.verb.end + at);
+        }
+        ensure!(
+            anchor.verb.end <= end && statement_start <= anchor.person.start,
+            Mismatch
+        );
+        let head = &syntax[statement_start..anchor.person.start];
+        let modifiers = &text[anchor.modifiers.clone()];
+        let nonassertive = quoted(&quote_ranges, anchor.person.start)
+            || qualified.is_match(head)
+            || qualified.is_match(modifiers)
+            || ["将", "会", "计划", "准备"]
+                .iter()
+                .any(|cue| modifiers.contains(cue))
+            || text[anchor.person.start..end]
+                .trim_end()
+                .ends_with(['?', '？']);
+        result.push(NamedReport {
+            person: text[anchor.person.clone()].to_owned(),
+            predicate: if &text[anchor.verb.clone()] == "认为" {
+                Predicate::Assessment
+            } else {
+                Predicate::Statement
+            },
+            fields: report_payload_fields(&text[anchor.verb.end..end], terms)?,
+            qualified: nonassertive,
+            statement: statement_start..end,
+        });
+    }
+    Ok(result)
+}
+
+struct ReportEvidence<'a> {
+    source: &'a Segment,
+    reports: Vec<NamedReport>,
+}
+
+pub(super) struct ReportedView<'a> {
+    evidence: Vec<ReportEvidence<'a>>,
+    same_scope: bool,
+}
+impl<'a> ReportedView<'a> {
+    pub(super) fn new(segments: &'a [Segment], meeting: &str, terms: &Terms) -> Result<Self> {
+        ensure!(
+            segments
+                .iter()
+                .filter(|source| reported_related(&source.text))
+                .try_fold(0usize, |sum, source| sum.checked_add(source.text.len()))
+                .is_some_and(|bytes| bytes <= REPORTED_BYTES),
+            Mismatch
+        );
+        let same_scope = segments.first().is_some_and(|first| {
+            segments
+                .iter()
+                .all(|source| source.meeting_id == meeting && source.run == first.run)
+        });
+        let mut evidence = Vec::new();
+        let mut count = 0usize;
+        for source in segments {
+            let reports = named_reports(&source.text, terms)?;
+            count = count
+                .checked_add(reports.len())
+                .filter(|n| *n <= REPORTED_FRAMES)
+                .ok_or_else(|| anyhow::anyhow!(Mismatch))?;
+            if !reports.is_empty() {
+                evidence.push(ReportEvidence { source, reports });
+            }
+        }
+        Ok(Self {
+            evidence,
+            same_scope,
+        })
+    }
+
+    pub(super) fn validate(&self, body: &str, sources: &[Source], terms: &Terms) -> Result<()> {
+        for candidate in named_reports(body, terms)? {
+            for field in &candidate.fields {
+                ensure!(
+                    self.same_scope
+                        && self.evidence.iter().any(|evidence| {
+                            sources.iter().any(|source| {
+                                source.segment_id == evidence.source.id
+                                    && source.revision == evidence.source.revision
+                                    && source.quote == evidence.source.text
+                                    && source.start_ms == evidence.source.start_ms
+                                    && source.end_ms == evidence.source.end_ms
+                            }) && evidence.reports.iter().any(|report| {
+                                report.person == candidate.person
+                                    && report.predicate == candidate.predicate
+                                    && report.fields.contains(field)
+                                    && (!report.qualified
+                                        || candidate.qualified
+                                            && source_body(
+                                                &evidence.source.text[report.statement.clone()],
+                                            ) == source_body(&body[candidate.statement.clone()]))
+                            })
+                        }),
+                    Mismatch
+                );
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
