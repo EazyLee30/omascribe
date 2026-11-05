@@ -1,4 +1,5 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+mod affiliation;
 #[cfg(test)]
 mod affiliation_provenance_tests;
 mod amounts;

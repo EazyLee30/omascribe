@@ -89,6 +89,18 @@ fn reported_ranges(text: &str) -> impl Iterator<Item = Range<usize>> + '_ {
             })
         })
 }
+// Keep occurrences, not the spelling legend's first occurrence per label:
+// the same literal person may have two independently observed affiliations.
+pub(super) fn reported_occurrences(text: &str) -> Result<Vec<Range<usize>>> {
+    ensure!(
+        text.len() <= REPORTED_SCAN_BYTES,
+        "机构来源名称校验超过文本预算"
+    );
+    let ranges = reported_ranges(text).take(65).collect::<Vec<_>>();
+    ensure!(ranges.len() <= 64, "机构来源名称校验超过断言预算");
+    Ok(ranges)
+}
+
 fn reported_spans(text: &str) -> ReportedSpans {
     // A large plain caption needs no reported-person protection. Avoid both a
     // regex name scan and a new rejection for unrelated long speech.

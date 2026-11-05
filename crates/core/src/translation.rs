@@ -1352,6 +1352,9 @@ pub(crate) fn source_name_mask(
 ) -> String {
     names::Names::new(terms, source).mask(body)
 }
+pub(crate) fn reported_name_occurrences(source: &str) -> Result<Vec<std::ops::Range<usize>>> {
+    names::reported_occurrences(source)
+}
 pub(crate) fn validate_reported_name_spellings(
     source: &str,
     body: &str,

@@ -98,3 +98,43 @@ fn a_generic_source6_cannot_borrow_an_institution_from_a_near_person_label() -> 
     );
     Ok(())
 }
+
+#[test]
+fn repeated_literal_person_occurrences_keep_each_observed_institution() -> Result<()> {
+    let first = ORIGINAL_SOURCES[3];
+    let other = first.replace("邓迪大学", "当迪大学");
+    // Both affiliations occur in ONE raw source: a deduplicated name legend
+    // must not erase this person's second institution occurrence.
+    let combined = format!("{first}。{other}");
+    let source = snapshot(&[&combined]);
+    ordinary(&source, &[0], first, None)?;
+    ordinary(&source, &[0], &other, None)?;
+    let separate = snapshot(&[first, &other]);
+    assert!(ordinary(&separate, &[0, 1], first, Some(&[2])).is_err());
+    Ok(())
+}
+
+#[test]
+fn qualified_affiliation_copies_do_not_authorize_unqualified_membership() -> Result<()> {
+    for qualified in [
+        format!("如果{}", ORIGINAL_SOURCES[3]),
+        format!("“{}”", ORIGINAL_SOURCES[3]),
+    ] {
+        let source = snapshot(&[&qualified]);
+        assert!(ordinary(&source, &[0], ORIGINAL_SOURCES[3], None).is_err());
+        // Conditions in the reported payload after教授 are irrelevant to the
+        // affiliation; a faithful copied affiliation wrapper stays qualified.
+        ordinary(&source, &[0], &qualified, None)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn affiliation_source_budget_counts_all_occurrences_and_total_bytes() {
+    let source = snapshot(&vec![ORIGINAL_SOURCES[3]; 65]);
+    assert!(super::affiliation::View::new(&source.segments[..64], "m").is_ok());
+    assert!(super::affiliation::View::new(&source.segments, "m").is_err());
+    let over = "x".repeat(120_001);
+    let source = snapshot(&[&over]);
+    assert!(super::affiliation::View::new(&source.segments, "m").is_err());
+}

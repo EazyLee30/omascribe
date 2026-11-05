@@ -1413,6 +1413,11 @@ fn validate_document_inner(
     } else {
         None
     };
+    let affiliations = if require_prose {
+        Some(super::affiliation::View::new(segments, meeting)?)
+    } else {
+        None
+    };
     let modals = if require_prose {
         Some(super::modal::View::new(segments, meeting, terms)?)
     } else {
@@ -1744,6 +1749,9 @@ fn validate_document_inner(
         // authoritative; this additional local veto never replaces those gates.
         if let Some(modals) = &modals {
             modals.validate(body, &sources, terms)?;
+        }
+        if let Some(affiliations) = &affiliations {
+            affiliations.validate(body, &sources)?;
         }
         if !seen.insert(body.to_string()) {
             continue;
