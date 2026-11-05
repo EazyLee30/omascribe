@@ -397,5 +397,43 @@
     }
   },
   "stable_release": "v0.3.4",
-  "v0.3.5_published": false
+  "v0.3.5_published": false,
+  "explicit_weekday_followup": {
+    "commit": "b0f0999065f7edeb17ddc2477cfe71a7f62baa59",
+    "case": "zh_explicit_this_weekday",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "cli_sha256": "2272f24c042068f9f2d0277c074588281418bd750b475752a21ab17b99947589",
+    "backend_observed": "metal",
+    "red": {
+      "commit": "13e0115b07e372283b8f991c94c5e922963990e0",
+      "passed": 5,
+      "failed": 1
+    },
+    "green_targeted_passed": 8,
+    "workspace_checks": {
+      "core_passed": 739,
+      "core_ignored": 14,
+      "integration_passed": 44,
+      "desktop_shell_passed": 4,
+      "asr_passed": 18,
+      "cli_passed": 2,
+      "strict_clippy_and_fmt": "passed"
+    },
+    "real_case": {
+      "run_count": 1,
+      "passed": true,
+      "request_started": 2,
+      "validation_rejected": 1,
+      "repaired_attempt": 2,
+      "output": "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。",
+      "source_quote": "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet.",
+      "coverage": 1,
+      "seconds": 2.326,
+      "report_sha256": "78dc9e43fc29334cf07b0ac9c349826d1d4d37f6d2cfef4037578bf1cf4315ad",
+      "last_generation_sha256": "25f1ad69923d7142b6af87a70fc34b824206578a26bd7e9d6a76e5141c919702",
+      "owned_stage_removed": true,
+      "observed_process_exits_confirmed": true
+    },
+    "limits": "The validator covers one current cited segment and one Chinese paragraph with a bounded matching future actor, predicate and weekday. It triggers the existing retry and never inserts a date. Other date omissions and the full 68 cases on this new source have not been verified."
+  }
 }
