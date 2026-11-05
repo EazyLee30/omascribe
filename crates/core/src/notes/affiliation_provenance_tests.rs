@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 // The second raw response from the sole 7842c898 trial. Original receipt:
 // artifacts/writer-zh-modal-2026-11-05/q16/
 // zh_recorded_mixed_prose_fidelity/candidate/job-1/last-generation.json
-const ACTUAL_RAW_BODY: &str = "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。  \n迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。  \n主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。  \n主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。";
+pub(super) const ACTUAL_RAW_BODY: &str = "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。  \n迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。  \n主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。  \n主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。";
 const ACTUAL_RAW_SHA256: &str = "6b2d199a121fb636919e87f939a63cd933520d6c642bc72a1b39050dda595216";
 const SOURCE6: &str =
     "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性";

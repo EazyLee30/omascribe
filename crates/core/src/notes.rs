@@ -2,6 +2,8 @@
 mod affiliation;
 #[cfg(test)]
 mod affiliation_provenance_tests;
+#[cfg(test)]
+mod affiliation_recovery_tests;
 mod amounts;
 mod attribution_roles;
 pub(crate) use amounts::normalize as normalize_money;
@@ -816,6 +818,7 @@ fn generate_inner(
         let mut completion_bridge = None;
         let mut unitless_yuan_corrections = 0;
         let mut week_qualifier_corrections = 0;
+        let mut affiliation_corrections = Vec::new();
         let normalized = prose
             .as_ref()
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -856,7 +859,39 @@ fn generate_inner(
                 checked_prose = Some(body);
                 Ok(document)
             })
-            .and_then(|text| terms.normalize_draft(&text));
+            .and_then(|text| terms.normalize_draft(&text))
+            .and_then(|draft| {
+                // Only a fresh ordinary draft may receive this one-shot,
+                // own-citation spelling repair. Prepared copy ranges and
+                // incremental/human documents never inherit that permission.
+                if delta.is_some()
+                    || prepared_evidence.is_some()
+                    || relation_repair.is_some()
+                    || translation_repair.is_some()
+                {
+                    return Ok(draft);
+                }
+                let restored = validation::restore_generated_affiliations(
+                    &draft,
+                    snapshot,
+                    &context.segments,
+                )?;
+                if !restored.edits.is_empty() {
+                    use sha2::{Digest, Sha256};
+                    affiliation_corrections = restored.edits.iter().map(|edit| json!({
+                        "section_index":edit.section_index,
+                        "body_range":edit.body_range,
+                        "source_id":edit.source_id,
+                        "source_revision":edit.source_revision,
+                        "source_suffix_range":edit.source_suffix_range,
+                        "suffix_sha256":format!("{:x}",Sha256::digest(edit.suffix.as_bytes())),
+                    })).collect();
+                    checked_prose = Some(restored.body);
+                    // No transformed bytes can inherit an exact-copy bridge.
+                    completion_bridge = None;
+                }
+                Ok(restored.draft)
+            });
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
         let validation = normalized
             .as_ref()
@@ -883,6 +918,7 @@ fn generate_inner(
         attempts.push(json!({
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "week_qualifier_corrections":week_qualifier_corrections,
+            "affiliation_corrections":affiliation_corrections,
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
