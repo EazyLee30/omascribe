@@ -362,7 +362,8 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
                 || word.eq_ignore_ascii_case("omascribe");
             let concept = note.kind != "term"
                 && !identifier
-                && ["date", "test", "budget"].contains(&word.to_ascii_lowercase().as_str());
+                && ["date", "test", "budget", "recording"]
+                    .contains(&word.to_ascii_lowercase().as_str());
             let named = identifier
                 || !concept
                     && (keyword_line
