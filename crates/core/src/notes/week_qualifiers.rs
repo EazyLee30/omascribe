@@ -203,8 +203,49 @@ pub(crate) fn validate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::modal_provenance_tests::{ordinary, snapshot};
+
     const SOURCE: &str = "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.";
     const BODY: &str = "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。";
+    // Public synthetic full68 inputs and first drafts at 666f37e, cases
+    // zh_explicit_this_weekday, zh_explicit_next_weekday,
+    // zh_absolute_weekday_scope, and zh_unqualified_weekday.
+    const THIS_WEEK: &str = "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet.";
+    const NEXT_WEEK: &str = "Riley will test keyboard accessibility next Tuesday. No accessibility test has been completed yet.";
+    const BARE_DRAFT: &str = "Riley 将在周二测试键盘可访问性。尚未完成任何可访问性测试。";
+    const NEXT_DRAFT: &str = "Riley 将在下周二进行键盘可访问性测试。尚未完成任何可访问性测试。";
+    const ABSOLUTE: &str = "The meeting date is Tuesday, 2024-5-7.";
+    const ABSOLUTE_DRAFT: &str = "会议日期是2024年5月7日，星期二。";
+
+    #[test]
+    fn actual_unqualified_draft_cannot_drop_a_cited_explicit_week() {
+        let error = ordinary(&snapshot(&[THIS_WEEK]), &[0], BARE_DRAFT, None)
+            .expect_err("the recorded draft lost the source's explicit week");
+        assert!(error.to_string().contains("stated week"), "{error:#}");
+        let error = ordinary(&snapshot(&[NEXT_WEEK]), &[0], BARE_DRAFT, None)
+            .expect_err("the same loss must be caught for next week");
+        assert!(error.to_string().contains("stated week"), "{error:#}");
+    }
+
+    #[test]
+    fn cited_week_controls_keep_their_exact_prose_and_quotes() -> Result<()> {
+        let corrected = BARE_DRAFT.replacen("周二", "本周二", 1);
+        for (source, body) in [
+            (THIS_WEEK, corrected.as_str()),
+            (NEXT_WEEK, NEXT_DRAFT),
+            (ABSOLUTE, ABSOLUTE_DRAFT),
+            (SOURCE, BARE_DRAFT),
+        ] {
+            let sections = ordinary(&snapshot(&[source]), &[0], body, None)?;
+            assert_eq!(sections.len(), 1);
+            assert_eq!(sections[0].text, body);
+            assert_eq!(sections[0].sources.len(), 1);
+            assert_eq!(sections[0].sources[0].quote, source);
+        }
+        assert!(ordinary(&snapshot(&[SOURCE]), &[0], &corrected, None).is_err());
+        assert!(ordinary(&snapshot(&[THIS_WEEK]), &[0], NEXT_DRAFT, None).is_err());
+        Ok(())
+    }
 
     #[test]
     fn actual_added_week_is_rejected_then_only_its_modifier_is_removed() {
