@@ -524,19 +524,30 @@ export async function mountSettings(
           const selected = acceleration.components.find(
             (entry) => entry.component.id === id && entry.version === version,
           );
-          if (!selected) {
+          const unavailable = acceleration.unavailable?.find(
+            (entry) => entry.id === id && entry.version === version,
+          );
+          if (!selected && !unavailable) {
             await pollModels();
             return;
           }
           if (
             !(await confirmDelete(
-              `${tr("移除组件", "Remove component", "移除元件")} · ${selected.component.name} · ${selected.version}`,
-              tr(
-                "移除后需要重新下载和测试才能再次使用。模型与会议内容会保留。",
-                "Download and test it again to use it after removal. Models and meetings will be kept.",
-                "移除後需要重新下載及測試才能再次使用。模型與會議內容會保留。",
-              ),
-              tr("移除", "Remove", "移除"),
+              `${unavailable ? tr("清理不可用组件", "Clean up unavailable component", "清理無法使用的元件") : tr("移除组件", "Remove component", "移除元件")} · ${selected?.component.name ?? unavailable?.id} · ${selected?.version ?? unavailable?.version}`,
+              unavailable
+                ? tr(
+                    "此组件信息缺失或损坏，当前无法使用。清理只移除该版本的组件文件。模型与会议内容会保留。",
+                    "This component's information is missing or damaged, so it cannot be used. Cleanup removes only this version's component files. Models and meetings will be kept.",
+                    "此元件資訊缺失或損壞，目前無法使用。清理只移除此版本的元件檔案。模型與會議內容會保留。",
+                  )
+                : tr(
+                    "移除后需要重新下载和测试才能再次使用。模型与会议内容会保留。",
+                    "Download and test it again to use it after removal. Models and meetings will be kept.",
+                    "移除後需要重新下載及測試才能再次使用。模型與會議內容會保留。",
+                  ),
+              unavailable
+                ? tr("清理", "Clean up", "清理")
+                : tr("移除", "Remove", "移除"),
             ))
           )
             return;

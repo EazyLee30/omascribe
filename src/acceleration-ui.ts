@@ -38,6 +38,12 @@ export interface ComponentCatalog {
       error: string | null;
     } | null;
   }[];
+  unavailable?: {
+    id: string;
+    version: string;
+    reason: "metadata_missing" | "metadata_invalid";
+    busy: boolean;
+  }[];
 }
 export function supportsAccelerationComponents(
   hardware: Hardware | null,
@@ -124,6 +130,12 @@ export function accelerationBody(
       : backend === "vulkan" &&
         ([...vendors].some((v) => ["amd", "intel"].includes(v)) ||
           (cudaOld && vendors.has("nvidia")));
+  const unavailableCards = (catalog.unavailable ?? [])
+    .map(
+      ({ id, version, reason, busy }) =>
+        `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(id)}</h3><span class="badge">${tr("不可用", "Unavailable", "無法使用")}</span></div><p>${tr("版本", "Version", "版本")} · ${esc(version)}</p><p class="inline-error">${reason === "metadata_missing" ? tr("组件信息缺失，当前无法使用。", "Component information is missing. This component cannot be used.", "元件資訊缺失，目前無法使用。") : tr("组件信息损坏，当前无法使用。", "Component information is damaged. This component cannot be used.", "元件資訊損壞，目前無法使用。")}</p><p class="setting-help">${tr("清理后可重新下载组件。模型与会议内容会保留。", "Clean up these files, then download the component again. Models and meetings will be kept.", "清理後可重新下載元件。模型與會議內容會保留。")}</p></div><div class="model-actions"><button class="subtle" data-component-action="remove" data-id="${esc(id)}" data-version="${esc(version)}" ${busy || testing ? "disabled" : ""}>${glyph("trash")}${tr("清理", "Clean up", "清理")}</button></div></article>`,
+    )
+    .join("");
   return `<div class="settings-section-title"><h2>${tr("显卡加速组件", "GPU acceleration", "顯示卡加速元件")}</h2><button class="outline" data-component-action="check">${tr("检查可用组件", "Check components", "檢查可用元件")}</button></div>
   <p class="setting-help">${tr("用于本地翻译与纪要，组件独立下载。通过本机模型测试且更快后，自动模式才会使用显卡。", "For local translation and minutes. Components download separately. Automatic mode uses the GPU only after a successful, faster local model test.", "元件獨立下載，不增加主安裝包體積；依顯示卡推薦，通過本機模型驗證後才啟用。")}</p>
   <div class="settings-group">${deviceModels.length ? deviceModels.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
@@ -183,5 +195,5 @@ export function accelerationBody(
             },
           )
           .join("")
-  }${failure}${comparison}`;
+  }${unavailableCards}${failure}${comparison}`;
 }
