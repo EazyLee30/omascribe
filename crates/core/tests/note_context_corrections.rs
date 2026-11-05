@@ -1809,12 +1809,91 @@ fn mixed_name_spelling_repairs_a_paraphrase_but_only_whole_source_minutes_become
 }
 
 #[test]
+fn paraphrase_name_spelling_accepts_consistent_current_multi_source_evidence() -> Result<()> {
+    for case in ["unrelated", "repeated_name", "different_entities"] {
+        for reverse in [false, true] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let body = if case == "different_entities" {
+                "ALMA SCRIBE的修复尚未完成，PixelLedger的测试仍未完成，预算还没有批准。"
+            } else {
+                "ALMA SCRIBE的修复尚未完成，预算还没有批准。"
+            };
+            let expected = if case == "different_entities" {
+                "OmaScribe的修复尚未完成，PixelLedger的测试仍未完成，预算还没有批准。"
+            } else {
+                "OmaScribe的修复尚未完成，预算还没有批准。"
+            };
+            let (note, seeded) =
+                clean_name_paraphrase(&engine, "OmaScribe尚未修复，预算仍未批准。", body)?;
+            let other_text = match case {
+                "unrelated" => "麦克风权限仍待检查。",
+                "repeated_name" => "OmaScribe尚未修复，预算仍未批准。",
+                "different_entities" => "PixelLedger的测试仍未完成。",
+                _ => unreachable!(),
+            };
+            let other = segment(&seeded.meeting.id, 2, other_text);
+            engine.store.lock().unwrap().save_segment(&other)?;
+            let snapshot = engine.snapshot(&seeded.meeting.id)?;
+            let mut paragraph = snapshot.suggestions[0].clone();
+            paragraph.sources.push(source(&other));
+            if reverse {
+                paragraph.sources.reverse();
+            }
+            engine.store.lock().unwrap().commit_document(
+                &snapshot,
+                &snapshot.segments,
+                2,
+                vec![paragraph],
+                false,
+            )?;
+            let before = engine.snapshot(&seeded.meeting.id)?;
+            let old_history = name_paraphrase_history(&engine, &before.meeting.id)?;
+            let content = if case == "different_entities" {
+                "OmaScribe\nPixelLedger"
+            } else {
+                "OmaScribe"
+            };
+
+            engine.save_note(&before.meeting.id, Some(note.id), content, "document", 0)?;
+            let after = engine.snapshot(&before.meeting.id)?;
+            assert_eq!(
+                after.suggestions[0].text, expected,
+                "{case}, reverse={reverse}"
+            );
+            assert_eq!(after.suggestions[0].id, before.suggestions[0].id);
+            assert_eq!(after.suggestions[0].status, "pending");
+            assert!(after.suggestions[0].stale);
+            assert!(after.meeting.notes_fingerprint.is_empty());
+            assert!(notes::needs_update(&after));
+            assert_eq!(after.meeting.notes_cursor, before.meeting.notes_cursor);
+            assert_eq!(
+                serde_json::to_value(&after.suggestions[0].sources)?,
+                serde_json::to_value(&before.suggestions[0].sources)?
+            );
+            assert_eq!(
+                serde_json::to_value(&after.segments)?,
+                serde_json::to_value(&before.segments)?
+            );
+            let history = name_paraphrase_history(&engine, &before.meeting.id)?;
+            assert_eq!(history.len(), old_history.len() + 1);
+            let archived: Vec<Suggestion> = serde_json::from_str(history.last().unwrap())?;
+            assert_eq!(archived[0].text, body);
+            assert_eq!(
+                serde_json::to_value(&archived[0].sources)?,
+                serde_json::to_value(&before.suggestions[0].sources)?
+            );
+            assert_eq!(inference_jobs(&engine)?, 0);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn paraphrase_name_spelling_never_borrows_missing_ambiguous_or_protected_evidence() -> Result<()> {
     for guard in [
         "unspoken",
         "uncited",
-        "cross_source",
-        "duplicate",
         "ambiguous",
         "accepted",
         "stale",
@@ -1829,8 +1908,6 @@ fn paraphrase_name_spelling_never_borrows_missing_ambiguous_or_protected_evidenc
         let engine = Engine::open(root.path().into())?;
         let source_text = if ["unspoken", "uncited"].contains(&guard) {
             "麦克风尚未修复，预算仍未批准。"
-        } else if guard == "cross_source" {
-            "PixelLedger尚未修复，预算仍未批准。"
         } else {
             "OmaScribe尚未修复，预算仍未批准。"
         };
@@ -1862,12 +1939,9 @@ fn paraphrase_name_spelling_never_borrows_missing_ambiguous_or_protected_evidenc
                     rusqlite::params![raw.id, serde_json::to_string(&raw)?],
                 )?;
             }
-            "uncited" | "cross_source" | "duplicate" => {
+            "uncited" => {
                 let other = segment(&seeded.meeting.id, 2, "OmaScribe尚未修复，预算仍未批准。");
                 engine.store.lock().unwrap().save_segment(&other)?;
-                if guard != "uncited" {
-                    old.sources.push(source(&other));
-                }
             }
             "unspoken" | "ambiguous" => {}
             _ => unreachable!(),
@@ -1898,6 +1972,62 @@ fn paraphrase_name_spelling_never_borrows_missing_ambiguous_or_protected_evidenc
         );
         assert_eq!(inference_jobs(&engine)?, 0, "{guard}");
     }
+    Ok(())
+}
+
+#[test]
+fn paraphrase_name_spelling_rejects_an_alias_claimed_by_two_cited_entities() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    engine.save_library_entry(explicit_term("CedarLedger", "CedarLedge"))?;
+    engine.save_library_entry(explicit_term("NimbusArchive", "CedarLedge"))?;
+    let (note, seeded) = clean_name_paraphrase(
+        &engine,
+        "CedarLedger尚未修复，预算仍未批准。",
+        "CedarLedge的修复尚未完成，预算还没有批准。",
+    )?;
+    let other = segment(&seeded.meeting.id, 2, "NimbusArchive仍待复核。");
+    engine.store.lock().unwrap().save_segment(&other)?;
+    let snapshot = engine.snapshot(&seeded.meeting.id)?;
+    let mut paragraph = snapshot.suggestions[0].clone();
+    paragraph.sources.push(source(&other));
+    engine.store.lock().unwrap().commit_document(
+        &snapshot,
+        &snapshot.segments,
+        2,
+        vec![paragraph],
+        false,
+    )?;
+    let before = engine.snapshot(&seeded.meeting.id)?;
+    let old_history = name_paraphrase_history(&engine, &before.meeting.id)?;
+    let old_terms = engine.terminology(&before.meeting.id)?.fingerprint();
+    // The unrelated new name changes the spelling context, but cannot resolve
+    // which of the two explicitly declared entities owns the shared alias.
+    engine.save_note(
+        &before.meeting.id,
+        Some(note.id),
+        "CedarLedger\nNimbusArchive\nOmaScribe",
+        "document",
+        0,
+    )?;
+    assert_ne!(
+        engine.terminology(&before.meeting.id)?.fingerprint(),
+        old_terms
+    );
+    let after = engine.snapshot(&before.meeting.id)?;
+    assert_eq!(
+        serde_json::to_value(&after.suggestions)?,
+        serde_json::to_value(&before.suggestions)?
+    );
+    assert_eq!(
+        serde_json::to_value(&after.segments)?,
+        serde_json::to_value(&before.segments)?
+    );
+    assert_eq!(
+        name_paraphrase_history(&engine, &before.meeting.id)?,
+        old_history
+    );
+    assert_eq!(inference_jobs(&engine)?, 0);
     Ok(())
 }
 
