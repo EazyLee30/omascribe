@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 // These controls call the PUBLIC ordinary validation path, not that experiment.
 const ACTUAL_BODY: &str = "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。音乐在主舞台已经结束，但嘉年华的某些部分仍将持续演奏至深夜。";
 const ACTUAL_BODY_SHA256: &str = "055507d4f1538fc37021c90c4263cf1ad8eadf7ca3aee594c9349513c18afedf";
-const ORIGINAL_SOURCES: [&str; 5] = [
+pub(super) const ORIGINAL_SOURCES: [&str; 5] = [
     "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
     "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
     "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
@@ -23,7 +23,7 @@ const ONLY_END_MODAL: &str = "音乐在主舞台可能已经结束，但嘉年�
 const ONLY_CONTINUATION_MODAL: &str =
     "音乐在主舞台已经结束，但嘉年华仍可能有部分区域持续演奏至深夜。";
 
-fn snapshot(texts: &[&str]) -> Snapshot {
+pub(super) fn snapshot(texts: &[&str]) -> Snapshot {
     Snapshot {
         meeting: Meeting {
             id: "m".into(),
@@ -66,7 +66,7 @@ fn snapshot(texts: &[&str]) -> Snapshot {
 // Same production parser, checked prose, document folding/normalization and
 // final name/fact/source/language gates. No Engine, model or replacement gate.
 // Explicit citation indices only narrow the final paragraph's declared sources.
-fn ordinary(
+pub(super) fn ordinary(
     snapshot: &Snapshot,
     selected: &[usize],
     raw: &str,

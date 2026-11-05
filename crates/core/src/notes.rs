@@ -1,4 +1,6 @@
 //! Automatic meeting-document pipeline: retrieve → compose → validate → transactional merge.
+#[cfg(test)]
+mod affiliation_provenance_tests;
 mod amounts;
 mod attribution_roles;
 pub(crate) use amounts::normalize as normalize_money;
