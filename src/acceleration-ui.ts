@@ -3,6 +3,7 @@ import { bytes, esc, glyph, tr } from "./workspace-ui";
 
 export interface ComponentCatalog {
   state: string;
+  preview_available?: boolean;
   verification?: {
     state: string;
     component_id: string | null;
@@ -27,6 +28,7 @@ export interface ComponentCatalog {
       license: string;
     };
     version: string;
+    preview?: boolean;
     present: boolean;
     installed: boolean;
     downloadable: boolean;
@@ -124,6 +126,11 @@ export function accelerationBody(
     ? `<p class="setting-help">${tr("本机短文本测试", "Local short-text test", "本機短文測試")} · CPU ${(report.cpu.total_ms / 1000).toFixed(2)} s · GPU ${(report.gpu.total_ms / 1000).toFixed(2)} s${report.gpu.peak_rss_mib !== null ? ` · ${tr("进程内存峰值", "Peak process memory", "程序記憶體峰值")} ${report.gpu.peak_rss_mib} MiB` : ""}</p>`
     : "";
   const vendors = new Set(devices.map((d) => d.vendor));
+  const offerPreview =
+    catalog.preview_available &&
+    h.arch === "x86_64" &&
+    h.gpus?.status === "detected" &&
+    ["nvidia", "amd", "intel"].some((vendor) => vendors.has(vendor));
   const recommended = (backend: string) =>
     backend === "cuda"
       ? hasNvidia && cudaSupported
@@ -141,7 +148,8 @@ export function accelerationBody(
   <div class="settings-group">${deviceModels.length ? deviceModels.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
   ${cudaUnknown ? `<p class="setting-help">${tr("CUDA 驱动兼容性未确认，下载前可重新检测；安装后仍需通过本机测试。", "CUDA driver compatibility is unconfirmed. Detect again before downloading; a local test is still required after installation.", "CUDA 驅動程式相容性未確認，下載前可重新偵測；安裝後仍需通過本機測試。")}</p>` : ""}
   ${cudaOld ? `<p class="inline-error">${tr("当前 NVIDIA 驱动仅支持 CUDA", "The installed NVIDIA driver supports CUDA", "目前 NVIDIA 驅動程式僅支援 CUDA")} ${Math.floor(cudaVersion! / 1000)}.${Math.floor((cudaVersion! % 1000) / 10)}。${tr("此 CUDA 组件需要支持 CUDA 12 的驱动。请更新显卡驱动，或尝试 Vulkan；无需安装 CUDA 开发工具包。", "This CUDA component needs a CUDA 12 capable driver. Update the GPU driver or test Vulkan. No CUDA development toolkit is required.", "此 CUDA 元件需要支援 CUDA 12 的驅動程式。請更新顯示卡驅動程式或測試 Vulkan，不需安裝 CUDA 開發工具包。")}</p>` : ""}
-  ${catalog.state === "not_published" ? `<p class="setting-help">${tr("GPU 组件尚未发布。显卡检测已完成；签名组件发布后可在这里检查并选择下载，当前继续使用 CPU。", "GPU components have not been published yet. Hardware detection is complete. Check here to choose a signed download when available; CPU remains active.", "GPU 元件尚未發布。硬體已偵測完成；簽章元件發布後可在此檢查及選擇下載，目前繼續使用 CPU。")}</p>` : ""}
+  ${catalog.state === "not_published" ? `<p class="setting-help">${tr("当前组件目录尚未发布。发布后可在此检查签名组件。", "The selected component catalog has not been published yet. Check here for signed components when available.", "目前的元件目錄尚未發布。發布後可在此檢查簽章元件。")}</p>` : ""}
+  ${offerPreview ? `<div class="settings-row"><p class="setting-help">${tr("可检查已签名的预览组件。检查只读取清单，下载和本机测试需单独操作。", "Check for signed preview components. Download and local testing are separate steps.", "可檢查已簽章的預覽元件。檢查只讀取清單，下載和本機測試需分開操作。")}</p><button class="outline" data-component-action="check-preview">${tr("检查预览组件", "Check preview components", "檢查預覽元件")}</button></div>` : ""}
   ${
     catalog.state !== "ready"
       ? `<p class="setting-help">${tr("检查组件目录只获取签名清单，不上传硬件信息或会议内容。", "Checking fetches only a signed catalog. Hardware information and meeting content are not uploaded.", "檢查只取得簽章清單，不上傳硬體資訊及會議內容。")}</p>`
@@ -150,6 +158,7 @@ export function accelerationBody(
             ({
               component: c,
               version,
+              preview = false,
               present,
               installed,
               downloadable = true,
@@ -170,7 +179,7 @@ export function accelerationBody(
                   ? ""
                   : !installed
                     ? downloadable
-                      ? `<button class="outline" data-component-action="download" data-id="${esc(c.id)}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>`
+                      ? `<button class="outline" data-component-action="download" data-id="${esc(c.id)}" data-version="${esc(version)}" data-preview="${preview}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>`
                       : ""
                     : !compatible
                       ? ""
@@ -185,13 +194,21 @@ export function accelerationBody(
               const incompleteHint = incomplete
                 ? `<p class="inline-error">${tr("安装不完整，请移除后重新下载。", "Installation is incomplete. Remove it, then download again.", "安裝不完整，請移除後重新下載。")}</p>`
                 : "";
-              const versionLabel = downloadable
-                ? ""
-                : `<p class="setting-help">${tr("保留版本", "Retained version", "保留版本")} · ${esc(version)}</p>`;
+              const versionLabel =
+                downloadable && !preview
+                  ? ""
+                  : `<p class="setting-help">${downloadable ? tr("预览版本", "Preview version", "預覽版本") : tr("保留版本", "Retained version", "保留版本")} · ${esc(version)}</p>`;
+              const recommendation =
+                recommended(c.backend) && downloadable
+                  ? `<span class="badge selected">${preview ? tr("推荐测试", "Recommended to test", "推薦測試") : tr("推荐", "Recommended", "推薦")}</span>`
+                  : "";
+              const previewBadge = preview
+                ? `<span class="badge">${tr("预览", "Preview", "預覽")}</span>`
+                : "";
               const compatibilityHint = compatible
                 ? ""
                 : `<p class="setting-help">${tr("此版本适用于旧版应用。请移除并下载当前组件。", "This version belongs to an earlier app. Remove it and download the current component.", "此版本適用於舊版應用程式。請移除並下載目前元件。")}</p>`;
-              return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${recommended(c.backend) && downloadable ? `<span class="badge selected">${tr("推荐", "Recommended", "推薦")}</span>` : ""}<span class="badge">${installed ? statusLabel(c.id, version) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${versionLabel}${compatibilityHint}${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${incompleteHint}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${action}${remove}</div></article>`;
+              return `<article class="model-card"><div class="model-icon">${glyph("models")}</div><div class="model-info"><div class="model-title"><h3>${esc(c.name)}</h3>${previewBadge}${recommendation}<span class="badge">${installed ? statusLabel(c.id, version) : esc(c.backend.toUpperCase())}</span></div><p>${bytes(c.archive.bytes)} · ${esc(c.license)}</p>${versionLabel}${compatibilityHint}${busy ? `<progress max="${d.total}" value="${d.downloaded}"></progress><small>${bytes(d.downloaded)} / ${bytes(d.total)}</small>` : ""}${incompleteHint}${d?.error ? `<p class="inline-error">${tr("组件下载或校验失败，可以重试。", "Component download or verification failed. You can retry.", "元件下載或驗證失敗，可重試。")}</p>` : ""}</div><div class="model-actions">${action}${remove}</div></article>`;
             },
           )
           .join("")

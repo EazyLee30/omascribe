@@ -499,18 +499,23 @@ export async function mountSettings(
       button.disabled = true;
       try {
         const kind = button.dataset.componentAction;
-        if (kind === "check") {
+        if (kind === "check" || kind === "check-preview") {
           if (!(await allowDownload())) return;
           acceleration = await invoke<ComponentCatalog>(
             "check_acceleration_components",
+            kind === "check-preview" ? { preview: true } : undefined,
           );
           const region = root.querySelector("#acceleration-components");
           if (region && hardware)
             region.innerHTML = accelerationBody(hardware, acceleration);
         } else if (kind === "download") {
+          const { id, version, preview } = button.dataset;
+          if (!id || !version) return;
           if (!(await allowDownload())) return;
           await invoke("download_acceleration_component", {
-            id: button.dataset.id,
+            id,
+            version,
+            preview: preview === "true",
           });
         } else if (kind === "cancel") {
           await invoke("cancel_acceleration_download", {

@@ -89,15 +89,32 @@ try {
           devices: [{ name: "Fixture GPU", vendor: "nvidia" }],
         },
       };
+      let allowDownloads = false;
+      let policyWait;
+      const previewEntry = {
+        component: {
+          id: "cuda-" + platform + "-x86_64", name: "Fixture CUDA", backend: "cuda",
+          archive: { bytes: 1024 }, license: "fixture",
+        },
+        version: "acceleration-ci-40367160891", preview: true, present: false,
+        installed: false, downloadable: true, compatible: true, download: null,
+      };
       window.cleanupInvoke = async (command, args) => {
         calls.push({ command, args });
         switch (command) {
           case "get_preferences": return structuredClone(prefs);
-          case "get_network_policy": return { allow_model_downloads: false };
+          case "get_network_policy":
+            await policyWait;
+            return { allow_model_downloads: allowDownloads };
           case "diagnostics": return { version: "fixture", worker_ready: true, server_ready: true };
           case "model_status": return [];
           case "hardware_profile": return structuredClone(hardware);
           case "acceleration_components": return structuredClone(catalog);
+          case "check_acceleration_components":
+            catalog.state = args?.preview ? "ready" : "not_published";
+            catalog.components = args?.preview ? [previewEntry] : [];
+            return structuredClone(catalog);
+          case "download_acceleration_component": return;
           case "remove_acceleration_component": return;
           default: throw new Error(`Unexpected cleanup IPC: ${command}`);
         }
@@ -116,11 +133,12 @@ try {
         await settle();
       };
       const root = document.querySelector("#settings");
-      const handle = await Settings.mountSettings(root, {
+      const mount = () => Settings.mountSettings(root, {
         section: "models", toast: (...args) => toasts.push(args),
         back: async () => {}, language: async () => {}, display: async () => {},
         device: () => {},
       });
+      const handle = await mount();
       const cards = () => [...root.querySelectorAll("#acceleration-components article")];
       const card = (version) => cards().find((entry) => entry.textContent.includes(version));
       const snapshot = () => cards().map((entry) => ({
@@ -212,14 +230,61 @@ try {
       await handle.close();
       await close(closedDialog, "delete");
       closed.calls = structuredClone(removals());
-      return {
+      const cleanup = {
         id, states, staleActive, busy, testing, canceled, accepted, healthy, closed,
-        timersAfterClose: intervals.size, toasts,
+        timersAfterClose: intervals.size, toasts: [...toasts],
         policyOrNetworkCalls: calls.filter((call) => [
           "get_network_policy", "check_acceleration_components", "download_acceleration_component",
           "verify_acceleration", "disable_acceleration",
         ].includes(call.command)),
       };
+
+      calls.length = 0;
+      catalog.state = "catalog_required";
+      catalog.components = [];
+      catalog.unavailable = [];
+      catalog.preview_available = true;
+      const previewHandle = await mount();
+      const networkActions = () => calls.filter(({ command }) => [
+        "check_acceleration_components", "download_acceleration_component", "verify_acceleration",
+      ].includes(command));
+      const button = (action) => root.querySelector('[data-component-action="' + action + '"]');
+      await tick();
+      const beforeCheck = { text: button("check-preview")?.textContent, actions: networkActions() };
+      button("check-preview")?.click();
+      await settle();
+      const denied = networkActions();
+      allowDownloads = true;
+      root.querySelector('.settings-nav [data-section="models"]')?.click();
+      await settle();
+      button("check")?.click();
+      await settle();
+      button("check-preview")?.click();
+      await settle();
+      const checked = {
+        actions: networkActions(),
+        recommendation: cards()[0]?.querySelector(".badge.selected")?.textContent,
+        text: cards()[0]?.textContent,
+      };
+
+      // A cache refresh swaps the rendered card while permission is pending.
+      // The user action must still carry the original preview identity.
+      let releasePolicy;
+      policyWait = new Promise((resolve) => { releasePolicy = resolve; });
+      button("download")?.click();
+      await settle();
+      const stableEntry = { ...previewEntry, version: "acceleration-stable-fixture", preview: false };
+      catalog.preview_available = false;
+      catalog.components = [stableEntry];
+      await tick();
+      const stableShown = !button("check-preview") && button("download")?.dataset.version;
+      releasePolicy();
+      await settle();
+      button("download")?.click();
+      await settle();
+      const preview = { beforeCheck, denied, checked, stableShown, actions: networkActions() };
+      await previewHandle.close();
+      return { ...cleanup, preview };
     }, platform);
     console.log(JSON.stringify({ platform, observed }));
     check(`${platform} unavailable cards survive remote catalog states`, () => {
@@ -273,6 +338,26 @@ try {
       assert.equal(observed.timersAfterClose, 0);
       assert.deepEqual(observed.policyOrNetworkCalls, []);
       assert.deepEqual(observed.toasts, []);
+      assert.deepEqual(pageErrors, []);
+    });
+    check(`${platform} preview is explicit and download keeps the rendered channel and version`, () => {
+      const { beforeCheck, denied, checked, stableShown, actions } = observed.preview;
+      assert.match(beforeCheck.text, /Check preview components/);
+      assert.deepEqual(beforeCheck.actions, []);
+      assert.deepEqual(denied, []);
+      assert.deepEqual(checked.actions.map(({ command }) => command), [
+        "check_acceleration_components", "check_acceleration_components",
+      ]);
+      assert.equal(checked.actions[0].args, undefined);
+      assert.deepEqual(checked.actions[1].args, { preview: true });
+      assert.equal(checked.recommendation, "Recommended to test");
+      assert.match(checked.text, /Preview version.*acceleration-ci-40367160891/);
+      assert.equal(stableShown, "acceleration-stable-fixture");
+      const id = "cuda-" + platform + "-x86_64";
+      assert.deepEqual(actions.slice(2), [
+        { command: "download_acceleration_component", args: { id, version: "acceleration-ci-40367160891", preview: true } },
+        { command: "download_acceleration_component", args: { id, version: "acceleration-stable-fixture", preview: false } },
+      ]);
       assert.deepEqual(pageErrors, []);
     });
     await page.close();

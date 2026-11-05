@@ -19,15 +19,20 @@ use std::{
 
 const INDEX_URL: &str =
     "https://github.com/EazyLee30/omascribe/releases/download/acceleration-v1/index.json";
+const PREVIEW_VERSION: &str = "acceleration-ci-40367160891";
 const MAX_INDEX: u64 = 512 * 1024;
 const MAX_UNPACKED: u64 = 4 * 1024 * 1024 * 1024;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum CatalogChannel {
     Stable,
     Candidate(String),
 }
 impl CatalogChannel {
+    fn preview() -> Self {
+        Self::Candidate(PREVIEW_VERSION.into())
+    }
+
     fn parse(candidate: Option<&str>) -> Result<Self> {
         match candidate {
             None => Ok(Self::Stable),
@@ -110,6 +115,7 @@ pub struct Component {
 pub struct Status {
     pub component: Component,
     pub version: String,
+    pub preview: bool,
     pub present: bool,
     pub installed: bool,
     pub downloadable: bool,
@@ -119,6 +125,7 @@ pub struct Status {
 #[derive(Serialize)]
 pub struct CatalogStatus {
     pub state: String,
+    pub preview_available: bool,
     pub components: Vec<Status>,
     pub unavailable: Vec<UnavailableComponent>,
     pub verification: crate::acceleration::Status,
@@ -291,6 +298,76 @@ fn cached_index_for(
     let index = channel.verify(&envelope, key)?;
     Ok((envelope, index))
 }
+
+fn offers_preview(channel: &CatalogChannel, host: &str, current: Option<&Index>) -> bool {
+    matches!(channel, CatalogChannel::Stable)
+        && matches!(host, "windows-x86_64" | "linux-x86_64")
+        && !current.is_some_and(|index| index.components.iter().any(|c| c.target == host))
+}
+
+fn catalog_for_display(
+    root: &Path,
+    primary: &CatalogChannel,
+    host: &str,
+    key: &str,
+) -> (Option<Index>, bool) {
+    let read = |channel| {
+        cached_index_for(root, channel, key)
+            .ok()
+            .map(|(_, index)| index)
+    };
+    let current = read(primary);
+    if offers_preview(primary, host, current.as_ref()) {
+        (read(&CatalogChannel::preview()), true)
+    } else {
+        (current, false)
+    }
+}
+
+fn requested_channel(
+    root: &Path,
+    primary: &CatalogChannel,
+    host: &str,
+    key: &str,
+    preview: bool,
+) -> Result<CatalogChannel> {
+    if !preview {
+        return Ok(primary.clone());
+    }
+    let current = cached_index_for(root, primary, key)
+        .ok()
+        .map(|(_, index)| index);
+    if !offers_preview(primary, host, current.as_ref()) {
+        bail!("Preview components are unavailable; refresh the component list");
+    }
+    Ok(CatalogChannel::preview())
+}
+
+fn requested_download(
+    root: &Path,
+    primary: &CatalogChannel,
+    host: &str,
+    key: &str,
+    id: &str,
+    version: Option<&str>,
+    preview: bool,
+) -> Result<(SignedIndex, Index, Component)> {
+    if preview && version != Some(PREVIEW_VERSION) {
+        bail!("Preview component version changed; refresh the component list");
+    }
+    let channel = requested_channel(root, primary, host, key, preview)?;
+    let (envelope, index) = cached_index_for(root, &channel, key)?;
+    if version.is_some_and(|expected| expected != index.version) {
+        bail!("Component version changed; refresh the component list");
+    }
+    let component = index
+        .components
+        .iter()
+        .find(|c| c.id == id && c.target == host)
+        .context("Unknown component for this platform")?
+        .clone();
+    Ok((envelope, index, component))
+}
 fn read_limited(path: &Path, max: u64) -> Result<Vec<u8>> {
     let mut bytes = vec![];
     File::open(path)?.take(max + 1).read_to_end(&mut bytes)?;
@@ -407,16 +484,20 @@ fn installed(root: &Path, index: &Index, component: &Component) -> bool {
 
 impl Engine {
     pub fn acceleration_components(&self) -> CatalogStatus {
-        catalog_status(
-            self,
-            cached_index(&self.root).ok().map(|(_, index)| index),
-            |id, version| saved_index(&self.root, id, version),
-        )
+        let (current, preview_available) = CatalogChannel::selected()
+            .map(|primary| catalog_for_display(&self.root, &primary, &target(), &public_key()))
+            .unwrap_or_default();
+        catalog_status(self, current, preview_available, |id, version| {
+            saved_index(&self.root, id, version)
+        })
     }
     /// Explicit user action. Fetches only the signed catalog, never uploads inventory or content.
-    pub fn check_acceleration_components(&self) -> Result<CatalogStatus> {
+    pub fn check_acceleration_components(&self, preview: bool) -> Result<CatalogStatus> {
         self.require_model_network()?;
-        let channel = CatalogChannel::selected()?;
+        let primary = CatalogChannel::selected()?;
+        let host = target();
+        let key = public_key();
+        let channel = requested_channel(&self.root, &primary, &host, &key, preview)?;
         let response = ureq::AgentBuilder::new()
             .timeout_connect(Duration::from_secs(10))
             .timeout_read(Duration::from_secs(20))
@@ -424,7 +505,7 @@ impl Engine {
             .get(&channel.url())
             .call();
         let response = match response {
-            Err(ureq::Error::Status(404, _)) => {
+            Err(ureq::Error::Status(404, _)) if !preview => {
                 let mut status = self.acceleration_components();
                 if status.state != "ready" {
                     status.state = "not_published".into();
@@ -442,26 +523,37 @@ impl Engine {
             bail!("Component catalog too large");
         }
         let envelope: SignedIndex = serde_json::from_slice(&bytes)?;
-        channel.verify(&envelope, &public_key())?;
+        channel.verify(&envelope, &key)?;
         let _gate = self.config_lock.lock().unwrap();
         self.require_model_network()?;
+        if preview {
+            // A concurrent stable check may have filled its cache during the request.
+            requested_channel(&self.root, &primary, &host, &key, true)?;
+        }
         let cache = channel.cache(&self.root);
         fs::create_dir_all(cache.parent().context("Invalid catalog cache")?)?;
         crate::preferences::atomic_json(&cache, &envelope)?;
         drop(_gate);
         Ok(self.acceleration_components())
     }
-    pub fn download_acceleration_component(self: &Arc<Self>, id: &str) -> Result<()> {
+    pub fn download_acceleration_component(
+        self: &Arc<Self>,
+        id: &str,
+        version: Option<&str>,
+        preview: bool,
+    ) -> Result<()> {
         let _gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         self.require_model_network()?;
-        let (envelope, index) = cached_index(&self.root)?;
-        let component = index
-            .components
-            .iter()
-            .find(|c| c.id == id && c.target == target())
-            .context("Unknown component for this platform")?
-            .clone();
+        let (envelope, index, component) = requested_download(
+            &self.root,
+            &CatalogChannel::selected()?,
+            &target(),
+            &public_key(),
+            id,
+            version,
+            preview,
+        )?;
         if installed(&self.root, &index, &component) {
             return Ok(());
         }
@@ -545,6 +637,7 @@ impl Engine {
 fn catalog_status(
     engine: &Engine,
     current: Option<Index>,
+    preview_available: bool,
     load_installed: impl Fn(&str, &str) -> Result<Index>,
 ) -> CatalogStatus {
     // Restore before the download-status lock, matching configuration actions.
@@ -557,6 +650,7 @@ fn catalog_status(
             statuses.push(Status {
                 component: component.clone(),
                 version: index.version.clone(),
+                preview: preview_available,
                 present: fs::symlink_metadata(location(&engine.root, index, component)).is_ok(),
                 installed: installed(&engine.root, index, component),
                 downloadable: true,
@@ -589,6 +683,7 @@ fn catalog_status(
             "catalog_required"
         }
         .into(),
+        preview_available,
         components: statuses,
         unavailable,
         verification,
@@ -672,6 +767,7 @@ fn append_installed_statuses(
             }
             previous.push(Status {
                 component: component.clone(),
+                preview: name == PREVIEW_VERSION,
                 version: name,
                 present: true,
                 installed: installed(root, &index, component),
@@ -1100,6 +1196,7 @@ mod tests {
         let listed = serde_json::to_value(catalog_status(
             &engine,
             Some(current.clone()),
+            false,
             |id, version| saved_index(&engine.root, id, version),
         ))?;
         let promoted = listed["components"]
@@ -1269,7 +1366,7 @@ mod tests {
                         .join("component-index.json"),
                 )?)?)
             };
-            let listed = catalog_status(&engine, Some(current.clone()), read_old);
+            let listed = catalog_status(&engine, Some(current.clone()), false, read_old);
             assert_eq!(listed.state, "ready");
             assert_eq!(listed.components.len(), 2);
             let new_status = &listed.components[0];
@@ -1297,7 +1394,7 @@ mod tests {
             assert!(!old_path.exists());
             assert!(receipt.check_current().is_err());
             assert_eq!(fs::read(current_path.join("llama-server"))?, b"good");
-            let remaining = catalog_status(&engine, Some(current), read_old);
+            let remaining = catalog_status(&engine, Some(current), false, read_old);
             assert_eq!(remaining.components.len(), 1);
         }
         Ok(())
@@ -1309,7 +1406,7 @@ mod tests {
         fs::create_dir_all(&path)?;
         fs::write(path.join("llama-server"), b"good")?;
         fixture_marker(&path, &old)?;
-        let status = catalog_status(&engine, None, |_, _| Ok(old.clone()));
+        let status = catalog_status(&engine, None, false, |_, _| Ok(old.clone()));
         assert_eq!(status.state, "ready");
         assert_eq!(status.components.len(), 1);
         assert!(status.components[0].installed);
@@ -1319,7 +1416,7 @@ mod tests {
         // visible or authorize its removal.
         let mut wrong = old.clone();
         wrong.version = "acceleration-wrong".into();
-        let rejected = catalog_status(&engine, None, |_, _| Ok(wrong.clone()));
+        let rejected = catalog_status(&engine, None, false, |_, _| Ok(wrong.clone()));
         assert_eq!(rejected.state, "catalog_required");
         assert!(rejected.components.is_empty());
         // The public reader still rejects unsigned metadata and cannot turn
@@ -1355,7 +1452,7 @@ mod tests {
         assert!(validate_index(&retired).is_err());
         // Host-target listing/removal uses the synthetic component reader, as
         // in the other removal fixtures. Its bytes are never executable.
-        let catalog = catalog_status(&engine, None, |_, _| Ok(old.clone()));
+        let catalog = catalog_status(&engine, None, false, |_, _| Ok(old.clone()));
         assert_eq!(catalog.components.len(), 1);
         let status = &catalog.components[0];
         assert!(status.installed);
@@ -1922,6 +2019,88 @@ mod tests {
         validate_index(&index)?;
         index.runtime_revision = "untrusted runtime".into();
         assert!(validate_index(&index).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn signed_preview_is_discovered_locally_without_changing_the_default_request() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let host = "linux-x86_64";
+        let stable = CatalogChannel::Stable;
+        let key = public_key();
+        let (current, offer) = catalog_for_display(root.path(), &stable, host, &key);
+        assert!(current.is_none() && offer);
+        assert_eq!(
+            requested_channel(root.path(), &stable, host, &key, false)?.url(),
+            INDEX_URL,
+        );
+        let preview = requested_channel(root.path(), &stable, host, &key, true)?;
+        assert_eq!(
+            preview.url(),
+            format!("https://github.com/EazyLee30/omascribe/releases/download/{PREVIEW_VERSION}/index.json")
+        );
+
+        // The real published envelope exercises the release key and runtime pin
+        // without a network request or any runtime archives during tests.
+        let envelope = include_bytes!("../../../tests/fixtures/acceleration-preview-index.json");
+        let path = preview.cache(root.path());
+        fs::create_dir_all(path.parent().unwrap())?;
+        fs::write(&path, envelope)?;
+        let (current, offer) = catalog_for_display(root.path(), &stable, host, &key);
+        assert!(offer);
+        assert_eq!(current.unwrap().version, PREVIEW_VERSION);
+
+        let override_channel = CatalogChannel::parse(Some("acceleration-candidate-fixture-1"))?;
+        let (current, offer) = catalog_for_display(root.path(), &override_channel, host, &key);
+        assert!(current.is_none() && !offer);
+        assert!(requested_channel(root.path(), &override_channel, host, &key, true).is_err());
+        let (current, offer) = catalog_for_display(root.path(), &stable, "windows-aarch64", &key);
+        assert!(current.is_none() && !offer);
+        assert!(requested_channel(root.path(), &stable, "windows-aarch64", &key, true).is_err());
+
+        let mut bad: SignedIndex = serde_json::from_slice(envelope)?;
+        bad.payload.push(' ');
+        crate::preferences::atomic_json(&path, &bad)?;
+        let (current, offer) = catalog_for_display(root.path(), &stable, host, &key);
+        assert!(current.is_none() && offer);
+        Ok(())
+    }
+
+    #[test]
+    fn signed_download_selection_rejects_stale_version_and_preview_after_stable_arrives(
+    ) -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let host = "windows-x86_64";
+        let stable = CatalogChannel::Stable;
+        let key = public_key();
+        let id = "cuda-windows-x86_64";
+        let select = |version, preview| {
+            requested_download(root.path(), &stable, host, &key, id, version, preview)
+        };
+        let envelope = include_bytes!("../../../tests/fixtures/acceleration-preview-index.json");
+        let preview_path = CatalogChannel::preview().cache(root.path());
+        fs::create_dir_all(preview_path.parent().unwrap())?;
+        fs::write(preview_path, envelope)?;
+        assert!(
+            select(None, false).is_err(),
+            "Unversioned stable calls cannot pick a preview"
+        );
+        assert!(select(None, true).is_err());
+        assert!(select(Some("acceleration-old"), true).is_err());
+        let (_, index, component) = select(Some(PREVIEW_VERSION), true)?;
+        assert_eq!(index.version, PREVIEW_VERSION);
+        assert_eq!(component.id, id);
+
+        // Stable promotion can point to the same immutable signed payload.
+        // A stale preview card must still fail rather than switch channels.
+        fs::write(stable.cache(root.path()), envelope)?;
+        let (current, offer) = catalog_for_display(root.path(), &stable, host, &key);
+        assert_eq!(current.unwrap().version, PREVIEW_VERSION);
+        assert!(!offer);
+        assert!(select(Some(PREVIEW_VERSION), true).is_err());
+        assert!(select(Some("acceleration-old"), false).is_err());
+        assert!(select(Some(PREVIEW_VERSION), false).is_ok());
+        assert!(select(None, false).is_ok());
         Ok(())
     }
 }

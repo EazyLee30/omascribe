@@ -82,18 +82,26 @@ pub async fn acceleration_components(
 #[tauri::command]
 pub async fn check_acceleration_components(
     engine: State<'_, AppState>,
+    preview: Option<bool>,
 ) -> Reply<omascribe_core::components::CatalogStatus> {
     let e = engine.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || e.check_acceleration_components())
-        .await
-        .map_err(err)?
-        .map_err(err)
+    tauri::async_runtime::spawn_blocking(move || {
+        e.check_acceleration_components(preview.unwrap_or(false))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
 }
 #[tauri::command]
-pub fn download_acceleration_component(engine: State<AppState>, id: String) -> Reply<()> {
+pub fn download_acceleration_component(
+    engine: State<AppState>,
+    id: String,
+    version: Option<String>,
+    preview: Option<bool>,
+) -> Reply<()> {
     engine
         .inner()
-        .download_acceleration_component(&id)
+        .download_acceleration_component(&id, version.as_deref(), preview.unwrap_or(false))
         .map_err(err)
 }
 #[tauri::command]
