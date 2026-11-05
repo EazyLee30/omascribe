@@ -20,7 +20,8 @@ SPEC.loader.exec_module(SMOKE)
 
 
 class DocumentCollectionTests(unittest.TestCase):
-    def exercise(self, outcomes=None, *, budget=1200, duration=0, preexisting=False):
+    def exercise(self, outcomes=None, *, budget=1200, duration=0, preexisting=False,
+                 final_report_delay=0):
         outcomes = outcomes or {}
         calls = []
         now = [0.0]
@@ -34,6 +35,16 @@ class DocumentCollectionTests(unittest.TestCase):
             digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
             if preexisting:
                 (results / "first.json").write_text("{}")
+            writes = [0]
+            original_write = pathlib.Path.write_text
+
+            def write(path, *args, **kwargs):
+                result = original_write(path, *args, **kwargs)
+                if path.name == "document-suite.json.part":
+                    writes[0] += 1
+                    if writes[0] == 4:  # initial, first, second, final summary
+                        now[0] += final_report_delay
+                return result
 
             def completed(argv, **kwargs):
                 case = argv[argv.index("--case") + 1]
@@ -57,6 +68,7 @@ class DocumentCollectionTests(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, code)
 
             with patch.object(SMOKE.subprocess, "run", side_effect=completed), \
+                    patch.object(pathlib.Path, "write_text", new=write), \
                     patch.object(SMOKE.time, "monotonic", side_effect=lambda: now[0]):
                 try:
                     SMOKE.run_document_cases(pathlib.Path("fixture-cli"), {}, results, cases,
@@ -139,6 +151,23 @@ class DocumentCollectionTests(unittest.TestCase):
         self.assertEqual(calls[0][2]["timeout"], 30.5)
         self.assertEqual(summary["stopped_reason"], "collection_budget")
         self.assertEqual(summary["unattempted_cases"], ["second"])
+
+    def test_last_case_returning_after_total_budget_cannot_pass_release(self):
+        calls, failed_gate, summary = self.exercise(budget=1.5, duration=1)
+        self.assertEqual([c[0] for c in calls], ["first", "second"])
+        self.assertTrue(failed_gate)
+        self.assertTrue(summary["complete"])
+        self.assertFalse(summary["passed"])
+        self.assertEqual(summary["stopped_reason"], "collection_budget")
+        self.assertEqual(summary["unattempted_cases"], [])
+
+    def test_final_report_work_cannot_turn_an_expired_collection_into_success(self):
+        calls, failed_gate, summary = self.exercise(budget=1.5, final_report_delay=2)
+        self.assertEqual([c[0] for c in calls], ["first", "second"])
+        self.assertTrue(failed_gate)
+        self.assertTrue(summary["complete"])
+        self.assertFalse(summary["passed"])
+        self.assertEqual(summary["stopped_reason"], "collection_budget")
 
     def test_previous_case_report_is_not_reused(self):
         calls, failed_gate, summary = self.exercise(preexisting=True)

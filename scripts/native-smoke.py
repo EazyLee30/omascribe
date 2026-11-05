@@ -74,10 +74,13 @@ def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=
     def save():
         attempted = {row["case"] for row in summary["cases"]}
         summary["unattempted_cases"] = [name for name in names if name not in attempted]
-        summary["seconds"] = round(time.monotonic() - started, 3)
+        elapsed = time.monotonic() - started
+        summary["seconds"] = round(elapsed, 3)
+        if elapsed >= budget_seconds and summary["stopped_reason"] is None:
+            summary["stopped_reason"] = "collection_budget"
         summary["complete"] = not summary["unattempted_cases"] and all(
             row["state"] in ("passed", "expectation_failed") for row in summary["cases"])
-        summary["passed"] = summary["complete"] and all(
+        summary["passed"] = summary["complete"] and summary["stopped_reason"] is None and all(
             row["state"] == "passed" for row in summary["cases"])
         temporary = summary_path.with_suffix(".json.part")
         temporary.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -121,6 +124,10 @@ def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=
         if summary["stopped_reason"]:
             break
     save()
+    # Include final report work in admission, even after the last case passed.
+    if summary["passed"] and time.monotonic() - started >= budget_seconds:
+        summary["stopped_reason"] = "collection_budget"
+        save()
     if not summary["passed"]:
         raise RuntimeError(f"Document release gate failed; see {summary_path}")
     return summary
