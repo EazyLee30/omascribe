@@ -513,4 +513,24 @@ mod tests {
         assert_eq!(bypass.content, content);
         Ok(())
     }
+
+    #[test]
+    fn restored_report_person_cannot_gain_an_unobserved_han_name_prefix() -> Result<()> {
+        let source = snapshot(&["北岭大学的 ALICE教授指出记者如果公布照片似乎存在风险。"]);
+        let data = encoded(&source, &[0], &empty_terms())?;
+        let plan = data.plan.as_ref().unwrap();
+        assert_eq!(plan.names, ["ALICE"]);
+        let raw = "北岭大学的王[N1]教授指出记者如果公布照片似乎存在风险。";
+        // The actual ordinary chain may reject a malformed rendered reference
+        // at decoding or any existing final gate; it must not accept 王ALICE
+        // as a new person merely because the known name token was intact.
+        let result = writer::body_with_evidence(raw, &data.content)
+            .and_then(|composed| plan.composition(composed))
+            .and_then(|composed| ordinary(&source, &[0], composed.text(), None));
+        assert!(
+            result.is_err(),
+            "an unobserved Han prefix changed the complete person label while the ordinary writer accepted it"
+        );
+        Ok(())
+    }
 }
