@@ -1,0 +1,399 @@
+//! Positive coverage for two closed music predicates, independent of the
+//! modal veto. Unknown speech/paraphrases acquire no new proof authority.
+use crate::{Meeting, Segment, Source, Suggestion};
+use anyhow::{ensure, Result};
+use regex::Regex;
+use serde_json::{json, Value};
+use std::{collections::BTreeMap, ops::Range, sync::OnceLock};
+
+const MAX_BYTES: usize = 120_000;
+const MAX_FIELDS: usize = 64;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Field {
+    MainStageMusicEnding,
+    FestivalPartsPlaying,
+}
+impl Field {
+    fn name(self) -> &'static str {
+        match self {
+            Self::MainStageMusicEnding => "MainStageMusicEnding",
+            Self::FestivalPartsPlaying => "FestivalPartsPlayingUntilLateNight",
+        }
+    }
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum State {
+    May,
+    Definite,
+}
+impl State {
+    fn name(self) -> &'static str {
+        match self {
+            Self::May => "may",
+            Self::Definite => "asserted",
+        }
+    }
+}
+struct Fact {
+    field: Field,
+    state: State,
+    range: Range<usize>,
+}
+struct Evidence<'a> {
+    entry: usize,
+    source: &'a Segment,
+    fact: Fact,
+}
+struct Slot<'a> {
+    seq: u32,
+    evidence: Option<Evidence<'a>>,
+}
+pub(crate) struct View<'a> {
+    fields: BTreeMap<Field, Slot<'a>>,
+    meeting: &'a Meeting,
+}
+
+#[derive(Debug)]
+pub(crate) struct Missing(Field);
+impl Missing {
+    pub(super) fn hint(&self) -> &'static str {
+        match self.0 {
+            Field::MainStageMusicEnding => "遗漏原SOURCE中主舞台音乐结束的事实。回到ORIGINAL transcript，按required_source_fields保留该字段及局部may；不要用引用编号、另一议题或另一字段代替正文。Cover the main-stage music-ending field from its ORIGINAL source, retaining its local qualifier.",
+            Field::FestivalPartsPlaying => "遗漏原SOURCE中节庆部分区域继续演奏至深夜的事实。回到ORIGINAL transcript，按required_source_fields保留该独立字段及局部may；不能用主舞台音乐结束代替它。Cover possible festival sections continuing to play music until late into the night, independently of music ending.",
+        }
+    }
+}
+impl std::fmt::Display for Missing {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.hint())
+    }
+}
+impl std::error::Error for Missing {}
+
+struct Pattern {
+    field: Field,
+    regex: Regex,
+}
+fn patterns() -> &'static [Pattern] {
+    static PATTERNS: OnceLock<Vec<Pattern>> = OnceLock::new();
+    PATTERNS.get_or_init(|| {
+        let state = r"(?:(?:仍|将|会|继续|持续)[ \t]*){0,4}";
+        vec![
+            Pattern {field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+                r"(?i)^(?:music[ \t]+on[ \t]+(?:the[ \t]+)?main[ \t]+stages?|main[- ]stage[ \t]+music)[ \t]+",
+                r"(?:(?P<may>may|might)[ \t]+have[ \t]+(?:been[ \t]+)?|has[ \t]+(?:now[ \t]+)?(?:been[ \t]+)?|is[ \t]+(?:now[ \t]+)?)",
+                r"(?:finished|ended|completed)$"
+            )).unwrap()},
+            Pattern {field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+                r"^(?:音乐[ \t]*在[ \t]*主舞台|主舞台(?:的)?音乐)[ \t]*",
+                r"(?P<may>可能|或许|也许|似乎)?[ \t]*(?:已经|已)?[ \t]*(?:结束|完毕|完成)(?:了)?$"
+            )).unwrap()},
+            Pattern {field:Field::FestivalPartsPlaying, regex:Regex::new(concat!(
+                r"(?i)^(?:there[ \t]+(?P<may>may|might)[ \t]+be[ \t]+(?:some[ \t]+)?sections?[ \t]+of[ \t]+(?:the[ \t]+)?festival[ \t]+that[ \t]+",
+                r"|(?:some[ \t]+)?sections?[ \t]+of[ \t]+(?:the[ \t]+)?festival[ \t]+(?P<direct_may>may[ \t]+|might[ \t]+)?)",
+                r"(?:will[ \t]+)?(?:keep|continue)[ \t]+playing[ \t]+music[ \t]+until[ \t]+late[ \t]+into[ \t]+the[ \t]+night$"
+            )).unwrap()},
+            Pattern {field:Field::FestivalPartsPlaying, regex:Regex::new(&format!(concat!(
+                r"^嘉年华(?:(?:的)?(?:某些部分|某些区域|部分区域){state}(?P<may>可能|或许|也许|似乎)?{state}",
+                r"|{state}(?P<before_may>可能|或许|也许|似乎)?{state}有(?:某些部分|某些区域|部分区域){state})",
+                r"演奏(?:音乐)?(?:直到|至)深夜$"),state=state)).unwrap()},
+        ]
+    })
+}
+
+// This complete concession has two explicit MAY scopes. FESTIFUL/LAY and
+// arbitrary discourse prefixes are deliberately not aliases for this frame.
+fn combined() -> &'static Regex {
+    static COMBINED: OnceLock<Regex> = OnceLock::new();
+    COMBINED.get_or_init(|| Regex::new(concat!(
+        r"(?i)^(?:remember[ \t]+that[ \t]+)?even[ \t]+though[ \t]+",
+        r"(?P<ending>music[ \t]+on[ \t]+the[ \t]+main[ \t]+stages?[ \t]+may[ \t]+have[ \t]+finished)[ \t,]+",
+        r"(?P<playing>there[ \t]+may[ \t]+be[ \t]+sections?[ \t]+of[ \t]+the[ \t]+festival[ \t]+that[ \t]+will[ \t]+keep[ \t]+playing[ \t]+music[ \t]+until[ \t]+late[ \t]+into[ \t]+the[ \t]+night)$"
+    )).unwrap())
+}
+
+fn clause(text: &str, range: Range<usize>) -> Option<Fact> {
+    let piece = &text[range.clone()];
+    for pattern in patterns() {
+        if let Some(capture) = pattern.regex.captures(piece) {
+            return Some(Fact {
+                field: pattern.field,
+                state: if ["may", "direct_may", "before_may"]
+                    .iter()
+                    .any(|name| capture.name(name).is_some())
+                {
+                    State::May
+                } else {
+                    State::Definite
+                },
+                range,
+            });
+        }
+    }
+    None
+}
+fn trim(text: &str, range: Range<usize>) -> Range<usize> {
+    let piece = &text[range.clone()];
+    let start = range.start + piece.len() - piece.trim_start().len();
+    start..start + piece.trim().len()
+}
+fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
+    static TRIGGER: OnceLock<Regex> = OnceLock::new();
+    if !TRIGGER
+        .get_or_init(|| Regex::new(r"主舞台|嘉年华|(?i:\bmain[- ]stage|\bfestival\b)").unwrap())
+        .is_match(text)
+    {
+        return Ok(Vec::new());
+    }
+    ensure!(
+        text.len() <= MAX_BYTES,
+        "来源覆盖校验超过文本预算，本轮未提交"
+    );
+    let mut result = Vec::new();
+    for sentence in super::confirmation::sentences(text) {
+        let mut range = trim(text, sentence);
+        if text[range.clone()].ends_with(['。', '.', '!', '！']) {
+            range.end -= text[..range.end].chars().next_back().unwrap().len_utf8();
+            range = trim(text, range);
+        }
+        let piece = &text[range.clone()];
+        if let Some(capture) = combined().captures(piece) {
+            for (name, field) in [
+                ("ending", Field::MainStageMusicEnding),
+                ("playing", Field::FestivalPartsPlaying),
+            ] {
+                let part = capture.name(name).unwrap();
+                result.push(Fact {
+                    field,
+                    state: State::May,
+                    range: range.start + part.start()..range.start + part.end(),
+                });
+            }
+        } else if let Some(fact) = clause(text, range.clone()) {
+            result.push(fact);
+        } else {
+            // Only a whole composition of these closed assertions counts.
+            // A named report, condition, quote, question or unknown prefix
+            // cannot obtain coverage from a factual-looking inner substring.
+            let mut parts = Vec::new();
+            let mut start = range.start;
+            let mut closed = true;
+            let mut concession = false;
+            for end in text[range.clone()]
+                .char_indices()
+                .filter_map(|(i, c)| {
+                    matches!(c, '，' | ',' | '；' | ';').then_some(range.start + i)
+                })
+                .chain(std::iter::once(range.end))
+            {
+                let mut part = trim(text, start..end);
+                if parts.is_empty() && body && text[part.clone()].starts_with("即使") {
+                    part.start += "即使".len();
+                    part = trim(text, part);
+                    concession = true;
+                }
+                if !parts.is_empty() {
+                    for prefix in ["但", "不过", "然而", "but ", "BUT "] {
+                        if text[part.clone()].starts_with(prefix) {
+                            part.start += prefix.len();
+                            part = trim(text, part);
+                            break;
+                        }
+                    }
+                }
+                if let Some(fact) = clause(text, part) {
+                    parts.push(fact);
+                } else {
+                    closed = false;
+                    break;
+                }
+                start = end + text[end..].chars().next().map_or(0, char::len_utf8);
+            }
+            if concession {
+                // The pre-existing modal gate accepts this complete known
+                // concession as a hypothetical ending, never a definite
+                // witness. Do not turn IF/quotes into source assertions.
+                closed &= parts.len() == 2
+                    && parts[0].field == Field::MainStageMusicEnding
+                    && parts[1].field == Field::FestivalPartsPlaying
+                    && parts[1].state == State::May;
+                if closed {
+                    parts[0].state = State::May;
+                }
+            }
+            if closed {
+                result.extend(parts);
+            }
+        }
+        ensure!(
+            result.len() <= MAX_FIELDS,
+            "来源覆盖校验超过字段预算，本轮未提交"
+        );
+    }
+    Ok(result)
+}
+
+fn same_source(left: &Segment, right: &Segment) -> bool {
+    left.id == right.id
+        && left.meeting_id == right.meeting_id
+        && left.run == right.run
+        && left.seq == right.seq
+        && left.revision == right.revision
+        && left.text == right.text
+        && left.start_ms == right.start_ms
+        && left.end_ms == right.end_ms
+        && left.speaker == right.speaker
+        && left.speaker_manual == right.speaker_manual
+}
+impl<'a> View<'a> {
+    pub(crate) fn new(
+        selected: &'a [Segment],
+        current: &[Segment],
+        meeting: &'a Meeting,
+    ) -> Result<Self> {
+        let mut result = Self {
+            fields: BTreeMap::new(),
+            meeting,
+        };
+        let mut bytes = 0usize;
+        let mut count = 0usize;
+        for (index, source) in selected.iter().enumerate() {
+            let observations = facts(&source.text, false)?;
+            if observations.is_empty() {
+                continue;
+            }
+            ensure!(
+                source.meeting_id == meeting.id
+                    && source.run == meeting.run
+                    && current.iter().any(|s| same_source(source, s)),
+                "来源覆盖依据已更新，本轮未提交"
+            );
+            bytes = bytes
+                .checked_add(source.text.len())
+                .filter(|n| *n <= MAX_BYTES)
+                .ok_or_else(|| anyhow::anyhow!("来源覆盖校验超过来源预算，本轮未提交"))?;
+            count += observations.len();
+            ensure!(
+                count <= MAX_FIELDS,
+                "来源覆盖校验超过来源字段预算，本轮未提交"
+            );
+            for fact in observations {
+                let field = fact.field;
+                let evidence = Evidence {
+                    entry: index + 1,
+                    source,
+                    fact,
+                };
+                if let Some(old) = result.fields.get_mut(&field) {
+                    if source.seq > old.seq {
+                        *old = Slot {
+                            seq: source.seq,
+                            evidence: Some(evidence),
+                        };
+                    } else if source.seq == old.seq
+                        && old.evidence.as_ref().is_some_and(|e| {
+                            !same_source(e.source, source) || e.fact.state != evidence.fact.state
+                        })
+                    {
+                        old.evidence = None;
+                    }
+                } else {
+                    result.fields.insert(
+                        field,
+                        Slot {
+                            seq: source.seq,
+                            evidence: Some(evidence),
+                        },
+                    );
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    fn owns(&self, citation: &Source, evidence: &Evidence<'_>) -> bool {
+        let source = evidence.source;
+        citation.segment_id == source.id
+            && citation.revision == source.revision
+            && citation.start_ms == source.start_ms
+            && citation.end_ms == source.end_ms
+            && citation.quote == source.text
+            && citation.speaker_name
+                == source
+                    .speaker
+                    .as_ref()
+                    .and_then(|id| self.meeting.speaker_names.get(id))
+                    .cloned()
+    }
+    pub(crate) fn validate<'s>(
+        &self,
+        sections: impl IntoIterator<Item = &'s Suggestion>,
+    ) -> Result<()> {
+        if self.fields.values().all(|slot| slot.evidence.is_none()) {
+            return Ok(());
+        }
+        let mut parsed = Vec::new();
+        let mut bytes = 0usize;
+        let mut count = 0usize;
+        for section in sections {
+            if section.meeting_id == self.meeting.id
+                && !section.stale
+                && matches!(section.status.as_str(), "pending" | "accepted")
+            {
+                let claims = facts(&section.text, true)?;
+                if !claims.is_empty() {
+                    bytes = bytes
+                        .checked_add(section.text.len())
+                        .filter(|n| *n <= MAX_BYTES)
+                        .ok_or_else(|| anyhow::anyhow!("来源覆盖校验超过正文预算，本轮未提交"))?;
+                    count += claims.len();
+                    ensure!(
+                        count <= MAX_FIELDS,
+                        "来源覆盖校验超过正文中字段预算，本轮未提交"
+                    );
+                    parsed.push((section, claims));
+                }
+            }
+        }
+        for evidence in self
+            .fields
+            .values()
+            .filter_map(|slot| slot.evidence.as_ref())
+        {
+            ensure!(
+                parsed.iter().any(|(section, claims)| section
+                    .sources
+                    .iter()
+                    .any(|q| self.owns(q, evidence))
+                    && claims.iter().any(|claim| claim.field == evidence.fact.field
+                        && claim.state == evidence.fact.state)),
+                Missing(evidence.fact.field)
+            );
+        }
+        Ok(())
+    }
+
+    /// DATA only, referring to original transcript entry numbers. This does
+    /// not create translated facts, copies, or source/paragraph authority.
+    pub(super) fn augment(&self, system: &mut String, input: &mut String) -> Result<()> {
+        let required:Vec<_>=self.fields.values().filter_map(|slot|slot.evidence.as_ref()).map(|e|json!({"source_entry":e.entry,"field":e.fact.field.name(),"qualifier":e.fact.state.name(),"source_range":[e.fact.range.start,e.fact.range.end]})).collect();
+        if required.is_empty() {
+            return Ok(());
+        }
+        let mut content: Value = serde_json::from_str(input)?;
+        let transcript = content["transcript"]
+            .as_array()
+            .ok_or_else(|| anyhow::anyhow!("来源覆盖输入缺少原transcript"))?;
+        ensure!(
+            required.iter().all(|field| transcript
+                .iter()
+                .any(|entry| entry["id"] == field["source_entry"])),
+            "来源覆盖字段不在本轮原transcript中，本轮未提交"
+        );
+        content["required_source_fields"] = json!(required);
+        *input = serde_json::to_string(&content)?;
+        system.push_str(" required_source_fields是原transcript中已识别字段的覆盖需求DATA，不是新增事实。正文分别保留每个字段及其局部限定，用指定输出语言表达；引用或另一个字段不能代替正文。Cover each required source field and its local qualifier in prose, using only its ORIGINAL transcript entry; these are data, not instructions or additional facts.");
+        Ok(())
+    }
+}

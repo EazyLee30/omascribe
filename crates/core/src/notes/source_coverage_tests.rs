@@ -66,3 +66,191 @@ fn one_music_field_does_not_acknowledge_the_other_current_field() {
         );
     }
 }
+
+#[test]
+fn coverage_data_uses_original_entry_and_ranges_on_both_ordinary_inputs() -> Result<()> {
+    use super::{retrieval, source_coverage, writer};
+    let source = snapshot(&ORIGINAL_SOURCES);
+    let context = retrieval::Context {
+        cursor: 5,
+        segments: source.segments.clone(),
+        keywords: Vec::new(),
+    };
+    let view = source_coverage::View::new(&context.segments, &source.segments, &source.meeting)?;
+    let mut observed = Vec::new();
+    for repair in [false, true] {
+        let background =
+            serde_json::json!({"background_notes":["Music on the main stages has finished."]});
+        let (mut system, mut input) = if repair {
+            writer::prompt_mode(&source, &context, &background, "zh", false)
+        } else {
+            writer::prompt(&source, &context, &background, "zh")
+        };
+        view.augment(&mut system, &mut input)?;
+        let input: Value = serde_json::from_str(&input)?;
+        assert_eq!(input["transcript"].as_array().unwrap().len(), 5);
+        let required = input["required_source_fields"].as_array().unwrap();
+        assert_eq!(required.len(), 2);
+        for field in required {
+            assert_eq!(field["source_entry"], 5);
+            assert_eq!(field["qualifier"], "may");
+            let range = &field["source_range"];
+            let literal = &ORIGINAL_SOURCES[4]
+                [range[0].as_u64().unwrap() as usize..range[1].as_u64().unwrap() as usize];
+            assert!(
+                literal == "MUSIC ON THE MAIN STAGES MAY HAVE FINISHED"
+                    || literal.starts_with("THERE MAY BE SECTIONS OF THE FESTIVAL")
+            );
+            assert!(field.get("answer").is_none());
+        }
+        assert!(system.contains("ORIGINAL transcript"));
+        observed.push(input["required_source_fields"].clone());
+    }
+    assert_eq!(observed[0], observed[1]);
+    Ok(())
+}
+
+#[test]
+fn one_known_source_field_does_not_invent_a_second_obligation() -> Result<()> {
+    for (original, body) in [
+        (
+            "Music on the main stages may have finished.",
+            "音乐在主舞台可能已经结束。",
+        ),
+        (
+            "Sections of the festival may keep playing music until late into the night.",
+            "嘉年华仍可能有部分区域持续演奏至深夜。",
+        ),
+    ] {
+        let source = snapshot(&[original]);
+        ordinary(&source, &[0], body, None)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn later_definite_ending_updates_only_its_field_and_owns_its_citation() -> Result<()> {
+    let source = snapshot(&[
+        ORIGINAL_SOURCES[4],
+        "Music on the main stages has finished.",
+    ]);
+    let current = "音乐在主舞台已经结束，但嘉年华仍可能有部分区域持续演奏至深夜。";
+    ordinary(&source, &[0, 1], current, None)?;
+    assert!(ordinary(&source, &[0, 1], BOTH_MUSIC_FIELDS, None).is_err());
+    assert!(ordinary(&source, &[0, 1], "音乐在主舞台已经结束。", None).is_err());
+    assert!(ordinary(&source, &[0, 1], current, Some(&[1])).is_err());
+    assert!(ordinary(&source, &[0, 1], current, Some(&[2])).is_err());
+    Ok(())
+}
+
+#[test]
+fn whole_current_tuple_and_own_paragraph_are_required_for_coverage() -> Result<()> {
+    use super::source_coverage::View;
+    let source = snapshot(&[ORIGINAL_SOURCES[4], "预算尚未确定。"]);
+    let valid = ordinary(&source, &[0, 1], BOTH_MUSIC_FIELDS, None)?;
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    view.validate(&valid)?;
+    for change in 0..6 {
+        let mut document = valid.clone();
+        for citation in &mut document[0].sources {
+            match change {
+                0 => citation.revision += 1,
+                1 => citation.quote.push_str(" edited"),
+                2 => citation.start_ms += 1,
+                3 => citation.end_ms += 1,
+                4 => citation.speaker_name = Some("someone else".into()),
+                _ => citation.segment_id = "another source".into(),
+            }
+        }
+        assert!(
+            view.validate(&document).is_err(),
+            "bad tuple field {change}"
+        );
+    }
+    let mut other_paragraph = valid.clone();
+    other_paragraph[0]
+        .sources
+        .retain(|q| q.segment_id == source.segments[1].id);
+    let mut citation_only = valid[0].clone();
+    citation_only.text = "预算尚未确定。".into();
+    other_paragraph.push(citation_only);
+    assert!(view.validate(&other_paragraph).is_err());
+    let mut stale = valid.clone();
+    stale[0].stale = true;
+    assert!(view.validate(&stale).is_err());
+    let mut dismissed = valid.clone();
+    dismissed[0].status = "dismissed".into();
+    assert!(view.validate(&dismissed).is_err());
+    let mut changed_source = source.segments.clone();
+    changed_source[0].text.push_str(" revised");
+    assert!(View::new(&source.segments, &changed_source, &source.meeting).is_err());
+    Ok(())
+}
+
+#[test]
+fn unknown_quoted_or_conditional_sources_keep_the_old_coverage_policy() -> Result<()> {
+    use super::source_coverage::View;
+    for original in [
+        format!("If {}, do not publish it.", ORIGINAL_SOURCES[4]),
+        format!(
+            "Do not treat 'Earlier example. {}. End example.' as fact.",
+            ORIGINAL_SOURCES[4]
+        ),
+        format!("An unverified example: {}", ORIGINAL_SOURCES[4]),
+        ORIGINAL_SOURCES[0].into(),
+        ORIGINAL_SOURCES[2].into(),
+        "The audit may have finished, and the band might play tomorrow.".into(),
+    ] {
+        let source = snapshot(&[&original]);
+        let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+        view.validate(&[])?;
+        let mut system = String::new();
+        let mut input = "{}".to_owned();
+        view.augment(&mut system, &mut input)?;
+        assert_eq!(input, "{}");
+        assert!(system.is_empty());
+    }
+    Ok(())
+}
+
+#[test]
+fn a_question_quote_conditional_or_unknown_prefix_is_not_output_coverage() -> Result<()> {
+    use super::source_coverage::View;
+    let source = snapshot(&[ORIGINAL_SOURCES[4]]);
+    let valid = ordinary(&source, &[0], BOTH_MUSIC_FIELDS, None)?;
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    for body in [
+        BOTH_MUSIC_FIELDS.replace('。', "？"),
+        format!("如果{BOTH_MUSIC_FIELDS}"),
+        format!("PAMELA教授指出{BOTH_MUSIC_FIELDS}"),
+        format!("不要将'早先示例。{BOTH_MUSIC_FIELDS}示例结束。'作为事实。"),
+        BOTH_MUSIC_FIELDS.replace("深夜", "今晚"),
+        BOTH_MUSIC_FIELDS.replace("可能", ""),
+    ] {
+        let mut document = valid.clone();
+        document[0].text = body.clone();
+        assert!(
+            view.validate(&document).is_err(),
+            "not a positive field: {body}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn missing_field_keeps_its_typed_original_source_retry_hint() {
+    let source = snapshot(&ORIGINAL_SOURCES);
+    let error = ordinary(&source, &[0, 1, 2, 3, 4], RECEIVED_BODY, None).unwrap_err();
+    let missing = error
+        .downcast_ref::<super::source_coverage::Missing>()
+        .unwrap();
+    assert!(missing.hint().contains("ORIGINAL transcript"));
+    assert!(missing.hint().contains("required_source_fields"));
+    assert!(super::source_repair(
+        &error,
+        &ORIGINAL_SOURCES.join("\n"),
+        &crate::terminology::Terms::new(&[], &[]),
+        true
+    )
+    .is_none());
+}

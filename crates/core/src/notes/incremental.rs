@@ -56,6 +56,7 @@ pub(crate) fn scope(
             include_str!("validation.rs"),
             include_str!("incremental.rs"),
             include_str!("source_language.rs"),
+            include_str!("source_coverage.rs"),
             include_str!("../notes.rs"),
         ))
     });

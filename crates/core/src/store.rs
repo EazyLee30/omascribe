@@ -463,6 +463,14 @@ impl Store {
                         }))
             })
         });
+        // Accepted paragraphs can suppress incoming text above. Validate the
+        // actual projected article before any history write or cursor seal:
+        // citations alone must not acknowledge a lost, known source field.
+        let projected = existing
+            .iter()
+            .filter(|section| !remove.contains(&section.id))
+            .chain(sections.iter());
+        crate::notes::source_coverage::View::new(selected, &now, &current)?.validate(projected)?;
         let count = sections.len();
         let tx = self.conn.transaction()?;
         tx.execute(
@@ -703,6 +711,110 @@ mod tests {
 #[cfg(test)]
 mod document_tests {
     use super::*;
+    #[test]
+    fn source_coverage_cannot_acknowledge_fields_lost_from_accepted_filter() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Projected source coverage")?;
+        let segment = Segment {
+            id: "music".into(),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        let citation = Source {
+            segment_id: segment.id.clone(),
+            revision: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            quote: segment.text.clone(),
+            speaker_name: None,
+        };
+        let accepted = Suggestion {
+            id: "human".into(),
+            meeting_id: meeting.id.clone(),
+            kind: "section".into(),
+            focus: String::new(),
+            text: "用户保留的风险说明。".into(),
+            sources: vec![citation],
+            status: "accepted".into(),
+            stale: false,
+        };
+        let body = "音乐在主舞台可能已经结束，但嘉年华仍可能有部分区域持续演奏至深夜。";
+        let mut incoming = accepted.clone();
+        incoming.id.clear();
+        incoming.text = body.into();
+        incoming.status = "pending".into();
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&segment)?;
+            db.save_suggestion(&accepted)?;
+            db.set_cache_dependency(&meeting.id, crate::notes::incremental::KEY, "before")?;
+        }
+        let before = engine.snapshot(&meeting.id)?;
+        let mut db = engine.store.lock().unwrap();
+        let error = db
+            .commit_document_with_state(
+                &before,
+                std::slice::from_ref(&segment),
+                1,
+                vec![incoming.clone()],
+                false,
+                Some("fixture-environment"),
+            )
+            .expect_err("accepted risk-only text suppresses the incoming music paragraph");
+        assert!(error.is::<crate::notes::source_coverage::Missing>());
+        let after = db.meeting(&meeting.id)?;
+        assert_eq!(after.notes_cursor, before.meeting.notes_cursor);
+        assert_eq!(after.notes_fingerprint, before.meeting.notes_fingerprint);
+        assert_eq!(
+            serde_json::to_value(db.suggestions(&meeting.id)?)?,
+            serde_json::to_value(&before.suggestions)?
+        );
+        assert_eq!(
+            serde_json::to_value(db.segments(&meeting)?)?,
+            serde_json::to_value(&before.segments)?
+        );
+        assert_eq!(
+            db.conn
+                .query_row("SELECT COUNT(*) FROM document_history", [], |row| row
+                    .get::<_, u32>(0))?,
+            0
+        );
+        assert_eq!(
+            db.cache_dependency(&meeting.id, crate::notes::incremental::KEY)?,
+            "before"
+        );
+        assert_eq!(
+            db.conn
+                .query_row("SELECT COUNT(*) FROM inference_jobs", [], |row| row
+                    .get::<_, u32>(0))?,
+            0
+        );
+        // A genuinely covering human paragraph can satisfy the same fields;
+        // it stays accepted and no model text replaces it.
+        db.update_suggestion(&meeting.id, &accepted.id, "accepted", Some(body.into()))?;
+        drop(db);
+        let before = engine.snapshot(&meeting.id)?;
+        let mut db = engine.store.lock().unwrap();
+        assert_eq!(
+            db.commit_document(&before, &[segment], 1, vec![incoming], false)?,
+            0
+        );
+        assert_eq!(db.meeting(&meeting.id)?.notes_cursor, 1);
+        let article = db.suggestions(&meeting.id)?;
+        assert_eq!(article.len(), 1);
+        assert_eq!(article[0].status, "accepted");
+        assert_eq!(article[0].text, body);
+        Ok(())
+    }
+
     #[test]
     fn source_actor_context_is_checked_once_at_commit_without_rejecting_unrelated_text(
     ) -> Result<()> {
