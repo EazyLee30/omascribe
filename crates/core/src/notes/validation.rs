@@ -518,43 +518,60 @@ fn restore_generated_report_fields(
     if !super::affiliation::recovery_inputs_current(snapshot, selected) {
         return Ok(unchanged());
     }
-    let original_prose = original_prose.filter(|original| {
-        original.len() <= 120_000
-            && super::writer::paragraphs(original)
-                .iter()
-                .map(String::as_str)
-                .eq(parsed.sections.iter().map(|section| section.body.as_str()))
-    });
+    let original_prose = match original_prose {
+        Some(original)
+            if original.len() <= 120_000
+                && super::writer::paragraphs(original)
+                    .iter()
+                    .map(String::as_str)
+                    .eq(parsed.sections.iter().map(|section| section.body.as_str())) =>
+        {
+            Some(original)
+        }
+        Some(_) => return Ok(unchanged()),
+        None => None,
+    };
     let mut edits = Vec::new();
     for (index, section) in parsed.sections.iter().enumerate() {
-        edits.extend(super::affiliation::generated_recovery_edits(
-            index,
-            &section.body,
-            &section.sources,
-            snapshot,
-            selected,
-        )?);
-        if let Some(original) = original_prose.filter(|_| {
-            !snapshot
+        if let Some(original) = original_prose {
+            if snapshot
                 .suggestions
                 .iter()
                 .any(|old| old.text == section.body)
-        }) {
-            for mut edit in super::affiliation::generated_person_recovery_edits(
+            {
+                continue;
+            }
+            let mut planned = super::affiliation::generated_recovery_edits(
                 index,
                 original,
                 &section.sources,
                 snapshot,
                 selected,
-            )? {
-                let Some(literal) = original.get(edit.body_range.clone()) else {
+            )?;
+            planned.extend(super::affiliation::generated_person_recovery_edits(
+                index,
+                original,
+                &section.sources,
+                snapshot,
+                selected,
+            )?);
+            for mut edit in planned {
+                let Some(anchor_end) = edit.body_range.end.checked_add(edit.suffix.len()) else {
+                    continue;
+                };
+                if original.get(edit.body_range.end..anchor_end) != Some(edit.suffix.as_str()) {
+                    continue;
+                }
+                let Some(literal) = original.get(edit.body_range.start..anchor_end) else {
                     continue;
                 };
                 if literal.is_empty() {
                     continue;
                 }
-                // Only an unchanged, unique literal field survives the known
-                // presentation fold. No normalization of the name is inferred.
+                // The field and complete unchanged report must survive as one
+                // unique anchor. A short institution may also be a substring
+                // of another report's institution; that is not another match
+                // for this complete evidence. No spelling is inferred here.
                 let locations = parsed
                     .sections
                     .iter()
@@ -569,11 +586,20 @@ fn restore_generated_report_fields(
                     .collect::<Vec<_>>();
                 if let [(section_index, at)] = locations.as_slice() {
                     if *section_index == index {
-                        edit.body_range = *at..*at + literal.len();
+                        edit.body_range = *at..*at + edit.body_range.len();
                         edits.push(edit);
                     }
                 }
             }
+        } else {
+            // Legacy institution-only test adapter retains its old contract.
+            edits.extend(super::affiliation::generated_recovery_edits(
+                index,
+                &section.body,
+                &section.sources,
+                snapshot,
+                selected,
+            )?);
         }
         if edits.len() > 16 {
             return Ok(unchanged());

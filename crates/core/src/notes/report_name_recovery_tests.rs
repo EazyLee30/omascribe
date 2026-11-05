@@ -166,12 +166,24 @@ fn folding_cannot_authorize_institution_recovery_through_a_split_person() -> Res
         recovered.edits.is_empty(),
         "a display fold cannot authorize a report field repair"
     );
-    assert!(prepare_generated_writer_document(
-        &raw,
+    let prepared =
+        prepare_generated_writer_document(&raw, &snapshot, &snapshot.segments, &terms(&snapshot))?;
+    assert!(validate(&snapshot, &prepared.draft).is_err());
+
+    let raw = ORIGINAL_SOURCES[3].replace("邓迪大学", "迪大学");
+    let document = writer::document(&raw, &snapshot.segments, &Default::default())?;
+    assert_eq!(
+        validation::restore_generated_reports(&document, &snapshot, &snapshot.segments, &raw)?
+            .edits
+            .len(),
+        1,
+    );
+    let mismatched = validation::restore_generated_reports(
+        &document,
         &snapshot,
         &snapshot.segments,
-        &terms(&snapshot),
-    )
-    .is_err());
+        "a different original",
+    )?;
+    assert!(mismatched.edits.is_empty());
     Ok(())
 }
