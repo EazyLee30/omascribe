@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "status": "FAILED_STOPPED_NOT_PROMOTED",
+  "source": "b4997ea818150486b8f8099629a3a14c7e941c5b",
+  "compile_input_sha256": "a964a989718c47600bd476151a137dc23019c4ea3b7dab1fe641d78f0ee33eff",
+  "source_branch": "https://github.com/EazyLee30/omascribe/tree/codex/prepared-fact-nodes",
+  "mechanism": "Checked translations and whole proved original clauses were immutable source-bound f nodes, ordinary n/t had no copy authority. Model chose one or two paragraphs using references; default production writer was not changed.",
+  "local_checks": {
+    "fact_node_controls": 12,
+    "core_passed": 759,
+    "core_ignored": 14,
+    "integration": 34,
+    "desktop_shell": 4,
+    "asr": 18,
+    "cli": 2,
+    "strict_workspace_clippy": "passed",
+    "fmt": "passed",
+    "runner_pure_controls": 20
+  },
+  "actual_prior_failures": [
+    {
+      "source": "3e94a50",
+      "result": "5 passed / 3 failed",
+      "cause": "The factory disagreed with the unchanged budget active projection; e6e7f14 shared only that admission view, preserving raw positive fact proof."
+    },
+    {
+      "source": "ba5e8db",
+      "result": "0 passed / 1 failed",
+      "cause": "A current-source prepared possible-completion clause was falsely rejected by the ordinary final guard; 18d7ca3 transported only sealed current f word permissions. Ordinary t/n still have none."
+    }
+  ],
+  "actual_trial": {
+    "preparation": {
+      "output_tokens": 74,
+      "validation_error": null,
+      "local_possible_qualifiers_per_translation": {
+        "A": 2,
+        "B": 2,
+        "C": 2
+      }
+    },
+    "composition": {
+      "output_tokens": 154,
+      "fact_nodes_available": 3,
+      "f_ids_returned": [
+        1,
+        2
+      ],
+      "missing_f_ids": [
+        3
+      ],
+      "music_content_returned": false,
+      "n_then_t_repeats_complete_name_and_report": true
+    },
+    "guard": {
+      "error": "Ordinary text appends an unobserved name suffix",
+      "correct_rejection": true,
+      "reason": "After literal person n1, t begins 当迪大学的 PAMELA FURGO森教授...; concatenation creates an unobserved person-name suffix and duplicates the report. This is malformed composition, not a valid draft falsely rejected. Missing f3 music is independently visible in the raw response; that later check was not reached.",
+      "f3_mapping_basis": "Frozen factory order over selected sources 1-5: report nodes from sources2/4, music node from source5; not passive wire capture."
+    },
+    "outcome": {
+      "committed": false,
+      "cursor_before": 0,
+      "cursor_after": 0,
+      "suggestions": 0,
+      "coverage": 0,
+      "quality_accepted": false,
+      "release_ready": false
+    },
+    "source6": {
+      "present_in_final_snapshot": true,
+      "selected_sequences": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "executed": false,
+      "jobs_observed": [
+        1
+      ],
+      "job_directories": [
+        "job-1"
+      ]
+    }
+  },
+  "costs": {
+    "chat_requests": 2,
+    "prompt_tokens": 759,
+    "completion_tokens": 228,
+    "chat_elapsed_ms": 3303,
+    "diagnostic_attempt_elapsed_ms": 3309,
+    "run_wall_seconds": 11.83,
+    "sampled_job_cpu_seconds_lower_bound": 1.5483862640000001,
+    "peak_summed_job_rss_mib": 1516.921875,
+    "limitation": "Sampled CPU is a lower bound; summed RSS can double-count shared memory. PSS, GPU memory, and energy remain unknown. Sampling settings are a frozen source contract, not passive wire evidence."
+  },
+  "terminal_audit": {
+    "request_audit_passed": true,
+    "metal_passed": true,
+    "metal_layers": [
+      [
+        "29",
+        "29"
+      ]
+    ],
+    "fallback": null,
+    "operational_audit_passed": true,
+    "recorded_process_exit_confirmed": true,
+    "live_owned_process_check": [
+      {
+        "pid": 23791,
+        "same_owned_process_alive": false
+      },
+      {
+        "pid": 23802,
+        "same_owned_process_alive": false
+      }
+    ],
+    "cow_files": 9,
+    "cow_methods": [
+      "apfs_cp_clone"
+    ],
+    "cow_source_before_after_metadata_equal": true,
+    "cow_distinct_owned_inodes": true,
+    "remaining_owned_targets": [],
+    "runtime_exists": false,
+    "model_store_exists": false,
+    "owned_assets_released": true
+  },
+  "source_and_assets_checks": {
+    "operational_audit_passed": true,
+    "original_eight_assets_full_hash_and_identity_pre_post": "passed by the same frozen source_check before execution and in finally",
+    "original_q16_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2"
+  },
+  "public_cli_asr_restored": {
+    "source": "9679c144730c766fe0f3645c7400831ee23902a3",
+    "actual_build_info": {
+      "profile": "release",
+      "revision_at_compile": "9679c144730c766fe0f3645c7400831ee23902a3",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "3049b73f50175e9304fdccb63cc897fdaae8b2e1e87654bccaa1c324bb8932a2",
+      "target": "aarch64-apple-darwin"
+    },
+    "receipt_sha256": "1b91ea42bcad917c8846e1bde8bd792150375c60f3375d2c5a5490cb05b8469e"
+  },
+  "evidence": {
+    "artifacts/prepared-fact-nodes-2026-11-05/frozen-inputs.json": "9e2b6660b48cecffeb34aaf9eaccdddae32ab14831df246f77b1a5cae8806ad1",
+    "artifacts/prepared-fact-nodes-2026-11-05/integration-proof.json": "76815a6535991ac9e6a150b3a2b2bfc4b30020f6565dfd964c4c6658f26d7347",
+    "artifacts/prepared-fact-nodes-2026-11-05/build-proof.json": "a801b17461c5837d13b85f145bb4a507e3575c9e3b3cae80efcf194a3e1b4f05",
+    "artifacts/prepared-fact-nodes-2026-11-05/run/independent-review.json": "275d441c2f0474dea9ed7282404124c756a9ab1c3dfe8347b740dc82ecaa65a1",
+    "artifacts/prepared-fact-nodes-2026-11-05/run/state.json": "98c743ee4a7f5003d57f71c8611b84c26b0e5711a9a7e042d35408d89da3564c",
+    "artifacts/prepared-fact-nodes-2026-11-05/run/job-1/last-generation.json": "09a678828e1778be6a600180bc891fb1b90377381244397ce2bd09d36904f174",
+    "artifacts/prepared-fact-nodes-2026-11-05/frontend-cleanup.json": "42106a18d81f40d94fdd64860219a7e9b22d27cd2d6e72bc973c650ec56332b4"
+  },
+  "disposition": "The one fixed trial stopped after its first no-progress job. Do not retry this stage or add a prompt/temperature matrix. Source6 was not run. Keep this mechanism isolated and prioritize checked production corrections.",
+  "limits": [
+    "A valid preparation is not a valid article; this trial produced no committed article.",
+    "Metal 29/29 offload is not quality, speed or energy qualification.",
+    "Only CLI/ASR test binaries were built, then the current public binaries were actually rebuilt and verified; installed app and weights were unchanged."
+  ]
+}
