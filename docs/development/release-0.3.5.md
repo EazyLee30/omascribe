@@ -15,6 +15,8 @@
 
 以下历史结果保留各自源码身份，不替代当前共享源码的完整验收：
 
+- `7b49174`：纪要正文折行后再次核对原始姓名，拒绝被换行隐藏的错名；同一字面事项从“未确认”写成“已确认”，须有同会议／轮次的后续明确原话并被当前段落实际引用，其他事项、条件和支持的引述形式不能代替。单引号多句反例已实际复现并修复，词内 apostrophe 仅按相邻 ASCII 字母数字识别。原始失败与前置条件修订保留；16 项状态、4 项姓名控制及最终 643 核心 / 12 忽略、2 CLI、34 集成、严格工作区检查及同源 Windows-core、Linux、Ubuntu22、prepare、validate CI 通过，build/catalog 跳过。CLI／ASR 验收二进制已备妥，未运行模型或构建 app／安装包，Q16 尚未在本候选重测，不宣称已解决或资源收益。[红绿测、源码及边界](../evaluation/minutes-production-guards-2026-11-05.json)。
+
 - 集成有限 Mac 同输入自动拒绝暂停；手动整理始终可重试，新输入保留原节流，旧任务不能重建删除后恢复会议的暂停。原 `143749e` 直接控制复现退避后仍重复准入，区别于 Cargo 注入 loader 环境导致的更早失败。Windows 原 `6e744ec` 的 OS32 失败保留，测试修订验证保护、撤销与文件变更，不放宽产品共享策略；`580c4ae` 加 Context 修订后的 `dfe2e341` 本地检查与同源 CI 通过。没有运行模型、构建安装包或测量节省；官方应用实际资格仍待验收。[行为、原失败及检查](../evaluation/automatic-minutes-rejection-2026-11-05.json)。
 
 - 将现有 format2 基础运行时构建配方提取为共享定义，并验证四目标参数序列与原生产函数完全一致。CPU/Metal 静态配方关闭动态后端、CUDA/HIP/Vulkan/SYCL、OpenMP/BLAS/CURL/SSL；仅 Apple arm64 嵌入 Metal library。28 项打包／发布控制通过，实际构建、下载、模型和安装包运行均为 0；运行依赖闭包与已安装二进制验收仍独立开放。[配方、对等执行及边界](../evaluation/base-runtime-recipe-contract-2026-11-05.json)。
