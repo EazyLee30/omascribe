@@ -227,6 +227,7 @@ impl<'a> View<'a> {
 /// This is not a DirectCopy/translation bridge or a permanent name alias.
 #[derive(Debug)]
 pub(super) struct Edit {
+    pub field: &'static str,
     pub section_index: usize,
     pub body_range: Range<usize>,
     pub replacement: String,
@@ -396,9 +397,199 @@ pub(super) fn generated_recovery_edits(
         }
         let (source, original, suffix) = witnesses.pop().unwrap();
         edits.push(Edit {
+            field: "institution",
             section_index,
             body_range: candidate.institution_range,
             replacement: original.institution.to_owned(),
+            source_id: source.id.clone(),
+            source_revision: source.revision,
+            source_suffix_range: suffix.clone(),
+            suffix: source.text[suffix].to_owned(),
+        });
+    }
+    Ok(edits)
+}
+
+// Recovery-only parsing admits a horizontal display gap before the title.
+// The original affiliation veto and its name authority remain unchanged.
+struct PersonCandidate<'a> {
+    institution: &'a str,
+    person: &'a str,
+    field: Range<usize>,
+    suffix: Range<usize>,
+}
+
+fn person_candidates(text: &str) -> Result<Vec<PersonCandidate<'_>>> {
+    if !relevant(text) {
+        return Ok(Vec::new());
+    }
+    ensure!(text.len() <= MAX_BYTES, "机构来源校验超过文本预算");
+    static FRAME: OnceLock<Regex> = OnceLock::new();
+    static VERB: OnceLock<Regex> = OnceLock::new();
+    let frame = FRAME.get_or_init(|| {
+        Regex::new(concat!(
+            r"^[ \t]*(?P<institution>[\p{Han}]{1,12}(?:大学|学院))的[ \t]*",
+            r"(?P<person>(?:[\p{Han}]{1,2}[ \t]+)?[A-Z][A-Za-z'’-]{1,79}",
+            r"(?:[ \t]+[A-Z][A-Za-z'’-]{1,79})*?",
+            r"(?:[ \t]*[\p{Han}][\p{Han}A-Za-z'’-]{0,79}?)??)",
+            r"[ \t]*(?P<title>教授|博士)"
+        ))
+        .unwrap()
+    });
+    let verb = VERB.get_or_init(|| Regex::new(r"^(?:指出|表示|称|说|认为|提到|强调)").unwrap());
+    let mut result = Vec::new();
+    for clause in super::confirmation::sentences(text) {
+        let mut end = clause.end;
+        while end > clause.start && text[..end].ends_with(char::is_whitespace) {
+            end -= text[..end].chars().next_back().unwrap().len_utf8();
+        }
+        if text[..end].ends_with('。') {
+            end -= '。'.len_utf8();
+        } else if text[..end].ends_with('.') {
+            end -= 1;
+        }
+        let complete = &text[clause.start..end];
+        let Some(captures) = frame.captures(complete) else {
+            continue;
+        };
+        let institution = captures.name("institution").unwrap();
+        let person = captures.name("person").unwrap();
+        let title = captures.name("title").unwrap();
+        if !proper_institution(institution.as_str())
+            || quoted_prefix(complete)
+            || complete.matches("大学").count() + complete.matches("学院").count() != 1
+            || complete.matches("教授").count() + complete.matches("博士").count() != 1
+        {
+            continue;
+        }
+        let Some(report) = verb.find(&complete[title.end()..]) else {
+            continue;
+        };
+        if complete[title.end() + report.end()..].trim().is_empty() {
+            continue;
+        }
+        ensure!(result.len() < MAX_FRAMES, "机构来源校验超过断言预算");
+        result.push(PersonCandidate {
+            institution: institution.as_str(),
+            person: person.as_str(),
+            field: clause.start + person.start()..clause.start + title.start(),
+            suffix: clause.start + title.start()..end,
+        });
+    }
+    Ok(result)
+}
+
+/// Restore only a generated person field supported by one current own-cited
+/// literal institution and byte-identical complete report. This creates no alias.
+pub(super) fn generated_person_recovery_edits(
+    section_index: usize,
+    body: &str,
+    own: &[usize],
+    snapshot: &crate::Snapshot,
+    selected: &[Segment],
+) -> Result<Vec<Edit>> {
+    if !recovery_inputs_current(snapshot, selected)
+        || snapshot.suggestions.iter().any(|old| old.text == body)
+        || own.is_empty()
+        || own.len() > selected.len()
+        || own.iter().any(|i| *i == 0 || *i > selected.len())
+        || own.iter().collect::<BTreeSet<_>>().len() != own.len()
+    {
+        return Ok(Vec::new());
+    }
+    let candidates = person_candidates(body)?;
+    if candidates.is_empty() {
+        return Ok(Vec::new());
+    }
+    // A literal already observed anywhere in this current run cannot be
+    // replaced by another person. Large histories conservatively abstain.
+    let current = snapshot
+        .segments
+        .iter()
+        .filter(|s| s.meeting_id == snapshot.meeting.id && s.run == snapshot.meeting.run)
+        .take(MAX_FRAMES + 1)
+        .collect::<Vec<_>>();
+    if current.len() > MAX_FRAMES
+        || current
+            .iter()
+            .try_fold(0usize, |n, s| n.checked_add(s.text.len()))
+            .is_none_or(|n| n > MAX_BYTES)
+    {
+        return Ok(Vec::new());
+    }
+    let mut known = BTreeSet::new();
+    let mut count = 0usize;
+    static SOURCE_TITLE_GAP: OnceLock<Regex> = OnceLock::new();
+    let source_title_gap =
+        SOURCE_TITLE_GAP.get_or_init(|| Regex::new(r"[ \t]+(?:教授|博士)").unwrap());
+    for source in current {
+        // The old inventory does not cover every qualified/quoted gapped
+        // header. An unknown original label must never become permission to
+        // replace that literal, so abstain instead of inventing a wider parser.
+        if source_title_gap.is_match(&source.text) {
+            return Ok(Vec::new());
+        }
+        let occurrences = crate::translation::reported_name_occurrences(&source.text)?;
+        count += occurrences.len();
+        if count > MAX_FRAMES {
+            return Ok(Vec::new());
+        }
+        for range in occurrences {
+            known.insert(&source.text[range]);
+        }
+    }
+    let view = View::new(selected, &snapshot.meeting.id)?;
+    let mut edits = Vec::new();
+    for candidate in candidates {
+        if known.contains(candidate.person) {
+            continue;
+        }
+        let people = view
+            .evidence
+            .iter()
+            .flat_map(|e| &e.pairs)
+            .filter(|p| p.institution == candidate.institution)
+            .map(|p| p.person)
+            .collect::<BTreeSet<_>>();
+        if people.len() != 1 {
+            continue;
+        }
+        let person = *people.first().unwrap();
+        let institutions = view
+            .evidence
+            .iter()
+            .flat_map(|e| &e.pairs)
+            .filter(|p| p.person == person)
+            .map(|p| p.institution)
+            .collect::<BTreeSet<_>>();
+        if institutions.len() != 1 {
+            continue;
+        }
+        let mut witnesses = Vec::new();
+        for index in own {
+            let source = &selected[index - 1];
+            for original in &view.evidence[index - 1].pairs {
+                if original.institution != candidate.institution || original.person != person {
+                    continue;
+                }
+                let Some(report) = report_suffix(&source.text, original)? else {
+                    continue;
+                };
+                let suffix = original.person_range.end..report.end;
+                if source.text[suffix.clone()] == body[candidate.suffix.clone()] {
+                    witnesses.push((source, original, suffix));
+                }
+            }
+        }
+        if witnesses.len() != 1 {
+            continue;
+        }
+        let (source, original, suffix) = witnesses.pop().unwrap();
+        edits.push(Edit {
+            field: "person",
+            section_index,
+            body_range: candidate.field,
+            replacement: original.person.to_owned(),
             source_id: source.id.clone(),
             source_revision: source.revision,
             source_suffix_range: suffix.clone(),
@@ -421,6 +612,90 @@ mod recovery_tests {
             &source[suffix],
             "的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn generated_person_fields_require_complete_unchanged_report_evidence() -> Result<()> {
+        let raw = super::super::modal_provenance_tests::ORIGINAL_SOURCES;
+        let snapshot = super::super::modal_provenance_tests::snapshot(&[raw[1], raw[3]]);
+        let body = format!(
+            "{}。{}。",
+            raw[1].replace("FURGO森", "FURGO 森"),
+            raw[3].replace("潘 MALE FERGUSON教授", "PAN MALE FERGUSON 教授")
+        );
+        let edits =
+            generated_person_recovery_edits(0, &body, &[1, 2], &snapshot, &snapshot.segments)?;
+        assert_eq!(edits.len(), 2);
+        assert!(edits.iter().all(|edit| edit.field == "person"));
+        assert_eq!(&body[edits[0].body_range.clone()], "PAMELA FURGO 森");
+        assert_eq!(edits[0].replacement, "PAMELA FURGO森");
+        assert_eq!(&body[edits[1].body_range.clone()], "PAN MALE FERGUSON ");
+        assert_eq!(edits[1].replacement, "潘 MALE FERGUSON");
+        assert!(edits
+            .iter()
+            .all(|e| e.suffix.starts_with("教授指出记者如果")
+                && e.suffix.ends_with("似乎确实存在危害性")));
+        let changed = body.replace("似乎确实存在危害性", "确实存在危害性");
+        assert!(generated_person_recovery_edits(
+            0,
+            &changed,
+            &[1, 2],
+            &snapshot,
+            &snapshot.segments
+        )?
+        .is_empty());
+        assert!(
+            generated_person_recovery_edits(0, &body, &[1], &snapshot, &snapshot.segments)?
+                .iter()
+                .all(|e| e.source_id == snapshot.segments[0].id)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn known_other_person_ambiguous_source_and_wrong_institution_never_recover() -> Result<()> {
+        let raw = super::super::modal_provenance_tests::ORIGINAL_SOURCES;
+        let first = raw[3];
+        let known = first.replace("潘 MALE FERGUSON", "PAN MALE FERGUSON");
+        let snapshot = super::super::modal_provenance_tests::snapshot(&[first, &known]);
+        assert!(
+            generated_person_recovery_edits(0, &known, &[1], &snapshot, &snapshot.segments)?
+                .is_empty()
+        );
+        let duplicate = super::super::modal_provenance_tests::snapshot(&[first, first]);
+        assert!(generated_person_recovery_edits(
+            0,
+            &known,
+            &[1, 2],
+            &duplicate,
+            &duplicate.segments
+        )?
+        .is_empty());
+        let spaced = known.replace("FERGUSON教授", "FERGUSON 教授");
+        let spaced_source = super::super::modal_provenance_tests::snapshot(&[first, &spaced]);
+        assert!(generated_person_recovery_edits(
+            0,
+            &spaced,
+            &[1],
+            &spaced_source,
+            &spaced_source.segments
+        )?
+        .is_empty());
+        let single = super::super::modal_provenance_tests::snapshot(&[first]);
+        for bad in [
+            known.replace("邓迪大学", "迪大学"),
+            format!("如果{known}"),
+            format!("“{known}”"),
+            known.replace("大学", "学院"),
+            known.replace("PAN MALE", "PAN\nMALE"),
+        ] {
+            assert!(
+                generated_person_recovery_edits(0, &bad, &[1], &single, &single.segments)?
+                    .is_empty(),
+                "{bad}"
+            );
+        }
         Ok(())
     }
 }
