@@ -906,6 +906,128 @@ mod tests {
             "report":{"cpu":trial,"gpu":trial,"faster":true}
         }))?)
     }
+    fn damaged_catalog_fixture() -> Result<(SignedIndex, Index)> {
+        let fixture =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/component-signature");
+        let key = fs::read_to_string(fixture.join("public.key"))?;
+        let mut envelope = SignedIndex {
+            payload: fs::read_to_string(fixture.join("payload"))?,
+            signature: fs::read_to_string(fixture.join("payload.sig"))?,
+        };
+        let index = verify_index_with_key(&envelope, &key)?;
+        // Preserve valid JSON while invalidating the genuine fixture signature.
+        // The fixture key is never admitted by the application's public readers.
+        envelope.payload.push('\n');
+        assert!(verify_inventory_with_key(&envelope, &key).is_err());
+        Ok((envelope, index))
+    }
+    fn unavailable_identity_count(view: &serde_json::Value, id: &str, version: &str) -> usize {
+        view["unavailable"]
+            .as_array()
+            .map(|entries| {
+                entries
+                    .iter()
+                    .filter(|entry| entry["id"] == id && entry["version"] == version)
+                    .count()
+            })
+            .unwrap_or(0)
+    }
+
+    #[test]
+    fn public_inventory_and_removal_recover_managed_versions_without_valid_metadata() -> Result<()>
+    {
+        let mut failures = Vec::new();
+        for damaged in [false, true] {
+            let (root, engine, mut index, _) = removal_fixture()?;
+            let (envelope, signed_index) = damaged_catalog_fixture()?;
+            // This is a real managed package identity even on a host where no
+            // optional GPU runtime can execute. Cleanup must not execute it.
+            index.components[0].id = "vulkan-linux-x86_64".into();
+            index.version = signed_index.version;
+            let component = &index.components[0];
+            let path = location(root.path(), &index, component);
+            fs::create_dir_all(&path)?;
+            fs::write(path.join("llama-server"), b"good")?;
+            fixture_marker(&path, &index)?;
+            if damaged {
+                fs::write(
+                    path.join("component-index.json"),
+                    serde_json::to_vec(&envelope)?,
+                )?;
+            }
+            let other = path.parent().unwrap().join("acceleration-keep");
+            fs::create_dir(&other)?;
+            fs::write(other.join("keep"), b"other version")?;
+            assert!(
+                installed_component(&engine.root, &component.id, Some(&index.version)).is_err()
+            );
+
+            // Exercise both public management entry points before reporting a
+            // RED, so a listing failure does not hide the independent delete gap.
+            let listed = serde_json::to_value(engine.acceleration_components())?;
+            let removal = engine.remove_acceleration_component(&component.id, &index.version);
+            assert_eq!(fs::read(other.join("keep"))?, b"other version");
+            let metadata = if damaged { "damaged" } else { "missing" };
+            if unavailable_identity_count(&listed, &component.id, &index.version) != 1 {
+                failures.push(format!(
+                    "{metadata} metadata: public inventory must expose one unavailable management entry: {listed}"
+                ));
+            }
+            if removal.is_err() || path.exists() {
+                failures.push(format!(
+                    "{metadata} metadata: public removal must clean this exact managed version: {removal:?}"
+                ));
+            }
+            let remaining = serde_json::to_value(engine.acceleration_components())?;
+            if unavailable_identity_count(&remaining, &component.id, &index.version) != 0 {
+                failures.push(format!(
+                    "{metadata} metadata: removed version must leave the management inventory"
+                ));
+            }
+        }
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+        Ok(())
+    }
+
+    #[test]
+    fn current_catalog_does_not_promote_an_install_with_damaged_metadata() -> Result<()> {
+        let (root, engine, mut current, _) = removal_fixture()?;
+        let (envelope, signed_index) = damaged_catalog_fixture()?;
+        current.components[0].id = "vulkan-linux-x86_64".into();
+        current.version = signed_index.version;
+        let component = &current.components[0];
+        let path = location(root.path(), &current, component);
+        fs::create_dir_all(&path)?;
+        fs::write(path.join("llama-server"), b"good")?;
+        fixture_marker(&path, &current)?;
+        fs::write(
+            path.join("component-index.json"),
+            serde_json::to_vec(&envelope)?,
+        )?;
+        assert!(installed_component(&engine.root, &component.id, Some(&current.version)).is_err());
+        // As in the retained-component controls, the host-target catalog is
+        // synthetic. This exercises the production view builder and real saved
+        // reader, not production signature admission or GPU execution.
+        let listed = serde_json::to_value(catalog_status(
+            &engine,
+            Some(current.clone()),
+            |id, version| saved_index(&engine.root, id, version),
+        ))?;
+        let promoted = listed["components"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|entry| {
+                entry["component"]["id"] == component.id
+                    && entry["version"] == current.version
+                    && (entry["installed"] == true || entry["downloadable"] == true)
+            });
+        assert!(
+            !promoted && unavailable_identity_count(&listed, &component.id, &current.version) == 1,
+            "A matching current catalog must not hide damaged local metadata behind installed/testable/recommended flags: {listed}"
+        );
+        Ok(())
+    }
     #[test]
     fn catalog_refresh_keeps_prior_installs_visible_and_removable() -> Result<()> {
         for damaged in [false, true] {
