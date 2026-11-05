@@ -817,7 +817,11 @@ fn generate_inner(
         let request_attempt = work.requests.take()?;
         session.begin_request()?;
         let request_stage = if source_plan.is_some() {
-            "prepare_sources"
+            if fact_mode {
+                "prepare_fact_sources"
+            } else {
+                "prepare_sources"
+            }
         } else if node_plan.is_some() {
             "compose_fact_nodes"
         } else if prepared_sources.is_some() {
@@ -832,7 +836,9 @@ fn generate_inner(
             "max_tokens":440,"stream":true,"stream_options":{"include_usage":true},"cache_prompt":true
         });
         if let Some(plan) = &source_plan {
-            request["temperature"] = json!(0.0);
+            if !fact_mode {
+                request["temperature"] = json!(0.0);
+            }
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"source_languages","strict":true,"schema":plan.schema()}});
         } else if let Some(plan) = &node_plan {
@@ -923,7 +929,7 @@ fn generate_inner(
             let metrics = plan.metrics();
             attempts.push(json!({
                 "attempt":request_attempt,"stage":request_stage,"draft":raw_body,"body_draft":raw_body,
-                "mode":"prepare_sources","source_preparation":metrics,"usage":usage,
+                "mode":if fact_mode {"prepare_fact_sources"}else{"prepare_sources"},"source_preparation":metrics,"usage":usage,
                 "input_tokens":prompt_tokens,"context_size":prefs.context_size,
                 "validation_error":preparation.as_ref().err().map(|error|format!("{error:#}")),
                 "elapsed_ms":generation_started.elapsed().as_millis() as u64,"first_token_ms":first_token_ms,
@@ -1110,7 +1116,7 @@ fn generate_inner(
                 }
             })
             .and_then(|draft| {
-                validate_writer_document(
+                let sections = validate_writer_document(
                     draft,
                     snapshot,
                     &context.segments,
@@ -1118,7 +1124,11 @@ fn generate_inner(
                     meeting,
                     writer::chinese(snapshot, &prefs.minutes_language),
                     completion_bridge.as_ref(),
-                )
+                )?;
+                if let (Some(plan), Some(Ok(rendered))) = (&node_plan, &node_rendered) {
+                    plan.check_sections(rendered, &sections)?;
+                }
+                Ok(sections)
             });
         attempts.push(json!({
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
@@ -1126,7 +1136,7 @@ fn generate_inner(
             "affiliation_corrections":affiliation_corrections,
             "name_tokens":name_plan.as_ref().map(|plan|plan.metrics()),
             "fact_nodes":node_plan.as_ref().map(|plan|plan.metrics()),
-            "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
+            "mode":if node_plan.is_some(){"compose_fact_nodes"}else if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
             "translation_plan":translation_repair.as_ref().map(|p|p.metrics()),

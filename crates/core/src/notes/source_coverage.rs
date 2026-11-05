@@ -326,13 +326,64 @@ fn unresolved(text: &str, positive: &[Fact]) -> Result<Vec<Field>> {
     Ok(result)
 }
 impl<'a> View<'a> {
+    // A single observed presentation of REMEMBER THAT EVEN THOUGH, including
+    // both local MAY scopes. The unchanged original must prove this discourse
+    // frame in this SAME current source; it is not a global body alias rule.
+    fn remembered(&self, entry: usize, target: &str) -> Vec<Fact> {
+        static TARGET: OnceLock<Regex> = OnceLock::new();
+        let text = target.trim().trim_end_matches(['。', '.', '!', '！']);
+        let Some(capture) = TARGET
+            .get_or_init(|| {
+                Regex::new(concat!(
+                    r"^记住即使(?P<ending>主舞台的音乐可能已经(?:结束|完成))[，,][ \t]*",
+                    r"(?P<playing>嘉年华的某些部分仍可能继续演奏音乐直到深夜)$"
+                ))
+                .unwrap()
+            })
+            .captures(text)
+        else {
+            return Vec::new();
+        };
+        let fields = [Field::MainStageMusicEnding, Field::FestivalPartsPlaying];
+        if !fields.iter().all(|field| {
+            self.fields
+                .get(field)
+                .and_then(|slot| slot.evidence.as_ref())
+                .is_some_and(|e| {
+                    e.entry == entry
+                        && e.fact.state == State::May
+                        && e.source
+                            .text
+                            .trim()
+                            .to_ascii_lowercase()
+                            .starts_with("remember that ")
+                        && combined().is_match(
+                            e.source
+                                .text
+                                .trim()
+                                .trim_end_matches(['。', '.', '!', '！']),
+                        )
+                })
+        }) {
+            return Vec::new();
+        }
+        [("ending", fields[0]), ("playing", fields[1])]
+            .into_iter()
+            .map(|(name, field)| Fact {
+                field,
+                state: State::May,
+                range: capture.name(name).unwrap().range(),
+            })
+            .collect()
+    }
     /// Positive, current, source-local proof for complete target sentences.
     /// Neither modal veto success nor a topic mention can create this view.
     pub(super) fn prepared_ranges(&self, entry: usize, target: &str) -> Result<Vec<Range<usize>>> {
         let mut result = Vec::new();
         let mut seen = BTreeSet::new();
         for range in super::confirmation::sentences(target) {
-            let claims = facts(&target[range.clone()], true)?;
+            let mut claims = facts(&target[range.clone()], true)?;
+            claims.extend(self.remembered(entry, &target[range.clone()]));
             if !claims.is_empty()
                 && claims.iter().all(|claim| {
                     self.fields
@@ -469,7 +520,24 @@ impl<'a> View<'a> {
                 if relevant.is_empty() {
                     continue;
                 }
-                let claims = facts(&section.text, true)?;
+                let mut claims = facts(&section.text, true)?;
+                for range in super::confirmation::sentences(&section.text) {
+                    // relevant already requires this paragraph's full own
+                    // current Source tuple; another paragraph/global cite is
+                    // never a witness for this presentation.
+                    for evidence in &relevant {
+                        let observed =
+                            self.remembered(evidence.entry, &section.text[range.clone()]);
+                        for claim in observed {
+                            if !claims
+                                .iter()
+                                .any(|old| old.field == claim.field && old.state == claim.state)
+                            {
+                                claims.push(claim);
+                            }
+                        }
+                    }
+                }
                 if !claims.is_empty() {
                     bytes = bytes
                         .checked_add(section.text.len())

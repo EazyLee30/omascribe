@@ -89,6 +89,16 @@ fn functional(name: &str) -> bool {
     .any(|word| name.eq_ignore_ascii_case(word))
 }
 
+/// Literal spellings actually observed with complete boundaries. Declaration
+/// alone, normalization of an alias, or a functional MAY/IF never creates an ID.
+pub(super) fn observed_caption_names(text: &str, terms: &Terms) -> Vec<String> {
+    terms
+        .caption_spellings(text)
+        .into_iter()
+        .filter(|name| !functional(name) && !boundaries(text, name).is_empty())
+        .collect()
+}
+
 pub(super) fn prepare(
     system: String,
     content: String,

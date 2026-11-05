@@ -59,7 +59,7 @@ fn validate(
         &source.segments,
         &source.meeting.speaker_names,
     )?)?;
-    super::validate_writer_document(
+    let sections = super::validate_writer_document(
         &draft,
         source,
         &source.segments,
@@ -67,12 +67,14 @@ fn validate(
         &source.meeting.id,
         true,
         None,
-    )
+    )?;
+    nodes.check_sections(&rendered, &sections)?;
+    Ok(sections)
 }
 
 #[test]
 fn validated_runtime_clause_is_immutable_and_plain_names_gain_no_copy_proof() -> Result<()> {
-    let (source, terms, _, _, nodes) = prepared(&[
+    let (source, terms, validated, original_input, nodes) = prepared(&[
         ORIGINAL_SOURCES[4],
         ORIGINAL_SOURCES[1],
         ORIGINAL_SOURCES[3],
@@ -82,22 +84,17 @@ fn validated_runtime_clause_is_immutable_and_plain_names_gain_no_copy_proof() ->
     assert_eq!(input["fact_nodes"].as_array().unwrap().len(), 3);
     assert_eq!(input["fact_nodes"][0]["source_entry"], 1);
     assert_eq!(input["fact_nodes"][0]["text"], MUSIC);
-    assert_eq!(
-        input["fact_nodes"][1]["text"],
-        format!("{}。", ORIGINAL_SOURCES[1])
-    );
-    assert_eq!(
-        input["fact_nodes"][2]["text"],
-        format!("{}。", ORIGINAL_SOURCES[3])
-    );
-    assert_eq!(
-        input["required_source_fields"][0]["range_basis"],
-        "original_source"
-    );
-    assert_eq!(
-        input["transcript"][0]["original_source"],
-        ORIGINAL_SOURCES[4]
-    );
+    assert_eq!(input["fact_nodes"][1]["text"], ORIGINAL_SOURCES[1]);
+    assert_eq!(input["fact_nodes"][2]["text"], ORIGINAL_SOURCES[3]);
+    assert!(input.get("required_source_fields").is_none());
+    assert!(input["transcript"][0].get("original_source").is_none());
+    let actual: Value = serde_json::from_str(&validated.checked_input(
+        &original_input,
+        &source.segments,
+        &terms,
+        true,
+    )?)?;
+    assert_eq!(nodes.expanded_transcript()?, actual["transcript"]);
     let sections = validate(&source, &terms, &nodes, &article())?;
     assert_eq!(sections.len(), 1);
     assert!(sections[0].text.contains(MUSIC));
@@ -107,6 +104,69 @@ fn validated_runtime_clause_is_immutable_and_plain_names_gain_no_copy_proof() ->
         .sources
         .iter()
         .any(|q| q.quote == ORIGINAL_SOURCES[4] && q.revision == 1));
+    // Actual earlier successful preparation, not a new model response or a
+    // prefilled production answer. Origin: after-guard/.../batch-1/last-generation.
+    let received =
+        include_str!("../../../../tests/fixtures/received-source-preparation-2026-10-30.json");
+    assert_eq!(received.len(), 364);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(received.as_bytes())),
+        "c0245e7b88cbe230e3f851160b7ffb4f370d06d96948d8c26dbbd111103ac7e5"
+    );
+    let all = snapshot(&ORIGINAL_SOURCES);
+    let terms = Terms::new(&[], &[]).with_actor_spellings(
+        all.segments.iter().map(|s| s.text.as_str()),
+        std::iter::empty(),
+    );
+    let context = retrieval::Context {
+        segments: all.segments.clone(),
+        cursor: 5,
+        keywords: Vec::new(),
+    };
+    let (mut system, mut input) = writer::prompt_mode(&all, &context, &json!({}), "zh", false);
+    super::source_coverage::View::new(&all.segments, &all.segments, &all.meeting)?
+        .augment_with_accepted(&mut system, &mut input, &[])?;
+    let plan = source_language::Plan::new(&input, &all.segments, true, &terms)?.unwrap();
+    let prepared = plan.prepare(received, &all.segments, &terms)?;
+    let nodes = fact_nodes::Plan::from_prepared(&prepared, &input, &all, &terms, true)?;
+    let visible: Value = serde_json::from_str(nodes.input())?;
+    let target: Value = serde_json::from_str(received)?;
+    assert_eq!(visible["fact_nodes"][2]["text"], target["C"]);
+    let article = validate(&all, &terms, &nodes, &article())?;
+    assert!(article[0].text.contains(target["C"].as_str().unwrap()));
+    // The presentation cannot borrow a global or wrong-revision source.
+    let body = format!(
+        "{}。{}。{}",
+        ORIGINAL_SOURCES[1],
+        ORIGINAL_SOURCES[3],
+        target["C"].as_str().unwrap()
+    );
+    assert!(super::modal_provenance_tests::ordinary(
+        &all,
+        &[0, 1, 2, 3, 4],
+        &body,
+        Some(&[1, 2, 3, 4])
+    )
+    .unwrap_err()
+    .is::<super::source_coverage::Missing>());
+    let mut current = all.clone();
+    current.segments[4].text = ORIGINAL_SOURCES[4].replacen("REMEMBER THAT ", "", 1);
+    let context = retrieval::Context {
+        segments: current.segments.clone(),
+        cursor: 5,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&current, &context, &json!({}), "zh", false);
+    let plan = source_language::Plan::new(&input, &current.segments, true, &terms)?.unwrap();
+    let rejected = plan
+        .prepare(received, &current.segments, &terms)
+        .and_then(|prepared| {
+            fact_nodes::Plan::from_prepared(&prepared, &input, &current, &terms, true)
+        });
+    assert!(
+        rejected.is_err(),
+        "unspoken REMEMBER cannot be inferred from another source"
+    );
     Ok(())
 }
 
@@ -200,6 +260,32 @@ fn same_language_original_can_supply_a_node_but_unknown_sources_stay_visible() -
         assert!(visible["fact_nodes"].as_array().unwrap().is_empty());
         assert_eq!(visible["transcript"][0]["text"], original);
     }
+    let mut product = snapshot(&["我正在测试OmaScribe的功能。"]);
+    product.notes = vec![crate::UserNote {
+        id: "n".into(),
+        meeting_id: product.meeting.id.clone(),
+        kind: "document".into(),
+        content: "OmaScribe\nUNSPOKEN".into(),
+        anchor_ms: 0,
+        updated_at: String::new(),
+    }];
+    let product_terms = Terms::new(&product.notes, &[]);
+    let context = retrieval::Context {
+        segments: product.segments.clone(),
+        cursor: 1,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&product, &context, &json!({}), "zh", false);
+    let nodes = fact_nodes::Plan::from_original(&input, &product, &product_terms, true)?;
+    let visible: Value = serde_json::from_str(nodes.input())?;
+    assert_eq!(visible["names"], json!([{"id":1,"text":"OmaScribe"}]));
+    validate(
+        &product,
+        &product_terms,
+        &nodes,
+        &json!({"paragraphs":[{"parts":[{"t":"我正在测试"},{"n":1},{"t":"的功能。"}]}]})
+            .to_string(),
+    )?;
     Ok(())
 }
 
