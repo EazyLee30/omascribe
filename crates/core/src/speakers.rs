@@ -246,6 +246,43 @@ impl Engine {
         if count.is_some_and(|n| n > 16) {
             bail!("Speaker count must be 0–16");
         }
+        // Only inexpensive metadata is needed to reject an already-ineligible
+        // action. Never decode/clone a long meeting's source rows here, and
+        // release every gate before cold model verification reads weights.
+        {
+            let _gate = self.config_lock.lock().unwrap();
+            self.require_available()?;
+            self.configuration_idle()?;
+            let (mut meeting, has_segments) = {
+                let db = self.store.lock().unwrap();
+                let meeting = db.meeting(id)?;
+                if db.conn.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                    [id],
+                    |row| row.get::<_, bool>(0),
+                )? {
+                    bail!("This meeting is in Deleted; restore it from Settings → Storage");
+                }
+                let has_segments = db.has_segments(&meeting)?;
+                (meeting, has_segments)
+            };
+            if !has_segments {
+                bail!("Transcribe audio before separating speakers");
+            }
+            {
+                let runtime = self.status.lock().unwrap();
+                if runtime.meeting_id.as_deref() == Some(id) {
+                    meeting.duration_ms = meeting.duration_ms.max(runtime.elapsed_ms);
+                }
+            }
+            if meeting.duration_ms > 7_200_000 {
+                bail!("Speaker analysis supports recordings up to two hours; split longer recordings first");
+            }
+            let required = 700 + meeting.duration_ms * 64 / 1024 / 1024;
+            if available_memory().is_none_or(|m| m < required) {
+                bail!("Not enough memory for speaker analysis");
+            }
+        }
         let verified = verify_model()?;
         let _gate = self.config_lock.lock().unwrap();
         self.require_available()?;
@@ -509,6 +546,95 @@ mod tests {
             observations.iter().all(|(_, bytes)| *bytes == 0),
             "cold admission refusals must not read model weights: {observations:?}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn eligible_speaker_admission_verifies_then_rechecks_each_original_gate() -> Result<()> {
+        for change in ["recording", "run", "segments", "duration", "memory"] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let mut meeting = engine.create_meeting("Speaker hash recheck")?;
+            meeting.duration_ms = 1000;
+            engine.store.lock().unwrap().save_meeting(&meeting)?;
+            admission_source(&engine, &meeting)?;
+            let model = admission_model(&engine)?;
+            let memory = std::cell::Cell::new(u64::MAX);
+            let verified = std::cell::Cell::new(false);
+            let error = engine
+                .diarize_with_admission_readers(
+                    &meeting.id,
+                    None,
+                    || {
+                        // The eligible path must reach real asset verification
+                        // with no configuration/Store/preferences lock held.
+                        assert!(engine.config_lock.try_lock().is_ok());
+                        assert!(engine.store.try_lock().is_ok());
+                        assert!(engine.preferences.try_lock().is_ok());
+                        let receipt = engine.test_verify_model_spec(&model)?;
+                        verified.set(true);
+                        match change {
+                            "recording" => engine.status.lock().unwrap().recording = true,
+                            "run" => {
+                                let mut current = meeting.clone();
+                                current.run += 1;
+                                engine.store.lock().unwrap().save_meeting(&current)?;
+                            }
+                            "segments" => {
+                                engine.store.lock().unwrap().conn.execute(
+                                    "DELETE FROM segments WHERE meeting_id=?1 AND run=?2",
+                                    rusqlite::params![meeting.id, meeting.run],
+                                )?;
+                            }
+                            "duration" => {
+                                let mut current = meeting.clone();
+                                current.duration_ms = 7_200_001;
+                                engine.store.lock().unwrap().save_meeting(&current)?;
+                            }
+                            _ => memory.set(0),
+                        }
+                        Ok(receipt)
+                    },
+                    || Some(memory.get()),
+                )
+                .expect_err("a passed metadata hint cannot authorize changed execution state");
+            let expected = match change {
+                "recording" => "Finish recording, transcription and writing before changing models",
+                "run" | "segments" => "Transcribe audio before separating speakers",
+                "duration" => "Speaker analysis supports recordings up to two hours; split longer recordings first",
+                _ => "Not enough memory for speaker analysis",
+            };
+            assert_eq!(error.to_string(), expected, "{change}");
+            assert!(verified.get());
+            assert_eq!(engine.model_integrity.hashed_bytes(), 8, "{change}");
+            assert_admission_never_started(&engine);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn old_run_speaker_rows_do_not_admit_an_empty_current_run() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Speaker current run")?;
+        admission_source(&engine, &meeting)?;
+        meeting.run += 1;
+        engine.store.lock().unwrap().save_meeting(&meeting)?;
+        let model = admission_model(&engine)?;
+        let error = engine
+            .diarize_with_admission_readers(
+                &meeting.id,
+                None,
+                || engine.test_verify_model_spec(&model),
+                || Some(u64::MAX),
+            )
+            .expect_err("a previous run cannot authorize current speaker analysis");
+        assert_eq!(
+            error.to_string(),
+            "Transcribe audio before separating speakers"
+        );
+        assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+        assert_admission_never_started(&engine);
         Ok(())
     }
 
