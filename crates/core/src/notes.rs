@@ -45,6 +45,8 @@ pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionM
 #[cfg(test)]
 mod confirmation_state_tests;
 mod retrieval;
+#[cfg(test)]
+mod source_coverage_tests;
 mod source_language;
 pub(crate) mod stream;
 mod uncertainty;
