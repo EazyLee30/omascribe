@@ -32,6 +32,7 @@ struct Span {
 }
 pub(super) struct Plan {
     names: Vec<String>,
+    people: BTreeSet<String>,
     origins: Vec<Origin>,
     input_sha256: String,
 }
@@ -110,6 +111,7 @@ pub(super) fn prepare(
         .context("Missing writer name input")?;
     let mut seen = BTreeSet::new();
     let mut spans = Vec::new();
+    let mut observed_people = BTreeSet::new();
     for (entry, passage) in entries.iter().enumerate() {
         let id = passage["id"]
             .as_u64()
@@ -165,6 +167,7 @@ pub(super) fn prepare(
                 .iter()
                 .find(|original| &source.text[(*original).clone()] == literal)
             {
+                observed_people.insert(literal.to_owned());
                 add("text", range, literal, original.clone());
             }
         }
@@ -233,6 +236,7 @@ pub(super) fn prepare(
     );
     prepared.plan = Some(Plan {
         names,
+        people: observed_people,
         origins: spans.into_iter().map(|span| span.origin).collect(),
         input_sha256,
     });
@@ -242,7 +246,7 @@ pub(super) fn prepare(
 impl Plan {
     pub(super) fn metrics(&self) -> Value {
         json!({"codec":"writer-literal-names-v1","names":self.names.len(),"occurrences":self.origins.len(),"input_sha256":self.input_sha256,
-            "bindings_sha256":format!("{:x}",Sha256::digest(serde_json::to_vec(&(&self.names,&self.origins)).expect("name bindings")))})
+            "bindings_sha256":format!("{:x}",Sha256::digest(serde_json::to_vec(&(&self.names,&self.people,&self.origins)).expect("name bindings")))})
     }
     pub(super) fn restore(&self, body: &str) -> Result<String> {
         ensure!(body.len() <= MAX_BYTES, "专有名称代码正文超过字节预算");
@@ -252,6 +256,7 @@ impl Plan {
         let mut cursor = 0;
         let mut count = 0;
         let mut depth = 0usize;
+        let mut rendered_people = Vec::new();
         for capture in token.captures_iter(body) {
             count += 1;
             ensure!(count <= MAX_OCCURRENCES, "专有名称代码超过出现预算");
@@ -279,8 +284,30 @@ impl Plan {
                 .and_then(|id| self.names.get(id))
                 .context("未知的专有名称代码")?;
             restored.push_str(&body[cursor..hit.start()]);
+            let start = restored.len();
             restored.push_str(name);
             cursor = hit.end();
+            if self.people.contains(name) {
+                rendered_people.push(start..restored.len());
+                let tail = &body[cursor..];
+                let horizontal = tail.trim_start_matches([' ', '\t']);
+                if ["教授", "博士"]
+                    .iter()
+                    .any(|title| horizontal.starts_with(title))
+                {
+                    // Only this already-bound person's adjacent horizontal
+                    // presentation gap is normalized. A line break cannot
+                    // manufacture a reported-person field for later folding.
+                    cursor += tail.len() - horizontal.len();
+                } else {
+                    ensure!(
+                        !["教授", "博士"]
+                            .iter()
+                            .any(|title| tail.trim_start().starts_with(title)),
+                        "名称代码不能跨行建立报道人名"
+                    );
+                }
+            }
             ensure!(restored.len() <= MAX_BYTES, "还原名称超过字节预算");
         }
         restored.push_str(&body[cursor..]);
@@ -288,6 +315,36 @@ impl Plan {
             restored.len() <= MAX_BYTES && !reserved(&restored),
             "未知或损坏的专有名称代码"
         );
+        if !rendered_people.is_empty() {
+            let full_people = crate::translation::reported_name_occurrences(&restored)?;
+            for range in rendered_people {
+                let lead = restored[..range.start].trim_end_matches([' ', '\t']);
+                let tail = restored[range.end..].trim_start_matches([' ', '\t']);
+                if lead.chars().next_back().is_some_and(char::is_alphanumeric) {
+                    ensure!(
+                        ["的", "由", "与", "和", "及", "向", "请"]
+                            .iter()
+                            .any(|word| lead.ends_with(word)),
+                        "名称代码不能附加未观察的姓名前缀"
+                    );
+                }
+                if tail.chars().next().is_some_and(char::is_alphanumeric) {
+                    ensure!(
+                        ["教授", "博士", "的", "与", "和", "及"]
+                            .iter()
+                            .chain(super::attribution_roles::REPORT_VERBS.iter())
+                            .any(|word| tail.starts_with(word)),
+                        "名称代码不能附加未观察的姓名后缀"
+                    );
+                }
+                if ["教授", "博士"].iter().any(|title| tail.starts_with(title)) {
+                    ensure!(
+                        full_people.contains(&range),
+                        "还原代码必须是来源中的完整报道人名，不能拼成另一个姓名"
+                    );
+                }
+            }
+        }
         Ok(restored)
     }
     pub(super) fn composition(
@@ -531,6 +588,65 @@ mod tests {
             result.is_err(),
             "an unobserved Han prefix changed the complete person label while the ordinary writer accepted it"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn complete_person_tokens_keep_natural_grammar_and_horizontal_title_gaps() -> Result<()> {
+        let source = snapshot(&["北岭大学的 ALICE教授指出记者如果公布照片似乎存在风险。"]);
+        let data = encoded(&source, &[0], &empty_terms())?;
+        let plan = data.plan.as_ref().unwrap();
+        for raw in [
+            "[N1]教授指出记者如果公布照片似乎存在风险。",
+            "北岭大学的[N1]教授指出记者如果公布照片似乎存在风险。",
+            "北岭大学的[N1] \t教授指出记者如果公布照片似乎存在风险。",
+        ] {
+            let body = plan.composition(writer::body_with_evidence(raw, &data.content)?)?;
+            assert!(body.text().contains("ALICE教授"), "{raw}");
+            assert!(body.copies().is_empty());
+            assert!(body.input().is_none());
+            ordinary(&source, &[0], body.text(), None)?;
+        }
+        assert_eq!(plan.restore("[N1]")?, "ALICE");
+        assert!(plan
+            .restore("[N1]\n教授指出记者如果公布照片似乎存在风险。")
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn unobserved_person_suffixes_are_rejected_without_restricting_identifier_prose() -> Result<()>
+    {
+        let source = snapshot(&["北岭大学的 ALICE教授指出记者如果公布照片似乎存在风险。"]);
+        let data = encoded(&source, &[0], &empty_terms())?;
+        let plan = data.plan.as_ref().unwrap();
+        for raw in [
+            "北岭大学的[N1]王教授指出记者如果公布照片似乎存在风险。",
+            "北岭大学的[N1] 王教授指出记者如果公布照片似乎存在风险。",
+            "北岭大学的王 [N1]教授指出记者如果公布照片似乎存在风险。",
+        ] {
+            let checked = writer::body_with_evidence(raw, &data.content)
+                .and_then(|composed| plan.composition(composed))
+                .and_then(|composed| ordinary(&source, &[0], composed.text(), None));
+            assert!(checked.is_err(), "{raw}");
+        }
+        let note = crate::UserNote {
+            id: "n".into(),
+            meeting_id: "m".into(),
+            kind: "document".into(),
+            content: "OmaScribe\nGTX1650".into(),
+            anchor_ms: 0,
+            updated_at: String::new(),
+        };
+        let terms = Terms::new(&[note], &[]);
+        for (raw, opaque) in [
+            ("我正在测试OmaScribe的功能。", "我正在测试[N1]的功能。"),
+            ("显卡使用GTX1650进行测试。", "显卡使用[N1]进行测试。"),
+        ] {
+            let source = snapshot(&[raw]);
+            let data = encoded(&source, &[0], &terms)?;
+            assert_eq!(data.plan.as_ref().unwrap().restore(opaque)?, raw);
+        }
         Ok(())
     }
 }
