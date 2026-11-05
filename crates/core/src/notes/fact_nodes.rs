@@ -117,6 +117,7 @@ impl Plan {
         let mut names = Vec::new();
         let mut people = BTreeSet::new();
         let mut seen = BTreeSet::new();
+        let active = super::source_language::active_sources(&snapshot.segments);
         for passage in passages {
             let entry = passage["id"]
                 .as_u64()
@@ -131,6 +132,9 @@ impl Plan {
                 source.meeting_id == snapshot.meeting.id && source.run == snapshot.meeting.run,
                 "Fact-node source scope changed"
             );
+            let current = active[entry - 1]
+                .as_deref()
+                .context("Retired fact-node passage was restored")?;
             let actual = passage["text"]
                 .as_str()
                 .context("Missing fact-node source text")?;
@@ -146,13 +150,15 @@ impl Plan {
                 "Fact-node speaker changed"
             );
             if !prepared {
-                ensure!(actual == source.text, "Unproved translated fact-node input");
+                ensure!(actual == current, "Unproved translated fact-node input");
             }
             // Prepared admission already validated every translation. Repeat
             // language/source checks here before minting a local fact node.
+            let mut evidence = source.clone();
+            evidence.text = current.into();
             let checked = crate::translation::validate_text(
                 actual,
-                source,
+                &evidence,
                 if chinese { "zh" } else { "en" },
                 terms,
             )
@@ -213,15 +219,11 @@ impl Plan {
         }
         // Missing entries cannot be hidden by constructing only the known
         // facts. Unknown/fragmentary speech remains visible to the composer.
-        let completed = super::completion::view(&snapshot.segments);
         ensure!(
-            snapshot
-                .segments
+            active
                 .iter()
                 .enumerate()
-                .all(|(i, s)| completed.retired(i)
-                    || super::writer::non_substantive(&s.text)
-                    || seen.contains(&(i + 1))),
+                .all(|(i, text)| text.is_none() || seen.contains(&(i + 1))),
             "Fact-node input omitted current evidence"
         );
         let proof: Vec<_> = nodes

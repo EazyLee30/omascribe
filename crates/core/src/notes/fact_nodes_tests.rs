@@ -529,3 +529,32 @@ fn active_projection_does_not_authorize_arbitrary_edits_restoration_or_missing_u
     );
     Ok(())
 }
+
+#[test]
+fn an_active_photo_fragment_does_not_become_a_whole_original_fact_proof() -> Result<()> {
+    let old = format!("预算为3000元，{}", ORIGINAL_SOURCES[1]);
+    let (source, terms, input) = current_budget_input(&[&old, "预算改为5000元。"])?;
+    assert!(
+        super::attribution_roles::original_photo_report(&old, &terms)?.is_some(),
+        "the complete raw statement includes its original budget prefix"
+    );
+    let actual: Value = serde_json::from_str(&input)?;
+    let fragment = actual["transcript"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["id"] == 1)
+        .unwrap()["text"]
+        .as_str()
+        .unwrap();
+    assert_ne!(fragment, old);
+    assert!(!fragment.contains("3000"));
+    let nodes = fact_nodes::Plan::from_original(&input, &source, &terms, true)?;
+    let visible: Value = serde_json::from_str(nodes.input())?;
+    assert!(
+        visible["fact_nodes"].as_array().unwrap().is_empty(),
+        "active admission does not replace the raw whole-source predicate proof"
+    );
+    assert_eq!(visible["transcript"][0]["text"], fragment);
+    Ok(())
+}

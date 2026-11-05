@@ -130,6 +130,26 @@ fn sources_value(sources: &[Segment]) -> Result<Value> {
     Ok(serde_json::to_value(sources)?)
 }
 
+// The existing writer's budget/completion projection is admission data, not a
+// new source or positive fact proof. Keep this shared algorithm unchanged.
+pub(super) fn active_sources(sources: &[Segment]) -> Vec<Option<String>> {
+    let budget = super::corrections::budget_view(sources);
+    let completed = super::completion::view(sources);
+    sources
+        .iter()
+        .enumerate()
+        .map(|(i, source)| {
+            if completed.retired(i) || super::writer::non_substantive(&source.text) {
+                return None;
+            }
+            let text = budget
+                .as_ref()
+                .map_or_else(|| source.text.clone(), |b| b.text(i, &source.text));
+            (!text.trim().is_empty()).then_some(text)
+        })
+        .collect()
+}
+
 impl Plan {
     /// The input must be the writer's actual, token-budgeted transcript view.
     /// In particular, a retired clause cannot be restored for translation.
@@ -162,21 +182,7 @@ impl Plan {
                 );
             }
         }
-        let budget = super::corrections::budget_view(sources);
-        let completed = super::completion::view(sources);
-        let active: Vec<_> = sources
-            .iter()
-            .enumerate()
-            .map(|(i, source)| {
-                if completed.retired(i) || super::writer::non_substantive(&source.text) {
-                    return None;
-                }
-                let text = budget
-                    .as_ref()
-                    .map_or_else(|| source.text.clone(), |b| b.text(i, &source.text));
-                (!text.trim().is_empty()).then_some(text)
-            })
-            .collect();
+        let active = active_sources(sources);
         let target = if chinese { "zh" } else { "en" };
         let mut seen = HashSet::new();
         let mut slots = BTreeMap::<String, String>::new();
