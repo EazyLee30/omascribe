@@ -16,6 +16,8 @@ mod language;
 pub(crate) use language::validate_with_source as validate_language_with_source;
 mod lexical;
 mod metrics;
+#[cfg(test)]
+mod modal_provenance_tests;
 mod qualifiers;
 pub(crate) use metrics::{prefix as metric_prefix, Mismatch as MetricMismatch};
 pub(crate) use qualifiers::{
