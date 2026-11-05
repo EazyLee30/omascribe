@@ -152,3 +152,26 @@ fn folding_cannot_manufacture_name_recovery_or_borrow_an_uncited_witness() -> Re
     assert!(recovered.edits.is_empty());
     Ok(())
 }
+
+#[test]
+fn folding_cannot_authorize_institution_recovery_through_a_split_person() -> Result<()> {
+    let snapshot = snapshot(&[ORIGINAL_SOURCES[3]]);
+    let raw = ORIGINAL_SOURCES[3]
+        .replace("邓迪大学", "迪大学")
+        .replace("潘 MALE", "潘\nMALE");
+    let document = writer::document(&raw, &snapshot.segments, &Default::default())?;
+    let recovered =
+        validation::restore_generated_reports(&document, &snapshot, &snapshot.segments, &raw)?;
+    assert!(
+        recovered.edits.is_empty(),
+        "a display fold cannot authorize a report field repair"
+    );
+    assert!(prepare_generated_writer_document(
+        &raw,
+        &snapshot,
+        &snapshot.segments,
+        &terms(&snapshot),
+    )
+    .is_err());
+    Ok(())
+}
