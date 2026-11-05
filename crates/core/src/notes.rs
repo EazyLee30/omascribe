@@ -295,6 +295,17 @@ fn record_admitted_input(
     }
 }
 
+fn without_cached_translations(
+    snapshot: &crate::Snapshot,
+) -> std::borrow::Cow<'_, crate::Snapshot> {
+    if snapshot.translations.is_empty() {
+        return std::borrow::Cow::Borrowed(snapshot);
+    }
+    let mut input = snapshot.clone();
+    input.translations.clear();
+    std::borrow::Cow::Owned(input)
+}
+
 /// The internal minutes input used by both actual admission and retry identity.
 /// Keep caption visibility and the public snapshot contract independent.
 pub(crate) fn input_snapshot<'a>(
@@ -310,7 +321,7 @@ pub(crate) fn input_snapshot<'a>(
     }
     let context = retrieval::retrieve(snapshot, Some(&engine.retrieval_cache));
     if !crate::translation::minutes_cache_selection_is_bounded(&context.segments) {
-        return Ok(std::borrow::Cow::Borrowed(snapshot));
+        return Ok(without_cached_translations(snapshot));
     }
     let chinese = writer::chinese(snapshot, &prefs.minutes_language);
     let target = if chinese { "zh" } else { "en" };
@@ -332,12 +343,7 @@ pub(crate) fn input_snapshot<'a>(
         (cached, glossary)
     };
     if cached.is_empty() {
-        if snapshot.translations.is_empty() {
-            return Ok(std::borrow::Cow::Borrowed(snapshot));
-        }
-        let mut input = snapshot.clone();
-        input.translations.clear();
-        return Ok(std::borrow::Cow::Owned(input));
+        return Ok(without_cached_translations(snapshot));
     }
     let terms = crate::terminology::Terms::new(&snapshot.notes, &glossary).with_actor_spellings(
         snapshot

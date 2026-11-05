@@ -584,11 +584,35 @@ fn cached_for_target(
         .transpose()?;
     let mut environment = None;
     let mut terms = None;
-    let mut q=db.conn.prepare("SELECT t.json,s.json FROM translations t JOIN segments s ON s.id=t.segment_id WHERE s.meeting_id=?1 AND s.run=?2 AND t.revision=json_extract(s.json,'$.revision') AND t.model=?3 AND (?4 IS NULL OR t.target=?4) AND (?5 IS NULL OR (s.id IN (SELECT value FROM json_each(?5)) AND length(CAST(s.json AS BLOB))<=65536 AND length(CAST(t.json AS BLOB))<=32768))")?;
-    let rows = q.query_map(
-        rusqlite::params![meeting.id, meeting.run, prefs.llm_model, target, ids],
-        |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
-    )?;
+    let query = if ids.is_some() {
+        // SQLite preserves CROSS JOIN order, so the selected IDs drive both
+        // primary key lookups even when a meeting has a long history.
+        "SELECT t.json,s.json
+         FROM json_each(?5) AS requested
+         CROSS JOIN segments s
+         CROSS JOIN translations t
+         WHERE s.id=requested.value AND s.meeting_id=?1 AND s.run=?2
+           AND t.segment_id=s.id AND t.revision=json_extract(s.json,'$.revision')
+           AND t.model=?3 AND t.target=?4
+           AND length(CAST(s.json AS BLOB))<=65536 AND length(CAST(t.json AS BLOB))<=32768"
+    } else {
+        "SELECT t.json,s.json FROM translations t JOIN segments s ON s.id=t.segment_id WHERE s.meeting_id=?1 AND s.run=?2 AND t.revision=json_extract(s.json,'$.revision') AND t.model=?3"
+    };
+    let mut q = db.conn.prepare(query)?;
+    let read_row =
+        |row: &rusqlite::Row<'_>| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?));
+    let rows = if let Some(ids) = ids.as_deref() {
+        let target = target.context("Missing minutes cache target")?;
+        q.query_map(
+            rusqlite::params![meeting.id, meeting.run, prefs.llm_model, target, ids],
+            read_row,
+        )?
+    } else {
+        q.query_map(
+            rusqlite::params![meeting.id, meeting.run, prefs.llm_model],
+            read_row,
+        )?
+    };
     let mut result = HashMap::new();
     for row in rows {
         #[cfg(test)]
