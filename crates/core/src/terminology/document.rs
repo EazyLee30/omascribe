@@ -593,6 +593,50 @@ mod unchanged_source_tests {
         assert!(crate::notes::needs_update(&after));
         Ok(())
     }
+
+    #[test]
+    fn canonical_only_name_check_does_not_decode_an_irrelevant_cited_source() -> Result<()> {
+        let (_root, engine, note, before) = seed()?;
+        let mut plain = before.suggestions[0].clone();
+        plain.text = "测试和预算仍待确认。".into();
+        engine.store.lock().unwrap().save_suggestion(&plain)?;
+        let old_history = history(&engine, &before.meeting.id)?;
+        let mut name_note = note;
+        name_note.content = NOTE.into();
+        let terms = super::super::Terms::new(&[name_note], &[]);
+        let mut db = engine.store.lock().unwrap();
+        db.conn.execute(
+            "UPDATE segments SET json='fixture invalid source JSON' WHERE id=?1",
+            [&before.segments[0].id],
+        )?;
+        // Direct production savepoint/helper control: Engine's earlier source
+        // scan is deliberately out of this ordering test's scope. This proves
+        // no decode for a no-name-edit paragraph, not zero database IO.
+        assert_eq!(
+            db.with_terminology_savepoint(|db| {
+                db.repair_canonical_source_documents(&before.meeting, &terms)
+            })?,
+            0
+        );
+        let still_invalid: String = db.conn.query_row(
+            "SELECT json FROM segments WHERE id=?1",
+            [&before.segments[0].id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(still_invalid, "fixture invalid source JSON");
+        let mut relevant = plain.clone();
+        relevant.text = OLD_MINUTES.into();
+        db.save_suggestion(&relevant)?;
+        assert!(db
+            .with_terminology_savepoint(|db| {
+                db.repair_canonical_source_documents(&before.meeting, &terms)
+            })
+            .is_err());
+        assert!(db.conn.is_autocommit());
+        drop(db);
+        assert_eq!(history(&engine, &before.meeting.id)?, old_history);
+        Ok(())
+    }
 }
 pub(super) struct SourceChange {
     pub before: Segment,
@@ -842,13 +886,21 @@ fn repair(
 
 /// Plan only: a whole resulting paragraph must be a unique, current, unedited
 /// cited source verbatim. This does not write, archive, or grant stale authority.
+enum CanonicalReplay {
+    Unchanged,
+    Recovered(Suggestion),
+    // A known name still needs correction (or cannot be checked in budget).
+    // The old unchanged checkpoint must not certify this paragraph as current.
+    Pending,
+}
+
 fn canonical_source_repair(
     conn: &rusqlite::Connection,
     meeting: &Meeting,
     terms: &super::Terms,
     old: &Suggestion,
     budget: &mut usize,
-) -> Result<Option<Suggestion>> {
+) -> Result<CanonicalReplay> {
     const MAX_CITATIONS: usize = 64;
     if old.meeting_id != meeting.id
         || old.status != "pending"
@@ -856,16 +908,16 @@ fn canonical_source_repair(
         || old.sources.is_empty()
         || old.sources.len() > MAX_CITATIONS
     {
-        return Ok(None);
+        return Ok(CanonicalReplay::Pending);
     }
     let Some(remaining) = budget.checked_sub(old.text.len()) else {
         *budget = 0;
-        return Ok(None);
+        return Ok(CanonicalReplay::Pending);
     };
     *budget = remaining;
     let (body, replacements) = terms.normalize_with_changes(&old.text);
     if body == old.text || replacements.is_empty() {
-        return Ok(None);
+        return Ok(CanonicalReplay::Unchanged);
     }
     let mut edits = BTreeMap::new();
     if !replacements
@@ -874,13 +926,13 @@ fn canonical_source_repair(
         || replay(&old.text, &edits)
             .is_none_or(|(text, used)| text != body || used.len() != edits.len())
     {
-        return Ok(None);
+        return Ok(CanonicalReplay::Pending);
     }
     let mut seen = BTreeSet::new();
     let mut witnesses = 0usize;
     for source in &old.sources {
         if !seen.insert(&source.segment_id) {
-            return Ok(None);
+            return Ok(CanonicalReplay::Pending);
         }
         let value: Option<String> = conn
             .query_row(
@@ -897,12 +949,12 @@ fn canonical_source_repair(
             )
             .optional()?;
         let Some(value) = value else {
-            return Ok(None);
+            return Ok(CanonicalReplay::Pending);
         };
         let current: Segment = serde_json::from_str(&value)?;
         let Some(remaining) = budget.checked_sub(current.text.len()) else {
             *budget = 0;
-            return Ok(None);
+            return Ok(CanonicalReplay::Pending);
         };
         *budget = remaining;
         if origin
@@ -911,7 +963,7 @@ fn canonical_source_repair(
             || !source_matches(source, &current, meeting)
             || terms.normalize(&current.text) != current.text
         {
-            return Ok(None);
+            return Ok(CanonicalReplay::Pending);
         }
         if origin.is_none() {
             let original: Option<String> = conn
@@ -925,17 +977,19 @@ fn canonical_source_repair(
                 let original: Segment = serde_json::from_str(&original)?;
                 if original.text != current.text {
                     // Legacy text changes have unknown provenance.
-                    return Ok(None);
+                    return Ok(CanonicalReplay::Pending);
                 }
             }
         }
         witnesses += usize::from(current.text == body);
     }
-    Ok((witnesses == 1).then(|| {
+    Ok(if witnesses == 1 {
         let mut updated = old.clone();
         updated.text = body;
-        updated
-    }))
+        CanonicalReplay::Recovered(updated)
+    } else {
+        CanonicalReplay::Pending
+    })
 }
 
 impl Store {
@@ -1026,37 +1080,48 @@ impl Store {
             if serde_json::to_string(&expected)? != serde_json::to_string(current)? {
                 continue;
             }
-            let mut sources = BTreeMap::new();
             let mut protected = false;
-            for source in &old.sources {
-                let value: Option<String> = tx
-                    .query_row(
-                        "SELECT json FROM segments WHERE id=?1 AND meeting_id=?2 AND run=?3",
-                        params![source.segment_id, meeting.id, meeting.run],
-                        |r| r.get(0),
+            let replayed = if changes.is_empty() {
+                // The source-change replay cannot contribute in this case.
+                // Let the bounded name plan check whether any source is needed
+                // before reading or decoding its citation records.
+                None
+            } else {
+                let mut sources = BTreeMap::new();
+                for source in &old.sources {
+                    let value: Option<String> = tx
+                        .query_row(
+                            "SELECT json FROM segments WHERE id=?1 AND meeting_id=?2 AND run=?3",
+                            params![source.segment_id, meeting.id, meeting.run],
+                            |r| r.get(0),
+                        )
+                        .optional()?;
+                    let origin: Option<String> = tx.query_row(
+                        "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
+                        [&source.segment_id], |r| r.get(0),
+                    ).optional()?;
+                    if origin.as_deref() == Some("human") {
+                        protected = true;
+                        break;
+                    }
+                    if let Some(value) = value {
+                        let segment: Segment = serde_json::from_str(&value)?;
+                        sources.insert(segment.id.clone(), segment);
+                    }
+                }
+                if protected {
+                    None
+                } else {
+                    repair(
+                        old,
+                        &current_meeting,
+                        &sources,
+                        changes,
+                        reusable_fingerprint.is_some(),
                     )
-                    .optional()?;
-                let origin: Option<String> = tx.query_row(
-                    "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
-                    [&source.segment_id], |r| r.get(0),
-                ).optional()?;
-                if origin.as_deref() == Some("human") {
-                    protected = true;
-                    break;
                 }
-                if let Some(value) = value {
-                    let segment: Segment = serde_json::from_str(&value)?;
-                    sources.insert(segment.id.clone(), segment);
-                }
-            }
+            };
             if !protected {
-                let replayed = repair(
-                    old,
-                    &current_meeting,
-                    &sources,
-                    changes,
-                    reusable_fingerprint.is_some(),
-                );
                 // Only a paragraph fresh in the captured pre-change document
                 // reaches this point. The current equality above permits this
                 // transaction's stale marker, never preexisting stale/human text.
@@ -1071,12 +1136,18 @@ impl Store {
                         )
                     })
                     .transpose()?
-                    .flatten();
-                if let Some(section) = canonical {
-                    canonical_recovered = true;
-                    repaired.push(section);
-                } else if let Some(section) = replayed {
-                    repaired.push(section);
+                    .unwrap_or(CanonicalReplay::Unchanged);
+                match canonical {
+                    CanonicalReplay::Recovered(section) => {
+                        canonical_recovered = true;
+                        repaired.push(section);
+                    }
+                    CanonicalReplay::Unchanged => {
+                        if let Some(section) = replayed {
+                            repaired.push(section);
+                        }
+                    }
+                    CanonicalReplay::Pending => {}
                 }
             }
         }
