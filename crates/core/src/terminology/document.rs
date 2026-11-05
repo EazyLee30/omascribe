@@ -74,13 +74,7 @@ mod unchanged_source_tests {
     ) -> Result<()> {
         let (_root, engine, note, before) = seed()?;
         assert!(!before.meeting.auto_notes);
-        engine.save_note(
-            &before.meeting.id,
-            Some(note.id),
-            NOTE,
-            "document",
-            0,
-        )?;
+        engine.save_note(&before.meeting.id, Some(note.id), NOTE, "document", 0)?;
         let after = engine.snapshot(&before.meeting.id)?;
         assert_eq!(after.suggestions[0].text, CANONICAL);
         assert_eq!(after.suggestions[0].id, before.suggestions[0].id);
@@ -101,6 +95,189 @@ mod unchanged_source_tests {
             |row| row.get(0),
         )?;
         assert_eq!(jobs, 0);
+        Ok(())
+    }
+
+    fn history(engine: &Engine, meeting: &str) -> Result<Vec<String>> {
+        let db = engine.store.lock().unwrap();
+        let mut query = db
+            .conn
+            .prepare("SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id")?;
+        let rows = query.query_map([meeting], |row| row.get::<_, String>(0))?;
+        Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    }
+
+    #[test]
+    fn canonical_source_replay_respects_human_state_current_citations_and_whole_claims(
+    ) -> Result<()> {
+        for case in [
+            "accepted",
+            "stale",
+            "revision",
+            "quote",
+            "start",
+            "end",
+            "speaker",
+            "missing",
+            "human",
+            "legacy",
+            "budget",
+            "negation",
+            "uncited",
+            "duplicate",
+            "ambiguous",
+        ] {
+            let (_root, engine, note, seeded) = seed()?;
+            let mut section = seeded.suggestions[0].clone();
+            match case {
+                "accepted" => section.status = "accepted".into(),
+                "stale" => section.stale = true,
+                "revision" => section.sources[0].revision += 1,
+                "quote" => section.sources[0].quote = OLD_MINUTES.into(),
+                "start" => section.sources[0].start_ms += 1,
+                "end" => section.sources[0].end_ms += 1,
+                "speaker" => section.sources[0].speaker_name = Some("Human label".into()),
+                "missing" => section.sources[0].segment_id = "missing-source".into(),
+                "human" => {
+                    engine.store.lock().unwrap().conn.execute(
+                        "INSERT INTO segment_text_edits VALUES(?1,1,'human')",
+                        [&seeded.segments[0].id],
+                    )?;
+                }
+                "legacy" => {
+                    let mut original = seeded.segments[0].clone();
+                    original.text = "人工检查前的转写。".into();
+                    let mut current = seeded.segments[0].clone();
+                    current.revision = 2;
+                    let db = engine.store.lock().unwrap();
+                    db.conn.execute(
+                        "INSERT INTO segment_history VALUES(?1,1,?2)",
+                        params![original.id, serde_json::to_string(&original)?],
+                    )?;
+                    db.save_segment(&current)?;
+                    section.sources[0].revision = 2;
+                }
+                "budget" => section.text = OLD_MINUTES.replace("仍未批准", "已批准"),
+                "negation" => section.text = OLD_MINUTES.replace("尚未修复", "已经修复"),
+                "uncited" | "duplicate" => {
+                    let mut other = seeded.segments[0].clone();
+                    other.id.push_str(":other");
+                    other.seq = 2;
+                    if case == "uncited" {
+                        other.text = "测试尚未开始，预算仍未批准。".into();
+                        section.sources.clear();
+                    }
+                    engine.store.lock().unwrap().save_segment(&other)?;
+                    section.sources.push(Source {
+                        segment_id: other.id,
+                        revision: other.revision,
+                        start_ms: other.start_ms,
+                        end_ms: other.end_ms,
+                        quote: other.text,
+                        speaker_name: None,
+                    });
+                }
+                "ambiguous" => {}
+                _ => unreachable!(),
+            }
+            engine.store.lock().unwrap().save_suggestion(&section)?;
+            let before = engine.snapshot(&seeded.meeting.id)?;
+            let old_history = history(&engine, &seeded.meeting.id)?;
+            let note_text = if case == "ambiguous" {
+                "我正在测试OmaScribe和AlmaScribe的功能"
+            } else {
+                NOTE
+            };
+            engine.save_note(&before.meeting.id, Some(note.id), note_text, "document", 0)?;
+            let after = engine.snapshot(&before.meeting.id)?;
+            assert_eq!(
+                serde_json::to_value(&after.suggestions)?,
+                serde_json::to_value(&before.suggestions)?,
+                "{case}"
+            );
+            assert_eq!(
+                serde_json::to_value(&after.segments)?,
+                serde_json::to_value(&before.segments)?,
+                "{case}"
+            );
+            assert_eq!(history(&engine, &before.meeting.id)?, old_history, "{case}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_source_replay_is_idempotent_and_does_not_archive_or_infer_again() -> Result<()> {
+        for alias in ["ALMA SCRIBE", "OMA SCRIBE", "奥马斯"] {
+            let (_root, engine, note, before) = seed()?;
+            let mut old = before.suggestions[0].clone();
+            old.text = CANONICAL.replace("OmaScribe", alias);
+            engine.store.lock().unwrap().save_suggestion(&old)?;
+            let old_history = history(&engine, &before.meeting.id)?;
+            engine.save_note(
+                &before.meeting.id,
+                Some(note.id.clone()),
+                NOTE,
+                "document",
+                0,
+            )?;
+            let updated_history = history(&engine, &before.meeting.id)?;
+            assert_eq!(updated_history.len(), old_history.len() + 1, "{alias}");
+            assert_eq!(
+                serde_json::from_str::<Vec<Suggestion>>(updated_history.last().unwrap())?[0].text,
+                old.text
+            );
+            let after = engine.snapshot(&before.meeting.id)?;
+            assert_eq!(after.suggestions[0].text, CANONICAL, "{alias}");
+            assert_eq!(engine.correct_terminology(&before.meeting.id)?, 0);
+            engine.save_note(&before.meeting.id, Some(note.id), NOTE, "document", 0)?;
+            assert_eq!(history(&engine, &before.meeting.id)?, updated_history);
+            let again = engine.snapshot(&before.meeting.id)?;
+            assert_eq!(
+                serde_json::to_value(&again.suggestions)?,
+                serde_json::to_value(&after.suggestions)?
+            );
+            assert_eq!(again.segments[0].revision, 1);
+            let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+                "SELECT COUNT(*) FROM inference_jobs",
+                [],
+                |row| row.get(0),
+            )?;
+            assert_eq!(jobs, 0);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_source_replay_failure_rolls_back_terms_document_and_history() -> Result<()> {
+        let (_root, engine, note, before) = seed()?;
+        let old_history = history(&engine, &before.meeting.id)?;
+        let old_terms = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&before.meeting.id, "terms")?;
+        engine.store.lock().unwrap().conn.execute_batch(
+            "CREATE TRIGGER reject_canonical_repair BEFORE UPDATE ON suggestions
+             BEGIN SELECT RAISE(ABORT,'fixture canonical repair failed'); END;",
+        )?;
+        let error = engine
+            .save_note(&before.meeting.id, Some(note.id), NOTE, "document", 0)
+            .expect_err("the real document write must fail inside the terms transaction");
+        assert!(format!("{error:#}").contains("fixture canonical repair failed"));
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.notes[0].content, NOTE);
+        assert_eq!(
+            serde_json::to_value(&after.suggestions)?,
+            serde_json::to_value(&before.suggestions)?
+        );
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
+        assert_eq!(history(&engine, &before.meeting.id)?, old_history);
+        let db = engine.store.lock().unwrap();
+        assert_eq!(db.cache_dependency(&before.meeting.id, "terms")?, old_terms);
+        assert!(db.conn.is_autocommit());
         Ok(())
     }
 }
@@ -351,6 +528,130 @@ fn repair(
 }
 
 impl Store {
+    /// A newly written name can repair old AI spelling even when ASR already
+    /// has the canonical text. This adds no fact authority: the whole resulting
+    /// paragraph must be one unique, current, unedited cited source verbatim.
+    /// The caller owns the terminology transaction and source-change replay.
+    pub(super) fn repair_canonical_source_documents(
+        &mut self,
+        meeting: &Meeting,
+        terms: &super::Terms,
+    ) -> Result<usize> {
+        anyhow::ensure!(!self.conn.is_autocommit(), "名称同步需要当前术语事务");
+        const MAX_BYTES: usize = 120_000;
+        const MAX_CITATIONS: usize = 64;
+        let existing = self.suggestions(&meeting.id)?;
+        let mut budget = MAX_BYTES;
+        let mut repaired = Vec::new();
+        for old in existing.iter().filter(|section| {
+            section.meeting_id == meeting.id
+                && section.status == "pending"
+                && !section.stale
+                && !section.sources.is_empty()
+                && section.sources.len() <= MAX_CITATIONS
+        }) {
+            let Some(remaining) = budget.checked_sub(old.text.len()) else {
+                break;
+            };
+            budget = remaining;
+            let (body, replacements) = terms.normalize_with_changes(&old.text);
+            if body == old.text || replacements.is_empty() {
+                continue;
+            }
+            let mut edits = BTreeMap::new();
+            if !replacements
+                .iter()
+                .all(|replacement| merge(&mut edits, replacement).is_some())
+                || replay(&old.text, &edits)
+                    .is_none_or(|(text, used)| text != body || used.len() != edits.len())
+            {
+                continue;
+            }
+            let mut seen = BTreeSet::new();
+            let mut witnesses = 0usize;
+            let mut valid = true;
+            for source in &old.sources {
+                if !seen.insert(&source.segment_id) {
+                    valid = false;
+                    break;
+                }
+                let value: Option<String> = self
+                    .conn
+                    .query_row(
+                        "SELECT json FROM segments WHERE id=?1 AND meeting_id=?2 AND run=?3",
+                        params![source.segment_id, meeting.id, meeting.run],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                let origin: Option<String> = self
+                    .conn
+                    .query_row(
+                        "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
+                        [&source.segment_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                let Some(value) = value else {
+                    valid = false;
+                    break;
+                };
+                let current: Segment = serde_json::from_str(&value)?;
+                let Some(remaining) = budget.checked_sub(current.text.len()) else {
+                    valid = false;
+                    break;
+                };
+                budget = remaining;
+                if origin
+                    .as_deref()
+                    .is_some_and(|origin| origin != "terminology")
+                    || !source_matches(source, &current, meeting)
+                    || terms.normalize(&current.text) != current.text
+                {
+                    valid = false;
+                    break;
+                }
+                if origin.is_none() {
+                    let original: Option<String> = self
+                        .conn
+                        .query_row(
+                            "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
+                            [&source.segment_id],
+                            |row| row.get(0),
+                        )
+                        .optional()?;
+                    if let Some(original) = original {
+                        let original: Segment = serde_json::from_str(&original)?;
+                        if original.text != current.text {
+                            // Legacy text changes have unknown provenance.
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+                witnesses += usize::from(current.text == body);
+            }
+            if valid && witnesses == 1 {
+                let mut updated = old.clone();
+                updated.text = body;
+                repaired.push(updated);
+            }
+        }
+        if !repaired.is_empty() {
+            self.conn.execute(
+                "INSERT INTO document_history(meeting_id,created_at,json) VALUES(?1,?2,?3)",
+                params![
+                    meeting.id,
+                    chrono::Utc::now().to_rfc3339(),
+                    serde_json::to_string(&existing)?
+                ],
+            )?;
+            for section in &repaired {
+                self.save_suggestion(section)?;
+            }
+        }
+        Ok(repaired.len())
+    }
+
     pub(crate) fn note_spelling_edit(
         &self,
         meeting: &Meeting,

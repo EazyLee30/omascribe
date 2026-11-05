@@ -1417,7 +1417,7 @@ impl Engine {
             pause();
         }
         let mut db = self.store.lock().unwrap();
-        let changed = db.with_terminology_savepoint(|db| {
+        let (changed, canonical_documents) = db.with_terminology_savepoint(|db| {
             // Derive the environment under the same guard used for all source,
             // citation and terms-key writes; an older worker cannot restore a
             // spelling snapshot captured before a concurrent note/glossary save.
@@ -1428,6 +1428,7 @@ impl Engine {
             let mut source_changes = Vec::new();
             let mut changed = 0;
             let terms_key = terms.fingerprint();
+            let terms_changed = db.cache_dependency(meeting, "terms")? != terms_key;
             db.schedule_terminology(&m, &terms_key)?;
             loop {
                 let candidates = db.terminology_candidates(&m)?;
@@ -1534,10 +1535,19 @@ impl Engine {
                     db.repair_terminology_documents(&m, &before, &source_changes, reusable)?;
                 }
             }
-            Ok(changed)
+            // A source may already have the right spelling while an older AI
+            // paragraph still has a known alias. Only fresh, whole-source
+            // literal repair is permitted here; changed-source replay above
+            // retains its existing revision/citation transaction.
+            let canonical_documents = if changed == 0 && terms_changed {
+                db.repair_canonical_source_documents(&m, &terms)?
+            } else {
+                0
+            };
+            Ok((changed, canonical_documents))
         })?;
         drop(db);
-        if changed > 0 {
+        if changed > 0 || canonical_documents > 0 {
             self.sync_meeting_files(meeting);
         }
         Ok(changed)
