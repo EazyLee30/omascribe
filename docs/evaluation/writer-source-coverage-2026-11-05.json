@@ -1,0 +1,77 @@
+{
+  "status": "SOURCE_CHECKED_COMPONENT_NOT_A_RELEASE_OR_FULL_ARTICLE_PASS",
+  "source": "126ac4ef63ace64b0fe40897e062485c1bc851d2",
+  "branch": "https://github.com/EazyLee30/omascribe/tree/codex/writer-source-coverage",
+  "public_production_unchanged": "317b1a76575de970aade706ad4470960b0df0481",
+  "received_counterexample": {
+    "prose_sha256": "6d1c06b52aa72c7f265bf3d4ead8e27f58aa78019515fc303e1845ebd967654d",
+    "bytes": 248,
+    "original_bug": "All selected music facts absent from body; global citations nevertheless acknowledged cursor5."
+  },
+  "changes": [
+    "Derive positive coverage obligations for two closed, current-source music predicates. The same field and local MAY must appear in prose with its own complete current citation; global citation presence alone cannot acknowledge it.",
+    "Apply coverage DATA before ordinary token-budget calculation and on the existing bounded ORIGINAL-source repair. No additional request or changed sampling/model.",
+    "Later direct same-field unresolved or negative statements retire the older obligation without creating a positive witness. Quoted, conditional, interrogative and different-subobject cases retain old policy.",
+    "Preserve valid translated caches; expose exact original_source and explicit UTF-8 range_basis when the actual visible text is translated.",
+    "Count current accepted paragraphs that Store certainly retains; exclude pending/stale/other-meeting/obsolete-quote paragraphs and avoid requiring duplicates in ordinary prompts.",
+    "Validate the actual Store projection after accepted filtering and before history, writes, cursor or fingerprint. This final failure is stop-only, not a new repair request."
+  ],
+  "root_executed_checks": [
+    {
+      "source": "24afce6d6099df2aaa2764a08b2746c47057e7d3",
+      "result": "RED: 1 pass / 2 failures",
+      "log": {
+        "path": "artifacts/writer-source-coverage-2026-11-05/red.log",
+        "sha256": "17e23c8327a41e5413312cd5a32a780ee168af35050d9e88a901a29ed9fb3c34"
+      }
+    },
+    {
+      "source": "99a4663",
+      "result": "RED: 11 pass / 2 failures, negative update and translated-cache coordinates",
+      "log": {
+        "path": "artifacts/writer-source-coverage-2026-11-05/99a4663-red.log",
+        "sha256": "4068fdbb66851734e0753c1b71c77328c0c12e76a304a78111e933cd64c18f56"
+      }
+    },
+    {
+      "source": "7e8d75a3ad4a5d6833681aa835ac7f2235e322c5",
+      "result": "16 pass / 1 failure, retained accepted body; previous two REDs green",
+      "log": {
+        "path": "artifacts/writer-source-coverage-2026-11-05/7e8d75a-target-red.log",
+        "sha256": "f6b62884f40ac807e9b4e6276550ec7f6f5e2296baedc6bf783798e166b1d0f2"
+      }
+    },
+    {
+      "source": "126ac4ef63ace64b0fe40897e062485c1bc851d2",
+      "result": "18 source-coverage checks pass",
+      "log": {
+        "path": "artifacts/writer-source-coverage-2026-11-05/126ac4e-target.log",
+        "sha256": "471adc9b71026d6deffde25c7cd4b5b91a430cf070564abe24499d8a79ef3f85"
+      }
+    },
+    {
+      "source": "126ac4ef63ace64b0fe40897e062485c1bc851d2",
+      "result": "17 modal-provenance checks pass",
+      "log": {
+        "path": "artifacts/writer-source-coverage-2026-11-05/126ac4e-modal.log",
+        "sha256": "9dc875e72048122a1c81ee83bd03178100be9c926c684081f15b7615702a5013"
+      }
+    }
+  ],
+  "scope_limits": [
+    "Finite recognized predicates, not universal omission detection or general natural-language inference.",
+    "Early coverage errors can route to ORIGINAL repair before final language/name rechecks; old final gates remain required before commit.",
+    "Whole combined workspace checks and actual complete-article acceptance are separate; this isolated component has no new model execution.",
+    "No real-recording ASR recall, general speaker attribution, Windows/Linux GPU qualification or performance improvement claimed."
+  ],
+  "resource_work": {
+    "new_model_calls": 0,
+    "downloads": 0,
+    "installer_builds": 0,
+    "source_only_fixture_cleanup": {
+      "path": "artifacts/writer-source-coverage-2026-11-05/frontend-cleanup.json",
+      "sha256": "ab5d09c9edfb26ec4da53b65a051b812623af6866112fa5c711636e1c91d3354"
+    }
+  },
+  "release_0_3_5_published": false
+}

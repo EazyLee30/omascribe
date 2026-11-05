@@ -1,0 +1,137 @@
+{
+  "status": "FAIL_STOPPED_NO_PROMOTION",
+  "candidate_source": "b466dc0c081118a3faaf33c5a8662057fbad76d8",
+  "branch": "https://github.com/EazyLee30/omascribe/tree/codex/writer-name-coverage-candidate",
+  "public_production_unchanged": "317b1a76575de970aade706ad4470960b0df0481",
+  "release_0_3_5_published": false,
+  "installer_built_or_installed_app_changed": false,
+  "fixed_case_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2",
+  "checks": {
+    "joint_controls": [
+      "initial_and_original_retry_rebuild_joint_bindings_after_reorder_and_trim",
+      "joint_name_rendering_keeps_coverage_veto_and_abstains_on_moved_coordinates",
+      "actual_second_retrieval_rebuilds_names_and_current_coverage_for_source_six"
+    ],
+    "core_pass": 744,
+    "core_explicit_ignored": 13,
+    "desktop_shell_pass": 4,
+    "asr_pass": 18,
+    "cli_pass": 2,
+    "integration_pass": 34,
+    "workspace_exit": 0,
+    "strict_clippy_exit": 0,
+    "fmt_exit": 0
+  },
+  "checks_evidence": {
+    "path": "artifacts/writer-name-coverage-2026-11-05/integration-proof.json",
+    "sha256": "ae5b509aa03cfc41b4eff50aa8e27086b8f2e181ae0b9856b129175a18300e20"
+  },
+  "prior_full_check_failure": {
+    "source": "a26fe614688c26bcc14967e89f5354dd3f7d9028",
+    "core_pass": 737,
+    "core_fail": 6,
+    "core_explicit_ignored": 13,
+    "log": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/workspace.log",
+      "sha256": "9b8d960f79016415d5f3820d4fb725ddd6bc5f44bb23119f0dddf79f841670db"
+    },
+    "repair": "Recognize an already observed complete Chinese body rendering only, without creating original-source alias authority; complete independent-topic positive fixtures while keeping wrong-owner/current-citation rejection assertions."
+  },
+  "actual_trial": {
+    "jobs": 1,
+    "requests": 2,
+    "complete_responses": 2,
+    "cursor_before": 0,
+    "cursor_after": 0,
+    "committed": false,
+    "manual_quality": "FAIL",
+    "stop_reason": "no_progress",
+    "source6_selected_or_generated": false,
+    "oracle_scope": "Harness stopped for no progress before assess() or the successful-first-job full-text checkpoint; independent review directly confirms the semantic failures.",
+    "attempts": [
+      {
+        "attempt": 1,
+        "raw_body_draft_sha256": "cf673999bb98d875aff80e6745f6f04c34bc6d468158a818f94459412d14fe7e",
+        "decoded_prose_sha256": null,
+        "validation_error": "未知或损坏的专有名称代码",
+        "name_tokens": {
+          "bindings_sha256": "a20aa6cc19397deb31dcd854ae1431fa2c7b53d9f6c62f9e3bcdb50bf8a77606",
+          "codec": "writer-literal-names-v1",
+          "input_sha256": "8dd8a15da3a7bfa646792d761819b9323a6905eba031bfaa24d147f3e427a53b",
+          "names": 2,
+          "occurrences": 2
+        },
+        "prompt_tokens": 639,
+        "completion_tokens": 58
+      },
+      {
+        "attempt": 2,
+        "raw_body_draft_sha256": "f8bba698373c35e145c32c64cf07e2a2d24bfbfc64042f7cb11ab5e5a431e515",
+        "decoded_prose_sha256": "f2ccaa005614372ee1c180591e305853ab401d89cd7b00a4028fc44a9c82ebe6",
+        "validation_error": "保留原SOURCE中主舞台音乐结束的局部MAY；只有该对象真正后续、且本段引用的明确事实才能更新它。继续演奏的可能性须单独保留，不能借别句似乎。Keep MAY with the music-ending claim and separately with possible continuing festival sections.",
+        "name_tokens": {
+          "bindings_sha256": "a20aa6cc19397deb31dcd854ae1431fa2c7b53d9f6c62f9e3bcdb50bf8a77606",
+          "codec": "writer-literal-names-v1",
+          "input_sha256": "17b1acf04337da4318a59fdfca796b7bf1eb99682dc1f69dd75861545480d8a2",
+          "names": 2,
+          "occurrences": 2
+        },
+        "prompt_tokens": 648,
+        "completion_tokens": 57
+      }
+    ],
+    "positive": "The music topic appeared in both responses; the second response restored both complete person names without inventing affiliations. No text committed and no coverage was falsely acknowledged.",
+    "failure": "First response damaged [N2] spelling. Second response turned both independent source MAY claims into definite music ending/continuation. Source coverage DATA is not prose proof.",
+    "raw_and_state": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/run/state.json",
+      "sha256": "71633375e810751e5dcfb33df76c5e64acf006bfded53034fe7b047d35a83a1e"
+    },
+    "independent_review": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/independent-semantic-review.json",
+      "sha256": "20ed297b701cdc97260d1dfc72eecd49bba7b8d238114dd3d74eaa499dee8bbb"
+    }
+  },
+  "costs": {
+    "all_prompt_tokens": 1287,
+    "all_completion_tokens": 115,
+    "chat_request_ms": 1857,
+    "generate_command_seconds": 8.075,
+    "all_stage_seconds": 10.255,
+    "generate_cpu_sampled_lower_bound_seconds": 1.172295536,
+    "generate_peak_summed_rss_mib": 1478.171875,
+    "whole_job_cpu_gpu_memory_energy": "Unknown; setup/cleanup/unsampled endpoints are not zero. Failed short text is not a performance improvement."
+  },
+  "metal": {
+    "observed_device": "Apple M5 MTL0",
+    "offloaded_layers": "29/29",
+    "fallback": null,
+    "evidence": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/run/job-1/metal-observation.json",
+      "sha256": "78fc6e8a4a1ea16ca26f371d642cd467924c8eec64d82ebcc26ee68e76576a84"
+    }
+  },
+  "lifecycle": {
+    "operational_audit_passed": true,
+    "owned_assets_released": true,
+    "all_observed_owned_processes_exited": true,
+    "original_8_assets_pre_and_post_checked": true,
+    "frozen_inputs": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/frozen-inputs.json",
+      "sha256": "36779436a1658a13d8f41793ecdd6f8a7c98c171c36d595f4eb877a9732e7fbf"
+    },
+    "frontend_fixture_cleanup": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/frontend-cleanup.json",
+      "sha256": "3b2bbac79cbef2f0fd1a1bbc0836c349463192b56e855a42396e535993e75018"
+    },
+    "public_cli_asr_actually_rebuilt": {
+      "path": "artifacts/writer-name-coverage-2026-11-05/public-restoration.json",
+      "sha256": "b9c6ef89df7f8444572dda5cf3d658a88b1989e82504d60f084273ab60df5809"
+    }
+  },
+  "limits": [
+    "Finite recognized source predicates; no general omission, unknown-update or event-resolution claim.",
+    "Explicit source-preparation can modify entry.text after this coverage binding and is still unqualified; this sole trial used only the default ordinary path.",
+    "Q9 real-recording name recall, complete article quality, source6 actual generation and same-candidate native platform acceptance remain open.",
+    "Do not rerun this closed stage, change original inputs, relax local MAY/name gates, or reuse its claim under a new path."
+  ]
+}
