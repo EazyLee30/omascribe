@@ -253,10 +253,19 @@ impl Drop for SessionLease {
         if let Some(hook) = self.before_retention.take() {
             hook();
         }
+        let stop = Arc::clone(&session.server.stop);
         let mut state = engine.inference_pool.0.lock().unwrap();
+        // A watchdog may accept a stop after the health/headroom snapshot.
+        // Keep its stop gate through insertion so it cannot miss a late return.
+        let stop_state = stop.lock().unwrap();
         state.leased = false;
         let eligible = state.epoch == self.epoch && (!self.ttl.is_zero() || state.batches > 0);
-        if otherwise_healthy && memory_ok && eligible {
+        if otherwise_healthy
+            && memory_ok
+            && eligible
+            && !stop_state.closing
+            && stop_state.reason.is_none()
+        {
             let lifetime = if self.ttl.is_zero() {
                 Duration::from_secs(2)
             } else {
@@ -270,6 +279,7 @@ impl Drop for SessionLease {
                 ttl: self.ttl,
                 since,
             });
+            drop(stop_state);
             drop(state);
             if let Some(idle) = replaced {
                 release_idle(idle, ReleaseReason::Invalidated);
@@ -308,6 +318,7 @@ impl Drop for SessionLease {
         } else {
             ReleaseReason::LeaseEnd
         };
+        drop(stop_state);
         drop(state);
         session.server.release_as(reason, self.ttl, None);
         drop(session);
@@ -736,8 +747,8 @@ fn stop_from_watchdog(
     accepted
 }
 
-// The final watchdog yield branch is shared with direct ownership controls.
-// Keep its existing behavior here until the idle-child RED is reproduced.
+// A terminal watchdog yield must also reap its retained idle child; no later
+// watchdog tick remains to release the Child and its receipt owners.
 fn yield_from_watchdog(
     engine: Option<&Engine>,
     stop: &Mutex<StopState>,
@@ -745,7 +756,27 @@ fn yield_from_watchdog(
     reason: ReleaseReason,
     pooled: bool,
 ) -> bool {
-    stop_from_watchdog(engine, stop, pid, reason, pooled)
+    let accepted = stop_from_watchdog(engine, stop, pid, reason, pooled);
+    if accepted && pooled {
+        if let Some(engine) = engine {
+            let idle = {
+                let mut state = engine.inference_pool.0.lock().unwrap();
+                if state
+                    .idle
+                    .as_ref()
+                    .is_some_and(|idle| idle.session.server.child.id() == pid)
+                {
+                    state.idle.take()
+                } else {
+                    None
+                }
+            };
+            if let Some(idle) = idle {
+                release_idle(idle, reason);
+            }
+        }
+    }
+    accepted
 }
 impl Drop for Server {
     fn drop(&mut self) {
