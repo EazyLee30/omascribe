@@ -190,9 +190,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: package-*
-          merge-multiple: true
-          path: release-assets
-      - name: Create signed update manifest
+          path: release-downloads
+      - name: Verify delivered package inventory and create update manifests
         run: python scripts/update-manifest.py
       - name: Publish all five tested installers as a stable release
         env:
@@ -200,14 +199,6 @@ jobs:
         run: |
           test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
           VERSION=$(node -p 'require("./package.json").version')
-          test "$(find release-assets -maxdepth 1 -name '*.dmg' | wc -l)" -eq 2
-          test "$(find release-assets -maxdepth 1 -name '*.exe' ! -name '*-runtime*' | wc -l)" -eq 1
-          test "$(find release-assets -maxdepth 1 -name '*.AppImage' ! -name '*-runtime*' | wc -l)" -eq 1
-          test "$(find release-assets -maxdepth 1 -name '*.deb' | wc -l)" -eq 1
-          cd release-assets
-          cat ./*.sha256 | tr -d '\r' > SHA256SUMS.txt
-          sha256sum --check SHA256SUMS.txt
-          cd ..
           python scripts/release-notes.py --version "$VERSION" --output release-body.md
           gh release create "v$VERSION" --target "$GITHUB_SHA" --draft --title "OmaScribe $VERSION" --notes-file release-body.md
           gh release create "v$VERSION-updates" --target "$GITHUB_SHA" --draft --title "OmaScribe $VERSION — automatic update files" --notes "Application-managed update payloads. For normal installation, use https://omascribe.eazylee.si/download/."
