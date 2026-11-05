@@ -732,3 +732,49 @@ fn sealed_completion_permits_cover_only_current_f_words_not_ordinary_statuses() 
     }
     Ok(())
 }
+
+#[test]
+fn a_person_first_seen_as_a_caption_name_keeps_human_name_boundaries() -> Result<()> {
+    let mut source = snapshot(&[
+        "ALICE工具仍待测试。",
+        "北岭大学的 ALICE教授指出材料仍需核对。",
+    ]);
+    source.notes = vec![crate::UserNote {
+        id: "names".into(),
+        meeting_id: source.meeting.id.clone(),
+        kind: "document".into(),
+        content: "ALICE\nUNSPOKEN".into(),
+        anchor_ms: 0,
+        updated_at: String::new(),
+    }];
+    let terms = Terms::new(&source.notes, &[]);
+    let context = retrieval::Context {
+        segments: source.segments.clone(),
+        cursor: 2,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&source, &context, &json!({}), "zh", false);
+    let nodes = fact_nodes::Plan::from_original(&input, &source, &terms, true)?;
+    assert_eq!(
+        serde_json::from_str::<Value>(nodes.input())?["names"],
+        json!([{"id":1,"text":"ALICE"}])
+    );
+    let valid=json!({"paragraphs":[{"parts":[{"t":"北岭大学的 "},{"n":1},{"t":" \t教授指出材料仍需核对。"}]}]}).to_string();
+    let rendered = nodes.render(&valid, nodes.input(), &source, &terms, true)?;
+    let composed = rendered.composition();
+    assert!(composed.text().contains("ALICE教授"));
+    assert!(composed.input().is_none() && composed.copies().is_empty());
+    for parts in [
+        json!([{"t":"王"},{"n":1},{"t":"教授指出材料仍需核对。"}]),
+        json!([{"n":1},{"t":"王教授指出材料仍需核对。"}]),
+    ] {
+        let raw = json!({"paragraphs":[{"parts":parts}]}).to_string();
+        assert!(
+            nodes
+                .render(&raw, nodes.input(), &source, &terms, true)
+                .is_err(),
+            "a prior caption occurrence cannot relax the observed person's boundary: {raw}"
+        );
+    }
+    Ok(())
+}

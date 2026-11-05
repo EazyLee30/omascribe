@@ -171,11 +171,12 @@ impl Plan {
                 if crate::translation::reported_name_occurrences(&source.text)?
                     .into_iter()
                     .any(|r| &source.text[r] == literal)
-                    && !names.iter().any(|old| old == literal)
                 {
-                    ensure!(names.len() < MAX_NODES, "Too many fact-node names");
                     people.insert(literal.to_owned());
-                    names.push(literal.to_owned());
+                    if !names.iter().any(|old| old == literal) {
+                        ensure!(names.len() < MAX_NODES, "Too many fact-node names");
+                        names.push(literal.to_owned());
+                    }
                 }
             }
             let observed = super::writer_names::observed_caption_names(actual, terms);
