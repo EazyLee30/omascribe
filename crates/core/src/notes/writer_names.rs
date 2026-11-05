@@ -649,4 +649,54 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn whitespace_delimited_english_person_reference_passes_the_ordinary_final_chain() -> Result<()>
+    {
+        const ORIGINAL: &str =
+            "Professor ALICE said that publishing a suspect's photograph might cause harm.";
+        let source = snapshot(&[ORIGINAL]);
+        let terms = empty_terms();
+        let context = retrieval::Context {
+            cursor: 1,
+            segments: source.segments.clone(),
+            keywords: Vec::new(),
+        };
+        let (system, input) = writer::prompt(&source, &context, &json!({}), "en");
+        let ordinary_english = |body: &str| -> Result<Vec<crate::Suggestion>> {
+            let checked = super::super::checked_writer_prose(body, &source.segments, &terms)?;
+            let draft = terms.normalize_draft(&writer::document(
+                &checked,
+                &source.segments,
+                &source.meeting.speaker_names,
+            )?)?;
+            super::super::validate_writer_document(
+                &draft,
+                &source,
+                &source.segments,
+                &terms,
+                &source.meeting.id,
+                false,
+                None,
+            )
+        };
+        ordinary_english(ORIGINAL)?;
+        let data = prepare(
+            system,
+            input,
+            &source.segments,
+            &terms,
+            &source.meeting.speaker_names,
+            true,
+            false,
+        )?;
+        let plan = data.plan.as_ref().unwrap();
+        assert_eq!(plan.names, ["ALICE"]);
+        let raw = "Professor [N1] said that publishing a suspect's photograph might cause harm.";
+        let result = writer::body_with_evidence(raw, &data.content)
+            .and_then(|composed| plan.composition(composed))
+            .and_then(|composed| ordinary_english(composed.text()));
+        assert!(result.is_ok(), "a source-identical English person reference separated by real spaces must remain valid: {:?}", result.err());
+        Ok(())
+    }
 }
