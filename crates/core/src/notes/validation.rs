@@ -475,10 +475,31 @@ struct Section {
 }
 /// Fresh ordinary generated drafts only. Human/accepted/history paths must
 /// never call this adapter; the ordinary final validator remains a pure veto.
+#[cfg(test)]
 pub(super) fn restore_generated_affiliations(
     draft: &str,
     snapshot: &crate::Snapshot,
     selected: &[Segment],
+) -> Result<super::affiliation::Recovery> {
+    restore_generated_report_fields(draft, snapshot, selected, None)
+}
+
+/// Plan both fields from the same original prose. Never let folded whitespace
+/// manufacture a reported name, or let one repair authorize a second repair.
+pub(super) fn restore_generated_reports(
+    draft: &str,
+    snapshot: &crate::Snapshot,
+    selected: &[Segment],
+    original_prose: &str,
+) -> Result<super::affiliation::Recovery> {
+    restore_generated_report_fields(draft, snapshot, selected, Some(original_prose))
+}
+
+fn restore_generated_report_fields(
+    draft: &str,
+    snapshot: &crate::Snapshot,
+    selected: &[Segment],
+    original_prose: Option<&str>,
 ) -> Result<super::affiliation::Recovery> {
     anyhow::ensure!(draft.len() <= 120_000, "机构草稿恢复超过文本预算");
     let mut parsed: Draft = serde_json::from_str(draft).context("机构草稿恢复结构校验失败")?;
@@ -497,6 +518,13 @@ pub(super) fn restore_generated_affiliations(
     if !super::affiliation::recovery_inputs_current(snapshot, selected) {
         return Ok(unchanged());
     }
+    let original_prose = original_prose.filter(|original| {
+        original.len() <= 120_000
+            && super::writer::paragraphs(original)
+                .iter()
+                .map(String::as_str)
+                .eq(parsed.sections.iter().map(|section| section.body.as_str()))
+    });
     let mut edits = Vec::new();
     for (index, section) in parsed.sections.iter().enumerate() {
         edits.extend(super::affiliation::generated_recovery_edits(
@@ -506,6 +534,47 @@ pub(super) fn restore_generated_affiliations(
             snapshot,
             selected,
         )?);
+        if let Some(original) = original_prose.filter(|_| {
+            !snapshot
+                .suggestions
+                .iter()
+                .any(|old| old.text == section.body)
+        }) {
+            for mut edit in super::affiliation::generated_person_recovery_edits(
+                index,
+                original,
+                &section.sources,
+                snapshot,
+                selected,
+            )? {
+                let Some(literal) = original.get(edit.body_range.clone()) else {
+                    continue;
+                };
+                if literal.is_empty() {
+                    continue;
+                }
+                // Only an unchanged, unique literal field survives the known
+                // presentation fold. No normalization of the name is inferred.
+                let locations = parsed
+                    .sections
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(section_index, section)| {
+                        section
+                            .body
+                            .match_indices(literal)
+                            .map(move |(at, _)| (section_index, at))
+                    })
+                    .take(2)
+                    .collect::<Vec<_>>();
+                if let [(section_index, at)] = locations.as_slice() {
+                    if *section_index == index {
+                        edit.body_range = *at..*at + literal.len();
+                        edits.push(edit);
+                    }
+                }
+            }
+        }
         if edits.len() > 16 {
             return Ok(unchanged());
         }

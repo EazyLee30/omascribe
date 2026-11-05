@@ -6,6 +6,8 @@ mod affiliation_provenance_tests;
 mod affiliation_recovery_tests;
 mod amounts;
 mod attribution_roles;
+#[cfg(test)]
+mod report_name_recovery_tests;
 pub(crate) use amounts::normalize as normalize_money;
 pub(crate) use amounts::repair_unitless_yuan;
 pub(crate) use attribution_roles::Mismatch as AttributionMismatch;
@@ -169,6 +171,30 @@ fn checked_writer_prose(
         &body,
     )?;
     Ok(body)
+}
+
+/// Only the ordinary generated path calls this preparation. Constructing the
+/// temporary document gives repairs their actual paragraph citations; it does
+/// not grant validation, accepted-text, or exact-copy bridge permission.
+fn prepare_generated_writer_document(
+    repaired: &str,
+    snapshot: &crate::Snapshot,
+    sources: &[crate::Segment],
+    terms: &crate::terminology::Terms,
+) -> Result<affiliation::Recovery> {
+    let original = uncertainty::restore(&terms.normalize(repaired), sources);
+    let document = terms.normalize_draft(&writer::document(
+        &original,
+        sources,
+        &snapshot.meeting.speaker_names,
+    )?)?;
+    let restored = validation::restore_generated_reports(&document, snapshot, sources, &original)?;
+    let checked = checked_writer_prose(&restored.body, sources, terms)?;
+    anyhow::ensure!(
+        checked == restored.body,
+        "报道字段恢复后正文再次变化，本轮保留原话等待复核"
+    );
+    Ok(restored)
 }
 
 fn validate_writer_document(
@@ -840,6 +866,31 @@ fn generate_inner(
                     week_qualifier_corrections = repair.removed_qualifiers;
                     repair.text
                 });
+                if delta.is_none()
+                    && state_environment.is_none()
+                    && prepared_evidence.is_none()
+                    && relation_repair.is_none()
+                    && translation_repair.is_none()
+                {
+                    let restored = prepare_generated_writer_document(
+                        &repaired,
+                        snapshot,
+                        &context.segments,
+                        &terms,
+                    )?;
+                    use sha2::{Digest, Sha256};
+                    affiliation_corrections = restored.edits.iter().map(|edit| json!({
+                        "field":edit.field,
+                        "section_index":edit.section_index,
+                        "body_range":edit.body_range,
+                        "source_id":edit.source_id,
+                        "source_revision":edit.source_revision,
+                        "source_suffix_range":edit.source_suffix_range,
+                        "suffix_sha256":format!("{:x}",Sha256::digest(edit.suffix.as_bytes())),
+                    })).collect();
+                    checked_prose = Some(restored.body);
+                    return Ok(restored.draft);
+                }
                 let body = checked_writer_prose(&repaired, &context.segments, &terms)?;
                 if let (Some(prepared), Some(Ok(composed))) =
                     (prepared_evidence.as_ref(), composition.as_ref())
@@ -859,40 +910,7 @@ fn generate_inner(
                 let document =
                     writer::document(&body, &context.segments, &snapshot.meeting.speaker_names)?;
                 checked_prose = Some(body);
-                Ok(document)
-            })
-            .and_then(|text| terms.normalize_draft(&text))
-            .and_then(|draft| {
-                // Only a fresh ordinary draft may receive this one-shot,
-                // own-citation spelling repair. Prepared copy ranges and
-                // incremental/human documents never inherit that permission.
-                if delta.is_some()
-                    || prepared_evidence.is_some()
-                    || relation_repair.is_some()
-                    || translation_repair.is_some()
-                {
-                    return Ok(draft);
-                }
-                let restored = validation::restore_generated_affiliations(
-                    &draft,
-                    snapshot,
-                    &context.segments,
-                )?;
-                if !restored.edits.is_empty() {
-                    use sha2::{Digest, Sha256};
-                    affiliation_corrections = restored.edits.iter().map(|edit| json!({
-                        "section_index":edit.section_index,
-                        "body_range":edit.body_range,
-                        "source_id":edit.source_id,
-                        "source_revision":edit.source_revision,
-                        "source_suffix_range":edit.source_suffix_range,
-                        "suffix_sha256":format!("{:x}",Sha256::digest(edit.suffix.as_bytes())),
-                    })).collect();
-                    checked_prose = Some(restored.body);
-                    // No transformed bytes can inherit an exact-copy bridge.
-                    completion_bridge = None;
-                }
-                Ok(restored.draft)
+                terms.normalize_draft(&document)
             });
         let text = normalized.as_ref().map(String::as_str).unwrap_or(&raw_body);
         let validation = normalized
