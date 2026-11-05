@@ -45,6 +45,7 @@ pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionM
 #[cfg(test)]
 mod confirmation_state_tests;
 mod retrieval;
+pub(crate) mod source_coverage;
 #[cfg(test)]
 mod source_coverage_tests;
 mod source_language;
@@ -229,6 +230,8 @@ fn validate_writer_document(
         )?
     };
     validation::preserve_replaced_sources(&snapshot.suggestions, sources, &sections)?;
+    source_coverage::View::new(sources, &snapshot.segments, &snapshot.meeting)?
+        .validate(&sections)?;
     let body = sections
         .iter()
         .map(|s| s.text.as_str())
@@ -548,10 +551,15 @@ fn generate_inner(
     let name_tokens_enabled =
         state_environment.is_none() && delta.is_none() && !source_preparation_configured;
     let (system, content, original_content, mut prompt_tokens, mut name_plan) = loop {
-        let (system, original_content) = delta.as_ref().map_or_else(
+        let (mut system, mut original_content) = delta.as_ref().map_or_else(
             || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
             |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
         );
+        let coverage =
+            source_coverage::View::new(&context.segments, &snapshot.segments, &snapshot.meeting)?;
+        if delta.is_none() {
+            coverage.augment(&mut system, &mut original_content)?;
+        }
         let named = writer_names::prepare(
             system,
             original_content.clone(),
@@ -620,6 +628,8 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
+    let coverage =
+        source_coverage::View::new(&context.segments, &snapshot.segments, &snapshot.meeting)?;
     let compose_messages = vec![
         json!({"role":"system","content":system}),
         json!({"role":"user","content":content}),
@@ -1040,7 +1050,7 @@ fn generate_inner(
                         .map(|v| json!({"spellings":v}))
                         .unwrap_or_else(|| json!({}));
                     let narrow = error.to_string().contains("数字或日期");
-                    let (repair_system, repair_content) = delta.as_ref().map_or_else(
+                    let (mut repair_system, mut repair_content) = delta.as_ref().map_or_else(
                         || {
                             writer::prompt_mode(
                                 snapshot,
@@ -1052,6 +1062,9 @@ fn generate_inner(
                         },
                         |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
                     );
+                    if delta.is_none() {
+                        coverage.augment(&mut repair_system, &mut repair_content)?;
+                    }
                     let mut repair: Value = serde_json::from_str(&repair_content)?;
                     let attribution = error.to_string().contains("speaker attribution");
                     if attribution {
@@ -1068,6 +1081,8 @@ fn generate_inner(
                         retention.hint()
                     } else if let Some(modal) = error.downcast_ref::<modal::Mismatch>() {
                         modal.hint()
+                    } else if let Some(missing) = error.downcast_ref::<source_coverage::Missing>() {
+                        missing.hint()
                     } else if let Some(week) = error.downcast_ref::<WeekQualifierMismatch>() {
                         week.hint()
                     } else if let Some(metric) = error.downcast_ref::<MetricMismatch>() {
