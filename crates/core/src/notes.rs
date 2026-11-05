@@ -25,6 +25,8 @@ mod modal;
 #[cfg(test)]
 mod modal_provenance_tests;
 mod qualifiers;
+#[cfg(test)]
+mod report_scope_tests;
 pub(crate) use metrics::{prefix as metric_prefix, Mismatch as MetricMismatch};
 pub(crate) use qualifiers::{
     boundary as qualifier_boundary, prefix as qualifier_prefix, Mismatch as QualifierMismatch,
