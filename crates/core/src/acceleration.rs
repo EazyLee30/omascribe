@@ -643,12 +643,44 @@ impl Engine {
         version: Option<&str>,
         verify_model: impl FnOnce(&str) -> Result<crate::model_integrity::Receipt>,
     ) -> Result<()> {
-        self.require_available()?;
-        self.configuration_idle()?;
-        if self.note_busy.load(Ordering::SeqCst) {
-            bail!("Wait for local inference to finish");
-        }
-        let selected_model = self.preferences.lock().unwrap().llm_model.clone();
+        self.verify_acceleration_version_with_readers(id, version, verify_model, |id, version| {
+            components::installed_component(&self.root, id, version)
+        })
+    }
+    fn verify_acceleration_version_with_readers(
+        self: &Arc<Self>,
+        id: &str,
+        version: Option<&str>,
+        verify_model: impl FnOnce(&str) -> Result<crate::model_integrity::Receipt>,
+        installed_component: impl Fn(
+            &str,
+            Option<&str>,
+        ) -> Result<(
+            components::Index,
+            components::Component,
+            std::path::PathBuf,
+        )>,
+    ) -> Result<()> {
+        // Reject inexpensive, ineligible requests before any weight reads. The
+        // short gate protects the initial configuration/component observation;
+        // potentially large model hashing stays outside it.
+        let selected_model = {
+            let _gate = self.config_lock.lock().unwrap();
+            self.require_available()?;
+            self.configuration_idle()?;
+            if self.note_busy.load(Ordering::SeqCst) {
+                bail!("Wait for local inference to finish");
+            }
+            let model = {
+                let prefs = self.preferences.lock().unwrap();
+                if prefs.inference_backend != "auto" {
+                    bail!("Choose Automatic inference before testing optional acceleration");
+                }
+                prefs.llm_model.clone()
+            };
+            installed_component(id, version)?;
+            model
+        };
         let receipt = verify_model(&selected_model)?;
         let gate = self.config_lock.lock().unwrap();
         self.require_available()?;
@@ -660,7 +692,9 @@ impl Engine {
         if self.preferences.lock().unwrap().inference_backend != "auto" {
             bail!("Choose Automatic inference before testing optional acceleration");
         }
-        let (index, _, _) = components::installed_component(&self.root, id, version)?;
+        // Hashing may have yielded to a configuration edit, component removal
+        // or another inference task. Never reuse the preflight reader result.
+        let (index, _, _) = installed_component(id, version)?;
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("Wait for local inference to finish");
         }
@@ -980,6 +1014,128 @@ mod tests {
             hashed_bytes, 0,
             "public CPU rejection must not hash weights"
         );
+        Ok(())
+    }
+
+    // These readers substitute only the signed installed-catalog boundary so
+    // host-independent controls can pass preflight. They do not test signatures
+    // or GPU compatibility, and all stop before any worker can be spawned.
+    fn installed_preflight_fixture(
+        fixture: &SelectionFixture,
+        id: &str,
+        version: Option<&str>,
+    ) -> Result<(components::Index, components::Component, std::path::PathBuf)> {
+        assert_eq!(id, fixture.component.id);
+        assert_eq!(version, Some("preflight-fixture-1"));
+        anyhow::ensure!(
+            fixture.directory.is_dir(),
+            "fixture component no longer installed"
+        );
+        Ok((
+            components::Index {
+                schema: 1,
+                version: "preflight-fixture-1".into(),
+                runtime_revision: String::new(),
+                components: vec![fixture.component.clone()],
+            },
+            fixture.component.clone(),
+            fixture.directory.clone(),
+        ))
+    }
+
+    #[test]
+    fn valid_auto_verifies_model_unlocked_and_rechecks_component_after_hashing() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        let component_reads = std::cell::Cell::new(0);
+        let error = fixture
+            .engine
+            .verify_acceleration_version_with_readers(
+                &fixture.component.id,
+                Some("preflight-fixture-1"),
+                |id| {
+                    assert_eq!(id, fixture.model.id);
+                    assert!(fixture.engine.config_lock.try_lock().is_ok());
+                    let receipt = fixture
+                        .engine
+                        .model_integrity
+                        .verify(&fixture.model_directory, &fixture.model)?;
+                    fs::remove_dir_all(&fixture.directory)?;
+                    Ok(receipt)
+                },
+                |id, version| {
+                    component_reads.set(component_reads.get() + 1);
+                    installed_preflight_fixture(&fixture, id, version)
+                },
+            )
+            .unwrap_err();
+        assert_eq!(error.to_string(), "fixture component no longer installed");
+        assert_eq!(component_reads.get(), 2);
+        assert_eq!(fixture.engine.model_integrity.hashed_bytes(), 4);
+        assert_preflight_left_inference_idle(&fixture.engine);
+        Ok(())
+    }
+
+    #[test]
+    fn changing_backend_during_model_hashing_still_rejects_component_test() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        let error = fixture
+            .engine
+            .verify_acceleration_version_with_readers(
+                &fixture.component.id,
+                Some("preflight-fixture-1"),
+                |id| {
+                    assert_eq!(id, fixture.model.id);
+                    assert!(fixture.engine.config_lock.try_lock().is_ok());
+                    let receipt = fixture
+                        .engine
+                        .model_integrity
+                        .verify(&fixture.model_directory, &fixture.model)?;
+                    let mut prefs = fixture.engine.preferences.lock().unwrap().clone();
+                    prefs.inference_backend = "cpu".into();
+                    fixture.engine.update_preferences(prefs)?;
+                    Ok(receipt)
+                },
+                |id, version| installed_preflight_fixture(&fixture, id, version),
+            )
+            .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Choose Automatic inference before testing optional acceleration"
+        );
+        assert_eq!(fixture.engine.model_integrity.hashed_bytes(), 4);
+        assert_preflight_left_inference_idle(&fixture.engine);
+        Ok(())
+    }
+
+    #[test]
+    fn another_job_claiming_busy_during_hashing_keeps_its_ownership() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        let error = fixture
+            .engine
+            .verify_acceleration_version_with_readers(
+                &fixture.component.id,
+                Some("preflight-fixture-1"),
+                |id| {
+                    assert_eq!(id, fixture.model.id);
+                    assert!(fixture.engine.config_lock.try_lock().is_ok());
+                    let receipt = fixture
+                        .engine
+                        .model_integrity
+                        .verify(&fixture.model_directory, &fixture.model)?;
+                    fixture.engine.note_busy.store(true, Ordering::SeqCst);
+                    Ok(receipt)
+                },
+                |id, version| installed_preflight_fixture(&fixture, id, version),
+            )
+            .unwrap_err();
+        assert_eq!(error.to_string(), "Wait for local inference to finish");
+        assert_eq!(fixture.engine.model_integrity.hashed_bytes(), 4);
+        assert!(fixture.engine.note_busy.load(Ordering::SeqCst));
+        assert!(!fixture.engine.status.lock().unwrap().notes_busy);
+        assert!(!fixture.engine.acceleration_test_running());
+        assert_eq!(fixture.engine.inference_pool.status().starts, 0);
+        fixture.engine.note_busy.store(false, Ordering::SeqCst);
+        assert_preflight_left_inference_idle(&fixture.engine);
         Ok(())
     }
 
