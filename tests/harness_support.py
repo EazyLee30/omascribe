@@ -88,15 +88,17 @@ def source_digest():
             digest.update(str(path.relative_to(REPO)).encode()); digest.update(b"\0"); digest.update(path.read_bytes())
     return digest.hexdigest()
 
-def environment(cli):
+def environment(cli, *, build_timeout=10):
     # Old comparison binaries may not support build-info and open Engine before failing.
     # Keep even that metadata request away from the user's workspace.
     build = None
     with tempfile.TemporaryDirectory(prefix="omascribe-build-info-") as folder:
         write_json(pathlib.Path(folder)/"network-policy.json", dict(allow_model_downloads=False, allow_online_recommendations=False))
         try:
+            if build_timeout <= 0:
+                raise TimeoutError("Metadata command budget expired")
             result = subprocess.run([str(cli), "build-info"], env=dict(os.environ, OMASCRIBE_DATA_DIR=folder),
-                                    capture_output=True, text=True, encoding="utf-8", timeout=10)
+                                    capture_output=True, text=True, encoding="utf-8", timeout=min(10, build_timeout))
             if result.returncode == 0:
                 value=json.loads(result.stdout)
                 if isinstance(value,dict) and value.get("schema")==1 and len(value.get("source_sha256",""))==64: build=value

@@ -7,6 +7,10 @@ from contextlib import closing
 from harness_support import suite_passed, REPO, command, environment, isolated_env, read_json, sha256, write_json
 
 
+class EvaluationBudgetExpired(RuntimeError):
+    pass
+
+
 def assess(case, snapshot, check_translations=False):
     sections = [s for s in snapshot["suggestions"] if s["status"] != "dismissed"]
     text = "\n".join(s.get("focus", "") + " " + s["text"] for s in sections)
@@ -92,6 +96,24 @@ def append(root, mid, passages, seq):
 
 
 def evaluate(args):
+    budget = getattr(args, "budget_seconds", None)
+    if budget is not None and not 0 < budget <= 700:
+        raise ValueError("Evaluation budget must be in (0, 700] seconds")
+    deadline = time.monotonic() + budget if budget is not None else None
+
+    def invoke(argv, env, directory, timeout=650):
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise EvaluationBudgetExpired("Document case budget exhausted")
+            timeout = min(timeout, remaining)
+        try:
+            return command(argv, env, directory, timeout=timeout)
+        except RuntimeError as error:
+            if deadline is not None and time.monotonic() >= deadline:
+                raise EvaluationBudgetExpired("Document case budget exhausted") from error
+            raise
+
     cli, output = args.cli.resolve(), args.output.resolve()
     artifacts = args.artifacts.resolve() if args.artifacts else output.with_suffix(".artifacts")
     if artifacts.exists(): raise ValueError(f"Use a fresh artifacts directory: {artifacts}")
@@ -103,14 +125,23 @@ def evaluate(args):
     if args.case:
         cases = [c for c in cases if c["name"] == args.case]
         if not cases: raise ValueError("Unknown fixture")
-    report = dict(schema=3, passed=False, environment=environment(cli),
+    observed_environment = environment(cli) if deadline is None else environment(
+        cli, build_timeout=max(0, deadline - time.monotonic()))
+    report = dict(schema=3, passed=False, environment=observed_environment,
         preferences=base_preferences, fixture_cases=[c["name"] for c in cases],
         fixture_sha256=sha256(REPO / "tests/fixtures/document-cases.json"), cases=[])
     automatic = getattr(args, "auto_schedule", False)
     report["execution"] = "automatic-scheduler" if automatic else "explicit-generation"
     report["catchup_enabled"] = os.environ.get("OMASCRIBE_MINUTES_CATCHUP") == "1"
     report["incremental_enabled"] = os.environ.get("OMASCRIBE_INCREMENTAL_MINUTES") == "1"
-    command([cli, "diagnose"], env, artifacts / "diagnose")
+    write_json(output, report)
+    try:
+        invoke([cli, "diagnose"], env, artifacts / "diagnose")
+    except Exception as error:
+        report["failure_kind"] = "budget" if isinstance(error, EvaluationBudgetExpired) else "execution"
+        report["error"] = f"{type(error).__name__}: {error}"
+        write_json(output, report)
+        return False
     for case in cases:
         folder = artifacts / case["name"]
         write_json(folder / "input.json", case)
@@ -119,6 +150,7 @@ def evaluate(args):
         note_updates = []
         minutes_preservation = []
         snapshot = None
+        failure_kind = None
         protected = []
         try:
             seed(root, case, mid, automatic)
@@ -135,13 +167,13 @@ def evaluate(args):
                     with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
                         jobs_before = db.execute("SELECT COUNT(*) FROM inference_jobs").fetchone()[0]
                     if note.get("edit_existing_document", False):
-                        current = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-before-note")
+                        current = invoke([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-before-note")
                         document = next((n for n in current["notes"] if n["kind"] == "document"), None)
                         if document is None: raise ValueError("No active document to edit")
                         argv = [cli, "edit-note", mid, document["id"], note["content"], note.get("kind", "document")]
                     else:
                         argv = [cli, "note", mid, note["content"], note.get("kind", "document")]
-                    command(argv, env, folder/f"phase-{number}"/"save-note")
+                    invoke(argv, env, folder/f"phase-{number}"/"save-note")
                     after = {name: sha256(root/name) for name in watched if (root/name).is_file()}
                     with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
                         jobs_after = db.execute("SELECT COUNT(*) FROM inference_jobs").fetchone()[0]
@@ -150,7 +182,7 @@ def evaluate(args):
                                              jobs_after=jobs_after, diagnostic_hashes_before=before, diagnostic_hashes_after=after))
                     if not no_generation: errors.append(f"Phase {number}: spelling save started generation")
                 if preserve:
-                    saved = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-after-note")
+                    saved = invoke([cli, "snapshot", mid], env, folder/f"phase-{number}"/"snapshot-after-note")
                     errors.extend(f"Phase {number} after save: {e}" for e in assess(phase.get("expect", {}), saved))
                     with closing(sqlite3.connect(root / "meetings.sqlite3")) as db:
                         saved_jobs = db.execute("SELECT COUNT(*) FROM inference_jobs WHERE meeting_id=?", (mid,)).fetchone()[0]
@@ -167,7 +199,7 @@ def evaluate(args):
                 # the actual frontier after append/save, not a -1 sentinel
                 # that would pay for the same rejected batch once more.
                 snapshot_name = "snapshot-before-generation" if phase.get("run_generation", True) else "snapshot-after-note"
-                snapshot = command([cli, "snapshot", mid], env, folder/f"phase-{number}"/snapshot_name)
+                snapshot = invoke([cli, "snapshot", mid], env, folder/f"phase-{number}"/snapshot_name)
                 cursor = snapshot["meeting"]["notes_cursor"]
                 # Still run the first job when requested: a spelling or
                 # fingerprint update may be needed at an already-covered cursor.
@@ -180,7 +212,7 @@ def evaluate(args):
                     snapshot = None
                     try:
                         argv = [cli, "settle", mid, 120] if automatic else [cli, "translate" if preserve else "generate", mid]
-                        snapshot = command(argv, env, generation)
+                        snapshot = invoke(argv, env, generation)
                     finally:
                         for name in diagnostic_names:
                             if (root / name).exists(): shutil.copy2(root / name, generation / name)
@@ -230,8 +262,9 @@ def evaluate(args):
                     errors.extend(f"Phase {number}: {e}" for e in phase_errors)
             errors.extend(assess(case, snapshot, automatic))
         except Exception as error:
+            failure_kind = "budget" if isinstance(error, EvaluationBudgetExpired) else "execution"
             errors.append(f"{type(error).__name__}: {error}")
-            try: snapshot = command([cli, "snapshot", mid], env, folder / "failure-snapshot", timeout=30)
+            try: snapshot = invoke([cli, "snapshot", mid], env, folder / "failure-snapshot", timeout=30)
             except Exception: pass
         finally:
             if automatic:
@@ -239,6 +272,7 @@ def evaluate(args):
                 with closing(sqlite3.connect(root / "meetings.sqlite3")) as db, db:
                     db.execute("UPDATE meetings SET json=json_set(json,'$.auto_notes',json('false')) WHERE id=?", (mid,))
         result = dict(case=case["name"], passed=not errors, errors=errors,
+            failure_kind=failure_kind or ("expectation" if errors else None),
             seconds=round(time.monotonic()-started,3), runs=runs,
             note_updates=note_updates,
             document=snapshot["suggestions"] if snapshot else [],
@@ -249,6 +283,11 @@ def evaluate(args):
         report["passed"] = suite_passed(report["cases"], len(cases))
         write_json(output, report)
         print(case["name"], "PASS" if not errors else errors, flush=True)
+        if failure_kind == "budget":
+            report["failure_kind"] = "budget"
+            report["unattempted_cases"] = [c["name"] for c in cases[len(report["cases"]):]]
+            write_json(output, report)
+            break
     return report["passed"]
 
 
@@ -260,6 +299,7 @@ def main():
     p.add_argument("--case")
     p.add_argument("--preferences", type=pathlib.Path)
     p.add_argument("--auto-schedule", action="store_true", help="Run the same factual/human-edit corpus through the real background scheduler")
+    p.add_argument("--budget-seconds", type=float, help="Bound this evaluation's commands; expired work is cancelled and cannot pass")
     raise SystemExit(0 if evaluate(p.parse_args()) else 1)
 
 if __name__ == "__main__": main()

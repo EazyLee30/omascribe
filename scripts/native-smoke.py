@@ -15,24 +15,115 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def run_document_cases(cli, env, results, cases):
-    assert cases and len({c["name"] for c in cases}) == len(cases)
-    for case in [c["name"] for c in cases]:
-        subprocess.run(
-            [
-                "python",
-                str(ROOT / "tests/evaluate.py"),
-                "--cli",
-                str(cli),
-                "--case",
-                case,
-                "--output",
-                str(results / (case + ".json")),
-            ],
-            env=env,
-            check=True,
-            timeout=700,
-        )
+class DocumentCaseBudgetExpired(RuntimeError):
+    pass
+
+
+def document_result(output, name, fixture_sha256, returncode):
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert isinstance(report, dict) and report.get("schema") == 3, "Invalid document report schema"
+    assert report.get("fixture_sha256") == fixture_sha256, "Document fixture changed"
+    assert report.get("fixture_cases") == [name], "Wrong document fixture selection"
+    if returncode == 1 and report.get("passed") is False and report.get("failure_kind") == "budget":
+        raise DocumentCaseBudgetExpired("Document evaluator exhausted its command budget")
+    rows = report.get("cases")
+    assert isinstance(rows, list) and len(rows) == 1, "Incomplete document report"
+    row = rows[0]
+    assert isinstance(row, dict) and row.get("case") == name, "Wrong document case"
+    errors = row.get("errors")
+    assert isinstance(errors, list) and all(isinstance(e, str) and e for e in errors), "Invalid case errors"
+    if returncode == 1 and report.get("passed") is False and row.get("passed") is False \
+            and errors and row.get("failure_kind") == "budget":
+        raise DocumentCaseBudgetExpired("Document case exhausted its command budget")
+    runs = row.get("runs")
+    assert isinstance(runs, list) and runs, "Missing document execution evidence"
+    assert all(isinstance(run, dict) and isinstance(run.get("process"), dict)
+               and run["process"].get("code") == 0
+               and run["process"].get("failure") is None for run in runs), "Document execution failed"
+    if returncode == 0:
+        assert report.get("passed") is True and row.get("passed") is True, "Exit success disagrees with report"
+        assert not errors and row.get("failure_kind") is None, "Failed case reported success"
+        return "passed"
+    assert returncode == 1, f"Document evaluator exited {returncode}"
+    assert report.get("passed") is False and row.get("passed") is False, "Exit failure disagrees with report"
+    assert errors and row.get("failure_kind") == "expectation", "Document execution or report failed"
+    return "expectation_failed"
+
+
+def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=1200,
+                       fixture_path=None):
+    """Collect semantic failures once; incomplete execution still stops the gate."""
+    fixture_path = fixture_path or ROOT / "tests/fixtures/document-cases.json"
+    fixture_bytes = fixture_path.read_bytes()
+    assert json.loads(fixture_bytes) == cases, "Must run the complete current document fixture"
+    names = [c["name"] for c in cases]
+    assert names and len(set(names)) == len(names), "Empty or duplicate document cases"
+    assert all(isinstance(name, str) and pathlib.Path(name).name == name
+               and name not in (".", "..") for name in names), "Invalid document case name"
+    assert 0 < budget_seconds <= 1200, "Invalid document collection budget"
+    fixture_sha256 = hashlib.sha256(fixture_bytes).hexdigest()
+    results.mkdir(parents=True, exist_ok=True)
+    summary_path = results / "document-suite.json"
+    started = time.monotonic()
+    summary = dict(schema=1, passed=False, complete=False, target=target,
+                   commit=env.get("GITHUB_SHA"), fixture_sha256=fixture_sha256,
+                   planned_cases=names, cases=[], unattempted_cases=names,
+                   budget_seconds=budget_seconds, case_timeout_seconds=700,
+                   stopped_reason=None)
+
+    def save():
+        attempted = {row["case"] for row in summary["cases"]}
+        summary["unattempted_cases"] = [name for name in names if name not in attempted]
+        summary["seconds"] = round(time.monotonic() - started, 3)
+        summary["complete"] = not summary["unattempted_cases"] and all(
+            row["state"] in ("passed", "expectation_failed") for row in summary["cases"])
+        summary["passed"] = summary["complete"] and all(
+            row["state"] == "passed" for row in summary["cases"])
+        temporary = summary_path.with_suffix(".json.part")
+        temporary.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(summary_path)
+
+    save()
+    for name in names:
+        remaining = budget_seconds - (time.monotonic() - started)
+        if remaining <= 0:
+            summary["stopped_reason"] = "collection_budget"
+            break
+        output = results / (name + ".json")
+        if output.exists():
+            summary["stopped_reason"] = "preexisting_case_report"
+            break
+        case_started = time.monotonic()
+        case_budget = min(700, remaining)
+        row = dict(case=name, report=output.name, artifacts=output.with_suffix(".artifacts").name,
+                   state="execution_failed", returncode=None)
+        summary["cases"].append(row)
+        try:
+            process = subprocess.run(
+                ["python", str(ROOT / "tests/evaluate.py"), "--cli", str(cli),
+                 "--case", name, "--output", str(output), "--budget-seconds", str(case_budget)],
+                env=env, check=False, timeout=case_budget + 30,
+            )
+            row["returncode"] = process.returncode
+            row["state"] = document_result(output, name, fixture_sha256, process.returncode)
+        except DocumentCaseBudgetExpired as error:
+            row["state"] = "budget_expired"
+            row["error"] = str(error)
+            summary["stopped_reason"] = "case_budget"
+        except subprocess.TimeoutExpired:
+            row["state"] = "timed_out"
+            summary["stopped_reason"] = "case_timeout"
+        except (OSError, ValueError, AssertionError, TypeError) as error:
+            row["error"] = f"{type(error).__name__}: {error}"
+            summary["stopped_reason"] = "execution_or_report_failure"
+        row["seconds"] = round(time.monotonic() - case_started, 3)
+        save()
+        if summary["stopped_reason"]:
+            break
+    save()
+    if not summary["passed"]:
+        raise RuntimeError(f"Document release gate failed; see {summary_path}")
+    return summary
 
 
 def main():
@@ -220,7 +311,7 @@ def main():
         cases = json.loads(
             (ROOT / "tests/fixtures/document-cases.json").read_text(encoding="utf-8")
         )
-        run_document_cases(cli, env, results, cases)
+        run_document_cases(cli, env, results, cases, target=args.target)
         # Smoke launch checks main process survival, not microphone permission or visual quality.
         with (results / "launch.log").open("wb") as log:
             process = subprocess.Popen(
