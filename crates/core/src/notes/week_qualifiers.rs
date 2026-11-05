@@ -1,5 +1,5 @@
-//! Delete a provably added week modifier from generated weekday prose only.
-//! This does not resolve dates, choose a week, or change source/user text.
+//! Check explicitly stated relative weeks without resolving calendar dates
+//! or changing source/user text.
 use anyhow::Result;
 use regex::Regex;
 use std::{ops::Range, sync::OnceLock};
@@ -19,6 +19,26 @@ impl std::fmt::Display for Mismatch {
     }
 }
 impl std::error::Error for Mismatch {}
+
+#[derive(Debug)]
+pub(super) struct MissingWeek {
+    next: bool,
+}
+impl MissingWeek {
+    pub(super) fn hint(&self) -> &'static str {
+        if self.next {
+            "Retain the stated week of the same future action: translate its explicit next weekday as 下周 plus the original weekday. Keep its actor, task and other clauses."
+        } else {
+            "Retain the stated week of the same future action: translate its explicit this weekday as 本周 plus the original weekday. Keep its actor, task and other clauses."
+        }
+    }
+}
+impl std::fmt::Display for MissingWeek {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.hint())
+    }
+}
+impl std::error::Error for MissingWeek {}
 
 pub(crate) struct Repair {
     pub(crate) text: String,
@@ -200,10 +220,138 @@ pub(crate) fn validate(
     Ok(())
 }
 
+/// Report an omitted qualifier only for a single directly cited, current
+/// schedule. Literal actor, predicate and weekday constrain the scope of the
+/// retry. An object's free translation does not authorize a text insertion.
+pub(super) fn validate_generated_schedule(
+    snapshot: &crate::Snapshot,
+    sections: &[crate::Suggestion],
+    body_name_mask: &str,
+    terms: &crate::terminology::Terms,
+) -> Result<()> {
+    let ([source], [section]) = (snapshot.segments.as_slice(), sections) else {
+        return Ok(());
+    };
+    let [citation] = section.sources.as_slice() else {
+        return Ok(());
+    };
+    if source.meeting_id != snapshot.meeting.id
+        || source.run != snapshot.meeting.run
+        || source.id != citation.segment_id
+        || source.revision != citation.revision
+        || source.start_ms != citation.start_ms
+        || source.end_ms != citation.end_ms
+        || source.text != citation.quote
+        || source.text.len() > 512
+        || section.text.len() > 512
+    {
+        return Ok(());
+    }
+    let source_name_mask = crate::translation::source_name_mask(&source.text, &source.text, terms);
+    if let Some(missing) = missing_week(
+        &section.text,
+        &source.text,
+        body_name_mask,
+        &source_name_mask,
+    ) {
+        return Err(missing.into());
+    }
+    Ok(())
+}
+
+fn missing_week(
+    body: &str,
+    source: &str,
+    body_name_mask: &str,
+    source_name_mask: &str,
+) -> Option<MissingWeek> {
+    static AMBIGUOUS: OnceLock<Regex> = OnceLock::new();
+    let ambiguous = AMBIGUOUS.get_or_init(|| {
+        Regex::new(concat!(
+            r"(?i)\b(?:and|or|then|instead|reschedul\w*|postpon\w*|cancel\w*|withdraw\w*|correct\w*|chang\w*|moved|no longer)\b",
+            r"|或者|还是|改期|推迟|取消|撤回|更正|变更|不再",
+        ))
+        .unwrap()
+    });
+    if !mask_matches(body, body_name_mask)
+        || !mask_matches(source, source_name_mask)
+        || [source_name_mask, body_name_mask].into_iter().any(|text| {
+            text.contains(['?', '？', ',', '，', ':', '：'])
+                || uncertain(text)
+                || literal_or_name(text)
+                || ambiguous.is_match(text)
+        })
+        || week_or_date(body_name_mask)
+    {
+        return None;
+    }
+    let source_day = single_weekday(source_name_mask)?;
+    let body_day = single_weekday(body_name_mask)?;
+    if source_day.day != body_day.day || body_name_mask[body_day.span.clone()].is_ascii() {
+        return None;
+    }
+    let source_clause = clause(source_name_mask, &source_day.span);
+    let body_clause = clause(body_name_mask, &body_day.span);
+    if source_clause.start != 0
+        || body_clause.start != 0
+        || !source_name_mask[source_day.span.end..source_clause.end]
+            .trim()
+            .is_empty()
+        || negated(&source_name_mask[source_clause])
+        || negated(&body_name_mask[body_clause.clone()])
+    {
+        return None;
+    }
+    static SCHEDULE: OnceLock<Regex> = OnceLock::new();
+    let frame = SCHEDULE
+        .get_or_init(|| {
+            Regex::new(concat!(
+                r"^\s*(?P<actor>[A-Z][A-Za-z]+(?:[ \t]+[A-Z][A-Za-z]+){0,2})",
+                r"[ \t]+(?i:will)[ \t]+(?P<verb>test|check|verify|review)[ \t]+",
+                r"[A-Za-z0-9][A-Za-z0-9 \t-]{0,100}?[ \t]+(?:on[ \t]+)?(?P<week>this|next)[ \t]+$",
+            ))
+            .unwrap()
+        })
+        .captures(&source[..source_day.span.start])?;
+    let week = frame.name("week")?;
+    if week_or_date(&source_name_mask[..week.start()])
+        || week_or_date(&source_name_mask[source_day.span.end..])
+    {
+        return None;
+    }
+    static FUTURE: OnceLock<Regex> = OnceLock::new();
+    let prefix = body[..body_day.span.start]
+        .trim_start()
+        .strip_prefix(&frame["actor"])?;
+    if !FUTURE
+        .get_or_init(|| Regex::new(r"^\s*(?:将会|将|会)\s*(?:在|于)?\s*$").unwrap())
+        .is_match(prefix)
+    {
+        return None;
+    }
+    let verbs: &[&str] = match &frame["verb"] {
+        "test" => &["测试", "试验"],
+        "check" => &["检查", "核查", "核对"],
+        "verify" => &["核验", "验证"],
+        "review" => &["审阅", "评审", "审核"],
+        _ => return None,
+    };
+    let tail = body[body_day.span.end..body_clause.end].trim_start();
+    verbs
+        .iter()
+        .any(|verb| {
+            tail.strip_prefix(*verb)
+                .is_some_and(|object| !object.trim().is_empty())
+        })
+        .then_some(MissingWeek {
+            next: week.as_str() == "next",
+        })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::modal_provenance_tests::{ordinary, snapshot};
+    use super::*;
 
     const SOURCE: &str = "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet.";
     const BODY: &str = "Riley 本周二将测试键盘可访问性。尚未完成任何可访问性测试。";
@@ -244,6 +392,64 @@ mod tests {
         }
         assert!(ordinary(&snapshot(&[SOURCE]), &[0], &corrected, None).is_err());
         assert!(ordinary(&snapshot(&[THIS_WEEK]), &[0], NEXT_DRAFT, None).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn omitted_week_detector_abstains_on_other_actions_or_ambiguous_schedule() {
+        for (source, body) in [
+            (THIS_WEEK, "Morgan 将在周二测试键盘可访问性。"),
+            (THIS_WEEK, "Riley 将在周二提交测试结果。"),
+            (THIS_WEEK, "Riley 将在周三测试键盘可访问性。"),
+            (THIS_WEEK, "Riley 可能将在周二测试键盘可访问性。"),
+            (THIS_WEEK, "Riley 不会在周二测试键盘可访问性。"),
+            (THIS_WEEK, "Riley 将在周二测试键盘可访问性。周三提交结果。"),
+            (THIS_WEEK, "Riley 将在周二测试键盘可访问性。下周发送结果。"),
+            ("Riley will test this Tuesday if approved.", BARE_DRAFT),
+            (
+                "Riley will not test keyboard accessibility this Tuesday.",
+                BARE_DRAFT,
+            ),
+            (
+                "Riley will test keyboard accessibility this Tuesday. The task was postponed.",
+                BARE_DRAFT,
+            ),
+            (
+                "Riley will test keyboard accessibility this Tuesday or Thursday.",
+                BARE_DRAFT,
+            ),
+            (
+                "Riley will test keyboard accessibility this Tuesday or next Tuesday.",
+                BARE_DRAFT,
+            ),
+            (
+                "Riley said \"Riley will test keyboard accessibility this Tuesday.\"",
+                BARE_DRAFT,
+            ),
+        ] {
+            assert!(
+                missing_week(body, source, body, source).is_none(),
+                "{source} → {body}"
+            );
+        }
+        let source = "Morgan will review the budget next Friday.";
+        let body = "Morgan 将于周五审核预算。";
+        assert!(missing_week(body, source, body, source).unwrap().next);
+    }
+
+    #[test]
+    fn only_the_current_owning_citation_can_trigger_the_week_retry() -> Result<()> {
+        let mut sections = ordinary(&snapshot(&[SOURCE]), &[0], BARE_DRAFT, None)?;
+        let current = snapshot(&[THIS_WEEK]);
+        let terms = crate::terminology::Terms::new(&[], &[]);
+        assert!(validate_generated_schedule(&current, &sections, BARE_DRAFT, &terms).is_ok());
+        sections[0].sources[0].quote = THIS_WEEK.into();
+        assert!(validate_generated_schedule(&current, &sections, BARE_DRAFT, &terms).is_err());
+        sections[0].sources[0].revision += 1;
+        assert!(validate_generated_schedule(&current, &sections, BARE_DRAFT, &terms).is_ok());
+        sections[0].sources[0].revision -= 1;
+        let other = snapshot(&[THIS_WEEK, "The test date was changed to Thursday."]);
+        assert!(validate_generated_schedule(&other, &sections, BARE_DRAFT, &terms).is_ok());
         Ok(())
     }
 

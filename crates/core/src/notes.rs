@@ -241,12 +241,11 @@ fn validate_writer_document(
     // Document construction folds line wrapping. Recheck the exact final prose
     // so a name split before its title cannot bypass the earlier spelling gate.
     terms.validate_writer_names(&source, &body)?;
-    language::validate_with_source(
-        &body,
-        &crate::translation::source_name_mask(&body, &source, terms),
-        &source,
-        chinese,
-    )?;
+    let body_name_mask = crate::translation::source_name_mask(&body, &source, terms);
+    language::validate_with_source(&body, &body_name_mask, &source, chinese)?;
+    if chinese && bridge.is_none() {
+        week_qualifiers::validate_generated_schedule(snapshot, &sections, &body_name_mask, terms)?;
+    }
     Ok(sections)
 }
 
@@ -1140,6 +1139,9 @@ fn generate_inner(
                     } else if let Some(modal) = error.downcast_ref::<modal::Mismatch>() {
                         modal.hint()
                     } else if let Some(week) = error.downcast_ref::<WeekQualifierMismatch>() {
+                        week.hint()
+                    } else if let Some(week) = error.downcast_ref::<week_qualifiers::MissingWeek>()
+                    {
                         week.hint()
                     } else if let Some(metric) = error.downcast_ref::<MetricMismatch>() {
                         metric.hint()
