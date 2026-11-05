@@ -62,11 +62,21 @@ impl Fixture {
     }
 
     fn save_translation(&self, target: &str, text: &str, check_text: bool) -> Result<()> {
+        self.save_translation_for(&self.source, target, text, check_text)
+    }
+
+    fn save_translation_for(
+        &self,
+        source: &Segment,
+        target: &str,
+        text: &str,
+        check_text: bool,
+    ) -> Result<()> {
         let db = self.engine.store.lock().unwrap();
         if check_text {
             crate::translation::validate_text(
                 text,
-                &self.source,
+                source,
                 target,
                 &crate::terminology::Terms::new(&[], &[]),
             )?;
@@ -74,12 +84,12 @@ impl Fixture {
         let environment =
             crate::inference_cache::environment(&self.engine, &db, &self.meeting, &self.prefs)?;
         let translation = crate::translation::Translation {
-            segment_id: self.source.id.clone(),
-            revision: self.source.revision,
+            segment_id: source.id.clone(),
+            revision: source.revision,
             target: target.into(),
             model: self.prefs.llm_model.clone(),
             text: text.into(),
-            cache_key: crate::inference_cache::translation_key(&environment, &self.source, target),
+            cache_key: crate::inference_cache::translation_key(&environment, source, target),
         };
         db.conn.execute(
             "INSERT OR REPLACE INTO translations VALUES(?1,?2,?3,?4,?5)",
@@ -99,7 +109,7 @@ impl Fixture {
     }
 
     fn input(&self) -> Result<Snapshot> {
-        input_snapshot(&self.engine, &self.public()?, &self.prefs)
+        Ok(input_snapshot(&self.engine, &self.public()?, &self.prefs)?.into_owned())
     }
 
     fn prompt_text(&self, input: &Snapshot) -> Result<String> {
@@ -221,6 +231,11 @@ fn minutes_cache_identity_tracks_internal_inputs_while_caption_view_stays_off() 
     let public_before = fixture.public()?;
     let first = fixture.digest(&fixture.input()?)?;
     assert_eq!(first, fixture.digest(&fixture.input()?)?);
+    assert_eq!(
+        first,
+        fixture.engine.test_minutes_retry_input(&public_before)?,
+        "the real penalty caller must observe the actual internal minutes input"
+    );
     let mut failures = crate::minutes_schedule::LegacyFailures::default();
     for _ in 0..3 {
         failures.finished_for_input(&fixture.meeting, Some(&first), false);
@@ -231,6 +246,25 @@ fn minutes_cache_identity_tracks_internal_inputs_while_caption_view_stays_off() 
     assert_ne!(
         first, actual,
         "a changed minutes input must release an old penalty"
+    );
+    let admitted = fixture.input()?;
+    let revision = fixture.engine.context_revision.load(Ordering::SeqCst);
+    let scope = generation::Scope::new(&fixture.engine, &admitted, &fixture.prefs, revision)?;
+    let mut observed = None;
+    record_admitted_input(
+        &scope,
+        &admitted,
+        &fixture.prefs,
+        revision,
+        Some(&mut observed),
+    );
+    assert_eq!(observed, Some(actual.clone()));
+    assert_eq!(
+        actual,
+        fixture
+            .engine
+            .test_minutes_retry_input(&fixture.public()?)?,
+        "actual admission and the real penalty caller must use the same view"
     );
     assert_eq!(actual, fixture.digest(&fixture.input()?)?);
     assert_eq!(
@@ -297,4 +331,188 @@ fn minutes_cache_keeps_existing_source_and_runtime_invalidation() -> Result<()> 
         fixture.assert_unused_worker()?;
     }
     Ok(())
+}
+
+#[test]
+fn minutes_cache_does_not_relax_full_source_or_generation_configuration_scope() -> Result<()> {
+    let changes: &[fn(&mut Segment)] = &[
+        |source| source.start_ms += 1,
+        |source| source.end_ms += 1,
+        |source| source.speaker = Some("speaker-one".into()),
+        |source| source.speaker_manual = true,
+        |source| source.text = "Alice will check another report on Friday.".into(),
+        |source| source.run += 1,
+    ];
+    for change in changes {
+        let fixture = Fixture::new("off", "zh", ENGLISH)?;
+        fixture.save_translation("zh", CHINESE, true)?;
+        let admitted = fixture.input()?;
+        assert_eq!(fixture.prompt_text(&admitted)?, CHINESE);
+        let scope = generation::Scope::new(
+            &fixture.engine,
+            &admitted,
+            &fixture.prefs,
+            fixture.engine.context_revision.load(Ordering::SeqCst),
+        )?;
+        let mut changed = fixture.source.clone();
+        change(&mut changed);
+        fixture
+            .engine
+            .store
+            .lock()
+            .unwrap()
+            .save_segment(&changed)?;
+        assert!(scope.check(&fixture.engine, &admitted.segments).is_err());
+        fixture.assert_unused_worker()?;
+    }
+    let changes: &[fn(&mut Preferences)] = &[
+        |prefs| prefs.minutes_language = "en".into(),
+        |prefs| prefs.llm_model = "different-model".into(),
+        |prefs| prefs.inference_backend = "auto".into(),
+    ];
+    for change in changes {
+        let fixture = Fixture::new("off", "zh", ENGLISH)?;
+        fixture.save_translation("zh", CHINESE, true)?;
+        let admitted = fixture.input()?;
+        assert_eq!(fixture.prompt_text(&admitted)?, CHINESE);
+        let scope = generation::Scope::new(
+            &fixture.engine,
+            &admitted,
+            &fixture.prefs,
+            fixture.engine.context_revision.load(Ordering::SeqCst),
+        )?;
+        change(&mut fixture.engine.preferences.lock().unwrap());
+        assert!(scope.check(&fixture.engine, &admitted.segments).is_err());
+        fixture.assert_unused_worker()?;
+    }
+    Ok(())
+}
+
+#[test]
+fn minutes_cache_input_leaves_human_text_and_sources_unchanged() -> Result<()> {
+    let fixture = Fixture::new("off", "zh", ENGLISH)?;
+    fixture.save_translation("zh", CHINESE, true)?;
+    let accepted = crate::Suggestion {
+        focus: String::new(),
+        id: "accepted-control".into(),
+        meeting_id: fixture.meeting.id.clone(),
+        kind: "document".into(),
+        text: "My own wording stays here.".into(),
+        sources: Vec::new(),
+        status: "accepted".into(),
+        stale: false,
+    };
+    fixture.engine.store.lock().unwrap().conn.execute(
+        "INSERT INTO suggestions(id,meeting_id,json) VALUES(?1,?2,?3)",
+        rusqlite::params![
+            accepted.id,
+            accepted.meeting_id,
+            serde_json::to_string(&accepted)?
+        ],
+    )?;
+    let public = fixture.public()?;
+    let before = serde_json::to_value(&public)?;
+    let input = input_snapshot(&fixture.engine, &public, &fixture.prefs)?;
+    assert_eq!(fixture.prompt_text(&input)?, CHINESE);
+    let mut after = serde_json::to_value(input.as_ref())?;
+    after["translations"] = before["translations"].clone();
+    assert_eq!(before, after);
+    assert_eq!(serde_json::to_value(&fixture.public()?)?, before);
+    fixture.assert_unused_worker()
+}
+
+#[test]
+fn minutes_cache_empty_view_borrows_without_cloning_history_or_opening_a_worker() -> Result<()> {
+    let fixture = Fixture::new("off", "zh", ENGLISH)?;
+    let public = fixture.public()?;
+    let input = input_snapshot(&fixture.engine, &public, &fixture.prefs)?;
+    assert!(matches!(input, std::borrow::Cow::Borrowed(_)));
+    assert_eq!(fixture.prompt_text(&input)?, ENGLISH);
+    fixture.assert_unused_worker()
+}
+
+#[test]
+fn minutes_cache_queries_and_validates_only_the_bounded_retrieval_selection() -> Result<()> {
+    let fixture = Fixture::new("off", "zh", ENGLISH)?;
+    let mut sources = vec![fixture.source.clone()];
+    for seq in 2..=80 {
+        let mut source = fixture.source.clone();
+        source.id = format!("{}:1:{seq}", fixture.meeting.id);
+        source.seq = seq;
+        source.start_ms = u64::from(seq - 1) * 1000;
+        source.end_ms = u64::from(seq) * 1000;
+        fixture.engine.store.lock().unwrap().save_segment(&source)?;
+        sources.push(source);
+    }
+    for source in &sources {
+        fixture.save_translation_for(source, "zh", CHINESE, true)?;
+    }
+    let public = fixture.public()?;
+    assert_eq!(public.segments.len(), 80);
+    assert!(public.translations.is_empty());
+    let selected = retrieval::retrieve(&public, Some(&fixture.engine.retrieval_cache));
+    assert_eq!(selected.segments.len(), 5);
+    let hashed = fixture.engine.inference_fingerprints.hashed_bytes();
+    crate::translation::take_minutes_cache_counts();
+    let input = input_snapshot(&fixture.engine, &public, &fixture.prefs)?;
+    assert_eq!(input.translations.len(), selected.segments.len());
+    assert_eq!(
+        crate::translation::take_minutes_cache_counts(),
+        (selected.segments.len(), selected.segments.len()),
+        "count actual SQL result rows and target-text validation calls"
+    );
+    assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), hashed);
+    let before = fixture.digest(&input)?;
+    fixture.save_translation_for(
+        sources.last().unwrap(),
+        "zh",
+        "Alice将在周四核对报告。",
+        true,
+    )?;
+    assert_eq!(before, fixture.digest(&fixture.input()?)?);
+    fixture.assert_unused_worker()
+}
+
+#[test]
+fn minutes_cache_abstains_from_an_oversized_selection_before_query_or_validation() -> Result<()> {
+    let mut fixture = Fixture::new("off", "zh", ENGLISH)?;
+    fixture.source.text = ENGLISH.repeat(500);
+    fixture
+        .engine
+        .store
+        .lock()
+        .unwrap()
+        .save_segment(&fixture.source)?;
+    let public = fixture.public()?;
+    crate::translation::take_minutes_cache_counts();
+    let hashed = fixture.engine.inference_fingerprints.hashed_bytes();
+    let input = input_snapshot(&fixture.engine, &public, &fixture.prefs)?;
+    assert!(matches!(&input, std::borrow::Cow::Borrowed(_)));
+    assert!(input.translations.is_empty());
+    assert_eq!(crate::translation::take_minutes_cache_counts(), (0, 0));
+    assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), hashed);
+    fixture.assert_unused_worker()
+}
+
+#[test]
+fn minutes_cache_does_not_fill_an_old_snapshot_from_a_new_database_source_tuple() -> Result<()> {
+    let mut fixture = Fixture::new("off", "zh", ENGLISH)?;
+    fixture.save_translation("zh", CHINESE, true)?;
+    let old = fixture.public()?;
+    fixture.source.start_ms += 1;
+    fixture
+        .engine
+        .store
+        .lock()
+        .unwrap()
+        .save_segment(&fixture.source)?;
+    // Translation content can be reused at its new timestamp, but it is not
+    // evidence for an old snapshot whose selected source identity differs.
+    let stale = input_snapshot(&fixture.engine, &old, &fixture.prefs)?;
+    assert!(stale.translations.is_empty());
+    let current = fixture.input()?;
+    assert_eq!(fixture.prompt_text(&current)?, CHINESE);
+    assert_eq!(current.segments[0].start_ms, fixture.source.start_ms);
+    assert_eq!(old.segments[0].start_ms, 0);
+    fixture.assert_unused_worker()
 }

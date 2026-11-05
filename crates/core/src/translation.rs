@@ -501,24 +501,125 @@ pub fn cached(
     if prefs.translation_mode == "off" {
         return Ok(HashMap::new());
     }
+    cached_for_target(engine, db, meeting, prefs, None, None)
+}
+
+const MAX_MINUTES_CACHE_SOURCES: usize = 64;
+const MAX_MINUTES_CACHE_SOURCE_BYTES: usize = 16_384;
+
+pub(crate) fn minutes_cache_selection_is_bounded(sources: &[crate::Segment]) -> bool {
+    if sources.is_empty() || sources.len() > MAX_MINUTES_CACHE_SOURCES {
+        return false;
+    }
+    let mut ids = std::collections::HashSet::new();
+    let mut bytes = 0usize;
+    let mut id_bytes = 0usize;
+    sources.iter().all(|source| {
+        bytes = bytes
+            .saturating_add(source.text.len())
+            .saturating_add(source.meeting_id.len())
+            .saturating_add(source.speaker.as_ref().map_or(0, String::len));
+        id_bytes = id_bytes.saturating_add(source.id.len());
+        !source.id.is_empty()
+            && ids.insert(source.id.as_str())
+            && bytes <= MAX_MINUTES_CACHE_SOURCE_BYTES
+            && id_bytes <= MAX_MINUTES_CACHE_SOURCE_BYTES
+    })
+}
+
+#[cfg(test)]
+std::thread_local! {
+    // Per-calling-thread counters, so unrelated parallel tests cannot inflate
+    // a bounded-query check. No production telemetry or content is retained.
+    static MINUTES_CACHE_COUNTS: std::cell::Cell<(usize, usize)> = const {
+        std::cell::Cell::new((0, 0))
+    };
+}
+#[cfg(test)]
+pub(crate) fn take_minutes_cache_counts() -> (usize, usize) {
+    MINUTES_CACHE_COUNTS.with(|counts| counts.replace((0, 0)))
+}
+#[cfg(test)]
+pub(crate) fn record_minutes_cache_validation() {
+    MINUTES_CACHE_COUNTS.with(|counts| {
+        let (rows, validations) = counts.get();
+        counts.set((rows, validations + 1));
+    });
+}
+
+/// A minutes target is independent of which caption translations are visible.
+/// This only reads current results; it does not schedule or run translation.
+pub(crate) fn cached_for_minutes(
+    engine: &Engine,
+    db: &Store,
+    meeting: &Meeting,
+    prefs: &Preferences,
+    target: &str,
+    sources: &[crate::Segment],
+) -> Result<HashMap<String, Translation>> {
+    anyhow::ensure!(["zh", "en"].contains(&target), "Invalid minutes target");
+    if !minutes_cache_selection_is_bounded(sources) {
+        return Ok(HashMap::new());
+    }
+    cached_for_target(engine, db, meeting, prefs, Some(target), Some(sources))
+}
+
+fn cached_for_target(
+    engine: &Engine,
+    db: &Store,
+    meeting: &Meeting,
+    prefs: &Preferences,
+    target: Option<&str>,
+    sources: Option<&[crate::Segment]>,
+) -> Result<HashMap<String, Translation>> {
+    let ids = sources
+        .map(|sources| serde_json::to_string(&sources.iter().map(|s| &s.id).collect::<Vec<_>>()))
+        .transpose()?;
     let mut environment = None;
     let mut terms = None;
-    let mut q=db.conn.prepare("SELECT t.json,s.json FROM translations t JOIN segments s ON s.id=t.segment_id WHERE s.meeting_id=?1 AND s.run=?2 AND t.revision=json_extract(s.json,'$.revision') AND t.model=?3")?;
+    let mut q=db.conn.prepare("SELECT t.json,s.json FROM translations t JOIN segments s ON s.id=t.segment_id WHERE s.meeting_id=?1 AND s.run=?2 AND t.revision=json_extract(s.json,'$.revision') AND t.model=?3 AND (?4 IS NULL OR t.target=?4) AND (?5 IS NULL OR (s.id IN (SELECT value FROM json_each(?5)) AND length(CAST(s.json AS BLOB))<=65536 AND length(CAST(t.json AS BLOB))<=32768))")?;
     let rows = q.query_map(
-        rusqlite::params![meeting.id, meeting.run, prefs.llm_model],
+        rusqlite::params![meeting.id, meeting.run, prefs.llm_model, target, ids],
         |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
     )?;
     let mut result = HashMap::new();
     for row in rows {
+        #[cfg(test)]
+        if sources.is_some() {
+            MINUTES_CACHE_COUNTS.with(|counts| {
+                let (rows, validations) = counts.get();
+                counts.set((rows + 1, validations));
+            });
+        }
         let (t, s) = row?;
+        if sources.is_some() && t.len() > 32_768 {
+            continue;
+        }
         let Ok(t) = serde_json::from_str::<Translation>(&t) else {
             continue;
         };
         let s: crate::Segment = serde_json::from_str(&s)?;
+        if sources.is_some_and(|expected| {
+            !expected.iter().any(|source| {
+                source.id == s.id
+                    && source.meeting_id == s.meeting_id
+                    && source.run == s.run
+                    && source.seq == s.seq
+                    && source.revision == s.revision
+                    && source.text == s.text
+                    && source.start_ms == s.start_ms
+                    && source.end_ms == s.end_ms
+                    && source.speaker == s.speaker
+                    && source.speaker_manual == s.speaker_manual
+            })
+        }) {
+            continue;
+        }
         if t.segment_id == s.id
             && t.revision == s.revision
             && t.model == prefs.llm_model
-            && target_language(&prefs.translation_mode, &s.text) == Some(t.target.as_str())
+            && target.or_else(|| target_language(&prefs.translation_mode, &s.text))
+                == Some(t.target.as_str())
             && !t.cache_key.is_empty()
         {
             if terms.is_none() {

@@ -431,6 +431,13 @@ impl Engine {
             self.context_revision.load(Ordering::SeqCst),
         )
     }
+    #[cfg(test)]
+    pub(crate) fn test_minutes_retry_input(
+        &self,
+        snapshot: &Snapshot,
+    ) -> Result<crate::minutes_schedule::InputDigest> {
+        self.minutes_retry_input(snapshot)
+    }
     pub(crate) fn automatic_minutes_admission(
         &self,
         snapshot: &Snapshot,

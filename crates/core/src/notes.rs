@@ -47,14 +47,14 @@ mod confirmation_state_tests;
 mod retrieval;
 mod source_language;
 pub(crate) mod stream;
+#[cfg(test)]
+mod target_cache_tests;
 mod uncertainty;
 mod validation;
 mod week_qualifiers;
 mod writer;
 #[cfg(test)]
 mod writer_final_guard_tests;
-#[cfg(test)]
-mod target_cache_tests;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
@@ -297,12 +297,89 @@ fn record_admitted_input(
 
 /// The internal minutes input used by both actual admission and retry identity.
 /// Keep caption visibility and the public snapshot contract independent.
-pub(crate) fn input_snapshot(
-    _engine: &Engine,
-    snapshot: &crate::Snapshot,
-    _prefs: &crate::preferences::Preferences,
-) -> Result<crate::Snapshot> {
-    Ok(snapshot.clone())
+pub(crate) fn input_snapshot<'a>(
+    engine: &Engine,
+    snapshot: &'a crate::Snapshot,
+    prefs: &crate::preferences::Preferences,
+) -> Result<std::borrow::Cow<'a, crate::Snapshot>> {
+    // Closed experiments retain their original input and request contract.
+    if std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1")
+        || source_language::configured()
+    {
+        return Ok(std::borrow::Cow::Borrowed(snapshot));
+    }
+    let context = retrieval::retrieve(snapshot, Some(&engine.retrieval_cache));
+    if !crate::translation::minutes_cache_selection_is_bounded(&context.segments) {
+        return Ok(std::borrow::Cow::Borrowed(snapshot));
+    }
+    let chinese = writer::chinese(snapshot, &prefs.minutes_language);
+    let target = if chinese { "zh" } else { "en" };
+    let (cached, glossary) = {
+        let db = engine.store.lock().unwrap();
+        let cached = crate::translation::cached_for_minutes(
+            engine,
+            &db,
+            &snapshot.meeting,
+            prefs,
+            target,
+            &context.segments,
+        )?;
+        let glossary = if cached.is_empty() {
+            Vec::new()
+        } else {
+            db.terminology_entries()?
+        };
+        (cached, glossary)
+    };
+    if cached.is_empty() {
+        if snapshot.translations.is_empty() {
+            return Ok(std::borrow::Cow::Borrowed(snapshot));
+        }
+        let mut input = snapshot.clone();
+        input.translations.clear();
+        return Ok(std::borrow::Cow::Owned(input));
+    }
+    let terms = crate::terminology::Terms::new(&snapshot.notes, &glossary).with_actor_spellings(
+        snapshot
+            .segments
+            .iter()
+            .filter(|s| s.meeting_id == snapshot.meeting.id && s.run == snapshot.meeting.run)
+            .map(|s| s.text.as_str()),
+        snapshot.meeting.speaker_names.values().map(String::as_str),
+    );
+    let budget = corrections::budget_view(&snapshot.segments);
+    let completed = completion::view(&snapshot.segments);
+    let mut input = snapshot.clone();
+    input.translations.clear();
+    for (i, source) in snapshot.segments.iter().enumerate() {
+        let Some(translation) = cached.get(&source.id) else {
+            continue;
+        };
+        if source.meeting_id != snapshot.meeting.id
+            || source.run != snapshot.meeting.run
+            || completed.retired(i)
+            || writer::non_substantive(&source.text)
+        {
+            continue;
+        }
+        let active = budget
+            .as_ref()
+            .map_or_else(|| source.text.clone(), |view| view.text(i, &source.text));
+        // This is prompt material, never fact/commit permission. Keep only
+        // actually usable substitutions in the admission/retry identity too;
+        // caption-only or invalid rows cannot repeatedly release a penalty.
+        if translation.text == source.text {
+            continue;
+        }
+        #[cfg(test)]
+        crate::translation::record_minutes_cache_validation();
+        if language::cached_text(source, &active, translation, chinese, &terms).is_some() {
+            input
+                .translations
+                .insert(source.id.clone(), translation.clone());
+        }
+    }
+    Ok(std::borrow::Cow::Owned(input))
 }
 
 fn generate_for_run(
