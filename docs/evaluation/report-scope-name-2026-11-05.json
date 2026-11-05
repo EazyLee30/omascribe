@@ -1,0 +1,125 @@
+{
+  "status": "CHECKED_SOURCE_FIXES_NOT_A_RELEASE_OR_MODEL_QUALITY_PASS",
+  "code_commit": "317b1a76575de970aade706ad4470960b0df0481",
+  "public_base": "844dfde1df82bd000e36624c7917a3efa08169b1",
+  "source_sha256": {
+    "crates/core/src/notes.rs": "a9f9fee98030332bd8faf1aff85df9f69d89eaedc49da7e3ed0f2027ca7f6031",
+    "crates/core/src/notes/affiliation.rs": "232b12b57501d19aab581b456959d3373d9486c7ccd90005d3cc21dd8ec1c933",
+    "crates/core/src/notes/attribution_roles.rs": "2c6d1a74b24e4e25a7804150cd2c76d0e970e3cb5e0e5cd6f1dcae2a3372be40",
+    "crates/core/src/notes/modal.rs": "0b97419644ac2770f2cdc2cf94a91f9b0a8f15b555b57f89065f47510871bfe7",
+    "crates/core/src/notes/report_name_recovery_tests.rs": "7c770e70ef3f9e192ee71ebbdf99d4fb79c0028e8c128c9e0af954c427ecea9d",
+    "crates/core/src/notes/report_scope_tests.rs": "02cc42c83e31c1f0ed2bf08fb64f8a9c2b330fe0f407ca9142bf69ac1d47f885",
+    "crates/core/src/notes/validation.rs": "0cc9a9251099ac30cb8a42c6b3598adf997f553b0f1ecc14e800d1ce0cad8a2a"
+  },
+  "changes": [
+    "Finite named-report payload checks bind photo-disclosure risk and the two music claims to the paragraph’s own complete current source tuples; unrelated globally valid citations cannot authorize a named reporter relationship.",
+    "Complete bare generated reports can restore a uniquely supported person field when institution and complete report suffix match current own evidence. An already observed literal name, including an untitled responsible person or speaker name, vetoes replacement.",
+    "Generated institution and person repair plans use the same original prose once. The complete unchanged field-and-report anchor must survive uniquely in the same folded paragraph. No post-repair rescan, cross-line authority or cascading field repair.",
+    "Only fresh ordinary generated drafts use preparation. Accepted/human/history, prepared exact-copy bridges, final validators, Scope and the two-response request budget retain their original permissions."
+  ],
+  "observed_phases": [
+    {
+      "stage": "public wrong-reporter RED",
+      "result": "1 passed, 2 failed; prior public validation wrongly accepted the received wrong-reporter article",
+      "log": {
+        "path": "artifacts/writer-official-sampling-2026-11-05/production-report-scope-red.log",
+        "sha256": "e8577d7d942d2ebf800cad814b7f5c5da56bd237ccde697f31a767683b10e564"
+      }
+    },
+    {
+      "stage": "first reporter fix",
+      "result": "4 passed, 1 failed: the name mask hid a conditional prefix; fixed without changing the five reporter assertions",
+      "log": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/94bd08b-target.log",
+        "sha256": "1a2777effec67447b5a1e8286fc9ac738fc23cfdb01283b2563d132bf6ab2311"
+      }
+    },
+    {
+      "stage": "first integrated adapter",
+      "code_commit": "3be8c7d8bb2bf787c570408f482c8eaa4775a0bd",
+      "result": "19 targeted passed; 709 core/13 ignored and workspace passed, but subsequent independent review found institution repair could inherit folded-person authority",
+      "target": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/integrated-report-target.log",
+        "sha256": "1bf86ababfae56a9b3b0105f22cf2dc69121d4f1f16897f065d757eb76931fc2"
+      },
+      "workspace": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/workspace.log",
+        "sha256": "b331597678f83db708db00db00c0dd1b6fa6a25f63e3f31e9b98ed2aa376eb23"
+      },
+      "target_source_note": "Targeted log predates the 3be8c7d commit; its only remaining commit edit was marking the old institution-only test adapter cfg(test). Full workspace ran at committed 3be8c7d."
+    },
+    {
+      "stage": "raw institution boundary RED",
+      "code_commit": "133bd9b",
+      "result": "0 passed, 1 failed at unchanged no-edit assertion; a split person was folded before institution repair",
+      "log": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/raw-institution-red.log",
+        "sha256": "f71a47e79b3d601ac8882e59ce316f1b0686027a392be0258246b156bc6e1f56"
+      }
+    },
+    {
+      "stage": "first raw-boundary fix",
+      "result": "18 passed, 2 failed. No-edit RED became green. An additional preparation-is-final-rejection assertion was at the wrong stage; final document validation is the existing rejection gate. Independent different-fields positive control also exposed a short-institution substring collision in the projection. Corrected projection to complete unchanged report anchor; preserved original no-edit RED and original different-fields positive assertions.",
+      "log": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/raw-boundary-target.log",
+        "sha256": "da6859d5f87d981c57f00ae7e2c12ce8e37aa7245a0d46c0a0cbe5a0a67db95b"
+      }
+    }
+  ],
+  "checks": {
+    "target": {
+      "exit": 0,
+      "passed": 20,
+      "log": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/raw-boundary-final-target.log",
+        "sha256": "f005488cb1c602316ca7735090ee5867987103aa66daf911d7e0fa1ca3cd7ca8"
+      }
+    },
+    "workspace": {
+      "exit": 0,
+      "core_passed": 710,
+      "core_explicit_ignored": 13,
+      "desktop_shell_passed": 4,
+      "asr_passed": 18,
+      "cli_passed": 2,
+      "integration_passed": 34,
+      "log": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/report-scope-name-2026-11-05/final-workspace.log",
+        "sha256": "fd6d3b7294ceb01579e2ac1260306bd8bdf8ec712b7102b13e0eacdca03da70a"
+      }
+    },
+    "clippy": {
+      "exit": 0,
+      "workspace_all_targets": true,
+      "deny_warnings": true,
+      "log": {
+        "path": "artifacts/report-scope-name-2026-11-05/final-clippy.log",
+        "sha256": "dd1697ee8e446a9e7aa08e584851ba0fd4d779a143b2f85d694064a2987f9d7c"
+      }
+    },
+    "ci": {
+      "status": "not yet pushed"
+    },
+    "format": {
+      "exit": 0,
+      "log": {
+        "path": "artifacts/report-scope-name-2026-11-05/final-fmt.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "resources": {
+    "new_model_requests": 0,
+    "new_model_downloads": 0,
+    "new_component_downloads": 0,
+    "installer_builds": 0,
+    "performance_claim": "none; replay and code checks do not measure GPU speed, memory, energy or general article availability"
+  },
+  "limitations": [
+    "The retained actual candidate article is rejected, not silently rewritten into a claimed high-quality article. The first received response only gains uniquely evidenced literal name restoration; its unfaithful music claim remains rejected.",
+    "Report payload typing is intentionally finite. Arbitrary relation or entity resolution is not proved.",
+    "Unknown, ambiguous, uncited, cross-line or non-literal reports abstain rather than guess. Broad paraphrases may remain pending.",
+    "No actual model rerun in this stage. Q16 faithful coherent full article availability, source6, Q9 real-audio names, installed Mac format2 qualification and physical Windows/Linux acceptance remain open.",
+    "Stable release remains 0.3.4; 0.3.5 has not been published. CUDA/Vulkan remain signed optional downloads outside installers."
+  ]
+}
