@@ -9,6 +9,10 @@ import tarfile
 import unicodedata
 
 OPTIONAL_GPU = re.compile(r"(?:^|[/\\])(?:accelerators?(?:[/\\]|$)|(?:lib)?(?:ggml[-_](?:cuda|vulkan|hip|sycl)|cuda(?:rt)?|cublas(?:lt)?|cudnn|cufft|curand|cusolver|cusparse|nvrtc|nvcc|nvcuda|nvjitlink|nvfatbin|nvml|nvidia|amdhip|hipblas|rocblas|rocm|miopen|amd_comgr|sycl|vulkan|DirectML|onnxruntime_providers_(?:cuda|rocm|dml|tensorrt))[^/\\]*\.(?:dll|so(?:\.[0-9]+)*|dylib|exe))", re.I)
+OPTIONAL_GPU_ARCHIVE = re.compile(
+    r"(?:^|[/\\])OmaScribe[-_](?:cuda|vulkan|hip|sycl)[-_][^/\\]+\.(?:tar\.(?:bz2|gz|xz)|zip)$",
+    re.I,
+)
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))
 APP = pathlib.PurePosixPath("OmaScribe.app")
@@ -27,7 +31,8 @@ RELEASE_FORMATS = {
 
 def assert_base_names(names):
     for name in names:
-        if OPTIONAL_GPU.search(str(name)):
+        name = str(name)
+        if OPTIONAL_GPU.search(name) or OPTIONAL_GPU_ARCHIVE.search(name):
             raise ValueError(f"Optional acceleration dependency in base payload: {name}")
 
 

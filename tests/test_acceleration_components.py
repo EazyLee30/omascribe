@@ -191,6 +191,15 @@ class AccelerationPackagingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 assert_base_names([name])
 
+    def test_base_installer_rejects_the_published_optional_archives_as_members(self):
+        signed = json.loads((ROOT / "tests/fixtures/acceleration-preview-index.json").read_text())
+        payload = json.loads(signed["payload"])
+        self.assertEqual(len(payload["components"]), 4)
+        for component in payload["components"]:
+            name = component["archive"]["name"]
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "Optional acceleration"):
+                assert_base_names([f"native/downloads/{name}"])
+
     def test_vulkan_sdk_uses_explicit_nested_loader_and_headers(self):
         with tempfile.TemporaryDirectory() as root:
             sdk = pathlib.Path(root)
