@@ -424,8 +424,9 @@ impl Engine {
         snapshot: &Snapshot,
     ) -> Result<crate::minutes_schedule::InputDigest> {
         let prefs = self.preferences.lock().unwrap().clone();
+        let snapshot = crate::notes::input_snapshot(self, snapshot, &prefs)?;
         crate::minutes_schedule::InputDigest::from_snapshot(
-            snapshot,
+            &snapshot,
             &prefs,
             self.context_revision.load(Ordering::SeqCst),
         )

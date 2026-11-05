@@ -293,6 +293,16 @@ fn record_admitted_input(
     }
 }
 
+/// The internal minutes input used by both actual admission and retry identity.
+/// Keep caption visibility and the public snapshot contract independent.
+pub(crate) fn input_snapshot(
+    _engine: &Engine,
+    snapshot: &crate::Snapshot,
+    _prefs: &crate::preferences::Preferences,
+) -> Result<crate::Snapshot> {
+    Ok(snapshot.clone())
+}
+
 fn generate_for_run(
     engine: &Arc<Engine>,
     meeting: &str,
@@ -344,6 +354,7 @@ fn generate_for_run(
             bail!("笔记模型尚未安装，请运行 scripts/bin/setup");
         }
         let prefs = engine.preferences.lock().unwrap().clone();
+        let snapshot = input_snapshot(engine, &snapshot, &prefs)?;
         let scope = generation::Scope::new(engine, &snapshot, &prefs, context_revision)?;
         record_admitted_input(
             &scope,
