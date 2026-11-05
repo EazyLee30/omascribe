@@ -360,3 +360,85 @@ fn cached_music_coverage_ranges_bind_the_model_visible_coordinate_space() -> Res
     }
     Ok(())
 }
+
+#[test]
+fn an_unresolved_update_retires_only_its_field_without_granting_positive_proof() -> Result<()> {
+    use super::{retrieval, source_coverage::View, writer};
+    for (update, retained, field) in [
+        (
+            "Main-stage music has not ended.",
+            "嘉年华仍可能有部分区域持续演奏至深夜。",
+            "FestivalPartsPlayingUntilLateNight",
+        ),
+        (
+            "Main-stage music has perhaps ended.",
+            "嘉年华仍可能有部分区域持续演奏至深夜。",
+            "FestivalPartsPlayingUntilLateNight",
+        ),
+        (
+            "Sections of the festival will not keep playing music until late into the night.",
+            "音乐在主舞台可能已经结束。",
+            "MainStageMusicEnding",
+        ),
+    ] {
+        let source = snapshot(&[ORIGINAL_SOURCES[4], update]);
+        ordinary(&source, &[0, 1], retained, None)?;
+        // Abstention never bypasses the old modal/source certainty veto.
+        assert!(ordinary(
+            &source,
+            &[0, 1],
+            "音乐在主舞台已经结束，但嘉年华的某些部分仍将持续演奏至深夜。",
+            None
+        )
+        .is_err());
+        let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+        let context = retrieval::Context {
+            cursor: 2,
+            segments: source.segments.clone(),
+            keywords: Vec::new(),
+        };
+        let (mut system, mut input) =
+            writer::prompt_mode(&source, &context, &serde_json::json!({}), "zh", false);
+        view.augment(&mut system, &mut input)?;
+        let input: Value = serde_json::from_str(&input)?;
+        let required = input["required_source_fields"].as_array().unwrap();
+        assert_eq!(required.len(), 1);
+        assert_eq!(required[0]["field"], field);
+        assert_eq!(required[0]["source_entry"], 1);
+        assert_eq!(required[0]["qualifier"], "may");
+    }
+    Ok(())
+}
+
+#[test]
+fn a_condition_question_quote_or_other_object_cannot_retire_a_music_field() -> Result<()> {
+    use super::source_coverage::View;
+    for update in [
+        "If main-stage music has not ended, do not start the audit.",
+        "Main-stage music has not ended?",
+        "Do not treat 'Earlier example. Main-stage music has not ended. End example.' as fact.",
+        "Main-stage music audit has not ended.",
+        "Main-stage music has not ended buffering.",
+        "If sections of the festival will not keep playing music until late into the night, cancel the audit.",
+        "Sections of the festival will not keep playing music until late into the night?",
+        "Sections of the festival inspection team will not keep playing music until late into the night.",
+    ] {
+        let source=snapshot(&[ORIGINAL_SOURCES[4],update]);
+        let complete=ordinary(&source,&[0,1],BOTH_MUSIC_FIELDS,None)?;
+        let view=View::new(&source.segments,&source.segments,&source.meeting)?;
+        for partial in ["音乐在主舞台可能已经结束。","嘉年华仍可能有部分区域持续演奏至深夜。"] {
+            let mut document=complete.clone();
+            document[0].text=partial.into();
+            assert!(view.validate(&document).is_err(),"{update} must not retire either field");
+        }
+    }
+    // Input order cannot turn an earlier unresolved observation into a later
+    // update of the known current source.
+    let source = snapshot(&["Main-stage music has not ended.", ORIGINAL_SOURCES[4]]);
+    let complete = ordinary(&source, &[1, 0], BOTH_MUSIC_FIELDS, None)?;
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    let mut partial = complete;
+    partial[0].text = "嘉年华仍可能有部分区域持续演奏至深夜。".into();
+    assert!(view.validate(&partial).is_err());
+    Ok(())
+}
