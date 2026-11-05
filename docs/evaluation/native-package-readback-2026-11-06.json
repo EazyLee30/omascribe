@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "source": "a3d7ff81d1284deb1ab1596304062b1641319a0f",
+  "delivered_files": {
+    "OmaScribe_0.3.5_macOS-AppleSilicon.dmg": "aarch64-apple-darwin",
+    "OmaScribe_0.3.5_macOS-AppleSilicon.app.tar.gz": "aarch64-apple-darwin",
+    "OmaScribe_0.3.5_macOS-AppleSilicon-runtime.app.tar.gz": "aarch64-apple-darwin",
+    "OmaScribe_0.3.5_macOS-Intel.dmg": "x86_64-apple-darwin",
+    "OmaScribe_0.3.5_macOS-Intel.app.tar.gz": "x86_64-apple-darwin",
+    "OmaScribe_0.3.5_macOS-Intel-runtime.app.tar.gz": "x86_64-apple-darwin",
+    "OmaScribe_0.3.5_Windows-x64.exe": "x86_64-pc-windows-msvc",
+    "OmaScribe_0.3.5_Windows-x64-runtime.exe": "x86_64-pc-windows-msvc",
+    "OmaScribe_0.3.5_Linux-x64.deb": "x86_64-unknown-linux-gnu",
+    "OmaScribe_0.3.5_Linux-x64.AppImage": "x86_64-unknown-linux-gnu",
+    "OmaScribe_0.3.5_Linux-x64-runtime.AppImage": "x86_64-unknown-linux-gnu"
+  },
+  "readback": {
+    "NSIS": "List the exact staged EXE members and scan the installed tree. Runtime update installs the signed staged EXE and scans after hiding legacy bundled models.",
+    "DEB and AppImage": "Scan each exact staged artifact after extraction. The AppImage serves as the full Linux updater, and the signed runtime AppImage is also extracted independently.",
+    "DMG": "Scan the read-only mounted volume before copying its app for native inference validation.",
+    "full Mac updater": "Verify the signature and stream the actual signed tar. Check regular anchors, format 2 stamp and macOS path aliases without extracting a second copy of the models.",
+    "runtime Mac updater": "Scan and safely unpack the signed tar, codesign-verify and scan the extracted app. Use that same app for migrated-model checks."
+  },
+  "publication_gate": {
+    "payloads": 11,
+    "producer_jobs": 4,
+    "signature_bound_payloads": 8,
+    "digest_reads_per_payload_in_publish": 1,
+    "notes": "Only exact same-run producer files, matching receipts and checksums may create both updater manifests. Receipt binds commit, target, filename, byte length and SHA-256, plus SHA-256 of adjacent signature where applicable."
+  },
+  "checks": {
+    "python_passed": 171,
+    "python_skipped": 1,
+    "new_test_methods": 6,
+    "mounted_dmg_controls": [
+      "CPU/Metal synthetic tree passes with Applications symlink untouched",
+      "libcudart.dylib outside .app rejected",
+      "both temporary mounted volumes detached"
+    ],
+    "static_workflow_parse": "passed"
+  },
+  "limits": [
+    "Native release was not dispatched. The mounted DMGs were small fictional controls; production NSIS, DEB, AppImage, DMG and signed runtime bytes remain to be verified by native release jobs.",
+    "This is an inventory and recipe-stamp gate. Imported binary dependencies, static linking and GitHub-side draft asset readback are separate checks. The receipts depend on the authenticated same-run producers and their actual signature verification.",
+    "No model or acceleration archive was downloaded. The mixed-language minutes quality failure still gates 0.3.5."
+  ],
+  "local_log_sha256": {
+    "python-final.log": "a867d1606d9b796f27bc24c1b9bd8cb968b3985513a8cf730ed486e3509992c5",
+    "dmg-control.log": "5d0b20a895f0a3255ff132e6f4c5b6f2344f645bb79e1c880d47c48278017768"
+  }
+}
