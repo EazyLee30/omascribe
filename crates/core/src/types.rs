@@ -132,6 +132,18 @@ pub struct Snapshot {
     #[serde(default)]
     pub translations: std::collections::HashMap<String, crate::translation::Translation>,
 }
+#[derive(Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum SnapshotPoll {
+    Full {
+        revision: Option<String>,
+        snapshot: Box<Snapshot>,
+    },
+    Runtime {
+        duration_ms: u64,
+        runtime: RuntimeStatus,
+    },
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Device {
     pub id: String,

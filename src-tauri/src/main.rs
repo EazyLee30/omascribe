@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, UserNote};
+use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, SnapshotPoll, UserNote};
 use std::{
     path::PathBuf,
     sync::{
@@ -49,6 +49,18 @@ fn create_meeting(engine: State<AppState>, title: String) -> Reply<Meeting> {
 #[tauri::command]
 fn snapshot(engine: State<AppState>, id: String) -> Reply<Snapshot> {
     engine.snapshot(&id).map_err(err)
+}
+#[tauri::command]
+async fn poll_snapshot(
+    engine: State<'_, AppState>,
+    id: String,
+    revision: Option<String>,
+) -> Reply<SnapshotPoll> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || engine.poll_snapshot(&id, revision.as_deref()))
+        .await
+        .map_err(err)?
+        .map_err(err)
 }
 #[tauri::command]
 async fn extract_focus_terms(content: String) -> Vec<String> {
@@ -383,6 +395,7 @@ fn main() {
         list_meetings,
         create_meeting,
         snapshot,
+        poll_snapshot,
         diagnostics,
         extract_focus_terms,
         list_devices,

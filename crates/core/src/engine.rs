@@ -101,6 +101,7 @@ pub struct Engine {
     pub(crate) acceleration: Mutex<crate::acceleration::State>,
     microphone_monitor: crate::microphone::MicrophoneMonitor,
     notes_target: Mutex<Option<String>>,
+    snapshot_session: Uuid,
     _lock: File,
 }
 impl Drop for Engine {
@@ -179,6 +180,7 @@ impl Engine {
             acceleration: Default::default(),
             microphone_monitor: Default::default(),
             notes_target: Mutex::new(None),
+            snapshot_session: Uuid::new_v4(),
             _lock: lock,
         });
         engine.recover_downloads()?;
@@ -537,6 +539,41 @@ impl Engine {
     pub fn snapshot(&self, id: &str) -> Result<Snapshot> {
         let prefs = self.preferences.lock().unwrap().clone();
         let db = self.store.lock().unwrap();
+        let (meeting, runtime) = self.snapshot_state(&db, id)?;
+        self.snapshot_body(&db, id, prefs, meeting, runtime)
+    }
+    pub fn poll_snapshot(&self, id: &str, known_revision: Option<&str>) -> Result<SnapshotPoll> {
+        let prefs = self.preferences.lock().unwrap().clone();
+        let db = self.store.lock().unwrap();
+        // Caption visibility depends on model/runtime receipts outside SQLite.
+        // Only the original-text view can use a storage-only revision.
+        let revision = if prefs.translation_mode == "off" && db.conn.is_autocommit() {
+            db.conn
+                .pragma_query_value(None, "data_version", |row| row.get::<_, i64>(0))
+                .ok()
+                .map(|external| {
+                    format!(
+                        "{}:{}:{external}:{id}",
+                        self.snapshot_session.simple(),
+                        db.conn.total_changes()
+                    )
+                })
+        } else {
+            None
+        };
+        let (meeting, runtime) = self.snapshot_state(&db, id)?;
+        if revision.is_some() && revision.as_deref() == known_revision {
+            return Ok(SnapshotPoll::Runtime {
+                duration_ms: meeting.duration_ms,
+                runtime,
+            });
+        }
+        Ok(SnapshotPoll::Full {
+            revision,
+            snapshot: Box::new(self.snapshot_body(&db, id, prefs, meeting, runtime)?),
+        })
+    }
+    fn snapshot_state(&self, db: &Store, id: &str) -> Result<(Meeting, RuntimeStatus)> {
         let mut m = db.meeting(id)?;
         if db.conn.query_row(
             "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
@@ -549,8 +586,18 @@ impl Engine {
         if runtime.meeting_id.as_deref() == Some(id) {
             m.duration_ms = m.duration_ms.max(runtime.elapsed_ms);
         }
+        Ok((m, runtime))
+    }
+    fn snapshot_body(
+        &self,
+        db: &Store,
+        id: &str,
+        prefs: crate::preferences::Preferences,
+        m: Meeting,
+        runtime: RuntimeStatus,
+    ) -> Result<Snapshot> {
         Ok(Snapshot {
-            translations: crate::translation::cached(self, &db, &m, &prefs)?,
+            translations: crate::translation::cached(self, db, &m, &prefs)?,
             translation_mode: prefs.translation_mode,
             segments: db.segments(&m)?,
             notes: db.notes(id)?,
@@ -1659,6 +1706,114 @@ impl Engine {
 pub fn timestamp(ms: u64) -> String {
     let s = ms / 1000;
     format!("{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60)
+}
+
+#[cfg(test)]
+mod snapshot_poll_tests {
+    use super::*;
+
+    fn full(poll: SnapshotPoll) -> (Option<String>, Box<Snapshot>) {
+        let SnapshotPoll::Full { revision, snapshot } = poll else {
+            panic!("expected a full snapshot");
+        };
+        (revision, snapshot)
+    }
+
+    #[test]
+    fn unchanged_long_meeting_poll_sends_live_state_without_transcript() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let meeting = engine.create_meeting("Synthetic long meeting")?;
+        {
+            let db = engine.store.lock().unwrap();
+            db.conn.execute_batch("BEGIN")?;
+            for seq in 1..=5_000 {
+                db.save_segment(&Segment {
+                    id: format!("{}:1:{seq}", meeting.id),
+                    meeting_id: meeting.id.clone(),
+                    run: meeting.run,
+                    seq,
+                    start_ms: (seq as u64 - 1) * 1_000,
+                    end_ms: seq as u64 * 1_000,
+                    text: "We checked the build and kept the review pending.".into(),
+                    revision: 1,
+                    speaker: None,
+                    speaker_manual: false,
+                })?;
+            }
+            db.conn.execute_batch("COMMIT")?;
+        }
+        let initial = engine.poll_snapshot(&meeting.id, None)?;
+        let initial_bytes = serde_json::to_vec(&initial)?.len();
+        let (revision, snapshot) = full(initial);
+        assert_eq!(snapshot.segments.len(), 5_000);
+        let revision = revision.unwrap();
+        {
+            let mut runtime = engine.status.lock().unwrap();
+            runtime.meeting_id = Some(meeting.id.clone());
+            runtime.recording = true;
+            runtime.elapsed_ms = 5_001_234;
+            runtime.partial = "Review is in progress".into();
+            runtime.notes_busy = true;
+            runtime.level = 0.4;
+        }
+        let update = engine.poll_snapshot(&meeting.id, Some(&revision))?;
+        let update_bytes = serde_json::to_vec(&update)?.len();
+        let SnapshotPoll::Runtime {
+            duration_ms,
+            runtime,
+        } = update
+        else {
+            panic!("live-only progress should not resend saved passages");
+        };
+        assert_eq!(duration_ms, 5_001_234);
+        assert!(runtime.recording && runtime.notes_busy);
+        assert_eq!(runtime.partial, "Review is in progress");
+        assert_eq!(runtime.level, 0.4);
+        assert!(initial_bytes > 1_000_000 && update_bytes < 1_024);
+        println!("5000 passages: {initial_bytes} bytes full, {update_bytes} bytes runtime");
+        Ok(())
+    }
+
+    #[test]
+    fn snapshot_revision_tracks_local_and_external_writes_and_access() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let meeting = engine.create_meeting("First")?;
+        let other = engine.create_meeting("Other")?;
+        let (revision, _) = full(engine.poll_snapshot(&meeting.id, None)?);
+        assert!(revision.is_some());
+        full(engine.poll_snapshot(&other.id, revision.as_deref())?);
+
+        let note = engine.save_note(&meeting.id, None, "Current note", "document", 0)?;
+        let (after_note, snapshot) = full(engine.poll_snapshot(&meeting.id, revision.as_deref())?);
+        assert_ne!(revision, after_note);
+        assert_eq!(snapshot.notes[0].content, note.content);
+        let separate = Store {
+            conn: rusqlite::Connection::open(root.path().join("meetings.sqlite3"))?,
+        };
+        let mut changed = note;
+        changed.content = "Committed through another connection".into();
+        separate.save_note(&changed)?;
+        let (after_external, snapshot) =
+            full(engine.poll_snapshot(&meeting.id, after_note.as_deref())?);
+        assert_ne!(after_note, after_external);
+        assert_eq!(snapshot.notes[0].content, changed.content);
+
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let (mode_revision, snapshot) =
+            full(engine.poll_snapshot(&meeting.id, after_external.as_deref())?);
+        assert!(mode_revision.is_none());
+        assert_eq!(snapshot.translation_mode, "bilingual");
+        engine.preferences.lock().unwrap().translation_mode = "off".into();
+        separate
+            .conn
+            .execute("INSERT INTO deleted_meetings VALUES(?1)", [&meeting.id])?;
+        assert!(engine
+            .poll_snapshot(&meeting.id, after_external.as_deref())
+            .is_err());
+        Ok(())
+    }
 }
 
 #[cfg(test)]
