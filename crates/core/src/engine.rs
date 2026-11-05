@@ -1915,11 +1915,17 @@ mod legacy_minutes_retry_tests {
         Ok(())
     }
     #[test]
-    fn checked_caption_text_changes_digest_but_hashmap_order_does_not() -> Result<()> {
+    fn admitted_translation_text_changes_digest_but_hashmap_order_does_not() -> Result<()> {
         let root = tempfile::tempdir()?;
         let engine = Engine::open(root.path().into())?;
         let m = engine.create_meeting("cached captions")?;
         let mut snapshot = engine.snapshot(&m.id)?;
+        let prefs = engine.preferences.lock().unwrap().clone();
+        let revision = engine.context_revision.load(Ordering::SeqCst);
+        // These synthetic rows exercise hashing of an already admitted view.
+        let digest = |snapshot: &Snapshot| {
+            crate::minutes_schedule::InputDigest::from_snapshot(snapshot, &prefs, revision)
+        };
         let first = crate::translation::Translation {
             segment_id: "one".into(),
             revision: 1,
@@ -1940,7 +1946,7 @@ mod legacy_minutes_retry_tests {
         snapshot
             .translations
             .insert(second.segment_id.clone(), second.clone());
-        let key = engine.minutes_retry_input(&snapshot)?;
+        let key = digest(&snapshot)?;
         snapshot.translations.clear();
         snapshot
             .translations
@@ -1948,9 +1954,38 @@ mod legacy_minutes_retry_tests {
         snapshot
             .translations
             .insert(first.segment_id.clone(), first);
-        assert_eq!(key, engine.minutes_retry_input(&snapshot)?);
+        assert_eq!(key, digest(&snapshot)?);
         snapshot.translations.get_mut("one").unwrap().text = "缓存已核对。".into();
-        assert_ne!(key, engine.minutes_retry_input(&snapshot)?);
+        assert_ne!(key, digest(&snapshot)?);
+        Ok(())
+    }
+
+    #[test]
+    fn source_less_snapshot_translations_do_not_change_retry_identity() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("source-less translation map")?;
+        let mut snapshot = engine.snapshot(&meeting.id)?;
+        assert!(snapshot.segments.is_empty());
+        let key = engine.minutes_retry_input(&snapshot)?;
+        let synthetic = crate::translation::Translation {
+            segment_id: "missing-source".into(),
+            revision: 1,
+            target: "zh".into(),
+            model: "qwen3-1.7b".into(),
+            text: "缓存仍待核对。".into(),
+            cache_key: "synthetic-key".into(),
+        };
+        snapshot
+            .translations
+            .insert(synthetic.segment_id.clone(), synthetic);
+        assert_eq!(key, engine.minutes_retry_input(&snapshot)?);
+        snapshot
+            .translations
+            .get_mut("missing-source")
+            .unwrap()
+            .text = "缓存已核对。".into();
+        assert_eq!(key, engine.minutes_retry_input(&snapshot)?);
         Ok(())
     }
     #[test]
