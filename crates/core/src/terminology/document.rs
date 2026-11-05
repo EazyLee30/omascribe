@@ -280,6 +280,100 @@ mod unchanged_source_tests {
         assert!(db.conn.is_autocommit());
         Ok(())
     }
+
+    #[test]
+    fn one_plain_note_repairs_changed_and_already_canonical_sources_with_their_own_minutes(
+    ) -> Result<()> {
+        let (_root, engine, note, first) = seed()?;
+        let second = Segment {
+            id: format!("{}:1:2", first.meeting.id),
+            meeting_id: first.meeting.id.clone(),
+            run: 1,
+            seq: 2,
+            start_ms: 1300,
+            end_ms: 2400,
+            text: "ALMA SCRIBE的字幕仍待测试。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&second)?;
+        let added = engine.snapshot(&first.meeting.id)?;
+        let mut sections = added.suggestions.clone();
+        sections.push(Suggestion {
+            id: String::new(),
+            meeting_id: first.meeting.id.clone(),
+            kind: "section".into(),
+            focus: String::new(),
+            text: second.text.clone(),
+            status: "pending".into(),
+            stale: false,
+            sources: vec![Source {
+                segment_id: second.id.clone(),
+                revision: 1,
+                start_ms: second.start_ms,
+                end_ms: second.end_ms,
+                quote: second.text.clone(),
+                speaker_name: None,
+            }],
+        });
+        engine.store.lock().unwrap().commit_document(
+            &added,
+            &added.segments,
+            2,
+            sections,
+            false,
+        )?;
+        let before = engine.snapshot(&first.meeting.id)?;
+        assert!(!before.meeting.auto_notes);
+        engine.save_note(&first.meeting.id, Some(note.id), NOTE, "document", 0)?;
+        let after = engine.snapshot(&first.meeting.id)?;
+        let first_section = after
+            .suggestions
+            .iter()
+            .find(|section| section.id == before.suggestions[0].id)
+            .unwrap();
+        let second_section = after
+            .suggestions
+            .iter()
+            .find(|section| section.id == before.suggestions[1].id)
+            .unwrap();
+        assert_eq!(second_section.text, "OmaScribe的字幕仍待测试。");
+        assert_eq!(second_section.sources[0].quote, after.segments[1].text);
+        assert_eq!(second_section.sources[0].revision, 2);
+        assert!(!second_section.stale);
+        assert_eq!(first_section.text, CANONICAL);
+        assert!(!first_section.stale);
+        assert_eq!(first_section.status, "pending");
+        assert_eq!(
+            serde_json::to_value(&first_section.sources)?,
+            serde_json::to_value(&before.suggestions[0].sources)?
+        );
+        assert_eq!(
+            serde_json::to_value(&after.segments[0])?,
+            serde_json::to_value(&before.segments[0])?
+        );
+        assert_eq!(after.segments[0].revision, 1);
+        assert_eq!(after.segments[1].revision, 2);
+        assert_eq!(after.meeting.notes_cursor, 2);
+        assert!(after.meeting.notes_fingerprint.is_empty());
+        assert!(crate::notes::needs_update(&after));
+        let db = engine.store.lock().unwrap();
+        let original: String = db.conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&second.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(
+            serde_json::from_str::<Segment>(&original)?.text,
+            second.text
+        );
+        let jobs: i64 = db
+            .conn
+            .query_row("SELECT COUNT(*) FROM inference_jobs", [], |row| row.get(0))?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
 }
 pub(super) struct SourceChange {
     pub before: Segment,
