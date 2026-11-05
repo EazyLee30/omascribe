@@ -7,12 +7,13 @@ use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::{Read, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     time::Duration,
 };
@@ -25,6 +26,7 @@ const PREVIEW_PAYLOAD_SHA256: &str =
     "f0f6261191b3f5cc3f720adbc83060ad11fa399eba060db472c52faaaed648d7";
 const MAX_INDEX: u64 = 512 * 1024;
 const MAX_UNPACKED: u64 = 4 * 1024 * 1024 * 1024;
+const MAX_COMPONENTS: usize = 24;
 
 #[derive(Debug, Clone)]
 enum CatalogChannel {
@@ -135,7 +137,151 @@ pub struct Status {
     pub installed: bool,
     pub downloadable: bool,
     pub compatible: bool,
-    pub download: Option<Download>,
+    pub download: Option<ComponentDownloadProgress>,
+}
+
+#[derive(Clone, Serialize)]
+pub struct ComponentDownloadProgress {
+    pub job_id: uuid::Uuid,
+    #[serde(flatten)]
+    pub progress: Download,
+}
+
+#[derive(Clone)]
+struct ComponentDownload {
+    component: Arc<Component>,
+    version: String,
+    preview: bool,
+    status: ComponentDownloadProgress,
+    // Keep a signalled job registered until its staging directory is cleaned up.
+    cancel: Option<Arc<AtomicBool>>,
+}
+impl ComponentDownload {
+    fn matches(&self, component: &Component, version: &str, preview: bool) -> bool {
+        self.version == version
+            && self.preview == preview
+            && self.component.archive.sha256 == component.archive.sha256
+            && self.component.archive.bytes == component.archive.bytes
+    }
+}
+
+#[derive(Default)]
+pub struct ComponentDownloads {
+    jobs: Mutex<HashMap<String, ComponentDownload>>,
+}
+impl ComponentDownloads {
+    fn begin(
+        &self,
+        component: Arc<Component>,
+        version: &str,
+        preview: bool,
+    ) -> Result<(uuid::Uuid, Arc<AtomicBool>)> {
+        let mut jobs = self.jobs.lock().unwrap();
+        let id = &component.id;
+        if jobs.get(id).is_some_and(|job| job.cancel.is_some()) {
+            bail!("Component download already running");
+        }
+        if jobs.len() >= MAX_COMPONENTS && !jobs.contains_key(id) {
+            let expired = jobs
+                .iter()
+                .find(|(_, job)| job.cancel.is_none())
+                .map(|(id, _)| id.clone())
+                .context("Too many component downloads in progress")?;
+            jobs.remove(&expired);
+        }
+        let job_id = uuid::Uuid::new_v4();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let total = component.archive.bytes;
+        jobs.insert(
+            id.clone(),
+            ComponentDownload {
+                component,
+                version: version.into(),
+                preview,
+                status: ComponentDownloadProgress {
+                    job_id,
+                    progress: Download {
+                        state: "downloading".into(),
+                        total,
+                        ..Default::default()
+                    },
+                },
+                cancel: Some(cancel.clone()),
+            },
+        );
+        Ok((job_id, cancel))
+    }
+
+    fn with_active(
+        &self,
+        id: &str,
+        job_id: uuid::Uuid,
+        action: impl FnOnce(&mut ComponentDownload),
+    ) {
+        let mut jobs = self.jobs.lock().unwrap();
+        if let Some(job) = jobs
+            .get_mut(id)
+            .filter(|job| job.status.job_id == job_id && job.cancel.is_some())
+        {
+            action(job);
+        }
+    }
+
+    fn finish(&self, id: &str, job_id: uuid::Uuid, result: Result<()>) {
+        self.with_active(id, job_id, |job| {
+            let cancelled = job
+                .cancel
+                .take()
+                .is_some_and(|cancel| cancel.load(Ordering::SeqCst));
+            job.status.progress.state = if result.is_ok() {
+                "installed"
+            } else if cancelled {
+                "cancelled"
+            } else {
+                "failed"
+            }
+            .into();
+            job.status.progress.error = if cancelled {
+                None
+            } else {
+                result.err().map(|error| format!("{error:#}"))
+            };
+        });
+    }
+
+    fn cancel(&self, id: &str, version: &str, job_id: uuid::Uuid) {
+        self.with_active(id, job_id, |job| {
+            if let Some(cancel) = job.cancel.as_ref().filter(|_| job.version == version) {
+                cancel.store(true, Ordering::SeqCst);
+            }
+        });
+    }
+
+    pub(crate) fn cancel_all(&self) {
+        for job in self.jobs.lock().unwrap().values() {
+            if let Some(cancel) = &job.cancel {
+                cancel.store(true, Ordering::SeqCst);
+            }
+        }
+    }
+
+    fn running(&self, id: &str) -> bool {
+        self.jobs
+            .lock()
+            .unwrap()
+            .get(id)
+            .is_some_and(|job| job.cancel.is_some())
+    }
+
+    fn forget_finished(&self, id: &str, version: &str) {
+        let mut jobs = self.jobs.lock().unwrap();
+        if jobs
+            .get(id)
+            .is_some_and(|job| job.version == version && job.cancel.is_none())
+        {
+            jobs.remove(id);
+        }
+    }
 }
 #[derive(Serialize)]
 pub struct CatalogStatus {
@@ -221,7 +367,7 @@ fn validate_inventory(index: &Index) -> Result<()> {
     if index.schema != 1
         || !index.version.starts_with("acceleration-")
         || !basename(&index.version)
-        || index.components.len() > 24
+        || index.components.len() > MAX_COMPONENTS
     {
         bail!("Unsupported acceleration catalog");
     }
@@ -578,57 +724,39 @@ impl Engine {
         if fs2::available_space(&self.root)? < required {
             bail!("Not enough disk space for component verification");
         }
-        let mut jobs = self.component_downloads.cancel.lock().unwrap();
-        if jobs.contains_key(id) {
-            bail!("Component download already running");
-        }
-        let cancel = Arc::new(AtomicBool::new(false));
-        jobs.insert(id.into(), cancel.clone());
-        self.component_downloads.status.lock().unwrap().insert(
-            id.into(),
-            Download {
-                state: "downloading".into(),
-                total: component.archive.bytes,
-                ..Default::default()
-            },
-        );
+        let component = Arc::new(component);
+        let (job_id, cancel) =
+            self.component_downloads
+                .begin(component.clone(), &index.version, preview)?;
         let engine = self.clone();
-        std::thread::spawn(move || {
+        let worker = std::thread::Builder::new().spawn(move || {
             let stage = engine
                 .root
                 .join("accelerators")
-                .join(format!(".download-{}", uuid::Uuid::new_v4()));
-            let result = install(&engine, &envelope, &index, &component, &stage, &cancel);
+                .join(format!(".download-{job_id}"));
+            let result = install(
+                &engine, &envelope, &index, &component, &stage, job_id, &cancel,
+            );
             let _ = fs::remove_dir_all(stage);
-            if let Some(progress) = engine
-                .component_downloads
-                .status
-                .lock()
-                .unwrap()
-                .get_mut(&component.id)
-            {
-                progress.state = if result.is_ok() {
-                    "installed"
-                } else if cancel.load(Ordering::SeqCst) {
-                    "cancelled"
-                } else {
-                    "failed"
-                }
-                .into();
-                progress.error = result.err().map(|e| format!("{e:#}"));
-            }
             engine
                 .component_downloads
-                .cancel
-                .lock()
-                .unwrap()
-                .remove(&component.id);
+                .finish(&component.id, job_id, result);
         });
+        if let Err(error) = worker {
+            self.component_downloads.finish(
+                id,
+                job_id,
+                Err(anyhow::anyhow!(
+                    "Could not start component download: {error}"
+                )),
+            );
+            return Err(error).context("Start component download");
+        }
         Ok(())
     }
-    pub fn cancel_acceleration_download(&self, id: &str) {
-        if let Some(cancel) = self.component_downloads.cancel.lock().unwrap().get(id) {
-            cancel.store(true, Ordering::SeqCst);
+    pub fn cancel_acceleration_download(&self, id: &str, version: &str, job_id: &str) {
+        if let Ok(job_id) = uuid::Uuid::parse_str(job_id) {
+            self.component_downloads.cancel(id, version, job_id);
         }
     }
     /// Local, explicit removal; a damaged installation need not pass its own
@@ -657,7 +785,7 @@ fn catalog_status(
 ) -> CatalogStatus {
     // Restore before the download-status lock, matching configuration actions.
     let verification = engine.acceleration_status();
-    let downloads = engine.component_downloads.status.lock().unwrap().clone();
+    let downloads = engine.component_downloads.jobs.lock().unwrap().clone();
     let mut statuses = Vec::new();
     let mut unavailable = Vec::new();
     if let Some(index) = &current {
@@ -670,7 +798,10 @@ fn catalog_status(
                 installed: installed(&engine.root, index, component),
                 downloadable: true,
                 compatible: true,
-                download: downloads.get(&component.id).cloned(),
+                download: downloads
+                    .get(&component.id)
+                    .filter(|job| job.matches(component, &index.version, preview_available))
+                    .map(|job| job.status.clone()),
             });
         }
     }
@@ -680,15 +811,47 @@ fn catalog_status(
         &mut unavailable,
         load_installed,
     );
+    let mut active: Vec<_> = downloads
+        .values()
+        .filter(|job| job.cancel.is_some())
+        .collect();
+    active.sort_unstable_by_key(|&job| job.component.id.as_str());
+    for job in active {
+        if statuses.iter().any(|entry| {
+            entry
+                .download
+                .as_ref()
+                .is_some_and(|status| status.job_id == job.status.job_id)
+        }) {
+            continue;
+        }
+        // Keep the admitted package visible even if the catalog changed
+        // before any installed files appeared. The job owns this identity.
+        statuses
+            .retain(|entry| entry.component.id != job.component.id || entry.version != job.version);
+        unavailable.retain(|entry| entry.id != job.component.id || entry.version != job.version);
+        statuses.push(Status {
+            component: job.component.as_ref().clone(),
+            version: job.version.clone(),
+            preview: job.preview,
+            present: false,
+            installed: false,
+            downloadable: false,
+            compatible: true,
+            download: Some(job.status.clone()),
+        });
+    }
     if !unavailable.is_empty() {
         let busy = engine.require_available().is_err()
             || engine.configuration_idle().is_err()
             || engine.note_busy.load(Ordering::SeqCst)
             || verification.state == "testing"
             || engine.inference_pool.status().leased;
-        let installing = engine.component_downloads.cancel.lock().unwrap();
         for entry in &mut unavailable {
-            entry.busy = busy || installing.contains_key(&entry.id);
+            entry.busy = busy
+                || downloads
+                    .get(&entry.id)
+                    .is_some_and(|job| job.cancel.is_some());
         }
     }
     CatalogStatus {
@@ -827,13 +990,7 @@ fn remove_component(
     }
     // Cancellation only signals the installer. Its job remains registered
     // until extraction/publication and stage cleanup have actually finished.
-    if engine
-        .component_downloads
-        .cancel
-        .lock()
-        .unwrap()
-        .contains_key(id)
-    {
+    if engine.component_downloads.running(id) {
         bail!("Cancel the component download and wait for it to finish");
     }
     let path = checked_component_path(&engine.root, id, version)?;
@@ -867,7 +1024,7 @@ fn remove_component(
     if path.exists() {
         fs::remove_dir_all(&path)?;
     }
-    engine.component_downloads.status.lock().unwrap().remove(id);
+    engine.component_downloads.forget_finished(id, version);
     Ok(())
 }
 
@@ -917,11 +1074,15 @@ fn install(
     index: &Index,
     component: &Component,
     stage: &Path,
+    job_id: uuid::Uuid,
     cancel: &AtomicBool,
 ) -> Result<()> {
     fs::create_dir_all(stage)?;
     let archive = stage.join("payload.tar.bz2");
     engine.require_model_network()?;
+    if cancel.load(Ordering::SeqCst) {
+        bail!("Component download cancelled");
+    }
     let response = ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(20))
         .timeout_read(Duration::from_secs(30))
@@ -947,15 +1108,11 @@ fn install(
         }
         hash.update(&buffer[..n]);
         out.write_all(&buffer[..n])?;
-        if let Some(progress) = engine
+        engine
             .component_downloads
-            .status
-            .lock()
-            .unwrap()
-            .get_mut(&component.id)
-        {
-            progress.downloaded = bytes;
-        }
+            .with_active(&component.id, job_id, |job| {
+                job.status.progress.downloaded = bytes;
+            });
     }
     out.sync_all()?;
     drop(out);
@@ -964,15 +1121,11 @@ fn install(
     {
         bail!("Component archive checksum mismatch");
     }
-    if let Some(progress) = engine
+    engine
         .component_downloads
-        .status
-        .lock()
-        .unwrap()
-        .get_mut(&component.id)
-    {
-        progress.state = "verifying".into();
-    }
+        .with_active(&component.id, job_id, |job| {
+            job.status.progress.state = "verifying".into();
+        });
     extract(&archive, stage, &component.files, cancel)?;
     let info: serde_json::Value =
         serde_json::from_slice(&read_limited(&stage.join("build-info.json"), 4096)?)?;
@@ -1096,6 +1249,17 @@ mod tests {
             }))?,
         )?;
         Ok(())
+    }
+    fn fixture_download(
+        engine: &Engine,
+        index: &Index,
+        preview: bool,
+    ) -> Result<(uuid::Uuid, Arc<AtomicBool>)> {
+        engine.component_downloads.begin(
+            Arc::new(index.components[0].clone()),
+            &index.version,
+            preview,
+        )
     }
     fn fixture_certificate(index: &Index) -> Result<Vec<u8>> {
         let trial = serde_json::json!({"startup_ms":1,"requests_ms":[1],"total_ms":2,
@@ -1260,14 +1424,12 @@ mod tests {
         fs::write(&certificate, &certificate_bytes)?;
         assert!(engine.remove_acceleration_component(id, version).is_err());
         engine.note_busy.store(false, Ordering::SeqCst);
+        let (job, cancel) = fixture_download(&engine, &index, false)?;
+        cancel.store(true, Ordering::SeqCst);
+        assert!(engine.remove_acceleration_component(id, version).is_err());
         engine
             .component_downloads
-            .cancel
-            .lock()
-            .unwrap()
-            .insert(id.clone(), Arc::new(AtomicBool::new(true)));
-        assert!(engine.remove_acceleration_component(id, version).is_err());
-        engine.component_downloads.cancel.lock().unwrap().remove(id);
+            .finish(id, job, Err(anyhow::anyhow!("cancelled")));
         for (candidate_id, candidate_version) in [
             ("unknown", version.as_str()),
             (id.as_str(), "manual"),
@@ -1342,26 +1504,20 @@ mod tests {
     fn catalog_refresh_keeps_active_download_on_admitted_version_without_files() -> Result<()> {
         let (_root, engine, old, old_path) = removal_fixture()?;
         let id = &old.components[0].id;
-        engine
-            .component_downloads
-            .cancel
-            .lock()
-            .unwrap()
-            .insert(id.clone(), Arc::new(AtomicBool::new(false)));
-        engine.component_downloads.status.lock().unwrap().insert(
-            id.clone(),
-            Download {
-                state: "downloading".into(),
-                downloaded: 4,
-                total: old.components[0].archive.bytes,
-                error: None,
-            },
-        );
+        let (job_id, _) = fixture_download(&engine, &old, true)?;
+        engine.component_downloads.with_active(id, job_id, |job| {
+            job.status.progress.downloaded = 4;
+        });
         let read_installed = |_: &str, _: &str| bail!("No installed component");
         let before = catalog_status(&engine, Some(old.clone()), true, read_installed);
         assert_eq!(before.components[0].version, old.version);
         assert_eq!(
-            before.components[0].download.as_ref().unwrap().downloaded,
+            before.components[0]
+                .download
+                .as_ref()
+                .unwrap()
+                .progress
+                .downloaded,
             4
         );
         assert!(!old_path.exists());
@@ -1384,13 +1540,104 @@ mod tests {
             .find(|c| c.version == old.version)
             .unwrap();
         assert!(admitted.preview && !admitted.present && !admitted.downloadable);
-        assert_eq!(admitted.download.as_ref().unwrap().downloaded, 4);
+        assert_eq!(admitted.download.as_ref().unwrap().progress.downloaded, 4);
+        assert_eq!(admitted.download.as_ref().unwrap().job_id, job_id);
 
         let offline = catalog_status(&engine, None, false, read_installed);
         assert_eq!(offline.state, "ready");
         assert_eq!(offline.components.len(), 1);
         assert_eq!(offline.components[0].version, old.version);
-        assert!(offline.components[0].download.is_some());
+        assert_eq!(
+            offline.components[0].download.as_ref().unwrap().job_id,
+            job_id
+        );
+
+        // A stable pointer can later reference the very same preview version.
+        // While the job is active, the single visible row still identifies it as preview.
+        let promoted = catalog_status(&engine, Some(old.clone()), false, read_installed);
+        assert_eq!(promoted.components.len(), 1);
+        assert!(promoted.components[0].preview && !promoted.components[0].downloadable);
+        assert_eq!(
+            promoted.components[0].download.as_ref().unwrap().job_id,
+            job_id
+        );
+
+        engine.component_downloads.finish(
+            id,
+            job_id,
+            Err(anyhow::anyhow!("fixture transport failed")),
+        );
+        let refreshed = catalog_status(&engine, Some(current), false, read_installed);
+        assert_eq!(refreshed.components.len(), 1);
+        assert!(refreshed.components[0].download.is_none());
+        let promoted = catalog_status(&engine, Some(old.clone()), false, read_installed);
+        assert!(promoted.components[0].download.is_none());
+        let preview = catalog_status(&engine, Some(old), true, read_installed);
+        let progress = &preview.components[0].download.as_ref().unwrap().progress;
+        assert_eq!(progress.state, "failed");
+        assert_eq!(progress.error.as_deref(), Some("fixture transport failed"));
+        Ok(())
+    }
+
+    #[test]
+    fn stale_cancel_and_cleanup_cannot_touch_a_replacement_download() -> Result<()> {
+        let (_root, engine, index, _) = removal_fixture()?;
+        let id = &index.components[0].id;
+        let version = &index.version;
+        let (old, old_cancel) = fixture_download(&engine, &index, true)?;
+        engine.cancel_acceleration_download(id, "acceleration-wrong", &old.to_string());
+        assert!(!old_cancel.load(Ordering::SeqCst));
+        engine.cancel_acceleration_download(id, version, &old.to_string());
+        assert!(old_cancel.load(Ordering::SeqCst));
+        assert!(fixture_download(&engine, &index, false).is_err());
+        engine
+            .component_downloads
+            .finish(id, old, Err(anyhow::anyhow!("cancelled")));
+
+        let (new, new_cancel) = fixture_download(&engine, &index, false)?;
+        assert_ne!(old, new);
+        engine.cancel_acceleration_download(id, version, &old.to_string());
+        engine
+            .component_downloads
+            .finish(id, old, Err(anyhow::anyhow!("stale cleanup")));
+        assert!(!new_cancel.load(Ordering::SeqCst));
+        assert!(engine.component_downloads.running(id));
+        engine.cancel_all_downloads();
+        assert!(new_cancel.load(Ordering::SeqCst));
+        assert!(
+            engine.component_downloads.running(id),
+            "Cancellation signals but does not release the job"
+        );
+        engine
+            .component_downloads
+            .finish(id, new, Err(anyhow::anyhow!("cancelled")));
+        assert!(!engine.component_downloads.running(id));
+        Ok(())
+    }
+
+    #[test]
+    fn download_registry_reclaims_only_terminal_slots_when_full() -> Result<()> {
+        let (_root, _engine, index, _) = removal_fixture()?;
+        let jobs = ComponentDownloads::default();
+        let component = |number| {
+            let mut component = index.components[0].clone();
+            component.id = format!("fixture-{number}");
+            Arc::new(component)
+        };
+        let (old, _) = jobs.begin(component(0), &index.version, false)?;
+        for number in 1..MAX_COMPONENTS {
+            jobs.begin(component(number), &index.version, false)?;
+        }
+        assert!(jobs
+            .begin(component(MAX_COMPONENTS), &index.version, false)
+            .is_err());
+        jobs.finish("fixture-0", old, Ok(()));
+        jobs.begin(component(MAX_COMPONENTS), &index.version, false)?;
+        assert_eq!(jobs.jobs.lock().unwrap().len(), MAX_COMPONENTS);
+        assert!(!jobs.jobs.lock().unwrap().contains_key("fixture-0"));
+        for number in 1..=MAX_COMPONENTS {
+            assert!(jobs.running(&format!("fixture-{number}")));
+        }
         Ok(())
     }
 
@@ -1420,13 +1667,10 @@ mod tests {
             fs::create_dir_all(&current_path)?;
             fixture_marker(&current_path, &current)?;
             fs::write(current_path.join("llama-server"), b"good")?;
-            engine.component_downloads.status.lock().unwrap().insert(
-                old.components[0].id.clone(),
-                Download {
-                    state: "installed".into(),
-                    ..Default::default()
-                },
-            );
+            let (job, _) = fixture_download(&engine, &current, false)?;
+            engine
+                .component_downloads
+                .finish(&current.components[0].id, job, Ok(()));
             let read_old = |id: &str, version: &str| -> Result<Index> {
                 Ok(serde_json::from_slice(&fs::read(
                     engine
@@ -1467,6 +1711,7 @@ mod tests {
             assert_eq!(fs::read(current_path.join("llama-server"))?, b"good");
             let remaining = catalog_status(&engine, Some(current), false, read_old);
             assert_eq!(remaining.components.len(), 1);
+            assert!(remaining.components[0].download.is_some());
         }
         Ok(())
     }
@@ -1599,12 +1844,11 @@ mod tests {
         let certificate = engine.root.join("accelerators/active.json");
         let certificate_bytes = fixture_certificate(&index)?;
         fs::write(&certificate, &certificate_bytes)?;
-        engine.component_downloads.status.lock().unwrap().insert(
-            component.id.clone(),
-            Download {
-                state: "failed".into(),
-                ..Default::default()
-            },
+        let (job, _) = fixture_download(&engine, &index, false)?;
+        engine.component_downloads.finish(
+            &component.id,
+            job,
+            Err(anyhow::anyhow!("fixture failure")),
         );
         BEFORE_COMPONENT_REMOVE.with(|slot| {
             *slot.borrow_mut() = Some(Box::new(|| {
@@ -1618,7 +1862,7 @@ mod tests {
         assert_eq!(fs::read(&certificate)?, certificate_bytes);
         assert!(engine
             .component_downloads
-            .status
+            .jobs
             .lock()
             .unwrap()
             .contains_key(&component.id));
@@ -1636,7 +1880,7 @@ mod tests {
         assert!(fresh.check_current().is_err());
         assert!(!engine
             .component_downloads
-            .status
+            .jobs
             .lock()
             .unwrap()
             .contains_key(&component.id));
@@ -1727,12 +1971,11 @@ mod tests {
             let other = path.parent().unwrap().join("acceleration-older");
             fs::create_dir(&other)?;
             fs::write(other.join("keep"), b"other version")?;
-            engine.component_downloads.status.lock().unwrap().insert(
-                component.id.clone(),
-                Download {
-                    state: "failed".into(),
-                    ..Default::default()
-                },
+            let (job, _) = fixture_download(&engine, &index, false)?;
+            engine.component_downloads.finish(
+                &component.id,
+                job,
+                Err(anyhow::anyhow!("fixture failure")),
             );
             // Production supplies this index only through the signed loader;
             // a pure fixture exercises removal without downloading/executing it.
@@ -1742,7 +1985,7 @@ mod tests {
             assert!(other.join("keep").exists());
             assert!(!engine
                 .component_downloads
-                .status
+                .jobs
                 .lock()
                 .unwrap()
                 .contains_key(&component.id));
@@ -1799,10 +2042,8 @@ mod tests {
                     "note_busy" => engine.note_busy.store(true, Ordering::SeqCst),
                     "maintenance" => engine.maintenance.store(true, Ordering::SeqCst),
                     _ => {
-                        engine.component_downloads.cancel.lock().unwrap().insert(
-                            index.components[0].id.clone(),
-                            Arc::new(AtomicBool::new(busy == "cancelled_download")),
-                        );
+                        let (_, cancel) = fixture_download(&engine, &index, false)?;
+                        cancel.store(busy == "cancelled_download", Ordering::SeqCst);
                     }
                 }
             }

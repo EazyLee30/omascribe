@@ -113,9 +113,7 @@ impl Engine {
         for cancel in self.downloads.cancel.lock().unwrap().values() {
             cancel.store(true, Ordering::SeqCst);
         }
-        for cancel in self.component_downloads.cancel.lock().unwrap().values() {
-            cancel.store(true, Ordering::SeqCst);
-        }
+        self.component_downloads.cancel_all();
     }
     pub fn model_directory(&self, id: &str) -> Result<PathBuf> {
         let spec = model(id)?;

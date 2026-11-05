@@ -135,8 +135,13 @@ pub fn disable_acceleration(engine: State<AppState>) -> Reply<()> {
     engine.disable_acceleration().map_err(err)
 }
 #[tauri::command]
-pub fn cancel_acceleration_download(engine: State<AppState>, id: String) {
-    engine.cancel_acceleration_download(&id)
+pub fn cancel_acceleration_download(
+    engine: State<AppState>,
+    id: String,
+    version: String,
+    job_id: String,
+) {
+    engine.cancel_acceleration_download(&id, &version, &job_id)
 }
 #[tauri::command]
 pub async fn hardware_profile(engine: State<'_, AppState>) -> Reply<Hardware> {

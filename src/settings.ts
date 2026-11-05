@@ -518,8 +518,12 @@ export async function mountSettings(
             preview: preview === "true",
           });
         } else if (kind === "cancel") {
+          const { id, version, jobId } = button.dataset;
+          if (!id || !version || !jobId) return;
           await invoke("cancel_acceleration_download", {
-            id: button.dataset.id,
+            id,
+            version,
+            jobId,
           });
         } else if (kind === "remove") {
           // Bind confirmation to the exact rendered version, even if polling

@@ -34,6 +34,7 @@ export interface ComponentCatalog {
     downloadable: boolean;
     compatible: boolean;
     download: {
+      job_id: string;
       state: string;
       downloaded: number;
       total: number;
@@ -126,6 +127,14 @@ export function accelerationBody(
     ? `<p class="setting-help">${tr("本机短文本测试", "Local short-text test", "本機短文測試")} · CPU ${(report.cpu.total_ms / 1000).toFixed(2)} s · GPU ${(report.gpu.total_ms / 1000).toFixed(2)} s${report.gpu.peak_rss_mib !== null ? ` · ${tr("进程内存峰值", "Peak process memory", "程序記憶體峰值")} ${report.gpu.peak_rss_mib} MiB` : ""}</p>`
     : "";
   const vendors = new Set(devices.map((d) => d.vendor));
+  const activeDownloads = new Set(
+    catalog.components
+      .filter(
+        ({ download }) =>
+          download && ["downloading", "verifying"].includes(download.state),
+      )
+      .map(({ component }) => component.id),
+  );
   const offerPreview =
     catalog.preview_available &&
     h.arch === "x86_64" &&
@@ -174,12 +183,14 @@ export function accelerationBody(
                   ? `<button class="subtle" data-component-action="remove" data-id="${esc(c.id)}" data-version="${esc(version)}" ${testing ? "disabled" : ""}>${glyph("trash")}${tr("移除", "Remove", "移除")}</button>`
                   : "";
               const action = busy
-                ? `<button class="outline" data-component-action="cancel" data-id="${esc(c.id)}">${tr("取消", "Cancel")}</button>`
+                ? d.job_id
+                  ? `<button class="outline" data-component-action="cancel" data-id="${esc(c.id)}" data-version="${esc(version)}" data-job-id="${esc(d.job_id)}">${tr("取消", "Cancel", "取消")}</button>`
+                  : ""
                 : incomplete
                   ? ""
                   : !installed
                     ? downloadable
-                      ? `<button class="outline" data-component-action="download" data-id="${esc(c.id)}" data-version="${esc(version)}" data-preview="${preview}" ${unavailable ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>`
+                      ? `<button class="outline" data-component-action="download" data-id="${esc(c.id)}" data-version="${esc(version)}" data-preview="${preview}" ${unavailable || activeDownloads.has(c.id) ? "disabled" : ""}>${glyph("download")}${tr("下载组件", "Download", "下載元件")}</button>`
                       : ""
                     : !compatible
                       ? ""
