@@ -16,6 +16,7 @@ mod language;
 pub(crate) use language::validate_with_source as validate_language_with_source;
 mod lexical;
 mod metrics;
+mod modal;
 #[cfg(test)]
 mod modal_provenance_tests;
 mod qualifiers;
@@ -981,6 +982,8 @@ fn generate_inner(
                         error.downcast_ref::<RecordingRetentionMismatch>()
                     {
                         retention.hint()
+                    } else if let Some(modal) = error.downcast_ref::<modal::Mismatch>() {
+                        modal.hint()
                     } else if let Some(week) = error.downcast_ref::<WeekQualifierMismatch>() {
                         week.hint()
                     } else if let Some(metric) = error.downcast_ref::<MetricMismatch>() {

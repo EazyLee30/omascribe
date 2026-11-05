@@ -40,7 +40,7 @@ fn key(object: &str) -> String {
 }
 
 // Match the writer's distinction between apostrophes inside words and quotes.
-fn word_apostrophe(text: &str, at: usize, ch: char) -> bool {
+pub(super) fn word_apostrophe(text: &str, at: usize, ch: char) -> bool {
     matches!(ch, '\'' | '’')
         && text[..at].ends_with(|c: char| c.is_ascii_alphanumeric())
         && text[at + ch.len_utf8()..].starts_with(|c: char| c.is_ascii_alphanumeric())
@@ -49,7 +49,7 @@ fn word_apostrophe(text: &str, at: usize, ch: char) -> bool {
 // A condition/quotation may cover commas, semicolons and line wrapping. Only
 // sentence stops outside quotations reset its scope; do not promote an inner
 // phrase into an independent factual update.
-fn sentences(text: &str) -> Vec<Range<usize>> {
+pub(super) fn sentences(text: &str) -> Vec<Range<usize>> {
     let mut result = Vec::new();
     let mut start = 0;
     let mut close = None;

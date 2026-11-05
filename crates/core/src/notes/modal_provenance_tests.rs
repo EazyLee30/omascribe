@@ -225,3 +225,120 @@ fn ordinary_writer_conditional_or_quoted_updates_are_not_factual_witnesses() {
         );
     }
 }
+
+#[test]
+fn modal_updates_require_later_sequence_same_scope_and_do_not_survive_reopening() {
+    let mut source = snapshot(&[ORIGINAL_SOURCES[4], DEFINITE]);
+    source.segments[1].seq = 1;
+    assert!(ordinary(&source, &[0, 1], DEFINITE, None).is_err());
+    source.segments[1].seq = 2;
+    source.segments[1].run = 2;
+    assert!(ordinary(&source, &[0, 1], DEFINITE, None).is_err());
+    source.segments[1].run = 1;
+    source.segments[1].meeting_id = "another".into();
+    assert!(ordinary(&source, &[0, 1], DEFINITE, None).is_err());
+    let reopened = snapshot(&[ORIGINAL_SOURCES[4], DEFINITE, ORIGINAL_SOURCES[4]]);
+    assert!(ordinary(&reopened, &[0, 1, 2], DEFINITE, Some(&[2])).is_err());
+    assert!(ordinary(&reopened, &[0, 1, 2], BOTH_MODAL, None).is_ok());
+}
+
+#[test]
+fn modal_updates_reuse_the_existing_quote_and_word_apostrophe_boundary() {
+    for quoted in [
+        "Do not treat 'Earlier example. Music on the main stages has finished. Some sections of the festival will keep playing music until late into the night.' as fact.",
+        "Do not treat 'It's an example. Music on the main stages has finished.' as fact.",
+        "不要把“音乐在主舞台已经结束，但嘉年华的某些部分仍将持续演奏至深夜。”当作事实。",
+    ] {
+        let source=snapshot(&[ORIGINAL_SOURCES[4],quoted]);
+        assert!(ordinary(&source,&[0,1],DEFINITE,Some(&[1,2])).is_err(),"{quoted}");
+    }
+    let update = format!("{DEFINITE} It's ready.");
+    let source = snapshot(&[ORIGINAL_SOURCES[4], &update]);
+    assert!(ordinary(&source, &[0, 1], DEFINITE, Some(&[2])).is_ok());
+}
+
+#[test]
+fn modal_failure_retains_its_category_for_the_existing_original_source_retry() {
+    let source = snapshot(&ORIGINAL_SOURCES);
+    let error = ordinary(&source, &[0, 1, 2, 3, 4], ACTUAL_BODY, None).unwrap_err();
+    let mismatch = error
+        .downcast_ref::<modal::Mismatch>()
+        .expect("typed modal rejection");
+    assert!(mismatch.hint().contains("MAY"));
+    assert!(!error.to_string().contains("输出语言"));
+    // No checked-draft language repair or unrelated positive source bridge:
+    // the existing ordinary second request rebuilds its full original SOURCE.
+    assert!(source_repair(
+        &error,
+        &ORIGINAL_SOURCES.join("\n"),
+        &crate::terminology::Terms::new(&[], &[]),
+        true
+    )
+    .is_none());
+}
+
+#[test]
+fn modal_view_has_one_bounded_budget_for_all_selected_sources() {
+    let texts = vec![ORIGINAL_SOURCES[4]; 33];
+    let source = snapshot(&texts);
+    let terms = crate::terminology::Terms::new(&[], &[]);
+    assert!(modal::View::new(&source.segments[..32], "m", &terms).is_ok());
+    assert!(modal::View::new(&source.segments, "m", &terms).is_err());
+}
+
+#[test]
+fn an_ending_hypothetical_cannot_discharge_the_continuation_modal() {
+    let source = snapshot(&[ORIGINAL_SOURCES[4]]);
+    assert!(ordinary(
+        &source,
+        &[0],
+        "即使主舞台的音乐已经结束，但嘉年华仍可能有部分区域持续演奏至深夜。",
+        None
+    )
+    .is_ok());
+    assert!(ordinary(
+        &source,
+        &[0],
+        "即使主舞台的音乐已经结束，但嘉年华的某些部分仍将持续演奏至深夜。",
+        None
+    )
+    .is_err());
+    let risk = snapshot(&[ORIGINAL_SOURCES[4], ORIGINAL_SOURCES[1]]);
+    let joined = format!("{}；{}", ORIGINAL_SOURCES[1], DEFINITE);
+    assert!(ordinary(&risk, &[0, 1], &joined, None).is_err());
+}
+
+#[test]
+fn a_different_later_subobject_does_not_revoke_an_explicit_music_witness() {
+    let source = snapshot(&[
+        ORIGINAL_SOURCES[4],
+        DEFINITE,
+        "主舞台的音乐播放器已经完成测试。",
+    ]);
+    assert!(ordinary(&source, &[0, 1, 2], DEFINITE, Some(&[2])).is_ok());
+}
+
+#[test]
+fn an_english_completion_prefix_or_shorter_duration_cannot_authorize_the_full_claim() {
+    for update in [
+        "Music on the main stages has finished buffering. Some sections of the festival will keep playing music until late into the night.",
+        "Music on the main stages has finished. Sections of the festival will keep playing music for one minute.",
+    ] {
+        let source=snapshot(&[ORIGINAL_SOURCES[4],update]);
+        assert!(ordinary(&source,&[0,1],DEFINITE,Some(&[1,2])).is_err(),"{update}");
+    }
+    let source=snapshot(&[ORIGINAL_SOURCES[4],"Music on the main stages has finished. Some sections of the festival will keep playing music until late into the night."]);
+    assert!(ordinary(&source, &[0, 1], DEFINITE, Some(&[2])).is_ok());
+}
+
+#[test]
+fn unknown_wrappers_or_qualifiers_are_not_closed_positive_music_witnesses() {
+    for update in [
+        "It is not true that music on the main stages has finished. Some sections of the festival will keep playing music until late into the night.",
+        "Maybe music on the main stages has finished. Some sections of the festival will keep playing music until late into the night.",
+        "音乐在主舞台已经结束，但这还没有得到确认。嘉年华的某些部分仍将持续演奏至深夜。",
+    ] {
+        let source=snapshot(&[ORIGINAL_SOURCES[4],update]);
+        assert!(ordinary(&source,&[0,1],DEFINITE,Some(&[1,2])).is_err(),"{update}");
+    }
+}

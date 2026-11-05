@@ -1413,6 +1413,11 @@ fn validate_document_inner(
     } else {
         None
     };
+    let modals = if require_prose {
+        Some(super::modal::View::new(segments, meeting, terms)?)
+    } else {
+        None
+    };
     if require_prose {
         completed.validate(
             &draft
@@ -1546,6 +1551,9 @@ fn validate_document_inner(
             .join(" ");
         if let Some(confirmations) = &confirmations {
             confirmations.validate(body, &sources, terms)?;
+        }
+        if let Some(modals) = &modals {
+            modals.validate(body, &sources, terms)?;
         }
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         let quoted_sources = sources.iter().map(|s| s.quote.as_str()).collect::<Vec<_>>();
