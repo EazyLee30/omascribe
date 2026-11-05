@@ -563,3 +563,60 @@ fn a_condition_question_quote_or_other_object_cannot_retire_a_music_field() -> R
     assert!(view.validate(&partial).is_err());
     Ok(())
 }
+
+#[test]
+fn ordinary_prompt_demands_only_fields_missing_from_current_retained_accepted_text() -> Result<()> {
+    use super::{retrieval, source_coverage::View, writer};
+    let source = snapshot(&[ORIGINAL_SOURCES[4], ORIGINAL_SOURCES[1]]);
+    let (_, mut article) = ordinary_before_source_coverage(&source, BOTH_MUSIC_FIELDS)?;
+    let mut accepted = article.remove(0);
+    accepted.status = "accepted".into();
+    accepted
+        .sources
+        .retain(|q| q.segment_id == source.segments[0].id);
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    let context = retrieval::Context {
+        cursor: 2,
+        segments: source.segments.clone(),
+        keywords: Vec::new(),
+    };
+    for change in 0..9 {
+        let mut retained = accepted.clone();
+        match change {
+            0 => {}
+            1 => retained.status = "pending".into(),
+            2 => retained.stale = true,
+            3 => retained.meeting_id = "other meeting".into(),
+            4 => retained.sources[0].revision += 1,
+            5 => retained.sources[0].quote.push_str(" altered"),
+            6 => retained.status = "dismissed".into(),
+            7 => retained.text = BOTH_MUSIC_FIELDS.replace('。', "？"),
+            _ => retained.text = "音乐在主舞台可能已经结束。".into(),
+        }
+        for retry in [false, true] {
+            let (mut system, mut input) = if retry {
+                writer::prompt_mode(&source, &context, &serde_json::json!({}), "zh", false)
+            } else {
+                writer::prompt(&source, &context, &serde_json::json!({}), "zh")
+            };
+            let before = input.clone();
+            view.augment_with_accepted(&mut system, &mut input, std::slice::from_ref(&retained))?;
+            let input: Value = serde_json::from_str(&input)?;
+            if change == 0 {
+                assert!(input.get("required_source_fields").is_none());
+                assert_eq!(serde_json::from_str::<Value>(&before)?, input);
+            } else if change == 8 {
+                let fields = input["required_source_fields"].as_array().unwrap();
+                assert_eq!(fields.len(), 1);
+                assert_eq!(fields[0]["field"], "FestivalPartsPlayingUntilLateNight");
+            } else {
+                assert_eq!(
+                    input["required_source_fields"].as_array().unwrap().len(),
+                    2,
+                    "invalid retained authority {change}"
+                );
+            }
+        }
+    }
+    Ok(())
+}
