@@ -174,6 +174,13 @@ impl Engine {
         }
         directories
     }
+    #[cfg(test)]
+    pub(crate) fn test_verify_model_spec(
+        &self,
+        spec: &Model,
+    ) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec(spec)
+    }
     fn verify_model_spec(&self, spec: &Model) -> Result<crate::model_integrity::Receipt> {
         let directories = self.model_candidates(spec);
         // A valid bundled receipt can serve the identical pinned model even if
