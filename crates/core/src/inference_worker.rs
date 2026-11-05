@@ -727,6 +727,18 @@ fn stop_from_watchdog(
     }
     accepted
 }
+
+// The final watchdog yield branch is shared with direct ownership controls.
+// Keep its existing behavior here until the idle-child RED is reproduced.
+fn yield_from_watchdog(
+    engine: Option<&Engine>,
+    stop: &Mutex<StopState>,
+    pid: u32,
+    reason: ReleaseReason,
+    pooled: bool,
+) -> bool {
+    stop_from_watchdog(engine, stop, pid, reason, pooled)
+}
 impl Drop for Server {
     fn drop(&mut self) {
         let stop_reason = {
@@ -950,7 +962,7 @@ fn spawn_session(
                 } else {
                     ReleaseReason::AsrBacklog
                 };
-                stop_from_watchdog(Some(&engine), &stop_state, pid, reason, pooled.is_some());
+                yield_from_watchdog(Some(&engine), &stop_state, pid, reason, pooled.is_some());
                 break;
             }
         }
@@ -1434,6 +1446,139 @@ mod tests {
         assert!(release.exit_confirmed);
         Ok(())
     }
+    #[test]
+    fn watchdog_asr_yield_reaps_its_retained_idle_child_and_receipt_owner() -> Result<()> {
+        use sha2::Digest;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let directory = root.path().join("owned-receipts");
+        std::fs::create_dir(&directory)?;
+        let mut model = crate::models::model("qwen3-1.7b")?.clone();
+        model.files.truncate(1);
+        model.files[0].bytes = 4;
+        model.files[0].sha256 = format!("{:x}", sha2::Sha256::digest(b"good"));
+        let model_path = directory.join(&model.files[0].name);
+        let runtime_path = directory.join("runtime-fixture");
+        std::fs::write(&model_path, b"good")?;
+        std::fs::write(&runtime_path, b"safe")?;
+        let mut session = retained_lease(&engine, 30)?;
+        // Real tiny admission receipts, never executable weights/runtime. Drop
+        // both temporary caches so the retained session is their only owner.
+        session.session.as_mut().unwrap().model_receipt = Some({
+            let cache = crate::model_integrity::Cache::default();
+            cache.verify(&directory, &model)?
+        });
+        session.session.as_mut().unwrap().runtime_receipt = Some({
+            let cache = crate::inference_cache::Fingerprints::default();
+            cache.refresh(&runtime_path)?
+        });
+        session.check_model()?;
+        let pid = session.server.child.id();
+        let probe = ReapProbe::new(&session.server.child)?;
+        let stop = Arc::clone(&session.server.stop);
+        drop(session);
+        let before = engine.inference_pool.status();
+        assert_eq!(before.idle_pid, Some(pid));
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), pid);
+        assert!(before.expires_in_ms.unwrap() > 0);
+        #[cfg(windows)]
+        {
+            assert!(std::fs::write(&model_path, b"evil").is_err());
+            assert!(std::fs::write(&runtime_path, b"evil").is_err());
+        }
+        // Exact production terminal-yield branch after ASR lag accepts a stop.
+        // That watchdog exits immediately: no future tick can reap this slot.
+        assert!(yield_from_watchdog(
+            Some(&engine),
+            &stop,
+            pid,
+            ReleaseReason::AsrBacklog,
+            true
+        ));
+        let after = engine.inference_pool.status();
+        assert!(
+            after.idle_pid.is_none(),
+            "ASR-yielded worker remains owned by an idle slot after its only reaper exits"
+        );
+        assert!(!after.leased);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        assert!(after.confirms_idle_exit_since(&before));
+        let release = after.lifecycle.last_release.as_ref().unwrap();
+        assert_eq!(release.reason, "asr_backlog");
+        assert_eq!(release.pid, pid);
+        assert!(release.exit_confirmed);
+        assert_eq!(after.lifecycle.ttl_releases, 0);
+        probe.assert_reaped();
+        // In particular Windows's final deny-write handles must be released.
+        // Unix replacement alone is not claimed as proof of descriptor closure.
+        std::fs::write(&model_path, b"next")?;
+        std::fs::write(&runtime_path, b"next")?;
+        Ok(())
+    }
+
+    #[test]
+    fn watchdog_asr_yield_keeps_active_lease_cleanup_with_its_owner() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let session = retained_lease(&engine, 30)?;
+        let pid = session.server.child.id();
+        let probe = ReapProbe::new(&session.server.child)?;
+        assert!(yield_from_watchdog(
+            Some(&engine),
+            &session.server.stop,
+            pid,
+            ReleaseReason::AsrBacklog,
+            true
+        ));
+        let active = engine.inference_pool.status();
+        assert!(active.leased);
+        assert!(active.idle_pid.is_none());
+        assert_eq!(active.lifecycle.releases, 0);
+        drop(session);
+        probe.assert_reaped();
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        let after = engine.inference_pool.status();
+        assert!(!after.leased);
+        assert_eq!(after.lifecycle.last_release.unwrap().reason, "asr_backlog");
+        Ok(())
+    }
+
+    #[test]
+    fn watchdog_asr_yield_from_a_closing_child_cannot_cancel_or_reap_newer_idle() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let old = retained_lease(&engine, 30)?;
+        let old_pid = old.server.child.id();
+        let old_stop = Arc::clone(&old.server.stop);
+        let old_probe = ReapProbe::new(&old.server.child)?;
+        drop(old);
+        engine.inference_pool.invalidate();
+        old_probe.assert_reaped();
+        let newer = retained_lease(&engine, 30)?;
+        let new_pid = newer.server.child.id();
+        let new_probe = ReapProbe::new(&newer.server.child)?;
+        assert_ne!(old_pid, new_pid);
+        drop(newer);
+        let before = engine.inference_pool.status();
+        assert_eq!(before.idle_pid, Some(new_pid));
+        assert!(!engine.note_cancel.load(Ordering::SeqCst));
+        assert!(!yield_from_watchdog(
+            Some(&engine),
+            &old_stop,
+            old_pid,
+            ReleaseReason::AsrBacklog,
+            true
+        ));
+        let after = engine.inference_pool.status();
+        assert_eq!(after.idle_pid, Some(new_pid));
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), new_pid);
+        assert_eq!(after.lifecycle.releases, before.lifecycle.releases);
+        assert!(!engine.note_cancel.load(Ordering::SeqCst));
+        engine.inference_pool.invalidate();
+        new_probe.assert_reaped();
+        Ok(())
+    }
+
     #[test]
     fn lifecycle_leased_watchdog_stops_keep_exact_cause_and_count_resources_once() -> Result<()> {
         for (reason, expected) in [
