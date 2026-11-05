@@ -53,6 +53,8 @@ mod week_qualifiers;
 mod writer;
 #[cfg(test)]
 mod writer_final_guard_tests;
+#[cfg(test)]
+mod target_cache_tests;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
