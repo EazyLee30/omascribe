@@ -945,6 +945,9 @@ mod tests {
                         Err(error) => return Err(error.into()),
                     }
                 };
+                // Accepted sockets inherit nonblocking mode on macOS. Only
+                // the accept loop polls; protocol reads use the bounded timeout.
+                stream.set_nonblocking(false)?;
                 stream.set_read_timeout(Some(Duration::from_secs(2)))?;
                 let mut request = Vec::new();
                 let mut byte = [0u8; 1];
