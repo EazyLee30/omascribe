@@ -695,6 +695,25 @@ fn named_reports(text: &str, terms: &Terms) -> Result<Vec<NamedReport>> {
     Ok(result)
 }
 
+/// Positive observation of one complete original reporting statement. This
+/// does not authorize an inferred report, strip a wrapper, or rewrite payload.
+pub(super) fn original_photo_report(text: &str, terms: &Terms) -> Result<Option<Range<usize>>> {
+    let reports = named_reports(text, terms)?;
+    let [report] = reports.as_slice() else {
+        return Ok(None);
+    };
+    if report.qualified
+        || report.predicate != Predicate::Statement
+        || report.fields.len() != 1
+        || !report.fields.contains(&ReportPayload::PhotoDisclosureRisk)
+        || !text[..report.statement.start].trim().is_empty()
+        || !text[report.statement.end..].trim().is_empty()
+    {
+        return Ok(None);
+    }
+    Ok(Some(0..text.len()))
+}
+
 struct ReportEvidence<'a> {
     source: &'a Segment,
     reports: Vec<NamedReport>,

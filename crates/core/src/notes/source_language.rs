@@ -327,6 +327,25 @@ impl Plan {
 }
 
 impl Prepared {
+    /// Only a genuinely validated preparation can expose translated input to
+    /// the fact-node factory. Recheck all task-local identities before use.
+    pub(super) fn checked_input(
+        &self,
+        input: &str,
+        sources: &[Segment],
+        terms: &Terms,
+        chinese: bool,
+    ) -> Result<String> {
+        ensure!(
+            terms_scope(terms) == self.terms,
+            "Prepared terminology changed"
+        );
+        ensure!(
+            self.target == if chinese { "zh" } else { "en" },
+            "Prepared target changed"
+        );
+        self.apply(input, sources)
+    }
     /// Only prompt text is replaced. IDs, ordering, speakers, background and
     /// source evidence are unchanged; this is never a visible caption cache.
     pub fn apply(&self, input: &str, sources: &[Segment]) -> Result<String> {

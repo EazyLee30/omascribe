@@ -15,6 +15,9 @@ mod completion;
 mod confirmation;
 mod corrections;
 mod diagnostic;
+mod fact_nodes;
+#[cfg(test)]
+mod fact_nodes_tests;
 #[cfg(test)]
 pub(crate) mod facts;
 mod generation;
@@ -383,7 +386,7 @@ fn generate_for_run(
     let started = Instant::now();
     let incremental_configured =
         std::env::var("OMASCRIBE_INCREMENTAL_MINUTES").as_deref() == Ok("1");
-    let source_preparation_configured = source_language::configured();
+    let source_preparation_configured = source_language::configured() || fact_nodes::configured();
     let job = Uuid::new_v4().to_string();
     let mut trace = crate::inference_trace::TaskTrace::start(&engine.root, "minutes", &job);
     let context_revision = engine.context_revision.load(Ordering::SeqCst);
@@ -524,6 +527,13 @@ fn generate_inner(
 ) -> Result<usize> {
     let trace = work.trace;
     let (mut delta, state_environment, source_preparation_configured) = article;
+    // One new opt-in mechanism, isolated from article-state/delta experiments.
+    // Preparation and node composition still share the same two sends.
+    let fact_mode = fact_nodes::configured() && delta.is_none() && state_environment.is_none();
+    anyhow::ensure!(
+        !fact_nodes::configured() || fact_mode && !source_language::configured(),
+        "限定句成文实验须独立运行，不能混用旧来源准备或增量状态实验"
+    );
     trace.event(
         "article_state",
         json!({"mode":if delta.is_some(){"delta"}else{"full"},"enabled":state_environment.is_some(),
@@ -627,7 +637,19 @@ fn generate_inner(
         state_environment.is_none() && delta.is_none() && !source_preparation_configured;
     let (system, content, original_content, mut prompt_tokens, mut name_plan) = loop {
         let (system, original_content) = delta.as_ref().map_or_else(
-            || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
+            || {
+                if fact_mode {
+                    writer::prompt_mode(
+                        snapshot,
+                        &context,
+                        &background,
+                        &prefs.minutes_language,
+                        false,
+                    )
+                } else {
+                    writer::prompt(snapshot, &context, &background, &prefs.minutes_language)
+                }
+            },
             |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
         );
         let (named, original_content) = prepare_writer_input(
@@ -713,6 +735,14 @@ fn generate_inner(
     let mut relation_repair: Option<crate::translation::SourceRepair> = None;
     let mut prepared_sources: Option<Value> = None;
     let mut prepared_evidence: Option<source_language::Prepared> = None;
+    let mut node_plan: Option<fact_nodes::Plan> = None;
+    // This copy is exclusively the selected, current source scope. Source6
+    // cannot enter a first-job node/name catalogue before retrieval selects it.
+    let node_snapshot = fact_mode.then(|| {
+        let mut selected = snapshot.clone();
+        selected.segments = context.segments.clone();
+        selected
+    });
     // Keep original selected evidence separate from translated prompt passages
     // and generated prose. Names, quotations and cleanup must be source-backed.
     let selected_source = context
@@ -742,6 +772,20 @@ fn generate_inner(
         if prompt_tokens > prefs.context_size as usize - 1148 {
             bail!("来源语言准备超出上下文预算，待处理内容已保留");
         }
+    }
+    if fact_mode && source_plan.is_none() {
+        let plan = fact_nodes::Plan::from_original(
+            &content,
+            node_snapshot.as_ref().context("Missing fact-node scope")?,
+            &terms,
+            writer::chinese(snapshot, &prefs.minutes_language),
+        )?;
+        messages = plan.messages.clone();
+        prompt_tokens = message_tokens(agent, base, auth, &messages)?;
+        if prompt_tokens > prefs.context_size as usize - 1148 {
+            bail!("限定句成文输入超出上下文预算，原话已保留");
+        }
+        node_plan = Some(plan);
     }
     trace.event(
         "article_prompt",
@@ -774,6 +818,8 @@ fn generate_inner(
         session.begin_request()?;
         let request_stage = if source_plan.is_some() {
             "prepare_sources"
+        } else if node_plan.is_some() {
+            "compose_fact_nodes"
         } else if prepared_sources.is_some() {
             "compose_prepared_sources"
         } else if attempt == 0 {
@@ -789,6 +835,8 @@ fn generate_inner(
             request["temperature"] = json!(0.0);
             request["response_format"] = json!({"type":"json_schema","json_schema":{
                 "name":"source_languages","strict":true,"schema":plan.schema()}});
+        } else if let Some(plan) = &node_plan {
+            request["response_format"] = json!({"type":"json_schema","json_schema":{"name":"qualified_article","strict":true,"schema":plan.schema()}});
         } else if let Some(plan) = &relation_repair {
             request["temperature"] = json!(0.0);
             request["grammar"] = plan.grammar().into();
@@ -903,9 +951,21 @@ fn generate_inner(
                 *budget,
             )?;
             session.check_model()?;
-            let prepared_content = prepared.apply(&content, &context.segments)?;
-            messages = compose_messages.clone();
-            messages[1]["content"] = prepared_content.into();
+            if fact_mode {
+                let plan = fact_nodes::Plan::from_prepared(
+                    &prepared,
+                    &content,
+                    node_snapshot.as_ref().context("Missing fact-node scope")?,
+                    &terms,
+                    writer::chinese(snapshot, &prefs.minutes_language),
+                )?;
+                messages = plan.messages.clone();
+                node_plan = Some(plan);
+            } else {
+                let prepared_content = prepared.apply(&content, &context.segments)?;
+                messages = compose_messages.clone();
+                messages[1]["content"] = prepared_content.into();
+            }
             prompt_tokens = message_tokens(agent, base, auth, &messages)?;
             if prompt_tokens > prefs.context_size as usize - 1148 {
                 bail!("译后来源超出纪要上下文预算，待处理内容已保留");
@@ -920,7 +980,24 @@ fn generate_inner(
             prepared_evidence = Some(prepared);
             continue;
         }
-        let composition = if relation_repair.is_none() && translation_repair.is_none() {
+        let node_rendered = node_plan.as_ref().map(|plan| {
+            let current = node_snapshot.as_ref().context("Missing fact-node scope")?;
+            plan.render(
+                &raw_body,
+                messages[1]["content"].as_str().unwrap_or("{}"),
+                current,
+                &terms,
+                writer::chinese(snapshot, &prefs.minutes_language),
+            )
+        });
+        let composition = if let Some(rendered) = &node_rendered {
+            Some(
+                rendered
+                    .as_ref()
+                    .map(|rendered| rendered.composition())
+                    .map_err(|error| anyhow::anyhow!("{error:#}")),
+            )
+        } else if relation_repair.is_none() && translation_repair.is_none() {
             Some(
                 writer::body_with_evidence(
                     &raw_body,
@@ -972,6 +1049,7 @@ fn generate_inner(
                 });
                 if delta.is_none()
                     && state_environment.is_none()
+                    && node_plan.is_none()
                     && prepared_evidence.is_none()
                     && relation_repair.is_none()
                     && translation_repair.is_none()
@@ -996,12 +1074,15 @@ fn generate_inner(
                     return Ok(restored.draft);
                 }
                 let body = checked_writer_prose(&repaired, &context.segments, &terms)?;
+                if let (Some(plan), Some(Ok(rendered))) = (&node_plan, &node_rendered) {
+                    plan.check_rendered(rendered, &body)?;
+                }
                 if let (Some(prepared), Some(Ok(composed))) =
                     (prepared_evidence.as_ref(), composition.as_ref())
                 {
                     // Repairs and normalization cannot inherit a copy's ranges.
                     // Only the exact checked presentation can carry this proof.
-                    if composed.text() == body {
+                    if !fact_mode && composed.text() == body {
                         completion_bridge = prepared.completion_bridge(
                             composed,
                             &content,
@@ -1044,6 +1125,7 @@ fn generate_inner(
             "week_qualifier_corrections":week_qualifier_corrections,
             "affiliation_corrections":affiliation_corrections,
             "name_tokens":name_plan.as_ref().map(|plan|plan.metrics()),
+            "fact_nodes":node_plan.as_ref().map(|plan|plan.metrics()),
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
@@ -1070,7 +1152,7 @@ fn generate_inner(
                 verified = Some(sections);
                 break;
             }
-            Err(error) if attempt == 0 => {
+            Err(error) if attempt == 0 && !fact_mode => {
                 // Semantic failures protect ORIGINAL source relationships.
                 // A language-only failure below edits the checked spans instead.
                 let source_plan = {

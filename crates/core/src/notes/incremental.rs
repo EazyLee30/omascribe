@@ -57,13 +57,14 @@ pub(crate) fn scope(
             include_str!("incremental.rs"),
             include_str!("source_language.rs"),
             include_str!("source_coverage.rs"),
+            include_str!("fact_nodes.rs"),
             include_str!("../notes.rs"),
         ))
     });
     Ok(digest(
         &json!({"schema":KEY,"environment":crate::inference_cache::environment(engine,&engine.store.lock().unwrap(),&snapshot.meeting,prefs)?,
         "template":template,"language":prefs.minutes_language,"reported_source_names":crate::translation::SOURCE_REPORTED_NAMES_VERSION,
-        "generation":{"temperature":0.1,"seed":42,"output_tokens":440,"repairs":1,"source_preparation":super::source_language::configured()}}),
+        "generation":{"temperature":0.1,"seed":42,"output_tokens":440,"repairs":1,"source_preparation":super::source_language::configured(),"fact_nodes":super::fact_nodes::configured()}}),
     ))
 }
 /// Metadata only, pointing to the actual committed document and current original sources.

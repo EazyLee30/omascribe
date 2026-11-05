@@ -326,6 +326,30 @@ fn unresolved(text: &str, positive: &[Fact]) -> Result<Vec<Field>> {
     Ok(result)
 }
 impl<'a> View<'a> {
+    /// Positive, current, source-local proof for complete target sentences.
+    /// Neither modal veto success nor a topic mention can create this view.
+    pub(super) fn prepared_ranges(&self, entry: usize, target: &str) -> Result<Vec<Range<usize>>> {
+        let mut result = Vec::new();
+        let mut seen = BTreeSet::new();
+        for range in super::confirmation::sentences(target) {
+            let claims = facts(&target[range.clone()], true)?;
+            if !claims.is_empty()
+                && claims.iter().all(|claim| {
+                    self.fields
+                        .get(&claim.field)
+                        .and_then(|slot| slot.evidence.as_ref())
+                        .is_some_and(|e| e.entry == entry && e.fact.state == claim.state)
+                })
+            {
+                ensure!(
+                    claims.iter().all(|claim| seen.insert(claim.field)),
+                    "Prepared target repeats a qualified field"
+                );
+                result.push(trim(target, range));
+            }
+        }
+        Ok(result)
+    }
     pub(crate) fn new(
         selected: &'a [Segment],
         current: &[Segment],

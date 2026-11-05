@@ -394,7 +394,7 @@ fn opens_item_scope(text: &str) -> bool {
 
 /// A scope opened in one item must never cover a later item. Ambiguous scope
 /// simply has no proof; ordinary body parsing and its factual checks still run.
-fn balanced_item_scope(text: &str) -> bool {
+pub(super) fn balanced_item_scope(text: &str) -> bool {
     !opens_item_scope(text) && balanced_item_delimiters(text)
 }
 fn balanced_item_delimiters(text: &str) -> bool {
