@@ -81,6 +81,9 @@ export interface Snapshot {
     { text: string; target: string; revision: number }
   >;
 }
+export type SnapshotPoll =
+  | { kind: "full"; revision: string | null; snapshot: Snapshot }
+  | { kind: "runtime"; duration_ms: number; runtime: Runtime };
 export interface Diagnostic {
   data_dir: string;
   asr_ready: boolean;
