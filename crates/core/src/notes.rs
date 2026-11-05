@@ -5,6 +5,7 @@ pub(crate) use amounts::normalize as normalize_money;
 pub(crate) use amounts::repair_unitless_yuan;
 pub(crate) use attribution_roles::Mismatch as AttributionMismatch;
 mod completion;
+mod confirmation;
 mod corrections;
 mod diagnostic;
 #[cfg(test)]
@@ -29,6 +30,8 @@ mod submission;
 pub(crate) use relations::anchors as report_anchors;
 pub(crate) use relations::Mismatch as RelationMismatch;
 pub(crate) use submission::{anchor as submission_anchor, Mismatch as SubmissionMismatch};
+#[cfg(test)]
+mod confirmation_state_tests;
 mod retrieval;
 mod source_language;
 pub(crate) mod stream;
@@ -36,6 +39,8 @@ mod uncertainty;
 mod validation;
 mod week_qualifiers;
 mod writer;
+#[cfg(test)]
+mod writer_final_guard_tests;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
@@ -136,6 +141,75 @@ fn source_repair(
         return None;
     }
     crate::translation::SourceRepair::from_source(source, terms, chinese)
+}
+
+fn checked_writer_prose(
+    repaired: &str,
+    sources: &[crate::Segment],
+    terms: &crate::terminology::Terms,
+) -> Result<String> {
+    let body = uncertainty::restore(&terms.normalize(repaired), sources);
+    terms.validate_writer_names(
+        &sources
+            .iter()
+            .filter(|s| !writer::non_substantive(&s.text))
+            .map(|s| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
+        &body,
+    )?;
+    Ok(body)
+}
+
+fn validate_writer_document(
+    draft: &str,
+    snapshot: &crate::Snapshot,
+    sources: &[crate::Segment],
+    terms: &crate::terminology::Terms,
+    meeting: &str,
+    chinese: bool,
+    bridge: Option<&source_language::CompletionBridge>,
+) -> Result<Vec<crate::Suggestion>> {
+    let sections = if let Some(bridge) = bridge {
+        validation::validate_with_bridge(
+            draft,
+            sources,
+            meeting,
+            &snapshot.meeting.speaker_names,
+            terms,
+            chinese,
+            bridge,
+        )?
+    } else {
+        validation::validate_with_terms(
+            draft,
+            sources,
+            meeting,
+            &snapshot.meeting.speaker_names,
+            terms,
+        )?
+    };
+    validation::preserve_replaced_sources(&snapshot.suggestions, sources, &sections)?;
+    let body = sections
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let source = sources
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    // Document construction folds line wrapping. Recheck the exact final prose
+    // so a name split before its title cannot bypass the earlier spelling gate.
+    terms.validate_writer_names(&source, &body)?;
+    language::validate_with_source(
+        &body,
+        &crate::translation::source_name_mask(&body, &source, terms),
+        &source,
+        chinese,
+    )?;
+    Ok(sections)
 }
 
 pub fn generate(engine: &Arc<Engine>, meeting: &str) -> Result<usize> {
@@ -755,17 +829,7 @@ fn generate_inner(
                     week_qualifier_corrections = repair.removed_qualifiers;
                     repair.text
                 });
-                let body = uncertainty::restore(&terms.normalize(&repaired), &context.segments);
-                terms.validate_writer_names(
-                    &context
-                        .segments
-                        .iter()
-                        .filter(|s| !writer::non_substantive(&s.text))
-                        .map(|s| s.text.as_str())
-                        .collect::<Vec<_>>()
-                        .join(" "),
-                    &body,
-                )?;
+                let body = checked_writer_prose(&repaired, &context.segments, &terms)?;
                 if let (Some(prepared), Some(Ok(composed))) =
                     (prepared_evidence.as_ref(), composition.as_ref())
                 {
@@ -800,44 +864,15 @@ fn generate_inner(
                 }
             })
             .and_then(|draft| {
-                let sections = if let Some(bridge) = &completion_bridge {
-                    validation::validate_with_bridge(
-                        draft,
-                        &context.segments,
-                        meeting,
-                        &snapshot.meeting.speaker_names,
-                        &terms,
-                        writer::chinese(snapshot, &prefs.minutes_language),
-                        bridge,
-                    )?
-                } else {
-                    validation::validate_with_terms(
-                        draft,
-                        &context.segments,
-                        meeting,
-                        &snapshot.meeting.speaker_names,
-                        &terms,
-                    )?
-                };
-                validation::preserve_replaced_sources(
-                    &snapshot.suggestions,
+                validate_writer_document(
+                    draft,
+                    snapshot,
                     &context.segments,
-                    &sections,
-                )?;
-                // A language-only repair may translate this checked prose; it
-                // must never be used to launder an unsupported first draft.
-                let body = sections
-                    .iter()
-                    .map(|s| s.text.as_str())
-                    .collect::<Vec<_>>()
-                    .join("\n\n");
-                language::validate_with_source(
-                    &body,
-                    &crate::translation::source_name_mask(&body, &selected_source, &terms),
-                    &selected_source,
+                    &terms,
+                    meeting,
                     writer::chinese(snapshot, &prefs.minutes_language),
-                )?;
-                Ok(sections)
+                    completion_bridge.as_ref(),
+                )
             });
         attempts.push(json!({
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,

@@ -8,7 +8,7 @@ use std::{collections::BTreeSet, ops::Range, sync::OnceLock};
 const MAX_BYTES: usize = 65_536;
 const MAX_SOURCE_BYTES: usize = 262_144;
 const MAX_FRAMES: usize = 24;
-const REPORT_VERBS: &[&str] = &[
+pub(super) const REPORT_VERBS: &[&str] = &[
     "表示", "指出", "说明", "提醒", "声称", "强调", "提到", "认为", "说",
 ];
 const DECISION_VERBS: &[&str] = &["决定", "决议", "选择", "确定"];
