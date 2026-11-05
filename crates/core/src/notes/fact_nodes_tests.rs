@@ -408,3 +408,124 @@ fn node_scope_is_exact_and_source_six_name_remains_distinct() -> Result<()> {
     assert!(fact_nodes::Plan::from_prepared(&prepared, &input, &source, &terms, false).is_err());
     Ok(())
 }
+
+fn current_budget_input(texts: &[&str]) -> Result<(Snapshot, Terms, String)> {
+    let source = snapshot(texts);
+    let terms = Terms::new(&[], &[]);
+    let context = retrieval::Context {
+        segments: source.segments.clone(),
+        cursor: source.segments.last().unwrap().seq,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&source, &context, &json!({}), "zh", false);
+    assert!(
+        source_language::Plan::new(&input, &source.segments, true, &terms)?.is_none(),
+        "the existing checked active projection needs no translation request"
+    );
+    Ok((source, terms, input))
+}
+
+#[test]
+fn original_factory_accepts_writer_omission_of_only_superseded_budget_evidence() -> Result<()> {
+    let (source, terms, input) = current_budget_input(&["预算为3000元。", "预算改为5000元。"])?;
+    let actual: Value = serde_json::from_str(&input)?;
+    assert_eq!(actual["transcript"].as_array().unwrap().len(), 1);
+    assert_eq!(actual["transcript"][0]["id"], 2);
+    assert_eq!(actual["transcript"][0]["text"], "预算改为5000元。");
+    let body = "预算为5000元。";
+    super::modal_provenance_tests::ordinary(&source, &[0, 1], body, None)?;
+    let nodes = fact_nodes::Plan::from_original(&input, &source, &terms, true)
+        .expect("the factory must accept the real writer's validated current-budget projection");
+    let article = json!({"paragraphs":[{"parts":[{"t":body}]}]}).to_string();
+    validate(&source, &terms, &nodes, &article)?;
+    Ok(())
+}
+
+#[test]
+fn original_factory_accepts_the_retained_pending_clause_of_a_mixed_budget_source() -> Result<()> {
+    let old = "预算为3000元，录音仍未保存。";
+    let (source, terms, input) = current_budget_input(&[old, "预算改为5000元。"])?;
+    let actual: Value = serde_json::from_str(&input)?;
+    let retained = actual["transcript"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["id"] == 1)
+        .unwrap();
+    assert!(retained["text"].as_str().unwrap().contains("录音仍未保存"));
+    assert!(!retained["text"].as_str().unwrap().contains("3000"));
+    assert_ne!(retained["text"], old);
+    let body = "预算为5000元，录音仍未保存。";
+    super::modal_provenance_tests::ordinary(&source, &[0, 1], body, None)?;
+    let nodes=fact_nodes::Plan::from_original(&input,&source,&terms,true)
+        .expect("a checked projection retains the unrelated pending clause without becoming a whole-source fact proof");
+    assert!(serde_json::from_str::<Value>(nodes.input())?["fact_nodes"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    validate(
+        &source,
+        &terms,
+        &nodes,
+        &json!({"paragraphs":[{"parts":[{"t":body}]}]}).to_string(),
+    )?;
+    Ok(())
+}
+
+#[test]
+fn active_projection_does_not_authorize_arbitrary_edits_restoration_or_missing_unknown_content(
+) -> Result<()> {
+    let (source, terms, input) =
+        current_budget_input(&["预算为3000元。", "预算改为5000元。", "录音仍未保存。"])?;
+    let actual: Value = serde_json::from_str(&input)?;
+    let mut arbitrary = actual.clone();
+    arbitrary["transcript"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|entry| entry["id"] == 2)
+        .unwrap()["text"] = "预算改为6000元。".into();
+    let mut restored = actual.clone();
+    restored["transcript"]
+        .as_array_mut()
+        .unwrap()
+        .insert(0, json!({"id":1,"text":"预算为3000元。"}));
+    let mut missing = actual;
+    missing["transcript"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|entry| entry["id"] != 3);
+    let mut wrongly_admitted = Vec::new();
+    for (name, value) in [
+        ("arbitrary 6000", arbitrary),
+        ("restored retired 3000", restored),
+        ("missing active unknown", missing),
+    ] {
+        let input = value.to_string();
+        assert!(
+            source_language::Plan::new(&input, &source.segments, true, &terms).is_err(),
+            "the old source-language projection rejects {name}"
+        );
+        if fact_nodes::Plan::from_original(&input, &source, &terms, true).is_ok() {
+            wrongly_admitted.push(name);
+        }
+    }
+    let (mixed, terms, input) =
+        current_budget_input(&["预算为3000元，录音仍未保存。", "预算改为5000元。"])?;
+    let mut missing: Value = serde_json::from_str(&input)?;
+    missing["transcript"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|entry| entry["id"] != 1);
+    assert!(
+        source_language::Plan::new(&missing.to_string(), &mixed.segments, true, &terms).is_err()
+    );
+    if fact_nodes::Plan::from_original(&missing.to_string(), &mixed, &terms, true).is_ok() {
+        wrongly_admitted.push("missing retained mixed clause");
+    }
+    assert!(
+        wrongly_admitted.is_empty(),
+        "the factory must share admission, not merely reuse raw source IDs: {wrongly_admitted:?}"
+    );
+    Ok(())
+}
