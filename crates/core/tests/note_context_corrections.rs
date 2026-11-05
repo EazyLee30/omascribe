@@ -1615,3 +1615,321 @@ fn recording_focus_keeps_product_names_and_explicit_term_authority() -> Result<(
         .is_ok());
     Ok(())
 }
+
+fn clean_name_paraphrase(
+    engine: &Engine,
+    source_text: &str,
+    body: &str,
+) -> Result<(UserNote, Snapshot)> {
+    let meeting = engine.create_meeting("A note corrects spelling without certifying prose")?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let note = engine.save_note(&meeting.id, None, "功能待测试", "document", 0)?;
+    let raw = segment(&meeting.id, 1, source_text);
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    engine.correct_terminology(&meeting.id)?;
+    let snapshot = engine.snapshot(&meeting.id)?;
+    engine.store.lock().unwrap().commit_document(
+        &snapshot,
+        &snapshot.segments,
+        1,
+        vec![section(&meeting.id, &raw, body)],
+        false,
+    )?;
+    let before = engine.snapshot(&meeting.id)?;
+    assert!(!notes::needs_update(&before));
+    assert!(!before.meeting.notes_fingerprint.is_empty());
+    Ok((note, before))
+}
+
+fn name_paraphrase_history(engine: &Engine, meeting: &str) -> Result<Vec<String>> {
+    let db = engine.store.lock().unwrap();
+    let mut query = db
+        .conn
+        .prepare("SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id")?;
+    let rows = query.query_map([meeting], |row| row.get(0))?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+#[test]
+fn note_corrects_a_source_backed_name_in_paraphrased_minutes_without_certifying_facts() -> Result<()>
+{
+    for (name, alias) in [
+        ("OmaScribe", "ALMA SCRIBE"),
+        ("PixelLedger", "PIXEL LEDGRE"),
+        ("Alexandra", "ALEX ANDRA"),
+    ] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let source_text = format!("{name}尚未修复，预算3000元仍未批准，仅本地录音可用。");
+        let body = format!("{alias}的修复尚未完成，3000元预算还没有批准，目前仅能本地录音。");
+        let expected = format!("{name}的修复尚未完成，3000元预算还没有批准，目前仅能本地录音。");
+        let (note, before) = clean_name_paraphrase(&engine, &source_text, &body)?;
+        let old_history = name_paraphrase_history(&engine, &before.meeting.id)?;
+
+        engine.save_note(
+            &before.meeting.id,
+            Some(note.id.clone()),
+            name,
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.suggestions[0].text, expected, "{name}");
+        assert_eq!(after.suggestions[0].id, before.suggestions[0].id);
+        assert_eq!(after.suggestions[0].status, "pending");
+        assert!(
+            after.suggestions[0].stale,
+            "spelling is not fact validation"
+        );
+        assert!(after.meeting.notes_fingerprint.is_empty());
+        assert!(notes::needs_update(&after));
+        assert_eq!(
+            serde_json::to_value(&after.suggestions[0].sources)?,
+            serde_json::to_value(&before.suggestions[0].sources)?
+        );
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
+        assert_eq!(inference_jobs(&engine)?, 0);
+        let history = name_paraphrase_history(&engine, &before.meeting.id)?;
+        assert_eq!(history.len(), old_history.len() + 1);
+        let archived: Vec<Suggestion> = serde_json::from_str(history.last().unwrap())?;
+        assert_eq!(archived[0].text, body);
+        assert_eq!(archived[0].sources[0].quote, source_text);
+
+        engine.save_note(&before.meeting.id, Some(note.id), name, "document", 0)?;
+        assert_eq!(
+            name_paraphrase_history(&engine, &before.meeting.id)?,
+            history
+        );
+        let again = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(again.suggestions[0].text, expected);
+        assert!(again.suggestions[0].stale);
+        assert!(again.meeting.notes_fingerprint.is_empty());
+        assert!(notes::needs_update(&again));
+    }
+    Ok(())
+}
+
+#[test]
+fn paraphrase_name_spelling_does_not_rewrite_or_approve_other_existing_claims() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, before) = clean_name_paraphrase(
+        &engine,
+        "OmaScribe尚未修复，预算3000元仍未批准，仅本地录音可用。",
+        "ALMA SCRIBE已经修复，预算9000元已获批准，可以在线录音。",
+    )?;
+    engine.save_note(
+        &before.meeting.id,
+        Some(note.id),
+        "OmaScribe",
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&before.meeting.id)?;
+    assert_eq!(
+        after.suggestions[0].text,
+        "OmaScribe已经修复，预算9000元已获批准，可以在线录音。"
+    );
+    assert!(after.suggestions[0].stale);
+    assert!(after.meeting.notes_fingerprint.is_empty());
+    assert!(notes::needs_update(&after));
+    assert_eq!(
+        after.suggestions[0].sources[0].quote,
+        before.segments[0].text
+    );
+    assert_eq!(after.segments[0].text, before.segments[0].text);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn mixed_name_spelling_repairs_a_paraphrase_but_only_whole_source_minutes_become_fresh(
+) -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, seeded) = clean_name_paraphrase(
+        &engine,
+        "OmaScribe尚未修复，预算仍未批准。",
+        "ALMA SCRIBE的修复尚未完成，预算还没有批准。",
+    )?;
+    let raw = segment(&seeded.meeting.id, 2, "ALMA SCRIBE的字幕仍待测试。");
+    engine.store.lock().unwrap().save_segment(&raw)?;
+    let snapshot = engine.snapshot(&seeded.meeting.id)?;
+    let mut sections = snapshot.suggestions.clone();
+    sections.push(section(&seeded.meeting.id, &raw, &raw.text));
+    engine.store.lock().unwrap().commit_document(
+        &snapshot,
+        &snapshot.segments,
+        2,
+        sections,
+        false,
+    )?;
+    let before = engine.snapshot(&seeded.meeting.id)?;
+    let old_history = name_paraphrase_history(&engine, &before.meeting.id)?;
+    engine.save_note(
+        &before.meeting.id,
+        Some(note.id),
+        "OmaScribe",
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&before.meeting.id)?;
+    assert_eq!(
+        after.suggestions[0].text,
+        "OmaScribe的修复尚未完成，预算还没有批准。"
+    );
+    assert!(after.suggestions[0].stale);
+    assert_eq!(after.suggestions[0].sources[0].revision, 1);
+    assert_eq!(after.suggestions[1].text, "OmaScribe的字幕仍待测试。");
+    assert!(!after.suggestions[1].stale);
+    assert_eq!(after.suggestions[1].sources[0].revision, 2);
+    assert_eq!(
+        after.suggestions[1].sources[0].quote,
+        after.segments[1].text
+    );
+    assert_eq!(after.segments[0].revision, 1);
+    assert_eq!(after.segments[1].revision, 2);
+    assert!(after.meeting.notes_fingerprint.is_empty());
+    assert!(notes::needs_update(&after));
+    assert_eq!(
+        name_paraphrase_history(&engine, &before.meeting.id)?.len(),
+        old_history.len() + 1
+    );
+    let original: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+        [&raw.id],
+        |row| row.get(0),
+    )?;
+    assert_eq!(serde_json::from_str::<Segment>(&original)?.text, raw.text);
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn paraphrase_name_spelling_never_borrows_missing_ambiguous_or_protected_evidence() -> Result<()> {
+    for guard in [
+        "unspoken",
+        "uncited",
+        "cross_source",
+        "duplicate",
+        "ambiguous",
+        "accepted",
+        "stale",
+        "human",
+        "revision",
+        "quote",
+        "time",
+        "speaker",
+        "legacy",
+    ] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let source_text = if ["unspoken", "uncited"].contains(&guard) {
+            "麦克风尚未修复，预算仍未批准。"
+        } else if guard == "cross_source" {
+            "PixelLedger尚未修复，预算仍未批准。"
+        } else {
+            "OmaScribe尚未修复，预算仍未批准。"
+        };
+        let body = if guard == "ambiguous" {
+            "ONA SCRIBE的修复尚未完成，预算还没有批准。"
+        } else {
+            "ALMA SCRIBE的修复尚未完成，预算还没有批准。"
+        };
+        let (note, seeded) = clean_name_paraphrase(&engine, source_text, body)?;
+        let mut old = seeded.suggestions[0].clone();
+        match guard {
+            "accepted" => old.status = "accepted".into(),
+            "stale" => old.stale = true,
+            "revision" => old.sources[0].revision += 1,
+            "quote" => old.sources[0].quote = body.into(),
+            "time" => old.sources[0].start_ms += 1,
+            "speaker" => old.sources[0].speaker_name = Some("Human label".into()),
+            "human" => {
+                engine.store.lock().unwrap().conn.execute(
+                    "INSERT INTO segment_text_edits VALUES(?1,1,'human')",
+                    [&seeded.segments[0].id],
+                )?;
+            }
+            "legacy" => {
+                let mut raw = seeded.segments[0].clone();
+                raw.text = "人工检查前的转写。".into();
+                engine.store.lock().unwrap().conn.execute(
+                    "INSERT INTO segment_history VALUES(?1,1,?2)",
+                    rusqlite::params![raw.id, serde_json::to_string(&raw)?],
+                )?;
+            }
+            "uncited" | "cross_source" | "duplicate" => {
+                let other = segment(&seeded.meeting.id, 2, "OmaScribe尚未修复，预算仍未批准。");
+                engine.store.lock().unwrap().save_segment(&other)?;
+                if guard != "uncited" {
+                    old.sources.push(source(&other));
+                }
+            }
+            "unspoken" | "ambiguous" => {}
+            _ => unreachable!(),
+        }
+        engine.store.lock().unwrap().save_suggestion(&old)?;
+        let before = engine.snapshot(&seeded.meeting.id)?;
+        let old_history = name_paraphrase_history(&engine, &before.meeting.id)?;
+        let content = if guard == "ambiguous" {
+            "OmaScribe\nOpaScribe"
+        } else {
+            "OmaScribe"
+        };
+        engine.save_note(&before.meeting.id, Some(note.id), content, "document", 0)?;
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(
+            serde_json::to_value(&after.suggestions)?,
+            serde_json::to_value(&before.suggestions)?,
+            "{guard}"
+        );
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?,
+            "{guard}"
+        );
+        assert_eq!(
+            name_paraphrase_history(&engine, &before.meeting.id)?,
+            old_history
+        );
+        assert_eq!(inference_jobs(&engine)?, 0, "{guard}");
+    }
+    Ok(())
+}
+
+#[test]
+fn paraphrase_name_spelling_write_failure_rolls_back_derived_state_but_keeps_the_note() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, before) = clean_name_paraphrase(
+        &engine,
+        "OmaScribe尚未修复，预算仍未批准。",
+        "ALMA SCRIBE的修复尚未完成，预算还没有批准。",
+    )?;
+    engine.store.lock().unwrap().conn.execute_batch(
+        "CREATE TRIGGER reject_paraphrase_spelling BEFORE UPDATE ON suggestions
+         WHEN json_extract(NEW.json,'$.text')='OmaScribe的修复尚未完成，预算还没有批准。'
+         BEGIN SELECT RAISE(ABORT,'fixture paraphrase spelling failed'); END;",
+    )?;
+    let derived_before = terminology_rows(&engine)?;
+    let error = engine
+        .save_note(
+            &before.meeting.id,
+            Some(note.id),
+            "OmaScribe",
+            "document",
+            0,
+        )
+        .expect_err("the actual spelling write must participate in the existing transaction");
+    assert!(format!("{error:#}").contains("fixture paraphrase spelling failed"));
+    assert_eq!(terminology_rows(&engine)?, derived_before);
+    let after = engine.snapshot(&before.meeting.id)?;
+    assert_eq!(after.notes[0].content, "OmaScribe");
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
+    Ok(())
+}
