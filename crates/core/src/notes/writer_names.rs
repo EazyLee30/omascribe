@@ -45,8 +45,25 @@ pub(super) struct Prepared {
 fn reserved(text: &str) -> bool {
     static RESERVED: OnceLock<Regex> = OnceLock::new();
     RESERVED
-        .get_or_init(|| Regex::new(r"(?i)\[\s*n|(?:^|[^A-Za-z0-9_])n[0-9]+\]").unwrap())
+        .get_or_init(|| {
+            Regex::new(r"(?i)\[\s*n|(?:^|[^A-Za-z0-9_])n[0-9]+(?:$|[^A-Za-z0-9_])").unwrap()
+        })
         .is_match(text)
+}
+fn needs_person_boundary(ch: Option<char>, separated: bool) -> bool {
+    let Some(ch) = ch.filter(|ch| ch.is_alphanumeric()) else {
+        return false;
+    };
+    if !separated {
+        return true;
+    }
+    if ch.is_ascii() {
+        return false;
+    }
+    static HAN: OnceLock<Regex> = OnceLock::new();
+    let mut encoded = [0u8; 4];
+    HAN.get_or_init(|| Regex::new(r"^\p{Han}$").unwrap())
+        .is_match(ch.encode_utf8(&mut encoded))
 }
 fn boundaries(text: &str, name: &str) -> Vec<Range<usize>> {
     text.match_indices(name)
@@ -318,9 +335,11 @@ impl Plan {
         if !rendered_people.is_empty() {
             let full_people = crate::translation::reported_name_occurrences(&restored)?;
             for range in rendered_people {
-                let lead = restored[..range.start].trim_end_matches([' ', '\t']);
-                let tail = restored[range.end..].trim_start_matches([' ', '\t']);
-                if lead.chars().next_back().is_some_and(char::is_alphanumeric) {
+                let before = &restored[..range.start];
+                let after = &restored[range.end..];
+                let lead = before.trim_end_matches([' ', '\t']);
+                let tail = after.trim_start_matches([' ', '\t']);
+                if needs_person_boundary(lead.chars().next_back(), lead.len() != before.len()) {
                     ensure!(
                         ["的", "由", "与", "和", "及", "向", "请"]
                             .iter()
@@ -328,7 +347,7 @@ impl Plan {
                         "名称代码不能附加未观察的姓名前缀"
                     );
                 }
-                if tail.chars().next().is_some_and(char::is_alphanumeric) {
+                if needs_person_boundary(tail.chars().next(), tail.len() != after.len()) {
                     ensure!(
                         ["教授", "博士", "的", "与", "和", "及"]
                             .iter()
@@ -697,6 +716,51 @@ mod tests {
             .and_then(|composed| plan.composition(composed))
             .and_then(|composed| ordinary_english(composed.text()));
         assert!(result.is_ok(), "a source-identical English person reference separated by real spaces must remain valid: {:?}", result.err());
+        Ok(())
+    }
+
+    #[test]
+    fn bare_name_namespace_is_rejected_but_real_source_products_leave_the_plan_inactive(
+    ) -> Result<()> {
+        let source = snapshot(&ORIGINAL_SOURCES);
+        let data = encoded(&source, &[0, 1, 2, 3, 4], &empty_terms())?;
+        let plan = data.plan.as_ref().unwrap();
+        for raw in ["N1", "N77", "n1", "文中N1教授", "Reference N77."] {
+            assert!(plan.restore(raw).is_err(), "{raw}");
+        }
+        let product = snapshot(&["北岭大学的 ALICE教授指出材料仍需核对。", "N1产品仍待测试。"]);
+        let context = retrieval::Context {
+            cursor: 2,
+            segments: product.segments.clone(),
+            keywords: Vec::new(),
+        };
+        let (system, input) = writer::prompt(&product, &context, &json!({}), "zh");
+        let fallback = prepare(
+            system.clone(),
+            input.clone(),
+            &product.segments,
+            &empty_terms(),
+            &product.meeting.speaker_names,
+            true,
+            true,
+        )?;
+        assert!(fallback.plan.is_none());
+        assert_eq!(fallback.content, input);
+        assert_eq!(fallback.system, system);
+        let unchanged: Value = serde_json::from_str(&fallback.content)?;
+        assert_eq!(unchanged["transcript"][1]["text"], "N1产品仍待测试。");
+        Ok(())
+    }
+
+    #[test]
+    fn non_han_words_need_real_whitespace_instead_of_name_concatenation() -> Result<()> {
+        let source = snapshot(&["Professor ALICE said the report remains pending."]);
+        let data = encoded(&source, &[0], &empty_terms())?;
+        let plan = data.plan.as_ref().unwrap();
+        for raw in ["Professor[N1]", "[N1]said", "Ж[N1]", "[N1]Ж"] {
+            assert!(plan.restore(raw).is_err(), "{raw}");
+        }
+        assert_eq!(plan.restore("Ж [N1] сказал")?, "Ж ALICE сказал");
         Ok(())
     }
 }
