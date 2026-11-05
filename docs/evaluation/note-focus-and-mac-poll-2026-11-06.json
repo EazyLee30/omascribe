@@ -81,7 +81,36 @@
     "artifacts/note-generic-focus-2026-11-06/9679c14-clippy.log": "f542ad60166155652585f2c1f62306a3ef145144c5bdf9b98340d97c6e4434f0"
   },
   "ui_proof_sha256": "1c40387e46c17b37dc0b0381462e153860c2dbd3f850f2159991f1da0d66cdab",
-  "same_source_ci": "Source pushed; remote candidate checks tracked in PR #1.",
+  "same_source_ci": {
+    "production_source": "9679c144730c766fe0f3645c7400831ee23902a3",
+    "all_runs": "success",
+    "runs": [
+      {
+        "id": 42063545348,
+        "name": "Website validation",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545348"
+      },
+      {
+        "id": 42063545293,
+        "name": "Linux compatibility",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545293"
+      },
+      {
+        "id": 42063545339,
+        "name": "CI",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545339"
+      },
+      {
+        "id": 42063545281,
+        "name": "Optional acceleration components",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545281"
+      }
+    ],
+    "windows_core_job": 127371456522,
+    "windows_core_conclusion": "success",
+    "optional_gpu_build_and_catalog": "skipped",
+    "scope": "Source checks only, no physical GPU or installer acceptance claim."
+  },
   "limits": [
     "These fixes performed zero model requests or downloads. The separately reported prepared-fact-node trial made two requests and failed.",
     "No CPU/energy/latency percentage measured; the Mac claim is only the eliminated unused IPC/catalog checks.",
