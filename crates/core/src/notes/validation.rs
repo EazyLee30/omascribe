@@ -1,7 +1,7 @@
 //! Deterministic guardrails, not a proof of semantic entailment. All generated prose retains citations.
 use crate::{Segment, Source, Suggestion};
 use anyhow::{bail, Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 /// Targeted guards for meeting-wide assertions that short excerpts do not prove.
@@ -461,18 +461,93 @@ mod conditional_role_replay_tests {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Draft {
     sections: Vec<Section>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Section {
     title: String,
     body: String,
     sources: Vec<usize>,
 }
+/// Fresh ordinary generated drafts only. Human/accepted/history paths must
+/// never call this adapter; the ordinary final validator remains a pure veto.
+pub(super) fn restore_generated_affiliations(
+    draft: &str,
+    snapshot: &crate::Snapshot,
+    selected: &[Segment],
+) -> Result<super::affiliation::Recovery> {
+    anyhow::ensure!(draft.len() <= 120_000, "机构草稿恢复超过文本预算");
+    let mut parsed: Draft = serde_json::from_str(draft).context("机构草稿恢复结构校验失败")?;
+    anyhow::ensure!(parsed.sections.len() <= 64, "机构草稿恢复超过段落预算");
+    let unchanged_body = parsed
+        .sections
+        .iter()
+        .map(|s| s.body.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let unchanged = || super::affiliation::Recovery {
+        draft: draft.to_owned(),
+        body: unchanged_body.clone(),
+        edits: Vec::new(),
+    };
+    if !super::affiliation::recovery_inputs_current(snapshot, selected) {
+        return Ok(unchanged());
+    }
+    let mut edits = Vec::new();
+    for (index, section) in parsed.sections.iter().enumerate() {
+        edits.extend(super::affiliation::generated_recovery_edits(
+            index,
+            &section.body,
+            &section.sources,
+            snapshot,
+            selected,
+        )?);
+        if edits.len() > 16 {
+            return Ok(unchanged());
+        }
+    }
+    if edits.is_empty() {
+        return Ok(unchanged());
+    }
+    edits.sort_by_key(|edit| (edit.section_index, edit.body_range.start));
+    if edits.windows(2).any(|pair| {
+        pair[0].section_index == pair[1].section_index
+            && pair[0].body_range.end > pair[1].body_range.start
+    }) {
+        return Ok(unchanged());
+    }
+    for edit in &edits {
+        let body = &parsed.sections[edit.section_index].body;
+        if edit.body_range.start >= edit.body_range.end
+            || edit.body_range.end > body.len()
+            || !body.is_char_boundary(edit.body_range.start)
+            || !body.is_char_boundary(edit.body_range.end)
+        {
+            return Ok(unchanged());
+        }
+    }
+    for edit in edits.iter().rev() {
+        parsed.sections[edit.section_index]
+            .body
+            .replace_range(edit.body_range.clone(), &edit.replacement);
+    }
+    let body = parsed
+        .sections
+        .iter()
+        .map(|s| s.body.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    Ok(super::affiliation::Recovery {
+        draft: serde_json::to_string(&parsed)?,
+        body,
+        edits,
+    })
+}
+
 // Date spelling may legitimately change between ASR and prose. Normalize only
 // calendar-number fields; ordinary Chinese numerals remain untouched.
 pub(super) fn chinese_number(text: &str) -> Option<u32> {
