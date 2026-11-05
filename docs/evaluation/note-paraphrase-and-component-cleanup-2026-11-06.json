@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "status": "CHECKED_PRODUCTION_SOURCE_PUSHED",
+  "production_source": "78b58cff1b12c90f34df1147a6f35888d1196e8e",
+  "base": "f0f37bd11eae8af2ab0e810c43050d932c96f825",
+  "note_spelling": {
+    "problem": "An old AI paraphrase retained an alias after its own current source was already canonical.",
+    "red_sources": [
+      {
+        "source": "8621965",
+        "actual_result": "1 passed / 4 failed"
+      },
+      {
+        "source": "a47469a",
+        "actual_result": "2 passed / 5 failed"
+      }
+    ],
+    "fix": "Replay only existing, exact name edits whose canonical targets belong to writer_names and occur as complete longest-match names in current, self-owned citations. Consistent multi-source evidence is supported.",
+    "freshness": "PendingSpelling corrects the name immediately, keeps stale=true, clears notes_fingerprint and cannot reuse the previous checkpoint. Whole-source recovery retains its prior unique-current-source fresh rule.",
+    "preserved": [
+      "Every non-name byte, including amounts, negation and other existing claims",
+      "Original/current source text, revisions and complete citation tuples",
+      "Human, accepted, already-stale and unverifiable legacy protection",
+      "Ambiguous aliases, uncited evidence, shared-prefix name ownership and model-number boundaries",
+      "One transaction and one archive; write failure rolls back derived data while retaining the user note"
+    ],
+    "intentional_prior_expectation_changes": "The old mixed text-equality assertion and budget/negation/consistent-repeat text-equality cases now allow a name-only pending edit. Their stale, current-source, fingerprint and factual-claim protections are retained or strengthened.",
+    "targeted_results": {
+      "save_note_integration": 34,
+      "document_and_checkpoint": 12
+    },
+    "model_scope": "The spelling operation is deterministic. Tests made no real model requests; enabled automatic minutes still use the existing scheduler to revalidate pending content."
+  },
+  "component_cleanup": {
+    "problem": "Missing or invalid local signed metadata hid an old managed directory and blocked removal. A matching current catalog could still label that damaged install installed/downloadable.",
+    "red_source": "c14ef5d",
+    "actual_red": "13 passed / 2 failed",
+    "core_fix": "d753997",
+    "core_result": "17 passed",
+    "management_state": "unavailable entries contain only directory-derived id/version, a fixed reason and busy state. They cannot be tested, downloaded or recommended.",
+    "cleanup_scope": "Only the four existing CUDA/Vulkan Windows/Linux x86_64 managed IDs and acceleration-* ordinary version directories can use metadata-independent cleanup. Signed normal removal and executable admission remain separate.",
+    "preserved": [
+      "Literal tuple paths and ordinary unlinked parents/metadata; no metadata-supplied deletion path",
+      "Unknown IDs, traversal, staging, linked/reparse roots, model and meeting data remain outside fallback cleanup",
+      "Original job, installer, maintenance and lease gates",
+      "invalidate -> block_directory/revoke receipts -> exact-version forget -> remove -> clear status ordering",
+      "Sibling versions, unrelated certificates and external child-link targets"
+    ],
+    "fixture_scope": "Old broken-directory inventory/removal uses the public API. The matching-current-catalog control invokes the real production builder with a host-target synthetic catalog; it is not proof of production signing or real GPU execution.",
+    "ui_checks": {
+      "first_ui_red": {
+        "exit": 1,
+        "pass_groups": 0,
+        "fail_groups": 8
+      },
+      "ui_red_after_setup_fix_with_original_ts": {
+        "exit": 1,
+        "pass_groups": 0,
+        "fail_groups": 8
+      },
+      "ui_green": {
+        "exit": 0,
+        "pass_groups": 8,
+        "fail_groups": 0
+      },
+      "existing_acceleration_ui": {
+        "exit": 0
+      },
+      "existing_settings_model_poll": {
+        "exit": 0,
+        "pass_groups": 9,
+        "fail_groups": 0
+      },
+      "typescript_no_emit": {
+        "exit": 0
+      },
+      "affected_ts_prettier": {
+        "exit": 0
+      },
+      "git_diff_check": {
+        "exit": 0
+      },
+      "original_browser_test_bytes_unchanged": true,
+      "new_test_assertions_unchanged_after_red": true,
+      "worktree_clean_after_removing_owned_dependency_symlink": true
+    },
+    "ui_setup_failure": "After the first real RED, a test-only commit waited for the actual dialog close event. All original assertions were retained; original TS still failed all eight groups and the fixed TS passed all eight.",
+    "ui_scope": "Real Chromium with mocked IPC verifies second confirmation, default cancellation, captured version across polling, and no action after settings closes. Mac zero component polling remains."
+  },
+  "integrated_checks": {
+    "core_passed": 717,
+    "core_ignored": 14,
+    "integration": 44,
+    "desktop_shell": 4,
+    "asr": 18,
+    "cli": 2,
+    "strict_workspace_clippy": "passed",
+    "workspace_fmt": "passed",
+    "typescript_no_emit": "passed",
+    "affected_source_prettier": "passed",
+    "independent_source_review": "passed for both frozen private sources; public source equivalence checked"
+  },
+  "ci": {
+    "checked_source": "78b58cff1b12c90f34df1147a6f35888d1196e8e",
+    "details": "PR #1 and workflow URLs track source checks; physical GPU and native recording/install acceptance remain open.",
+    "runs": [
+      {
+        "id": 42070970121,
+        "name": "Website validation",
+        "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/42070970121"
+      },
+      {
+        "id": 42070970063,
+        "name": "Optional acceleration components",
+        "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/42070970063"
+      },
+      {
+        "id": 42070970171,
+        "name": "Linux compatibility",
+        "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/42070970171"
+      },
+      {
+        "id": 42070970059,
+        "name": "CI",
+        "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/42070970059"
+      }
+    ]
+  },
+  "evidence": {
+    "artifacts/note-paraphrase-spelling-2026-11-06/8621965-paraphrase-red.log": "ca304cc4d07c5c9e257ad3b9d208933516a4d25cba1cf598f07949f4dc8aadf2",
+    "artifacts/note-paraphrase-spelling-2026-11-06/a47469a-multisource-red.log": "ec743758c7b1613e28303e2a8c27fe090e7a7283c7c02da14a438dfa8c583a73",
+    "artifacts/note-paraphrase-spelling-2026-11-06/302c39e-integration.log": "a41c4fce55615670255731dd57c333eb781c7ae909687694a7693a5ebdf3c496",
+    "artifacts/note-paraphrase-spelling-2026-11-06/302c39e-document.log": "1d59aea33f3e35cfcc27d8c8ae9bb5a9bf934f957696e60eb08cd4dd9600ebe6",
+    "artifacts/note-paraphrase-spelling-2026-11-06/78b58cf-workspace.log": "8223ce6cfb908987560a760139f477ffc127b7ee7222ff33a6f0b69892691269",
+    "artifacts/note-paraphrase-spelling-2026-11-06/78b58cf-clippy.log": "2b0c220e04d6ebde4f804335231a674ad4e573fd58972fafaa0194ee48854395",
+    "artifacts/note-paraphrase-spelling-2026-11-06/78b58cf-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/note-paraphrase-spelling-2026-11-06/78b58cf-typescript.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/note-paraphrase-spelling-2026-11-06/78b58cf-prettier.log": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20",
+    "artifacts/broken-component-cleanup-2026-11-06/c14ef5d-components-red.log": "7f442fdaa72b1d05047134497f5330392d2163f161be75c3a5fa144f94e4facd",
+    "artifacts/broken-component-cleanup-2026-11-06/d753997-components.log": "788bd953714c6a71a8daf51d705e95bb8403511a399d0c732de49b8cb0812aa6",
+    "artifacts/broken-component-cleanup-2026-11-06/ui-proof.json": "7cfdf14bed6462613556c8f5a2c4e5402d043fa7d92fdece9898c1a912612b69",
+    "artifacts/broken-component-cleanup-2026-11-06/artifact-migration.json": "f509e9937bf2e9d166e2585daaf8406f92d251472ddce57979d123db53da5b43",
+    "artifacts/completed-core-fix-worktrees-cleanup-2026-11-06.json": "65b4bc064c9bd3c1f9430138ac8ecbc3e36cc75b12ec163f61aeedccfbbedaf1"
+  },
+  "limits": [
+    "No real model inference, external model/component download, SDK installation, installer build or installed-app change in this validation.",
+    "No overall CPU, latency, energy or GPU-memory improvement claimed.",
+    "Real acoustic name recall (Q9), full generated article quality (Q16) and physical platform acceptance remain open; 0.3.5 is unpublished."
+  ]
+}
