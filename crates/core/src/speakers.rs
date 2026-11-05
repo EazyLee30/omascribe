@@ -495,7 +495,7 @@ mod tests {
                 .diarize_with_admission_readers(
                     &meeting.id,
                     None,
-                    || engine.verify_model_spec(&model),
+                    || engine.test_verify_model_spec(&model),
                     || Some(if rejection == "memory" { 0 } else { u64::MAX }),
                 )
                 .expect_err("known ineligible actions cannot start speaker analysis");
