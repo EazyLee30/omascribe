@@ -170,6 +170,8 @@ pub(crate) struct SessionLease {
     usable: std::cell::Cell<bool>,
     #[cfg(test)]
     retention_memory: Option<Option<u64>>,
+    #[cfg(test)]
+    before_retention: Option<Box<dyn FnOnce() + Send>>,
 }
 impl SessionLease {
     pub(crate) fn rejection_witness(
@@ -247,6 +249,10 @@ impl Drop for SessionLease {
         };
         let memory_ok = available.is_some_and(|m| m >= 768);
         *session.active_since.lock().unwrap() = None;
+        #[cfg(test)]
+        if let Some(hook) = self.before_retention.take() {
+            hook();
+        }
         let mut state = engine.inference_pool.0.lock().unwrap();
         state.leased = false;
         let eligible = state.epoch == self.epoch && (!self.ttl.is_zero() || state.batches > 0);
@@ -616,6 +622,8 @@ fn checkout(
         usable: std::cell::Cell::new(true),
         #[cfg(test)]
         retention_memory: None,
+        #[cfg(test)]
+        before_retention: None,
     })
 }
 
@@ -1576,6 +1584,49 @@ mod tests {
         assert!(!engine.note_cancel.load(Ordering::SeqCst));
         engine.inference_pool.invalidate();
         new_probe.assert_reaped();
+        Ok(())
+    }
+
+    #[test]
+    fn watchdog_asr_yield_during_return_cannot_retain_a_stopped_child() -> Result<()> {
+        use std::sync::mpsc;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut session = retained_lease(&engine, 30)?;
+        let pid = session.server.child.id();
+        let stop = Arc::clone(&session.server.stop);
+        let probe = ReapProbe::new(&session.server.child)?;
+        let (waiting_tx, waiting_rx) = mpsc::channel();
+        let (continue_tx, continue_rx) = mpsc::channel();
+        session.before_retention = Some(Box::new(move || {
+            // Bound cleanup even if the controller panics or disconnects.
+            let _ = waiting_tx.send(());
+            let _ = continue_rx.recv_timeout(Duration::from_secs(5));
+        }));
+        let returning = thread::spawn(move || drop(session));
+        waiting_rx.recv_timeout(Duration::from_secs(5))?;
+        let held = engine.inference_pool.status();
+        assert!(held.leased);
+        assert!(held.idle_pid.is_none());
+        // The otherwise-healthy snapshot is already taken, but pool insertion
+        // has not happened: a same-PID idle take alone cannot close this race.
+        let accepted =
+            yield_from_watchdog(Some(&engine), &stop, pid, ReleaseReason::AsrBacklog, true);
+        continue_tx.send(())?;
+        returning.join().unwrap();
+        assert!(accepted);
+        let after = engine.inference_pool.status();
+        assert!(!after.leased);
+        assert!(
+            after.idle_pid.is_none(),
+            "a stale healthy snapshot retained the child after ASR accepted its stop"
+        );
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        let release = after.lifecycle.last_release.as_ref().unwrap();
+        assert_eq!(release.pid, pid);
+        assert_eq!(release.reason, "asr_backlog");
+        assert!(release.exit_confirmed);
+        probe.assert_reaped();
         Ok(())
     }
 
