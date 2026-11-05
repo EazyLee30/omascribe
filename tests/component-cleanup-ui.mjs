@@ -115,6 +115,7 @@ try {
             catalog.components = args?.preview ? [previewEntry] : [];
             return structuredClone(catalog);
           case "download_acceleration_component": return;
+          case "cancel_acceleration_download": return;
           case "remove_acceleration_component": return;
           default: throw new Error(`Unexpected cleanup IPC: ${command}`);
         }
@@ -283,8 +284,31 @@ try {
       button("download")?.click();
       await settle();
       const preview = { beforeCheck, denied, checked, stableShown, actions: networkActions() };
+
+      const jobId = "12345678-1234-4234-8234-123456789abc";
+      const activePreview = {
+        ...previewEntry,
+        downloadable: false,
+        download: { job_id: jobId, state: "downloading", downloaded: 16, total: 1024, error: null },
+      };
+      catalog.components = [stableEntry, activePreview];
+      await tick();
+      const stableDisabled = button("download")?.disabled;
+      const activeCancel = button("cancel");
+      const oldRow = activeCancel?.closest("article");
+      const progress = oldRow?.querySelector("progress")?.value;
+      activeCancel?.click();
+      await settle();
+      catalog.components = [activePreview];
+      await tick();
+      const activeDownload = {
+        stableDisabled, progress,
+        oldVersion: oldRow?.textContent,
+        offlineCancelVisible: Boolean(button("cancel")),
+        cancels: calls.filter(({ command }) => command === "cancel_acceleration_download"),
+      };
       await previewHandle.close();
-      return { ...cleanup, preview };
+      return { ...cleanup, preview, activeDownload };
     }, platform);
     console.log(JSON.stringify({ platform, observed }));
     check(`${platform} unavailable cards survive remote catalog states`, () => {
@@ -339,6 +363,21 @@ try {
       assert.deepEqual(observed.policyOrNetworkCalls, []);
       assert.deepEqual(observed.toasts, []);
       assert.deepEqual(pageErrors, []);
+    });
+    check(`${platform} active preview remains cancellable with its exact identity after refresh`, () => {
+      const { stableDisabled, progress, oldVersion, offlineCancelVisible, cancels } = observed.activeDownload;
+      assert.deepEqual(cancels, [{
+        command: "cancel_acceleration_download",
+        args: {
+          id: "cuda-" + platform + "-x86_64",
+          version: "acceleration-ci-40367160891",
+          jobId: "12345678-1234-4234-8234-123456789abc",
+        },
+      }]);
+      assert.equal(stableDisabled, true);
+      assert.equal(progress, 16);
+      assert.match(oldVersion, /acceleration-ci-40367160891/);
+      assert.equal(offlineCancelVisible, true);
     });
     check(`${platform} preview is explicit and download keeps the rendered channel and version`, () => {
       const { beforeCheck, denied, checked, stableShown, actions } = observed.preview;

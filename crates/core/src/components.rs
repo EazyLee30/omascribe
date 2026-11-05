@@ -1339,6 +1339,62 @@ mod tests {
         Ok(())
     }
     #[test]
+    fn catalog_refresh_keeps_active_download_on_admitted_version_without_files() -> Result<()> {
+        let (_root, engine, old, old_path) = removal_fixture()?;
+        let id = &old.components[0].id;
+        engine
+            .component_downloads
+            .cancel
+            .lock()
+            .unwrap()
+            .insert(id.clone(), Arc::new(AtomicBool::new(false)));
+        engine.component_downloads.status.lock().unwrap().insert(
+            id.clone(),
+            Download {
+                state: "downloading".into(),
+                downloaded: 4,
+                total: old.components[0].archive.bytes,
+                error: None,
+            },
+        );
+        let read_installed = |_: &str, _: &str| bail!("No installed component");
+        let before = catalog_status(&engine, Some(old.clone()), true, read_installed);
+        assert_eq!(before.components[0].version, old.version);
+        assert_eq!(
+            before.components[0].download.as_ref().unwrap().downloaded,
+            4
+        );
+        assert!(!old_path.exists());
+
+        let mut current = old.clone();
+        current.version = "acceleration-stable-fixture".into();
+        let refreshed = catalog_status(&engine, Some(current.clone()), false, read_installed);
+        let stable = refreshed
+            .components
+            .iter()
+            .find(|c| c.version == current.version)
+            .unwrap();
+        assert!(
+            stable.download.is_none(),
+            "Progress cannot move to a different version"
+        );
+        let admitted = refreshed
+            .components
+            .iter()
+            .find(|c| c.version == old.version)
+            .unwrap();
+        assert!(admitted.preview && !admitted.present && !admitted.downloadable);
+        assert_eq!(admitted.download.as_ref().unwrap().downloaded, 4);
+
+        let offline = catalog_status(&engine, None, false, read_installed);
+        assert_eq!(offline.state, "ready");
+        assert_eq!(offline.components.len(), 1);
+        assert_eq!(offline.components[0].version, old.version);
+        assert!(offline.components[0].download.is_some());
+        Ok(())
+    }
+
+    #[test]
     fn catalog_refresh_keeps_prior_installs_visible_and_removable() -> Result<()> {
         for damaged in [false, true] {
             let (_root, engine, old, old_path) = removal_fixture()?;
