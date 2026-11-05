@@ -95,5 +95,34 @@
     "No ONNX/ASR/LLM inference, GPU/SDK/component downloads, installer build or installed app change.",
     "Q9 real-audio name recall, Q16 complete article quality and real-device platform acceptance remain open; 0.3.5 is unpublished."
   ],
-  "same_source_windows_linux_ci": "Pending after push; previous 411caef Windows-core/Linux/CI/website workflows completed successfully, including windows-core job127289934750."
+  "same_source_windows_linux_ci": {
+    "checked_source": "27be8e419afadcdea90292b51ad329240055fcb4",
+    "production_source": "6d99c19da6a31ef4600c4fc50b05738cd50fbf2e",
+    "conclusion": "success",
+    "runs": [
+      {
+        "name": "CI",
+        "id": 42046990698,
+        "conclusion": "success"
+      },
+      {
+        "name": "Linux compatibility",
+        "id": 42046991161,
+        "conclusion": "success"
+      },
+      {
+        "name": "Website validation",
+        "id": 42046991138,
+        "conclusion": "success"
+      },
+      {
+        "name": "Optional acceleration components",
+        "id": 42046990849,
+        "conclusion": "success"
+      }
+    ],
+    "windows_core_job": 127312613794,
+    "optional_gpu_build_and_catalog": "skipped",
+    "scope": "Same production code passed shared CI; physical GPU, native recording and install/upgrade acceptance remain open."
+  }
 }
