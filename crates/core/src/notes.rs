@@ -53,6 +53,7 @@ mod week_qualifiers;
 mod writer;
 #[cfg(test)]
 mod writer_final_guard_tests;
+mod writer_names;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
@@ -534,11 +535,31 @@ fn generate_inner(
     )?;
     let mut trimmed_background = 0;
     let mut trimmed_passages = 0;
-    let (system, content, mut prompt_tokens) = loop {
-        let (system, content) = delta.as_ref().map_or_else(
+    let terms = engine.terminology(meeting)?.with_actor_spellings(
+        snapshot
+            .segments
+            .iter()
+            .filter(|s| s.meeting_id == snapshot.meeting.id && s.run == snapshot.meeting.run)
+            .map(|s| s.text.as_str()),
+        snapshot.meeting.speaker_names.values().map(String::as_str),
+    );
+    let name_tokens_enabled =
+        state_environment.is_none() && delta.is_none() && !source_preparation_configured;
+    let (system, content, original_content, mut prompt_tokens, mut name_plan) = loop {
+        let (system, original_content) = delta.as_ref().map_or_else(
             || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
             |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
         );
+        let named = writer_names::prepare(
+            system,
+            original_content.clone(),
+            &context.segments,
+            &terms,
+            &snapshot.meeting.speaker_names,
+            name_tokens_enabled,
+            writer::chinese(snapshot, &prefs.minutes_language),
+        )?;
+        let (system, content) = (named.system, named.content);
         let tokens: Value = agent
             .post(&format!("{base}/tokenize"))
             .set("Authorization", auth)
@@ -549,7 +570,7 @@ fn generate_inner(
             .context("Invalid tokenizer response")?
             .len();
         if count <= prefs.context_size as usize - 1148 {
-            break (system, content, count);
+            break (system, content, original_content, count, named.plan);
         }
         if delta.take().is_some() {
             trace.event(
@@ -616,14 +637,6 @@ fn generate_inner(
         .map(|s| s.text.as_str())
         .collect::<Vec<_>>()
         .join("\n");
-    let terms = engine.terminology(meeting)?.with_actor_spellings(
-        snapshot
-            .segments
-            .iter()
-            .filter(|s| s.meeting_id == snapshot.meeting.id && s.run == snapshot.meeting.run)
-            .map(|s| s.text.as_str()),
-        snapshot.meeting.speaker_names.values().map(String::as_str),
-    );
     let source_name_mask =
         crate::translation::source_name_mask(&selected_source, &selected_source, &terms);
     // Default to the existing writer and its bounded factual/language repair.
@@ -650,7 +663,8 @@ fn generate_inner(
         "article_prompt",
         json!({"mode":if source_plan.is_some(){"prepare_sources"}else if delta.is_some(){"delta"}else{"full"},
         "input_tokens":prompt_tokens,"source_preparation":source_plan.as_ref().map(|plan|plan.metrics()),
-        "reused_translation_passages":language::reused_count(&content, &context.segments, snapshot)}),
+        "reused_translation_passages":language::reused_count(&original_content, &context.segments, snapshot),
+        "name_tokens":name_plan.as_ref().map(|plan|plan.metrics())}),
     );
     // Preparation, composition, repair and CPU fallback share two chat sends.
     for attempt in 0..2 {
@@ -823,10 +837,16 @@ fn generate_inner(
             continue;
         }
         let composition = if relation_repair.is_none() && translation_repair.is_none() {
-            Some(writer::body_with_evidence(
-                &raw_body,
-                messages[1]["content"].as_str().unwrap_or("{}"),
-            ))
+            Some(
+                writer::body_with_evidence(
+                    &raw_body,
+                    messages[1]["content"].as_str().unwrap_or("{}"),
+                )
+                .and_then(|composed| match name_plan.as_ref() {
+                    Some(plan) => plan.composition(composed),
+                    None => Ok(composed),
+                }),
+            )
         } else {
             None
         };
@@ -939,6 +959,7 @@ fn generate_inner(
             "attempt":request_attempt, "stage":request_stage, "draft":text, "body_draft":raw_body, "prose_body":prose.as_ref().ok(), "normalized_draft":normalized.as_ref().ok(), "usage":usage,
             "week_qualifier_corrections":week_qualifier_corrections,
             "affiliation_corrections":affiliation_corrections,
+            "name_tokens":name_plan.as_ref().map(|plan|plan.metrics()),
             "mode":if relation_repair.is_some() {"translate_source_relations"} else if translation_repair.is_some() {"translate_checked_prose"} else if prepared_sources.is_some() {"compose_prepared_sources"} else {"compose"},
             "completion_bridge":completion_bridge.is_some(),
             "source_preparation":prepared_sources,
@@ -992,10 +1013,12 @@ fn generate_inner(
                     )
                 };
                 if let Some(plan) = source_plan {
+                    name_plan = None;
                     trace.event("article_repair", json!({"mode":"source_relations","source_predicates":plan.source_predicates(),"source_slots":plan.source_slots()}));
                     messages = plan.messages.clone();
                     relation_repair = Some(plan);
                 } else if error.to_string().contains("输出语言") {
+                    name_plan = None;
                     let prose = checked_prose.as_deref().context("Missing checked prose")?;
                     let plan = language::repair_messages_with_source(
                         normalized.as_ref().map_err(|e| anyhow::anyhow!("{e}"))?,
@@ -1088,9 +1111,19 @@ fn generate_inner(
                     } else {
                         "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
                     };
+                    let named = writer_names::prepare(
+                        format!("{repair_system} {hint}"),
+                        serde_json::to_string(&repair)?,
+                        &context.segments,
+                        &terms,
+                        &snapshot.meeting.speaker_names,
+                        name_tokens_enabled,
+                        writer::chinese(snapshot, &prefs.minutes_language),
+                    )?;
+                    name_plan = named.plan;
                     messages = vec![
-                        json!({"role":"system","content":format!("{repair_system} {hint}")}),
-                        json!({"role":"user","content":serde_json::to_string(&repair)?}),
+                        json!({"role":"system","content":named.system}),
+                        json!({"role":"user","content":named.content}),
                     ];
                 }
                 let repair_input = messages

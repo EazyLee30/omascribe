@@ -256,6 +256,15 @@ pub(super) struct Composition {
     copies: Vec<DirectCopy>,
 }
 impl Composition {
+    /// Name-token rendering is not exact presentation of actual raw input.
+    /// In particular it cannot mint DirectCopy or CompletionBridge authority.
+    pub(super) fn without_copy_authority(text: String) -> Self {
+        Self {
+            text,
+            input: None,
+            copies: Vec::new(),
+        }
+    }
     pub(super) fn text(&self) -> &str {
         &self.text
     }
