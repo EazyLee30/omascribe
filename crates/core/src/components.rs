@@ -120,7 +120,16 @@ pub struct Status {
 pub struct CatalogStatus {
     pub state: String,
     pub components: Vec<Status>,
+    pub unavailable: Vec<UnavailableComponent>,
     pub verification: crate::acceleration::Status,
+}
+/// Directory identity for local cleanup only; never an executable component.
+#[derive(Serialize)]
+pub struct UnavailableComponent {
+    pub id: String,
+    pub version: String,
+    pub reason: String,
+    pub busy: bool,
 }
 
 pub fn target() -> String {
@@ -134,6 +143,19 @@ fn basename(name: &str) -> bool {
         && name
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+}
+fn managed_identity(id: &str, version: &str) -> bool {
+    [
+        "cuda-windows-x86_64",
+        "vulkan-windows-x86_64",
+        "cuda-linux-x86_64",
+        "vulkan-linux-x86_64",
+    ]
+    .contains(&id)
+        && basename(version)
+        && version
+            .strip_prefix("acceleration-")
+            .is_some_and(|suffix| !suffix.is_empty())
 }
 fn public_key() -> String {
     let config: serde_json::Value =
@@ -315,14 +337,11 @@ fn installed_index(root: &Path, id: &str, version: &str) -> Result<Index> {
     Ok(index)
 }
 fn saved_index(root: &Path, id: &str, version: &str) -> Result<Index> {
-    if !basename(id) || !basename(version) {
-        bail!("Invalid component identity");
+    let path = checked_component_path(root, id, version)?.join("component-index.json");
+    let metadata = fs::symlink_metadata(&path)?;
+    if !metadata.file_type().is_file() || !unlinked(&metadata) {
+        bail!("Installed component metadata is not a regular file");
     }
-    let path = root
-        .join("accelerators")
-        .join(id)
-        .join(version)
-        .join("component-index.json");
     let envelope: SignedIndex = serde_json::from_slice(&read_limited(&path, MAX_INDEX * 2)?)?;
     let index = verify_inventory_with_key(&envelope, &public_key())?;
     if index.version != version {
@@ -532,6 +551,7 @@ fn catalog_status(
     let verification = engine.acceleration_status();
     let downloads = engine.component_downloads.status.lock().unwrap().clone();
     let mut statuses = Vec::new();
+    let mut unavailable = Vec::new();
     if let Some(index) = &current {
         for component in index.components.iter().filter(|c| c.target == target()) {
             statuses.push(Status {
@@ -545,7 +565,23 @@ fn catalog_status(
             });
         }
     }
-    append_installed_statuses(&engine.root, &mut statuses, load_installed);
+    append_installed_statuses(
+        &engine.root,
+        &mut statuses,
+        &mut unavailable,
+        load_installed,
+    );
+    if !unavailable.is_empty() {
+        let busy = engine.require_available().is_err()
+            || engine.configuration_idle().is_err()
+            || engine.note_busy.load(Ordering::SeqCst)
+            || verification.state == "testing"
+            || engine.inference_pool.status().leased;
+        let installing = engine.component_downloads.cancel.lock().unwrap();
+        for entry in &mut unavailable {
+            entry.busy = busy || installing.contains_key(&entry.id);
+        }
+    }
     CatalogStatus {
         state: if current.is_some() || !statuses.is_empty() {
             "ready"
@@ -554,6 +590,7 @@ fn catalog_status(
         }
         .into(),
         components: statuses,
+        unavailable,
         verification,
     }
 }
@@ -561,6 +598,7 @@ fn catalog_status(
 fn append_installed_statuses(
     root: &Path,
     statuses: &mut Vec<Status>,
+    unavailable: &mut Vec<UnavailableComponent>,
     load_installed: impl Fn(&str, &str) -> Result<Index>,
 ) {
     let directory = root.join("accelerators");
@@ -585,15 +623,43 @@ fn append_installed_statuses(
             let name = version.file_name().to_string_lossy().into_owned();
             if !basename(&name)
                 || !fs::symlink_metadata(version.path()).is_ok_and(|m| plain_directory(&m))
-                || statuses
-                    .iter()
-                    .any(|s| s.component.id == id && s.version == name)
             {
                 continue;
             }
-            let Ok(index) = load_installed(&id, &name) else {
+            let current = statuses
+                .iter()
+                .any(|s| s.component.id == id && s.version == name);
+            // Recheck managed current versions before deduplication: a cached
+            // catalog cannot make damaged saved metadata healthy or testable.
+            let managed = managed_identity(&id, &name);
+            if current && !managed {
                 continue;
-            };
+            }
+            let loaded = load_installed(&id, &name);
+            let identified = loaded.as_ref().is_ok_and(|index| {
+                index.version == name && index.components.iter().any(|c| c.id == id)
+            });
+            if managed && !identified {
+                let reason = match fs::symlink_metadata(version.path().join("component-index.json"))
+                {
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                        "metadata_missing"
+                    }
+                    _ => "metadata_invalid",
+                };
+                statuses.retain(|s| s.component.id != id || s.version != name);
+                unavailable.push(UnavailableComponent {
+                    id: id.clone(),
+                    version: name,
+                    reason: reason.into(),
+                    busy: false,
+                });
+                continue;
+            }
+            if current {
+                continue;
+            }
+            let Ok(index) = loaded else { continue };
             let Some(component) = index
                 .components
                 .iter()
@@ -616,6 +682,7 @@ fn append_installed_statuses(
         }
     }
     previous.sort_by(|a, b| (&a.component.id, &a.version).cmp(&(&b.component.id, &b.version)));
+    unavailable.sort_by(|a, b| (&a.id, &a.version).cmp(&(&b.id, &b.version)));
     statuses.extend(previous);
 }
 
@@ -658,28 +725,25 @@ fn remove_component(
     {
         bail!("Cancel the component download and wait for it to finish");
     }
-    let index = catalog()?;
-    if index.version != version {
-        bail!("Component catalog changed; refresh before removing this version");
-    }
-    let component = index
-        .components
-        .iter()
-        .find(|c| c.id == id && c.target == target())
-        .context("Unknown component for this platform")?;
-    let path = location(&engine.root, &index, component);
-    for directory in [
-        engine.root.join("accelerators"),
-        engine.root.join("accelerators").join(id),
-        path.clone(),
-    ] {
-        match fs::symlink_metadata(directory) {
-            Ok(metadata) if !plain_directory(&metadata) => {
-                bail!("Refusing to remove a linked or non-directory component path")
-            }
-            Ok(_) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-            Err(error) => return Err(error.into()),
+    let path = checked_component_path(&engine.root, id, version)?;
+    let authenticated = catalog().and_then(|index| {
+        if index.version != version {
+            bail!("Component catalog changed; refresh before removing this version");
+        }
+        index
+            .components
+            .iter()
+            .find(|c| c.id == id && c.target == target())
+            .context("Unknown component for this platform")?;
+        Ok(())
+    });
+    if let Err(error) = authenticated {
+        // Only the manager's fixed package layout can be cleaned without its
+        // signed inventory. Metadata never supplies a deletion path or files.
+        if !managed_identity(id, version)
+            || !fs::symlink_metadata(&path).is_ok_and(|m| plain_directory(&m))
+        {
+            return Err(error);
         }
     }
     engine.inference_pool.invalidate();
@@ -696,8 +760,33 @@ fn remove_component(
     Ok(())
 }
 
+fn checked_component_path(root: &Path, id: &str, version: &str) -> Result<PathBuf> {
+    if !basename(id) || !basename(version) {
+        bail!("Invalid component identity");
+    }
+    let path = root.join("accelerators").join(id).join(version);
+    for directory in [
+        root.join("accelerators"),
+        root.join("accelerators").join(id),
+        path.clone(),
+    ] {
+        match fs::symlink_metadata(directory) {
+            Ok(metadata) if !plain_directory(&metadata) => {
+                bail!("Refusing to remove a linked or non-directory component path")
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    Ok(path)
+}
+
 fn plain_directory(metadata: &fs::Metadata) -> bool {
-    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
+    metadata.file_type().is_dir() && unlinked(metadata)
+}
+fn unlinked(metadata: &fs::Metadata) -> bool {
+    if metadata.file_type().is_symlink() {
         return false;
     }
     #[cfg(windows)]
@@ -1026,6 +1115,115 @@ mod tests {
             !promoted && unavailable_identity_count(&listed, &component.id, &current.version) == 1,
             "A matching current catalog must not hide damaged local metadata behind installed/testable/recommended flags: {listed}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn unavailable_cleanup_preserves_job_gates_and_managed_directory_scope() -> Result<()> {
+        let (root, engine, mut index, _) = removal_fixture()?;
+        index.components[0].id = "vulkan-linux-x86_64".into();
+        let id = &index.components[0].id;
+        let version = &index.version;
+        let path = location(root.path(), &index, &index.components[0]);
+        fs::create_dir_all(&path)?;
+        let runtime = path.join("keep");
+        fs::write(&runtime, b"target")?;
+        let unknown = root.path().join("accelerators/unknown").join(version);
+        let unmanaged = path.parent().unwrap().join("manual");
+        let other = path.parent().unwrap().join("acceleration-other");
+        for directory in [&unknown, &unmanaged, &other] {
+            fs::create_dir_all(directory)?;
+            fs::write(directory.join("keep"), b"retain")?;
+        }
+        let receipt = engine.inference_fingerprints.refresh(&runtime)?;
+        let held_clone = receipt.clone();
+        engine.note_busy.store(true, Ordering::SeqCst);
+        let listed = engine.acceleration_components();
+        assert!(listed
+            .unavailable
+            .iter()
+            .any(|entry| entry.id == *id && entry.version == *version && entry.busy));
+        let certificate = root.path().join("accelerators/active.json");
+        let certificate_bytes = fixture_certificate(&index)?;
+        fs::write(&certificate, &certificate_bytes)?;
+        assert!(engine.remove_acceleration_component(id, version).is_err());
+        engine.note_busy.store(false, Ordering::SeqCst);
+        engine
+            .component_downloads
+            .cancel
+            .lock()
+            .unwrap()
+            .insert(id.clone(), Arc::new(AtomicBool::new(true)));
+        assert!(engine.remove_acceleration_component(id, version).is_err());
+        engine.component_downloads.cancel.lock().unwrap().remove(id);
+        for (candidate_id, candidate_version) in [
+            ("unknown", version.as_str()),
+            (id.as_str(), "manual"),
+            ("../escape", version.as_str()),
+            (id.as_str(), "../escape"),
+        ] {
+            assert!(engine
+                .remove_acceleration_component(candidate_id, candidate_version)
+                .is_err());
+        }
+        assert_eq!(fs::read(&certificate)?, certificate_bytes);
+        receipt.check_current()?;
+        held_clone.check_current()?;
+        engine.remove_acceleration_component(id, version)?;
+        assert!(!path.exists());
+        assert!(!certificate.exists());
+        assert!(receipt.check_current().is_err());
+        assert!(held_clone.check_current().is_err());
+        for directory in [&unknown, &unmanaged, &other] {
+            assert_eq!(fs::read(directory.join("keep"))?, b"retain");
+        }
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn unavailable_cleanup_refuses_linked_roots_and_does_not_read_linked_metadata() -> Result<()> {
+        use std::os::unix::fs::symlink;
+        for parent in 0..3 {
+            let (root, engine, mut index, _) = removal_fixture()?;
+            index.components[0].id = "vulkan-linux-x86_64".into();
+            let path = location(root.path(), &index, &index.components[0]);
+            let outside = tempfile::tempdir()?;
+            fs::write(outside.path().join("keep"), b"external")?;
+            let linked = match parent {
+                0 => root.path().join("accelerators"),
+                1 => path.parent().unwrap().to_path_buf(),
+                _ => path,
+            };
+            fs::create_dir_all(linked.parent().unwrap())?;
+            symlink(outside.path(), &linked)?;
+            assert!(engine
+                .remove_acceleration_component(&index.components[0].id, &index.version)
+                .is_err());
+            assert!(engine.acceleration_components().unavailable.is_empty());
+            assert_eq!(fs::read(outside.path().join("keep"))?, b"external");
+        }
+        let (root, engine, mut index, _) = removal_fixture()?;
+        index.components[0].id = "vulkan-linux-x86_64".into();
+        let id = &index.components[0].id;
+        let path = location(root.path(), &index, &index.components[0]);
+        fs::create_dir_all(&path)?;
+        let outside = tempfile::tempdir()?;
+        let metadata = outside.path().join("keep");
+        fs::write(&metadata, b"external")?;
+        symlink(&metadata, path.join("component-index.json"))?;
+        let error = saved_index(root.path(), id, &index.version).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Installed component metadata is not a regular file"
+        );
+        let listed = engine.acceleration_components();
+        assert!(listed.unavailable.iter().any(|entry| {
+            entry.id == *id && entry.version == index.version && entry.reason == "metadata_invalid"
+        }));
+        engine.remove_acceleration_component(id, &index.version)?;
+        assert!(!path.exists());
+        assert_eq!(fs::read(metadata)?, b"external");
         Ok(())
     }
     #[test]
