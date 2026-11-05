@@ -254,3 +254,109 @@ fn missing_field_keeps_its_typed_original_source_retry_hint() {
     )
     .is_none());
 }
+
+#[test]
+fn later_unknown_negative_field_does_not_require_the_superseded_may() -> Result<()> {
+    use super::{language, retrieval, source_coverage::View, validation, writer};
+    let source = snapshot(&[
+        "Music on the main stages may have finished.",
+        "Main-stage music has not ended.",
+    ]);
+    let body = "主舞台音乐尚未结束。";
+    let terms = crate::terminology::Terms::new(&[], &[]);
+    // Check the pre-coverage production gates first: this is not a request to
+    // widen an older modal, spelling or language exception.
+    let draft = writer::document(body, &source.segments, &source.meeting.speaker_names)?;
+    let sections = validation::validate_with_terms(
+        &draft,
+        &source.segments,
+        &source.meeting.id,
+        &source.meeting.speaker_names,
+        &terms,
+    )?;
+    let original = source
+        .segments
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    terms.validate_writer_names(&original, body)?;
+    language::validate_with_source(
+        body,
+        &crate::translation::source_name_mask(body, &original, &terms),
+        &original,
+        true,
+    )?;
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    let context = retrieval::Context {
+        cursor: 2,
+        segments: source.segments.clone(),
+        keywords: Vec::new(),
+    };
+    let (mut system, mut input) =
+        writer::prompt_mode(&source, &context, &serde_json::json!({}), "zh", false);
+    view.augment(&mut system, &mut input)?;
+    let input: Value = serde_json::from_str(&input)?;
+    let coverage = view.validate(&sections);
+    assert!(input.get("required_source_fields").is_none() && coverage.is_ok(), "the old gates accept the faithful negative; a later unknown/negative statement of this same field must make its old obligation abstain: data={}, coverage={coverage:?}",input["required_source_fields"]);
+    Ok(())
+}
+
+#[test]
+fn cached_music_coverage_ranges_bind_the_model_visible_coordinate_space() -> Result<()> {
+    use super::{language, retrieval, source_coverage::View, writer};
+    let mut source = snapshot(&[ORIGINAL_SOURCES[4]]);
+    let segment = &source.segments[0];
+    let cached = crate::translation::Translation {
+        segment_id: segment.id.clone(),
+        revision: segment.revision,
+        target: "zh".into(),
+        model: "local".into(),
+        cache_key: "validated-snapshot-key".into(),
+        text: BOTH_MUSIC_FIELDS.into(),
+    };
+    let terms = crate::terminology::Terms::new(&[], &[]);
+    assert_eq!(
+        language::cached_text(segment, &segment.text, &cached, true, &terms),
+        Some(BOTH_MUSIC_FIELDS)
+    );
+    source.translations.insert(segment.id.clone(), cached);
+    let context = retrieval::Context {
+        cursor: 1,
+        segments: source.segments.clone(),
+        keywords: Vec::new(),
+    };
+    let (mut system, mut input) = writer::prompt(&source, &context, &serde_json::json!({}), "zh");
+    assert_eq!(
+        language::reused_count(&input, &context.segments, &source),
+        1
+    );
+    let view = View::new(&context.segments, &source.segments, &source.meeting)?;
+    view.augment(&mut system, &mut input)?;
+    let input: Value = serde_json::from_str(&input)?;
+    let entry = &input["transcript"][0];
+    assert_eq!(
+        entry["text"], BOTH_MUSIC_FIELDS,
+        "a fully proved cache remains reusable"
+    );
+    for field in input["required_source_fields"].as_array().unwrap() {
+        // Rebased actual-text ranges or an explicitly exposed original source
+        // are both sound; English coordinates on an unseen English original
+        // must not silently point into the displayed Chinese cache.
+        let visible = if field["range_basis"] == "original_source" {
+            entry["original_source"].as_str().unwrap()
+        } else {
+            entry["text"].as_str().unwrap()
+        };
+        let range = &field["source_range"];
+        let observed =
+            visible.get(range[0].as_u64().unwrap() as usize..range[1].as_u64().unwrap() as usize);
+        let valid=match field["field"].as_str().unwrap() {
+            "MainStageMusicEnding"=>matches!(observed,Some("MUSIC ON THE MAIN STAGES MAY HAVE FINISHED"|"音乐在主舞台可能已经结束")),
+            "FestivalPartsPlayingUntilLateNight"=>matches!(observed,Some("THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT"|"嘉年华仍可能有部分区域持续演奏至深夜")),
+            other=>panic!("unexpected field {other}"),
+        };
+        assert!(valid,"coverage range must identify the promised fact in its declared visible source: field={field}, slice={observed:?}");
+    }
+    Ok(())
+}
