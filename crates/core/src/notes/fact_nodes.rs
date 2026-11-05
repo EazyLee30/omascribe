@@ -193,7 +193,7 @@ impl Plan {
             }
             for range in ranges {
                 ensure!(nodes.len() < MAX_NODES, "Too many qualified fact nodes");
-                let text = sentence(&actual[range]);
+                let text = sentence(&actual[range.clone()]);
                 ensure!(closed(&text), "Qualified fact-node scope is open");
                 nodes.push(Node {
                     entry,
