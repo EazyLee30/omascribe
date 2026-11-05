@@ -605,9 +605,12 @@ mod unchanged_source_tests {
         name_note.content = NOTE.into();
         let terms = super::super::Terms::new(&[name_note], &[]);
         let mut db = engine.store.lock().unwrap();
+        // The queue trigger extracts $.revision, so storage must contain valid
+        // JSON. A scalar is valid JSON but cannot deserialize as a Segment.
+        let invalid_segment = serde_json::to_string("fixture is not a Segment")?;
         db.conn.execute(
-            "UPDATE segments SET json='fixture invalid source JSON' WHERE id=?1",
-            [&before.segments[0].id],
+            "UPDATE segments SET json=?2 WHERE id=?1",
+            params![before.segments[0].id, invalid_segment],
         )?;
         // Direct production savepoint/helper control: Engine's earlier source
         // scan is deliberately out of this ordering test's scope. This proves
@@ -623,7 +626,7 @@ mod unchanged_source_tests {
             [&before.segments[0].id],
             |row| row.get(0),
         )?;
-        assert_eq!(still_invalid, "fixture invalid source JSON");
+        assert_eq!(still_invalid, invalid_segment);
         let mut relevant = plain.clone();
         relevant.text = OLD_MINUTES.into();
         db.save_suggestion(&relevant)?;
