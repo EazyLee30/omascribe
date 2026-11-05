@@ -20,6 +20,9 @@ use std::{
 const INDEX_URL: &str =
     "https://github.com/EazyLee30/omascribe/releases/download/acceleration-v1/index.json";
 const PREVIEW_VERSION: &str = "acceleration-ci-40367160891";
+// The GitHub release allows replacing assets. Pin the reviewed signed payload.
+const PREVIEW_PAYLOAD_SHA256: &str =
+    "f0f6261191b3f5cc3f720adbc83060ad11fa399eba060db472c52faaaed648d7";
 const MAX_INDEX: u64 = 512 * 1024;
 const MAX_UNPACKED: u64 = 4 * 1024 * 1024 * 1024;
 
@@ -27,10 +30,15 @@ const MAX_UNPACKED: u64 = 4 * 1024 * 1024 * 1024;
 enum CatalogChannel {
     Stable,
     Candidate(String),
+    Preview,
 }
 impl CatalogChannel {
-    fn preview() -> Self {
-        Self::Candidate(PREVIEW_VERSION.into())
+    fn version(&self) -> Option<&str> {
+        match self {
+            Self::Stable => None,
+            Self::Candidate(version) => Some(version),
+            Self::Preview => Some(PREVIEW_VERSION),
+        }
     }
 
     fn parse(candidate: Option<&str>) -> Result<Self> {
@@ -58,28 +66,35 @@ impl CatalogChannel {
         }
     }
     fn url(&self) -> String {
-        match self {
-            Self::Stable => INDEX_URL.into(),
-            Self::Candidate(version) => format!(
+        match self.version() {
+            None => INDEX_URL.into(),
+            Some(version) => format!(
                 "https://github.com/EazyLee30/omascribe/releases/download/{version}/index.json"
             ),
         }
     }
     fn cache(&self, root: &Path) -> PathBuf {
-        match self {
-            Self::Stable => root.join("acceleration-index.json"),
-            Self::Candidate(version) => root
+        match self.version() {
+            None => root.join("acceleration-index.json"),
+            Some(version) => root
                 .join("acceleration-candidates")
                 .join(version)
                 .join("index.json"),
         }
     }
     fn verify(&self, envelope: &SignedIndex, key: &str) -> Result<Index> {
+        if matches!(self, Self::Preview)
+            && format!("{:x}", Sha256::digest(envelope.payload.as_bytes()))
+                != PREVIEW_PAYLOAD_SHA256
+        {
+            bail!("Unexpected built-in preview catalog payload");
+        }
         let index = verify_index_with_key(envelope, key)?;
-        if let Self::Candidate(version) = self {
-            if &index.version != version {
-                bail!("Acceleration candidate version mismatch");
-            }
+        if self
+            .version()
+            .is_some_and(|version| index.version != version)
+        {
+            bail!("Acceleration candidate version mismatch");
         }
         Ok(index)
     }
@@ -318,7 +333,7 @@ fn catalog_for_display(
     };
     let current = read(primary);
     if offers_preview(primary, host, current.as_ref()) {
-        (read(&CatalogChannel::preview()), true)
+        (read(&CatalogChannel::Preview), true)
     } else {
         (current, false)
     }
@@ -340,7 +355,7 @@ fn requested_channel(
     if !offers_preview(primary, host, current.as_ref()) {
         bail!("Preview components are unavailable; refresh the component list");
     }
-    Ok(CatalogChannel::preview())
+    Ok(CatalogChannel::Preview)
 }
 
 fn requested_download(
@@ -2060,6 +2075,10 @@ mod tests {
 
         let mut bad: SignedIndex = serde_json::from_slice(envelope)?;
         bad.payload.push(' ');
+        assert_eq!(
+            preview.verify(&bad, &key).unwrap_err().to_string(),
+            "Unexpected built-in preview catalog payload",
+        );
         crate::preferences::atomic_json(&path, &bad)?;
         let (current, offer) = catalog_for_display(root.path(), &stable, host, &key);
         assert!(current.is_none() && offer);
@@ -2078,7 +2097,7 @@ mod tests {
             requested_download(root.path(), &stable, host, &key, id, version, preview)
         };
         let envelope = include_bytes!("../../../tests/fixtures/acceleration-preview-index.json");
-        let preview_path = CatalogChannel::preview().cache(root.path());
+        let preview_path = CatalogChannel::Preview.cache(root.path());
         fs::create_dir_all(preview_path.parent().unwrap())?;
         fs::write(preview_path, envelope)?;
         assert!(
