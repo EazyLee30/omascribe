@@ -4,7 +4,11 @@ use crate::{Meeting, Segment, Source, Suggestion};
 use anyhow::{ensure, Result};
 use regex::Regex;
 use serde_json::{json, Value};
-use std::{collections::BTreeMap, ops::Range, sync::OnceLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+    sync::OnceLock,
+};
 
 const MAX_BYTES: usize = 120_000;
 const MAX_FIELDS: usize = 64;
@@ -400,14 +404,14 @@ impl<'a> View<'a> {
                     .and_then(|id| self.meeting.speaker_names.get(id))
                     .cloned()
     }
-    pub(crate) fn validate<'s>(
+    fn covered<'s>(
         &self,
         sections: impl IntoIterator<Item = &'s Suggestion>,
-    ) -> Result<()> {
+    ) -> Result<BTreeSet<Field>> {
+        let mut covered = BTreeSet::new();
         if self.fields.values().all(|slot| slot.evidence.is_none()) {
-            return Ok(());
+            return Ok(covered);
         }
-        let mut parsed = Vec::new();
         let mut bytes = 0usize;
         let mut count = 0usize;
         for section in sections {
@@ -415,6 +419,15 @@ impl<'a> View<'a> {
                 && !section.stale
                 && matches!(section.status.as_str(), "pending" | "accepted")
             {
+                let relevant: Vec<_> = self
+                    .fields
+                    .values()
+                    .filter_map(|slot| slot.evidence.as_ref())
+                    .filter(|e| section.sources.iter().any(|q| self.owns(q, e)))
+                    .collect();
+                if relevant.is_empty() {
+                    continue;
+                }
                 let claims = facts(&section.text, true)?;
                 if !claims.is_empty() {
                     bytes = bytes
@@ -426,22 +439,31 @@ impl<'a> View<'a> {
                         count <= MAX_FIELDS,
                         "来源覆盖校验超过正文中字段预算，本轮未提交"
                     );
-                    parsed.push((section, claims));
+                    for evidence in relevant {
+                        if claims.iter().any(|claim| {
+                            claim.field == evidence.fact.field && claim.state == evidence.fact.state
+                        }) {
+                            covered.insert(evidence.fact.field);
+                        }
+                    }
                 }
             }
         }
+        Ok(covered)
+    }
+
+    pub(crate) fn validate<'s>(
+        &self,
+        sections: impl IntoIterator<Item = &'s Suggestion>,
+    ) -> Result<()> {
+        let covered = self.covered(sections)?;
         for evidence in self
             .fields
             .values()
             .filter_map(|slot| slot.evidence.as_ref())
         {
             ensure!(
-                parsed.iter().any(|(section, claims)| section
-                    .sources
-                    .iter()
-                    .any(|q| self.owns(q, evidence))
-                    && claims.iter().any(|claim| claim.field == evidence.fact.field
-                        && claim.state == evidence.fact.state)),
+                covered.contains(&evidence.fact.field),
                 Missing(evidence.fact.field)
             );
         }
@@ -450,8 +472,28 @@ impl<'a> View<'a> {
 
     /// DATA only, referring to original transcript entry numbers. This does
     /// not create translated facts, copies, or source/paragraph authority.
+    #[cfg(test)]
     pub(super) fn augment(&self, system: &mut String, input: &mut String) -> Result<()> {
-        if self.fields.values().all(|slot| slot.evidence.is_none()) {
+        self.augment_with_accepted(system, input, &[])
+    }
+
+    pub(super) fn augment_with_accepted(
+        &self,
+        system: &mut String,
+        input: &mut String,
+        sections: &[Suggestion],
+    ) -> Result<()> {
+        // Store never replaces these paragraphs. Pending paragraphs are
+        // deliberately excluded even if their old text currently covers a
+        // field: the incoming article may replace that exact paragraph.
+        let retained = self.covered(sections.iter().filter(|s| s.status == "accepted"))?;
+        let required_fields: Vec<_> = self
+            .fields
+            .values()
+            .filter_map(|slot| slot.evidence.as_ref())
+            .filter(|e| !retained.contains(&e.fact.field))
+            .collect();
+        if required_fields.is_empty() {
             return Ok(());
         }
         let mut content: Value = serde_json::from_str(input)?;
@@ -459,11 +501,7 @@ impl<'a> View<'a> {
             .as_array_mut()
             .ok_or_else(|| anyhow::anyhow!("来源覆盖输入缺少原transcript"))?;
         let mut required = Vec::new();
-        for evidence in self
-            .fields
-            .values()
-            .filter_map(|slot| slot.evidence.as_ref())
-        {
+        for evidence in required_fields {
             let entry = transcript
                 .iter()
                 .position(|entry| entry["id"].as_u64() == Some(evidence.entry as u64))

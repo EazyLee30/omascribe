@@ -229,8 +229,11 @@ fn validate_writer_document(
         )?
     };
     validation::preserve_replaced_sources(&snapshot.suggestions, sources, &sections)?;
+    let retained = snapshot.suggestions.iter().filter(|section| {
+        section.meeting_id == snapshot.meeting.id && section.status == "accepted" && !section.stale
+    });
     source_coverage::View::new(sources, &snapshot.segments, &snapshot.meeting)?
-        .validate(&sections)?;
+        .validate(retained.chain(sections.iter()))?;
     let body = sections
         .iter()
         .map(|s| s.text.as_str())
@@ -547,7 +550,7 @@ fn generate_inner(
         let coverage =
             source_coverage::View::new(&context.segments, &snapshot.segments, &snapshot.meeting)?;
         if delta.is_none() {
-            coverage.augment(&mut system, &mut content)?;
+            coverage.augment_with_accepted(&mut system, &mut content, &snapshot.suggestions)?;
         }
         let tokens: Value = agent
             .post(&format!("{base}/tokenize"))
@@ -1040,7 +1043,11 @@ fn generate_inner(
                         |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
                     );
                     if delta.is_none() {
-                        coverage.augment(&mut repair_system, &mut repair_content)?;
+                        coverage.augment_with_accepted(
+                            &mut repair_system,
+                            &mut repair_content,
+                            &snapshot.suggestions,
+                        )?;
                     }
                     let mut repair: Value = serde_json::from_str(&repair_content)?;
                     let attribution = error.to_string().contains("speaker attribution");
