@@ -190,17 +190,37 @@ mod unchanged_source_tests {
             };
             engine.save_note(&before.meeting.id, Some(note.id), note_text, "document", 0)?;
             let after = engine.snapshot(&before.meeting.id)?;
-            assert_eq!(
-                serde_json::to_value(&after.suggestions)?,
-                serde_json::to_value(&before.suggestions)?,
-                "{case}"
-            );
+            if ["budget", "negation", "duplicate"].contains(&case) {
+                let mut expected = before.suggestions.clone();
+                expected[0].text = expected[0].text.replace("ALMA SCRIBE", "OmaScribe");
+                expected[0].stale = true;
+                assert_eq!(
+                    serde_json::to_value(&after.suggestions)?,
+                    serde_json::to_value(&expected)?,
+                    "{case}: only the name changes; other claims and all citations are retained"
+                );
+                assert!(after.meeting.notes_fingerprint.is_empty(), "{case}");
+                assert!(crate::notes::needs_update(&after), "{case}");
+                let updated_history = history(&engine, &before.meeting.id)?;
+                assert_eq!(updated_history.len(), old_history.len() + 1, "{case}");
+                assert_eq!(
+                    serde_json::from_str::<serde_json::Value>(updated_history.last().unwrap())?,
+                    serde_json::to_value(&before.suggestions)?,
+                    "{case}"
+                );
+            } else {
+                assert_eq!(
+                    serde_json::to_value(&after.suggestions)?,
+                    serde_json::to_value(&before.suggestions)?,
+                    "{case}"
+                );
+                assert_eq!(history(&engine, &before.meeting.id)?, old_history, "{case}");
+            }
             assert_eq!(
                 serde_json::to_value(&after.segments)?,
                 serde_json::to_value(&before.segments)?,
                 "{case}"
             );
-            assert_eq!(history(&engine, &before.meeting.id)?, old_history, "{case}");
         }
         Ok(())
     }
@@ -580,7 +600,16 @@ mod unchanged_source_tests {
             0,
         )?;
         let after = engine.snapshot(&before.meeting.id)?;
-        assert_eq!(after.suggestions[0].text, before.suggestions[0].text);
+        assert_eq!(
+            after.suggestions[0].text,
+            before.suggestions[0]
+                .text
+                .replace("ALMA SCRIBE", "OmaScribe")
+        );
+        assert_eq!(
+            serde_json::to_value(&after.suggestions[0].sources)?,
+            serde_json::to_value(&before.suggestions[0].sources)?
+        );
         assert!(
             after.suggestions[0].stale,
             "a name correction that lacks whole-source proof must remain pending, not pass the old unchanged checkpoint"
@@ -887,14 +916,49 @@ fn repair(
     Some(updated)
 }
 
-/// Plan only: a whole resulting paragraph must be a unique, current, unedited
-/// cited source verbatim. This does not write, archive, or grant stale authority.
+/// Plan only: whole-source recovery and supported name spelling have distinct
+/// freshness contracts. This does not write, archive, or grant stale authority.
 enum CanonicalReplay {
     Unchanged,
     Recovered(Suggestion),
+    // Current own citations support these literal names, not the other claims
+    // in a paraphrase. Keep the corrected paragraph pending factual validation.
+    PendingSpelling(Suggestion),
     // A known name still needs correction (or cannot be checked in budget).
     // The old unchanged checkpoint must not certify this paragraph as current.
     Pending,
+}
+
+fn source_has_canonical_name(terms: &super::Terms, text: &str, name: &str) -> bool {
+    if terms
+        .names
+        .get(&name.to_lowercase())
+        .is_none_or(|owner| owner != name)
+    {
+        return false;
+    }
+    let model = super::model_identifier(name).is_some();
+    terms
+        .matcher
+        .iter()
+        .flat_map(|matcher| matcher.find_iter(text))
+        .any(|hit| {
+            // The existing longest exact matcher keeps another declared complete
+            // name opaque; its shared prefix cannot authorize the shorter name.
+            hit.as_str() == name
+                && !text[..hit.start()]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|c| c.is_ascii_alphanumeric() || model && c == '_')
+                && if model {
+                    !super::model_has_continuation(&text[hit.end()..])
+                } else {
+                    !text[hit.end()..]
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_ascii_alphanumeric())
+                }
+        })
 }
 
 fn canonical_source_repair(
@@ -933,6 +997,7 @@ fn canonical_source_repair(
     }
     let mut seen = BTreeSet::new();
     let mut witnesses = 0usize;
+    let mut supported_names = BTreeSet::new();
     for source in &old.sources {
         if !seen.insert(&source.segment_id) {
             return Ok(CanonicalReplay::Pending);
@@ -985,11 +1050,23 @@ fn canonical_source_repair(
             }
         }
         witnesses += usize::from(current.text == body);
+        for edit in edits.values() {
+            if source_has_canonical_name(terms, &current.text, &edit.new) {
+                supported_names.insert(edit.new.as_str());
+            }
+        }
     }
     Ok(if witnesses == 1 {
         let mut updated = old.clone();
         updated.text = body;
         CanonicalReplay::Recovered(updated)
+    } else if edits.values().all(|edit| {
+        terms.writer_names.contains(&edit.new) && supported_names.contains(edit.new.as_str())
+    }) {
+        let mut updated = old.clone();
+        updated.text = body;
+        updated.stale = true;
+        CanonicalReplay::PendingSpelling(updated)
     } else {
         CanonicalReplay::Pending
     })
@@ -1074,6 +1151,7 @@ impl Store {
         let mut repaired = Vec::new();
         let mut canonical_budget = 120_000usize;
         let mut canonical_recovered = false;
+        let mut pending_spelling = false;
         for old in before.iter().filter(|s| s.status == "pending" && !s.stale) {
             let Some(current) = existing.iter().find(|s| s.id == old.id) else {
                 continue;
@@ -1145,6 +1223,10 @@ impl Store {
                         canonical_recovered = true;
                         repaired.push(section);
                     }
+                    CanonicalReplay::PendingSpelling(section) => {
+                        pending_spelling = true;
+                        repaired.push(section);
+                    }
                     CanonicalReplay::Unchanged => {
                         if let Some(section) = replayed {
                             repaired.push(section);
@@ -1169,9 +1251,17 @@ impl Store {
                     params![section.id, serde_json::to_string(section)?, meeting.id],
                 )?;
             }
-            // A new whole-source spelling recovery is not the old checkpoint's
-            // proof of a spelling-only note edit. Leave regeneration pending.
+            if pending_spelling {
+                current_meeting.notes_fingerprint.clear();
+                tx.execute(
+                    "UPDATE meetings SET json=?2 WHERE id=?1",
+                    params![meeting.id, serde_json::to_string(&current_meeting)?],
+                )?;
+            }
+            // Neither whole-source recovery nor pending name spelling proves
+            // reuse of the old checkpoint. Leave regeneration pending.
             if !canonical_recovered
+                && !pending_spelling
                 && repaired.len() == before.len()
                 && existing.len() == before.len()
             {
