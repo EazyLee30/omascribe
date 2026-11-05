@@ -11,6 +11,99 @@ pub(super) struct Replacement {
     pub new: String,
     pub model: bool,
 }
+
+#[cfg(test)]
+mod unchanged_source_tests {
+    use super::*;
+    use crate::Engine;
+    use std::sync::Arc;
+
+    const CANONICAL: &str = "OmaScribe尚未修复，预算仍未批准。";
+    const OLD_MINUTES: &str = "ALMA SCRIBE尚未修复，预算仍未批准。";
+    const NOTE: &str = "我正在测试omascribe的功能";
+
+    fn seed() -> Result<(tempfile::TempDir, Arc<Engine>, UserNote, crate::Snapshot)> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Existing canonical source note spelling")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        let note = engine.save_note(&meeting.id, None, "功能待测试", "document", 0)?;
+        let source = Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 100,
+            end_ms: 1200,
+            text: CANONICAL.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let snapshot = engine.snapshot(&meeting.id)?;
+        engine.store.lock().unwrap().commit_document(
+            &snapshot,
+            std::slice::from_ref(&source),
+            1,
+            vec![Suggestion {
+                id: String::new(),
+                meeting_id: meeting.id.clone(),
+                kind: "section".into(),
+                focus: String::new(),
+                text: OLD_MINUTES.into(),
+                status: "pending".into(),
+                stale: false,
+                sources: vec![Source {
+                    segment_id: source.id.clone(),
+                    revision: 1,
+                    start_ms: source.start_ms,
+                    end_ms: source.end_ms,
+                    quote: CANONICAL.into(),
+                    speaker_name: None,
+                }],
+            }],
+            false,
+        )?;
+        let snapshot = engine.snapshot(&meeting.id)?;
+        Ok((root, engine, note, snapshot))
+    }
+
+    #[test]
+    fn plain_note_repairs_old_alias_minutes_when_current_cited_source_is_already_canonical(
+    ) -> Result<()> {
+        let (_root, engine, note, before) = seed()?;
+        assert!(!before.meeting.auto_notes);
+        engine.save_note(
+            &before.meeting.id,
+            Some(note.id),
+            NOTE,
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.suggestions[0].text, CANONICAL);
+        assert_eq!(after.suggestions[0].id, before.suggestions[0].id);
+        assert_eq!(after.suggestions[0].status, "pending");
+        assert!(!after.suggestions[0].stale);
+        assert_eq!(
+            serde_json::to_value(&after.suggestions[0].sources)?,
+            serde_json::to_value(&before.suggestions[0].sources)?
+        );
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
+        assert_eq!(after.segments[0].revision, 1);
+        let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM inference_jobs",
+            [],
+            |row| row.get(0),
+        )?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
+}
 pub(super) struct SourceChange {
     pub before: Segment,
     pub after: Segment,
