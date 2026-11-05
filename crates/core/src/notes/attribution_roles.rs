@@ -597,9 +597,17 @@ fn named_reports(text: &str, terms: &Terms) -> Result<Vec<NamedReport>> {
     });
     let source_clauses = super::confirmation::sentences(text);
     let quote_ranges = reported_quotes(text);
-    let syntax = opaque_names(text, terms);
+    let people = crate::translation::reported_name_occurrences(text)?;
+    // Only the complete literal person fields are opaque here. The general
+    // translation name mask also protects institutions and can swallow an
+    // attached如果/否定 prefix, which must still qualify this report's scope.
+    let mut syntax = text.as_bytes().to_vec();
+    for person in &people {
+        syntax[person.clone()].fill(b'#');
+    }
+    let syntax = String::from_utf8(syntax).expect("whole person labels masked as ASCII");
     let mut anchors = Vec::new();
-    for person in crate::translation::reported_name_occurrences(text)? {
+    for person in people {
         let Some(title) = ["教授", "博士"]
             .into_iter()
             .find(|title| text[person.end..].starts_with(*title))
