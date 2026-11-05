@@ -126,7 +126,6 @@
     "Canonical recovery still requires whole-source exact support; arbitrary paraphrased prose can remain pending.",
     "Q16 full faithful coherent article availability, source6, Q9 actual audio and installed/native qualification remain open."
   ],
-  "inference_requests_this_turn": 0,
   "model_downloads": 0,
   "component_downloads": 0,
   "installer_builds": 0,
@@ -137,5 +136,11 @@
     "path": "artifacts/note-name-mixed-2026-11-05/independent-review.json",
     "sha256": "79775254cd21a71744ec8fea8e0d2f31948342ca500b79b056f0073aa6c9ce47",
     "scope": "Exact final source including fixture correction. Review-time strict-check status is historical; final root exit codes are in checks."
+  },
+  "name_repair_validation_stage_inference_requests": 0,
+  "later_independent_sampling_trial": {
+    "requests": 4,
+    "evidence": "writer-official-sampling-stop-2026-11-05.json",
+    "scope": "Later stage, not part of name-repair save controls; all cost counted separately."
   }
 }

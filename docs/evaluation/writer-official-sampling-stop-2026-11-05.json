@@ -1,0 +1,242 @@
+{
+  "status": "FAILED_STOPPED_NOT_PROMOTED",
+  "public_base": "3be8d2ffc0b7806184aefccaf5b992d79acaaf74",
+  "private_source": "d466561ed6370e98c03d81ded2f127f52186517a",
+  "source_compile_sha256": "a548a3ac5bd5c76d00dc1126edb881e9a95eb117e0bc248e3ac516789fca5736",
+  "hypothesis": "One current versus official non-thinking sampling-subset pair; original input/prompt/seed42/max440/two sends per job/first-failure stop, no old grammar. No tuning or rerun after failure.",
+  "profile": {
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "top_k": 20,
+    "min_p": 0,
+    "presence_penalty": 1.5
+  },
+  "frozen": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/frozen-inputs.json",
+    "sha256": "8d162469d15c847e2881440ec45a1cd6741d203c8317501d97a6812602265711"
+  },
+  "runner": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/run-pair.py",
+    "sha256": "366c384e648863432945a67b31b0b9798e5df879dbae8371415b416ffc2a2efa"
+  },
+  "source_proof": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/private-source.json",
+    "sha256": "be51c5dc6456ae65d06e904db8db0ef4ba0b788a75619536b70f389e1e704b66"
+  },
+  "build_proof": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/private-built.json",
+    "sha256": "401a4fce81154cedd038b03ac5c857acfa77ca48d372e5ecd637bb2b79f15a03"
+  },
+  "protocol": {
+    "passed": true,
+    "actual_requests": 4,
+    "actual_complete_responses": 4,
+    "all_ordinary": true,
+    "structured_protocol_exercised": false,
+    "corresponding_messages_equal": true,
+    "grammar_and_schema_absent": true,
+    "control_temperature": 0.1,
+    "other_control_sampling_fields": "null: inherited effective values not independently observed",
+    "candidate_actual_fields": "equal five frozen values in all actual requests",
+    "evidence": "producer final request values, request/messages SHA and matching diagnostic/trace; not passive wire capture"
+  },
+  "outcomes": {
+    "control": {
+      "frontier": [
+        0,
+        0
+      ],
+      "requests": 2,
+      "reason": "English source stacking and changed reported-name spacing rejected twice."
+    },
+    "candidate": {
+      "frontier": [
+        0,
+        5
+      ],
+      "requests": 2,
+      "first_draft": "Name spacing rejection; contains ending certainty and mixed festival text.",
+      "committed_raw_sha256": "dd70bcbcc56f6f18c39547854e4594df899590f0bae357771fcbdf9333114dee",
+      "committed_body": "PAMELA FURGO森教授指出，即使主舞台的音乐已经结束，嘉年华仍有部分区域将持续播放音乐直到深夜。邓迪大学的潘 MALE FERGUSON教授指出，如果记者公布嫌疑人的照片等信息，似乎存在危害性。",
+      "oracle_failure": "Missing 当迪大学",
+      "independent_failures": [
+        "Unowned music wrongly attributed to PAMELA, whose actual original reports photo risk.",
+        "PAMELA original photo-risk claim and 当迪大学 omitted.",
+        "Continuation claim lacks its own MAY; ending 即使 is hypothetical, not asserted definite ending."
+      ],
+      "faithful_parts": [
+        "Literal final person spellings and 潘/邓迪 pairing preserved.",
+        "Photo-risk 如果/似乎 preserved for 潘.",
+        "No new task/date/deadline and no adjacent repeated sentence."
+      ],
+      "source6": "Not selected or generated in any actual attempt; FERGUSTON not verified."
+    }
+  },
+  "costs": {
+    "stage_seconds": 24.935,
+    "rows": [
+      {
+        "arm": "control",
+        "coverage": 0,
+        "pass": false,
+        "costs": [
+          {
+            "chat_requests_started": 2,
+            "completed_diagnostic_attempts_observed": 2,
+            "prompt_tokens_observed": 905,
+            "completion_tokens_observed": 332,
+            "diagnostic_attempt_elapsed_ms": 5058,
+            "request_only_ms": null,
+            "total_attempts_known": true,
+            "limitation": "Legacy diagnostic elapsed time includes validation and does not prove pure model compute. Missing usage and request-start traces are unknown."
+          }
+        ],
+        "commands": [
+          {
+            "seconds": 11.547,
+            "exit": 0,
+            "exit_confirmed": true,
+            "cpu_seconds_sampled": 2.01716276,
+            "peak_tree_rss_mib": 1468.3125,
+            "sample_errors": 0
+          }
+        ],
+        "raw": [
+          {
+            "job": 1,
+            "attempt": 1,
+            "sha256": "c2ea16d0562fab83ad4d5473bc050972e649f70070075e4e115b7bd7f13600e1",
+            "bytes": 739,
+            "profile": "current"
+          },
+          {
+            "job": 1,
+            "attempt": 2,
+            "sha256": "6f1e854422199d6c0a56616c4d7cac42a2fc6b3eb0b25cc9f420a08b95515d0e",
+            "bytes": 576,
+            "profile": "current"
+          }
+        ]
+      },
+      {
+        "arm": "candidate",
+        "coverage": 5,
+        "pass": false,
+        "costs": [
+          {
+            "chat_requests_started": 2,
+            "completed_diagnostic_attempts_observed": 2,
+            "prompt_tokens_observed": 905,
+            "completion_tokens_observed": 140,
+            "diagnostic_attempt_elapsed_ms": 2486,
+            "request_only_ms": null,
+            "total_attempts_known": true,
+            "limitation": "Legacy diagnostic elapsed time includes validation and does not prove pure model compute. Missing usage and request-start traces are unknown."
+          }
+        ],
+        "commands": [
+          {
+            "seconds": 8.462,
+            "exit": 0,
+            "exit_confirmed": true,
+            "cpu_seconds_sampled": 1.576403728,
+            "peak_tree_rss_mib": 1492.671875,
+            "sample_errors": 0
+          }
+        ],
+        "raw": [
+          {
+            "job": 1,
+            "attempt": 1,
+            "sha256": "3dee5760f2c29ed3258d65a298657f1e9dc358b9b98f9d0670f4bf5c8d3deff0",
+            "bytes": 357,
+            "profile": "official"
+          },
+          {
+            "job": 1,
+            "attempt": 2,
+            "sha256": "dd70bcbcc56f6f18c39547854e4594df899590f0bae357771fcbdf9333114dee",
+            "bytes": 251,
+            "profile": "official"
+          }
+        ]
+      }
+    ],
+    "quality": "FAIL in both arms. Unequal invalid outputs cannot establish a performance gain. GPU memory, physical memory deduplication, energy and setup/cleanup CPU remain unknown."
+  },
+  "state": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/q16/state.json",
+    "sha256": "1789da7673022a234a55ed7606f80539eba73f783a47decc7b97468adda15f24"
+  },
+  "independent_semantic_review": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/independent-semantic-review.json",
+    "sha256": "9146d0f140b6cdc93f9c294d3505c365db6195c3a5a399c4e4554203e2633de9"
+  },
+  "independent_runtime_cost_review": {
+    "path": "artifacts/writer-official-sampling-2026-11-05/admission-runtime-review.json",
+    "sha256": "75eecf3cb6ddbfaa4316cd2de32b3a96c4fc44f49073ee732dc94745e76840b6"
+  },
+  "private_checks": {
+    "sampling_controls_pass": 4,
+    "automatic_pause_environment_control_pass": 1,
+    "core_pass": 701,
+    "explicit_asset_model_controls_ignored": 13,
+    "desktop_shell_pass": 4,
+    "asr_pass": 18,
+    "cli_pass": 2,
+    "integration_pass": 34,
+    "strict_workspace_clippy_exit": 0,
+    "format_exit": 0,
+    "workspace": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/private-workspace.log",
+      "sha256": "d5bd7dfd9415f7457e856b814ebf7aab1dc7d125cb9e7bff01caf4d21de400e6"
+    },
+    "clippy": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/private-clippy.log",
+      "sha256": "b816abe43cbbffb0513ecdf8c24a1c2bb5837c8832deb5727e571f3dfc9fdff0"
+    },
+    "format": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/private-fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "production_counterexample": {
+    "source": "9c18f86a06763b4450ba10d859a2062080972a63",
+    "base": "3be8d2ffc0b7806184aefccaf5b992d79acaaf74",
+    "exit": 101,
+    "pass": 1,
+    "fail": 2,
+    "scope": "Actual received body and a separate both-MAY-preserved wrong-report relationship pass current PUBLIC ordinary final validation when they must be rejected. Faithful risk reporters plus unowned modal music remains valid. No private sampling/grammar in these controls.",
+    "log": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/production-report-scope-red.log",
+      "sha256": "e8577d7d942d2ebf800cad814b7f5c5da56bd237ccde697f31a767683b10e564"
+    },
+    "next_work": "Repair reported-person/payload ownership against current own source evidence; do not certify a claim from unrelated globally cited passages."
+  },
+  "backend": {
+    "both_arms": "Apple M5 MTL0 Metal, 29/29 layers observed",
+    "fallback_observed": false,
+    "scope": "Actual worker identity/offload only, not installed-app qualification or a resource gain."
+  },
+  "cleanup": {
+    "all_8_owned_pids_gone": true,
+    "12_clone_targets_and_borrowed_model_runtime_directories_released": true,
+    "6_original_model_files_and_2_original_runtime_files": "unchanged before/after full SHA/identity audit",
+    "private_binary_copies": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/private-binaries-cleanup.json",
+      "sha256": "9a2a1cfe2947d7716a61f19f86a0c74b128df112b4e01cd2789c47fc42f16f9e"
+    },
+    "public_cli_asr_restoration": {
+      "path": "artifacts/writer-official-sampling-2026-11-05/public-restoration.json",
+      "sha256": "a30231d5f8fc86cc289e9d4883dc9ab6f5927e632568ca74493db6add902a5d9"
+    },
+    "installed_app_runtime_originals": "preserved"
+  },
+  "release_0_3_5": "unpublished",
+  "remaining": [
+    "Reported-person ownership and faithful article availability.",
+    "Source6 and Q9 actual audio.",
+    "Installed/native Metal and three-platform GPU/CPU fallback acceptance."
+  ],
+  "defaults": "Public source/default sampling unchanged; optional CUDA/Vulkan separate from base installers."
+}
