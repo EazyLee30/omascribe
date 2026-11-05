@@ -516,3 +516,106 @@ fn minutes_cache_does_not_fill_an_old_snapshot_from_a_new_database_source_tuple(
     assert_eq!(old.segments[0].start_ms, 0);
     fixture.assert_unused_worker()
 }
+
+#[test]
+fn minutes_cache_selected_lookup_vm_steps_do_not_scale_with_history() -> Result<()> {
+    fn work(history: u32) -> Result<(u64, u64)> {
+        let fixture = Fixture::new("off", "zh", ENGLISH)?;
+        let mut selected = vec![fixture.source.clone()];
+        {
+            // Bulk fixture preparation is outside the measured cache statement.
+            // Use the real Store schema and bundled SQLite, not a timing model.
+            let mut db = fixture.engine.store.lock().unwrap();
+            let tx = db.conn.transaction()?;
+            for seq in 2..=history {
+                let mut source = fixture.source.clone();
+                source.id = format!("{}:1:{seq}", fixture.meeting.id);
+                source.seq = seq;
+                source.start_ms = u64::from(seq - 1) * 1000;
+                source.end_ms = u64::from(seq) * 1000;
+                tx.execute(
+                    "INSERT INTO segments(id,meeting_id,run,seq,json) VALUES(?1,?2,?3,?4,?5)",
+                    rusqlite::params![
+                        source.id,
+                        source.meeting_id,
+                        source.run,
+                        source.seq,
+                        serde_json::to_string(&source)?
+                    ],
+                )?;
+                if seq <= 5 {
+                    selected.push(source);
+                }
+            }
+            tx.commit()?;
+        }
+        for source in &selected {
+            fixture.save_translation_for(source, "zh", CHINESE, true)?;
+        }
+        let measured = {
+            let db = fixture.engine.store.lock().unwrap();
+            crate::translation::take_minutes_cache_sql_work();
+            crate::translation::take_minutes_cache_counts();
+            let cached = crate::translation::cached_for_minutes(
+                &fixture.engine,
+                &db,
+                &fixture.meeting,
+                &fixture.prefs,
+                "zh",
+                &selected,
+            )?;
+            assert_eq!(cached.len(), 5);
+            assert!(cached.values().all(|row| row.text == CHINESE));
+            assert_eq!(crate::translation::take_minutes_cache_counts(), (5, 0));
+            crate::translation::take_minutes_cache_sql_work()
+        };
+        fixture.assert_unused_worker()?;
+        Ok(measured)
+    }
+    let small = work(1000)?;
+    let large = work(5000)?;
+    eprintln!(
+        "selected cache statement only: history=1000 vm={} fullscan={}; history=5000 vm={} fullscan={}",
+        small.0, small.1, large.0, large.1
+    );
+    assert!(small.0 > 0 && large.0 > 0, "SQLite VM status is required");
+    assert!(small.1 <= 5 && large.1 <= 5);
+    assert!(
+        large.0 <= small.0 + 128,
+        "five selected IDs must drive indexed lookup, not a full meeting/run scan: {small:?} -> {large:?}"
+    );
+    Ok(())
+}
+
+#[test]
+fn minutes_cache_oversized_abstention_clears_unusable_caption_rows_from_retry_identity(
+) -> Result<()> {
+    let fixture = Fixture::new("bilingual", "en", &ENGLISH.repeat(500))?;
+    fixture.save_translation("zh", "Bob将在周四检查报告。", false)?;
+    let public = fixture.public()?;
+    assert_eq!(public.translations[&fixture.source.id].target, "zh");
+    assert_eq!(
+        public.translations[&fixture.source.id].text,
+        "Bob将在周四检查报告。"
+    );
+    crate::translation::take_minutes_cache_counts();
+    let input = input_snapshot(&fixture.engine, &public, &fixture.prefs)?;
+    assert!(input.translations.is_empty());
+    assert_eq!(crate::translation::take_minutes_cache_counts(), (0, 0));
+    let before = fixture.digest(&input)?;
+    fixture.save_translation("zh", "Carol将在周四检查报告。", false)?;
+    let current = fixture.input()?;
+    assert!(current.translations.is_empty());
+    assert_eq!(before, fixture.digest(&current)?);
+    assert_eq!(
+        before,
+        fixture
+            .engine
+            .test_minutes_retry_input(&fixture.public()?)?
+    );
+    assert_ne!(
+        public.translations[&fixture.source.id].text,
+        fixture.public()?.translations[&fixture.source.id].text
+    );
+    fixture.assert_unused_worker()
+}

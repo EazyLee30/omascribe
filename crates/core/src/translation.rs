@@ -534,10 +534,17 @@ std::thread_local! {
     static MINUTES_CACHE_COUNTS: std::cell::Cell<(usize, usize)> = const {
         std::cell::Cell::new((0, 0))
     };
+    static MINUTES_CACHE_SQL_WORK: std::cell::Cell<(u64, u64)> = const {
+        std::cell::Cell::new((0, 0))
+    };
 }
 #[cfg(test)]
 pub(crate) fn take_minutes_cache_counts() -> (usize, usize) {
     MINUTES_CACHE_COUNTS.with(|counts| counts.replace((0, 0)))
+}
+#[cfg(test)]
+pub(crate) fn take_minutes_cache_sql_work() -> (u64, u64) {
+    MINUTES_CACHE_SQL_WORK.with(|counts| counts.replace((0, 0)))
 }
 #[cfg(test)]
 pub(crate) fn record_minutes_cache_validation() {
@@ -649,6 +656,16 @@ fn cached_for_target(
                 result.insert(t.segment_id.clone(), t);
             }
         }
+    }
+    #[cfg(test)]
+    if sources.is_some() {
+        MINUTES_CACHE_SQL_WORK.with(|counts| {
+            let (vm, scans) = counts.get();
+            counts.set((
+                vm + q.get_status(rusqlite::StatementStatus::VmStep) as u64,
+                scans + q.get_status(rusqlite::StatementStatus::FullscanStep) as u64,
+            ));
+        });
     }
     Ok(result)
 }
