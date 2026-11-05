@@ -1,0 +1,221 @@
+{
+  "status": "FAIL_STOPPED_COMPONENT_NAMES_WORK_BUT_ARTICLE_OMITS_A_TOPIC",
+  "candidate_source": "7d0155d849c2c5210ea4e12c40afd9ab963b146b",
+  "source_branch": "https://github.com/EazyLee30/omascribe/tree/codex/writer-initial-name-tokens",
+  "promoted_to_default": false,
+  "installed_app_or_release_changed": false,
+  "public_base": "98277d29544b971b3da15899d611932d22cb47d1",
+  "build_info": {
+    "profile": "release",
+    "revision_at_compile": "7d0155d849c2c5210ea4e12c40afd9ab963b146b",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "b6f42f252dbb31f82a53d3a4461ef14be1b3e95e706f2a774387a90a09489380",
+    "target": "aarch64-apple-darwin"
+  },
+  "fixed_input_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2",
+  "implementation_scope": [
+    "Task-local case-sensitive observed person/declared-term spans encoded before actual prompt tokenization; no unspoken-note entity insertion or general alias resolution.",
+    "Restoration drops all DirectCopy/CompletionBridge permission, then retains existing final language/fact/name/current-citation/Scope/commit checks.",
+    "Only fresh ordinary initial and original-source retry paths; structured repair, state/delta and source preparation stay isolated.",
+    "No sampling/model/default request-budget change."
+  ],
+  "checked_source_phases": [
+    {
+      "source": "48703596ce510bbf0083c95f63475ca6e49b8d7b",
+      "target_pass": 6,
+      "target": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/target.log",
+        "sha256": "e49994235c32fe757a79f7e30dae36b6b443612839779976c8db01723334ba20"
+      },
+      "workspace_result": "Tauri frontendDist absent in isolated checkout before shell tests could run; fixture setup failure, not a product test result",
+      "workspace": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/workspace.log",
+        "sha256": "468ca7d7ff8f3205e6770a06b866a4d8786b3d1cd4e783723c332f847dcbd924"
+      }
+    },
+    {
+      "source": "68682f6067891e2f4fb97cec948704bd4d17047e",
+      "actual_red": "0 pass / 1 fail: token plus new Han person prefix was accepted by public final validation",
+      "log": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/han-prefix-red.log",
+        "sha256": "86ba254791ca7080fc96be9bf50741be60abd3ba6513417b5291c8b7637deabd"
+      }
+    },
+    {
+      "source": "78ec9ffeb181cbb9652e5aea7deff22ac0d4d14b",
+      "target_pass": 9,
+      "workspace_exit": 0,
+      "strict_exit": 0,
+      "qualification": "Subsequent new English positive control refuted complete readiness; these prior checks do not override that RED.",
+      "workspace": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/final-workspace.log",
+        "sha256": "60a596d0c2c530a2099b6f42a2fb97a416ef23c1429250ce3f9986f44aee1d03"
+      }
+    },
+    {
+      "source": "94e11d1e83e29c03ab2e3c33c8826e8969015170",
+      "actual_red": "0 pass / 1 fail: source-identical whitespace-delimited English person reference was wrongly rejected by the codec; baseline original sentence passed",
+      "log": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/english-red.log",
+        "sha256": "1c0babfb5e79529636bb7ed4851ee5d4d2a0b3d9572bedd2bf897536cdd94bd3"
+      }
+    },
+    {
+      "source": "7d0155d849c2c5210ea4e12c40afd9ab963b146b",
+      "target_pass": 12,
+      "core_pass": 722,
+      "core_explicit_ignored": 13,
+      "integration_pass": 34,
+      "desktop_shell_pass": 4,
+      "asr_pass": 18,
+      "cli_pass": 2,
+      "workspace_exit": 0,
+      "strict_clippy_fmt_exit": 0,
+      "target": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/7d0155-target.log",
+        "sha256": "e5e6d357215fe5a355c84ece6553d626358540e09114ff3ee3ed8791fc6d57ee"
+      },
+      "workspace": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/7d0155-workspace.log",
+        "sha256": "b4eace9974dc549574aceb9eea3aba1ac575d315c4506895436bc99fdd958069"
+      },
+      "clippy": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/7d0155-clippy.log",
+        "sha256": "5321399bde89a788a58df6fc7904323d1e9b306a098b15f50ec966e815410c7d"
+      },
+      "format": {
+        "path": "artifacts/writer-initial-name-tokens-2026-11-05/7d0155-fmt.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "actual_trial": {
+    "jobs": 1,
+    "requests": 2,
+    "complete_responses": 2,
+    "cursor_before": 0,
+    "cursor_after": 5,
+    "oracle_passed": false,
+    "manual_quality": "FAIL",
+    "source6_selected_or_generated": false,
+    "first_job_full_text_checkpoint_triggered": false,
+    "reason": "Original oracle already rejected the missing music topic, before any source6 workload or manual continuation file could be admitted.",
+    "positive": "Both raw [N1]/[N2] references restored to PAMELA FURGO森 and 潘 MALE FERGUSON; final institution pairing and if/apparent-risk statements preserved.",
+    "failure": "All anonymous music sources1/3/5 omitted, including both independent MAY claims. The second response nevertheless committed one section and acknowledged cursor5 with all five source citations.",
+    "attempts": [
+      {
+        "attempt": 1,
+        "mode": "compose",
+        "raw_sha256": "af63a435422e29caa4fab960aa751c8a8f80824d7e755fb4c2ee8d7c75edbd4c",
+        "decoded_prose_sha256": "35b866b391021da5914238e4fb210d1c6de62de577cbf3382c9c8861ef6d5fe5",
+        "validation_error": "保留原话的发言或决定主体及其陈述内容。条件或可能事件中被谈及的人物，不因此成为实际发言或决定者；同一个人名不能把别处事实变成其新发言。回到 ORIGINAL SOURCE，新增归属须有该人物在对应原话中的陈述支持。",
+        "codec_observed": {
+          "bindings_sha256": "3de650588996cec77d42d8c0f3ddcadf654c99e89b7e5a61f45fdb3110de99a4",
+          "codec": "writer-literal-names-v1",
+          "input_sha256": "1f8d6f78e3890ef3e88435ea9f656743b65f6b51aca17e67d35f4ca91c23d838",
+          "names": 2,
+          "occurrences": 2
+        }
+      },
+      {
+        "attempt": 2,
+        "mode": "compose",
+        "raw_sha256": "4700afe0abf5078ec665fd4d030dd4c573d182b9f0645b1222652c03e45e3e9f",
+        "decoded_prose_sha256": "6d1c06b52aa72c7f265bf3d4ead8e27f58aa78019515fc303e1845ebd967654d",
+        "validation_error": null,
+        "codec_observed": {
+          "bindings_sha256": "3de650588996cec77d42d8c0f3ddcadf654c99e89b7e5a61f45fdb3110de99a4",
+          "codec": "writer-literal-names-v1",
+          "input_sha256": "c92b1cc75338822b1be0b72d0383b6cde6e7838ba0d093aa0cdbb2bb94bf952d",
+          "names": 2,
+          "occurrences": 2
+        }
+      }
+    ],
+    "committed_body_sha256": "6d1c06b52aa72c7f265bf3d4ead8e27f58aa78019515fc303e1845ebd967654d"
+  },
+  "costs": {
+    "all_prompt_tokens": 996,
+    "all_completion_tokens": 97,
+    "all_chat_trace_ms": 1630,
+    "generation_command_seconds": 7.772,
+    "stage_seconds": 9.948,
+    "generation_cpu_seconds_sampled_lower_bound": 1.107723456,
+    "generation_peak_summed_tree_rss_mib": 1482.40625,
+    "gpu_memory_energy_setup_cleanup_cpu": "unknown",
+    "performance_claim": "none; fewer output tokens came from omitting a substantive topic, and unequal invalid work cannot establish a gain"
+  },
+  "runtime": {
+    "backend_trace": [
+      {
+        "backend": "metal",
+        "budget_mib": 4096,
+        "reused": false,
+        "startup_ms": 5458
+      }
+    ],
+    "layers": [
+      [
+        "29",
+        "29"
+      ]
+    ],
+    "fallback": null,
+    "model_worker_log_present": true,
+    "device_lines": [
+      "0.04.647.255 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free"
+    ],
+    "passed": true
+  },
+  "sampling_scope": "Frozen production source plus observed public request count/raw/usage, not passive wire or private sampling metrics.",
+  "wire_request_digest": null,
+  "new_public_production_counterexample": {
+    "red_source": "24afce6d6099df2aaa2764a08b2746c47057e7d3",
+    "base": "98277d2, without name codec",
+    "result": "PUBLIC ordinary received body remains accepted despite all music omitted; complete double-MAY positive passes. 1 pass / 2 failing tests.",
+    "one_field_control_scope": "The ending-only assertion failed first; continuation-only branch in the same test loop was not reached in this RED.",
+    "log": {
+      "path": "artifacts/writer-source-coverage-2026-11-05/red.log",
+      "sha256": "17e23c8327a41e5413312cd5a32a780ee168af35050d9e88a901a29ed9fb3c34"
+    }
+  },
+  "cleanup": {
+    "all_observed_processes_exited": true,
+    "owned_nine_clone_files_released": true,
+    "original_six_model_two_runtime_sha_and_metadata_unchanged": true,
+    "frontend_fixture": {
+      "released": true,
+      "verified_files": 24,
+      "logical_bytes": 3732006,
+      "physical_bytes_reclaimed": null,
+      "original_source_retained": "/Users/eazylee/build/omascribe/dist"
+    },
+    "model_component_downloads": 0,
+    "installer_builds": 0,
+    "cli_asr_builds": "Fresh private build and actual public restoration performed; an earlier wrong-cwd public cache hit is retained separately.",
+    "public_restoration": {
+      "path": "artifacts/writer-initial-name-tokens-2026-11-05/public-restoration.json",
+      "sha256": "babf241b45f2bafe9de417aa5fd02c3c190d85c9ed114050f3535767b557339a"
+    }
+  },
+  "evidence": {
+    "state": {
+      "path": "artifacts/writer-initial-name-tokens-2026-11-05/run/state.json",
+      "sha256": "a8ec6c2e9571fd86623833a161940b16105060eca5000649c0a8685648ee61ac"
+    },
+    "build": {
+      "path": "artifacts/writer-initial-name-tokens-2026-11-05/build-proof.json",
+      "sha256": "d89596ad7f1b9ce66da4a93033b603f6f4a7ee0abd8e68ce8cae150b7d980aa6"
+    },
+    "frozen": {
+      "path": "artifacts/writer-initial-name-tokens-2026-11-05/frozen-inputs.json",
+      "sha256": "2c48944370fa068ca4fb9da7f0f595bbc76c02409c3f4b2327c3d27577cdda53"
+    },
+    "independent_review": {
+      "path": "artifacts/writer-initial-name-tokens-2026-11-05/independent-semantic-review.json",
+      "sha256": "7bd64d177bf23502be0ddc16ee8235a0ab8bd75060a3ef7c80f9de42d7a1837f"
+    }
+  },
+  "next_action": "Main owns source-driven factual coverage obligations and existing bounded ORIGINAL repair, including commit acknowledgement. Keep this failed name-rendering trial stopped; reuse checked component only after whole-article acceptance. No name-format/sampling tuning matrix. 0.3.5 remains unpublished."
+}
