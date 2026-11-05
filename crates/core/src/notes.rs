@@ -56,6 +56,8 @@ mod week_qualifiers;
 mod writer;
 #[cfg(test)]
 mod writer_final_guard_tests;
+#[cfg(test)]
+mod writer_name_coverage_tests;
 mod writer_names;
 pub(crate) use crate::inference_worker::open_session;
 use crate::Engine;
@@ -133,6 +135,76 @@ fn message_tokens(
         .as_array()
         .context("Invalid tokenizer response")?
         .len())
+}
+
+// Shared by the initial ordinary input and its ORIGINAL-source retry. Build
+// coverage in the model-visible coordinate space before encoding names, then
+// reject unsupported overlap rather than rewriting facts or granting copies.
+fn prepare_writer_input(
+    mut system: String,
+    mut original_content: String,
+    snapshot: &crate::Snapshot,
+    selected: &[crate::Segment],
+    terms: &crate::terminology::Terms,
+    modes: (bool, bool, bool),
+    repair_hint: Option<&str>,
+) -> Result<(writer_names::Prepared, String)> {
+    let coverage = source_coverage::View::new(selected, &snapshot.segments, &snapshot.meeting)?;
+    if modes.0 {
+        coverage.augment_with_accepted(
+            &mut system,
+            &mut original_content,
+            &snapshot.suggestions,
+        )?;
+    }
+    if let Some(hint) = repair_hint {
+        system.push(' ');
+        system.push_str(hint);
+    }
+    let named = writer_names::prepare(
+        system,
+        original_content.clone(),
+        selected,
+        terms,
+        &snapshot.meeting.speaker_names,
+        modes.1,
+        modes.2,
+    )?;
+    if modes.0 {
+        coverage_coordinates_unchanged(&original_content, &named.content)?;
+    }
+    Ok((named, original_content))
+}
+
+fn coverage_slice<'a>(input: &'a Value, field: &Value) -> Option<&'a str> {
+    let entry = input["transcript"]
+        .as_array()?
+        .iter()
+        .find(|entry| entry["id"] == field["source_entry"])?;
+    let basis = field["range_basis"].as_str()?;
+    let start = usize::try_from(field["source_range"][0].as_u64()?).ok()?;
+    let end = usize::try_from(field["source_range"][1].as_u64()?).ok()?;
+    entry[basis].as_str()?.get(start..end)
+}
+
+fn coverage_coordinates_unchanged(original: &str, encoded: &str) -> Result<()> {
+    let original: Value = serde_json::from_str(original)?;
+    let encoded: Value = serde_json::from_str(encoded)?;
+    anyhow::ensure!(
+        original.get("required_source_fields") == encoded.get("required_source_fields"),
+        "姓名编码改变来源覆盖字段，本轮保留原话等待复核"
+    );
+    if let Some(fields) = original["required_source_fields"].as_array() {
+        for field in fields {
+            let before = coverage_slice(&original, field);
+            anyhow::ensure!(
+                before.is_some_and(|value| !value.is_empty())
+                    && before == coverage_slice(&encoded, field),
+                "姓名编码改变来源覆盖坐标，本轮保留原话等待复核"
+            );
+        }
+    }
+    Ok(())
 }
 
 fn source_repair(
@@ -554,23 +626,22 @@ fn generate_inner(
     let name_tokens_enabled =
         state_environment.is_none() && delta.is_none() && !source_preparation_configured;
     let (system, content, original_content, mut prompt_tokens, mut name_plan) = loop {
-        let (mut system, mut original_content) = delta.as_ref().map_or_else(
+        let (system, original_content) = delta.as_ref().map_or_else(
             || writer::prompt(snapshot, &context, &background, &prefs.minutes_language),
             |d| d.prompt(snapshot, &background, &prefs.minutes_language, false),
         );
-        let coverage =
-            source_coverage::View::new(&context.segments, &snapshot.segments, &snapshot.meeting)?;
-        if delta.is_none() {
-            coverage.augment_with_accepted(&mut system, &mut original_content, &snapshot.suggestions)?;
-        }
-        let named = writer_names::prepare(
+        let (named, original_content) = prepare_writer_input(
             system,
-            original_content.clone(),
+            original_content,
+            snapshot,
             &context.segments,
             &terms,
-            &snapshot.meeting.speaker_names,
-            name_tokens_enabled,
-            writer::chinese(snapshot, &prefs.minutes_language),
+            (
+                delta.is_none(),
+                name_tokens_enabled,
+                writer::chinese(snapshot, &prefs.minutes_language),
+            ),
+            None,
         )?;
         let (system, content) = (named.system, named.content);
         let tokens: Value = agent
@@ -631,8 +702,6 @@ fn generate_inner(
                 .unwrap_or(snapshot.meeting.notes_cursor);
         }
     };
-    let coverage =
-        source_coverage::View::new(&context.segments, &snapshot.segments, &snapshot.meeting)?;
     let compose_messages = vec![
         json!({"role":"system","content":system}),
         json!({"role":"user","content":content}),
@@ -1053,7 +1122,7 @@ fn generate_inner(
                         .map(|v| json!({"spellings":v}))
                         .unwrap_or_else(|| json!({}));
                     let narrow = error.to_string().contains("数字或日期");
-                    let (mut repair_system, mut repair_content) = delta.as_ref().map_or_else(
+                    let (repair_system, repair_content) = delta.as_ref().map_or_else(
                         || {
                             writer::prompt_mode(
                                 snapshot,
@@ -1065,13 +1134,6 @@ fn generate_inner(
                         },
                         |d| d.prompt(snapshot, &spelling_context, &prefs.minutes_language, narrow),
                     );
-                    if delta.is_none() {
-                        coverage.augment_with_accepted(
-                            &mut repair_system,
-                            &mut repair_content,
-                            &snapshot.suggestions,
-                        )?;
-                    }
                     let mut repair: Value = serde_json::from_str(&repair_content)?;
                     let attribution = error.to_string().contains("speaker attribution");
                     if attribution {
@@ -1135,14 +1197,18 @@ fn generate_inner(
                     } else {
                         "数字和时间保留原文写法，保留否定、问题和待定状态；省略没有原文支持的内容。"
                     };
-                    let named = writer_names::prepare(
-                        format!("{repair_system} {hint}"),
+                    let (named, _) = prepare_writer_input(
+                        repair_system,
                         serde_json::to_string(&repair)?,
+                        snapshot,
                         &context.segments,
                         &terms,
-                        &snapshot.meeting.speaker_names,
-                        name_tokens_enabled,
-                        writer::chinese(snapshot, &prefs.minutes_language),
+                        (
+                            delta.is_none(),
+                            name_tokens_enabled,
+                            writer::chinese(snapshot, &prefs.minutes_language),
+                        ),
+                        Some(hint),
                     )?;
                     name_plan = named.plan;
                     messages = vec![
