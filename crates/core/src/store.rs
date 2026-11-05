@@ -164,6 +164,15 @@ impl Store {
             &[&m.id, &m.run],
         )
     }
+    /// Admission hint only; the execution path must still read and validate
+    /// the current source snapshot after any slow model verification.
+    pub(crate) fn has_segments(&self, m: &Meeting) -> Result<bool> {
+        Ok(self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM segments WHERE meeting_id=?1 AND run=?2)",
+            params![m.id, m.run],
+            |row| row.get(0),
+        )?)
+    }
     /// Revisit changed evidence only. LIMIT bounds temporary Rust allocations for long meetings.
     pub(crate) fn terminology_candidates(&self, m: &Meeting) -> Result<Vec<Segment>> {
         self.json_query("SELECT s.json FROM term_queue q JOIN segments s ON s.id=q.segment_id WHERE q.meeting_id=?1 AND q.run=?2 ORDER BY q.seq,q.segment_id LIMIT 128", &[&m.id, &m.run])
