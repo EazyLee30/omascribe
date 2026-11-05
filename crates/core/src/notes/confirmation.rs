@@ -39,6 +39,13 @@ fn key(object: &str) -> String {
         .to_ascii_lowercase()
 }
 
+// Match the writer's distinction between apostrophes inside words and quotes.
+fn word_apostrophe(text: &str, at: usize, ch: char) -> bool {
+    matches!(ch, '\'' | '’')
+        && text[..at].ends_with(|c: char| c.is_ascii_alphanumeric())
+        && text[at + ch.len_utf8()..].starts_with(|c: char| c.is_ascii_alphanumeric())
+}
+
 // A condition/quotation may cover commas, semicolons and line wrapping. Only
 // sentence stops outside quotations reset its scope; do not promote an inner
 // phrase into an independent factual update.
@@ -46,7 +53,19 @@ fn sentences(text: &str) -> Vec<Range<usize>> {
     let mut result = Vec::new();
     let mut start = 0;
     let mut close = None;
+    let mut escaped = false;
     for (at, ch) in text.char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if close.is_some() && ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if word_apostrophe(text, at, ch) {
+            continue;
+        }
         if let Some(expected) = close {
             if ch == expected {
                 close = None;
@@ -58,7 +77,7 @@ fn sentences(text: &str) -> Vec<Range<usize>> {
             '‘' => Some('’'),
             '「' => Some('」'),
             '『' => Some('』'),
-            '"' | '`' => Some(ch),
+            '"' | '\'' | '`' => Some(ch),
             _ => None,
         };
         if close.is_none()
@@ -118,7 +137,10 @@ fn frames(text: &str, terms: &Terms) -> Result<Vec<Frame>> {
         let syntax = &syntax[range];
         if syntax.contains([
             '?', '？', '"', '“', '”', '‘', '’', '「', '」', '『', '』', '`',
-        ]) || nonassertive.is_match(syntax)
+        ]) || syntax
+            .char_indices()
+            .any(|(at, ch)| ch == '\'' && !word_apostrophe(syntax, at, ch))
+            || nonassertive.is_match(syntax)
         {
             continue;
         }

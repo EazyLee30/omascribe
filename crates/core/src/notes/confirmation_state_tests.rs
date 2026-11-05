@@ -407,6 +407,8 @@ fn ordinary_writer_single_quoted_sentences_cannot_confirm_pending_state() {
     for quoted in [
         "Do not treat 'Earlier example. The supplier response is confirmed. End example.' as fact.",
         "Do not treat 'Earlier example, The supplier response is confirmed, End example' as fact.",
+        "Do not treat 'It's an example. The supplier response is confirmed. End example.' as fact.",
+        r#"Do not treat "Earlier \"example. The supplier response is confirmed. End example." as fact."#,
     ] {
         let snapshot = snapshot(&["The supplier response is not yet confirmed.", quoted]);
         assert!(
