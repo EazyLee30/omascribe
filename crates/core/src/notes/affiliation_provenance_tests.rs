@@ -134,7 +134,33 @@ fn affiliation_source_budget_counts_all_occurrences_and_total_bytes() {
     let source = snapshot(&vec![ORIGINAL_SOURCES[3]; 65]);
     assert!(super::affiliation::View::new(&source.segments[..64], "m").is_ok());
     assert!(super::affiliation::View::new(&source.segments, "m").is_err());
-    let over = "x".repeat(120_001);
+    // The budget governs relevant affiliation sources, not unrelated prose.
+    let over = format!("{}{}", "x".repeat(120_001), ORIGINAL_SOURCES[3]);
     let source = snapshot(&[&over]);
     assert!(super::affiliation::View::new(&source.segments, "m").is_err());
+}
+
+#[test]
+fn an_explicit_from_prefix_keeps_the_observed_institution_literal() -> Result<()> {
+    let from = format!("来自{}", ORIGINAL_SOURCES[3]);
+    let source = snapshot(&[&from]);
+    ordinary(&source, &[0], ORIGINAL_SOURCES[3], None)?;
+    Ok(())
+}
+
+#[test]
+fn an_earlier_report_payload_condition_does_not_wrap_the_next_affiliation() -> Result<()> {
+    let combined = format!("{}，{}", ORIGINAL_SOURCES[1], ORIGINAL_SOURCES[3]);
+    let source = snapshot(&[&combined]);
+    ordinary(&source, &[0], ORIGINAL_SOURCES[3], None)?;
+    Ok(())
+}
+
+#[test]
+fn unrelated_source_and_body_do_not_enter_affiliation_scan_budget() -> Result<()> {
+    let unrelated = "x".repeat(120_001);
+    let source = snapshot(&[&unrelated]);
+    let view = super::affiliation::View::new(&source.segments, "m")?;
+    view.validate(&unrelated, &[])?;
+    Ok(())
 }
