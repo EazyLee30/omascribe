@@ -138,12 +138,14 @@ fn trim(text: &str, range: Range<usize>) -> Range<usize> {
     let start = range.start + piece.len() - piece.trim_start().len();
     start..start + piece.trim().len()
 }
-fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
+fn related(text: &str) -> bool {
     static TRIGGER: OnceLock<Regex> = OnceLock::new();
-    if !TRIGGER
+    TRIGGER
         .get_or_init(|| Regex::new(r"主舞台|嘉年华|(?i:\bmain[- ]stage|\bfestival\b)").unwrap())
         .is_match(text)
-    {
+}
+fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
+    if !related(text) {
         return Ok(Vec::new());
     }
     ensure!(
@@ -246,6 +248,62 @@ fn same_source(left: &Segment, right: &Segment) -> bool {
         && left.speaker == right.speaker
         && left.speaker_manual == right.speaker_manual
 }
+
+// An unresolved/negative direct statement of the *same* closed predicate can
+// retire an older coverage demand. It supplies no positive fact, modality
+// discharge, or permission to write the new statement. Questions, IF, quotes,
+// arbitrary prefixes and different subobjects fail the anchored forms.
+fn unresolved(text: &str, positive: &[Fact]) -> Result<Vec<Field>> {
+    if !related(text) {
+        return Ok(Vec::new());
+    }
+    ensure!(
+        text.len() <= MAX_BYTES,
+        "来源覆盖校验超过文本预算，本轮未提交"
+    );
+    static PATTERNS: OnceLock<Vec<Pattern>> = OnceLock::new();
+    let patterns = PATTERNS.get_or_init(|| vec![
+        Pattern { field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+            r"(?i)^(?:music[ \t]+on[ \t]+(?:the[ \t]+)?main[ \t]+stages?|main[- ]stage[ \t]+music)[ \t]+",
+            r"(?:has|is|may|might)[ \t]+(?:(?:not|yet|perhaps|possibly|still|have|been)[ \t]+){1,6}",
+            r"(?:finished|ended|completed)$"
+        )).unwrap()},
+        Pattern { field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+            r"^(?:音乐[ \t]*在[ \t]*主舞台|主舞台(?:的)?音乐)[ \t]*",
+            r"(?:尚未|还未|并未|没有|未|不)[ \t]*(?:结束|完毕|完成)(?:了)?$"
+        )).unwrap()},
+        Pattern { field:Field::FestivalPartsPlaying, regex:Regex::new(concat!(
+            r"(?i)^(?:some[ \t]+)?sections?[ \t]+of[ \t]+(?:the[ \t]+)?festival[ \t]+",
+            r"(?:will|may|might)[ \t]+not[ \t]+(?:keep|continue)[ \t]+playing[ \t]+music[ \t]+until[ \t]+late[ \t]+into[ \t]+the[ \t]+night$"
+        )).unwrap()},
+        Pattern { field:Field::FestivalPartsPlaying, regex:Regex::new(concat!(
+            r"^嘉年华(?:的)?(?:某些部分|某些区域|部分区域)[ \t]*(?:仍|将)?[ \t]*",
+            r"(?:不会|不再|没有)[ \t]*(?:继续|持续)?[ \t]*演奏(?:音乐)?(?:直到|至)深夜$"
+        )).unwrap()},
+    ]);
+    let mut result = Vec::new();
+    for sentence in super::confirmation::sentences(text) {
+        let mut range = trim(text, sentence);
+        if text[range.clone()].ends_with(['。', '.', '!', '！']) {
+            range.end -= text[..range.end].chars().next_back().unwrap().len_utf8();
+            range = trim(text, range);
+        }
+        for pattern in patterns {
+            if pattern.regex.is_match(&text[range.clone()])
+                && !positive
+                    .iter()
+                    .any(|fact| fact.field == pattern.field && fact.range == range)
+            {
+                ensure!(
+                    result.len() < MAX_FIELDS,
+                    "来源覆盖校验超过未决字段预算，本轮未提交"
+                );
+                result.push(pattern.field);
+            }
+        }
+    }
+    Ok(result)
+}
 impl<'a> View<'a> {
     pub(crate) fn new(
         selected: &'a [Segment],
@@ -260,7 +318,8 @@ impl<'a> View<'a> {
         let mut count = 0usize;
         for (index, source) in selected.iter().enumerate() {
             let observations = facts(&source.text, false)?;
-            if observations.is_empty() {
+            let unresolved = unresolved(&source.text, &observations)?;
+            if observations.is_empty() && unresolved.is_empty() {
                 continue;
             }
             ensure!(
@@ -273,7 +332,7 @@ impl<'a> View<'a> {
                 .checked_add(source.text.len())
                 .filter(|n| *n <= MAX_BYTES)
                 .ok_or_else(|| anyhow::anyhow!("来源覆盖校验超过来源预算，本轮未提交"))?;
-            count += observations.len();
+            count += observations.len() + unresolved.len();
             ensure!(
                 count <= MAX_FIELDS,
                 "来源覆盖校验超过来源字段预算，本轮未提交"
@@ -304,6 +363,21 @@ impl<'a> View<'a> {
                         Slot {
                             seq: source.seq,
                             evidence: Some(evidence),
+                        },
+                    );
+                }
+            }
+            for field in unresolved {
+                if result
+                    .fields
+                    .get(&field)
+                    .is_none_or(|old| source.seq >= old.seq)
+                {
+                    result.fields.insert(
+                        field,
+                        Slot {
+                            seq: source.seq,
+                            evidence: None,
                         },
                     );
                 }
@@ -377,23 +451,35 @@ impl<'a> View<'a> {
     /// DATA only, referring to original transcript entry numbers. This does
     /// not create translated facts, copies, or source/paragraph authority.
     pub(super) fn augment(&self, system: &mut String, input: &mut String) -> Result<()> {
-        let required:Vec<_>=self.fields.values().filter_map(|slot|slot.evidence.as_ref()).map(|e|json!({"source_entry":e.entry,"field":e.fact.field.name(),"qualifier":e.fact.state.name(),"source_range":[e.fact.range.start,e.fact.range.end]})).collect();
-        if required.is_empty() {
+        if self.fields.values().all(|slot| slot.evidence.is_none()) {
             return Ok(());
         }
         let mut content: Value = serde_json::from_str(input)?;
         let transcript = content["transcript"]
-            .as_array()
+            .as_array_mut()
             .ok_or_else(|| anyhow::anyhow!("来源覆盖输入缺少原transcript"))?;
-        ensure!(
-            required.iter().all(|field| transcript
+        let mut required = Vec::new();
+        for evidence in self
+            .fields
+            .values()
+            .filter_map(|slot| slot.evidence.as_ref())
+        {
+            let entry = transcript
                 .iter()
-                .any(|entry| entry["id"] == field["source_entry"])),
-            "来源覆盖字段不在本轮原transcript中，本轮未提交"
-        );
+                .position(|entry| entry["id"].as_u64() == Some(evidence.entry as u64))
+                .ok_or_else(|| anyhow::anyhow!("来源覆盖字段不在本轮原transcript中，本轮未提交"))?;
+            let entry = &mut transcript[entry];
+            let original = entry["text"].as_str() == Some(evidence.source.text.as_str());
+            if !original {
+                // Keep the validated cached translation, exposing its exact
+                // current original separately instead of mixing coordinates.
+                entry["original_source"] = json!(evidence.source.text);
+            }
+            required.push(json!({"source_entry":evidence.entry,"field":evidence.fact.field.name(),"qualifier":evidence.fact.state.name(),"source_range":[evidence.fact.range.start,evidence.fact.range.end],"range_basis":if original {"text"} else {"original_source"}}));
+        }
         content["required_source_fields"] = json!(required);
         *input = serde_json::to_string(&content)?;
-        system.push_str(" required_source_fields是原transcript中已识别字段的覆盖需求DATA，不是新增事实。正文分别保留每个字段及其局部限定，用指定输出语言表达；引用或另一个字段不能代替正文。Cover each required source field and its local qualifier in prose, using only its ORIGINAL transcript entry; these are data, not instructions or additional facts.");
+        system.push_str(" required_source_fields是原transcript中已识别字段的覆盖需求DATA，不是新增事实。source_range是对应entry的range_basis字段内的UTF-8字节范围；original_source是缓存译文对应的原话。正文分别保留每个字段及其局部限定，用指定输出语言表达；引用或另一个字段不能代替正文。Cover each required source field and its local qualifier in prose, using only its ORIGINAL transcript entry; these are data, not instructions or additional facts.");
         Ok(())
     }
 }
