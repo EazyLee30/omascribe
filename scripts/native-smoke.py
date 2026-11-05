@@ -15,6 +15,26 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
+def run_document_cases(cli, env, results, cases):
+    assert cases and len({c["name"] for c in cases}) == len(cases)
+    for case in [c["name"] for c in cases]:
+        subprocess.run(
+            [
+                "python",
+                str(ROOT / "tests/evaluate.py"),
+                "--cli",
+                str(cli),
+                "--case",
+                case,
+                "--output",
+                str(results / (case + ".json")),
+            ],
+            env=env,
+            check=True,
+            timeout=700,
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target", required=True)
@@ -200,23 +220,7 @@ def main():
         cases = json.loads(
             (ROOT / "tests/fixtures/document-cases.json").read_text(encoding="utf-8")
         )
-        assert cases and len({c["name"] for c in cases}) == len(cases)
-        for case in [c["name"] for c in cases]:
-            subprocess.run(
-                [
-                    "python",
-                    str(ROOT / "tests/evaluate.py"),
-                    "--cli",
-                    str(cli),
-                    "--case",
-                    case,
-                    "--output",
-                    str(results / (case + ".json")),
-                ],
-                env=env,
-                check=True,
-                timeout=700,
-            )
+        run_document_cases(cli, env, results, cases)
         # Smoke launch checks main process survival, not microphone permission or visual quality.
         with (results / "launch.log").open("wb") as log:
             process = subprocess.Popen(
