@@ -1532,13 +1532,19 @@ impl Engine {
                     }
                 }
                 if let Some(before) = before_document {
-                    db.repair_terminology_documents(&m, &before, &source_changes, reusable)?;
+                    db.repair_terminology_documents(
+                        &m,
+                        &before,
+                        &source_changes,
+                        reusable,
+                        terms_changed.then_some(&terms),
+                    )?;
                 }
             }
             // A source may already have the right spelling while an older AI
             // paragraph still has a known alias. Only fresh, whole-source
             // literal repair is permitted here; changed-source replay above
-            // retains its existing revision/citation transaction.
+            // already combines this proof with its revision/citation updates.
             let canonical_documents = if changed == 0 && terms_changed {
                 db.repair_canonical_source_documents(&m, &terms)?
             } else {

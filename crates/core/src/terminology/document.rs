@@ -374,6 +374,179 @@ mod unchanged_source_tests {
         assert_eq!(jobs, 0);
         Ok(())
     }
+
+    fn mixed_seed() -> Result<(tempfile::TempDir, Arc<Engine>, UserNote, crate::Snapshot)> {
+        let (root, engine, note, first) = seed()?;
+        let second = Segment {
+            id: format!("{}:1:2", first.meeting.id),
+            meeting_id: first.meeting.id.clone(),
+            run: 1,
+            seq: 2,
+            start_ms: 1300,
+            end_ms: 2400,
+            text: "ALMA SCRIBE的字幕仍待测试。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&second)?;
+        let snapshot = engine.snapshot(&first.meeting.id)?;
+        let mut sections = snapshot.suggestions.clone();
+        sections.push(Suggestion {
+            id: String::new(),
+            meeting_id: first.meeting.id.clone(),
+            kind: "section".into(),
+            focus: String::new(),
+            text: second.text.clone(),
+            status: "pending".into(),
+            stale: false,
+            sources: vec![Source {
+                segment_id: second.id.clone(),
+                revision: 1,
+                start_ms: second.start_ms,
+                end_ms: second.end_ms,
+                quote: second.text,
+                speaker_name: None,
+            }],
+        });
+        engine.store.lock().unwrap().commit_document(
+            &snapshot,
+            &snapshot.segments,
+            2,
+            sections,
+            false,
+        )?;
+        let before = engine.snapshot(&first.meeting.id)?;
+        Ok((root, engine, note, before))
+    }
+
+    #[test]
+    fn mixed_replay_does_not_grant_old_stale_human_or_invalid_citation_authority() -> Result<()> {
+        for case in ["accepted", "stale", "human", "revision", "quote", "time"] {
+            let (_root, engine, note, seeded) = mixed_seed()?;
+            let mut first = seeded.suggestions[0].clone();
+            match case {
+                "accepted" => first.status = "accepted".into(),
+                "stale" => first.stale = true,
+                "human" => {
+                    engine.store.lock().unwrap().conn.execute(
+                        "INSERT INTO segment_text_edits VALUES(?1,1,'human')",
+                        [&seeded.segments[0].id],
+                    )?;
+                }
+                "revision" => first.sources[0].revision += 1,
+                "quote" => first.sources[0].quote = OLD_MINUTES.into(),
+                "time" => first.sources[0].start_ms += 1,
+                _ => unreachable!(),
+            }
+            engine.store.lock().unwrap().save_suggestion(&first)?;
+            engine.save_note(&seeded.meeting.id, Some(note.id), NOTE, "document", 0)?;
+            let after = engine.snapshot(&seeded.meeting.id)?;
+            assert_eq!(after.suggestions[0].text, OLD_MINUTES, "{case}");
+            assert_eq!(after.suggestions[0].status, first.status, "{case}");
+            assert_eq!(
+                serde_json::to_value(&after.suggestions[0].sources)?,
+                serde_json::to_value(&first.sources)?,
+                "{case}"
+            );
+            assert_eq!(
+                after.suggestions[1].text, "OmaScribe的字幕仍待测试。",
+                "{case}"
+            );
+            assert!(!after.suggestions[1].stale, "{case}");
+            assert_eq!(after.suggestions[1].sources[0].revision, 2, "{case}");
+            assert_eq!(after.segments[0].revision, 1, "{case}");
+            assert_eq!(after.segments[1].revision, 2, "{case}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn mixed_replay_archives_once_stays_dirty_and_is_idempotent_without_inference() -> Result<()> {
+        let (_root, engine, note, before) = mixed_seed()?;
+        let old_history = history(&engine, &before.meeting.id)?;
+        engine.save_note(
+            &before.meeting.id,
+            Some(note.id.clone()),
+            NOTE,
+            "document",
+            0,
+        )?;
+        let updated_history = history(&engine, &before.meeting.id)?;
+        assert_eq!(updated_history.len(), old_history.len() + 1);
+        let archived: Vec<Suggestion> = serde_json::from_str(updated_history.last().unwrap())?;
+        assert_eq!(archived[0].text, OLD_MINUTES);
+        assert_eq!(archived[1].text, "ALMA SCRIBE的字幕仍待测试。");
+        assert_eq!(archived[0].sources[0].revision, 1);
+        assert_eq!(archived[1].sources[0].revision, 1);
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.suggestions[0].text, CANONICAL);
+        assert_eq!(after.suggestions[1].text, "OmaScribe的字幕仍待测试。");
+        assert!(after.meeting.notes_fingerprint.is_empty());
+        assert!(crate::notes::needs_update(&after));
+        assert_eq!(engine.correct_terminology(&before.meeting.id)?, 0);
+        engine.save_note(&before.meeting.id, Some(note.id), NOTE, "document", 0)?;
+        assert_eq!(history(&engine, &before.meeting.id)?, updated_history);
+        let again = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(
+            serde_json::to_value(&again.suggestions)?,
+            serde_json::to_value(&after.suggestions)?
+        );
+        let jobs: i64 = engine.store.lock().unwrap().conn.query_row(
+            "SELECT COUNT(*) FROM inference_jobs",
+            [],
+            |row| row.get(0),
+        )?;
+        assert_eq!(jobs, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn mixed_replay_second_document_write_failure_rolls_back_the_entire_source_transaction(
+    ) -> Result<()> {
+        let (_root, engine, note, before) = mixed_seed()?;
+        let old_history = history(&engine, &before.meeting.id)?;
+        let old_terms = engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&before.meeting.id, "terms")?;
+        engine.store.lock().unwrap().conn.execute_batch(
+            "CREATE TRIGGER reject_second_mixed_repair BEFORE UPDATE ON suggestions
+             WHEN json_extract(NEW.json,'$.text')='OmaScribe的字幕仍待测试。'
+             BEGIN SELECT RAISE(ABORT,'fixture second mixed repair failed'); END;",
+        )?;
+        let error = engine
+            .save_note(&before.meeting.id, Some(note.id), NOTE, "document", 0)
+            .expect_err("second real document update must fail after the first repair write");
+        assert!(format!("{error:#}").contains("fixture second mixed repair failed"));
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.notes[0].content, NOTE);
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
+        assert_eq!(
+            serde_json::to_value(&after.suggestions)?,
+            serde_json::to_value(&before.suggestions)?
+        );
+        assert_eq!(
+            after.meeting.notes_fingerprint,
+            before.meeting.notes_fingerprint
+        );
+        assert_eq!(after.meeting.notes_cursor, before.meeting.notes_cursor);
+        assert_eq!(history(&engine, &before.meeting.id)?, old_history);
+        let db = engine.store.lock().unwrap();
+        assert_eq!(db.cache_dependency(&before.meeting.id, "terms")?, old_terms);
+        let raw_rows: i64 = db.conn.query_row(
+            "SELECT COUNT(*) FROM segment_history WHERE id=?1",
+            [&before.segments[1].id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(raw_rows, 0);
+        assert!(db.conn.is_autocommit());
+        Ok(())
+    }
 }
 pub(super) struct SourceChange {
     pub before: Segment,
@@ -621,129 +794,115 @@ fn repair(
     Some(updated)
 }
 
+/// Plan only: a whole resulting paragraph must be a unique, current, unedited
+/// cited source verbatim. This does not write, archive, or grant stale authority.
+fn canonical_source_repair(
+    conn: &rusqlite::Connection,
+    meeting: &Meeting,
+    terms: &super::Terms,
+    old: &Suggestion,
+    budget: &mut usize,
+) -> Result<Option<Suggestion>> {
+    const MAX_CITATIONS: usize = 64;
+    if old.meeting_id != meeting.id
+        || old.status != "pending"
+        || old.stale
+        || old.sources.is_empty()
+        || old.sources.len() > MAX_CITATIONS
+    {
+        return Ok(None);
+    }
+    let Some(remaining) = budget.checked_sub(old.text.len()) else {
+        *budget = 0;
+        return Ok(None);
+    };
+    *budget = remaining;
+    let (body, replacements) = terms.normalize_with_changes(&old.text);
+    if body == old.text || replacements.is_empty() {
+        return Ok(None);
+    }
+    let mut edits = BTreeMap::new();
+    if !replacements
+        .iter()
+        .all(|replacement| merge(&mut edits, replacement).is_some())
+        || replay(&old.text, &edits)
+            .is_none_or(|(text, used)| text != body || used.len() != edits.len())
+    {
+        return Ok(None);
+    }
+    let mut seen = BTreeSet::new();
+    let mut witnesses = 0usize;
+    for source in &old.sources {
+        if !seen.insert(&source.segment_id) {
+            return Ok(None);
+        }
+        let value: Option<String> = conn
+            .query_row(
+                "SELECT json FROM segments WHERE id=?1 AND meeting_id=?2 AND run=?3",
+                params![source.segment_id, meeting.id, meeting.run],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let origin: Option<String> = conn
+            .query_row(
+                "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
+                [&source.segment_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let Some(value) = value else {
+            return Ok(None);
+        };
+        let current: Segment = serde_json::from_str(&value)?;
+        let Some(remaining) = budget.checked_sub(current.text.len()) else {
+            *budget = 0;
+            return Ok(None);
+        };
+        *budget = remaining;
+        if origin
+            .as_deref()
+            .is_some_and(|origin| origin != "terminology")
+            || !source_matches(source, &current, meeting)
+            || terms.normalize(&current.text) != current.text
+        {
+            return Ok(None);
+        }
+        if origin.is_none() {
+            let original: Option<String> = conn
+                .query_row(
+                    "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
+                    [&source.segment_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if let Some(original) = original {
+                let original: Segment = serde_json::from_str(&original)?;
+                if original.text != current.text {
+                    // Legacy text changes have unknown provenance.
+                    return Ok(None);
+                }
+            }
+        }
+        witnesses += usize::from(current.text == body);
+    }
+    Ok((witnesses == 1).then(|| {
+        let mut updated = old.clone();
+        updated.text = body;
+        updated
+    }))
+}
+
 impl Store {
-    /// A newly written name can repair old AI spelling even when ASR already
-    /// has the canonical text. This adds no fact authority: the whole resulting
-    /// paragraph must be one unique, current, unedited cited source verbatim.
-    /// The caller owns the terminology transaction and source-change replay.
+    /// No source changed; use the same proof, archive and transaction as mixed
+    /// source replay. No independent second document write is permitted.
     pub(super) fn repair_canonical_source_documents(
         &mut self,
         meeting: &Meeting,
         terms: &super::Terms,
     ) -> Result<usize> {
         anyhow::ensure!(!self.conn.is_autocommit(), "名称同步需要当前术语事务");
-        const MAX_BYTES: usize = 120_000;
-        const MAX_CITATIONS: usize = 64;
-        let existing = self.suggestions(&meeting.id)?;
-        let mut budget = MAX_BYTES;
-        let mut repaired = Vec::new();
-        for old in existing.iter().filter(|section| {
-            section.meeting_id == meeting.id
-                && section.status == "pending"
-                && !section.stale
-                && !section.sources.is_empty()
-                && section.sources.len() <= MAX_CITATIONS
-        }) {
-            let Some(remaining) = budget.checked_sub(old.text.len()) else {
-                break;
-            };
-            budget = remaining;
-            let (body, replacements) = terms.normalize_with_changes(&old.text);
-            if body == old.text || replacements.is_empty() {
-                continue;
-            }
-            let mut edits = BTreeMap::new();
-            if !replacements
-                .iter()
-                .all(|replacement| merge(&mut edits, replacement).is_some())
-                || replay(&old.text, &edits)
-                    .is_none_or(|(text, used)| text != body || used.len() != edits.len())
-            {
-                continue;
-            }
-            let mut seen = BTreeSet::new();
-            let mut witnesses = 0usize;
-            let mut valid = true;
-            for source in &old.sources {
-                if !seen.insert(&source.segment_id) {
-                    valid = false;
-                    break;
-                }
-                let value: Option<String> = self
-                    .conn
-                    .query_row(
-                        "SELECT json FROM segments WHERE id=?1 AND meeting_id=?2 AND run=?3",
-                        params![source.segment_id, meeting.id, meeting.run],
-                        |row| row.get(0),
-                    )
-                    .optional()?;
-                let origin: Option<String> = self
-                    .conn
-                    .query_row(
-                        "SELECT origin FROM segment_text_edits WHERE id=?1 ORDER BY revision DESC LIMIT 1",
-                        [&source.segment_id],
-                        |row| row.get(0),
-                    )
-                    .optional()?;
-                let Some(value) = value else {
-                    valid = false;
-                    break;
-                };
-                let current: Segment = serde_json::from_str(&value)?;
-                let Some(remaining) = budget.checked_sub(current.text.len()) else {
-                    valid = false;
-                    break;
-                };
-                budget = remaining;
-                if origin
-                    .as_deref()
-                    .is_some_and(|origin| origin != "terminology")
-                    || !source_matches(source, &current, meeting)
-                    || terms.normalize(&current.text) != current.text
-                {
-                    valid = false;
-                    break;
-                }
-                if origin.is_none() {
-                    let original: Option<String> = self
-                        .conn
-                        .query_row(
-                            "SELECT json FROM segment_history WHERE id=?1 ORDER BY revision LIMIT 1",
-                            [&source.segment_id],
-                            |row| row.get(0),
-                        )
-                        .optional()?;
-                    if let Some(original) = original {
-                        let original: Segment = serde_json::from_str(&original)?;
-                        if original.text != current.text {
-                            // Legacy text changes have unknown provenance.
-                            valid = false;
-                            break;
-                        }
-                    }
-                }
-                witnesses += usize::from(current.text == body);
-            }
-            if valid && witnesses == 1 {
-                let mut updated = old.clone();
-                updated.text = body;
-                repaired.push(updated);
-            }
-        }
-        if !repaired.is_empty() {
-            self.conn.execute(
-                "INSERT INTO document_history(meeting_id,created_at,json) VALUES(?1,?2,?3)",
-                params![
-                    meeting.id,
-                    chrono::Utc::now().to_rfc3339(),
-                    serde_json::to_string(&existing)?
-                ],
-            )?;
-            for section in &repaired {
-                self.save_suggestion(section)?;
-            }
-        }
-        Ok(repaired.len())
+        let before = self.suggestions(&meeting.id)?;
+        self.repair_terminology_documents(meeting, &before, &[], None, Some(terms))
     }
 
     pub(crate) fn note_spelling_edit(
@@ -788,8 +947,9 @@ impl Store {
         before: &[Suggestion],
         changes: &[SourceChange],
         reusable_fingerprint: Option<String>,
+        canonical_terms: Option<&super::Terms>,
     ) -> Result<usize> {
-        if changes.is_empty() {
+        if changes.is_empty() && canonical_terms.is_none() {
             return Ok(0);
         }
         let tx = self.conn.savepoint()?;
@@ -809,6 +969,8 @@ impl Store {
             .collect::<Result<_>>()?;
         drop(query);
         let mut repaired = Vec::new();
+        let mut canonical_budget = 120_000usize;
+        let mut canonical_recovered = false;
         for old in before.iter().filter(|s| s.status == "pending" && !s.stale) {
             let Some(current) = existing.iter().find(|s| s.id == old.id) else {
                 continue;
@@ -842,13 +1004,32 @@ impl Store {
                 }
             }
             if !protected {
-                if let Some(section) = repair(
+                let replayed = repair(
                     old,
                     &current_meeting,
                     &sources,
                     changes,
                     reusable_fingerprint.is_some(),
-                ) {
+                );
+                // Only a paragraph fresh in the captured pre-change document
+                // reaches this point. The current equality above permits this
+                // transaction's stale marker, never preexisting stale/human text.
+                let canonical = canonical_terms
+                    .map(|terms| {
+                        canonical_source_repair(
+                            &tx,
+                            &current_meeting,
+                            terms,
+                            replayed.as_ref().unwrap_or(old),
+                            &mut canonical_budget,
+                        )
+                    })
+                    .transpose()?
+                    .flatten();
+                if let Some(section) = canonical {
+                    canonical_recovered = true;
+                    repaired.push(section);
+                } else if let Some(section) = replayed {
                     repaired.push(section);
                 }
             }
@@ -868,7 +1049,12 @@ impl Store {
                     params![section.id, serde_json::to_string(section)?, meeting.id],
                 )?;
             }
-            if repaired.len() == before.len() && existing.len() == before.len() {
+            // A new whole-source spelling recovery is not the old checkpoint's
+            // proof of a spelling-only note edit. Leave regeneration pending.
+            if !canonical_recovered
+                && repaired.len() == before.len()
+                && existing.len() == before.len()
+            {
                 if let Some(fingerprint) = reusable_fingerprint {
                     current_meeting.notes_fingerprint = fingerprint;
                     tx.execute(
