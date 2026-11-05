@@ -361,6 +361,127 @@ fn cached_music_coverage_ranges_bind_the_model_visible_coordinate_space() -> Res
     Ok(())
 }
 
+// Keep the pre-coverage ordinary production gates explicit here. The new
+// accepted paragraph control must fail only at the new public coverage gate,
+// not because its raw model draft or an existing validator is already invalid.
+fn ordinary_before_source_coverage(
+    source: &crate::Snapshot,
+    raw: &str,
+) -> Result<(String, Vec<crate::Suggestion>)> {
+    use super::{language, retrieval, validation, writer};
+    let terms = crate::terminology::Terms::new(&source.notes, &[]).with_actor_spellings(
+        source.segments.iter().map(|s| s.text.as_str()),
+        source.meeting.speaker_names.values().map(String::as_str),
+    );
+    let context = retrieval::Context {
+        cursor: source.segments.last().unwrap().seq,
+        segments: source.segments.clone(),
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt(source, &context, &serde_json::json!({}), "zh");
+    let composed = writer::body_with_evidence(raw, &input)?;
+    let checked = super::checked_writer_prose(composed.text(), &source.segments, &terms)?;
+    let draft = terms.normalize_draft(&writer::document(
+        &checked,
+        &source.segments,
+        &source.meeting.speaker_names,
+    )?)?;
+    let sections = validation::validate_with_terms(
+        &draft,
+        &source.segments,
+        &source.meeting.id,
+        &source.meeting.speaker_names,
+        &terms,
+    )?;
+    validation::preserve_replaced_sources(&source.suggestions, &source.segments, &sections)?;
+    let body = sections
+        .iter()
+        .map(|section| section.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let original = source
+        .segments
+        .iter()
+        .map(|segment| segment.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    terms.validate_writer_names(&original, &body)?;
+    language::validate_with_source(
+        &body,
+        &crate::translation::source_name_mask(&body, &original, &terms),
+        &original,
+        true,
+    )?;
+    Ok((draft, sections))
+}
+
+#[test]
+fn accepted_current_music_does_not_require_repeating_it_in_new_risk_prose() -> Result<()> {
+    use super::source_coverage::View;
+    let risk = ORIGINAL_SOURCES[1];
+    let mut source = snapshot(&[ORIGINAL_SOURCES[4], risk]);
+    source.meeting.notes_cursor = 1;
+    let (_, mut music) = ordinary_before_source_coverage(&source, BOTH_MUSIC_FIELDS)?;
+    assert_eq!(music.len(), 1);
+    let mut accepted = music.remove(0);
+    accepted.id = "accepted-current-music".into();
+    accepted.status = "accepted".into();
+    accepted
+        .sources
+        .retain(|q| q.segment_id == source.segments[0].id);
+    assert_eq!(accepted.sources.len(), 1);
+    source.suggestions.push(accepted);
+    let before = serde_json::to_value(&source)?;
+
+    // The SAME model draft passes every old ordinary gate, and the exact
+    // projected article covers music in the immutable accepted paragraph.
+    let (_, next) = ordinary_before_source_coverage(&source, risk)?;
+    assert_eq!(next.len(), 1);
+    assert_eq!(next[0].text, risk);
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    assert!(view.validate(&next).is_err());
+    view.validate(source.suggestions.iter().chain(next.iter()))?;
+    assert_eq!(source.suggestions[0].status, "accepted");
+    assert!(!source.suggestions[0].stale);
+
+    let result = ordinary(&source, &[0, 1], risk, None);
+    assert!(result.is_ok(), "a new risk paragraph must not repeat music that remains covered by current accepted text; old gates and the final projection passed: {result:?}");
+    assert_eq!(serde_json::to_value(&source)?, before);
+    Ok(())
+}
+
+#[test]
+fn replaceable_pending_music_cannot_lend_coverage_to_its_risk_replacement() -> Result<()> {
+    use super::source_coverage::View;
+    let risk = ORIGINAL_SOURCES[1];
+    let mut source = snapshot(&[ORIGINAL_SOURCES[4], risk]);
+    source.meeting.notes_cursor = 1;
+    let (_, mut music) = ordinary_before_source_coverage(&source, BOTH_MUSIC_FIELDS)?;
+    let mut pending = music.remove(0);
+    pending.id = "replaceable-current-music".into();
+    pending
+        .sources
+        .retain(|q| q.segment_id == source.segments[0].id);
+    assert_eq!(pending.status, "pending");
+    assert!(pending.sources.iter().all(|q| source
+        .segments
+        .iter()
+        .any(|selected| selected.id == q.segment_id)));
+    source.suggestions.push(pending);
+    let before = serde_json::to_value(&source)?;
+    let (_, next) = ordinary_before_source_coverage(&source, risk)?;
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    // Retaining the pending old body would make a naive union appear covered,
+    // but Store will replace it: only the new risk body survives that projection.
+    view.validate(source.suggestions.iter().chain(next.iter()))?;
+    assert!(view.validate(&next).is_err());
+    let error = ordinary(&source, &[0, 1], risk, None)
+        .expect_err("a pending paragraph that will be replaced cannot provide music coverage");
+    assert!(error.is::<super::source_coverage::Missing>(), "{error:#}");
+    assert_eq!(serde_json::to_value(&source)?, before);
+    Ok(())
+}
+
 #[test]
 fn an_unresolved_update_retires_only_its_field_without_granting_positive_proof() -> Result<()> {
     use super::{retrieval, source_coverage::View, writer};
