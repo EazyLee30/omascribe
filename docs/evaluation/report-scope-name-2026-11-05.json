@@ -98,7 +98,47 @@
       }
     },
     "ci": {
-      "status": "not yet pushed"
+      "source": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+      "same_production_code": true,
+      "runs": [
+        {
+          "conclusion": "success",
+          "databaseId": 42014171641,
+          "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+          "status": "completed",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171641",
+          "workflowName": "Linux compatibility"
+        },
+        {
+          "conclusion": "success",
+          "databaseId": 42014171606,
+          "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+          "status": "completed",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171606",
+          "workflowName": "Optional acceleration components"
+        },
+        {
+          "conclusion": "success",
+          "databaseId": 42014171561,
+          "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+          "status": "completed",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171561",
+          "workflowName": "Website validation"
+        },
+        {
+          "conclusion": "success",
+          "databaseId": 42014171564,
+          "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+          "status": "completed",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171564",
+          "workflowName": "CI"
+        }
+      ],
+      "windows_core": {
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171606/job/127200434717"
+      },
+      "gpu_build_catalog": "skipped"
     },
     "format": {
       "exit": 0,
@@ -121,5 +161,9 @@
     "Unknown, ambiguous, uncited, cross-line or non-literal reports abstain rather than guess. Broad paraphrases may remain pending.",
     "No actual model rerun in this stage. Q16 faithful coherent full article availability, source6, Q9 real-audio names, installed Mac format2 qualification and physical Windows/Linux acceptance remain open.",
     "Stable release remains 0.3.4; 0.3.5 has not been published. CUDA/Vulkan remain signed optional downloads outside installers."
-  ]
+  ],
+  "later_independent_acceptance": {
+    "path": "docs/evaluation/current-report-acceptance-2026-11-05.json",
+    "result": "FAIL: actual current public default still 0→0 after two complete responses; separate stage from zero-request code controls"
+  }
 }
