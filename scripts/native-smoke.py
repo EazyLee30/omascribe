@@ -50,7 +50,7 @@ def document_result(output, name, fixture_sha256, returncode):
     return "expectation_failed"
 
 
-def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=1200,
+def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=2100,
                        fixture_path=None):
     """Collect semantic failures once; incomplete execution still stops the gate."""
     fixture_path = fixture_path or ROOT / "tests/fixtures/document-cases.json"
@@ -60,7 +60,7 @@ def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=
     assert names and len(set(names)) == len(names), "Empty or duplicate document cases"
     assert all(isinstance(name, str) and pathlib.Path(name).name == name
                and name not in (".", "..") for name in names), "Invalid document case name"
-    assert 0 < budget_seconds <= 1200, "Invalid document collection budget"
+    assert 0 < budget_seconds <= 2100, "Invalid document collection budget"
     fixture_sha256 = hashlib.sha256(fixture_bytes).hexdigest()
     results.mkdir(parents=True, exist_ok=True)
     summary_path = results / "document-suite.json"

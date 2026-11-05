@@ -20,7 +20,7 @@ SPEC.loader.exec_module(SMOKE)
 
 
 class DocumentCollectionTests(unittest.TestCase):
-    def exercise(self, outcomes=None, *, budget=1200, duration=0, preexisting=False,
+    def exercise(self, outcomes=None, *, budget=None, duration=0, preexisting=False,
                  final_report_delay=0):
         outcomes = outcomes or {}
         calls = []
@@ -71,8 +71,9 @@ class DocumentCollectionTests(unittest.TestCase):
                     patch.object(pathlib.Path, "write_text", new=write), \
                     patch.object(SMOKE.time, "monotonic", side_effect=lambda: now[0]):
                 try:
+                    options = {} if budget is None else dict(budget_seconds=budget)
                     SMOKE.run_document_cases(pathlib.Path("fixture-cli"), {}, results, cases,
-                                             budget_seconds=budget, fixture_path=fixture)
+                                             fixture_path=fixture, **options)
                     failed_gate = False
                 except RuntimeError:
                     failed_gate = True
@@ -95,6 +96,14 @@ class DocumentCollectionTests(unittest.TestCase):
         self.assertFalse(failed_gate)
         self.assertTrue(summary["complete"])
         self.assertTrue(summary["passed"])
+
+    def test_default_collection_budget_is_35_minutes_with_unchanged_case_limit(self):
+        calls, failed_gate, summary = self.exercise()
+        self.assertFalse(failed_gate)
+        self.assertEqual(summary["budget_seconds"], 2100)
+        self.assertEqual(summary["case_timeout_seconds"], 700)
+        self.assertTrue(all(call[1][-2:] == ["--budget-seconds", "700"] for call in calls))
+        self.assertTrue(all(call[2]["timeout"] == 730 for call in calls))
 
     def test_multiple_semantic_failures_are_retained_without_retries(self):
         calls, failed_gate, summary = self.exercise({name: dict(code=1) for name in ("first", "second")})
