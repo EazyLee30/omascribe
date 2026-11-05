@@ -2,7 +2,11 @@ import { getViewSettings, patchViewSettings } from "./views-client";
 import { translationChoices } from "./translation-ui";
 import { confirmDelete } from "./interactions";
 import { mountUpdates } from "./updates";
-import { accelerationBody, type ComponentCatalog } from "./acceleration-ui";
+import {
+  accelerationBody,
+  supportsAccelerationComponents,
+  type ComponentCatalog,
+} from "./acceleration-ui";
 import { mountMicrophoneTest } from "./microphone-test";
 import { invoke } from "@tauri-apps/api/core";
 import { t, locale, type Locale } from "./i18n";
@@ -305,7 +309,10 @@ export async function mountSettings(
       ]);
       if (!alive || section !== active) return;
       [models, hardware] = values;
-      acceleration = await invoke<ComponentCatalog>("acceleration_components");
+      if (supportsAccelerationComponents(hardware))
+        acceleration = await invoke<ComponentCatalog>(
+          "acceleration_components",
+        );
       if (!alive || section !== active) return;
       content.innerHTML = modelBody();
     } else if (section === "general") {
@@ -803,6 +810,7 @@ export async function mountSettings(
       const pair = root.querySelector("#model-selected-pair");
       if (pair) pair.textContent = modelPairText();
     }
+    if (!supportsAccelerationComponents(hardware)) return;
     const nextAcceleration = await invoke<ComponentCatalog>(
       "acceleration_components",
     );

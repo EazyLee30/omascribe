@@ -39,11 +39,16 @@ export interface ComponentCatalog {
     } | null;
   }[];
 }
+export function supportsAccelerationComponents(
+  hardware: Hardware | null,
+): boolean {
+  return hardware !== null && ["windows", "linux"].includes(hardware.platform);
+}
 export function accelerationBody(
   h: Hardware,
   catalog: ComponentCatalog,
 ): string {
-  if (!["windows", "linux"].includes(h.platform)) return "";
+  if (!supportsAccelerationComponents(h)) return "";
   const devices = h.gpus?.devices || [];
   // Remote display sessions can expose several DXGI adapters for the same GPU
   // model. Keep raw identities in the probe/certificate, summarize models here.
