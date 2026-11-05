@@ -73,9 +73,19 @@ fn patterns() -> &'static [Pattern] {
                 r"(?:has\s+(?:now\s+)?(?:been\s+)?|is\s+(?:now\s+)?)(?:finished|ended|completed)[ \t]*(?:$|[.,;!?])"
             )).unwrap() },
             Pattern { field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
-                r"(?:^|[，,；;])[ \t]*(?:但|不过|然而)?[ \t]*(?P<hyp>即使)?[ \t]*(?P<pre>可能|或许|也许|似乎)?[ \t]*",
+                r"(?:^|[，,；;])[ \t]*(?:但|不过|然而)?[ \t]*",
                 r"(?:音乐[ \t]*在[ \t]*主舞台|主舞台(?:的)?音乐)[ \t]*",
-                r"(?P<modal>可能|或许|也许|似乎)?[ \t]*(?:已经|已)?[ \t]*(?:结束|完毕|完成)(?:了)?[ \t]*(?:$|[，,；;。.!！])"
+                r"(?:已经|已)?[ \t]*(?:结束|完毕|完成)(?:了)?[ \t]*(?:$|[，,；;。.!！])"
+            )).unwrap() },
+            // Negative provenance is local to the exact object/predicate,
+            // independent of a discourse prefix. It grants no positive fact.
+            Pattern { field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+                r"(?P<hyp>即使)?[ \t]*(?:音乐[ \t]*在[ \t]*主舞台|主舞台(?:的)?音乐)[ \t]*",
+                r"(?P<modal>可能|或许|也许|似乎)[ \t]*(?:已经|已)?[ \t]*(?:结束|完毕|完成)(?:了)?[ \t]*(?:$|[，,；;。.!！])"
+            )).unwrap() },
+            Pattern { field:Field::MainStageMusicEnding, regex:Regex::new(concat!(
+                r"(?P<hyp>即使)[ \t]*(?:音乐[ \t]*在[ \t]*主舞台|主舞台(?:的)?音乐)[ \t]*",
+                r"(?:已经|已)?[ \t]*(?:结束|完毕|完成)(?:了)?[ \t]*(?:$|[，,；;。.!！])"
             )).unwrap() },
             Pattern { field:Field::FestivalPartsPlaying, regex:Regex::new(concat!(
                 r"(?i)\bthere\s+(?P<modal>may|might)\s+be\s+(?:some\s+)?sections?\s+of\s+(?:the\s+)?festival\s+",

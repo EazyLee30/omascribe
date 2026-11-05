@@ -1552,9 +1552,6 @@ fn validate_document_inner(
         if let Some(confirmations) = &confirmations {
             confirmations.validate(body, &sources, terms)?;
         }
-        if let Some(modals) = &modals {
-            modals.validate(body, &sources, terms)?;
-        }
         super::relations::validate(body, sources.iter().map(|s| s.quote.as_str()))?;
         let quoted_sources = sources.iter().map(|s| s.quote.as_str()).collect::<Vec<_>>();
         if sources.iter().all(|s| s.speaker_name.is_none()) {
@@ -1742,6 +1739,11 @@ fn validate_document_inner(
         }
         if shares_uncertain_topic && uncertain(&current_evidence) && !uncertain(body) {
             bail!("文档可能遗漏待确认状态，本轮未提交");
+        }
+        // Keep existing attribution/fact/completion failures and bridge checks
+        // authoritative; this additional local veto never replaces those gates.
+        if let Some(modals) = &modals {
+            modals.validate(body, &sources, terms)?;
         }
         if !seen.insert(body.to_string()) {
             continue;
