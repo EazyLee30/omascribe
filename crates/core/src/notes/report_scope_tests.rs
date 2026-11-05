@@ -86,10 +86,12 @@ fn explicit_named_payload_needs_its_own_current_citation_and_unknown_paraphrases
     texts.push(&named);
     let source = snapshot(&texts);
     let body = format!(
-        "PAMELA FURGO森教授指出，{}{}。",
-        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3]
+        "PAMELA FURGO森教授指出，{}{}。{}",
+        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3], MUSIC_WITH_BOTH_MAY
     );
-    ordinary(&source, &[0, 1, 2, 3, 4, 5], &body, Some(&[4, 6]))?;
+    // The named report and the independent anonymous music fact have separate
+    // own-source obligations. Source5 cannot authorize PAMELA's new report.
+    ordinary(&source, &[0, 1, 2, 3, 4, 5], &body, Some(&[4, 5, 6]))?;
     assert!(ordinary(&source, &[0, 1, 2, 3, 4, 5], &body, Some(&[1, 2, 3, 4, 5])).is_err());
     let terms = crate::terminology::Terms::new(&[], &[]);
     let view = super::attribution_roles::ReportedView::new(&source.segments, "m", &terms)?;
@@ -127,8 +129,8 @@ fn explicit_named_payload_needs_its_own_current_citation_and_unknown_paraphrases
 fn qualified_named_reports_do_not_authorize_bare_reports_across_sentence_stops() -> Result<()> {
     let named = format!("当迪大学的 PAMELA FURGO森教授指出{}", MUSIC_WITH_BOTH_MAY);
     let bare = format!(
-        "PAMELA FURGO森教授指出，{}{}。",
-        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3]
+        "PAMELA FURGO森教授指出，{}{}。{}",
+        MUSIC_WITH_BOTH_MAY, ORIGINAL_SOURCES[3], MUSIC_WITH_BOTH_MAY
     );
     for wrapped in [
         format!("如果{named}"),
@@ -147,8 +149,13 @@ fn qualified_named_reports_do_not_authorize_bare_reports_across_sentence_stops()
         let mut texts = ORIGINAL_SOURCES.to_vec();
         texts.push(&wrapped);
         let source = snapshot(&texts);
-        let copied = format!("{wrapped}。{}。", ORIGINAL_SOURCES[3]);
-        ordinary(&source, &[0, 1, 2, 3, 4, 5], &copied, Some(&[4, 6]))?;
+        // Keep the copied qualifier/quotation intact; only the independent
+        // anonymous sentence and its source5 citation cover the bare fact.
+        let copied = format!(
+            "{wrapped}。{}。{}",
+            ORIGINAL_SOURCES[3], MUSIC_WITH_BOTH_MAY
+        );
+        ordinary(&source, &[0, 1, 2, 3, 4, 5], &copied, Some(&[4, 5, 6]))?;
     }
     Ok(())
 }

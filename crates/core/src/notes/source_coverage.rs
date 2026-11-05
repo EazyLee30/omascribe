@@ -117,7 +117,7 @@ fn combined() -> &'static Regex {
     )).unwrap())
 }
 
-fn clause(text: &str, range: Range<usize>) -> Option<Fact> {
+fn clause(text: &str, range: Range<usize>, body: bool) -> Option<Fact> {
     let piece = &text[range.clone()];
     for pattern in patterns() {
         if let Some(capture) = pattern.regex.captures(piece) {
@@ -135,6 +135,23 @@ fn clause(text: &str, range: Range<usize>) -> Option<Fact> {
             });
         }
     }
+    // Observed complete Chinese rendering from the retained received article.
+    // This is presentation-only: original sources cannot acquire a new object
+    // alias or positive update witness from this spelling.
+    static BODY_PLAYING: OnceLock<Regex> = OnceLock::new();
+    if body
+        && BODY_PLAYING
+            .get_or_init(|| {
+                Regex::new(r"^节庆部分[ \t]*可能[ \t]*继续[ \t]*演奏[ \t]*至[ \t]*深夜$").unwrap()
+            })
+            .is_match(piece)
+    {
+        return Some(Fact {
+            field: Field::FestivalPartsPlaying,
+            state: State::May,
+            range,
+        });
+    }
     None
 }
 fn trim(text: &str, range: Range<usize>) -> Range<usize> {
@@ -149,7 +166,7 @@ fn related(text: &str) -> bool {
         .is_match(text)
 }
 fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
-    if !related(text) {
+    if !related(text) && !(body && text.contains("节庆部分")) {
         return Ok(Vec::new());
     }
     ensure!(
@@ -176,7 +193,7 @@ fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
                     range: range.start + part.start()..range.start + part.end(),
                 });
             }
-        } else if let Some(fact) = clause(text, range.clone()) {
+        } else if let Some(fact) = clause(text, range.clone(), body) {
             result.push(fact);
         } else {
             // Only a whole composition of these closed assertions counts.
@@ -208,7 +225,7 @@ fn facts(text: &str, body: bool) -> Result<Vec<Fact>> {
                         }
                     }
                 }
-                if let Some(fact) = clause(text, part) {
+                if let Some(fact) = clause(text, part, body) {
                     parts.push(fact);
                 } else {
                     closed = false;

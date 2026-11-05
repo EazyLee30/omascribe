@@ -620,3 +620,35 @@ fn ordinary_prompt_demands_only_fields_missing_from_current_retained_accepted_te
     }
     Ok(())
 }
+
+#[test]
+fn observed_complete_festival_rendering_is_body_only_and_preserves_both_fields() -> Result<()> {
+    use super::source_coverage::View;
+    // This exact body spelling already occurs, twice, in ACTUAL_RAW_BODY.
+    let observed = "主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。";
+    assert!(super::affiliation_provenance_tests::ACTUAL_RAW_BODY.contains(observed));
+    let source = snapshot(&[ORIGINAL_SOURCES[4]]);
+    let view = View::new(&source.segments, &source.segments, &source.meeting)?;
+    let valid = ordinary(&source, &[0], observed, None)?;
+    for body in [
+        "主舞台音乐可能已结束。",
+        "节庆部分可能继续演奏至深夜。",
+        "如果主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。",
+        "“主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜。”",
+        "主舞台音乐可能已结束，但有人说节庆部分可能继续演奏至深夜。",
+        "主舞台音乐可能已结束，但节庆部分的音响检查可能继续演奏至深夜。",
+        "主舞台音乐可能已结束，但节庆部分可能继续演奏至深夜？",
+        "主舞台音乐可能已结束，但节庆部分继续演奏至深夜。",
+    ] {
+        let mut document = valid.clone();
+        document[0].text = body.into();
+        assert!(
+            view.validate(&document).is_err(),
+            "unsupported complete rendering: {body}"
+        );
+    }
+    // No new original-source witness is derived from the body presentation.
+    let unknown = snapshot(&[observed]);
+    View::new(&unknown.segments, &unknown.segments, &unknown.meeting)?.validate(&[])?;
+    Ok(())
+}
