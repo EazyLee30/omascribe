@@ -547,6 +547,52 @@ mod unchanged_source_tests {
         assert!(db.conn.is_autocommit());
         Ok(())
     }
+
+    #[test]
+    fn mixed_checkpoint_cannot_ack_a_name_alias_paraphrase_without_literal_repair_proof(
+    ) -> Result<()> {
+        let (_root, engine, note, seeded) = mixed_seed()?;
+        engine.save_note(
+            &seeded.meeting.id,
+            Some(note.id.clone()),
+            "ALMA SCRIBE",
+            "document",
+            0,
+        )?;
+        let snapshot = engine.snapshot(&seeded.meeting.id)?;
+        let mut sections = snapshot.suggestions.clone();
+        sections[0].text = "ALMA SCRIBE的修复尚未完成，预算还没有批准。".into();
+        engine.store.lock().unwrap().commit_document(
+            &snapshot,
+            &snapshot.segments,
+            2,
+            sections,
+            false,
+        )?;
+        let before = engine.snapshot(&seeded.meeting.id)?;
+        assert!(!crate::notes::needs_update(&before));
+        assert!(!before.meeting.notes_fingerprint.is_empty());
+        engine.save_note(
+            &before.meeting.id,
+            Some(note.id),
+            "OmaScribe",
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&before.meeting.id)?;
+        assert_eq!(after.suggestions[0].text, before.suggestions[0].text);
+        assert!(
+            after.suggestions[0].stale,
+            "a name correction that lacks whole-source proof must remain pending, not pass the old unchanged checkpoint"
+        );
+        assert_eq!(after.suggestions[1].text, "OmaScribe的字幕仍待测试。");
+        assert!(!after.suggestions[1].stale);
+        assert_eq!(after.segments[0].revision, 1);
+        assert_eq!(after.segments[1].revision, 2);
+        assert!(after.meeting.notes_fingerprint.is_empty());
+        assert!(crate::notes::needs_update(&after));
+        Ok(())
+    }
 }
 pub(super) struct SourceChange {
     pub before: Segment,
