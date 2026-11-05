@@ -558,3 +558,66 @@ fn an_active_photo_fragment_does_not_become_a_whole_original_fact_proof() -> Res
     assert_eq!(visible["transcript"][0]["text"], fragment);
     Ok(())
 }
+
+#[test]
+fn prepared_current_music_possible_completion_survives_the_ordinary_final_gate() -> Result<()> {
+    // Exact already received wording from B; only its runtime source binding
+    // is now the complete current source5, rather than typo-bearing source3.
+    let received =
+        include_str!("../../../../tests/fixtures/received-source-preparation-2026-10-30.json");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(received.as_bytes())),
+        "c0245e7b88cbe230e3f851160b7ffb4f370d06d96948d8c26dbbd111103ac7e5"
+    );
+    let mut targets: Value = serde_json::from_str(received)?;
+    let complete = targets["B"].as_str().unwrap().to_owned();
+    assert!(complete.contains("可能已经完成"));
+    assert_eq!(complete.matches("可能").count(), 2);
+    targets["C"] = complete.clone().into();
+    let source = snapshot(&ORIGINAL_SOURCES);
+    assert_eq!(source.segments[4].text, ORIGINAL_SOURCES[4]);
+    assert_eq!(source.segments[4].revision, 1);
+    let terms = Terms::new(&[], &[]).with_actor_spellings(
+        source.segments.iter().map(|s| s.text.as_str()),
+        std::iter::empty(),
+    );
+    let context = retrieval::Context {
+        segments: source.segments.clone(),
+        cursor: 5,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&source, &context, &json!({}), "zh", false);
+    let translation = source_language::Plan::new(&input, &source.segments, true, &terms)?.unwrap();
+    let prepared=translation.prepare(&targets.to_string(),&source.segments,&terms)
+        .expect("the genuine source-language preparation accepts this locally qualified past completion");
+    let nodes = fact_nodes::Plan::from_prepared(&prepared, &input, &source, &terms, true)?;
+    let visible: Value = serde_json::from_str(nodes.input())?;
+    assert_eq!(visible["fact_nodes"][2]["source_entry"], 5);
+    assert_eq!(visible["fact_nodes"][2]["text"], complete);
+    // Ordinary n/t remains ordinary, even beside an immutable fact node.
+    let raw =
+        json!({"paragraphs":[{"parts":[{"f":1},{"f":2},{"f":3},{"n":1},{"t":RISK}]}]}).to_string();
+    let rendered = nodes.render(&raw, nodes.input(), &source, &terms, true)?;
+    let composed = rendered.composition();
+    assert!(composed.input().is_none());
+    assert!(composed.copies().is_empty());
+    assert!(composed.text().contains(&complete));
+    assert_eq!(composed.text().matches("可能").count(), 2);
+    let mut wrong_revision = source.clone();
+    wrong_revision.segments[4].revision += 1;
+    assert!(nodes
+        .render(&raw, nodes.input(), &wrong_revision, &terms, true)
+        .is_err());
+    let sections=validate(&source,&terms,&nodes,&raw)
+        .expect("a complete current-source prepared MAY clause must survive the ordinary final checks without granting n/t copy authority");
+    assert!(sections
+        .iter()
+        .any(|section| section.text.contains(&complete)
+            && section
+                .sources
+                .iter()
+                .any(|quote| quote.segment_id == source.segments[4].id
+                    && quote.revision == 1
+                    && quote.quote == ORIGINAL_SOURCES[4])));
+    Ok(())
+}
