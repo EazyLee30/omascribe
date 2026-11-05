@@ -635,13 +635,21 @@ impl Engine {
         id: &str,
         version: Option<&str>,
     ) -> Result<()> {
+        self.verify_acceleration_version_with_model(id, version, |model| self.verified_model(model))
+    }
+    fn verify_acceleration_version_with_model(
+        self: &Arc<Self>,
+        id: &str,
+        version: Option<&str>,
+        verify_model: impl FnOnce(&str) -> Result<crate::model_integrity::Receipt>,
+    ) -> Result<()> {
         self.require_available()?;
         self.configuration_idle()?;
         if self.note_busy.load(Ordering::SeqCst) {
             bail!("Wait for local inference to finish");
         }
         let selected_model = self.preferences.lock().unwrap().llm_model.clone();
-        let receipt = self.verified_model(&selected_model)?;
+        let receipt = verify_model(&selected_model)?;
         let gate = self.config_lock.lock().unwrap();
         self.require_available()?;
         self.configuration_idle()?;
@@ -820,6 +828,167 @@ mod tests {
             manifest,
             _root: root,
         })
+    }
+
+    // The production wrapper uses its pinned catalog. Reuse the same Engine
+    // admission body with a tiny descriptor at that one boundary, so the real
+    // integrity cache hashes bytes without weights, GPU, worker or network.
+    // The original backend/component errors must still be reached; an invalid
+    // model stopping before those errors is not evidence for this regression.
+    #[test]
+    fn explicit_cpu_component_test_rejects_before_model_hashing() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        fixture.engine.preferences.lock().unwrap().inference_backend = "cpu".into();
+        assert_eq!(fixture.engine.model_integrity.hashed_bytes(), 0);
+        let error = fixture
+            .engine
+            .verify_acceleration_version_with_model("missing-preflight-component", None, |id| {
+                assert_eq!(id, fixture.model.id);
+                fixture
+                    .engine
+                    .model_integrity
+                    .verify(&fixture.model_directory, &fixture.model)
+            })
+            .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Choose Automatic inference before testing optional acceleration"
+        );
+        assert_preflight_left_inference_idle(&fixture.engine);
+        assert_eq!(
+            fixture.engine.model_integrity.hashed_bytes(),
+            0,
+            "explicit CPU rejection must not read any model bytes"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn absent_component_test_rejects_before_model_hashing() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        let id = "missing-preflight-component";
+        let version = Some("0.0.0-preflight");
+        let expected = components::installed_component(&fixture.engine.root, id, version)
+            .unwrap_err()
+            .to_string();
+        assert_eq!(fixture.engine.model_integrity.hashed_bytes(), 0);
+        let error = fixture
+            .engine
+            .verify_acceleration_version_with_model(id, version, |model| {
+                assert_eq!(model, fixture.model.id);
+                fixture
+                    .engine
+                    .model_integrity
+                    .verify(&fixture.model_directory, &fixture.model)
+            })
+            .unwrap_err();
+        assert_eq!(error.to_string(), expected);
+        assert_preflight_left_inference_idle(&fixture.engine);
+        assert_eq!(
+            fixture.engine.model_integrity.hashed_bytes(),
+            0,
+            "absent component rejection must not read any model bytes"
+        );
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "explicit pinned local GGUF copy/hash admission control; never runs a model"]
+    fn live_explicit_cpu_component_test_rejects_before_model_hashing() -> Result<()> {
+        let original = std::path::PathBuf::from(std::env::var("OMASCRIBE_TEST_GGUF")?);
+        let original_before = fs::symlink_metadata(&original)?;
+        anyhow::ensure!(
+            original_before.file_type().is_file(),
+            "GGUF must be a regular file"
+        );
+        let model = crate::models::model("qwen3-1.7b")?;
+        anyhow::ensure!(model.files.len() == 1 && model.format == "gguf");
+        let asset = &model.files[0];
+        anyhow::ensure!(
+            original_before.len() == asset.bytes,
+            "GGUF size differs from catalog"
+        );
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        {
+            let mut prefs = engine.preferences.lock().unwrap();
+            prefs.llm_model.clone_from(&model.id);
+            prefs.inference_backend = "cpu".into();
+        }
+        let directory = root.path().join("model-store").join(&model.id);
+        fs::create_dir_all(&directory)?;
+        let owned = directory.join(&asset.name);
+        #[cfg(target_os = "macos")]
+        {
+            let mut command = Command::new("/bin/cp");
+            command.arg("-c").arg(&original).arg(&owned);
+            crate::probe::capture(&mut command, Duration::from_secs(30), 4096)?;
+        }
+        #[cfg(not(target_os = "macos"))]
+        fs::copy(&original, &owned)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let copied = fs::symlink_metadata(&owned)?;
+            assert_ne!(
+                (original_before.dev(), original_before.ino()),
+                (copied.dev(), copied.ino()),
+                "the task must own an independent copy, not a hard link"
+            );
+        }
+        // Verify the owned fixture before observing the public admission path.
+        // These explicit setup bytes are not included in Engine's hash counter.
+        let mut hash = Sha256::new();
+        let mut input = fs::File::open(&owned)?;
+        let mut buffer = [0u8; 64 * 1024];
+        loop {
+            let n = input.read(&mut buffer)?;
+            if n == 0 {
+                break;
+            }
+            hash.update(&buffer[..n]);
+        }
+        drop(input);
+        assert_eq!(format!("{:x}", hash.finalize()), asset.sha256);
+        assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+        let error = engine
+            .verify_acceleration_version("missing-preflight-component", None)
+            .unwrap_err();
+        assert_preflight_left_inference_idle(&engine);
+        let hashed_bytes = engine.model_integrity.hashed_bytes();
+        println!("PUBLIC_PREFLIGHT_MODEL_BYTES_HASHED={hashed_bytes}");
+        // Release receipts before deleting the task-owned copy on Windows, too.
+        drop(engine);
+        fs::remove_dir_all(root.path().join("model-store"))?;
+        assert!(!owned.exists());
+        let original_after = fs::symlink_metadata(&original)?;
+        assert_eq!(original_after.len(), original_before.len());
+        assert_eq!(original_after.modified()?, original_before.modified()?);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            assert_eq!(original_after.dev(), original_before.dev());
+            assert_eq!(original_after.ino(), original_before.ino());
+            assert_eq!(original_after.ctime(), original_before.ctime());
+            assert_eq!(original_after.ctime_nsec(), original_before.ctime_nsec());
+        }
+        assert_eq!(
+            error.to_string(),
+            "Choose Automatic inference before testing optional acceleration"
+        );
+        assert_eq!(
+            hashed_bytes, 0,
+            "public CPU rejection must not hash weights"
+        );
+        Ok(())
+    }
+
+    fn assert_preflight_left_inference_idle(engine: &Engine) {
+        assert!(!engine.note_busy.load(Ordering::SeqCst));
+        assert!(!engine.status.lock().unwrap().notes_busy);
+        assert!(!engine.acceleration_test_running());
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
     }
 
     fn selection_snapshot(fixture: &SelectionFixture) -> SelectorEnv {
