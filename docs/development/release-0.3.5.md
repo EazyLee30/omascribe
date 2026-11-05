@@ -11,6 +11,11 @@
 | 三端候选交付 | 各平台负责人 | `c6706b6` 四目标原生构建步骤成功，安装后离线纪要验收失败，模型复用小更新与交付包上传均跳过；只有4份诊断产物，没有可交付候选包。新源码的缓存与收集修复须先完成同源CI，再选择新候选；仍需真实录音、停止、原生窗口、GPU/CPU回退及安装升级验收。[本轮范围与检查](../evaluation/minutes-target-cache-and-native-collection-2026-11-06.json)。 |
 | 运行时缓存与同输入重复失败成本 | 主线程／调度与运行时 | **有限 Mac 自动暂停已集成**：仅官方 format2 Apple arm64 GGUF CPU/Metal 的已观察实际执行，普通自动任务用尽两次完整响应后仍明确校验拒绝，才等待新输入或手动整理。输入、模型、配置或运行时变化解除暂停；未知身份、Windows/Linux/MLX、回退及非语义失败继续原退避。`dfe2e341` 本地 623 核心 / 12 忽略、2 CLI、34 集成及严格工作区检查通过，同 SHA Windows-core、Linux、Ubuntu22、prepare、validate CI 均通过。实际安装应用的正向资格、无重复请求及资源收益尚未验收；Q16 未因此解决。[原红绿测、Windows 修订与边界](../evaluation/automatic-minutes-rejection-2026-11-05.json)。既有[运行时凭据修复](../evaluation/runtime-receipt-2026-10-31.json)保留；完整依赖／驱动、mmap／远程文件系统仍开放。 |
 
+## 11 月 6 日的同源验收与 GPU 预览
+
+- 本机 M5 用 `666f37e` 跑完原 68 项纪要，66 项通过，第 35 和 56 项失败，旧候选未执行的 33 项全部覆盖。第 35 项两份原稿都拆开了报道人姓名，并保留未译英文，未提交正文。第 56 项已经提交，但把 “this Tuesday” 写成了“周二”。本轮使用夹具转写和旧版 Metal 运行时，不能替代原生安装或真实录音验收。78 次 worker 事件均记录为 Metal，本次没有对照速度结论。[语料与资源结果](../evaluation/gpu-preview-and-full-document-2026-11-06.json)。
+- `baa3652` 为检测到显卡的 Windows/Linux x86_64 增加签名预览目录入口。检查只取 15,445 字节的清单。用户单独选择下载，下载绑定当时展示的版本和渠道。已签名的 CUDA/Vulkan 包继续独立分发，资格测试通过后才可启用。基础配方保留 CPU 与 Apple Silicon Metal。本轮完成 735 核心、44 集成、前端构建及 20 项 Chromium 检查，设备速度、驱动回退与新安装包仍待验收。[预览与测试记录](../evaluation/gpu-preview-and-full-document-2026-11-06.json)。
+
 ## 已完成范围
 
 以下历史结果保留各自源码身份，不替代当前共享源码的完整验收：
