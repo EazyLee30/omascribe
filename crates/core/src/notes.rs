@@ -1082,6 +1082,13 @@ fn generate_inner(
                 let body = checked_writer_prose(&repaired, &context.segments, &terms)?;
                 if let (Some(plan), Some(Ok(rendered))) = (&node_plan, &node_rendered) {
                     plan.check_rendered(rendered, &body)?;
+                    completion_bridge = source_language::CompletionBridge::from_fact_nodes(
+                        plan,
+                        rendered,
+                        node_snapshot.as_ref().context("Missing fact-node scope")?,
+                        &terms,
+                        writer::chinese(snapshot, &prefs.minutes_language),
+                    )?;
                 }
                 if let (Some(prepared), Some(Ok(composed))) =
                     (prepared_evidence.as_ref(), composition.as_ref())

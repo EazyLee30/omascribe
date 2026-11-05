@@ -22,6 +22,7 @@ struct Node {
     range: Range<usize>,
     text: String,
     source: Source,
+    translated: bool,
 }
 pub(super) struct Plan {
     input: String,
@@ -38,7 +39,9 @@ pub(super) struct Plan {
 pub(super) struct Rendered {
     body: String,
     occurrences: Vec<(usize, Range<usize>)>,
+    binding: String,
 }
+pub(super) type CompletionWords = (String, Vec<(Range<usize>, Source)>);
 
 fn source_value(snapshot: &Snapshot) -> Result<Value> {
     Ok(serde_json::to_value(&snapshot.segments)?)
@@ -206,6 +209,7 @@ impl Plan {
                     raw: actual[range.clone()].into(),
                     range,
                     text,
+                    translated: prepared && actual != current,
                     source: Source {
                         segment_id: source.id.clone(),
                         revision: source.revision,
@@ -359,6 +363,21 @@ impl Plan {
     pub(super) fn metrics(&self) -> Value {
         json!({"mechanism":"prepared-qualified-nodes-v1","nodes":self.nodes.len(),"names":self.names.len(),"input_sha256":format!("{:x}",Sha256::digest(self.input.as_bytes())),"prepared_input_sha256":format!("{:x}",Sha256::digest(self.prepared_input.as_bytes())),"sources_sha256":format!("{:x}",Sha256::digest(self.sources.to_string().as_bytes()))})
     }
+    fn binding(&self) -> String {
+        format!(
+            "{:x}",
+            Sha256::digest(
+                serde_json::to_vec(&(
+                    &self.input,
+                    &self.sources,
+                    &self.speakers,
+                    &self.terms,
+                    self.chinese
+                ))
+                .expect("fact-node scope")
+            )
+        )
+    }
     pub(super) fn render(
         &self,
         raw: &str,
@@ -487,9 +506,17 @@ impl Plan {
             used.len() == self.nodes.len(),
             "Missing qualified fact node"
         );
-        Ok(Rendered { body, occurrences })
+        Ok(Rendered {
+            body,
+            occurrences,
+            binding: self.binding(),
+        })
     }
     pub(super) fn check_rendered(&self, rendered: &Rendered, body: &str) -> Result<()> {
+        ensure!(
+            rendered.binding == self.binding(),
+            "Qualified fact-node rendering scope changed"
+        );
         ensure!(
             rendered.body == body,
             "Qualified fact-node presentation changed"
@@ -501,6 +528,61 @@ impl Plan {
             );
         }
         Ok(())
+    }
+    /// Only actual translated f occurrences can supply the existing narrow
+    /// uncertain-completion exception. Ordinary t/n words are never scanned.
+    pub(super) fn completion_words(
+        &self,
+        rendered: &Rendered,
+        current: &Snapshot,
+        terms: &Terms,
+        chinese: bool,
+    ) -> Result<Option<CompletionWords>> {
+        self.check(&self.input, current, terms, chinese)?;
+        self.check_rendered(rendered, &rendered.body)?;
+        if !chinese {
+            return Ok(None);
+        }
+        let mut paragraph = None;
+        let mut words = Vec::new();
+        for (index, range) in &rendered.occurrences {
+            let node = &self.nodes[*index];
+            if !node.translated
+                || !super::completion::hedged_completion_covers(
+                    &super::validation::completion_name_mask(
+                        &node.source.quote,
+                        &node.source.quote,
+                        terms,
+                    ),
+                    &super::validation::completion_name_mask(&node.text, &node.source.quote, terms),
+                )
+            {
+                continue;
+            }
+            let start = rendered.body[..range.start]
+                .rfind("\n\n")
+                .map_or(0, |at| at + 2);
+            let end = rendered.body[range.end..]
+                .find("\n\n")
+                .map_or(rendered.body.len(), |at| range.end + at);
+            for word in ["已完成", "已经完成"] {
+                for (at, _) in node.text.match_indices(word) {
+                    let scope = start..end;
+                    ensure!(
+                        paragraph.as_ref().is_none_or(|old| old == &scope),
+                        "Qualified completion spans different paragraphs"
+                    );
+                    paragraph = Some(scope);
+                    let local = range.start + at - start..range.start + at + word.len() - start;
+                    ensure!(
+                        rendered.body[start..end].get(local.clone()) == Some(word),
+                        "Qualified completion word range changed"
+                    );
+                    words.push((local, node.source.clone()));
+                }
+            }
+        }
+        Ok(paragraph.map(|range| (rendered.body[range].to_owned(), words)))
     }
     pub(super) fn check_sections(
         &self,

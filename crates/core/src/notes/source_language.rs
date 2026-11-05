@@ -63,6 +63,29 @@ pub(super) struct CompletionBridge {
 }
 
 impl CompletionBridge {
+    /// A separate sealed producer; the legacy whole-transcript-copy factory
+    /// below is deliberately unchanged. Callers cannot supply word ranges.
+    pub(super) fn from_fact_nodes(
+        plan: &super::fact_nodes::Plan,
+        rendered: &super::fact_nodes::Rendered,
+        current: &crate::Snapshot,
+        terms: &Terms,
+        chinese: bool,
+    ) -> Result<Option<Self>> {
+        let Some((body, words)) = plan.completion_words(rendered, current, terms, chinese)? else {
+            return Ok(None);
+        };
+        Ok(Some(Self {
+            body,
+            permits: words
+                .into_iter()
+                .map(|(word, source)| CompletionPermit { word, source })
+                .collect(),
+            sources: sources_value(&current.segments)?,
+            terms: terms_scope(terms),
+            target: if chinese { "zh" } else { "en" },
+        }))
+    }
     pub(super) fn check_scope(
         &self,
         current_sources: &[Segment],

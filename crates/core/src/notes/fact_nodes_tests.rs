@@ -54,6 +54,8 @@ fn validate(
     assert!(composed.copies().is_empty());
     let checked = super::checked_writer_prose(composed.text(), &source.segments, terms)?;
     nodes.check_rendered(&rendered, &checked)?;
+    let bridge =
+        source_language::CompletionBridge::from_fact_nodes(nodes, &rendered, source, terms, true)?;
     let draft = terms.normalize_draft(&writer::document(
         &checked,
         &source.segments,
@@ -66,7 +68,7 @@ fn validate(
         terms,
         &source.meeting.id,
         true,
-        None,
+        bridge.as_ref(),
     )?;
     nodes.check_sections(&rendered, &sections)?;
     Ok(sections)
@@ -619,5 +621,114 @@ fn prepared_current_music_possible_completion_survives_the_ordinary_final_gate()
                 .any(|quote| quote.segment_id == source.segments[4].id
                     && quote.revision == 1
                     && quote.quote == ORIGINAL_SOURCES[4])));
+    Ok(())
+}
+
+#[test]
+fn sealed_completion_permits_cover_only_current_f_words_not_ordinary_statuses() -> Result<()> {
+    let mut targets: Value = serde_json::from_str(include_str!(
+        "../../../../tests/fixtures/received-source-preparation-2026-10-30.json"
+    ))?;
+    targets["C"] = targets["B"].clone();
+    let source = snapshot(&ORIGINAL_SOURCES);
+    let terms = Terms::new(&[], &[]).with_actor_spellings(
+        source.segments.iter().map(|s| s.text.as_str()),
+        std::iter::empty(),
+    );
+    let context = retrieval::Context {
+        segments: source.segments.clone(),
+        cursor: 5,
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt_mode(&source, &context, &json!({}), "zh", false);
+    let translation = source_language::Plan::new(&input, &source.segments, true, &terms)?.unwrap();
+    let prepared = translation.prepare(&targets.to_string(), &source.segments, &terms)?;
+    let nodes = fact_nodes::Plan::from_prepared(&prepared, &input, &source, &terms, true)?;
+    let rendered = nodes.render(&article(), nodes.input(), &source, &terms, true)?;
+    let composed = rendered.composition();
+    assert!(composed.input().is_none() && composed.copies().is_empty());
+    let body = composed.text();
+    let at = body.find("已经完成").unwrap();
+    let range = at..at + "已经完成".len();
+    let bridge = source_language::CompletionBridge::from_fact_nodes(
+        &nodes, &rendered, &source, &terms, true,
+    )?
+    .unwrap();
+    let segment = &source.segments[4];
+    let quote = crate::Source {
+        segment_id: segment.id.clone(),
+        revision: segment.revision,
+        start_ms: segment.start_ms,
+        end_ms: segment.end_ms,
+        quote: segment.text.clone(),
+        speaker_name: None,
+    };
+    assert!(bridge.permits(body, range.clone(), std::slice::from_ref(&quote)));
+    assert!(!bridge.permits(body, at + 1..range.end, std::slice::from_ref(&quote)));
+    assert!(!bridge.permits(
+        &format!("{body} 已修改。"),
+        range.clone(),
+        std::slice::from_ref(&quote)
+    ));
+    for field in 0..6 {
+        let mut wrong = quote.clone();
+        match field {
+            0 => wrong.segment_id = source.segments[0].id.clone(),
+            1 => wrong.revision += 1,
+            2 => wrong.start_ms += 1,
+            3 => wrong.end_ms += 1,
+            4 => wrong.quote.push('改'),
+            _ => wrong.speaker_name = Some("other".into()),
+        }
+        assert!(!bridge.permits(body, range.clone(), &[wrong]));
+    }
+    let mut changed = source.clone();
+    changed.segments[4].revision += 1;
+    assert!(bridge.check_scope(&changed.segments, &terms, true).is_err());
+    assert!(source_language::CompletionBridge::from_fact_nodes(
+        &nodes, &rendered, &changed, &terms, true
+    )
+    .is_err());
+    assert!(bridge.check_scope(&source.segments, &terms, false).is_err());
+    let changed_terms = Terms::new(
+        &[],
+        &[crate::library::Entry {
+            kind: "term".into(),
+            title: "Nova".into(),
+            enabled: true,
+            ..Default::default()
+        }],
+    );
+    assert!(bridge
+        .check_scope(&source.segments, &changed_terms, true)
+        .is_err());
+    for status in ["任务已完成。", "已告知团队。"] {
+        let raw =
+            json!({"paragraphs":[{"parts":[{"f":1},{"f":2},{"f":3},{"t":status}]}]}).to_string();
+        let rendered = nodes.render(&raw, nodes.input(), &source, &terms, true)?;
+        let composed = rendered.composition();
+        assert!(composed.input().is_none() && composed.copies().is_empty());
+        let bridge = source_language::CompletionBridge::from_fact_nodes(
+            &nodes, &rendered, &source, &terms, true,
+        )?
+        .unwrap();
+        let at = composed
+            .text()
+            .rfind(if status.contains("已完成") {
+                "已完成"
+            } else {
+                "已告知"
+            })
+            .unwrap();
+        assert!(!bridge.permits(
+            composed.text(),
+            at..at + "已完成".len(),
+            std::slice::from_ref(&quote)
+        ));
+        assert!(
+            validate(&source, &terms, &nodes, &raw).is_err(),
+            "ordinary text cannot inherit a qualified fact's completion permit: {status}"
+        );
+    }
     Ok(())
 }
