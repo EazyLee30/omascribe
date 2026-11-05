@@ -522,7 +522,7 @@ pub(super) fn generated_person_recovery_edits(
     static SOURCE_TITLE_GAP: OnceLock<Regex> = OnceLock::new();
     let source_title_gap =
         SOURCE_TITLE_GAP.get_or_init(|| Regex::new(r"[ \t]+(?:教授|博士)").unwrap());
-    for source in current {
+    for source in &current {
         // The old inventory does not cover every qualified/quoted gapped
         // header. An unknown original label must never become permission to
         // replace that literal, so abstain instead of inventing a wider parser.
@@ -541,7 +541,12 @@ pub(super) fn generated_person_recovery_edits(
     let view = View::new(selected, &snapshot.meeting.id)?;
     let mut edits = Vec::new();
     for candidate in candidates {
-        if known.contains(candidate.person) {
+        if known.contains(candidate.person)
+            // An already observed literal needs no report/title parser to
+            // veto a change to another person. This grants no witness power.
+            || current.iter().any(|s| s.text.contains(candidate.person))
+            || snapshot.meeting.speaker_names.values().any(|name| name == candidate.person)
+        {
             continue;
         }
         let people = view
@@ -696,6 +701,21 @@ mod recovery_tests {
                 "{bad}"
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn observed_responsible_person_without_report_title_is_not_another_professor() -> Result<()> {
+        let source = super::super::modal_provenance_tests::ORIGINAL_SOURCES[3];
+        let target = source.replace("潘 MALE FERGUSON教授", "PAN MALE FERGUSON 教授");
+        let snapshot = super::super::modal_provenance_tests::snapshot(&[
+            source,
+            "PAN MALE FERGUSON负责检查录音。",
+        ]);
+        assert!(
+            generated_person_recovery_edits(0, &target, &[1], &snapshot, &snapshot.segments)?
+                .is_empty()
+        );
         Ok(())
     }
 }
