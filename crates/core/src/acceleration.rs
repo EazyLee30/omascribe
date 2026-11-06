@@ -699,7 +699,7 @@ impl Engine {
         if self.note_busy.swap(true, Ordering::SeqCst) {
             bail!("Wait for local inference to finish");
         }
-        self.note_cancel.store(false, Ordering::SeqCst);
+        self.reset_note_cancellation();
         let mut state = self.acceleration.lock().unwrap();
         let version = index.version;
         state.status = Status {

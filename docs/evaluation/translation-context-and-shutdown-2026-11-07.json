@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "3ac2d7a84c803ae10bf3c754f6e91f9049e07f0c",
+  "core_and_harness_source_sha256": "520de4def88de8c0f7a91c6a8a44d7ed7568f90fcc8796e870e7ef9f7fb1ca67",
+  "scope": "Prevent stale note terminology from being relabeled as current translation; close inference admission during shutdown",
+  "translation": {
+    "reproduced_red": "Real Engine note edit adds omascribe while a human-protected source stays byte/revision identical; worker-open refresh wrongly rebound old Terms to the new cache key.",
+    "fix": [
+      "Capture effective note/glossary terms and environments under one Store guard.",
+      "Before runtime rebinding, verify actual effective terms, meeting/run, speaker names, cached actor identity and every pending source. Check even when the environment key is unchanged.",
+      "Apply the same content check before committing model or literal captions. Changed content defers; human source text remains intact.",
+      "Allow runtime-only changes and CPU fallback to reload pending progress under the new execution identity."
+    ],
+    "controls": [
+      "real note edit with protected source",
+      "note write before terminology dependency catches up",
+      "changed actor or second queued source cannot partially rebind keys",
+      "existing runtime-change and CPU-fallback controls retained"
+    ],
+    "resource_scope": "Rechecks effective terms, not whole-note byte equality; source actor digest uses the existing cache. At most four pending source rows are checked on rebind; no extra model request is introduced."
+  },
+  "shutdown": {
+    "reproduced_red": "Engine shutdown still permitted new inference admission; scheduler/admission could reset the cancellation flag.",
+    "fix": [
+      "Permanent shutdown state closes admission and stops scheduler loops; ordinary cancellation stays reusable.",
+      "All three async inference admissions recheck permanent shutdown when resetting cancellation, including optional GPU verification.",
+      "CLI RAII guard covers success and early errors, invokes shutdown, then allows at most five additional seconds for admitted task cancellation/trace work.",
+      "Observe config-lock handoff before trusting note_busy=false; a deadline or unavailable handoff reports unknown."
+    ],
+    "limits": [
+      "Five seconds is task grace after existing shutdown work, not a total bound on OS calls or capture shutdown.",
+      "Task drain does not prove a native child/process tree has exited; timeout explicitly reports worker_exit=not_verified.",
+      "No new actual Metal cancellation run or installer validation was performed in this change."
+    ]
+  },
+  "validation": {
+    "core_passed": 783,
+    "core_ignored": 14,
+    "integration_passed": 48,
+    "shell_passed": 8,
+    "asr_passed": 18,
+    "cli_passed": 3,
+    "translation_subset_passed": 48,
+    "python_total": 189,
+    "python_skipped": 1,
+    "strict_workspace_clippy": true,
+    "fmt": true,
+    "independent_diff_review": "No P1/P2 found"
+  },
+  "raw_logs": {
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/shutdown-red.log": "3bc73fbc53ef0b2828ca55d6e060f02fb1110184cf584b296929e476511f9530",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/translation-red.log": "ad2d9968a6a565d6a5b6267192bea136c33af803f28a339cd7dd63b2514b7d48",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/shutdown-green.log": "409d0ac40f1ccc651d7788f0b0c668195333653cdf02e64d01dc9ff41bcfd261",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/cli-shutdown-green.log": "c95aa0883bdaa8898dda660b2c092e41f84a87920149ea776f9e15af8a6dc6da",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/translation-green.log": "cf8c3056b7ac920346797d35b4c067c1cf632218303afd675cf8dde77d77814f",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/translation-suite.log": "b45160b9c93823caf831e8d92cec2272dcb73a8ea7a0d4a9dc4dfe0f18fc825c",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/workspace-tests.log": "07397cb3ac7d97db476e4d00fc27bd6e78745e54203de6f6e702c966c1d866bc",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/python-tests.log": "414310d0e3fadda63498639b7de12e27d54d3bee5daca746b05199a67b5fc01e",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/clippy.log": "848b9dcb49dcf953f80f034bcf57922361c45e3ed6119159ef941e3e13b05953"
+  },
+  "release_admission": false,
+  "release_status": "Stable 0.3.4; 0.3.5 not published. Q16 minutes quality and recorded-audio admission remain open.",
+  "gpu_delivery": "Existing separate CUDA/Vulkan components retained; no installer or GPU-component rebuild."
+}

@@ -92,6 +92,7 @@ pub struct Engine {
     pub active: Mutex<Option<Arc<Active>>>,
     pub note_busy: AtomicBool,
     pub maintenance: AtomicBool,
+    shutting_down: AtomicBool,
     pub(crate) legacy_minutes_failures: Mutex<crate::minutes_schedule::LegacyFailures>,
     pub(crate) files_lock: Mutex<()>,
     pub note_cancel: AtomicBool,
@@ -118,6 +119,9 @@ pub fn default_root() -> PathBuf {
 }
 impl Engine {
     pub fn require_available(&self) -> Result<()> {
+        if self.shutting_down.load(Ordering::SeqCst) {
+            bail!("engine:shutting_down");
+        }
         if self.maintenance.load(Ordering::SeqCst) {
             bail!("update:installing");
         }
@@ -171,6 +175,7 @@ impl Engine {
             active: Mutex::new(None),
             note_busy: AtomicBool::new(false),
             maintenance: AtomicBool::new(false),
+            shutting_down: AtomicBool::new(false),
             legacy_minutes_failures: Default::default(),
             files_lock: Mutex::new(()),
             note_cancel: AtomicBool::new(false),
@@ -189,6 +194,9 @@ impl Engine {
         Ok(engine)
     }
     pub fn start_scheduler(self: &Arc<Self>) {
+        if self.shutting_down.load(Ordering::SeqCst) {
+            return;
+        }
         let weak = Arc::downgrade(self);
         // Live catch-up remains experimental. After ASR stops, successful batches
         // drain pending work without reapplying the live 45s coalescing interval.
@@ -204,6 +212,9 @@ impl Engine {
             loop {
                 thread::sleep(Duration::from_secs(2));
                 let Some(engine) = weak.upgrade() else { break };
+                if engine.shutting_down.load(Ordering::SeqCst) {
+                    break;
+                }
                 if engine.note_busy.load(Ordering::SeqCst) {
                     continue;
                 }
@@ -271,6 +282,9 @@ impl Engine {
                 minute_schedule.retain(&ids);
                 idle_meetings.retain(&ids);
                 for id in ids {
+                    if engine.shutting_down.load(Ordering::SeqCst) {
+                        return;
+                    }
                     let snapshot = match engine.scheduler_snapshot(&id, &mut idle_meetings) {
                         Ok(Some(snapshot)) => snapshot,
                         Ok(None) => {
@@ -1444,6 +1458,7 @@ impl Engine {
         id: &str,
         dispatch: Option<crate::minutes_schedule::Dispatch>,
     ) -> Result<()> {
+        self.require_available()?;
         self.correct_terminology(id)?;
         let _config = self.config_lock.lock().unwrap();
         self.require_available()?;
@@ -1477,7 +1492,7 @@ impl Engine {
                 .unwrap()
                 .clear_rejected(&launch_meeting);
         }
-        self.note_cancel.store(false, Ordering::SeqCst);
+        self.reset_note_cancellation();
         {
             let mut status = self.status.lock().unwrap();
             status.notes_busy = true;
@@ -1631,6 +1646,14 @@ impl Engine {
     pub fn inference_worker_status(&self) -> crate::WorkerStatus {
         self.inference_pool.status()
     }
+    /// A late admission may have passed require_available before shutdown. Its
+    /// reset must not revive work after the permanent shutdown flag is set.
+    pub(crate) fn reset_note_cancellation(&self) {
+        self.note_cancel.store(false, Ordering::SeqCst);
+        if self.shutting_down.load(Ordering::SeqCst) {
+            self.note_cancel.store(true, Ordering::SeqCst);
+        }
+    }
     pub fn cancel_notes(&self) {
         self.note_cancel.store(true, Ordering::SeqCst);
         self.inference_pool.invalidate();
@@ -1761,6 +1784,10 @@ impl Engine {
         }
     }
     pub fn shutdown(&self) {
+        // Shutdown is permanent for this Engine. Ordinary cancel_notes remains
+        // reusable and must not close recording or future inference admission.
+        self.shutting_down.store(true, Ordering::SeqCst);
+        self.note_cancel.store(true, Ordering::SeqCst);
         self.microphone_monitor.stop();
         self.cancel_all_downloads();
         let _ = self.stop_recording();
@@ -1790,6 +1817,38 @@ impl Engine {
                     platform::stop_process(pid, false);
                 }
             }
+        }
+    }
+    /// Give admitted notes/translation tasks a bounded opportunity to finish
+    /// their cancellation and traces. This is not native process-tree exit
+    /// confirmation: a task may release note_busy before its final guards drop.
+    /// Desktop shutdown need not wait; process-owning CLI callers opt in.
+    pub fn wait_for_shutdown_tasks(&self, timeout: Duration) -> bool {
+        if !self.shutting_down.load(Ordering::SeqCst) {
+            return false;
+        }
+        let started = Instant::now();
+        loop {
+            // An admission that passed require_available before shutdown may
+            // still reset this flag while holding config_lock. Observe the gate
+            // handoff and reassert cancellation before trusting note_busy=false.
+            self.note_cancel.store(true, Ordering::SeqCst);
+            let admission_finished = match self.config_lock.try_lock() {
+                Ok(_gate) => {
+                    self.note_cancel.store(true, Ordering::SeqCst);
+                    true
+                }
+                Err(std::sync::TryLockError::WouldBlock) => false,
+                Err(std::sync::TryLockError::Poisoned(_)) => return false,
+            };
+            if admission_finished && !self.note_busy.load(Ordering::SeqCst) {
+                return true;
+            }
+            let remaining = timeout.saturating_sub(started.elapsed());
+            if remaining.is_zero() {
+                return false;
+            }
+            thread::sleep(remaining.min(Duration::from_millis(10)));
         }
     }
 }
@@ -2754,6 +2813,93 @@ mod note_size_tests {
             )
             .is_err());
         assert_eq!(engine.snapshot(&meeting.id)?.notes[0].content, content);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod shutdown_tests {
+    use super::*;
+
+    #[test]
+    fn shutdown_closes_inference_admission_without_reusing_maintenance() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let meeting = engine.create_meeting("Shutdown admission")?;
+        engine.shutdown();
+        assert!(!engine.maintenance.load(Ordering::SeqCst));
+        assert!(engine.note_cancel.load(Ordering::SeqCst));
+        assert!(
+            engine.require_available().is_err(),
+            "shutdown must close admission"
+        );
+        assert!(engine.generate_notes(&meeting.id).is_err());
+        assert!(engine
+            .translate_with_minutes_dispatch(&meeting.id, false, None)
+            .is_err());
+        assert!(!engine.note_busy.load(Ordering::SeqCst));
+        assert_eq!(engine.inference_worker_status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn ordinary_cancel_keeps_future_admission_available() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        engine.cancel_notes();
+        engine.require_available()?;
+        assert!(!engine.shutting_down.load(Ordering::SeqCst));
+        assert!(!engine.wait_for_shutdown_tasks(Duration::ZERO));
+        engine.reset_note_cancellation();
+        assert!(!engine.note_cancel.load(Ordering::SeqCst));
+        Ok(())
+    }
+
+    #[test]
+    fn shutdown_cannot_be_undone_by_a_late_admission_reset() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let _admission = engine.config_lock.lock().unwrap();
+        engine.require_available()?;
+        engine.shutdown();
+        // Follow the same late-reset entry used by notes, translation and GPU
+        // verification after their already-successful admission check.
+        engine.reset_note_cancellation();
+        assert!(engine.note_cancel.load(Ordering::SeqCst));
+        assert!(engine.require_available().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn shutdown_drain_requires_admission_handoff_and_reasserts_cancellation() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let admission = engine.config_lock.lock().unwrap();
+        // shutdown must not wait for the admission lock. An already admitted
+        // task can still reset note_cancel before its gate handoff.
+        engine.shutdown();
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        assert!(!engine.note_busy.load(Ordering::SeqCst));
+        assert!(!engine.wait_for_shutdown_tasks(Duration::ZERO));
+        assert!(engine.note_cancel.load(Ordering::SeqCst));
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        drop(admission);
+        assert!(engine.wait_for_shutdown_tasks(Duration::ZERO));
+        assert!(engine.note_cancel.load(Ordering::SeqCst));
+        assert!(engine.require_available().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn shutdown_drain_deadline_does_not_report_a_busy_task_as_finished() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        engine.note_busy.store(true, Ordering::SeqCst);
+        engine.shutdown();
+        assert!(!engine.wait_for_shutdown_tasks(Duration::ZERO));
+        assert!(engine.note_busy.load(Ordering::SeqCst));
+        engine.note_busy.store(false, Ordering::SeqCst);
+        assert!(engine.wait_for_shutdown_tasks(Duration::ZERO));
         Ok(())
     }
 }

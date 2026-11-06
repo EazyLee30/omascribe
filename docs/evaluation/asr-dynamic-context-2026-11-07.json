@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "kind": "ASR dynamic proper-name context safety and update cost",
+  "source_revision": "3ac2d7a84c803ae10bf3c754f6e91f9049e07f0c",
+  "core_and_harness_source_sha256": "7d1d13dc36d069d13587396d4d5fa794ac0b66a8a375cc18bfc35b8cc2e5b605",
+  "worker_sha256": "d28d8c7948b95a29a2886d97468dc561bd722487e04a42180cfe4502424a8ff8",
+  "worker_build_revision": "b0f0999065f7edeb17ddc2477cfe71a7f62baa59",
+  "worker_source_match": "All tracked crates/asr sources, Cargo.toml, Cargo.lock and models.lock.json match the pinned build; no ASR rebuild.",
+  "protocol": {
+    "runs": 1,
+    "worker_processes": 8,
+    "modes": [
+      "legacy",
+      "stream"
+    ],
+    "threads": 1,
+    "budget_seconds": 180,
+    "wall_seconds": 13.843,
+    "retries": 0,
+    "checks": [
+      "12 nonempty updates, identical-word no-op, clear and re-enable",
+      "4 pinned public WAVs plus silence and quiet noise at pause boundaries",
+      "invalid and oversized updates retain prior context; valid recovery clears error",
+      "empty start, Ready wait, incomplete first block, active utterance, pause and resume first block"
+    ],
+    "fixture_manifest_sha256": "658ce425103e9f87d33457618b6381830ab8c545a2d20518f444973130fddbc5"
+  },
+  "result": {
+    "passed": true,
+    "identities_unchanged": true,
+    "exact_cross_mode_text_pcm_and_tail": true,
+    "all_process_exits_confirmed": true,
+    "owned_clones_removed": true,
+    "owned_clone_logical_bytes": 86851915,
+    "default_changed": false,
+    "release_admission": false
+  },
+  "lifecycle_microbenchmark": {
+    "legacy": {
+      "nonempty_context_changes": 12,
+      "model_loads_after_changes": 13,
+      "context_update_ms_total": 1378.013083,
+      "model_loads_after_clear_and_reenable": 15
+    },
+    "stream": {
+      "nonempty_context_changes": 12,
+      "model_loads_after_changes": 1,
+      "context_update_ms_total": 11.252833,
+      "model_loads_after_clear_and_reenable": 3
+    }
+  },
+  "limits": [
+    "One fixed order on this Apple Silicon Mac; lifecycle figures are context-update measurements, not full-meeting latency or an energy claim.",
+    "Empty-to-nonempty and clear transitions still rebuild the recognizer because the search algorithm changes.",
+    "No independent recognition-accuracy improvement is claimed; paired English 600-call gate is separate.",
+    "Historical numeric case 051 remains open. No change to unsupported-hint rejection or numeric text.",
+    "No Windows/Linux real-device run, installer build, new GPU package, or new model download."
+  ],
+  "raw_report": {
+    "local_path": "artifacts/dynamic-context-and-shutdown-2026-11-07/asr-report.json",
+    "sha256": "990774cd24efabcb49ccf93b515de2ef5f3c7ed1817d3288a4bf61c746ac3e63"
+  },
+  "previous_fixed_context_evidence": "asr-stream-equivalence-2026-11-07.json"
+}

@@ -3,9 +3,37 @@ use omascribe_core::{engine::default_root, Engine};
 use std::{
     io::{BufWriter, Write},
     path::PathBuf,
+    sync::Arc,
     thread,
     time::{Duration, Instant},
 };
+
+struct ShutdownOnExit {
+    engine: Arc<Engine>,
+    task_timeout: Duration,
+}
+impl ShutdownOnExit {
+    fn new(engine: Arc<Engine>) -> Self {
+        Self {
+            engine,
+            task_timeout: Duration::from_secs(5),
+        }
+    }
+}
+impl Drop for ShutdownOnExit {
+    fn drop(&mut self) {
+        self.engine.shutdown();
+        if !self.engine.wait_for_shutdown_tasks(self.task_timeout) {
+            // Do not turn a deadline or an unavailable admission gate into a
+            // claim that cancellation, trace flush or child exit was confirmed.
+            eprintln!(
+                "{}",
+                serde_json::json!({"phase":"shutdown","task_drain":"unknown",
+                    "budget_ms":self.task_timeout.as_millis(),"worker_exit":"not_verified"})
+            );
+        }
+    }
+}
 #[derive(Default, Debug, PartialEq, Eq)]
 struct ReplayOptions {
     telemetry: Option<PathBuf>,
@@ -119,6 +147,9 @@ fn run() -> Result<()> {
         return Ok(());
     }
     let engine = Engine::open(default_root())?;
+    // Register immediately: option parsing, telemetry I/O and every command's
+    // early error must close admission and give cancellation the same grace.
+    let _shutdown = ShutdownOnExit::new(engine.clone());
     let replay = matches!(command, "replay" | "replay-settle");
     let settle_seconds = if command == "replay-settle" {
         let seconds = arg(4)?.parse::<u64>()?;
@@ -313,7 +344,6 @@ fn run() -> Result<()> {
                     }
                 }
                 if start.elapsed() > Duration::from_secs(14_500) {
-                    engine.shutdown();
                     bail!("处理超时，音频已保留");
                 }
                 thread::sleep(Duration::from_millis(200));
@@ -387,7 +417,6 @@ fn run() -> Result<()> {
             let start = Instant::now();
             while engine.status.lock().unwrap().transcribing {
                 if start.elapsed() > Duration::from_secs(14_500) {
-                    engine.shutdown();
                     bail!("转写超时，原始录音仍已保存");
                 }
                 thread::sleep(Duration::from_millis(200));
@@ -437,7 +466,6 @@ fn run() -> Result<()> {
                     break serde_json::to_value(snapshot)?;
                 }
                 if started.elapsed() >= Duration::from_secs(seconds) {
-                    engine.shutdown();
                     bail!("Scheduled work did not settle within the explicit budget; prior content is retained");
                 }
                 thread::sleep(Duration::from_millis(200));
@@ -449,7 +477,6 @@ fn run() -> Result<()> {
         _ => bail!("未知命令；运行 omascribe-cli help"),
     };
     println!("{}", serde_json::to_string_pretty(&result)?);
-    engine.shutdown();
     Ok(())
 }
 fn main() {
@@ -462,6 +489,27 @@ fn main() {
 #[cfg(test)]
 mod replay_option_tests {
     use super::*;
+
+    #[test]
+    fn cli_exit_guard_closes_admission_on_success_and_early_error() -> Result<()> {
+        fn command_scope(engine: Arc<Engine>, fail: bool) -> Result<()> {
+            let _shutdown = ShutdownOnExit::new(engine);
+            if fail {
+                None::<()>.context("controlled command error")?;
+            }
+            Ok(())
+        }
+        for fail in [false, true] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            assert_eq!(command_scope(engine.clone(), fail).is_err(), fail);
+            assert!(engine.require_available().is_err());
+            assert!(engine.note_cancel.load(std::sync::atomic::Ordering::SeqCst));
+            assert!(engine.wait_for_shutdown_tasks(Duration::ZERO));
+        }
+        Ok(())
+    }
+
     #[test]
     fn idle_data_signature_ignores_map_order_and_runtime_clocks_but_detects_edits() -> Result<()> {
         let root = tempfile::tempdir()?;

@@ -415,13 +415,52 @@ type PendingTranslation = (
     Option<&'static str>,
 );
 
+// A runtime fallback may change execution identity, never the content that was
+// used to build the request. Read actual note terms: their persisted dependency
+// can briefly lag save_note while terminology correction is being scheduled.
+fn ensure_current_content(
+    db: &Store,
+    meeting: &Meeting,
+    terms: &crate::terminology::Terms,
+) -> Result<()> {
+    let current = db.meeting(&meeting.id)?;
+    anyhow::ensure!(
+        current.run == meeting.run
+            && current.speaker_names == meeting.speaker_names
+            && crate::terminology::Terms::new(&db.notes(&meeting.id)?, &db.terminology_entries()?)
+                .fingerprint()
+                == terms.fingerprint()
+            && crate::source_context::digest(db, &current)? == terms.actor_spellings_digest(),
+        "Translation content changed; pending work retained"
+    );
+    Ok(())
+}
+
 fn refresh_opened_environment<'a>(
     db: &Store,
+    meeting: &Meeting,
     environment: &mut String,
     opened_environment: String,
     pending: impl Iterator<Item = &'a mut PendingTranslation>,
     terms: &crate::terminology::Terms,
 ) -> Result<()> {
+    ensure_current_content(db, meeting, terms)?;
+    let pending: Vec<_> = pending.collect();
+    // Check every source before mutating any cursor. Human edits (including
+    // speaker assignment) cannot acquire the newly opened runtime's cache key.
+    for (passage, target, _, _, _) in &pending {
+        let current: String = db.conn.query_row(
+            "SELECT json FROM segments WHERE id=?1",
+            [&passage.id],
+            |row| row.get(0),
+        )?;
+        let current: crate::Segment = serde_json::from_str(&current)?;
+        anyhow::ensure!(
+            crate::inference_cache::translation_key("", &current, target)
+                == crate::inference_cache::translation_key("", passage, target),
+            "Translation source changed; pending work retained"
+        );
+    }
     if *environment == opened_environment {
         return Ok(());
     }
@@ -760,7 +799,7 @@ impl Engine {
                 return Err(error);
             }
         }
-        self.note_cancel.store(false, Ordering::SeqCst);
+        self.reset_note_cancellation();
         {
             let mut status = self.status.lock().unwrap();
             status.translation_busy = true;
@@ -831,14 +870,24 @@ fn run_inner(
 ) -> Result<usize> {
     let prefs = engine.preferences.lock().unwrap().clone();
     let snapshot = engine.snapshot(meeting)?;
-    let terms = engine.terminology(meeting)?.with_actor_spellings(
-        snapshot.segments.iter().map(|s| s.text.as_str()),
-        snapshot.meeting.speaker_names.values().map(String::as_str),
-    );
     let mut passages = select_pending(&snapshot);
     if passages.is_empty() {
         return Ok(0);
     }
+    let (terms, mut environment, literal_environment) = {
+        let db = engine.store.lock().unwrap();
+        let terms = crate::terminology::Terms::new(&db.notes(meeting)?, &db.terminology_entries()?)
+            .with_actor_spellings(
+                snapshot.segments.iter().map(|source| source.text.as_str()),
+                snapshot.meeting.speaker_names.values().map(String::as_str),
+            );
+        ensure_current_content(&db, &snapshot.meeting, &terms)?;
+        let environment =
+            current_environment(engine, &db, &snapshot.meeting, &prefs)?.unwrap_or_default();
+        let literal_environment =
+            crate::inference_cache::literal_environment(&db, &snapshot.meeting, &prefs)?;
+        (terms, environment, literal_environment)
+    };
     let last = engine
         .store
         .lock()
@@ -854,13 +903,6 @@ fn run_inner(
     });
     literals.extend(generated);
     let passages = literals;
-    let (mut environment, literal_environment) = {
-        let db = engine.store.lock().unwrap();
-        (
-            current_environment(engine, &db, &snapshot.meeting, &prefs)?.unwrap_or_default(),
-            crate::inference_cache::literal_environment(&db, &snapshot.meeting, &prefs)?,
-        )
-    };
     let mut session: Option<crate::inference_worker::SessionLease> = None;
     let started = Instant::now();
     let mut startup_elapsed = Duration::ZERO;
@@ -935,6 +977,7 @@ fn run_inner(
                     crate::inference_cache::environment(engine, &db, &snapshot.meeting, &prefs)?;
                 refresh_opened_environment(
                     &db,
+                    &snapshot.meeting,
                     &mut environment,
                     refreshed_environment,
                     std::iter::once(&mut pending).chain(queue.iter_mut()),
@@ -958,6 +1001,7 @@ fn run_inner(
                 crate::inference_cache::environment(engine, &db, &snapshot.meeting, &prefs)?;
             refresh_opened_environment(
                 &db,
+                &snapshot.meeting,
                 &mut environment,
                 opened_environment,
                 std::iter::once(&mut pending).chain(queue.iter_mut()),
@@ -1207,9 +1251,7 @@ fn run_inner(
         }
         let mut db = engine.store.lock().unwrap();
         let current_meeting = db.meeting(meeting)?;
-        if current_meeting.run != snapshot.meeting.run {
-            break;
-        }
+        ensure_current_content(&db, &snapshot.meeting, &terms)?;
         let expected_environment = if literal_mode {
             &literal_environment
         } else {
@@ -1947,6 +1989,7 @@ mod tests {
         let mut environment = old_environment;
         refresh_opened_environment(
             &db,
+            &meeting,
             &mut environment,
             new_environment,
             std::iter::once(&mut pending),
@@ -2761,10 +2804,11 @@ mod tests {
         let unchanged = environment.clone();
         refresh_opened_environment(
             &db,
+            &meeting,
             &mut environment,
             unchanged,
             std::iter::once(&mut current).chain(queue.iter_mut()),
-            &crate::terminology::Terms::new(&[], &[]),
+            &current_terms(&db, &meeting)?,
         )?;
         assert_eq!(current.3.text, "旧GPU片段");
         assert_eq!(current.4, Some("old environment repair"));
@@ -2794,10 +2838,11 @@ mod tests {
         )?;
         refresh_opened_environment(
             &db,
+            &meeting,
             &mut environment,
             cpu_environment.clone(),
             std::iter::once(&mut current).chain(queue.iter_mut()),
-            &crate::terminology::Terms::new(&[], &[]),
+            &current_terms(&db, &meeting)?,
         )?;
         assert_eq!(environment, cpu_environment);
         for (pending, old_key) in std::iter::once(&current).chain(queue.iter()).zip(old_keys) {
@@ -3411,6 +3456,194 @@ mod tests {
         db.save_segment(&s)?;
         assert!(cached(&e, &db, &m, &prefs)?.is_empty());
         assert_eq!(db.segments(&m)?[0].text, "The budget is not decided");
+        Ok(())
+    }
+
+    #[test]
+    fn note_spelling_change_during_worker_open_cannot_rebind_old_terms_to_new_key() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Translation note-edit race")?;
+        let note = engine.save_note(&meeting.id, None, "功能复核", "document", 0)?;
+        let source = cache_fixture_source(&meeting, 1, "正在测试奥马（OMA）的SCRIB，尚未完成。");
+        engine.store.lock().unwrap().save_segment(&source)?;
+        engine.edit_segment(&source.id, &source.text, source.revision)?;
+        let before = engine.snapshot(&meeting.id)?;
+        let source = before.segments[0].clone();
+        let old_terms = engine.terminology(&meeting.id)?.with_actor_spellings(
+            before.segments.iter().map(|source| source.text.as_str()),
+            before.meeting.speaker_names.values().map(String::as_str),
+        );
+        let old_environment = {
+            let db = engine.store.lock().unwrap();
+            crate::inference_cache::environment(&engine, &db, &before.meeting, &prefs)?
+        };
+        let old_key = crate::inference_cache::translation_key(&old_environment, &source, "en");
+        let mut pending = (
+            source.clone(),
+            "en",
+            old_key.clone(),
+            chunks::Progress::default(),
+            None,
+        );
+        // Real note save changes spelling context while human source protection
+        // deliberately keeps every source byte and revision unchanged.
+        engine.save_note(
+            &meeting.id,
+            Some(note.id),
+            "测试omascribe的功能",
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&meeting.id)?;
+        assert_eq!(
+            serde_json::to_value(&after.segments)?,
+            serde_json::to_value(&before.segments)?
+        );
+        let db = engine.store.lock().unwrap();
+        assert_ne!(
+            old_terms.fingerprint(),
+            current_terms(&db, &after.meeting)?.fingerprint()
+        );
+        let new_environment =
+            crate::inference_cache::environment(&engine, &db, &after.meeting, &prefs)?;
+        assert_ne!(old_environment, new_environment);
+        let mut environment = old_environment.clone();
+        let result = refresh_opened_environment(
+            &db,
+            &meeting,
+            &mut environment,
+            new_environment,
+            std::iter::once(&mut pending),
+            &old_terms,
+        );
+        assert!(
+            result.is_err(),
+            "changed note context was treated as runtime-only fallback"
+        );
+        assert_eq!(environment, old_environment);
+        assert_eq!(pending.2, old_key);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn saved_note_terms_are_checked_before_the_dependency_key_catches_up() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Translation unsealed note edit")?;
+        let mut note = engine.save_note(&meeting.id, None, "功能复核", "document", 0)?;
+        let source = cache_fixture_source(&meeting, 1, "正在测试工具，尚未完成。");
+        let db = engine.store.lock().unwrap();
+        db.save_segment(&source)?;
+        let terms = current_terms(&db, &meeting)?;
+        let old_environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+        let old_key = crate::inference_cache::translation_key(&old_environment, &source, "en");
+        let mut pending = (
+            source,
+            "en",
+            old_key.clone(),
+            chunks::Progress::default(),
+            None,
+        );
+        // This is save_note's actual first Store write, before the unlocked
+        // terminology pass seals its dependency. The old cache key is unchanged.
+        note.content = "测试omascribe的功能".into();
+        db.save_note(&note)?;
+        let opened_environment =
+            crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+        assert_eq!(old_environment, opened_environment);
+        // The same guard is used at initial capture and final generated commit.
+        assert!(ensure_current_content(&db, &meeting, &terms).is_err());
+        let mut environment = old_environment.clone();
+        assert!(refresh_opened_environment(
+            &db,
+            &meeting,
+            &mut environment,
+            opened_environment,
+            std::iter::once(&mut pending),
+            &terms,
+        )
+        .is_err());
+        assert_eq!(environment, old_environment);
+        assert_eq!(pending.2, old_key);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn source_or_actor_changes_cannot_rebind_any_pending_translation() -> Result<()> {
+        for change_actor in [false, true] {
+            let (_root, engine, prefs) = runtime_fixture()?;
+            observe_fixture_runtime(&engine, &prefs)?;
+            let meeting = engine.create_meeting("Translation changed source")?;
+            let first = cache_fixture_source(&meeting, 1, "The upload is not complete.");
+            let second = cache_fixture_source(&meeting, 2, "The review is not complete.");
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&first)?;
+            db.save_segment(&second)?;
+            let terms = current_terms(&db, &meeting)?;
+            let old_environment =
+                crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            let mut pending: Vec<_> = [first, second.clone()]
+                .into_iter()
+                .map(|source| {
+                    let key =
+                        crate::inference_cache::translation_key(&old_environment, &source, "zh");
+                    (
+                        source,
+                        "zh",
+                        key,
+                        chunks::Progress::default(),
+                        Some("old repair"),
+                    )
+                })
+                .collect();
+            let old_keys: Vec<_> = pending.iter().map(|item| item.2.clone()).collect();
+            if change_actor {
+                db.save_segment(&cache_fixture_source(
+                    &meeting,
+                    3,
+                    "Morgan will check the report on Thursday.",
+                ))?;
+                assert_ne!(
+                    crate::source_context::digest(&db, &meeting)?,
+                    terms.actor_spellings_digest()
+                );
+            } else {
+                // The actor context and terms remain unchanged; changing the
+                // second pending source still rejects the entire rebind first.
+                let mut edited = second;
+                edited.text = "The review is complete.".into();
+                edited.revision += 1;
+                edited.speaker_manual = true;
+                db.save_segment(&edited)?;
+                ensure_current_content(&db, &meeting, &terms)?;
+            }
+            let mut environment = old_environment.clone();
+            assert!(
+                refresh_opened_environment(
+                    &db,
+                    &meeting,
+                    &mut environment,
+                    "different-runtime".into(),
+                    pending.iter_mut(),
+                    &terms,
+                )
+                .is_err(),
+                "changed actor: {change_actor}"
+            );
+            assert_eq!(environment, old_environment);
+            assert_eq!(
+                pending
+                    .iter()
+                    .map(|item| item.2.clone())
+                    .collect::<Vec<_>>(),
+                old_keys
+            );
+            assert!(pending.iter().all(|item| item.4 == Some("old repair")));
+            assert_eq!(engine.inference_pool.status().starts, 0);
+        }
         Ok(())
     }
 }
