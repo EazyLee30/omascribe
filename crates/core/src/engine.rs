@@ -15,6 +15,8 @@ use std::{
 };
 use uuid::Uuid;
 
+mod scheduler;
+
 fn replace_hotword_file(dir: &Path, name: &str, contents: &[u8]) -> Result<()> {
     let temp = dir.join(format!("hotwords-{}.next", Uuid::new_v4()));
     let result = fs::write(&temp, contents).and_then(|_| fs::rename(&temp, dir.join(name)));
@@ -198,6 +200,7 @@ impl Engine {
             let mut in_flight: Option<(String, bool, crate::minutes_schedule::Dispatch)> = None;
             let mut translation_attempts = std::collections::HashMap::<String, Instant>::new();
             let mut speaker_attempts = std::collections::HashMap::<String, Instant>::new();
+            let mut idle_meetings = scheduler::IdleMeetings::default();
             loop {
                 thread::sleep(Duration::from_secs(2));
                 let Some(engine) = weak.upgrade() else { break };
@@ -266,9 +269,15 @@ impl Engine {
                     }
                 }
                 minute_schedule.retain(&ids);
+                idle_meetings.retain(&ids);
                 for id in ids {
-                    let Ok(snapshot) = engine.snapshot(&id) else {
-                        continue;
+                    let snapshot = match engine.scheduler_snapshot(&id, &mut idle_meetings) {
+                        Ok(Some(snapshot)) => snapshot,
+                        Ok(None) => {
+                            minute_schedule.forget(&id);
+                            continue;
+                        }
+                        Err(_) => continue,
                     };
                     let pending_minutes = notes::needs_update(&snapshot);
                     let own_active = capture_active && status.meeting_id.as_deref() == Some(&id);
@@ -675,10 +684,14 @@ impl Engine {
         meeting: Meeting,
         runtime: RuntimeStatus,
     ) -> Result<TranscriptSnapshot> {
+        let translations = crate::translation::cached(self, db, &meeting, &prefs)?;
+        let segments = db.segments(&meeting)?;
+        #[cfg(test)]
+        scheduler::record_segment_materialization(segments.len());
         Ok(TranscriptSnapshot {
-            translations: crate::translation::cached(self, db, &meeting, &prefs)?,
+            translations,
             translation_mode: prefs.translation_mode,
-            segments: db.segments(&meeting)?,
+            segments,
             meeting,
             runtime,
         })
