@@ -1041,6 +1041,31 @@ pub(crate) struct LocalSession {
     active_since: Arc<std::sync::Mutex<Option<Instant>>>,
     server: Server,
 }
+
+fn watchdog_workload_stop(
+    status: &crate::RuntimeStatus,
+    cancelled: bool,
+    lag_count: &mut u8,
+) -> Option<ReleaseReason> {
+    // Capture can finish or pause while ASR still has audio to process. File
+    // imports also transcribe without recording; those workloads have priority
+    // over a running writer just as live capture does.
+    if (status.recording || status.transcribing)
+        && status.elapsed_ms.saturating_sub(status.processed_ms) > 4000
+    {
+        *lag_count += 1;
+    } else {
+        *lag_count = 0;
+    }
+    if cancelled {
+        Some(ReleaseReason::Cancelled)
+    } else if *lag_count >= 6 {
+        Some(ReleaseReason::AsrBacklog)
+    } else {
+        None
+    }
+}
+
 pub(crate) fn spawn_session_with_spec(
     engine: &Arc<Engine>,
     prefs: &crate::preferences::Preferences,
@@ -1205,18 +1230,11 @@ fn spawn_session(
                 );
                 break;
             }
-            if s.recording && s.elapsed_ms.saturating_sub(s.processed_ms) > 4000 {
-                lag_count += 1;
-            } else {
-                lag_count = 0;
-            }
-            let cancelled = engine.note_cancel.load(Ordering::SeqCst);
-            if cancelled || lag_count >= 6 {
-                let reason = if cancelled {
-                    ReleaseReason::Cancelled
-                } else {
-                    ReleaseReason::AsrBacklog
-                };
+            if let Some(reason) = watchdog_workload_stop(
+                &s,
+                engine.note_cancel.load(Ordering::SeqCst),
+                &mut lag_count,
+            ) {
                 finish_watchdog_stop(Some(&engine), &stop_state, pid, reason, pooled.is_some());
                 break;
             }
@@ -2268,6 +2286,155 @@ mod tests {
         assert!(release.exit_confirmed);
         Ok(())
     }
+    #[test]
+    fn watchdog_yields_to_asr_after_capture_stops_or_pauses() -> Result<()> {
+        let mut observed = Vec::new();
+        for (label, recording, transcribing, paused, lag, expected) in [
+            ("live", true, true, false, 12_000, true),
+            ("capture ended or import", false, true, false, 12_000, true),
+            ("capture paused", false, true, true, 12_000, true),
+            (
+                "ASR finished with old timestamps",
+                false,
+                false,
+                false,
+                12_000,
+                false,
+            ),
+            ("paused and caught up", false, true, true, 4_000, false),
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            engine.note_busy.store(true, Ordering::SeqCst);
+            *engine.status.lock().unwrap() = crate::RuntimeStatus {
+                recording,
+                transcribing,
+                paused,
+                notes_busy: true,
+                elapsed_ms: lag + 1_000,
+                processed_ms: 1_000,
+                ..Default::default()
+            };
+            let mut session = retained_lease(&engine, 30)?;
+            let pid = session.server.child.id();
+            let probe = ReapProbe::new(&session.server.child)?;
+            let mut lag_count = 0;
+            let mut early_stop = false;
+            let mut selected = None;
+            // Exercise the production decision on six consecutive snapshots,
+            // rather than supplying AsrBacklog directly as older stop tests do.
+            // Poll timing is not a performance measurement in this regression.
+            for tick in 0..6 {
+                let status = engine.status.lock().unwrap().clone();
+                selected = watchdog_workload_stop(
+                    &status,
+                    engine.note_cancel.load(Ordering::SeqCst),
+                    &mut lag_count,
+                );
+                if let Some(reason) = selected {
+                    early_stop = tick < 5;
+                    finish_watchdog_stop(Some(&engine), &session.server.stop, pid, reason, true);
+                    break;
+                }
+            }
+            let accepted = session.server.stop.lock().unwrap().reason;
+            let cancelled = engine.note_cancel.load(Ordering::SeqCst);
+            let control_alive = session
+                .session
+                .as_mut()
+                .unwrap()
+                .server
+                .try_wait()?
+                .is_none();
+            drop(session);
+            let after = engine.inference_pool.status();
+            let stopped_and_reaped = after
+                .lifecycle
+                .last_release
+                .as_ref()
+                .is_some_and(|release| {
+                    release.pid == pid && release.reason == "asr_backlog" && release.exit_confirmed
+                });
+            // Release the intentionally healthy negative-control worker too.
+            // Cleanup must not turn its captured stop decision into a success.
+            engine.inference_pool.invalidate();
+            probe.assert_reaped();
+            observed.push((
+                label,
+                expected,
+                early_stop,
+                selected == Some(ReleaseReason::AsrBacklog),
+                accepted == Some(ReleaseReason::AsrBacklog),
+                cancelled,
+                stopped_and_reaped,
+                control_alive,
+            ));
+        }
+        for (label, expected, early, selected, accepted, cancelled, reaped, control_alive) in
+            observed
+        {
+            assert!(
+                !early,
+                "{label}: stopped before the existing six-tick grace"
+            );
+            assert_eq!(selected, expected, "{label}: workload decision");
+            assert_eq!(
+                accepted, expected,
+                "{label}: owned child stop was not accepted"
+            );
+            assert_eq!(cancelled, expected, "{label}: cancellation publication");
+            assert_eq!(reaped, expected, "{label}: stop cause and confirmed exit");
+            if !expected {
+                assert!(
+                    control_alive,
+                    "{label}: healthy child stopped before cleanup"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn watchdog_asr_grace_resets_after_catchup_and_preserves_explicit_cancel() {
+        let mut status = crate::RuntimeStatus {
+            recording: true,
+            transcribing: true,
+            elapsed_ms: 12_000,
+            processed_ms: 1_000,
+            ..Default::default()
+        };
+        let mut count = 0;
+        for _ in 0..5 {
+            assert!(watchdog_workload_stop(&status, false, &mut count).is_none());
+        }
+        // Pausing capture does not reset actual ASR backlog. Catching up does.
+        status.recording = false;
+        status.paused = true;
+        assert!(
+            watchdog_workload_stop(&status, false, &mut count) == Some(ReleaseReason::AsrBacklog)
+        );
+        status.processed_ms = 12_000;
+        assert!(watchdog_workload_stop(&status, false, &mut count).is_none());
+        assert_eq!(count, 0);
+        status.processed_ms = 1_000;
+        for _ in 0..5 {
+            assert!(watchdog_workload_stop(&status, false, &mut count).is_none());
+        }
+        assert!(
+            watchdog_workload_stop(&status, false, &mut count) == Some(ReleaseReason::AsrBacklog)
+        );
+        status.transcribing = false;
+        assert!(watchdog_workload_stop(&status, false, &mut count).is_none());
+        assert_eq!(count, 0);
+        assert!(
+            watchdog_workload_stop(&status, true, &mut count) == Some(ReleaseReason::Cancelled)
+        );
+        // Processed time ahead of capture must not wrap into an enormous lag.
+        status.transcribing = true;
+        status.processed_ms = status.elapsed_ms + 1;
+        assert!(watchdog_workload_stop(&status, false, &mut count).is_none());
+    }
+
     #[test]
     fn watchdog_asr_yield_reaps_its_retained_idle_child_and_receipt_owner() -> Result<()> {
         use sha2::Digest;

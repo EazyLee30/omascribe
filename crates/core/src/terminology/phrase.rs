@@ -33,10 +33,10 @@ pub(super) fn full_boundary(text: &str, start: usize, end: usize) -> bool {
     let mut after = text[end..].chars();
     let left = before.next();
     let right = after.next();
-    !left.is_some_and(word)
-        && !right.is_some_and(word)
-        && !(left == Some('.') && before.next().is_some_and(char::is_alphanumeric))
-        && !(right == Some('.') && after.next().is_some_and(char::is_alphanumeric))
+    !(left.is_some_and(word)
+        || right.is_some_and(word)
+        || left == Some('.') && before.next().is_some_and(char::is_alphanumeric)
+        || right == Some('.') && after.next().is_some_and(char::is_alphanumeric))
 }
 
 impl Corrections {
