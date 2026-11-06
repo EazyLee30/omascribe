@@ -24,6 +24,22 @@ def config(mode="stream", rejected=False):
 
 
 class DeadlineAndEvidenceTests(unittest.TestCase):
+    def test_missing_sampler_dependency_refuses_before_assets_or_worker(self):
+        with tempfile.TemporaryDirectory() as folder, \
+                patch.object(gate.process_resources, "_psutil", None), \
+                patch.object(gate, "source_identity") as identity, \
+                patch.object(gate.Assets, "inventory") as inventory, \
+                patch.object(gate.Assets, "prepare") as prepare, \
+                patch.object(gate.subprocess, "Popen") as launch:
+            report = gate.run(Mock(output=Path(folder) / "report.json", worker=Path("omascribe-asr")))
+            self.assertFalse(report["passed"])
+            self.assertFalse(report["identities_unchanged"])
+            self.assertIn("requires psutil", report["errors"][0])
+            self.assertEqual(report["processes"], [])
+            self.assertTrue(report["cleanup"]["released"])
+            for operation in (identity, inventory, prepare, launch):
+                operation.assert_not_called()
+
     def test_global_reserve_prevents_another_launch_and_caps_long_arm(self):
         with patch.object(gate.time, "monotonic", side_effect=[100., 101., 269., 270.]):
             budget = gate.Budget(seconds=180, reserve=10)
@@ -87,6 +103,15 @@ class ProcessCleanupTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name) / "process"
         self.records = []
+        # Isolate optional sampling; the child, pipe reader, killpg, wait and
+        # group-absence checks still run for real. Sampler behavior has its own tests.
+        sampler = Mock()
+        sampler.start.return_value = sampler
+        sampler.finish.return_value = dict(processes_exit_confirmed=True, method="unit-test collector")
+        for replacement in (patch.object(gate.process_resources, "_psutil", object()),
+                            patch.object(gate, "ProcessTreeSampler", return_value=sampler)):
+            replacement.start()
+            self.addCleanup(replacement.stop)
 
     def worker(self, script, budget=None):
         return gate.worker([sys.executable, "-c", script], self.directory, "stream",
@@ -102,6 +127,16 @@ class ProcessCleanupTests(unittest.TestCase):
         self.assertTrue(record["group_absent"])
         self.assertFalse(record["killed"])
         self.assertEqual(json.loads((self.directory / "stdout.jsonl").read_text())["event"], "ready")
+
+    def test_missing_sampler_dependency_prevents_direct_worker_launch(self):
+        with patch.object(gate.process_resources, "_psutil", None), \
+                patch.object(gate.subprocess, "Popen") as launch:
+            with self.assertRaisesRegex(RuntimeError, "requires psutil"):
+                with self.worker('raise SystemExit(0)'):
+                    pass
+            launch.assert_not_called()
+        self.assertEqual(self.records, [])
+        self.assertFalse(self.directory.exists())
 
     def test_stalled_worker_is_killed_reaped_and_failure_evidence_remains(self):
         script = 'import json,time; print(json.dumps({"event":"ready"}),flush=True); time.sleep(60)'
@@ -149,7 +184,7 @@ class AssetOwnershipTests(unittest.TestCase):
         return assets
 
     def test_unknown_exit_or_member_prevents_any_clone_deletion(self):
-        for reason in ("exit", "extra", "owner", "mutation", "symlink"):
+        for reason in ("exit", "extra", "owner", "mutation"):
             with self.subTest(reason=reason), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder) / "owned"
                 assets = self.make_assets(root)
@@ -159,12 +194,26 @@ class AssetOwnershipTests(unittest.TestCase):
                     write_json(root / "owner.json", {"owner": "someone else"})
                 elif reason == "mutation":
                     assets.worker.write_bytes(b"changed")
-                elif reason == "symlink":
-                    (root / "unexpected").symlink_to(assets.worker)
                 with self.assertRaises(RuntimeError):
                     assets.cleanup(reason != "exit")
                 self.assertTrue(assets.worker.exists())
                 self.assertTrue((assets.model / "tokens.txt").exists())
+
+    def test_unexpected_symlink_prevents_clone_deletion(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "owned"
+            assets = self.make_assets(root)
+            try:
+                (root / "unexpected").symlink_to(assets.worker)
+            except OSError as error:
+                if os.name == "nt" and (isinstance(error, PermissionError)
+                                       or getattr(error, "winerror", None) == 1314):
+                    self.skipTest("Windows account lacks symbolic-link permission")
+                raise
+            with self.assertRaisesRegex(RuntimeError, "Unexpected owned symlink"):
+                assets.cleanup(True)
+            self.assertTrue(assets.worker.exists())
+            self.assertTrue((assets.model / "tokens.txt").exists())
 
     def test_only_verified_owned_copies_removed_original_sibling_is_retained(self):
         with tempfile.TemporaryDirectory() as folder:

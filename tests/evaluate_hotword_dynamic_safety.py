@@ -27,6 +27,7 @@ import wave
 
 from evaluate_name_bias import file_identity
 from harness_support import REPO, read_json, sha256, source_digest, write_json
+import process_resources
 from process_resources import ProcessTreeSampler
 
 TOTAL_SECONDS, ARM_SECONDS, RESERVE_SECONDS = 180, 30, 15
@@ -40,6 +41,11 @@ MODES = ("legacy", "stream")
 def require(value, message):
     if not value:
         raise RuntimeError(message)
+
+
+def require_process_sampler():
+    require(process_resources._psutil is not None,
+            "This gate requires psutil for process-tree exit evidence; install it in the harness environment before running")
 
 
 class Budget:
@@ -118,6 +124,7 @@ class Native:
 @contextmanager
 def worker(argv, directory, mode, budget, processes):
     require(os.name == "posix", "This process-group gate currently supports macOS/Linux")
+    require_process_sampler()
     timeout = budget.remaining()
     directory.mkdir(parents=True, exist_ok=False)
     record = dict(mode=mode, directory=str(directory), launched=False, exit_confirmed=False,
@@ -475,6 +482,7 @@ def run(args):
     assets, before = Assets(args, root / "owned-assets"), None
     write_json(args.output, report)
     try:
+        require_process_sampler()  # Refuse before hashing/copying assets or launching any worker.
         before = source_identity(args)
         freeze = read_json(args.freeze)
         require(all(before[key] == freeze.get(key) for key in before), "Source/worker freeze differs")
@@ -485,14 +493,15 @@ def run(args):
     except BaseException as error:
         report["errors"].append(f"{type(error).__name__}: {error}")
     finally:
-        try:
-            after = dict(source=source_identity(args), originals=assets.inventory())
-            report["identity_after"] = after
-            require(after["source"] == before and after["originals"] == assets.originals, "Original/source identity changed")
-            report["identities_unchanged"] = True
-        except BaseException as error:
-            report["identities_unchanged"] = False
-            report["errors"].append(f"Identity recheck: {type(error).__name__}: {error}")
+        report["identities_unchanged"] = False
+        if before is not None:
+            try:
+                after = dict(source=source_identity(args), originals=assets.inventory())
+                report["identity_after"] = after
+                require(after["source"] == before and after["originals"] == assets.originals, "Original/source identity changed")
+                report["identities_unchanged"] = True
+            except BaseException as error:
+                report["errors"].append(f"Identity recheck: {type(error).__name__}: {error}")
         exited = all(p.get("exit_confirmed") is True for p in report["processes"])
         try:
             report["cleanup"] = assets.cleanup(exited)

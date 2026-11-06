@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-07",
   "base_revision": "3ac2d7a84c803ae10bf3c754f6e91f9049e07f0c",
-  "core_and_harness_source_sha256": "520de4def88de8c0f7a91c6a8a44d7ed7568f90fcc8796e870e7ef9f7fb1ca67",
+  "core_and_harness_source_sha256": "df7ce87450bf2b66109646743ca2a203cea23fcb8255f73893f623680ebb3cf7",
   "scope": "Prevent stale note terminology from being relabeled as current translation; close inference admission during shutdown",
   "translation": {
     "reproduced_red": "Real Engine note edit adds omascribe while a human-protected source stays byte/revision identical; worker-open refresh wrongly rebound old Terms to the new cache key.",
@@ -42,11 +42,16 @@
     "asr_passed": 18,
     "cli_passed": 3,
     "translation_subset_passed": 48,
-    "python_total": 189,
+    "python_total": 192,
     "python_skipped": 1,
     "strict_workspace_clippy": true,
     "fmt": true,
-    "independent_diff_review": "No P1/P2 found"
+    "independent_diff_review": "No P1/P2 found",
+    "python_without_psutil": {
+      "total": 192,
+      "skipped": 2,
+      "passed": true
+    }
   },
   "raw_logs": {
     "artifacts/dynamic-context-and-shutdown-2026-11-07/shutdown-red.log": "3bc73fbc53ef0b2828ca55d6e060f02fb1110184cf584b296929e476511f9530",
@@ -57,9 +62,22 @@
     "artifacts/dynamic-context-and-shutdown-2026-11-07/translation-suite.log": "b45160b9c93823caf831e8d92cec2272dcb73a8ea7a0d4a9dc4dfe0f18fc825c",
     "artifacts/dynamic-context-and-shutdown-2026-11-07/workspace-tests.log": "07397cb3ac7d97db476e4d00fc27bd6e78745e54203de6f6e702c966c1d866bc",
     "artifacts/dynamic-context-and-shutdown-2026-11-07/python-tests.log": "414310d0e3fadda63498639b7de12e27d54d3bee5daca746b05199a67b5fc01e",
-    "artifacts/dynamic-context-and-shutdown-2026-11-07/clippy.log": "848b9dcb49dcf953f80f034bcf57922361c45e3ed6119159ef941e3e13b05953"
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/clippy.log": "848b9dcb49dcf953f80f034bcf57922361c45e3ed6119159ef941e3e13b05953",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/ci-first-failure.log": "e1a7a887378391128a8d1bd55278884969add16ee416fae2da994b71557a31c5",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/python-no-psutil-red.log": "c3045f0396ced0baa72ccb0cda6a0fe745a729df1ab1d5d4b718527b8ccfe66b",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/python-final.log": "07834731271f573e3236e6354cbbe4c93268034cc5ae25be1e661cf63c43083a",
+    "artifacts/dynamic-context-and-shutdown-2026-11-07/python-no-psutil-final.log": "904cc82a66f887fd90aba4cd3a0b7a0639db0c18589638bfda2179dc14994ff8"
   },
   "release_admission": false,
   "release_status": "Stable 0.3.4; 0.3.5 not published. Q16 minutes quality and recorded-audio admission remain open.",
-  "gpu_delivery": "Existing separate CUDA/Vulkan components retained; no installer or GPU-component rebuild."
+  "gpu_delivery": "Existing separate CUDA/Vulkan components retained; no installer or GPU-component rebuild.",
+  "production_revision": "ebb62a1d8c6798b64ca7c9fc72994c72601051fb",
+  "original_core_and_harness_source_sha256": "520de4def88de8c0f7a91c6a8a44d7ed7568f90fcc8796e870e7ef9f7fb1ca67",
+  "harness_portability": {
+    "first_ci": "https://github.com/EazyLee30/omascribe/actions/runs/42256135617",
+    "result": "Initial Python CI failed because the new process cleanup tests relied on optional psutil. Core/ASR Rust and Clippy passed; Windows-core, Linux compatibility and Website passed.",
+    "local_reproduction": "Hiding psutil reproduced the same two failures and one error.",
+    "fix": "Unit tests isolate the optional collector while still exercising real child launch, kill, wait, reader and group exit. The actual ASR gate requires psutil before copying assets or starting a worker and still rejects missing exit evidence.",
+    "scope": "Python harness only; no production Rust change, repeated model trial or new installer/GPU build."
+  }
 }
