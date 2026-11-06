@@ -1,4 +1,4 @@
-import type { Hardware } from "./preferences-client";
+import type { Hardware, Preferences } from "./preferences-client";
 import { bytes, esc, glyph, tr } from "./workspace-ui";
 
 export interface ComponentCatalog {
@@ -56,8 +56,10 @@ export function supportsAccelerationComponents(
 export function accelerationBody(
   h: Hardware,
   catalog: ComponentCatalog,
+  backend: Preferences["inference_backend"],
 ): string {
   if (!supportsAccelerationComponents(h)) return "";
+  const automatic = backend === "auto";
   const devices = h.gpus?.devices || [];
   // Remote display sessions can expose several DXGI adapters for the same GPU
   // model. Keep raw identities in the probe/certificate, summarize models here.
@@ -93,11 +95,9 @@ export function accelerationBody(
       );
     switch (verification?.state) {
       case "active":
-        return tr(
-          "已验证 · 自动启用",
-          "Verified · automatic",
-          "已驗證 · 自動啟用",
-        );
+        return automatic
+          ? tr("已验证 · 自动启用", "Verified · automatic", "已驗證 · 自動啟用")
+          : tr("已验证 · 未启用", "Verified · not enabled", "已驗證 · 未啟用");
       case "testing":
         return tr("本机测试中", "Testing locally", "本機測試中");
       case "cancelled":
@@ -159,6 +159,7 @@ export function accelerationBody(
     .join("");
   return `<div class="settings-section-title"><h2>${tr("显卡加速组件", "GPU acceleration", "顯示卡加速元件")}</h2><button class="outline" data-component-action="check">${tr("检查可用组件", "Check components", "檢查可用元件")}</button></div>
   <p class="setting-help">${tr("用于本地翻译与纪要，组件独立下载。通过本机模型测试且更快后，自动模式才会使用显卡。", "For local translation and minutes. Components download separately. Automatic mode uses the GPU only after a successful, faster local model test.", "元件獨立下載，不增加主安裝包體積；依顯示卡推薦，通過本機模型驗證後才啟用。")}</p>
+  ${!automatic ? `<div class="settings-row"><p class="setting-help">${backend === "cpu" ? tr("当前选择 CPU。切换自动模式后，可单独测试显卡组件；资源不足时仍会回退 CPU。", "CPU is selected. Switch to Automatic, then test a component separately. CPU fallback remains available when resources are low.", "目前選擇 CPU。切換自動模式後，可另行測試顯示卡元件；資源不足時仍會退回 CPU。") : tr("测试显卡组件需要自动模式。切换后再选择组件测试。", "Component testing requires Automatic mode. Switch first, then choose a component to test.", "測試顯示卡元件需要自動模式。切換後再選擇元件測試。")}</p><button class="outline" data-component-action="use-auto" ${testing ? "disabled" : ""}>${tr("切换自动模式", "Switch to Automatic", "切換自動模式")}</button></div>` : ""}
   <div class="settings-group">${deviceModels.length ? deviceModels.map((d) => `<div class="settings-row"><div><label>${esc(d.name)}</label><p>${esc(d.vendor.toUpperCase())}${d.dedicated_memory_bytes ? ` · ${bytes(d.dedicated_memory_bytes)} ${tr("独立显存", "dedicated memory", "獨立顯示記憶體")}` : ""}</p></div><span class="badge">${tr("已检测", "Detected", "已偵測")}</span></div>`).join("") : `<p class="setting-help">${h.gpus?.status === "detected" ? tr("未检测到硬件显卡，将使用 CPU。", "No hardware GPU detected. CPU remains available.", "未偵測到硬體顯示卡，將使用 CPU。") : tr("暂时无法读取显卡信息，将继续使用 CPU。可点击重新检测。", "GPU inventory is unavailable. CPU remains available; try Detect again.", "暫時無法讀取顯示卡資訊，將繼續使用 CPU；可重新偵測。")}</p>`}</div>
   ${cudaUnknown ? `<p class="setting-help">${tr("CUDA 驱动兼容性未确认，下载前可重新检测；安装后仍需通过本机测试。", "CUDA driver compatibility is unconfirmed. Detect again before downloading; a local test is still required after installation.", "CUDA 驅動程式相容性未確認，下載前可重新偵測；安裝後仍需通過本機測試。")}</p>` : ""}
   ${cudaOld ? `<p class="inline-error">${tr("当前 NVIDIA 驱动仅支持 CUDA", "The installed NVIDIA driver supports CUDA", "目前 NVIDIA 驅動程式僅支援 CUDA")} ${Math.floor(cudaVersion! / 1000)}.${Math.floor((cudaVersion! % 1000) / 10)}。${tr("此 CUDA 组件需要支持 CUDA 12 的驱动。请更新显卡驱动，或尝试 Vulkan；无需安装 CUDA 开发工具包。", "This CUDA component needs a CUDA 12 capable driver. Update the GPU driver or test Vulkan. No CUDA development toolkit is required.", "此 CUDA 元件需要支援 CUDA 12 的驅動程式。請更新顯示卡驅動程式或測試 Vulkan，不需安裝 CUDA 開發工具包。")}</p>` : ""}
@@ -203,10 +204,11 @@ export function accelerationBody(
                         ? matchesVerification(c.id, version)
                           ? `<button class="outline" data-component-action="cancel-test">${tr("取消测试", "Cancel test", "取消測試")}</button>`
                           : ""
-                        : verification?.state === "active" &&
+                        : automatic &&
+                            verification?.state === "active" &&
                             matchesVerification(c.id, version)
                           ? `<button class="outline" data-component-action="disable">${tr("使用 CPU", "Use CPU", "使用 CPU")}</button>`
-                          : `<button class="outline" data-component-action="test" data-id="${esc(c.id)}" data-version="${esc(version)}" ${unavailable ? "disabled" : ""}>${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`;
+                          : `<button class="outline" data-component-action="test" data-id="${esc(c.id)}" data-version="${esc(version)}" ${unavailable || !automatic ? "disabled" : ""}>${tr("测试并启用", "Test & enable", "測試並啟用")}</button>`;
               const incompleteHint = incomplete
                 ? `<p class="inline-error">${tr("安装不完整，请移除后重新下载。", "Installation is incomplete. Remove it, then download again.", "安裝不完整，請移除後重新下載。")}</p>`
                 : "";

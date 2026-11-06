@@ -115,6 +115,24 @@ export async function mountSettings(
   function header(title: string, sub: string) {
     return `<header class="page-heading"><span class="eyebrow">OMASCRIBE / ${t("settings")}</span><h1>${title}</h1><p>${sub}</p></header>`;
   }
+  function renderAccelerationControls() {
+    if (!alive || active !== "models" || !hardware) return;
+    const region = root.querySelector("#acceleration-components");
+    if (region)
+      region.innerHTML = accelerationBody(
+        hardware,
+        acceleration,
+        prefs.inference_backend,
+      );
+  }
+  function renderBackendControls() {
+    if (!alive || active !== "models") return;
+    const backend = root.querySelector<HTMLSelectElement>(
+      '[data-pref="inference_backend"]',
+    );
+    if (backend) backend.value = prefs.inference_backend;
+    renderAccelerationControls();
+  }
   function modelPairText() {
     const selected = models.filter((m) => m.selected);
     return `${tr("所选组合", "Selected pair", "所選組合")}: ${selected.map((m) => m.model.name).join(" + ")}`;
@@ -169,7 +187,7 @@ export async function mountSettings(
     <div class="hardware-card"><div class="hardware-title">${glyph("models")}<div><strong>${esc(h.cpu || h.arch)}</strong><p>${esc(h.os)} · ${h.arch}${h.apple_silicon ? " · Apple Silicon" : ""}</p></div><button class="subtle" data-settings="refresh-hardware">${tr("重新检测", "Detect again", "重新偵測")}</button></div>
     <div class="hardware-metrics"><div><strong>${(h.total_memory_mib / 1024).toFixed(0)} <small>GiB</small></strong><span>${tr("总内存", "Total memory", "總記憶體")}</span></div><div><strong>${h.available_memory_mib === null ? "—" : (h.available_memory_mib / 1024).toFixed(1)} <small>GiB</small></strong><span>${tr("当前可用", "Available now", "目前可用")}</span></div><div><strong>${h.cores}</strong><span>${tr("逻辑核心", "Logical cores", "邏輯核心")}</span></div><div><strong>${bytes(h.free_disk_bytes)}</strong><span>${tr("可用磁盘", "Free disk", "可用磁碟")}</span></div></div>
     <p class="setting-help">${tr("硬件检测在本机完成，不上传设备信息。推荐依据容量与运行时支持，速度需实测。", "Hardware detection is local and sends no device information. Recommendations reflect capacity and installed runtimes; speed requires measurement.", "硬體偵測在本機完成，不上傳裝置資訊；推薦依容量及執行環境，速度需實測。")}</p><p class="setting-help">${tr("本机可用后端", "Available local backends", "本機可用後端")}: ${h.backends.map((b) => esc(backendLabels[b] || b)).join(" / ")}</p></div>
-    <div id="acceleration-components">${accelerationBody(h, acceleration)}</div>
+    <div id="acceleration-components">${accelerationBody(h, acceleration, prefs.inference_backend)}</div>
     <h2 class="settings-subtitle">${tr("模型与资源搭配", "Model and resource combinations", "模型及資源搭配")}</h2><div class="preset-grid">${h.resource_presets.map(({ id, preferences: p }) => `<button data-preset="${id}" class="preset-card ${prefs.resource_mode === id ? "recommended" : ""}"><span>${modes[id as keyof typeof modes] || esc(id)}</span><strong>${esc(models.find((m) => m.model.id === p.llm_model)?.model.name || p.llm_model)}</strong><p>${esc(p.asr_model)}<br>${p.threads} ${tr("线程", "threads", "執行緒")} · ${p.context_size} tokens</p></button>`).join("")}</div>
     <div class="settings-group">${row(
       tr("推理后端", "Inference backend", "推理後端"),
@@ -505,9 +523,7 @@ export async function mountSettings(
             "check_acceleration_components",
             kind === "check-preview" ? { preview: true } : undefined,
           );
-          const region = root.querySelector("#acceleration-components");
-          if (region && hardware)
-            region.innerHTML = accelerationBody(hardware, acceleration);
+          renderAccelerationControls();
         } else if (kind === "download") {
           const { id, version, preview } = button.dataset;
           if (!id || !version) return;
@@ -562,7 +578,20 @@ export async function mountSettings(
             return;
           if (!alive) return;
           await invoke("remove_acceleration_component", { id, version });
+        } else if (kind === "use-auto") {
+          // Changing the user's backend requires this explicit action. Testing
+          // remains a separate click, including when saving the preference fails.
+          await save((p) => (p.inference_backend = "auto"));
+          renderBackendControls();
+          return;
         } else if (kind === "test") {
+          // A CPU selection may still be saving while this old button is visible.
+          await queue;
+          if (!alive) return;
+          if (prefs.inference_backend !== "auto") {
+            renderAccelerationControls();
+            return;
+          }
           await invoke("verify_acceleration", {
             id: button.dataset.id,
             version: button.dataset.version,
@@ -800,14 +829,18 @@ export async function mountSettings(
     }
     if (input.dataset.pref) {
       const key = input.dataset.pref as keyof Preferences;
+      // Capture the user's choice before an earlier queued save redraws this
+      // control. Reading it inside the mutator can silently reverse that choice.
+      const value =
+        input.type === "checkbox"
+          ? input.checked
+          : ["inference_backend", "resource_mode"].includes(key)
+            ? input.value
+            : Number(input.value);
       await save((p) => {
-        (p as unknown as Record<string, unknown>)[key] =
-          input.type === "checkbox"
-            ? input.checked
-            : ["inference_backend", "resource_mode"].includes(key)
-              ? input.value
-              : Number(input.value);
+        (p as unknown as Record<string, unknown>)[key] = value;
       });
+      if (key === "inference_backend") renderBackendControls();
     }
     if (input.dataset.appearance) {
       const key = input.dataset.appearance as keyof Preferences["appearance"];
@@ -847,7 +880,7 @@ export async function mountSettings(
       JSON.stringify(nextAcceleration) !== JSON.stringify(acceleration)
     ) {
       acceleration = nextAcceleration;
-      region.innerHTML = accelerationBody(hardware, acceleration);
+      renderAccelerationControls();
     }
   }
   const click = (e: Event) =>

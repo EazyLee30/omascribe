@@ -66,11 +66,15 @@ try {
     await page.evaluate(
       ({ components, verification, hardware }) => {
         document.querySelector("#catalog").innerHTML =
-          AccelerationUI.accelerationBody(hardware, {
-            state: "ready",
-            components,
-            verification,
-          });
+          AccelerationUI.accelerationBody(
+            hardware,
+            {
+              state: "ready",
+              components,
+              verification,
+            },
+            "auto",
+          );
       },
       { components, verification, hardware },
     );
