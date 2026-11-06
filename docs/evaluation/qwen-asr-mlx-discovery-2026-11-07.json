@@ -1,0 +1,857 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "source_revision": "a02c208f55e16f7fc4dc7cc888c2834b447cac44",
+  "result": "Completed bounded discovery; fixed Qwen MLX candidate warrants further review, not production admission.",
+  "scope": "Seven previously selected public FLEURS clips; three unchanged note/hotword arms each. Full archived production PCM, not prepared WAV. Direct offline candidate only: no note-save UI, production ASR worker, translation, minutes writer or user workspace exercised.",
+  "candidate": {
+    "model_id": "mlx-community/Qwen3-ASR-0.6B-4bit",
+    "revision": "313d850181767edf09f00a9c289becca70e58cd0",
+    "license": "apache-2.0",
+    "weights_bytes": 708236945,
+    "weights_sha256": "70c7e67e588062adce4f10796e47ad42ead51c6671eda61a0987eae38ca95ddf",
+    "mlx_audio_version": "0.6.4",
+    "python_version": "3.11.12",
+    "component_policy": "Independent optional component; not bundled with installer."
+  },
+  "runtime": {
+    "mlx-audio": "0.6.4",
+    "mlx": "0.32.4",
+    "mlx-metal": "0.32.4",
+    "transformers": "5.22.2",
+    "huggingface-hub": "2.4.0"
+  },
+  "host": {
+    "cpu": "Apple M5",
+    "system": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "initial_observer_failure": {
+    "retained": true,
+    "loads": 1,
+    "generation_calls": 1,
+    "emitted_transcript_results": 0,
+    "quality_verdict": null,
+    "wall_seconds": 4.8835456249071285,
+    "exit_code": 1,
+    "process_exit_confirmed": true,
+    "reason": "Observer expected one prompt construction. The pinned release builds the same prompt again only to count tokens. The first request returned internally, but its text was not emitted or inspected before repairing the observer.",
+    "repair": "Exactly one instrumentation-only repair; count actual chunk calls and require two identical prompt/token observations for nonempty output. Preserve raw output before parent-side rejection. Fixed-source AST stub checks pass without a model. No changed weights, runtime, decoding, notes, inputs or quality rules."
+  },
+  "protocol": {
+    "case_order": [
+      "fleurs_en_hotword_013",
+      "fleurs_en_hotword_051",
+      "fleurs_en_hotword_004",
+      "fleurs_en_hotword_053",
+      "fleurs_en_hotword_065",
+      "fleurs_en_hotword_087",
+      "fleurs_en_hotword_096"
+    ],
+    "arm_order": [
+      "baseline",
+      "positive",
+      "negative"
+    ],
+    "limits": {
+      "max_requests": 21,
+      "per_request_seconds": 30,
+      "total_seconds": 240,
+      "max_process_tree_rss_bytes": 3221225472,
+      "retries": 0,
+      "model_loads": 1,
+      "gpu_memory_policy": "Record MLX active/peak separately; do not equate unified-memory metrics with process-tree RSS."
+    },
+    "generation": {
+      "language": null,
+      "hotwords_source": "Exact recorded wire.words for each arm; passed directly as generate(hotwords=...)",
+      "system_prompt": null,
+      "temperature": 0.0,
+      "max_tokens": 256,
+      "batch_size": 1,
+      "stream": false,
+      "mlx_cache_limit_bytes": 67108864,
+      "pcm_conversion": "numpy.frombuffer(bytes, dtype=<i2).astype(float32) / 32768.0; no normalization, resampling, trimming, padding or second PcmReader pass."
+    },
+    "completed_requests": 21,
+    "loads_in_completed_run": 1,
+    "total_loads_including_observer_failure": 2,
+    "total_generation_calls_including_observer_failure": 22,
+    "quality_or_parameter_retries": 0,
+    "instrumentation_repairs": 1
+  },
+  "findings": {
+    "candidate_by_arm": {
+      "baseline": {
+        "raw_target_names": 3,
+        "cases": 7,
+        "word_errors": 14,
+        "reference_words": 162,
+        "wer": 0.08641975308641975
+      },
+      "positive": {
+        "raw_target_names": 7,
+        "cases": 7,
+        "word_errors": 9,
+        "reference_words": 162,
+        "wer": 0.05555555555555555
+      },
+      "negative": {
+        "raw_target_names": 3,
+        "cases": 7,
+        "word_errors": 14,
+        "reference_words": 162,
+        "wer": 0.08641975308641975
+      }
+    },
+    "positive_names_vs_historical_small": {
+      "measured": 7,
+      "expected": 7,
+      "gains": 7,
+      "losses": 0
+    },
+    "positive_small_raw_names": 0,
+    "positive_names_gained_within_qwen": 4,
+    "designated_unspoken_name_insertions": 0,
+    "unexpected_explicit_negations": 0,
+    "required_reference_numbers_all_preserved": true,
+    "remaining_unhinted_name_error": "013 still mistranscribes Oldrich Jelinek as Aldrich Deleñic in baseline/positive and Ondrej Deleňic in negative. Passing target-name sentinels is not complete factual fidelity.",
+    "wer_limit": "Existing token scorer unchanged: 11th/16th versus written ordinals, punctuation and tokenization may contribute errors. Numeric source-fidelity controls are independent of aggregate WER."
+  },
+  "costs_completed_run": {
+    "wall_seconds_including_load_shutdown_and_final_hashes": 6.723736583022401,
+    "load_seconds_warm_environment": 0.8446840409887955,
+    "summed_request_seconds": 4.90146733308211,
+    "audio_seconds_unique": 72.72,
+    "audio_seconds_all_arms": 218.16,
+    "sampled_tree_cpu_seconds": 3.761364961,
+    "sampled_tree_peak_rss_mib": 838.28125,
+    "max_mlx_active_bytes": 736009010,
+    "max_mlx_peak_bytes": 1503545068,
+    "max_mlx_cache_bytes": 4327456,
+    "gpu_energy": null
+  },
+  "guards": {
+    "frozen_files": 8270,
+    "before_after_identity_match": true,
+    "full_pcm_float32_chunk_and_exact_hotword_prompt_verified": true,
+    "confirmed_process_exit": true,
+    "exit_code": 0,
+    "real_user_data_opened": false,
+    "production_defaults_changed": false,
+    "installer_built": false,
+    "quality_gate_passed": false,
+    "release_admission": false
+  },
+  "limits": [
+    "Discovery selection contains known small-model misses and only seven English clips; not representative accuracy, Chinese/mixed-language coverage, original Q9 100-case admission, or Q16 minutes quality.",
+    "No clip contains spoken negation; checks only unexpected explicit insertion, not preserving spoken negation or uncertainty. Other unhinted names still fail.",
+    "Historical small baseline used source a6afb8e61f7cf34191a77999067635ff66dc44a9 and archived output, not a current-source or matched lifecycle speed comparison. Raw output and old textual correction remain distinct.",
+    "Warm import/OS/Metal caches; sampled CPU is a lower bound. Summed process RSS can double-count sharing and excludes parts of GPU/unified allocation. MLX allocator peaks are separate and must not be added to or substituted for RSS. No energy or whole-meeting resource improvement claim.",
+    "Direct model hotwords can inform recognition, but this run does not implement or validate notes triggering safe automatic acoustic revision of existing transcript and minutes."
+  ],
+  "decision": [
+    "Keep current production defaults and Q9/Q16 gates unchanged. Continue a bounded optional Apple Silicon component evaluation; no installer bundling.",
+    "Before automatic refinement, verify full original name/negative/numeric corpus and Chinese/mixed speech. Preserve human revisions, archived ASR and an explicit latest accepted acoustic baseline so later note edits cannot restore obsolete first-pass text.",
+    "Schedule any future refinement only within explicit idle/resource/time budgets and cancel on changed notes, source, recording or meeting identity. Commit transcript/citations atomically only with supporting audio evidence; do not use name presence alone to justify replacement.",
+    "Retain one pinned task-owned model/runtime for the next approved-scope evaluation rather than download duplicate copies. No application model installation or signed release component was created."
+  ],
+  "observations": [
+    {
+      "case": "fleurs_en_hotword_013",
+      "reference": "Australia's Mitchell Gourley finished eleventh in the men's standing Super-G. Czech competitor Oldrich Jelinek finished sixteenth in the men's sitting Super-G.",
+      "target": "Mitchell Gourley",
+      "forbidden": "Erik the Red",
+      "protected_numbers": {
+        "11th": "\\b(?:eleventh|11th)\\b",
+        "16th": "\\b(?:sixteenth|16th)\\b"
+      },
+      "pcm": {
+        "sha256": "a1bf7fea154625d0e6f08ddf33b42663c65cf7d6d2237ebd19265e2fddeb0a70",
+        "bytes": 447360,
+        "samples": 223680,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "Australia's Mitchell Gorley finished 11th in the men's standing super-G. Czech competitor Aldrich Deleñic finished 16th in the men's sitting super-G.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "11th": true,
+              "16th": true
+            },
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 5,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 23,
+              "wer": 0.21739130434782608
+            }
+          },
+          "small_historical_raw_text": "A STRALIA S MITCHELEY FINISHED ELEVENTH IN THE MEN STANDING SUPERGY CHECK COMPETITOR OLDERAGE DELENIC FINISH SIXTEENTH IN THE MEN SITTING SUPERGY",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Mitchell Gourley**",
+          "hotwords": [
+            "MITCHELL GOURLEY"
+          ],
+          "qwen_raw_text": "Australia's Mitchell Gourley finished 11th in the men's standing super-G. Czech competitor Aldrich Deleñic finished 16th in the men's sitting super-G.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "11th": true,
+              "16th": true
+            },
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 4,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 23,
+              "wer": 0.17391304347826086
+            }
+          },
+          "small_historical_raw_text": "ASTRALIA S MITCHELL GOE FINISHED ELEVENTH IN THE MEN STANDING SUPERGY CHECK COMPETITOR OLDERAGE DELENIC FINISH SIXTEENTH IN THE MEN SITTING SUPERGY",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Erik the Red**",
+          "hotwords": [
+            "ERIK THE RED"
+          ],
+          "qwen_raw_text": "Australia's Mitchell Gorley finished 11th in the men's standing super-G. Czech competitor Ondrej Deleňic finished 16th in the men's sitting super-G.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "11th": true,
+              "16th": true
+            },
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 5,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 23,
+              "wer": 0.21739130434782608
+            }
+          },
+          "small_historical_raw_text": "ASTRALIA S MITCHEARLY FINISHED ELEVENTH IN THE MEN STANDING SUPERGY CHECK COMPETITOR OLDERAGE DELENIC FINISH SIXTEENTH IN THE MEN SITTING SUPERGY",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_051",
+      "reference": "Goats seem to have been first domesticated roughly 10,000 years ago in the Zagros Mountains of Iran.",
+      "target": "Zagros Mountains",
+      "forbidden": "Asunción",
+      "protected_numbers": {
+        "10000": "\\b(?:10[ ,]?000|ten thousand)\\b"
+      },
+      "pcm": {
+        "sha256": "1b972144375fd32591b867b21e0cfd3e9303a09cb8f9e67556e4888924394dfb",
+        "bytes": 220800,
+        "samples": 110400,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "Goats seem to have been first domesticated roughly 10,000 years ago in the Zagros Mountains of Iran.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "10000": true
+            },
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 18,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "GOATS SEEMED TO HAVE BEEN FIRST DOMESTICATED ROUGHLY TUNNING YEARS AGO IN THE ZACH ROSE METONS OF IRAN",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Zagros Mountains**",
+          "hotwords": [
+            "ZAGROS MOUNTAINS"
+          ],
+          "qwen_raw_text": "Goats seem to have been first domesticated roughly 10,000 years ago in the Zagros Mountains of Iran.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "10000": true
+            },
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 18,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "GOATS SEEMED TO HAVE BEEN FIRST DOMESTICATED ROUGHLY TEN THOUSAND YEARS AGO IN THE ZA IRONT",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Asunción**",
+          "hotwords": [
+            "ASUNCIÓN"
+          ],
+          "qwen_raw_text": "Goats seem to have been first domesticated roughly 10,000 years ago in the Zagros Mountains of Iran.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "10000": true
+            },
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 18,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "GOATS SEEMED TO HAVE BEEN FIRST DOMESTICATED ROUGHLY TUNNING YEARS AGO IN THE ZACH ROSE METONS OF IRAN",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_004",
+      "reference": "Bishkek was described as sinking into a state of \"anarchy\" by one observer, as gangs of people roamed the streets and plundered stores of consumer goods.",
+      "target": "Bishkek",
+      "forbidden": "Cambridge",
+      "protected_numbers": {},
+      "pcm": {
+        "sha256": "ffd9049eaceda2fb1590fa9016c57af7b0b402b00cfcce521fdff4963c87ca28",
+        "bytes": 307200,
+        "samples": 153600,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "Bishkek was described as sinking into a state of anarchy by one observer, as gangs of people roamed the streets and plundered stores of consumer goods.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 26,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "WAS DESCRIBED AS SINKING INTO A STATE OF AN ARCHI BY ONE OBSERVER AS GANGS OF PEOPLE WRONG THE STREETS AND PLUNDERED STORES OF CONSUMER GOODS",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Bishkek**",
+          "hotwords": [
+            "BISHKEK"
+          ],
+          "qwen_raw_text": "Bishkek was described as sinking into a state of anarchy by one observer, as gangs of people roamed the streets and plundered stores of consumer goods.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 26,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "WAS DESCRIBED AS SINKING INTO A STATE OF ANARCHY BY ONE OBSERVER AS GANGS OF PEOPLE WRONG THE STREETS AND PLUNDERED STORES OF CONSUMER GOODS",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Cambridge**",
+          "hotwords": [
+            "CAMBRIDGE"
+          ],
+          "qwen_raw_text": "Bishkek was described as sinking into a state of anarchy by one observer, as gangs of people roamed the streets and plundered stores of consumer goods.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 26,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "WAS DESCRIBED AS SINKING INTO A STATE OF ANARCHY BY ONE OBSERVER AS GANGS OF PEOPLE WRONG THE STREETS AND PLUNDERED STORES OF CONSUMER GOODS",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_053",
+      "reference": "Barcelona's official languages are Catalan and Spanish. About a half prefer to speak Catalan, a vast majority understands it, and virtually everyone knows Spanish.",
+      "target": "Barcelona",
+      "forbidden": "Cabo da Roca",
+      "protected_numbers": {},
+      "pcm": {
+        "sha256": "f825797126eee626111c5f34501f6b48fd8803b19449da13d14824ae9121469d",
+        "bytes": 359040,
+        "samples": 179520,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "Brazilia's official languages are Catalan and Spanish. About half prefer to speak Catalan, a vast majority understands it, and virtually everyone knows Spanish.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 1,
+              "deletions": 1,
+              "insertions": 0,
+              "reference_units": 24,
+              "wer": 0.08333333333333333
+            }
+          },
+          "small_historical_raw_text": "BRUCE LOANIS OFFICIAL LANGUAGES ARE CAUGHT ALAN AND SPANISH ABOUT HAVE PREFERRED SPEECHOAN OF ASTMAJORITY UNDERSTANDS IT AND VIRTUALLY EVERYONE KNOW SPANISH",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Barcelona**",
+          "hotwords": [
+            "BARCELONA"
+          ],
+          "qwen_raw_text": "Barcelona's official languages are Catalan and Spanish. About half prefer to speak Catalan, a vast majority understands it, and virtually everyone knows Spanish.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 1,
+              "insertions": 0,
+              "reference_units": 24,
+              "wer": 0.041666666666666664
+            }
+          },
+          "small_historical_raw_text": "NESS OFFICIAL LANGUAGES ARE CAUGHT ALONG AND SPANISH ABOUT HAVE PREFERRED SPEAK COLON OF AS MAJORITY UNDERSTANDS IT AND VIRTUALLY EVERYONE KNOW SPANISH",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Cabo da Roca**",
+          "hotwords": [
+            "CABO DA ROCA"
+          ],
+          "qwen_raw_text": "Brazilia's official languages are Catalan and Spanish. About half prefer to speak Catalan, a vast majority understands it, and virtually everyone knows Spanish.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 1,
+              "deletions": 1,
+              "insertions": 0,
+              "reference_units": 24,
+              "wer": 0.08333333333333333
+            }
+          },
+          "small_historical_raw_text": "NESS OFFICIAL LANGUAGES ARE CAUGHT ALONG AND SPANISH ABOUT HAVE PREFERRED SPEAK COLON OF AS MAJORITY UNDERSTANDS IT AND VIRTUALLY EVERYONE KNOW SPANISH",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_065",
+      "reference": "The debate was sparked by controversy over spending on relief and reconstruction in the wake Hurricane Katrina; which some fiscal conservatives have humorously labeled \"Bush's New Orleans Deal.\"",
+      "target": "Hurricane Katrina",
+      "forbidden": "Subtropical Storm Jerry",
+      "protected_numbers": {},
+      "pcm": {
+        "sha256": "af770008ce73a6ed7efd65e50048a083343d0cb6086429d1b0b545fe54cfb1d3",
+        "bytes": 395520,
+        "samples": 197760,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "The debate was sparked by controversy over spending on relief and reconstruction in the wake of Hurricane Katrina, which some fiscal conservatives have humorously labeled Bush's New Orleans deal.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 1,
+              "reference_units": 28,
+              "wer": 0.03571428571428571
+            }
+          },
+          "small_historical_raw_text": "THE DEBATE WAS BARKED BY CONTROVERSY OVER SPINNING OUR RELIEF AND RECONSTRUCTION IN THE WAKE OF HER KING KATRINA WHICH THUMB FISCAL CONSERVATIVES HAVE HUMOROUSLY LABELED BUSHES NEW ORLEANS DEAL",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Hurricane Katrina**",
+          "hotwords": [
+            "HURRICANE KATRINA"
+          ],
+          "qwen_raw_text": "The debate was sparked by controversy over spending on relief and reconstruction in the wake of Hurricane Katrina, which some fiscal conservatives have humorously labeled Bush's New Orleans deal.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 1,
+              "reference_units": 28,
+              "wer": 0.03571428571428571
+            }
+          },
+          "small_historical_raw_text": "THE DEBATE WAS SPARKED BY CONTROVERSY OVER SPINNING OUR RELIEF AND RECONSTRUCTION IN THE WAKE OF HER KING KATRINA WHICH THUMB FISCAL CONSERVATIVES HAVE HUMOROUSLY LABELED BUSHES NEW ORLEANS DEAL",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Subtropical Storm Jerry**",
+          "hotwords": [
+            "SUBTROPICAL STORM JERRY"
+          ],
+          "qwen_raw_text": "The debate was sparked by controversy over spending on relief and reconstruction in the wake of Hurricane Katrina, which some fiscal conservatives have humorously labeled Bush's New Orleans deal.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 1,
+              "reference_units": 28,
+              "wer": 0.03571428571428571
+            }
+          },
+          "small_historical_raw_text": "THE DEBATE WAS SPARKED BY CONTROVERSY OVER SPINNING OUR RELIEF AND RECONSTRUCTION IN THE WAKE OF HER KING KATRINA WHICH THUMB FISCAL CONSERVATIVES HAVE HUMOROUSLY LABELED BUSHES NEW ORLEANS DEAL",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_087",
+      "reference": "Ottawa is Canada's charming, bilingual capital and features an array of art galleries and museums that showcase Canada's past and present.",
+      "target": "Ottawa",
+      "forbidden": "South Carolina",
+      "protected_numbers": {},
+      "pcm": {
+        "sha256": "17103dd649574a66bb44dc172aba8ed370c9e1d7d6880203080840e90b1a759a",
+        "bytes": 253440,
+        "samples": 126720,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "Oraura is Canada's charming bilingual capital and features an array of art galleries and museums that showcase Canada's past and present.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 1,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 21,
+              "wer": 0.047619047619047616
+            }
+          },
+          "small_historical_raw_text": "CHARMING BY THE CAPITER OF FEATURES AND ARRAY OF ARTALARIES AND MUSEUMS THAT SHOWCASE CANVAS PAST AND PRESENT",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**Ottawa**",
+          "hotwords": [
+            "OTTAWA"
+          ],
+          "qwen_raw_text": "OTTAWA is Canada's charming bilingual capital and features an array of art galleries and museums that showcase Canada's past and present.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 0,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 21,
+              "wer": 0.0
+            }
+          },
+          "small_historical_raw_text": "CHARMING BY THE CAPITER OF FEATURES AND ARRAY OF ARTALARIES AND MUSEUMS THAT SHOWCASE CANVAS PAST AND PRESENT",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**South Carolina**",
+          "hotwords": [
+            "SOUTH CAROLINA"
+          ],
+          "qwen_raw_text": "Orovia is Canada's charming bilingual capital and features an array of art galleries and museums that showcase Canada's past and present.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {},
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 1,
+              "deletions": 0,
+              "insertions": 0,
+              "reference_units": 21,
+              "wer": 0.047619047619047616
+            }
+          },
+          "small_historical_raw_text": "CHARMING BY THE CAPITER OF FEATURES AND ARRAY OF ARTALARIES AND MUSEUMS THAT SHOWCASE CANVAS PAST AND PRESENT",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    },
+    {
+      "case": "fleurs_en_hotword_096",
+      "reference": "ASUS Eee PC, earlier launched world-wide for cost-saving and functionality factors, became a hot topic in 2007 Taipei IT Month.",
+      "target": "ASUS Eee PC",
+      "forbidden": "Rossby number",
+      "protected_numbers": {
+        "2007": "\\b(?:2007|two thousand (?:and )?seven|twenty (?:oh |o )?seven)\\b"
+      },
+      "pcm": {
+        "sha256": "02b9b8f0da6789681cfa693528033e3072a4f05494debcc1171538fe2bc1400a",
+        "bytes": 343680,
+        "samples": 171840,
+        "sample_rate": 16000,
+        "channels": 1,
+        "encoding": "s16le"
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "note": "",
+          "hotwords": [],
+          "qwen_raw_text": "ASUS EPC earlier launched worldwide for cost-saving functionality factors became a hot topic in 2007 Taipei IT Month.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "2007": true
+            },
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 2,
+              "deletions": 3,
+              "insertions": 0,
+              "reference_units": 22,
+              "wer": 0.22727272727272727
+            }
+          },
+          "small_historical_raw_text": "SCENEPC EARLIER LAUNCH WORLDWIDE FOR COST SAVING FUNCTIONALITY FACTORS BECAME A HOT TOPIC AND TWO THOUSAND SEVEN TYPE I T MONTH",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "positive",
+          "note": "**ASUS Eee PC**",
+          "hotwords": [
+            "ASUS EEE PC"
+          ],
+          "qwen_raw_text": "ASUS EEE PC, earlier launched worldwide for cost-saving functionality factors became a hot topic in 2007 Taipei IT Month.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "2007": true
+            },
+            "expected_name_present": true,
+            "wer": {
+              "substitutions": 1,
+              "deletions": 2,
+              "insertions": 0,
+              "reference_units": 22,
+              "wer": 0.13636363636363635
+            }
+          },
+          "small_historical_raw_text": "SCENEPC EARLIER LAUNCH WORLD WIDE FOR COST SAVING FUNCTIONALITY FACTORS BECAME A HOT TOPIC AND TWO THOUSAND SEVEN TYPE I T MONTH",
+          "small_historical_raw_target_present": false
+        },
+        {
+          "arm": "negative",
+          "note": "**Rossby number**",
+          "hotwords": [
+            "ROSSBY NUMBER"
+          ],
+          "qwen_raw_text": "ASUS EPC, earlier launched worldwide for cost-saving functionality factors, became a hot topic in 2007 Taipei IT Month.",
+          "qwen_controls": {
+            "problems": [],
+            "numbers": {
+              "2007": true
+            },
+            "expected_name_present": false,
+            "wer": {
+              "substitutions": 2,
+              "deletions": 3,
+              "insertions": 0,
+              "reference_units": 22,
+              "wer": 0.22727272727272727
+            }
+          },
+          "small_historical_raw_text": "SCENEPC EARLIER LAUNCH WORLD WIDE FOR COST SAVING FUNCTIONALITY FACTORS BECAME A HOT TOPIC AND TWO THOUSAND SEVEN TYPE I T MONTH",
+          "small_historical_raw_target_present": false
+        }
+      ]
+    }
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/PROTOCOL.md",
+      "bytes": 3835,
+      "sha256": "d24a2a44699eb57150e5f1458cc31c6b4f7c02a9cd363e3010aa9b9cf14fcc7b"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/OBSERVATION-REPAIR.md",
+      "bytes": 1411,
+      "sha256": "d7b5d37ea1e93e2f63a7ae9dc5df53b7d4bbee6bcbb31feadd30c2e839ac47d6"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/fixture-manifest.json",
+      "bytes": 53480,
+      "sha256": "f198b0508f4e4f749bcbb5fbbb742ec2c7f76482b7b547a346679bfe77c403fc"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/fixture-control-check.json",
+      "bytes": 416,
+      "sha256": "7dfce5d2b9860a222d9b87c94b0e824a10b533b34938ffe46d5c19db41c5421a"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/observer-source-check.json",
+      "bytes": 3397,
+      "sha256": "1de6f9c204c1e49744a7bbe1bcddc03fb7a55b175ff9f2d0a23d9b872ecf5b1e"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/worker.py",
+      "bytes": 5714,
+      "sha256": "326a84696519dc0d41c9c45d8dfc61674aa04e78a112bd3538d53338e802a9e5"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run.py",
+      "bytes": 9286,
+      "sha256": "6680a058510cf9edfed9075106a53f78159a8cd782b7ef028d8efeea4b4422f8"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/execution-freeze.json",
+      "bytes": 2304614,
+      "sha256": "41f4e2c0205b4c09af512ac88304314608395914cd62e8354477da379df7794d"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/execution-freeze-observer-failure.json",
+      "bytes": 2302640,
+      "sha256": "663099ccf26f6a104deb1f0a7b25e5da6c2b7ad61e0640abfc386acf16a9e4fe"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/execution.log",
+      "bytes": 4551,
+      "sha256": "bea46c7da607973fd1bf490b5eb7f01dda3e111de1dd571a8e7ebcf11fc3e16a"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run/report.json",
+      "bytes": 4672750,
+      "sha256": "4fa0460ae3861ff1ba4edd084a175723d8b6f89038ad18700ce0db619bce728b"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run/stdout.jsonl",
+      "bytes": 31996,
+      "sha256": "afc9d3aaae7fa16ede59bbddb8226846c2f0f35b00b320e8854297ad9f128ef2"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run-observer-failure/report.json",
+      "bytes": 4616051,
+      "sha256": "16c06cd0a9dd2521c7e040309203beedcf3a213d5583ce273ba4f109b22699db"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run-observer-failure/stdout.jsonl",
+      "bytes": 285,
+      "sha256": "20553f9ef29a37ba463316e88f1bb9f4bb04f9b523e41e625b07f74d88bc423c"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run-observer-failure/stderr.txt",
+      "bytes": 477,
+      "sha256": "96f8806bfdbd52cff2edaf0def9aa7f0bf3bad01f532a86030cdf152f36a3d28"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/worker-observer-failure.py",
+      "bytes": 4397,
+      "sha256": "a93d2339b4a2e9555c569ca87acd442d22f61e1982988feecc0afeeba101102c"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/run-observer-failure.py",
+      "bytes": 9246,
+      "sha256": "ba0aab185c60845116b2ad96bea2b2131998b8a1fe929856768c7b6c151489fc"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/runtime/requirements.lock",
+      "bytes": 73218,
+      "sha256": "373e6cbccf383091eeb5b57d3f559b97bfab48e3023327287feb3ca484bbe023"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/weight-download.json",
+      "bytes": 219,
+      "sha256": "8d8bd8e75ad168fd558c9db4b2de8964b773bd774a44a9f33111b87c20b63f75"
+    }
+  ]
+}
