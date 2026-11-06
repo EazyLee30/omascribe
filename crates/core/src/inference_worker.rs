@@ -26,6 +26,7 @@ pub(crate) struct WorkerPool(Mutex<PoolState>);
 #[derive(Default)]
 struct PoolState {
     idle: Option<IdleWorker>,
+    active_stop: Option<StopControl>,
     leased: bool,
     epoch: u64,
     batches: usize,
@@ -42,6 +43,11 @@ struct IdleWorker {
     expires: Instant,
     ttl: Duration,
     since: Instant,
+}
+#[derive(Clone)]
+struct StopControl {
+    pid: u32,
+    stop: Weak<Mutex<StopState>>,
 }
 #[derive(Clone, Serialize)]
 pub struct WorkerStatus {
@@ -69,6 +75,43 @@ impl WorkerStatus {
     }
 }
 impl WorkerPool {
+    fn register_stop(&self, engine: &Engine, pid: u32, stop: &Arc<Mutex<StopState>>) {
+        self.0.lock().unwrap().active_stop = Some(StopControl {
+            pid,
+            stop: Arc::downgrade(stop),
+        });
+        // Cancellation may precede publication, including during native spawn.
+        // Check after publishing; the complementary cancel path reads the
+        // published control after setting the flag. Neither holds the pool lock
+        // while signalling through the Server's closing/one-stop gate.
+        if engine.note_cancel.load(Ordering::SeqCst) {
+            stop_from_watchdog(Some(engine), stop, pid, ReleaseReason::Cancelled, false);
+        }
+    }
+    pub(crate) fn cancel_active(&self, engine: &Engine) {
+        let control = self.0.lock().unwrap().active_stop.clone();
+        if let Some(control) = control {
+            if let Some(stop) = control.stop.upgrade() {
+                stop_from_watchdog(
+                    Some(engine),
+                    &stop,
+                    control.pid,
+                    ReleaseReason::Cancelled,
+                    false,
+                );
+            }
+        }
+    }
+    fn clear_stop(&self, pid: u32, stop: &Arc<Mutex<StopState>>) {
+        let mut state = self.0.lock().unwrap();
+        if state
+            .active_stop
+            .as_ref()
+            .is_some_and(|control| control.pid == pid && control.stop.ptr_eq(&Arc::downgrade(stop)))
+        {
+            state.active_stop = None;
+        }
+    }
     fn metal_rejected(&self, key: &str) -> bool {
         self.0.lock().unwrap().metal_failure.as_deref() == Some(key)
     }
@@ -371,7 +414,7 @@ impl LocalSession {
         !self.resource_stop.load(Ordering::SeqCst)
             && !self.timed_out.load(Ordering::SeqCst)
             && !self.server.done.load(Ordering::SeqCst)
-            && matches!(self.server.child.try_wait(), Ok(None))
+            && matches!(self.server.try_wait(), Ok(None))
     }
 }
 #[cfg(test)]
@@ -724,7 +767,10 @@ fn check_memory(available: Option<u64>, required: u64) -> Result<()> {
 struct StopState {
     closing: bool,
     reason: Option<ReleaseReason>,
+    requested_at: Option<Instant>,
+    forced: bool,
 }
+const STOP_GRACE: Duration = Duration::from_secs(1);
 struct ReleaseContext {
     reason: ReleaseReason,
     ttl: Duration,
@@ -748,7 +794,7 @@ impl Server {
         engine: &Arc<Engine>,
         pooled: Option<Duration>,
     ) -> Self {
-        Self {
+        let server = Self {
             child,
             done,
             engine: Arc::downgrade(engine),
@@ -762,7 +808,11 @@ impl Server {
             force_unconfirmed_exit: false,
             #[cfg(test)]
             before_reap: None,
-        }
+        };
+        engine
+            .inference_pool
+            .register_stop(engine, server.child.id(), &server.stop);
+        server
     }
     fn release_as(&mut self, reason: ReleaseReason, ttl: Duration, idle_since: Option<Instant>) {
         self.pooled = Some(ReleaseContext {
@@ -770,6 +820,16 @@ impl Server {
             ttl,
             idle_since,
         });
+    }
+    fn try_wait(&mut self) -> std::io::Result<Option<std::process::ExitStatus>> {
+        let mut stop = self.stop.lock().unwrap();
+        let result = self.child.try_wait();
+        // Reaping can free the PID before Drop. Close the same signal gate
+        // while still holding it; errors are also unsafe to signal again.
+        if !matches!(result, Ok(None)) {
+            stop.closing = true;
+        }
+        result
     }
 }
 fn stop_from_watchdog(
@@ -785,6 +845,7 @@ fn stop_from_watchdog(
             false
         } else {
             state.reason = Some(reason);
+            state.requested_at = Some(Instant::now());
             if matches!(reason, ReleaseReason::Cancelled | ReleaseReason::AsrBacklog) {
                 if let Some(engine) = engine {
                     // Preserve cancellation-before-signal ordering, but only
@@ -850,6 +911,61 @@ fn yield_from_watchdog(
     }
     accepted
 }
+
+fn finish_watchdog_stop(
+    engine: Option<&Engine>,
+    stop: &Mutex<StopState>,
+    pid: u32,
+    reason: ReleaseReason,
+    pooled: bool,
+) {
+    yield_from_watchdog(engine, stop, pid, reason, pooled);
+    loop {
+        let remaining = {
+            let state = stop.lock().unwrap();
+            if state.closing || state.forced {
+                return;
+            }
+            let Some(requested) = state.requested_at else {
+                return;
+            };
+            STOP_GRACE.saturating_sub(requested.elapsed())
+        };
+        if remaining.is_zero() {
+            force_after_grace(stop, pid, Instant::now());
+            return;
+        }
+        thread::sleep(remaining.min(Duration::from_millis(20)));
+    }
+}
+
+fn force_after_grace(stop: &Mutex<StopState>, pid: u32, now: Instant) -> bool {
+    let mut state = stop.lock().unwrap();
+    if state.closing
+        || state.forced
+        || state
+            .requested_at
+            .is_none_or(|at| now.saturating_duration_since(at) < STOP_GRACE)
+    {
+        return false;
+    }
+    state.forced = true;
+    // Hold the owned Server's stop gate through the syscall. try_wait and Drop
+    // close this gate before they can reap, so this PID cannot identify a new
+    // process here. This is a hard stop, never another SIGINT/SIGTERM.
+    force_stopped_process(pid);
+    true
+}
+
+fn force_stopped_process(pid: u32) {
+    #[cfg(unix)]
+    unsafe {
+        libc::kill(pid as i32, libc::SIGKILL);
+    }
+    #[cfg(windows)]
+    crate::platform::stop_process(pid, false); // Windows already uses taskkill /F.
+}
+
 impl Drop for Server {
     fn drop(&mut self) {
         let stop_reason = {
@@ -876,6 +992,9 @@ impl Drop for Server {
         #[cfg(test)]
         let confirmed = confirmed && !self.force_unconfirmed_exit;
         if let Some(engine) = self.engine.upgrade() {
+            engine
+                .inference_pool
+                .clear_stop(self.child.id(), &self.stop);
             let _ = engine.llm_pid.compare_exchange(
                 self.child.id(),
                 0,
@@ -1010,6 +1129,20 @@ fn spawn_session(
             if done.load(Ordering::SeqCst) {
                 break;
             }
+            // Finish an accepted stop before unrelated resource/status locks.
+            // Repeated cancellation must not restart the first grace period.
+            let stopping = stop_state.lock().unwrap().reason;
+            if let Some(reason) = stopping {
+                let engine = weak.upgrade();
+                finish_watchdog_stop(
+                    engine.as_deref(),
+                    &stop_state,
+                    pid,
+                    reason,
+                    pooled.is_some(),
+                );
+                break;
+            }
             memory.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[process]), true);
             let rss_mib = memory.process(process).map(|p| p.memory() / 1024 / 1024);
             if let Some(mib) = rss_mib {
@@ -1035,10 +1168,17 @@ fn spawn_session(
                     reason,
                     pooled.is_some(),
                 ) {
-                    if let Some(engine) = engine {
+                    if let Some(engine) = engine.as_ref() {
                         engine.inference_pool.invalidate();
                     }
                 }
+                finish_watchdog_stop(
+                    engine.as_deref(),
+                    &stop_state,
+                    pid,
+                    reason,
+                    pooled.is_some(),
+                );
                 break;
             }
             let Some(engine) = weak.upgrade() else { break };
@@ -1056,7 +1196,7 @@ fn spawn_session(
             };
             if active_at.is_some_and(|since| since.elapsed() > Duration::from_secs(600)) {
                 timeout_flag.store(true, Ordering::SeqCst);
-                stop_from_watchdog(
+                finish_watchdog_stop(
                     Some(&engine),
                     &stop_state,
                     pid,
@@ -1077,7 +1217,7 @@ fn spawn_session(
                 } else {
                     ReleaseReason::AsrBacklog
                 };
-                yield_from_watchdog(Some(&engine), &stop_state, pid, reason, pooled.is_some());
+                finish_watchdog_stop(Some(&engine), &stop_state, pid, reason, pooled.is_some());
                 break;
             }
         }
@@ -1103,7 +1243,7 @@ fn spawn_session(
             }
             bail!("writer:resource-pressure");
         }
-        if server.child.try_wait()?.is_some() {
+        if server.try_wait()?.is_some() {
             bail!("笔记模型已停止；原文保留，可以稍后重试");
         }
         if agent
@@ -1379,8 +1519,268 @@ mod tests {
             thread::sleep(Duration::from_secs(120));
         }
     }
-    fn fake(engine: &Arc<Engine>) -> Result<LocalSession> {
+
+    #[cfg(unix)]
+    static CANCEL_SIGNALS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    #[cfg(unix)]
+    extern "C" fn count_cancel_signal(_: libc::c_int) {
+        // The handler does no allocation or file I/O. The child loop publishes
+        // the count outside the signal handler, including repeated interrupts.
+        CANCEL_SIGNALS.fetch_add(1, Ordering::SeqCst);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    #[ignore = "real signal-counting child invoked only by cancellation ownership tests"]
+    fn cancellation_signal_child() -> Result<()> {
+        let Some(directory) = std::env::var_os("OMASCRIBE_CANCEL_SIGNAL_CHILD") else {
+            return Ok(());
+        };
+        let directory = std::path::PathBuf::from(directory);
+        unsafe {
+            anyhow::ensure!(
+                libc::signal(
+                    libc::SIGTERM,
+                    count_cancel_signal as *const () as libc::sighandler_t
+                ) != libc::SIG_ERR,
+                "cannot install child signal handler"
+            );
+        }
+        let listener = if std::env::var_os("OMASCRIBE_CANCEL_SIGNAL_SSE").is_some() {
+            let listener = TcpListener::bind("127.0.0.1:0")?;
+            listener.set_nonblocking(true)?;
+            std::fs::write(
+                directory.join("address"),
+                listener.local_addr()?.to_string(),
+            )?;
+            Some(listener)
+        } else {
+            None
+        };
+        let mut held_stream = None;
+        std::fs::write(directory.join("signals"), "0")?;
+        std::fs::write(directory.join("ready"), "ready")?;
+        let mut previous = 0;
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while Instant::now() < deadline {
+            if held_stream.is_none() {
+                if let Some(listener) = &listener {
+                    match listener.accept() {
+                        Ok((mut stream, _)) => {
+                            use std::io::Write;
+                            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n")?;
+                            stream.flush()?;
+                            // Deliberately retain this socket after TERM, like
+                            // the observed native server waiting for HTTP close.
+                            held_stream = Some(stream);
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+                        Err(error) => return Err(error.into()),
+                    }
+                }
+            }
+            let count = CANCEL_SIGNALS.load(Ordering::SeqCst);
+            if count != previous {
+                std::fs::write(directory.join("signals"), count.to_string())?;
+                previous = count;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancelling_a_term_ignoring_worker_unblocks_its_live_sse_read() -> Result<()> {
+        use std::sync::mpsc;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let signals = tempfile::tempdir()?;
         let child = std::process::Command::new(std::env::current_exe()?)
+            .args([
+                "--exact",
+                "inference_worker::tests::cancellation_signal_child",
+                "--ignored",
+            ])
+            .env("OMASCRIBE_CANCEL_SIGNAL_CHILD", signals.path())
+            .env("OMASCRIBE_CANCEL_SIGNAL_SSE", "1")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?;
+        let pid = child.id();
+        let mut server = Server::new(child, Default::default(), &engine, Some(Duration::ZERO));
+        engine.llm_pid.store(pid, Ordering::SeqCst);
+        let reaped = ReapProbe::new(&server.child)?;
+        let ready_by = Instant::now() + Duration::from_secs(5);
+        while !signals.path().join("ready").exists() {
+            anyhow::ensure!(Instant::now() < ready_by, "SSE child did not become ready");
+            thread::sleep(Duration::from_millis(5));
+        }
+        let address = std::fs::read_to_string(signals.path().join("address"))?;
+        let (token_tx, token_rx) = mpsc::channel();
+        let (finished_tx, finished_rx) = mpsc::channel();
+        let reader = thread::spawn(move || {
+            let result = (|| -> Result<()> {
+                let response = ureq::AgentBuilder::new()
+                    .try_proxy_from_env(false)
+                    .timeout_read(Duration::from_secs(15))
+                    .build()
+                    .get(&format!("http://{address}/stream"))
+                    .call()?;
+                crate::notes::stream::read_observed(
+                    std::io::BufReader::new(response.into_reader()),
+                    |text| {
+                        if !text.is_empty() {
+                            let _ = token_tx.send(());
+                        }
+                    },
+                )?;
+                Ok(())
+            })();
+            let _ = finished_tx.send(result.is_err());
+        });
+        let first_token = token_rx.recv_timeout(Duration::from_secs(5));
+        let started = Instant::now();
+        let mut original_deadline_retained = false;
+        if first_token.is_ok() {
+            engine.cancel_notes();
+            let requested = server.stop.lock().unwrap().requested_at;
+            engine.cancel_notes();
+            original_deadline_retained = server.stop.lock().unwrap().requested_at == requested;
+            finish_watchdog_stop(
+                Some(&engine),
+                &server.stop,
+                pid,
+                ReleaseReason::Cancelled,
+                true,
+            );
+        }
+        let interrupted =
+            finished_rx.recv_timeout(Duration::from_secs(5).saturating_sub(started.elapsed()));
+        let forced = server.stop.lock().unwrap().forced;
+        let duplicate_force = force_after_grace(&server.stop, pid, Instant::now() + STOP_GRACE);
+        let mut exit_status = server.try_wait();
+        // Socket teardown can precede the OS publishing a waitable exit. Keep
+        // both observations inside the original total cancellation budget.
+        while matches!(exit_status, Ok(None)) && started.elapsed() < Duration::from_secs(5) {
+            thread::sleep(
+                Duration::from_millis(5)
+                    .min(Duration::from_secs(5).saturating_sub(started.elapsed())),
+            );
+            exit_status = server.try_wait();
+        }
+        let elapsed = started.elapsed();
+        let signal_count = std::fs::read_to_string(signals.path().join("signals"));
+        // Capture the failed response/child state BEFORE cleanup; cleanup must
+        // never make the deadline assertion pass. Always release and join both.
+        drop(server);
+        reaped.assert_reaped();
+        reader.join().unwrap();
+        let still_running = exit_status?.is_none();
+        let signal_count = signal_count?;
+        assert!(first_token.is_ok(), "no real SSE content was observed");
+        assert!(
+            original_deadline_retained,
+            "repeated cancel restarted the grace period"
+        );
+        assert!(
+            forced && !duplicate_force,
+            "stalled child requires exactly one hard-stop request"
+        );
+        assert_eq!(signal_count.trim(), "1", "soft cancellation was repeated");
+        assert_eq!(
+            interrupted.ok(),
+            Some(true),
+            "cancel left the live SSE read blocked"
+        );
+        assert!(!still_running, "cancel left its native child alive");
+        assert!(
+            elapsed < Duration::from_secs(5),
+            "cancel exceeded the response budget"
+        );
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn engine_cancel_and_watchdog_signal_the_same_child_only_once() -> Result<()> {
+        fn wait_for(mut condition: impl FnMut() -> bool) -> Result<()> {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !condition() {
+                anyhow::ensure!(
+                    Instant::now() < deadline,
+                    "child signal observation timed out"
+                );
+                thread::sleep(Duration::from_millis(5));
+            }
+            Ok(())
+        }
+        // Both pooled minutes and direct calibration use Server, but only the
+        // pooled path records lifecycle metrics. Cancellation must own both.
+        for pooled in [None, Some(Duration::ZERO)] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let signals = tempfile::tempdir()?;
+            let child = std::process::Command::new(std::env::current_exe()?)
+                .args([
+                    "--exact",
+                    "inference_worker::tests::cancellation_signal_child",
+                    "--ignored",
+                ])
+                .env("OMASCRIBE_CANCEL_SIGNAL_CHILD", signals.path())
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()?;
+            let pid = child.id();
+            engine.llm_pid.store(pid, Ordering::SeqCst);
+            let server = Server::new(child, Default::default(), &engine, pooled);
+            let reaped = ReapProbe::new(&server.child)?;
+            wait_for(|| signals.path().join("ready").exists())?;
+            let count = || {
+                std::fs::read_to_string(signals.path().join("signals"))
+                    .ok()
+                    .and_then(|text| text.parse::<usize>().ok())
+                    .unwrap_or(0)
+            };
+            // Exercise the real user entry, then its real watchdog continuation.
+            // There is no direct test signal or unrelated repeated interruption.
+            engine.cancel_notes();
+            wait_for(|| count() >= 1)?;
+            let after_cancel = count();
+            let watchdog_accepted = yield_from_watchdog(
+                Some(&engine),
+                &server.stop,
+                pid,
+                ReleaseReason::Cancelled,
+                pooled.is_some(),
+            );
+            if watchdog_accepted {
+                wait_for(|| count() >= 2)?;
+            }
+            let after_watchdog = count();
+            drop(server);
+            reaped.assert_reaped();
+            assert_eq!(
+                after_cancel, 1,
+                "cancel must synchronously request one stop"
+            );
+            assert_eq!(
+                after_watchdog, 1,
+                "the watchdog repeated Engine.cancel_notes' signal to the same child"
+            );
+            assert!(
+                !watchdog_accepted,
+                "the original stop must own the stop gate"
+            );
+        }
+        Ok(())
+    }
+
+    fn worker_process() -> Result<Child> {
+        Ok(std::process::Command::new(std::env::current_exe()?)
             .args([
                 "--exact",
                 "inference_worker::tests::worker_child",
@@ -1390,7 +1790,153 @@ mod tests {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .stdin(Stdio::null())
-            .spawn()?;
+            .spawn()?)
+    }
+
+    #[test]
+    fn cancellation_during_spawn_is_observed_when_stop_control_is_registered() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let child = worker_process()?;
+        let pid = child.id();
+        // Reproduce the real gap after spawn but before Server registration.
+        // No further fallible operation occurs before Server owns the Child.
+        engine.cancel_notes();
+        let mut server = Server::new(child, Default::default(), &engine, None);
+        // Production publishes the display PID after Server owns/registers it;
+        // cancellation must already reach the child without this bare PID.
+        engine.llm_pid.store(pid, Ordering::SeqCst);
+        let reaped = ReapProbe::new(&server.child)?;
+        assert!(matches!(
+            server.stop.lock().unwrap().reason,
+            Some(ReleaseReason::Cancelled)
+        ));
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while server.try_wait()?.is_none() {
+            anyhow::ensure!(
+                Instant::now() < deadline,
+                "registered cancelled child survived"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
+        drop(server);
+        reaped.assert_reaped();
+        assert!(engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .active_stop
+            .is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn observing_child_exit_closes_the_force_gate_before_drop() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut old = fake(&engine)?;
+        let old_pid = old.server.child.id();
+        let old_reaped = ReapProbe::new(&old.server.child)?;
+        engine.cancel_notes();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while old.server.try_wait()?.is_none() {
+            anyhow::ensure!(Instant::now() < deadline, "cancelled child did not exit");
+            thread::sleep(Duration::from_millis(5));
+        }
+        assert!(old.server.stop.lock().unwrap().closing);
+        // The old PID is now reaped, but its Server and queued control still
+        // exist. A delayed force must not signal after this point.
+        engine.reset_note_cancellation();
+        let mut newer = fake(&engine)?;
+        let new_reaped = ReapProbe::new(&newer.server.child)?;
+        assert!(!force_after_grace(
+            &old.server.stop,
+            old_pid,
+            Instant::now() + STOP_GRACE
+        ));
+        assert!(!engine.note_cancel.load(Ordering::SeqCst));
+        assert!(newer.server.try_wait()?.is_none());
+        drop(old);
+        old_reaped.assert_reaped();
+        assert!(newer.server.try_wait()?.is_none());
+        drop(newer);
+        new_reaped.assert_reaped();
+        Ok(())
+    }
+
+    #[test]
+    fn closing_stop_control_and_late_cleanup_cannot_cancel_or_unregister_new_child() -> Result<()> {
+        use std::sync::mpsc;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut old = fake(&engine)?;
+        let old_control = engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .active_stop
+            .clone()
+            .unwrap();
+        let old_reaped = ReapProbe::new(&old.server.child)?;
+        let (waiting_tx, waiting_rx) = mpsc::channel();
+        let (continue_tx, continue_rx) = mpsc::channel();
+        old.server.before_reap = Some(Box::new(move || {
+            let _ = waiting_tx.send(());
+            let _ = continue_rx.recv_timeout(Duration::from_secs(5));
+        }));
+        let reaping = thread::spawn(move || drop(old));
+        waiting_rx.recv_timeout(Duration::from_secs(5))?;
+        let mut newer = fake(&engine)?;
+        let new_pid = newer.server.child.id();
+        let new_reaped = ReapProbe::new(&newer.server.child)?;
+        assert_ne!(old_control.pid, new_pid);
+        let old_stop = old_control.stop.upgrade().unwrap();
+        assert!(!stop_from_watchdog(
+            Some(&engine),
+            &old_stop,
+            old_control.pid,
+            ReleaseReason::Cancelled,
+            false,
+        ));
+        assert!(!engine.note_cancel.load(Ordering::SeqCst));
+        assert!(newer.server.child.try_wait()?.is_none());
+        continue_tx.send(())?;
+        reaping.join().unwrap();
+        old_reaped.assert_reaped();
+        let current = engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .active_stop
+            .clone()
+            .unwrap();
+        assert_eq!(current.pid, new_pid);
+        assert!(current.stop.ptr_eq(&Arc::downgrade(&newer.server.stop)));
+        assert!(newer.server.child.try_wait()?.is_none());
+        // Clearing the old registration must not remove the new child's
+        // synchronous cancellation route (including during desktop shutdown).
+        engine.cancel_notes();
+        assert!(matches!(
+            newer.server.stop.lock().unwrap().reason,
+            Some(ReleaseReason::Cancelled)
+        ));
+        drop(newer);
+        new_reaped.assert_reaped();
+        assert!(engine
+            .inference_pool
+            .0
+            .lock()
+            .unwrap()
+            .active_stop
+            .is_none());
+        Ok(())
+    }
+
+    fn fake(engine: &Arc<Engine>) -> Result<LocalSession> {
+        let child = worker_process()?;
         engine.llm_pid.store(child.id(), Ordering::SeqCst);
         Ok(LocalSession {
             model_receipt: None,

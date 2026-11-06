@@ -1669,10 +1669,7 @@ impl Engine {
     pub fn cancel_notes(&self) {
         self.note_cancel.store(true, Ordering::SeqCst);
         self.inference_pool.invalidate();
-        let pid = self.llm_pid.load(Ordering::SeqCst);
-        if pid > 0 {
-            platform::stop_process(pid, false);
-        }
+        self.inference_pool.cancel_active(self);
     }
     pub fn clip(&self, id: &str, start_ms: u64, end_ms: u64) -> Result<String> {
         let pcm = audio::pcm_range(&self.audio_dir(id)?, start_ms, end_ms)?;
