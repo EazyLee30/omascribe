@@ -43,6 +43,12 @@ fn vendor_name(id: u32) -> &'static str {
         _ => "other",
     }
 }
+/// DXGI has no integrated-adapter flag. An iGPU reports only a small carve-out as
+/// dedicated memory (Iris Xe: 128 MiB) and runs the model from shared system RAM.
+#[cfg(any(target_os = "windows", test))]
+fn integrated_adapter(dedicated_bytes: u64) -> bool {
+    dedicated_bytes < 1 << 30
+}
 fn unavailable(reason: &str) -> GpuInventory {
     GpuInventory {
         schema: 1,
@@ -268,7 +274,7 @@ fn windows_inventory() -> GpuInventory {
                 shared_memory_bytes: Some(desc.SharedSystemMemory as u64),
                 budget_bytes: budget,
                 budget_source: budget.map(|_| "dxgi_probe_process_budget".into()),
-                integrated: None,
+                integrated: Some(integrated_adapter(desc.DedicatedVideoMemory as u64)),
             });
         }
     }
@@ -350,5 +356,11 @@ mod tests {
             "unavailable"
         );
         Ok(())
+    }
+    #[test]
+    fn windows_marks_shared_memory_adapters_as_integrated() {
+        // DXGI values from an RTX 3060 Laptop / Iris Xe hybrid laptop.
+        assert!(integrated_adapter(128 << 20));
+        assert!(!integrated_adapter(5994 << 20));
     }
 }
