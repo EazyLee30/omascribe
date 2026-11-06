@@ -10,6 +10,9 @@ pub(super) struct Replacement {
     pub old: String,
     pub new: String,
     pub model: bool,
+    // A complete marked phrase owns its entire envelope, not a token inside
+    // another word or compound. Keep this proof through document replay.
+    pub phrase: bool,
 }
 
 #[cfg(test)]
@@ -778,7 +781,8 @@ fn replay(text: &str, edits: &BTreeMap<String, Replacement>) -> Option<(String, 
         let before = text[..hit.start()].chars().next_back();
         let after = text[hit.end()..].chars().next();
         let word = |c: char| c.is_ascii_alphanumeric() || c == '_';
-        if first.is_ascii_alphanumeric() && before.is_some_and(word)
+        if edit.phrase && !super::phrase::full_boundary(text, hit.start(), hit.end())
+            || first.is_ascii_alphanumeric() && before.is_some_and(word)
             || last.is_ascii_alphanumeric() && after.is_some_and(word)
             || edit.model && super::model_has_continuation(&text[hit.end()..])
         {
@@ -802,10 +806,167 @@ fn merge(edits: &mut BTreeMap<String, Replacement>, edit: &Replacement) -> Optio
             return None;
         }
         old.model |= edit.model;
+        old.phrase |= edit.phrase;
     } else {
         edits.insert(edit.old.clone(), edit.clone());
     }
     Some(())
+}
+
+#[cfg(test)]
+mod phrase_replay_tests {
+    use super::*;
+
+    fn canonical_article(source_text: &str, body: &str) -> Result<crate::Snapshot> {
+        let root = tempfile::tempdir()?;
+        let engine = crate::Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("A marked phrase keeps its own source proof")?;
+        engine.update_meeting(&meeting.id, &meeting.title, false)?;
+        let note = engine.save_note(&meeting.id, None, "observations", "document", 0)?;
+        let source = Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 3000,
+            text: source_text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        engine.store.lock().unwrap().save_segment(&source)?;
+        let snapshot = engine.snapshot(&meeting.id)?;
+        engine.store.lock().unwrap().commit_document(
+            &snapshot,
+            std::slice::from_ref(&source),
+            1,
+            vec![Suggestion {
+                id: String::new(),
+                meeting_id: meeting.id.clone(),
+                kind: "section".into(),
+                focus: String::new(),
+                text: body.into(),
+                status: "pending".into(),
+                stale: false,
+                sources: vec![Source {
+                    segment_id: source.id.clone(),
+                    revision: 1,
+                    start_ms: source.start_ms,
+                    end_ms: source.end_ms,
+                    quote: source_text.into(),
+                    speaker_name: None,
+                }],
+            }],
+            false,
+        )?;
+        engine.save_note(
+            &meeting.id,
+            Some(note.id),
+            "**Subtropical Storm Jerry**",
+            "document",
+            0,
+        )?;
+        let terms = engine.terminology(&meeting.id)?;
+        assert!(terms.writer_names.is_empty());
+        assert!(terms.caption_names.is_empty());
+        let after = engine.snapshot(&meeting.id)?;
+        assert_eq!(after.segments[0].text, source_text);
+        assert_eq!(after.segments[0].revision, 1);
+        assert_eq!(after.suggestions[0].sources[0].quote, source_text);
+        assert_eq!(after.suggestions[0].sources[0].revision, 1);
+        assert_eq!(
+            engine.store.lock().unwrap().conn.query_row(
+                "SELECT COUNT(*) FROM inference_jobs",
+                [],
+                |row| row.get::<_, i64>(0),
+            )?,
+            0
+        );
+        Ok(after)
+    }
+
+    #[test]
+    fn marked_phrase_repairs_existing_canonical_source_without_certifying_a_paraphrase(
+    ) -> Result<()> {
+        let source = "Subtropical Storm Jerry remains unconfirmed.";
+        let exact = canonical_article(source, "SUBTROPIC STORM JERRY remains unconfirmed.")?;
+        assert_eq!(exact.suggestions[0].text, source);
+        assert!(!exact.suggestions[0].stale);
+        let paraphrase = canonical_article(
+            source,
+            "The status of SUBTROPIC STORM JERRY is still uncertain.",
+        )?;
+        assert_eq!(
+            paraphrase.suggestions[0].text,
+            "The status of Subtropical Storm Jerry is still uncertain."
+        );
+        assert!(paraphrase.suggestions[0].stale);
+        assert!(paraphrase.meeting.notes_fingerprint.is_empty());
+        // The recognizer's exact uppercase spelling is a current witness,
+        // while its source/citation bytes remain untouched.
+        let uppercase = canonical_article(
+            "SUBTROPICAL STORM JERRY remains unconfirmed.",
+            "The status of SUBTROPIC STORM JERRY is still uncertain.",
+        )?;
+        assert_eq!(
+            uppercase.suggestions[0].text,
+            "The status of Subtropical Storm Jerry is still uncertain."
+        );
+        assert!(uppercase.suggestions[0].stale);
+        Ok(())
+    }
+
+    #[test]
+    fn marked_phrase_cannot_repair_minutes_from_an_unrelated_current_citation() -> Result<()> {
+        let body = "The status of SUBTROPIC STORM JERRY is still uncertain.";
+        let after = canonical_article("Other observations remain unconfirmed.", body)?;
+        assert_eq!(after.suggestions[0].text, body);
+        let compound = "SUBTROPIC STORM JERRY-Plus remains unconfirmed.";
+        let after = canonical_article("Subtropical Storm Jerry remains unconfirmed.", compound)?;
+        assert_eq!(after.suggestions[0].text, compound);
+        Ok(())
+    }
+
+    fn edit(phrase: bool) -> Replacement {
+        Replacement {
+            old: "SUBTROPIC STORM JERRY".into(),
+            new: "Subtropical Storm Jerry".into(),
+            model: false,
+            phrase,
+        }
+    }
+
+    #[test]
+    fn phrase_replay_keeps_the_source_proven_envelope() {
+        let mut edits = BTreeMap::new();
+        merge(&mut edits, &edit(true)).unwrap();
+        let input = "SUBTROPIC STORM JERRY is not approved; éSUBTROPIC STORM JERRY, SUBTROPIC STORM JERRY-Plus and SUBTROPIC STORM JERRY's status are unchanged.";
+        let (body, used) = replay(input, &edits).unwrap();
+        assert_eq!(body, "Subtropical Storm Jerry is not approved; éSUBTROPIC STORM JERRY, SUBTROPIC STORM JERRY-Plus and SUBTROPIC STORM JERRY's status are unchanged.");
+        assert_eq!(used, BTreeSet::from([edit(true).old]));
+    }
+
+    #[test]
+    fn merging_equal_replacements_cannot_drop_phrase_boundaries() {
+        for flags in [[false, true], [true, false]] {
+            let mut edits = BTreeMap::new();
+            for phrase in flags {
+                merge(&mut edits, &edit(phrase)).unwrap();
+            }
+            let input = "SUBTROPIC STORM JERRY-Plus";
+            let (body, used) = replay(input, &edits).unwrap();
+            assert_eq!(body, input);
+            assert!(used.is_empty());
+        }
+        // Existing nonphrase aliases retain their previous replay behavior.
+        let mut edits = BTreeMap::new();
+        merge(&mut edits, &edit(false)).unwrap();
+        assert_eq!(
+            replay("SUBTROPIC STORM JERRY-Plus", &edits).unwrap().0,
+            "Subtropical Storm Jerry-Plus"
+        );
+    }
 }
 
 fn source_matches(source: &Source, segment: &Segment, meeting: &Meeting) -> bool {
@@ -930,6 +1091,9 @@ enum CanonicalReplay {
 }
 
 fn source_has_canonical_name(terms: &super::Terms, text: &str, name: &str) -> bool {
+    if terms.phrases.owns(name) {
+        return terms.phrases.contains_canonical(text, name);
+    }
     if terms
         .names
         .get(&name.to_lowercase())
@@ -1061,7 +1225,8 @@ fn canonical_source_repair(
         updated.text = body;
         CanonicalReplay::Recovered(updated)
     } else if edits.values().all(|edit| {
-        terms.writer_names.contains(&edit.new) && supported_names.contains(edit.new.as_str())
+        (terms.writer_names.contains(&edit.new) || terms.phrases.owns(&edit.new))
+            && supported_names.contains(edit.new.as_str())
     }) {
         let mut updated = old.clone();
         updated.text = body;

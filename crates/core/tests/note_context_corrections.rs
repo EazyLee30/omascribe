@@ -773,6 +773,285 @@ fn inference_jobs(engine: &Engine) -> Result<i64> {
     )?)
 }
 
+const MARKED_MULTIWORD_NAMES: &str = "**Sundarbans National Park**\n\n**Subtropical Storm Jerry**";
+const MULTIWORD_SOURCE_ONE: &str = "SUNDARBONS NATIONAL PARK remains closed.";
+const MULTIWORD_SOURCE_TWO: &str = "Observations for SUBTROPIC STORM JERRY are not complete.";
+const MULTIWORD_PROSE: &str =
+    "SUNDARBONS NATIONAL PARK remains closed; observations for SUBTROPIC STORM JERRY are not complete.";
+const MULTIWORD_CORRECTED_PROSE: &str =
+    "Sundarbans National Park remains closed; observations for Subtropical Storm Jerry are not complete.";
+
+/// Exercise an existing editor note and a synthetic article with two independent
+/// source citations. The article is supplied directly, never generated.
+fn clean_multiword_document(engine: &Engine, title: &str) -> Result<(UserNote, Snapshot)> {
+    let meeting = engine.create_meeting(title)?;
+    engine.update_meeting(&meeting.id, &meeting.title, false)?;
+    let note = engine.save_note(&meeting.id, None, "field observations", "document", 0)?;
+    let first = segment(&meeting.id, 1, MULTIWORD_SOURCE_ONE);
+    let second = segment(&meeting.id, 2, MULTIWORD_SOURCE_TWO);
+    engine.store.lock().unwrap().save_segment(&first)?;
+    engine.store.lock().unwrap().save_segment(&second)?;
+    let before = engine.snapshot(&meeting.id)?;
+    let mut article = section(&meeting.id, &first, MULTIWORD_PROSE);
+    article.sources.push(source(&second));
+    engine.store.lock().unwrap().commit_document(
+        &before,
+        &before.segments,
+        2,
+        vec![article],
+        false,
+    )?;
+    Ok((note, engine.snapshot(&meeting.id)?))
+}
+
+#[test]
+fn marked_multiword_note_replays_archived_asr_and_source_backed_article_without_jobs() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, before) = clean_multiword_document(&engine, "Marked multiword names")?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id.clone()),
+        MARKED_MULTIWORD_NAMES,
+        "document",
+        0,
+    )?;
+    let after = engine.snapshot(&note.meeting_id)?;
+    assert!(!after.meeting.auto_notes);
+    assert_eq!(after.meeting.notes_cursor, 2);
+    let expected = [
+        "Sundarbans National Park remains closed.",
+        "Observations for Subtropical Storm Jerry are not complete.",
+    ];
+    let article = &after.suggestions[0];
+    assert_eq!(article.id, before.suggestions[0].id);
+    assert_eq!(article.text, MULTIWORD_CORRECTED_PROSE);
+    assert_eq!(article.status, "pending");
+    assert!(!article.stale);
+    assert_eq!(article.sources.len(), 2);
+    for (index, text) in expected.into_iter().enumerate() {
+        let current = &after.segments[index];
+        let original = &before.segments[index];
+        assert_eq!(current.id, original.id);
+        assert_eq!(current.revision, 2);
+        assert_eq!(current.text, text);
+        assert_eq!(article.sources[index].segment_id, current.id);
+        assert_eq!(article.sources[index].revision, 2);
+        assert_eq!(article.sources[index].quote, text);
+        assert_eq!(article.sources[index].start_ms, original.start_ms);
+        assert_eq!(article.sources[index].end_ms, original.end_ms);
+        let archived: String = engine.store.lock().unwrap().conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&original.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(
+            serde_json::from_str::<Segment>(&archived)?.text,
+            original.text
+        );
+    }
+    let archived: String = engine.store.lock().unwrap().conn.query_row(
+        "SELECT json FROM document_history WHERE meeting_id=?1 ORDER BY id DESC LIMIT 1",
+        [&note.meeting_id],
+        |row| row.get(0),
+    )?;
+    let archived: Vec<Suggestion> = serde_json::from_str(&archived)?;
+    assert_eq!(archived[0].text, MULTIWORD_PROSE);
+    assert_eq!(
+        serde_json::to_value(&archived[0].sources)?,
+        serde_json::to_value(&before.suggestions[0].sources)?
+    );
+    assert_eq!(inference_jobs(&engine)?, 0);
+
+    let once = terminology_rows(&engine)?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id),
+        MARKED_MULTIWORD_NAMES,
+        "document",
+        0,
+    )?;
+    assert_eq!(terminology_rows(&engine)?, once, "replay is idempotent");
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn marked_multiword_note_rolls_back_both_sources_when_article_replay_fails() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, before) = clean_multiword_document(&engine, "Atomic multiword replay")?;
+    let original_rows = terminology_rows(&engine)?;
+    engine.store.lock().unwrap().conn.execute_batch(
+        "CREATE TRIGGER reject_multiword_replay BEFORE UPDATE ON suggestions
+         WHEN json_extract(NEW.json,'$.stale')=0
+         BEGIN SELECT RAISE(ABORT,'fixture multiword article write failed'); END;",
+    )?;
+    let error = engine
+        .save_note(
+            &note.meeting_id,
+            Some(note.id.clone()),
+            MARKED_MULTIWORD_NAMES,
+            "document",
+            0,
+        )
+        .expect_err("the source-backed article replay must reach its write");
+    assert!(format!("{error:#}").contains("fixture multiword article write failed"));
+    let failed = engine.snapshot(&note.meeting_id)?;
+    assert_eq!(failed.notes[0].content, MARKED_MULTIWORD_NAMES);
+    assert_eq!(
+        serde_json::to_value(&failed.segments)?,
+        serde_json::to_value(&before.segments)?
+    );
+    assert_eq!(
+        serde_json::to_value(&failed.suggestions)?,
+        serde_json::to_value(&before.suggestions)?
+    );
+    assert_eq!(terminology_rows(&engine)?, original_rows);
+    assert!(engine.store.lock().unwrap().conn.is_autocommit());
+    assert_eq!(inference_jobs(&engine)?, 0);
+
+    engine
+        .store
+        .lock()
+        .unwrap()
+        .conn
+        .execute_batch("DROP TRIGGER reject_multiword_replay;")?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id),
+        MARKED_MULTIWORD_NAMES,
+        "document",
+        0,
+    )?;
+    let retried = engine.snapshot(&note.meeting_id)?;
+    assert_eq!(retried.suggestions[0].text, MULTIWORD_CORRECTED_PROSE);
+    assert!(!retried.suggestions[0].stale);
+    for (segment, citation) in retried.segments.iter().zip(&retried.suggestions[0].sources) {
+        assert_eq!(segment.revision, 2);
+        assert_eq!(citation.segment_id, segment.id);
+        assert_eq!(citation.revision, segment.revision);
+        assert_eq!(citation.quote, segment.text);
+    }
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
+#[test]
+fn marked_multiword_note_preserves_human_transcript_and_article_edits() -> Result<()> {
+    for guard in ["human_source", "human_article"] {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let (note, seeded) = clean_multiword_document(&engine, guard)?;
+        let human_text = "SUNDARBONS NATIONAL PARK remains closed after a manual review.";
+        if guard == "human_source" {
+            engine.edit_segment(&seeded.segments[0].id, human_text, 1)?;
+            let current = engine.snapshot(&note.meeting_id)?;
+            let body = format!("{human_text} {}", current.segments[1].text);
+            let mut article = section(&note.meeting_id, &current.segments[0], &body);
+            article.sources.push(source(&current.segments[1]));
+            engine.store.lock().unwrap().commit_document(
+                &current,
+                &current.segments,
+                2,
+                vec![article],
+                false,
+            )?;
+        } else {
+            engine.store.lock().unwrap().update_suggestion(
+                &note.meeting_id,
+                &seeded.suggestions[0].id,
+                "pending",
+                Some(format!("Manually retained: {MULTIWORD_PROSE}")),
+            )?;
+        }
+        let protected = engine.snapshot(&note.meeting_id)?;
+        engine.save_note(
+            &note.meeting_id,
+            Some(note.id),
+            MARKED_MULTIWORD_NAMES,
+            "document",
+            0,
+        )?;
+        let after = engine.snapshot(&note.meeting_id)?;
+        if guard == "human_source" {
+            assert_eq!(after.segments[0].text, human_text);
+            assert_eq!(after.segments[0].revision, 2);
+        } else {
+            assert_eq!(
+                after.segments[0].text,
+                "Sundarbans National Park remains closed."
+            );
+            assert_eq!(after.segments[0].revision, 2);
+        }
+        assert_eq!(
+            after.segments[1].text,
+            "Observations for Subtropical Storm Jerry are not complete."
+        );
+        assert_eq!(after.segments[1].revision, 2);
+        assert_eq!(
+            after.suggestions[0].text, protected.suggestions[0].text,
+            "{guard}"
+        );
+        assert_eq!(
+            after.suggestions[0].status, protected.suggestions[0].status,
+            "{guard}"
+        );
+        assert_eq!(
+            serde_json::to_value(&after.suggestions[0].sources)?,
+            serde_json::to_value(&protected.suggestions[0].sources)?,
+            "{guard}"
+        );
+        assert!(after.suggestions[0].stale, "{guard}");
+        assert!(notes::needs_update(&after), "{guard}");
+        assert_eq!(inference_jobs(&engine)?, 0, "{guard}");
+    }
+    Ok(())
+}
+
+#[test]
+fn removing_marked_multiword_note_restores_asr_without_reverse_rewriting_the_article() -> Result<()>
+{
+    let root = tempfile::tempdir()?;
+    let engine = Engine::open(root.path().into())?;
+    let (note, original) = clean_multiword_document(&engine, "Revoke multiword authority")?;
+    engine.save_note(
+        &note.meeting_id,
+        Some(note.id.clone()),
+        MARKED_MULTIWORD_NAMES,
+        "document",
+        0,
+    )?;
+    let corrected = engine.snapshot(&note.meeting_id)?;
+    assert_eq!(corrected.suggestions[0].text, MULTIWORD_CORRECTED_PROSE);
+    assert!(!corrected.suggestions[0].stale);
+
+    engine.save_note(&note.meeting_id, Some(note.id), "", "document", 0)?;
+    let revoked = engine.snapshot(&note.meeting_id)?;
+    assert!(revoked.notes[0].content.is_empty());
+    for (current, raw) in revoked.segments.iter().zip(&original.segments) {
+        assert_eq!(current.id, raw.id);
+        assert_eq!(current.text, raw.text);
+        assert_eq!(current.revision, 3);
+        let archived: String = engine.store.lock().unwrap().conn.query_row(
+            "SELECT json FROM segment_history WHERE id=?1 AND revision=1",
+            [&raw.id],
+            |row| row.get(0),
+        )?;
+        assert_eq!(serde_json::from_str::<Segment>(&archived)?.text, raw.text);
+    }
+    assert_eq!(revoked.suggestions[0].text, corrected.suggestions[0].text);
+    assert_eq!(
+        serde_json::to_value(&revoked.suggestions[0].sources)?,
+        serde_json::to_value(&corrected.suggestions[0].sources)?
+    );
+    assert!(revoked.suggestions[0].stale);
+    assert!(notes::needs_update(&revoked));
+    assert_eq!(inference_jobs(&engine)?, 0);
+    Ok(())
+}
+
 #[test]
 fn same_document_spelling_only_edit_keeps_complete_minutes_synchronized() -> Result<()> {
     let root = tempfile::tempdir()?;

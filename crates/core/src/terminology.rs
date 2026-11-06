@@ -5,6 +5,7 @@ use regex::{Regex, RegexBuilder};
 use rusqlite::OptionalExtension;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 mod document;
+mod phrase;
 pub(crate) use document::NoteSpellingEdit;
 
 #[cfg(test)]
@@ -29,6 +30,7 @@ pub struct Terms {
     caption_names: Vec<String>,
     actor_spellings: Vec<String>,
     approximate: Vec<String>,
+    phrases: phrase::Corrections,
 }
 
 fn decoder_spelling(value: &str) -> bool {
@@ -274,8 +276,11 @@ struct NoteWord<'a> {
 
 /// The same bounded note admission serves glossary selection and normalization.
 fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
+    note_words_with_limit(note, crate::asr_hotwords::MAX_WORDS)
+}
+
+fn note_words_with_limit(note: &UserNote, limit: usize) -> Vec<NoteWord<'_>> {
     const MAX_NOTE_CHARS: usize = 200_000;
-    const LIMIT: usize = crate::asr_hotwords::MAX_WORDS;
     static LATIN: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let latin = LATIN.get_or_init(|| Regex::new(r"[A-Za-z][A-Za-z0-9_+.-]{2,39}").unwrap());
     let mut chinese_context = false;
@@ -325,18 +330,21 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
         for hit in latin.find_iter(raw_line) {
             let start = base + hit.start();
             let end = base + hit.end();
-            // A complete marked Unicode/long token must not leave an ASCII
-            // prefix as a separate correction name or recognition hint.
+            // A complete marked phrase owns its whole spelling. Its all-caps
+            // words must not independently acquire single-name correction
+            // authority and bypass phrase ambiguity. Likewise, Unicode/long
+            // tokens must not leave ASCII prefixes as separate names/hints.
             while marked_spans.peek().is_some_and(|span| span.end() <= start) {
                 marked_spans.next();
             }
             if marked_spans.peek().is_some_and(|span| {
                 span.start() <= start
                     && end <= span.end()
-                    && (note.content[..start]
-                        .chars()
-                        .next_back()
-                        .is_some_and(char::is_alphanumeric)
+                    && (span.as_str().contains(' ')
+                        || note.content[..start]
+                            .chars()
+                            .next_back()
+                            .is_some_and(char::is_alphanumeric)
                         || note.content[end..]
                             .chars()
                             .next()
@@ -372,10 +380,10 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
                 if named || note.kind == "term" {
                     strong_seen.insert(word);
                     strong.push(NoteWord { word, named });
-                    if strong.len() == LIMIT {
+                    if strong.len() == limit {
                         break 'lines;
                     }
-                } else if weak.len() < LIMIT {
+                } else if weak.len() < limit {
                     weak_seen.insert(word);
                     weak.push(NoteWord { word, named });
                 }
@@ -385,7 +393,7 @@ fn note_words(note: &UserNote) -> Vec<NoteWord<'_>> {
     // At most80 retained candidates per class; rejected scanned tokens do not
     // allocate a seen entry. Each bounded input is indexed/scanned linearly.
     strong.extend(weak);
-    strong.truncate(LIMIT);
+    strong.truncate(limit);
     strong
 }
 
@@ -437,7 +445,18 @@ impl Terms {
         use sha2::{Digest, Sha256};
         let mut model_aliases: Vec<_> = self.model_aliases.iter().collect();
         model_aliases.sort_unstable();
-        let payload = if !self.ambiguous.is_empty() {
+        let payload = if !self.phrases.is_empty() {
+            serde_json::to_vec(&(
+                "terms-v9-anchored-phrases",
+                &self.names,
+                &self.approximate,
+                &self.caption_names,
+                &self.writer_names,
+                &model_aliases,
+                &self.ambiguous,
+                self.phrases.fingerprint(),
+            ))
+        } else if !self.ambiguous.is_empty() {
             serde_json::to_vec(&(
                 "terms-v8-ambiguous-spellings",
                 &self.names,
@@ -860,6 +879,36 @@ impl Terms {
                 && names.get(&s.to_lowercase()) == Some(s)
         });
         prioritize_spellings(&mut approximate, &priorities);
+        // Independently declared names retain ownership even when they occur
+        // as one word of a longer marked phrase. Ordinary contextual ASR words
+        // are deliberately absent from this guard set.
+        let phrases = phrase::Corrections::new(
+            notes,
+            || {
+                let mut phrase_guards: HashSet<_> = explicit
+                    .into_iter()
+                    .chain(
+                        writer_names
+                            .iter()
+                            .chain(&caption_names)
+                            .map(|s| s.to_lowercase()),
+                    )
+                    .collect();
+                for note in crate::notes::document_notes(notes) {
+                    let named: Vec<_> =
+                        note_words_with_limit(note, crate::asr_hotwords::MAX_WORDS + 1)
+                            .into_iter()
+                            .filter(|word| word.named || note.kind == "term")
+                            .collect();
+                    if named.len() > crate::asr_hotwords::MAX_WORDS {
+                        return None;
+                    }
+                    phrase_guards.extend(named.iter().map(|word| word.word.to_lowercase()));
+                }
+                Some(phrase_guards)
+            },
+            &ambiguous,
+        );
         Self {
             matcher,
             names,
@@ -874,6 +923,7 @@ impl Terms {
             caption_names,
             actor_spellings: Vec::new(),
             approximate,
+            phrases,
         }
     }
     /// Corroborate source spellings without inventing aliases or changing ASR
@@ -939,7 +989,8 @@ impl Terms {
         )
     }
     pub fn normalize(&self, text: &str) -> String {
-        self.normalize_near_names(&self.normalize_exact(text))
+        let phrases = self.phrases.normalize_with(text, |_, _| {});
+        self.normalize_near_names(&self.normalize_exact(&phrases))
     }
     fn normalize_exact(&self, text: &str) -> String {
         self.normalize_exact_with(text, |_, _| {})
@@ -1181,6 +1232,16 @@ impl Terms {
     }
     fn normalize_with_changes(&self, text: &str) -> (String, Vec<document::Replacement>) {
         let mut replacements = Vec::new();
+        // Capture the complete original source envelope before weak contextual
+        // casing changes individual words. Its two anchors are the permission.
+        let phrases = self.phrases.normalize_with(text, |old, new| {
+            replacements.push(document::Replacement {
+                old: old.into(),
+                new: new.into(),
+                model: false,
+                phrase: true,
+            });
+        });
         let mut record = |old: &str, new: &str| {
             if old.chars().any(char::is_alphabetic)
                 && self
@@ -1193,10 +1254,11 @@ impl Terms {
                     old: old.into(),
                     new: new.into(),
                     model: self.model_aliases.contains(&old.to_lowercase()),
+                    phrase: false,
                 });
             }
         };
-        let exact = self.normalize_exact_with(text, &mut record);
+        let exact = self.normalize_exact_with(&phrases, &mut record);
         let normalized = self.normalize_near_names_with(&exact, record);
         (normalized, replacements)
     }
@@ -2575,6 +2637,7 @@ mod tests {
         let empty = Terms::new(&[], &[]);
         for (content, expected) in [
             ("**Chandra Shekhar Solanki**", "Chandra Shekhar Solanki"),
+            ("**CHANDRA SHEKHAR SOLANKI**", "CHANDRA SHEKHAR SOLANKI"),
             ("**Cabo da Roca district**", "Cabo da Roca district"),
             ("**University of São Paulo**", "University of São Paulo"),
             ("**New  York**", "New  York"),
@@ -2588,7 +2651,13 @@ mod tests {
                 terms.recognition_hotwords().contains(&expected.to_owned()),
                 "{content}"
             );
-            assert_eq!(terms.fingerprint(), empty.fingerprint(), "{content}");
+            if expected == "Cabo da Roca district" {
+                // Its long word can now be repaired only with the other three
+                // source words present. It remains no name/fact obligation.
+                assert_ne!(terms.fingerprint(), empty.fingerprint(), "{content}");
+            } else {
+                assert_eq!(terms.fingerprint(), empty.fingerprint(), "{content}");
+            }
             assert!(terms.writer_names.is_empty(), "{content}");
             assert!(terms.caption_names.is_empty(), "{content}");
             assert!(terms.approximate.is_empty(), "{content}");
