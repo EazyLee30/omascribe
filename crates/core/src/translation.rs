@@ -870,7 +870,18 @@ fn run_inner(
 ) -> Result<usize> {
     let prefs = engine.preferences.lock().unwrap().clone();
     let snapshot = engine.snapshot(meeting)?;
-    let mut passages = select_pending(&snapshot);
+    let backlog_turn = engine
+        .store
+        .lock()
+        .unwrap()
+        .cache_dependency(meeting, BACKLOG_TURN)?;
+    let SelectedPassages {
+        mut passages,
+        backlog,
+    } = select_pending(
+        &snapshot,
+        BacklogTurn::after(&backlog_turn, &snapshot.meeting, &prefs.translation_mode),
+    );
     if passages.is_empty() {
         return Ok(0);
     }
@@ -947,11 +958,24 @@ fn run_inner(
             break;
         }
         // Advance even if tokenization fails or this source cannot fit safely.
-        engine.store.lock().unwrap().set_cache_dependency(
-            meeting,
-            "translation-turn",
-            &pending.0.id,
-        )?;
+        {
+            let db = engine.store.lock().unwrap();
+            db.set_cache_dependency(meeting, "translation-turn", &pending.0.id)?;
+            // Only an actual older-passage turn advances the backlog cursor.
+            // New arrivals and selected-but-unattempted work cannot push it
+            // past old sources when the live time budget ends early.
+            if backlog.contains(&pending.0.id) {
+                db.set_cache_dependency(
+                    meeting,
+                    BACKLOG_TURN,
+                    &serde_json::to_string(&BacklogTurn {
+                        run: snapshot.meeting.run,
+                        mode: prefs.translation_mode.clone(),
+                        seq: pending.0.seq,
+                    })?,
+                )?;
+            }
+        }
         let literal = if pending.3.end == 0 {
             literal_caption(&pending.0.text, pending.1, &terms)
         } else {
@@ -1590,8 +1614,31 @@ fn rotate_after(passages: &mut [crate::Segment], last: &str) {
     }
 }
 
-/// Reserve half of each batch for the oldest work; new captions cannot starve it.
-fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
+const BACKLOG_TURN: &str = "translation-backlog-turn-v1";
+
+/// Scheduling metadata only: never a translation key or commit permission.
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct BacklogTurn {
+    run: u32,
+    mode: String,
+    seq: u32,
+}
+impl BacklogTurn {
+    fn after(saved: &str, meeting: &Meeting, mode: &str) -> Option<u32> {
+        let turn: Self = serde_json::from_str(saved).ok()?;
+        (turn.run == meeting.run && turn.mode == mode).then_some(turn.seq)
+    }
+}
+
+struct SelectedPassages {
+    passages: Vec<crate::Segment>,
+    backlog: Vec<String>,
+}
+
+/// Keep two newest captions and rotate two older slots by actual attempt age.
+/// Persistently failing old sources must not pin every backlog slot forever.
+fn select_pending(snapshot: &crate::Snapshot, after: Option<u32>) -> SelectedPassages {
     let pending: Vec<_> = snapshot
         .segments
         .iter()
@@ -1600,18 +1647,25 @@ fn select_pending(snapshot: &crate::Snapshot) -> Vec<crate::Segment> {
                 && !snapshot.translations.contains_key(&s.id)
         })
         .collect();
-    let mut selected: Vec<_> = pending.iter().take(2).copied().collect();
-    for passage in pending.iter().rev() {
-        if selected.len() == 4 {
-            break;
-        }
-        if !selected.iter().any(|s| s.id == passage.id) {
-            selected.push(passage);
-        }
+    let (older, newest) = pending.split_at(pending.len().saturating_sub(2));
+    let start = after
+        .and_then(|seq| older.iter().position(|source| source.seq > seq))
+        .unwrap_or(0);
+    let mut selected: Vec<_> = older[start..]
+        .iter()
+        .chain(&older[..start])
+        .take(2)
+        .copied()
+        .collect();
+    let backlog = selected.iter().map(|source| source.id.clone()).collect();
+    selected.extend_from_slice(newest);
+    // Keep the circular older order at wraparound. Sorting [last, first] back
+    // to [first, last] can starve `last` when only one attempt fits each batch.
+    // The existing translation-turn rotation still applies to this selection.
+    SelectedPassages {
+        passages: selected.into_iter().cloned().collect(),
+        backlog,
     }
-    // Oldest work executes first, so the recording time budget cannot postpone it forever.
-    selected.sort_by_key(|s| s.seq);
-    selected.into_iter().cloned().collect()
 }
 #[cfg(test)]
 mod tests {
@@ -3361,7 +3415,8 @@ mod tests {
                 speaker_manual: false,
             })?;
         }
-        let selected = select_pending(&engine.snapshot(&m.id)?);
+        let snapshot = engine.snapshot(&m.id)?;
+        let selected = select_pending(&snapshot, None).passages;
         assert_eq!(
             selected.iter().map(|s| s.seq).collect::<Vec<_>>(),
             vec![1, 2, 11, 12]
@@ -3375,6 +3430,208 @@ mod tests {
             next = selected.clone();
             rotate_after(&mut next, &id);
         }
+        // A failed attempted source moves the backlog forward; the two newest
+        // stay selected regardless of backlog position or wraparound.
+        for (after, expected) in [
+            (1, vec![2, 3, 11, 12]),
+            (2, vec![3, 4, 11, 12]),
+            (9, vec![10, 1, 11, 12]),
+            (10, vec![1, 2, 11, 12]),
+            (u32::MAX, vec![1, 2, 11, 12]),
+        ] {
+            let selected = select_pending(&snapshot, Some(after));
+            assert_eq!(
+                selected.passages.iter().map(|s| s.seq).collect::<Vec<_>>(),
+                expected
+            );
+            assert_eq!(selected.backlog.len(), 2);
+        }
+        for count in 0..=12 {
+            let mut bounded = snapshot.clone();
+            bounded.segments.truncate(count);
+            let selected = select_pending(&bounded, Some(4));
+            assert_eq!(selected.passages.len(), count.min(4));
+            for newest in bounded.segments.iter().rev().take(2) {
+                assert!(selected.passages.iter().any(|s| s.id == newest.id));
+            }
+        }
+        Ok(())
+    }
+    #[test]
+    fn backlog_cursor_is_scoped_to_run_and_language_mode() -> Result<()> {
+        let (_root, engine, _) = runtime_fixture()?;
+        let mut meeting = engine.create_meeting("Backlog cursor scope")?;
+        let saved = serde_json::to_string(&BacklogTurn {
+            run: meeting.run,
+            mode: "bilingual".into(),
+            seq: 4,
+        })?;
+        assert_eq!(BacklogTurn::after(&saved, &meeting, "bilingual"), Some(4));
+        assert_eq!(BacklogTurn::after(&saved, &meeting, "en-zh"), None);
+        meeting.run += 1;
+        assert_eq!(BacklogTurn::after(&saved, &meeting, "bilingual"), None);
+        for invalid in ["", "not-json", r#"{"run":1,"mode":"bilingual"}"#] {
+            assert_eq!(BacklogTurn::after(invalid, &meeting, "bilingual"), None);
+        }
+        engine
+            .store
+            .lock()
+            .unwrap()
+            .set_cache_dependency(&meeting.id, BACKLOG_TURN, &saved)?;
+        let other = engine.create_meeting("Other backlog")?;
+        assert!(engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&other.id, BACKLOG_TURN)?
+            .is_empty());
+        engine.set_meeting_deleted(&meeting.id, true)?;
+        engine.set_meeting_deleted(&meeting.id, false)?;
+        assert!(engine
+            .store
+            .lock()
+            .unwrap()
+            .cache_dependency(&meeting.id, BACKLOG_TURN)?
+            .is_empty());
+        Ok(())
+    }
+    #[test]
+    fn backlog_wraparound_survives_one_failed_runtime_attempt_per_batch() -> Result<()> {
+        let (_root, engine, _) = runtime_fixture()?;
+        let meeting = engine.create_meeting("One failed older turn per batch")?;
+        {
+            let db = engine.store.lock().unwrap();
+            for seq in 1..=10 {
+                db.save_segment(&cache_fixture_source(
+                    &meeting,
+                    seq,
+                    "The budget remains unapproved.",
+                ))?;
+            }
+            // Resume immediately before wraparound. The real runtime failure
+            // exits each subsequent run after exactly one substantive attempt.
+            db.set_cache_dependency(
+                &meeting.id,
+                BACKLOG_TURN,
+                &serde_json::to_string(&BacklogTurn {
+                    run: meeting.run,
+                    mode: "bilingual".into(),
+                    seq: 9,
+                })?,
+            )?;
+            db.set_cache_dependency(
+                &meeting.id,
+                "translation-turn",
+                &cache_fixture_source(&meeting, 9, "").id,
+            )?;
+        }
+        let mut attempted = Vec::new();
+        for round in 0..12 {
+            let newest = [11 + 2 * round, 12 + 2 * round];
+            {
+                let db = engine.store.lock().unwrap();
+                for seq in newest {
+                    db.save_segment(&cache_fixture_source(&meeting, seq, "AND"))?;
+                }
+            }
+            assert!(run(&engine, &meeting.id).is_err());
+            let snapshot = engine.snapshot(&meeting.id)?;
+            for seq in newest {
+                let id = cache_fixture_source(&meeting, seq, "AND").id;
+                assert_eq!(snapshot.translations[&id].text, "和");
+            }
+            let db = engine.store.lock().unwrap();
+            let turn: BacklogTurn =
+                serde_json::from_str(&db.cache_dependency(&meeting.id, BACKLOG_TURN)?)?;
+            assert_eq!(
+                db.cache_dependency(&meeting.id, "translation-turn")?,
+                cache_fixture_source(&meeting, turn.seq, "").id
+            );
+            attempted.push(turn.seq);
+        }
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert!(
+            (1..=10).all(|seq| attempted.contains(&seq)),
+            "a one-attempt runtime failure must not starve the wrap boundary: {attempted:?}"
+        );
+        assert_eq!(attempted[0], 10, "resume after 9 before wrapping to 1");
+        Ok(())
+    }
+    #[test]
+    fn growing_caption_queue_does_not_starve_middle_literals_after_runtime_failure() -> Result<()> {
+        let (_root, engine, _) = runtime_fixture()?;
+        let meeting = engine.create_meeting("Growing queue with unavailable inference")?;
+        engine.status.lock().unwrap().recording = true;
+        for seq in 1..=12 {
+            let text = if seq <= 2 {
+                "The budget remains unapproved."
+            } else {
+                "AND"
+            };
+            engine
+                .store
+                .lock()
+                .unwrap()
+                .save_segment(&cache_fixture_source(&meeting, seq, text))?;
+        }
+        // Exercise the actual producer: newest literal captions commit before
+        // the old substantive source reaches the deliberately absent runtime.
+        // No model files, fake completions, sleeps or spawned workers are used.
+        assert!(run(&engine, &meeting.id).is_err());
+        let first = engine.snapshot(&meeting.id)?;
+        for seq in [11, 12] {
+            let id = cache_fixture_source(&meeting, seq, "AND").id;
+            assert_eq!(first.translations[&id].text, "和");
+        }
+        let mut previous = first.translations.len();
+        for round in 0..7 {
+            let newest = [13 + 2 * round, 14 + 2 * round];
+            for seq in newest {
+                engine
+                    .store
+                    .lock()
+                    .unwrap()
+                    .save_segment(&cache_fixture_source(&meeting, seq, "AND"))?;
+            }
+            // A batch containing an old substantive source may still fail;
+            // this must not permanently exclude other ready, older captions.
+            let _ = run(&engine, &meeting.id);
+            let snapshot = engine.snapshot(&meeting.id)?;
+            for seq in newest {
+                let id = cache_fixture_source(&meeting, seq, "AND").id;
+                assert_eq!(snapshot.translations[&id].text, "和");
+            }
+            assert!(snapshot.translations.len() - previous <= 4);
+            previous = snapshot.translations.len();
+        }
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        for seq in [1, 2] {
+            let id = cache_fixture_source(&meeting, seq, "").id;
+            assert!(!snapshot.translations.contains_key(&id));
+        }
+        let missing: Vec<_> = (3..=10)
+            .filter(|seq| {
+                let id = cache_fixture_source(&meeting, *seq, "AND").id;
+                !snapshot.translations.contains_key(&id)
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "older ready captions starved while newest captions progressed: {missing:?}"
+        );
+        let mut revised = cache_fixture_source(&meeting, 3, "OR");
+        revised.revision = 2;
+        engine.store.lock().unwrap().save_segment(&revised)?;
+        assert!(!engine
+            .snapshot(&meeting.id)?
+            .translations
+            .contains_key(&revised.id));
+        let _ = run(&engine, &meeting.id);
+        let snapshot = engine.snapshot(&meeting.id)?;
+        assert_eq!(snapshot.translations[&revised.id].text, "或");
+        assert_eq!(snapshot.translations[&revised.id].revision, 2);
+        assert_eq!(engine.inference_pool.status().starts, 0);
         Ok(())
     }
     #[test]

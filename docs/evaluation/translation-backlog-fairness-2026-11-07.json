@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "kind": "P1.2 translation backlog scheduling",
+  "base_revision": "d4cf0e74b754c89d2f680508d7f0ef6bb77f34a1",
+  "working_tree_dirty": true,
+  "scope": "Real translation::run scheduling with deliberately absent models/runtime and existing deterministic literal translations. No generated translation, model benchmark or release qualification.",
+  "observed_failures": [
+    {
+      "test": "growing_caption_queue_does_not_starve_middle_literals_after_runtime_failure",
+      "original_result": "Two oldest substantive sources remained pending after runtime admission failed. Across eight bounded batches, with two new AND captions appended per subsequent batch, the newest literals succeeded but sources 3 through 10 never entered the selected batch.",
+      "missing_sequences": [3, 4, 5, 6, 7, 8, 9, 10],
+      "red": "0 passed; 1 failed"
+    },
+    {
+      "test": "backlog_wraparound_survives_one_failed_runtime_attempt_per_batch",
+      "original_result": "The first patch selected a circular backlog pair but sorted it back into sequence order. Starting after source 9, an actual missing-runtime failure ended each batch after one substantive attempt; source 10 was skipped through twelve batches despite newest literal progress.",
+      "attempted_sequences": [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3],
+      "red": "0 passed; 1 failed"
+    }
+  ],
+  "change": {
+    "selection": "Reserve two slots for newest pending captions and rotate two older slots after the last actually attempted backlog sequence. Preserve circular order at wraparound; the existing selected-batch execution rotation remains.",
+    "cursor": "One meeting-local translation-backlog-turn-v1 dependency containing run, mode and sequence. Only an actual backlog turn advances it, after existing cancellation and batch-budget checks. Newest captions and unattempted selected passages do not advance it.",
+    "scope_and_invalidation": "Run or translation-mode mismatch and malformed cursor data start from the oldest pending work. Meetings remain isolated; deletion clears the dependency and restoring a meeting does not restore it.",
+    "source_protection": "The cursor is scheduling metadata only. Translation environment keys, partial-result keys, current-source/revision checks, terminology and actor checks, and commit validation are unchanged.",
+    "unchanged_budgets": {
+      "selected_passages_max": 4,
+      "model_requests_per_batch_max": 8,
+      "recording_work_allowance_seconds": 8,
+      "time_budget_note": "Existing elapsed-work checks and worker-startup exclusion remain; this is not a new hard per-request deadline."
+    }
+  },
+  "verification": {
+    "real_run_regressions": "Both original failing regressions pass in core-final.log. Newest literal captions remain available, the previously starved middle literals progress, and the one-attempt wraparound test visits every old source including 10.",
+    "no_model_control": "Each fairness regression uses an isolated missing model/runtime directory and asserts inference_pool starts == 0. Literal text is produced by the existing AND-to-和 path, not mocked model completions.",
+    "additional_controls": [
+      "Zero through twelve pending sources preserve the four-passage bound and inclusion of the two newest sources",
+      "Backlog rotation, wraparound, run/mode mismatch and malformed cursor handling",
+      "Meeting isolation and deletion/restoration clear the scheduling cursor",
+      "Revising a completed AND source to OR invalidates the old visible translation and commits only the new revision"
+    ],
+    "intermediate_translation_suite": "50 passed before the independently identified wraparound regression; not the final acceptance result",
+    "final_core": { "passed": 798, "failed": 0, "ignored": 14 },
+    "final_cli": { "passed": 3, "failed": 0 },
+    "final_core_integration": { "passed": 48, "failed": 0 },
+    "clippy": "passed",
+    "rust_format": "passed; empty format.log",
+    "independent_review": "Wraparound failure reproduced and repaired; final review found no remaining P1/P2 within this change."
+  },
+  "source_file": {
+    "path": "crates/core/src/translation.rs",
+    "sha256": "8ba6f9dc304f7a374d263f4a06af53078fbf82ac019d23bb626d66508fe70c22"
+  },
+  "raw_evidence": [
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/red.log",
+      "sha256": "8834b27e72d540faf14385eb756630a54780e02e59beea23c872688f127c1ac3"
+    },
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/wrap-red.log",
+      "sha256": "401291b51c4fe1dc3bfcd351a3041499cb9efe555d0ff49e586bd27d93b70feb"
+    },
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/green.log",
+      "sha256": "d26370b31ee950c6497f832467aa16533e7c634b74c48e72b5033c2f2da64cdd"
+    },
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/core-final.log",
+      "sha256": "4b878500d33a4936d4ec77b4e75dfa8fe57ca2570cc6e2c340f877324dc09476"
+    },
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/clippy.log",
+      "sha256": "eadb2f189d72a5c361026f8c7b12cd90cbc19a7d9cecd13ebd0a2135b5eaaefb"
+    },
+    {
+      "path": "artifacts/translation-fairness-2026-11-07/format.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limits": [
+    "These bounded producer tests demonstrate scheduling progress for the stated failure cases, not generated translation quality, proper-name accuracy or a general latency guarantee.",
+    "No new model inference, GPU execution, energy measurement or installer build was performed for this fairness evaluation. No CPU, memory, throughput or speed improvement is claimed.",
+    "Batch selection still reads the existing snapshot and pending history. This change does not complete P1.3 incremental storage or remove translation-enabled full-history reads."
+  ]
+}
