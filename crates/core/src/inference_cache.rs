@@ -117,22 +117,28 @@ fn blocked(state: &State, path: &Path) -> bool {
 impl Fingerprints {
     /// Fast validation only. It never opens a content stream or repairs a stale receipt.
     pub(crate) fn current(&self, path: &Path) -> Option<RuntimeReceipt> {
-        let path = normalized(path).ok()?;
+        self.current_checked(path).ok().flatten()
+    }
+    /// Distinguish an unobserved file from an observed runtime that changed.
+    pub(crate) fn current_checked(&self, path: &Path) -> Result<Option<RuntimeReceipt>> {
+        let path = normalized(path).map_err(runtime_error)?;
         let entry = {
             let state = self.state.lock().unwrap();
-            if blocked(&state, &path) {
-                return None;
-            }
-            state.entries.get(&path)?.clone()
+            anyhow::ensure!(!blocked(&state, &path), RuntimeIdentityError);
+            let Some(entry) = state.entries.get(&path) else {
+                return Ok(None);
+            };
+            entry.clone()
         };
-        if entry.check_current().is_ok() {
+        let observed = entry.check_current();
+        if observed.is_ok() {
             let state = self.state.lock().unwrap();
-            return (!blocked(&state, &path)
+            return Ok((!blocked(&state, &path)
                 && state
                     .entries
                     .get(&path)
                     .is_some_and(|now| Arc::ptr_eq(&now.0, &entry.0)))
-            .then_some(entry);
+            .then_some(entry));
         }
         let mut state = self.state.lock().unwrap();
         if state
@@ -142,7 +148,7 @@ impl Fingerprints {
         {
             state.entries.remove(&path);
         }
-        None
+        observed.map(|()| None)
     }
     /// Admission-only refresh. Call outside Store/preferences/pool/global-map locks.
     pub(crate) fn refresh(&self, path: &Path) -> Result<RuntimeReceipt> {

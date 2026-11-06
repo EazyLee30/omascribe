@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "c90b5f8a7ea5c77c2a8d12a60a8ccb2a56905de5",
+  "problem": "A persisted faster-GPU comparison omitted the built-in CPU runtime used as its baseline. Replacing only that CPU executable left the old certificate eligible for automatic GPU selection.",
+  "observed_red": {
+    "test": "acceleration::tests::selected_rejects_faster_certificate_after_only_cpu_baseline_changes",
+    "passed": 0,
+    "failed": 1,
+    "production_changed": false,
+    "test_source_sha256": "3acbd821ddadaeb3bd8f2d32afdafe220e309c42631013154ebbcc0ec039c8cc",
+    "result": "The unchanged measured comparison worked; after only the isolated CPU executable changed, selected_with incorrectly still returned a GPU launch spec."
+  },
+  "changes": [
+    "Certificate schema 2 / configuration schema 3 binds the actual built-in CPU executable and bounded build-info content receipts, in addition to the existing GPU, model, hardware, selectors and inference configuration.",
+    "Status selection uses current receipts only. A cold CPU receipt keeps the saved certificate and reports runtime_verification_required without hashing files. Actual launch admission refreshes only for Automatic Windows/Linux with an eligible saved certificate; unchanged receipts are reused.",
+    "Missing, oversized or changed CPU baseline files invalidate optional GPU qualification and request another explicit test. This does not increment GPU failure counters or launch an automatic benchmark/download. Normal CPU admission remains available and performs its own integrity checks.",
+    "Calibration retains and rechecks the original CPU receipts through both trials. Replacement during driver capture or calibration cannot be hidden by a newly refreshed receipt.",
+    "The settings component labels a pending runtime check neutrally, without claiming active acceleration or displaying a failed test."
+  ],
+  "validation": {
+    "acceleration_tests": {
+      "passed": 32,
+      "failed": 0,
+      "explicitly_ignored": 3
+    },
+    "workspace": {
+      "core_passed": 810,
+      "core_explicitly_ignored": 15,
+      "integration_passed": 48,
+      "asr_passed": 18,
+      "desktop_shell_passed": 8,
+      "cli_passed": 3,
+      "failed": 0
+    },
+    "strict_workspace_clippy": "passed",
+    "rust_format": "passed",
+    "typescript": "passed",
+    "src_prettier": "passed",
+    "browser": "Existing acceleration-ui.mjs passed in headless installed Chrome with fictional Windows/Linux component fixtures; includes the new pending status. No native GPU inference.",
+    "independent_review": "Core and frontend read-only reviews found no remaining P1/P2 in this scope. Directory relocation conservatively requires retesting; hashing is cancellation-checked before/after, not per chunk; loader-wide atomic dependency identity is not claimed."
+  },
+  "limits": [
+    "No model request, real GPU benchmark, model download, native installer or optional component build in this change. Synthetic selection fixtures are not proof of device performance, memory or energy improvement.",
+    "The actual launch-prewarm integration test is Windows/Linux-only and was not executed by the local macOS run; same-head platform CI must confirm it.",
+    "Linux driver provenance remains session-scoped. The baseline identity includes its directory; relocation conservatively requires a new test. This change does not add arbitrary external shared-library dependency tracking.",
+    "Per-task calibration and complete GPU/device coverage remain open. CUDA/Vulkan remain independently downloaded components; explicit CPU and Apple Metal preferences are unchanged.",
+    "Q16 complex mixed-language minutes and Q9 real-audio name recall remain open. The original 68-case quality gate is unchanged; no repeated stopped prompt/newline experiment was run. Version 0.3.5 is not released."
+  ],
+  "source_files": [
+    {
+      "path": "crates/core/src/acceleration.rs",
+      "sha256": "81331042bf122753a36310c82f1cbcd6ec8a39ad8a1591da3f840067cbfe175f"
+    },
+    {
+      "path": "crates/core/src/inference.rs",
+      "sha256": "aabe88ea89d0bffd04f0ba3cfe1bfb841b0f61879a38e7590a379985b9c0315b"
+    },
+    {
+      "path": "crates/core/src/inference_cache.rs",
+      "sha256": "655b011f17abb4edfb721b4e43e4813ca4e5a4c632554109b03aad6870f41a88"
+    },
+    {
+      "path": "src/acceleration-ui.ts",
+      "sha256": "ee936bf78f8de73016ae854318ebf4d88dd168825cf43b8c395e38e0c3ca2e39"
+    },
+    {
+      "path": "tests/acceleration-ui.mjs",
+      "sha256": "f9b75596fc8c853538413304a1562193307726e77d5e81776e2b106c16ae5358"
+    }
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/red.log",
+      "sha256": "afef51cfe997d03acbd5d1d3e1d92e16221852a96354fd64df33512ee23f1cc4"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/acceleration.log",
+      "sha256": "38adabd18859891024ce2f0d6f2b9ddb7b405063afd3b9c2a9fdef705431be7d"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/workspace.log",
+      "sha256": "00336bed7c3a882bc4c12d8b2a4035b63110c536449477bbacc00708d64e73e1"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/clippy.log",
+      "sha256": "705eb693535915c759ccc7944be25a2964e9c1bcf6f31ffb43b2fd714c93f4cf"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/format-rust.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/format-ts.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/cpu-baseline-binding-2026-11-07/ui.log",
+      "sha256": "cb7e4cff517f4c1196c1c81b946d098e0387c6e156aed697e47eb1e6000126b4"
+    }
+  ]
+}

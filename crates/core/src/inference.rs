@@ -42,6 +42,7 @@ pub(crate) struct LaunchSpec {
     pub selectors: SelectorEnv,
 }
 pub(crate) fn launch_spec(engine: &Engine, prefs: &Preferences) -> Result<LaunchSpec> {
+    crate::acceleration::refresh_cpu_baseline_for_selection(engine, prefs)?;
     if prefs.inference_backend == "auto" {
         if let Some(spec) = crate::acceleration::selected(engine, prefs) {
             return Ok(spec);

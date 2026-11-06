@@ -60,6 +60,93 @@ struct Certificate {
 fn certificate_path(engine: &Engine) -> std::path::PathBuf {
     engine.root.join("accelerators/active.json")
 }
+fn read_certificate(engine: &Engine) -> Result<Certificate> {
+    let mut data = Vec::new();
+    fs::File::open(certificate_path(engine))?
+        .take(16_385)
+        .read_to_end(&mut data)?;
+    if data.len() > 16_384 {
+        bail!("Invalid acceleration certificate");
+    }
+    Ok(serde_json::from_slice(&data)?)
+}
+
+struct CpuBaseline {
+    executable: crate::inference_cache::RuntimeReceipt,
+    build_info: crate::inference_cache::RuntimeReceipt,
+    identity: Value,
+}
+impl CpuBaseline {
+    fn observe(engine: &Engine, refresh: bool) -> Result<Self> {
+        let directory = engine.runtime_dir.join("llama");
+        let entry = directory.join(crate::platform::executable("llama-server"));
+        let info = directory.join("build-info.json");
+        // Check both files before a cold executable receipt can return pending.
+        for (path, maximum) in [(&entry, 256 * 1024 * 1024), (&info, 64 * 1024)] {
+            let metadata = fs::symlink_metadata(path)?;
+            if !metadata.file_type().is_file() || metadata.len() > maximum {
+                bail!("CPU baseline files must be regular and within their size limits");
+            }
+        }
+        let receipt = |path: &Path, maximum| {
+            if refresh {
+                engine.inference_fingerprints.refresh_bounded(path, maximum)
+            } else {
+                engine
+                    .inference_fingerprints
+                    .current_checked(path)?
+                    .context("runtime:verification-required")
+            }
+        };
+        let executable = receipt(&entry, 256 * 1024 * 1024)?;
+        let build_info = receipt(&info, 64 * 1024)?;
+        let identity = json!({"directory":directory,"executable":executable.digest(),
+            "build_info":build_info.digest()});
+        let baseline = Self {
+            executable,
+            build_info,
+            identity,
+        };
+        baseline.check_current()?;
+        Ok(baseline)
+    }
+    fn check_current(&self) -> Result<()> {
+        self.executable.check_current()?;
+        self.build_info.check_current()
+    }
+}
+
+/// Admission only; UI/status selection must never hash a cold CPU baseline.
+pub(crate) fn refresh_cpu_baseline_for_selection(
+    engine: &Engine,
+    prefs: &Preferences,
+) -> Result<()> {
+    if prefs.inference_backend != "auto"
+        || !cfg!(any(target_os = "windows", target_os = "linux"))
+        || !read_certificate(engine).is_ok_and(|c| c.schema == 2 && c.report.faster)
+    {
+        return Ok(());
+    }
+    let check = || -> Result<()> {
+        if engine.note_cancel.load(Ordering::SeqCst) || engine.maintenance.load(Ordering::SeqCst) {
+            return Err(crate::model_integrity::VerificationCancelled.into());
+        }
+        Ok(())
+    };
+    check()?;
+    let observation = CpuBaseline::observe(engine, true);
+    check()?;
+    if observation.is_err() {
+        invalidate_selection(engine);
+    }
+    Ok(())
+}
+fn invalidate_selection(engine: &Engine) {
+    let mut state = engine.acceleration.lock().unwrap();
+    state.status.state = "test_required".into();
+    state.status.reason = Some("configuration_or_driver_changed".into());
+    let _ = fs::remove_file(certificate_path(engine));
+}
 /// Caller owns config_lock and has excluded tests/leases. This helper never
 /// reacquires that gate or discards another installed version's authorization.
 pub(crate) fn forget_component(engine: &Engine, id: &str, version: &str) -> Result<()> {
@@ -177,7 +264,7 @@ fn binding(
     let prepared = prepare_binding(engine, prefs, component, directory, device, |id| {
         engine.cached_model(id)
     })?;
-    configuration_binding(&prepared.configuration, selectors)
+    prepared.after_capture(selectors)
 }
 
 struct PreparedBinding<'a> {
@@ -185,6 +272,7 @@ struct PreparedBinding<'a> {
     component: &'a components::Component,
     directory: &'a Path,
     receipt: crate::model_integrity::Receipt,
+    cpu_baseline: CpuBaseline,
     configuration: Value,
 }
 
@@ -195,6 +283,7 @@ impl PreparedBinding<'_> {
         // observed while capturing drivers. No second model-cache lookup or
         // second driver capture is needed.
         self.receipt.check_current()?;
+        self.cpu_baseline.check_current()?;
         components::exact_directory(self.component, self.directory)?;
         let files = self
             .component
@@ -230,7 +319,9 @@ fn prepare_binding<'a>(
         .map(|f| stamp(&directory.join(&f.name)))
         .collect::<Result<_>>()?;
     let receipt = cached_model(&prefs.llm_model)?.context("model:verification-required")?;
-    let configuration = json!({"schema":2,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
+    let cpu_baseline = CpuBaseline::observe(engine, false)?;
+    let configuration = json!({"schema":3,"hardware":hardware_key(engine)?,"verified_model":receipt.fingerprint(),
+        "cpu_baseline":cpu_baseline.identity,
         "archive":component.archive.sha256,"files":files,"device":device,"threads":prefs.threads,"context":prefs.context_size,
         "mode":prefs.resource_mode,"budget":crate::inference::budget_mib(prefs)});
     Ok(PreparedBinding {
@@ -238,6 +329,7 @@ fn prepare_binding<'a>(
         component,
         directory,
         receipt,
+        cpu_baseline,
         configuration,
     })
 }
@@ -280,15 +372,8 @@ fn selected_with(
     capture: impl FnOnce(Backend) -> SelectorEnv,
 ) -> Option<LaunchSpec> {
     let result = (|| -> Result<LaunchSpec> {
-        let mut data = Vec::new();
-        fs::File::open(certificate_path(engine))?
-            .take(16_385)
-            .read_to_end(&mut data)?;
-        if data.len() > 16_384 {
-            bail!("Invalid acceleration certificate");
-        }
-        let cert: Certificate = serde_json::from_slice(&data)?;
-        if cert.schema != 1 || !cert.report.faster {
+        let cert = read_certificate(engine)?;
+        if cert.schema != 2 || !cert.report.faster {
             bail!("Acceleration has not passed local verification");
         }
         let (component, directory) = installed_component(&cert.component_id, &cert.version)?;
@@ -319,22 +404,21 @@ fn selected_with(
             selectors,
         })
     })();
-    let verification_pending = result.as_ref().is_err_and(|error| {
-        error
-            .chain()
-            .any(|e| e.to_string() == "model:verification-required")
+    let verification_pending = result.as_ref().err().and_then(|error| {
+        error.chain().find_map(|e| match e.to_string().as_str() {
+            "model:verification-required" => Some("model_verification_required"),
+            "runtime:verification-required" => Some("runtime_verification_required"),
+            _ => None,
+        })
     });
-    if verification_pending {
+    if let Some(pending) = verification_pending {
         // UI/status restoration never hashes weights, and a cold process-local
         // cache must not destroy a previously measured component certificate.
         let mut state = engine.acceleration.lock().unwrap();
-        state.status.state = "model_verification_required".into();
-        state.status.reason = Some("model_verification_required".into());
+        state.status.state = pending.into();
+        state.status.reason = Some(pending.into());
     } else if result.is_err() && certificate_path(engine).exists() {
-        let mut state = engine.acceleration.lock().unwrap();
-        state.status.state = "test_required".into();
-        state.status.reason = Some("configuration_or_driver_changed".into());
-        let _ = fs::remove_file(certificate_path(engine));
+        invalidate_selection(engine);
     }
     result.ok()
 }
@@ -529,7 +613,7 @@ fn finish_verification(
         crate::preferences::atomic_json(
             &certificate_path(engine),
             &Certificate {
-                schema: 1,
+                schema: 2,
                 component_id: trial.component_id,
                 version: trial.version,
                 device: trial.device,
@@ -615,6 +699,8 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
         + u64::from(prefs.context_size.saturating_sub(2048)) / 4
         + 256;
     let device = choose_device(&String::from_utf8(listing)?, kind, required)?;
+    // Retain the exact compared CPU runtime through both trials, not just its path.
+    let baseline = CpuBaseline::observe(engine, true)?;
     let key = binding(engine, &prefs, &component, &directory, &device, &selectors)?;
     engine.inference_pool.invalidate();
     let cpu_spec = LaunchSpec {
@@ -652,6 +738,7 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
         &device,
         &observed_selectors,
     )?;
+    baseline.check_current()?;
     finish_verification(
         engine,
         VerifiedTrial {
@@ -824,7 +911,20 @@ mod tests {
 
     fn selection_fixture(warm: bool) -> Result<SelectionFixture> {
         let root = tempfile::tempdir()?;
-        let engine = Engine::open(root.path().into())?;
+        let mut engine = Engine::open(root.path().into())?;
+        Arc::get_mut(&mut engine)
+            .context("Fresh fixture engine must be unique")?
+            .runtime_dir = root.path().join("builtin-runtime");
+        let cpu_directory = engine.runtime_dir.join("llama");
+        fs::create_dir_all(&cpu_directory)?;
+        fs::write(
+            cpu_directory.join(crate::platform::executable("llama-server")),
+            b"never executed CPU baseline",
+        )?;
+        fs::write(cpu_directory.join("build-info.json"), b"{}")?;
+        if warm {
+            CpuBaseline::observe(&engine, true)?;
+        }
         let prefs = Preferences {
             memory_budget_mib: 1024,
             ..Default::default()
@@ -1282,7 +1382,7 @@ mod tests {
         crate::preferences::atomic_json(
             &certificate_path(&fixture.engine),
             &Certificate {
-                schema: 1,
+                schema: 2,
                 component_id: fixture.component.id.clone(),
                 version: "selection-fixture-1".into(),
                 device: "Vulkan0".into(),
@@ -1315,6 +1415,38 @@ mod tests {
             "threads":fixture.prefs.threads,"context":fixture.prefs.context_size,
             "mode":fixture.prefs.resource_mode,"budget":1024
         },"cuda_selectors":selectors.digest()}))
+    }
+
+    fn current_selection_binding(fixture: &SelectionFixture) -> Result<String> {
+        prepare_binding(
+            &fixture.engine,
+            &fixture.prefs,
+            &fixture.component,
+            &fixture.directory,
+            "Vulkan0",
+            |_| {
+                fixture
+                    .engine
+                    .model_integrity
+                    .current(&fixture.model_directory, &fixture.model)
+            },
+        )?
+        .after_capture(&selection_snapshot(fixture))
+    }
+
+    fn fixture_selection(fixture: &SelectionFixture) -> Option<LaunchSpec> {
+        selected_with(
+            &fixture.engine,
+            &fixture.prefs,
+            |_, _| Ok((fixture.component.clone(), fixture.directory.clone())),
+            |_| {
+                fixture
+                    .engine
+                    .model_integrity
+                    .current(&fixture.model_directory, &fixture.model)
+            },
+            |_| selection_snapshot(fixture),
+        )
     }
 
     #[test]
@@ -1364,11 +1496,12 @@ mod tests {
     }
 
     #[test]
-    fn selected_warm_model_captures_once_and_keeps_the_existing_binding_scope() -> Result<()> {
+    fn selected_warm_model_captures_once_without_rereading_runtime() -> Result<()> {
         let fixture = selection_fixture(true)?;
         let selectors = selection_snapshot(&fixture);
-        let legacy = legacy_selection_binding(&fixture, &selectors)?;
-        let original = selection_certificate(&fixture, &legacy)?;
+        let binding = current_selection_binding(&fixture)?;
+        let original = selection_certificate(&fixture, &binding)?;
+        let read_bytes = fixture.engine.inference_fingerprints.hashed_bytes();
         let captures = std::cell::Cell::new(0);
         let lookups = std::cell::Cell::new(0);
         let spec = selected_with(
@@ -1396,13 +1529,278 @@ mod tests {
         assert_eq!(spec.backend, Backend::Vulkan);
         assert_eq!(spec.directory, fixture.directory);
         assert_eq!(spec.device.as_deref(), Some("Vulkan0"));
-        assert_eq!(spec.identity, legacy);
+        assert_eq!(spec.identity, binding);
         assert_eq!(spec.selectors, selectors);
         assert_eq!(
             fixture.engine.acceleration.lock().unwrap().status.state,
             "active"
         );
         assert_eq!(fs::read(certificate_path(&fixture.engine))?, original);
+        assert_eq!(
+            fixture.engine.inference_fingerprints.hashed_bytes(),
+            read_bytes
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn selected_rejects_legacy_cpu_unbound_certificates() -> Result<()> {
+        for schema in [1, 2] {
+            let fixture = selection_fixture(true)?;
+            let old = legacy_selection_binding(&fixture, &selection_snapshot(&fixture))?;
+            selection_certificate(&fixture, &old)?;
+            let mut cert = read_certificate(&fixture.engine)?;
+            cert.schema = schema;
+            crate::preferences::atomic_json(&certificate_path(&fixture.engine), &cert)?;
+            assert!(fixture_selection(&fixture).is_none());
+            assert!(!certificate_path(&fixture.engine).exists());
+            assert_eq!(
+                fixture.engine.acceleration.lock().unwrap().status.state,
+                "test_required"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn cold_cpu_baseline_preserves_certificate_without_reading_files() -> Result<()> {
+        let fixture = selection_fixture(true)?;
+        let binding = current_selection_binding(&fixture)?;
+        let original = selection_certificate(&fixture, &binding)?;
+        drop(
+            fixture
+                .engine
+                .inference_fingerprints
+                .block_directory(&fixture.engine.runtime_dir)?,
+        );
+        let before = fixture.engine.inference_fingerprints.hashed_bytes();
+        assert!(fixture_selection(&fixture).is_none());
+        assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), before);
+        assert_eq!(fs::read(certificate_path(&fixture.engine))?, original);
+        assert_eq!(
+            fixture.engine.acceleration.lock().unwrap().status.state,
+            "runtime_verification_required"
+        );
+        CpuBaseline::observe(&fixture.engine, true)?;
+        assert!(fixture_selection(&fixture).is_some());
+        let warmed = fixture.engine.inference_fingerprints.hashed_bytes();
+        assert!(warmed > before);
+        assert!(fixture_selection(&fixture).is_some());
+        assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), warmed);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_or_oversized_cpu_baseline_invalidates_without_cold_hashing() -> Result<()> {
+        for missing in ["executable", "build-info", "oversized-info"] {
+            let fixture = selection_fixture(true)?;
+            selection_certificate(&fixture, &current_selection_binding(&fixture)?)?;
+            let directory = fixture.engine.runtime_dir.join("llama");
+            drop(
+                fixture
+                    .engine
+                    .inference_fingerprints
+                    .block_directory(&directory)?,
+            );
+            match missing {
+                "executable" => {
+                    fs::remove_file(directory.join(crate::platform::executable("llama-server")))?
+                }
+                "build-info" => fs::remove_file(directory.join("build-info.json"))?,
+                _ => fs::write(directory.join("build-info.json"), vec![b' '; 65_537])?,
+            }
+            let before = fixture.engine.inference_fingerprints.hashed_bytes();
+            assert!(fixture_selection(&fixture).is_none());
+            assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), before);
+            assert!(!certificate_path(&fixture.engine).exists(), "{missing}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn cpu_build_info_change_invalidates_the_measured_comparison() -> Result<()> {
+        let fixture = selection_fixture(true)?;
+        selection_certificate(&fixture, &current_selection_binding(&fixture)?)?;
+        let directory = fixture.engine.runtime_dir.join("llama");
+        drop(
+            fixture
+                .engine
+                .inference_fingerprints
+                .block_directory(&directory)?,
+        );
+        fs::write(
+            directory.join("build-info.json"),
+            br#"{"revision":"changed"}"#,
+        )?;
+        CpuBaseline::observe(&fixture.engine, true)?;
+        assert!(fixture_selection(&fixture).is_none());
+        assert!(!certificate_path(&fixture.engine).exists());
+        Ok(())
+    }
+
+    #[test]
+    fn cpu_baseline_changed_during_capture_or_trial_cannot_be_replaced_by_a_new_receipt(
+    ) -> Result<()> {
+        for file in [
+            crate::platform::executable("llama-server"),
+            "build-info.json".into(),
+        ] {
+            let fixture = selection_fixture(true)?;
+            let prepared = prepare_binding(
+                &fixture.engine,
+                &fixture.prefs,
+                &fixture.component,
+                &fixture.directory,
+                "Vulkan0",
+                |_| {
+                    fixture
+                        .engine
+                        .model_integrity
+                        .current(&fixture.model_directory, &fixture.model)
+                },
+            )?;
+            let original_trial_baseline = CpuBaseline::observe(&fixture.engine, true)?;
+            let directory = fixture.engine.runtime_dir.join("llama");
+            drop(
+                fixture
+                    .engine
+                    .inference_fingerprints
+                    .block_directory(&directory)?,
+            );
+            fs::write(directory.join(file), b"changed during trial")?;
+            CpuBaseline::observe(&fixture.engine, true)?.check_current()?;
+            assert!(prepared
+                .after_capture(&selection_snapshot(&fixture))
+                .is_err());
+            // verify() retains this original receipt until its publication gate.
+            assert!(original_trial_baseline.check_current().is_err());
+            assert!(!certificate_path(&fixture.engine).exists());
+            assert!(!fixture
+                .engine
+                .root
+                .join("last-acceleration-test.json")
+                .exists());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn cpu_baseline_admission_is_inert_without_an_eligible_certificate() -> Result<()> {
+        let fixture = selection_fixture(false)?;
+        refresh_cpu_baseline_for_selection(&fixture.engine, &fixture.prefs)?;
+        selection_certificate(&fixture, &"0".repeat(64))?;
+        let mut cpu = fixture.prefs.clone();
+        cpu.inference_backend = "cpu".into();
+        refresh_cpu_baseline_for_selection(&fixture.engine, &cpu)?;
+        let mut legacy = read_certificate(&fixture.engine)?;
+        legacy.schema = 1;
+        crate::preferences::atomic_json(&certificate_path(&fixture.engine), &legacy)?;
+        refresh_cpu_baseline_for_selection(&fixture.engine, &fixture.prefs)?;
+        assert_eq!(fixture.engine.inference_fingerprints.hashed_bytes(), 0);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    fn launch_spec_prewarms_baseline_and_bad_baseline_only_revokes_gpu_qualification() -> Result<()>
+    {
+        let fixture = selection_fixture(false)?;
+        selection_certificate(&fixture, &"0".repeat(64))?;
+        // A real launch admission warms CPU receipts; fixture GPU metadata is not
+        // installed, so normal component selection ultimately keeps CPU available.
+        assert_eq!(
+            crate::inference::launch_spec(&fixture.engine, &fixture.prefs)?.backend,
+            Backend::Cpu
+        );
+        CpuBaseline::observe(&fixture.engine, false)?;
+        selection_certificate(&fixture, &"0".repeat(64))?;
+        let directory = fixture.engine.runtime_dir.join("llama");
+        drop(
+            fixture
+                .engine
+                .inference_fingerprints
+                .block_directory(&directory)?,
+        );
+        fs::remove_file(directory.join("build-info.json"))?;
+        assert_eq!(
+            crate::inference::launch_spec(&fixture.engine, &fixture.prefs)?.backend,
+            Backend::Cpu
+        );
+        assert!(!certificate_path(&fixture.engine).exists());
+        assert_eq!(
+            fixture.engine.acceleration.lock().unwrap().status.state,
+            "test_required"
+        );
+        assert_eq!(
+            fixture.engine.acceleration.lock().unwrap().failed_requests,
+            0
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn selected_rejects_faster_certificate_after_only_cpu_baseline_changes() -> Result<()> {
+        let fixture = selection_fixture(true)?;
+        let cpu_directory = fixture.engine.runtime_dir.join("llama");
+        let cpu_entry = cpu_directory.join(crate::platform::executable("llama-server"));
+
+        let selectors = selection_snapshot(&fixture);
+        let binding = prepare_binding(
+            &fixture.engine,
+            &fixture.prefs,
+            &fixture.component,
+            &fixture.directory,
+            "Vulkan0",
+            |_| {
+                fixture
+                    .engine
+                    .model_integrity
+                    .current(&fixture.model_directory, &fixture.model)
+            },
+        )?
+        .after_capture(&selectors)?;
+        let original = selection_certificate(&fixture, &binding)?;
+        let select = || {
+            selected_with(
+                &fixture.engine,
+                &fixture.prefs,
+                |_, _| Ok((fixture.component.clone(), fixture.directory.clone())),
+                |_| {
+                    fixture
+                        .engine
+                        .model_integrity
+                        .current(&fixture.model_directory, &fixture.model)
+                },
+                |_| selection_snapshot(&fixture),
+            )
+        };
+        assert!(
+            select().is_some(),
+            "unchanged measured comparison must work"
+        );
+
+        // Release only baseline receipts, as an updater must before replacing a
+        // Windows deny-write runtime. GPU/model/driver and the certificate stay put.
+        drop(
+            fixture
+                .engine
+                .inference_fingerprints
+                .block_directory(&cpu_directory)?,
+        );
+        fs::write(&cpu_entry, b"cpu baseline after upgrade")?;
+        assert_eq!(fs::read(certificate_path(&fixture.engine))?, original);
+        // The real launch_spec admission prewarms; status selection itself never hashes.
+        CpuBaseline::observe(&fixture.engine, true)?;
+
+        assert!(
+            select().is_none(),
+            "a faster result measured against the old CPU runtime must not authorize GPU selection"
+        );
+        assert_eq!(
+            fixture.engine.acceleration.lock().unwrap().status.state,
+            "test_required"
+        );
+        assert!(!certificate_path(&fixture.engine).exists());
         Ok(())
     }
 
@@ -1410,9 +1808,8 @@ mod tests {
     fn selected_rechecks_prepared_component_and_hardware_after_driver_capture() -> Result<()> {
         for component_change in [true, false] {
             let fixture = selection_fixture(true)?;
-            let selectors = selection_snapshot(&fixture);
-            let legacy = legacy_selection_binding(&fixture, &selectors)?;
-            selection_certificate(&fixture, &legacy)?;
+            let binding = current_selection_binding(&fixture)?;
+            selection_certificate(&fixture, &binding)?;
             let captures = std::cell::Cell::new(0);
             let lookups = std::cell::Cell::new(0);
             let result = selected_with(

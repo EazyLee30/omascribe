@@ -240,6 +240,24 @@ try {
     await page.locator('[data-component-action="test"]').isDisabled(),
     false,
   );
+  await render([old], {
+    state: "runtime_verification_required",
+    component_id: old.component.id,
+    version: old.version,
+    reason: "runtime_verification_required",
+    report: null,
+  });
+  assert.match(
+    await page.locator("#catalog").innerText(),
+    /(?:待校验推理组件|Runtime check pending|待驗證推理元件)/,
+  );
+  assert.equal(await page.locator(".inline-error").count(), 0);
+  assert.equal(await page.locator("details").count(), 0);
+  assert.equal(
+    await page.locator('[data-component-action="disable"]').count(),
+    0,
+    "A pending runtime check must not present the GPU as active",
+  );
   for (const reason of [
     "No compatible GPU with enough free memory; CPU remains available",
     "Local model failed fact/negation verification",
