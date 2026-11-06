@@ -84,6 +84,7 @@ pub struct Engine {
     pub downloads: crate::models::Downloads,
     pub component_downloads: crate::components::ComponentDownloads,
     pub config_lock: Mutex<()>,
+    hotword_publication: Mutex<()>,
     pub diarization_pid: AtomicU32,
     pub diarization_cancelled: Mutex<std::collections::HashSet<String>>,
     pub models: PathBuf,
@@ -166,6 +167,7 @@ impl Engine {
             downloads: crate::models::Downloads::default(),
             component_downloads: crate::components::ComponentDownloads::default(),
             config_lock: Mutex::new(()),
+            hotword_publication: Mutex::new(()),
             diarization_pid: AtomicU32::new(0),
             diarization_cancelled: Mutex::new(Default::default()),
             root,
@@ -771,10 +773,21 @@ impl Engine {
     pub(crate) fn refresh_live_hotwords(&self) -> Result<()> {
         let id = self.active.lock().unwrap().as_ref().map(|a| a.id.clone());
         if let Some(id) = id {
-            let dir = self.audio_dir(&id)?;
-            publish_hotwords(&dir, &self.terminology(&id)?.recognition_hotwords())?;
+            self.publish_current_hotwords(&id)?;
         }
         Ok(())
+    }
+    fn publish_current_hotwords(&self, id: &str) -> Result<PathBuf> {
+        // Serialize the snapshot as well as both file replacements. A startup
+        // or refresh that waited behind save_note must read the new terms,
+        // never publish a previously captured spelling (including after clear).
+        // Callers release active/store before entry; the only nested lock is store.
+        let _publication = self.hotword_publication.lock().unwrap();
+        let dir = self.audio_dir(id)?;
+        let candidates = self.terminology(id)?.recognition_hotwords();
+        #[cfg(test)]
+        hotword_publication_tests::before_replace();
+        publish_hotwords(&dir, &candidates)
     }
     pub fn edit_segment(&self, id: &str, text: &str, revision: u32) -> Result<()> {
         if text.chars().count() > 4000 {
@@ -1109,8 +1122,7 @@ impl Engine {
             .map(|end| end.to_string())
             .collect::<Vec<_>>()
             .join(",");
-        let hotwords =
-            publish_hotwords(&dir, &self.terminology(&active.id)?.recognition_hotwords())?;
+        let hotwords = self.publish_current_hotwords(&active.id)?;
         let mut command = audio::child_command(self.worker_path());
         // Reuse the native recognizer only for the model/target covered by the
         // paired and dynamic-context gates. An explicit environment setting,
@@ -2713,6 +2725,132 @@ mod legacy_minutes_retry_tests {
 #[cfg(test)]
 mod hotword_publication_tests {
     use super::*;
+    use std::{cell::RefCell, sync::mpsc};
+
+    thread_local! {
+        static BEFORE_REPLACE: RefCell<Option<Box<dyn FnOnce()>>> = RefCell::new(None);
+    }
+
+    pub(super) fn before_replace() {
+        let hook = BEFORE_REPLACE.with(|slot| slot.borrow_mut().take());
+        if let Some(hook) = hook {
+            hook();
+        }
+    }
+
+    fn note_save_wins_delayed_publication(startup: bool, replacement: &str) -> Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let engine = Engine::open(tmp.path().into())?;
+        let meeting = engine.create_meeting("Hotword publication")?;
+        let note = engine.save_note(&meeting.id, None, "AsterLabs", "term", 0)?;
+        // Only the active meeting identity is needed. No audio/model process is started.
+        *engine.active.lock().unwrap() = Some(Arc::new(Active {
+            id: meeting.id.clone(),
+            take_number: None,
+            capture_pid: AtomicU32::new(0),
+            capture_running: AtomicBool::new(false),
+            capture_stop: Mutex::new(None),
+            worker_pid: AtomicU32::new(0),
+            capture_done: AtomicBool::new(true),
+            worker_done: AtomicBool::new(true),
+            stopping: AtomicBool::new(false),
+            paused: AtomicBool::new(false),
+            device: "test".into(),
+            resumable: false,
+            transition: Mutex::new(()),
+            samples: AtomicU64::new(0),
+            hold: Mutex::new(None),
+        }));
+        let wire_path = engine.publish_current_hotwords(&meeting.id)?;
+        assert_eq!(fs::read_to_string(&wire_path)?, "ASTERLABS");
+        let audio = engine.audio_dir(&meeting.id)?.join("000000.pcm");
+        fs::write(&audio, b"unchanged public test audio")?;
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let old_engine = engine.clone();
+        let old_meeting = meeting.id.clone();
+        let old = thread::spawn(move || -> Result<()> {
+            let probe = old_engine.clone();
+            BEFORE_REPLACE.with(|slot| {
+                *slot.borrow_mut() = Some(Box::new(move || {
+                    // Probe before the second writer starts. This only chooses a
+                    // deadlock-free interleaving; success is judged by the file.
+                    let serialized = match probe.hotword_publication.try_lock() {
+                        Ok(guard) => {
+                            drop(guard);
+                            false
+                        }
+                        Err(std::sync::TryLockError::WouldBlock) => true,
+                        Err(error) => panic!("publication lock poisoned: {error}"),
+                    };
+                    entered_tx.send(serialized).unwrap();
+                    release_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+                }));
+            });
+            if startup {
+                // The same production entry point used by spawn_asr.
+                old_engine.publish_current_hotwords(&old_meeting)?;
+            } else {
+                old_engine.refresh_live_hotwords()?;
+            }
+            Ok(())
+        });
+        let serialized = entered_rx.recv_timeout(Duration::from_secs(10))?;
+        let save_engine = engine.clone();
+        let save_meeting = meeting.id.clone();
+        let replacement = replacement.to_owned();
+        let (saved_tx, saved_rx) = mpsc::channel();
+        let save = thread::spawn(move || {
+            let result =
+                save_engine.save_note(&save_meeting, Some(note.id), &replacement, "term", 0);
+            saved_tx.send(result.map(|_| ())).unwrap();
+        });
+        let saved = if serialized {
+            // A owns the gate, so release A before waiting for B's real save.
+            release_tx.send(())?;
+            saved_rx.recv_timeout(Duration::from_secs(10))
+        } else {
+            // Original bug: B finishes first, then A overwrites it with old terms.
+            let saved = saved_rx.recv_timeout(Duration::from_secs(10));
+            release_tx.send(())?;
+            saved
+        };
+        let old_result = old.join();
+        let save_result = save.join();
+        old_result.unwrap()?;
+        save_result.unwrap();
+        saved??;
+        let expected = crate::asr_hotwords::encode_words(
+            &engine.terminology(&meeting.id)?.recognition_hotwords(),
+        );
+        assert!(!expected.words.contains("ASTERLABS"));
+        assert_eq!(fs::read_to_string(&wire_path)?, expected.words);
+        let stats: serde_json::Value =
+            serde_json::from_slice(&fs::read(wire_path.with_file_name("hotwords-input.json"))?)?;
+        assert_eq!(stats["stats"], serde_json::to_value(expected.stats)?);
+        assert_eq!(fs::read(audio)?, b"unchanged public test audio");
+        Ok(())
+    }
+
+    #[test]
+    fn saved_name_wins_delayed_startup_publication() -> Result<()> {
+        note_save_wins_delayed_publication(true, "OrbitForge")
+    }
+
+    #[test]
+    fn cleared_names_win_delayed_startup_publication() -> Result<()> {
+        note_save_wins_delayed_publication(true, "")
+    }
+
+    #[test]
+    fn saved_name_wins_delayed_live_publication() -> Result<()> {
+        note_save_wins_delayed_publication(false, "OrbitForge")
+    }
+
+    #[test]
+    fn cleared_names_win_delayed_live_publication() -> Result<()> {
+        note_save_wins_delayed_publication(false, "")
+    }
 
     #[test]
     fn serialized_hotwords_fit_worker_contract_and_updates_clear_old_context() -> Result<()> {
