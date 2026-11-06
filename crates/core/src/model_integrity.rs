@@ -196,6 +196,10 @@ struct Verified {
 pub(crate) struct Receipt(Arc<Verified>);
 
 impl Receipt {
+    pub(crate) fn model_id(&self) -> &str {
+        &self.0.key.catalog.id
+    }
+
     pub(crate) fn fingerprint(&self) -> &str {
         &self.0.fingerprint
     }

@@ -15,6 +15,7 @@ use std::{
 };
 use uuid::Uuid;
 
+mod asr_context;
 mod scheduler;
 
 fn replace_hotword_file(dir: &Path, name: &str, contents: &[u8]) -> Result<()> {
@@ -1111,6 +1112,17 @@ impl Engine {
         let hotwords =
             publish_hotwords(&dir, &self.terminology(&active.id)?.recognition_hotwords())?;
         let mut command = audio::child_command(self.worker_path());
+        // Reuse the native recognizer only for the model/target covered by the
+        // paired and dynamic-context gates. An explicit environment setting,
+        // including 0, remains authoritative for experiments and rollback.
+        if asr_context::use_stream_by_default(
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            primary.model_id(),
+            std::env::var_os(asr_context::OVERRIDE).as_deref(),
+        ) {
+            command.env(asr_context::OVERRIDE, "1");
+        }
         command
             .arg(primary.directory())
             .arg(&dir)

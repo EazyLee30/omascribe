@@ -407,7 +407,7 @@ fn trial(engine: &Arc<Engine>, prefs: &Preferences, spec: &LaunchSpec) -> Result
         "评审安排在周四，不是周五。预算是 3000，尚未批准。",
     ] {
         if engine.note_cancel.load(Ordering::SeqCst) {
-            bail!("Acceleration test cancelled");
+            return Err(crate::model_integrity::VerificationCancelled.into());
         }
         let at = Instant::now();
         session.check_model()?;
@@ -427,9 +427,10 @@ fn trial(engine: &Arc<Engine>, prefs: &Preferences, spec: &LaunchSpec) -> Result
         if !correct_facts(&facts) {
             bail!("Local model failed fact/negation verification");
         }
-        if engine.note_cancel.load(Ordering::SeqCst)
-            || session.resource_stop.load(Ordering::SeqCst)
-            || session.timed_out.load(Ordering::SeqCst)
+        if engine.note_cancel.load(Ordering::SeqCst) {
+            return Err(crate::model_integrity::VerificationCancelled.into());
+        }
+        if session.resource_stop.load(Ordering::SeqCst) || session.timed_out.load(Ordering::SeqCst)
         {
             bail!("Local test stopped to protect system resources");
         }
@@ -513,10 +514,10 @@ fn finish_verification(
 ) -> Result<Report> {
     // Check before either report or certificate writes. A selector changing
     // during the trial cannot authorize an ordinal tested in another scope.
-    if engine.note_cancel.load(Ordering::SeqCst)
-        || trial.selectors != *observed_selectors
-        || trial.binding != observed_binding
-    {
+    if engine.note_cancel.load(Ordering::SeqCst) {
+        return Err(crate::model_integrity::VerificationCancelled.into());
+    }
+    if trial.selectors != *observed_selectors || trial.binding != observed_binding {
         bail!("Acceleration test configuration changed");
     }
     fs::write(
@@ -542,9 +543,60 @@ fn finish_verification(
     Ok(trial.report)
 }
 
+fn finish_test(engine: &Engine, id: String, version: String, result: Result<Report>) {
+    let mut state = engine.acceleration.lock().unwrap();
+    // This terminal observation is the completion boundary. Cancellation that
+    // arrived after certificate publication but before this check still wins.
+    let cancelled = engine.note_cancel.load(Ordering::SeqCst)
+        || result
+            .as_ref()
+            .is_err_and(crate::model_integrity::is_cancelled);
+    state.status = if cancelled {
+        let _ = fs::remove_file(certificate_path(engine));
+        Status {
+            state: "cancelled".into(),
+            component_id: Some(id),
+            version: Some(version),
+            reason: None,
+            report: None,
+        }
+    } else {
+        match result {
+            Ok(report) => Status {
+                state: if report.faster {
+                    "active"
+                } else {
+                    "cpu_preferred"
+                }
+                .into(),
+                component_id: Some(id),
+                version: Some(version),
+                report: Some(report),
+                reason: None,
+            },
+            Err(error) => {
+                let _ = fs::remove_file(certificate_path(engine));
+                Status {
+                    state: "test_failed".into(),
+                    component_id: Some(id),
+                    version: Some(version),
+                    reason: Some(format!("{error:#}")),
+                    report: None,
+                }
+            }
+        }
+    };
+    drop(state);
+    engine.status.lock().unwrap().notes_busy = false;
+    engine.note_busy.store(false, Ordering::SeqCst);
+}
+
 fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     engine.inference_pool.invalidate();
     let prefs = engine.preferences.lock().unwrap().clone();
+    if engine.note_cancel.load(Ordering::SeqCst) {
+        return Err(crate::model_integrity::VerificationCancelled.into());
+    }
     let (index, component, directory) =
         components::installed_component(&engine.root, id, Some(version))?;
     components::verify_component_files(&component, &directory, &engine.note_cancel)?;
@@ -586,7 +638,10 @@ fn verify(engine: &Arc<Engine>, id: &str, version: &str) -> Result<Report> {
     // A driver/config change or cancellation during a test cannot activate stale results.
     engine.acceleration.lock().unwrap().hardware = None;
     let observed_selectors = SelectorEnv::capture(kind);
-    if engine.note_cancel.load(Ordering::SeqCst) || selectors != observed_selectors {
+    if engine.note_cancel.load(Ordering::SeqCst) {
+        return Err(crate::model_integrity::VerificationCancelled.into());
+    }
+    if selectors != observed_selectors {
         bail!("Acceleration test configuration changed");
     }
     let observed_binding = binding(
@@ -715,34 +770,7 @@ impl Engine {
         let id = id.to_owned();
         std::thread::spawn(move || {
             let result = verify(&engine, &id, &version);
-            let mut state = engine.acceleration.lock().unwrap();
-            state.status = match result {
-                Ok(report) => Status {
-                    state: if report.faster {
-                        "active"
-                    } else {
-                        "cpu_preferred"
-                    }
-                    .into(),
-                    component_id: Some(id),
-                    version: Some(version),
-                    report: Some(report),
-                    reason: None,
-                },
-                Err(error) => {
-                    let _ = fs::remove_file(certificate_path(&engine));
-                    Status {
-                        state: "test_failed".into(),
-                        component_id: Some(id),
-                        version: Some(version),
-                        reason: Some(format!("{error:#}")),
-                        report: None,
-                    }
-                }
-            };
-            drop(state);
-            engine.status.lock().unwrap().notes_busy = false;
-            engine.note_busy.store(false, Ordering::SeqCst);
+            finish_test(&engine, id, version, result);
         });
         Ok(())
     }
@@ -1042,6 +1070,100 @@ mod tests {
             fixture.component.clone(),
             fixture.directory.clone(),
         ))
+    }
+
+    #[test]
+    fn admitted_component_test_cancel_is_not_a_gpu_failure() -> Result<()> {
+        for cancelled in [true, false] {
+            let fixture = selection_fixture(false)?;
+            let component_reads = std::cell::Cell::new(0);
+            let held_preferences = std::cell::RefCell::new(None);
+            fixture.engine.verify_acceleration_version_with_readers(
+                &fixture.component.id,
+                Some("preflight-fixture-1"),
+                |_| {
+                    fixture
+                        .engine
+                        .model_integrity
+                        .verify(&fixture.model_directory, &fixture.model)
+                },
+                |id, version| {
+                    let installed = installed_preflight_fixture(&fixture, id, version)?;
+                    component_reads.set(component_reads.get() + 1);
+                    if component_reads.get() == 2 {
+                        // Admission has already read preferences. Hold only the
+                        // worker's next read, so Cancel deterministically occurs
+                        // after accepted admission and before runtime startup.
+                        held_preferences
+                            .borrow_mut()
+                            .replace(fixture.engine.preferences.lock().unwrap());
+                    }
+                    Ok(installed)
+                },
+            )?;
+            assert!(fixture.engine.note_busy.load(Ordering::SeqCst));
+            assert!(fixture.engine.acceleration_test_running());
+            if cancelled {
+                fixture.engine.cancel_notes();
+            }
+            drop(held_preferences.borrow_mut().take());
+            let started = Instant::now();
+            while fixture.engine.note_busy.load(Ordering::SeqCst)
+                && started.elapsed() < Duration::from_secs(5)
+            {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            assert!(!fixture.engine.note_busy.load(Ordering::SeqCst));
+            let status = fixture.engine.acceleration_status();
+            assert_eq!(
+                status.state,
+                if cancelled {
+                    "cancelled"
+                } else {
+                    "test_failed"
+                },
+                "cancelled={cancelled}, reason={:?}",
+                status.reason
+            );
+            assert_eq!(status.reason.is_none(), cancelled);
+            assert!(status.report.is_none());
+            assert!(!certificate_path(&fixture.engine).exists());
+            assert!(!fixture.engine.status.lock().unwrap().notes_busy);
+            assert_eq!(fixture.engine.inference_worker_status().starts, 0);
+            assert_eq!(fixture.engine.llm_pid.load(Ordering::SeqCst), 0);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn terminal_cancel_retracts_a_just_published_test_certificate() -> Result<()> {
+        for cancelled in [true, false] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let selectors = SelectorEnv::capture(Backend::Cpu);
+            let trial = fixed_trial("terminal-fixture", selectors.clone());
+            let id = trial.component_id.clone();
+            let version = trial.version.clone();
+            engine.note_busy.store(true, Ordering::SeqCst);
+            engine.status.lock().unwrap().notes_busy = true;
+            // Exercise the production certificate publisher and finalizer, not
+            // a measured GPU run. All timings in this fixture are synthetic.
+            let report = finish_verification(&engine, trial, "terminal-fixture", &selectors)?;
+            assert!(certificate_path(&engine).exists());
+            if cancelled {
+                engine.cancel_notes();
+            }
+            finish_test(&engine, id, version, Ok(report));
+            let status = engine.acceleration_status();
+            assert_eq!(status.state, if cancelled { "cancelled" } else { "active" });
+            assert_eq!(certificate_path(&engine).exists(), !cancelled);
+            assert_eq!(status.report.is_some(), !cancelled);
+            assert!(status.reason.is_none());
+            assert!(!engine.note_busy.load(Ordering::SeqCst));
+            assert!(!engine.status.lock().unwrap().notes_busy);
+            assert_eq!(engine.inference_worker_status().starts, 0);
+        }
+        Ok(())
     }
 
     #[test]

@@ -100,6 +100,8 @@ export function accelerationBody(
         );
       case "testing":
         return tr("本机测试中", "Testing locally", "本機測試中");
+      case "cancelled":
+        return tr("测试已取消", "Test cancelled", "測試已取消");
       case "cpu_preferred":
         return tr("CPU 更快", "CPU is faster", "CPU 較快");
       case "cpu_fallback":
@@ -116,13 +118,16 @@ export function accelerationBody(
   const modelCheckPending =
     verification?.reason === "model_verification_required";
   const modelInvalid = verification?.reason?.includes("model:integrity:");
-  const failure = modelCheckPending
-    ? `<p class="setting-help">${tr("首次加载前会校验模型文件；已保存的显卡测试记录保留。", "Model files will be checked before first use. The saved GPU test is retained.", "首次載入前會驗證模型檔案；已儲存的顯示卡測試記錄保留。")}</p>`
-    : modelInvalid
-      ? `<p class="inline-error">${tr("模型文件校验未通过。请检查模型文件；这不代表显卡驱动故障。", "Model file verification failed. Check the model files; this does not indicate a GPU driver failure.", "模型檔案驗證未通過。請檢查模型檔案；這不代表顯示卡驅動程式故障。")}</p>`
-      : verification?.reason
-        ? `<p class="inline-error">${tr("显卡测试未通过，继续使用 CPU。请检查驱动后重试。", "GPU test did not pass; CPU remains active. Check the driver and try again.", "顯示卡測試未通過，繼續使用 CPU；請檢查驅動程式後重試。")}</p><details><summary>${tr("测试详情", "Test details", "測試詳情")}</summary><p class="setting-help">${esc(verification.reason)}</p></details>`
-        : "";
+  const failure =
+    verification?.state === "cancelled"
+      ? `<p class="setting-help">${tr("测试已取消，继续使用 CPU。可随时重新测试。", "Test cancelled. CPU remains active; you can test again when ready.", "測試已取消，繼續使用 CPU；可隨時重新測試。")}</p>`
+      : modelCheckPending
+        ? `<p class="setting-help">${tr("首次加载前会校验模型文件；已保存的显卡测试记录保留。", "Model files will be checked before first use. The saved GPU test is retained.", "首次載入前會驗證模型檔案；已儲存的顯示卡測試記錄保留。")}</p>`
+        : modelInvalid
+          ? `<p class="inline-error">${tr("模型文件校验未通过。请检查模型文件；这不代表显卡驱动故障。", "Model file verification failed. Check the model files; this does not indicate a GPU driver failure.", "模型檔案驗證未通過。請檢查模型檔案；這不代表顯示卡驅動程式故障。")}</p>`
+          : verification?.reason
+            ? `<p class="inline-error">${tr("测试未通过，继续使用 CPU。请查看详情后重试。", "Test did not pass; CPU remains active. Check the details before trying again.", "測試未通過，繼續使用 CPU；請查看詳情後重試。")}</p><details><summary>${tr("测试详情", "Test details", "測試詳情")}</summary><p class="setting-help">${esc(verification.reason)}</p></details>`
+            : "";
   const comparison = report
     ? `<p class="setting-help">${tr("本机短文本测试", "Local short-text test", "本機短文測試")} · CPU ${(report.cpu.total_ms / 1000).toFixed(2)} s · GPU ${(report.gpu.total_ms / 1000).toFixed(2)} s${report.gpu.peak_rss_mib !== null ? ` · ${tr("进程内存峰值", "Peak process memory", "程序記憶體峰值")} ${report.gpu.peak_rss_mib} MiB` : ""}</p>`
     : "";

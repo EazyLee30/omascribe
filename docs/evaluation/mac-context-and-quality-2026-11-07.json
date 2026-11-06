@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "ea1803103f76814b94dd2bb994e3a36a6b1ab07a",
+  "final_core_and_harness_source_sha256": "da244d398a4b5e032e00c52b9bceb8a4a40508769dbf042acd848b2e99b1248b",
+  "changes": {
+    "apple_asr_default": "Engine passes stream hotword reuse only for macOS/aarch64 and the primary verified zipformer-small receipt when the override is unset. Explicit 0, 1, empty, unknown and non-Unicode settings remain inherited. Other target/model defaults and the standalone worker default remain Legacy.",
+    "minutes": "The existing meeting-end predicate cannot borrow affirmative support from an explicitly denied/conditional/questioned statement. Affirmative reports and later direct statements remain valid; unrelated quoted questions or conditions cannot hide a claim or erase its support. Finite deterministic checks, not general entailment.",
+    "component_cancel": "An admitted optional acceleration test reports cancellation separately from failure, including cancellation before final status publication after a certificate was written. The certificate is withdrawn in that case. Genuine failures retain details without presuming a driver defect; retry remains available."
+  },
+  "production_asr_gate": {
+    "passed": true,
+    "runs": 1,
+    "arms": [
+      "unset default",
+      "explicit override 0"
+    ],
+    "native_asr_workers": 6,
+    "threads": 1,
+    "wall_seconds": 5.086816666997038,
+    "budget_seconds": 120,
+    "retries": 0,
+    "entry": "crates/core/examples/asr_context_probe.rs; same Engine import, note replacement plus human correction, append, retranscribe",
+    "expected_modes": [
+      "stream_experiment",
+      "recognizer"
+    ],
+    "checks": [
+      "actual child diagnostics",
+      "canonical PCM identity",
+      "exact cross-mode text, revisions and timeline",
+      "human correction retained on append and in previous run history",
+      "same-Engine note change replaces published hotwords between takes",
+      "zero LLM starts",
+      "observed process-tree exits confirmed"
+    ],
+    "fixture_sha256": "7d93384ca14702cc584a7a33fe2fed92e89e708549161cb12ea38c916882103b",
+    "worker_sha256": "d28d8c7948b95a29a2886d97468dc561bd722487e04a42180cfe4502424a8ff8",
+    "worker_build_revision": "b0f0999065f7edeb17ddc2477cfe71a7f62baa59",
+    "worker_source_binding": "No changes from pinned build in crates/asr, Cargo.toml, Cargo.lock or models.lock.json.",
+    "tested_core_build": {
+      "profile": "debug",
+      "revision_at_compile": "ea1803103f76814b94dd2bb994e3a36a6b1ab07a",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "6aa04e6b670949e170024380cb3b40723edb5723dbf76627211b470421b16a60",
+      "target": "aarch64-apple-darwin"
+    },
+    "tested_core_and_harness_source_sha256": "4bb4d29bec94019fde9d673d720b572c4e96dc1195f1e7bf9feff28c1ba59870",
+    "followup_scope": "This gate preceded the final unrelated-quoted-question/condition guard refinement. That follow-up changed only minutes validation/tests; ASR launch policy, model receipts, worker and probe were unchanged. Final core tests/clippy were rerun; no repeated model gate.",
+    "identities_unchanged": true,
+    "owned_copies_removed": true,
+    "owned_copies_logical_bytes": 102712874,
+    "prior_required_evidence": [
+      "asr-stream-equivalence-2026-11-07.json",
+      "asr-dynamic-context-2026-11-07.json"
+    ]
+  },
+  "validation": {
+    "core": 795,
+    "core_ignored": 14,
+    "cli": 3,
+    "integration": 48,
+    "workspace_shell": 8,
+    "workspace_asr": 18,
+    "strict_clippy": true,
+    "format": true,
+    "typescript": true,
+    "chromium_component_controls": true,
+    "scope": "Full workspace tests and strict workspace Clippy passed; after the final minutes-only refinement, full core tests/integration and strict core all-targets Clippy passed again. Python unchanged; no local repeat."
+  },
+  "raw_evidence": [
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/minutes-red.log",
+      "sha256": "77eab317011275255dd88f26144b4a139898100e5a3b8f29eb4d4629b1249e62"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/minutes-green.log",
+      "sha256": "2c6e2c1a84ea73527fede000b28136a84e9ed4501343cd60d3dca919062a203a"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/quoted-question-red.log",
+      "sha256": "d1fcef6d71f8a4f74d2ed74c7487d15196002a3a4bba1e24d28fd7b1552923e7"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/gpu-cancel-red.log",
+      "sha256": "6fe0884e41d46125eee45f01917a6cd3407a40a28d9ed6a91837c57537144494"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/component-ui.log",
+      "sha256": "ae7ca757f094de6a1b13f6cef0cf36921c751c641369c9e3d6742cb3ed5a5007"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/component-ui-green.log",
+      "sha256": "cb7e4cff517f4c1196c1c81b946d098e0387c6e156aed697e47eb1e6000126b4"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/workspace-tests-final.log",
+      "sha256": "973b468d86f6dd9755baf20e00585e2b8a515bcbdd1aea7740c88e6fa805d9bc"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/clippy-final.log",
+      "sha256": "d2f5c64d92232e096a27e8b85c214887ed60eeb4a38af04abe2a8636262ef415"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/core-final.log",
+      "sha256": "b0fa967e9670ec7225e148c0ef42eea2b9d30db2b26df6885ffd1c6b42186905"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/core-clippy-final.log",
+      "sha256": "199b9673835751182d409cac1e4ab93a705e827793d3ab233959eb13cb5fca5d"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/production-freeze.json",
+      "sha256": "be6b869f38dd8d85fbafd8157d494445d3224ab7ca46fd3da2e834fc9dc8aeb7"
+    },
+    {
+      "path": "artifacts/mac-context-production-2026-11-07/production-report.json",
+      "sha256": "faff7bbbbe3131f232e0191f91399cfbd45697fef3443df2a163272b763402e5"
+    }
+  ],
+  "limits": [
+    "Not a new recognition accuracy, whole-meeting speed, memory, energy or Metal-offload claim. Reuse saves nonempty context rebuilds; empty/nonempty transitions still rebuild.",
+    "No live microphone pause/resume application verification; prior direct-worker dynamic gate remains separate.",
+    "No new Q16 model inference or full document corpus. Q16 and the historical 051 numerical regression remain open.",
+    "No new installer or CUDA/Vulkan component build. Optional components stay separate; PR #14 device selection is untouched.",
+    "No v0.3.5 release. Stable application version remains v0.3.4."
+  ]
+}

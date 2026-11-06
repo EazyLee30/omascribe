@@ -4,6 +4,115 @@ use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+/// Keep explicit denials of the existing meeting-end predicate from lending
+/// their inner words to an affirmative conclusion. Quotation alone does not
+/// remove support; retain its scope across punctuation and visual line wrapping.
+fn asserted_meeting_end(text: &str, rule: &regex::Regex) -> bool {
+    if !rule.is_match(text) {
+        return false;
+    }
+    static PREFIX: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    static SUFFIX: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    static CONDITION: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let prefix = PREFIX.get_or_init(|| regex::Regex::new(concat!(
+        r"(?i)(?:并非|并不是|不是|否认(?:了)?|不认为|不能确认|尚未确认)\s*$",
+        r"|\b(?:(?:not|never)\s+(?:true|correct|confirmed)|false|untrue|incorrect|denied)\b(?:\s+that\b)?(?:\s+the\b)?\s*$"
+    )).unwrap());
+    let suffix = SUFFIX.get_or_init(|| {
+        regex::Regex::new(concat!(
+            r"(?i)^\s*(?:(?:的说法)?(?:是|系)?(?:假消息|谣言|不实|错误)|(?:的说法)?(?:并)?不属实)",
+            r"|^\s*(?:is|was)\s+(?:false|untrue|incorrect)\b"
+        ))
+        .unwrap()
+    });
+    let condition = CONDITION.get_or_init(|| {
+        regex::Regex::new(r"(?i)^\s*(?:(?:if|when|once|unless|after)\b|如果|假如|待会议|等会议)")
+            .unwrap()
+    });
+    super::confirmation::sentences(text)
+        .into_iter()
+        .any(|range| {
+            let sentence = &text[range];
+            rule.find_iter(sentence).any(|claim| {
+                // Inspect the qualifier outside a quoted predicate as well:
+                // 否认“会议已结束” / “会议已结束。”是假消息. Do not erase
+                // the quoted fact itself or turn a newline into a new scope.
+                let (mut start, mut end) = (claim.start(), claim.end());
+                let mut quoted = None;
+                let mut escaped = false;
+                let mut outer_question = false;
+                let mut claim_question = false;
+                let mut claim_prefix_start = 0;
+                for (at, ch) in sentence.char_indices() {
+                    if escaped {
+                        escaped = false;
+                        continue;
+                    }
+                    if quoted.is_some() && ch == '\\' {
+                        escaped = true;
+                        continue;
+                    }
+                    if super::confirmation::word_apostrophe(sentence, at, ch) {
+                        continue;
+                    }
+                    if let Some((open, close, question)) = quoted {
+                        if ch == close {
+                            if open < claim.start() && at >= claim.end() {
+                                start = open;
+                                end = at + ch.len_utf8();
+                                claim_prefix_start =
+                                    open + sentence[open..].chars().next().unwrap().len_utf8();
+                                claim_question = question;
+                            }
+                            quoted = None;
+                        } else if matches!(ch, '?' | '？') {
+                            quoted = Some((open, close, true));
+                        }
+                    } else {
+                        outer_question |= matches!(ch, '?' | '？');
+                        quoted = match ch {
+                            '“' => Some((at, '”', false)),
+                            '‘' => Some((at, '’', false)),
+                            '「' => Some((at, '」', false)),
+                            '『' => Some((at, '』', false)),
+                            '\"' | '\'' | '`' => Some((at, ch, false)),
+                            _ => None,
+                        };
+                    }
+                }
+                if let Some((open, _, question)) = quoted {
+                    claim_question |= open < claim.start() && question;
+                    if open < claim.start() {
+                        claim_prefix_start =
+                            open + sentence[open..].chars().next().unwrap().len_utf8();
+                    }
+                }
+                let unqualified = |start: usize, end: usize, prefix_start: usize| {
+                    let before = sentence[..start].trim_end_matches(|ch: char| {
+                        ch.is_whitespace() || "\"'‘“「『`".contains(ch)
+                    });
+                    let after = sentence[end..].trim_start_matches(|ch: char| {
+                        ch.is_whitespace() || "\"'’”」』`。.!！,，;；".contains(ch)
+                    });
+                    // Retain the original sentence-initial condition rule.
+                    // Only a quotation containing this claim supplies an inner
+                    // condition prefix; unrelated earlier quotes do not.
+                    !condition.is_match(&sentence[prefix_start..start])
+                        && !prefix.is_match(before)
+                        && !suffix.is_match(after)
+                };
+                // A reported denial remains a denial; the outer quotation
+                // scope supplements the predicate's own qualifiers.
+                // A question in another quoted statement has no authority
+                // over this predicate, in either source or generated prose.
+                !outer_question
+                    && !claim_question
+                    && unqualified(claim.start(), claim.end(), claim_prefix_start)
+                    && unqualified(start, end, 0)
+            })
+        })
+}
+
 /// Targeted guards for meeting-wide assertions that short excerpts do not prove.
 /// These are not a general semantic-entailment classifier.
 fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str> {
@@ -41,11 +150,20 @@ fn unsupported_summary_claim(body: &str, evidence: &str) -> Option<&'static str>
             .collect::<Vec<_>>()
             .join(" ")
     };
-    let body = assertions(body);
-    let evidence = assertions(evidence);
+    // Stage/version mentions have different semantics from an ended meeting:
+    // “public beta not approved” can still invent the public-beta stage. Keep
+    // those existing rules unchanged instead of filtering all negative text.
+    let body_assertions = assertions(body);
+    let evidence_assertions = assertions(evidence);
     rules
         .iter()
-        .find(|(_, rule)| rule.is_match(&body) && !rule.is_match(&evidence))
+        .find(|(name, rule)| {
+            if *name == "会议结束结论" {
+                asserted_meeting_end(body, rule) && !asserted_meeting_end(evidence, rule)
+            } else {
+                rule.is_match(&body_assertions) && !rule.is_match(&evidence_assertions)
+            }
+        })
         .map(|(name, _)| *name)
 }
 

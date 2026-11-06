@@ -215,3 +215,189 @@ fn final_name_guard_preserves_exact_source_completion_bridge() -> Result<()> {
     .is_err());
     Ok(())
 }
+
+fn ordinary_generated(snapshot: &Snapshot, raw: &str, chinese: bool) -> Result<Vec<Suggestion>> {
+    let terms = terms(snapshot);
+    let context = retrieval::Context {
+        cursor: snapshot.segments.last().map_or(0, |source| source.seq),
+        segments: snapshot.segments.clone(),
+        keywords: Vec::new(),
+    };
+    let (_, input) = writer::prompt(
+        snapshot,
+        &context,
+        &json!({}),
+        if chinese { "zh" } else { "en" },
+    );
+    let composed = writer::body_with_evidence(raw, &input)?;
+    let prepared =
+        prepare_generated_writer_document(composed.text(), snapshot, &snapshot.segments, &terms)?;
+    validate_writer_document(
+        &prepared.draft,
+        snapshot,
+        &snapshot.segments,
+        &terms,
+        &snapshot.meeting.id,
+        chinese,
+        None,
+    )
+}
+
+#[test]
+fn ordinary_minutes_cannot_promote_a_denied_meeting_end_quote_to_a_fact() -> Result<()> {
+    let snapshot = fixture_snapshot(&["“会议已结束”是假消息，现场录音仍在继续。"]);
+    let result = ordinary_generated(&snapshot, "会议已结束，现场录音仍在继续。", true);
+    assert!(
+        result.is_err(),
+        "a denied quoted meeting-end claim was accepted as affirmative source evidence: {result:?}"
+    );
+    Ok(())
+}
+
+#[test]
+fn ordinary_minutes_meeting_end_rejects_explicit_denials_and_conditions() {
+    for source in [
+        "‘会议已结束。录音停止。’是假消息，现场录音仍在继续。",
+        "\"会议已结束\"是假消息，现场录音仍在继续。",
+        "「会议已结束」是假消息，现场录音仍在继续。",
+        "并非会议已结束，现场录音仍在继续。",
+        "主持人说：“并非会议已结束，录音仍在继续。”",
+        "主持人问：“会议已结束吗？”",
+        "主持人真的说“会议已结束”了吗？",
+        "会议已结束的说法不属实，现场录音仍在继续。",
+        "如果现场录音停止，\n会议已结束的提示就会出现。",
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        assert!(
+            ordinary_generated(&snapshot, "会议已结束，现场录音仍在继续。", true).is_err(),
+            "{source}"
+        );
+    }
+    for source in [
+        "\"The meeting has ended.\" is false. Recording continues.",
+        "It is not true that the meeting has ended. Recording continues.",
+        "The chair said, \"It is not true that the meeting has ended.\"",
+        "The chair asked, \"The meeting has ended?\"",
+        "The statement that the meeting has ended is false. Recording continues.",
+        "If recording stops,\nthe meeting has ended notice will appear.",
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        assert!(
+            ordinary_generated(
+                &snapshot,
+                "The meeting has ended. Recording continues.",
+                false
+            )
+            .is_err(),
+            "{source}"
+        );
+    }
+    // An unrelated quoted phrase cannot hide a separate affirmative claim.
+    let snapshot = fixture_snapshot(&["“会议已结束”是假消息，现场录音仍在继续。"]);
+    assert!(ordinary_generated(&snapshot, "会议已结束，现场显示“录音仍在继续”。", true,).is_err());
+}
+
+#[test]
+fn ordinary_minutes_keep_direct_later_and_quoted_meeting_end_evidence() -> Result<()> {
+    for source in [
+        "会议已结束，现场录音仍在继续。",
+        "“会议已结束”是假消息，现场录音仍在继续。",
+        "并非会议已结束，现场录音仍在继续。",
+        "记录中有“会议已结束”这句话。",
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        let before = serde_json::to_value(&snapshot)?;
+        let sections = ordinary_generated(&snapshot, source, true)?;
+        assert_eq!(sections[0].text, source);
+        assert_eq!(sections[0].sources[0].quote, source);
+        assert_eq!(serde_json::to_value(&snapshot)?, before);
+    }
+    let snapshot = fixture_snapshot(&[
+        "“会议已结束”是假消息，现场录音仍在继续。",
+        "现在会议已结束。",
+    ]);
+    let sections = ordinary_generated(&snapshot, "会议已结束，现场录音仍在继续。", true)?;
+    assert!(sections[0]
+        .sources
+        .iter()
+        .any(|source| source.segment_id == "m:1:2"));
+    for (source, body, chinese) in [
+        ("主持人说：“会议已结束。”", "会议已结束。", true),
+        (
+            "The chair said, \"The meeting has ended.\"",
+            "The meeting has ended.",
+            false,
+        ),
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        let sections = ordinary_generated(&snapshot, body, chinese)?;
+        assert_eq!(sections[0].text, body);
+        assert_eq!(sections[0].sources[0].quote, source);
+    }
+    for source in [
+        "The meeting has ended. Recording continues.",
+        "The record contains \"The meeting has ended.\"",
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        assert_eq!(
+            ordinary_generated(&snapshot, source, false)?[0].sources[0].quote,
+            source
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn ordinary_minutes_unrelated_quoted_question_keeps_the_later_end_assertion() -> Result<()> {
+    let source = "主持人问：“还有问题吗？”随后宣布会议已结束。";
+    let snapshot = fixture_snapshot(&[source]);
+    let sections = ordinary_generated(&snapshot, "会议已结束。", true)?;
+    assert_eq!(sections[0].text, "会议已结束。");
+    assert_eq!(sections[0].sources[0].quote, source);
+    Ok(())
+}
+
+#[test]
+fn ordinary_minutes_unrelated_quoted_question_cannot_hide_an_invented_end_assertion() {
+    let snapshot = fixture_snapshot(&["主持人问：“还有问题吗？”现场录音仍在继续。"]);
+    let result = ordinary_generated(
+        &snapshot,
+        "主持人先问：“还有问题吗？”随后宣布会议已结束。",
+        true,
+    );
+    assert!(
+        result.is_err(),
+        "an unrelated quoted question hid an unsupported affirmative meeting-end claim: {result:?}"
+    );
+}
+
+#[test]
+fn ordinary_minutes_unrelated_quoted_condition_keeps_the_later_end_assertion() -> Result<()> {
+    let source = "主持人说：“如果有问题，稍后联系。”随后宣布会议已结束。";
+    let snapshot = fixture_snapshot(&[source]);
+    let sections = ordinary_generated(&snapshot, "会议已结束。", true)?;
+    assert_eq!(sections[0].text, "会议已结束。");
+    assert_eq!(sections[0].sources[0].quote, source);
+    Ok(())
+}
+
+#[test]
+fn ordinary_minutes_conditions_apply_only_to_the_claims_own_scope() {
+    let snapshot = fixture_snapshot(&["主持人说：“如果有问题，稍后联系。”现场录音仍在继续。"]);
+    assert!(ordinary_generated(
+        &snapshot,
+        "主持人说：“如果有问题，稍后联系。”随后宣布会议已结束。",
+        true,
+    )
+    .is_err());
+    for source in [
+        "主持人说：“如果录音停止，会议已结束的提示就会出现。”",
+        "如果主持人说“会议已结束”，录音就会停止。",
+    ] {
+        let snapshot = fixture_snapshot(&[source]);
+        assert!(
+            ordinary_generated(&snapshot, "会议已结束。", true).is_err(),
+            "{source}"
+        );
+    }
+}

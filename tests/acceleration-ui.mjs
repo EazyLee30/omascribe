@@ -219,6 +219,41 @@ try {
       1,
     );
   }
+  await render([old], {
+    state: "cancelled",
+    component_id: old.component.id,
+    version: old.version,
+    reason: "Acceleration test cancelled",
+    report: null,
+  });
+  assert.match(
+    await page.locator("#catalog").innerText(),
+    /(?:已取消|cancelled)/i,
+    "Explicit cancellation needs its own visible status",
+  );
+  assert.equal(await page.locator(".inline-error").count(), 0);
+  assert.equal(
+    await page.locator('[data-component-action="test"]').isDisabled(),
+    false,
+  );
+  for (const reason of [
+    "No compatible GPU with enough free memory; CPU remains available",
+    "Local model failed fact/negation verification",
+  ]) {
+    await render([old], {
+      state: "test_failed",
+      component_id: old.component.id,
+      version: old.version,
+      reason,
+      report: null,
+    });
+    const message = await page.locator("#catalog").innerText();
+    assert.doesNotMatch(message, /(?:检查驱动|檢查驅動|Check the driver)/);
+    assert.equal(await page.locator(".inline-error").count(), 1);
+    await page.locator("details summary").click();
+    assert.equal(await page.locator("details p").isVisible(), true);
+    assert.equal(await page.locator("details p").innerText(), reason);
+  }
   console.log(
     "PASS retained controls and Linux/Windows CUDA supported/old/unknown recommendations and actions",
   );
