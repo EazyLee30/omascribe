@@ -811,18 +811,23 @@ impl Engine {
         std::thread::spawn(move || {
             let _batch = engine.inference_pool.batch();
             let result = run(&engine, &id);
-            let continue_minutes =
-                minutes_can_follow(minutes, engine.note_cancel.load(Ordering::SeqCst), &result);
-            {
+            let continue_minutes = {
                 let mut status = engine.status.lock().unwrap();
+                // Preference changes use the same stage gate when cancelling
+                // an obsolete translation. Decide the handoff only inside it.
+                let follow =
+                    minutes_can_follow(minutes, engine.note_cancel.load(Ordering::SeqCst), &result);
                 status.translation_busy = false;
                 status.translation_status = match result {
                     Ok(_) => String::new(),
                     Err(e) => format!("translation:deferred:{e:#}"),
                 };
-            }
+                if follow {
+                    status.notes_busy = true;
+                }
+                follow
+            };
             if continue_minutes {
-                engine.status.lock().unwrap().notes_busy = true;
                 if let Some(dispatch) = &dispatch {
                     let (minutes_result, observation) =
                         notes::generate_in_run_observed(&engine, &id, launch_run);

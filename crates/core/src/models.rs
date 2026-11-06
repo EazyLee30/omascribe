@@ -389,14 +389,20 @@ impl Engine {
             || current.use_knowledge != prefs.use_knowledge
             || current.llm_model != prefs.llm_model
             || current.minutes_language != prefs.minutes_language;
+        let translation_changed = current.translation_mode != prefs.translation_mode;
         prefs.save(&self.root)?;
-        if current.translation_mode != prefs.translation_mode
-            && self.status.lock().unwrap().translation_busy
-        {
-            self.note_cancel.store(true, Ordering::SeqCst);
-        }
         *current = prefs.clone();
         drop(current);
+        if translation_changed {
+            // Keep the translation stage stable until its owned worker accepts
+            // the stop. A follow-up minutes task must not replace it between
+            // observing translation_busy and signalling the active Server.
+            let status = self.status.lock().unwrap();
+            if status.translation_busy {
+                self.note_cancel.store(true, Ordering::SeqCst);
+                self.inference_pool.cancel_active(self);
+            }
+        }
         if context_changed {
             self.invalidate_background()?;
         }

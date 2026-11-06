@@ -1592,6 +1592,125 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn translation_mode_changes_accept_an_immediate_owned_stop_without_cancelling_minutes(
+    ) -> Result<()> {
+        use std::sync::mpsc;
+
+        let mut observations = Vec::new();
+        for (next_mode, translation_busy) in [
+            ("off", true),
+            ("zh-en", true),
+            ("bilingual", true),
+            ("off", false),
+        ] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let mut prefs = engine.preferences.lock().unwrap().clone();
+            prefs.translation_mode = "bilingual".into();
+            engine.update_preferences(prefs.clone())?;
+            {
+                let mut status = engine.status.lock().unwrap();
+                status.translation_busy = translation_busy;
+                status.notes_busy = !translation_busy;
+            }
+            engine.note_busy.store(true, Ordering::SeqCst);
+            let signals = tempfile::tempdir()?;
+            let child = std::process::Command::new(std::env::current_exe()?)
+                .args([
+                    "--exact",
+                    "inference_worker::tests::cancellation_signal_child",
+                    "--ignored",
+                ])
+                .env("OMASCRIBE_CANCEL_SIGNAL_CHILD", signals.path())
+                .env("OMASCRIBE_CANCEL_SIGNAL_SSE", "1")
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()?;
+            let pid = child.id();
+            let server = Server::new(child, Default::default(), &engine, Some(Duration::ZERO));
+            engine.llm_pid.store(pid, Ordering::SeqCst);
+            let reaped = ReapProbe::new(&server.child)?;
+            let ready_by = Instant::now() + Duration::from_secs(5);
+            while !signals.path().join("ready").exists() {
+                anyhow::ensure!(Instant::now() < ready_by, "SSE child did not become ready");
+                thread::sleep(Duration::from_millis(5));
+            }
+            let address = std::fs::read_to_string(signals.path().join("address"))?;
+            let (token_tx, token_rx) = mpsc::channel();
+            let (finished_tx, finished_rx) = mpsc::channel();
+            let reader = thread::spawn(move || {
+                let result = (|| -> Result<()> {
+                    let response = ureq::AgentBuilder::new()
+                        .try_proxy_from_env(false)
+                        .timeout_read(Duration::from_secs(15))
+                        .build()
+                        .get(&format!("http://{address}/stream"))
+                        .call()?;
+                    crate::notes::stream::read_observed(
+                        std::io::BufReader::new(response.into_reader()),
+                        |text| {
+                            if !text.is_empty() {
+                                let _ = token_tx.send(());
+                            }
+                        },
+                    )?;
+                    Ok(())
+                })();
+                let _ = finished_tx.send(result.is_err());
+            });
+            let first_token = token_rx.recv_timeout(Duration::from_secs(5));
+            prefs.translation_mode = next_mode.into();
+            let saved = engine.update_preferences(prefs);
+            // Observe the real preference entry's stop gate before any watchdog
+            // continuation or cleanup. The previous implementation did set the
+            // shared flag, but left actual stop acceptance to a later watchdog.
+            let accepted = {
+                let stop = server.stop.lock().unwrap();
+                stop.reason == Some(ReleaseReason::Cancelled) && stop.requested_at.is_some()
+            };
+            let cancelled = engine.note_cancel.load(Ordering::SeqCst);
+            let interrupted = if accepted {
+                finish_watchdog_stop(
+                    Some(&engine),
+                    &server.stop,
+                    pid,
+                    ReleaseReason::Cancelled,
+                    true,
+                );
+                finished_rx.recv_timeout(Duration::from_secs(5)).ok()
+            } else {
+                finished_rx.try_recv().ok()
+            };
+            // Cleanup cannot make the captured acceptance/response observations
+            // pass. Release the actual child and reader even on a failing RED.
+            drop(server);
+            reaped.assert_reaped();
+            reader.join().unwrap();
+            first_token.context("no real SSE content was observed")?;
+            saved?;
+            observations.push((
+                next_mode,
+                translation_busy,
+                accepted,
+                cancelled,
+                interrupted,
+            ));
+        }
+        for (mode, translating, accepted, cancelled, interrupted) in observations {
+            let should_stop = translating && mode != "bilingual";
+            assert_eq!(
+                accepted, should_stop,
+                "mode={mode}, translation_busy={translating}: preference save must immediately accept only the obsolete translation's stop"
+            );
+            assert_eq!(cancelled, should_stop);
+            assert_eq!(interrupted, should_stop.then_some(true));
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn cancelling_a_term_ignoring_worker_unblocks_its_live_sse_read() -> Result<()> {
         use std::sync::mpsc;
         let root = tempfile::tempdir()?;
