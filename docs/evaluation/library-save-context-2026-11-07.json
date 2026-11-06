@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_commit": "ac982b40480751ba3a842bd401b232dab91df5e6",
+  "change": "Use only matching persisted logical-ID candidates for save_library_entry prior-context eligibility; stop materializing unrelated library bodies and all historical meetings/notes.",
+  "invariants": [
+    "Keep JSON logical-ID matching, not SQL primary key assumptions.",
+    "Deserialize all matching candidates strictly before deleted-meeting filtering; preserve stable SQL-date then JSON-date ordering.",
+    "Read prior empty/default ID before generating a new UUID; explicit null remains an error.",
+    "Keep kind/enabled/deleted/knowledge eligibility, previous term handling and existing downstream invalidation.",
+    "Derived note overlays change no eligibility fields; no historical note read needed for this lookup.",
+    "Drop Store guard before nested Engine::save_note / terminology correction / hotword publication."
+  ],
+  "red": {
+    "cases": 6,
+    "failed": 6,
+    "scope": "Actual save_library_entry editing/disabling/deleting an unlinked ordinary note; unrelated historical UserNote or persisted Entry has valid JSON metadata but invalid body type. Old full materialization rejects the unrelated body."
+  },
+  "green": {
+    "read_scope_regressions": 6,
+    "prior_context_compatibility": 6,
+    "existing_library_passes": 9,
+    "existing_note_context_passes": 38,
+    "total_passes": 59,
+    "ignored_measurements": 2,
+    "compatibility_before_change_passes": 6,
+    "checks": [
+      "cargo fmt --all -- --check",
+      "cargo clippy -p omascribe-core --all-targets -- -D warnings",
+      "git diff --check"
+    ]
+  },
+  "review": "Independent review found no inverse lock edge, production helper misuse or P1/P2 issue.",
+  "limits": [
+    "This is a prior-eligibility lookup optimization, not an index migration: SQLite may still scan library JSON metadata.",
+    "No measured end-to-end latency, whole-device memory or energy claim.",
+    "Nonmatching valid JSON with an invalid Entry body no longer blocks an unrelated save by design; malformed JSON syntax can still fail SQLite metadata extraction.",
+    "Matching invalid rows still fail, including rows linked to deleted meetings.",
+    "Necessary linked-note ownership checks and actual term changes global corrections are unchanged.",
+    "No model, native capture, installer, GPU runtime build or user-data change occurred. Q9/Q16 remain open."
+  ],
+  "source_sha256": {
+    "crates/core/src/library.rs": "9ff2b718d6a9d874d37eaa18fcf13a80c5ab90f8bfe6b904f64dc80a1e4ad36c",
+    "crates/core/tests/library_entry_save_reads.rs": "6668faa7a559d71b75d7233bfe7d5d843c4c6c27dde2b2a5e03664d874166406",
+    "crates/core/tests/library_entry_save_compatibility.rs": "ef4f66af4461345280aa5cd6a4c21efb9935b3cfed3311d247aa207bf2d8f908"
+  },
+  "artifacts": {
+    "red.log": {
+      "path": "artifacts/library-save-context-2026-11-07/red.log",
+      "sha256": "162da0e058e18853ccd5548a585d0476ffd7ec1666eae5a8954ca3e4792a39b5",
+      "bytes": 2216
+    },
+    "compatibility-before.log": {
+      "path": "artifacts/library-save-context-2026-11-07/compatibility-before.log",
+      "sha256": "83f85b5bf98678f03eca0ac93b48a88c270c2243900601e15cda51f115ea3cb4",
+      "bytes": 836
+    },
+    "green.log": {
+      "path": "artifacts/library-save-context-2026-11-07/green.log",
+      "sha256": "0b4a75ddc55e7b607cf65a2203c1f0ae147e3e33d7d94df91c4ae3f302eeeb63",
+      "bytes": 1506
+    },
+    "library.log": {
+      "path": "artifacts/library-save-context-2026-11-07/library.log",
+      "sha256": "5fc0e7e3291b481c4598a563b33ad32067448e5faea678c3171f34671b7aac37",
+      "bytes": 1423
+    },
+    "note-context.log": {
+      "path": "artifacts/library-save-context-2026-11-07/note-context.log",
+      "sha256": "dc1167c5f94494fe52b0be2f3f2a07c04a3b25b37a9548871b7cef0836e878a5",
+      "bytes": 3543
+    },
+    "clippy.log": {
+      "path": "artifacts/library-save-context-2026-11-07/clippy.log",
+      "sha256": "27ad624c70e92363e6c1634463739d21f74d7b562f84f2a4771d8254cb106e86",
+      "bytes": 140
+    }
+  }
+}

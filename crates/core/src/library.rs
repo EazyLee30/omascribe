@@ -5,6 +5,8 @@ use std::{collections::HashMap, fs, path::Path};
 
 const TERMINOLOGY_ENTRIES_SQL: &str =
     "SELECT json FROM library_entries WHERE json_extract(json,'$.kind')='term' ORDER BY updated_at DESC";
+const PREVIOUS_ENTRY_SQL: &str = "SELECT json FROM library_entries
+    WHERE COALESCE(json_extract(json,'$.id'),'')=?1 ORDER BY updated_at DESC";
 // Keep the full persisted view's ordering and ID shadowing, but transfer only
 // context candidates' bodies into Rust. Ordinary historical notes have no
 // knowledge flag until their explicit library row opts in.
@@ -55,6 +57,33 @@ impl Default for Entry {
     }
 }
 impl crate::store::Store {
+    /// Read only the persisted candidates for a save's prior context decision.
+    /// Note overlays change content/meeting_id, not kind/enabled/deleted/knowledge;
+    /// unpersisted notes have no knowledge opt-in and cannot contribute old context.
+    /// Imported JSON IDs and dates may differ from the SQL columns, so retain the
+    /// full view's two-stage ordering and deserialize every matching candidate.
+    fn entry_before_save(&self, id: &str) -> Result<Option<Entry>> {
+        let mut query = self.conn.prepare(PREVIOUS_ENTRY_SQL)?;
+        let mut entries: Vec<Entry> = query
+            .query_map([id], |r| r.get::<_, String>(0))?
+            .map(|r| Ok(serde_json::from_str(&r?)?))
+            .collect::<Result<_>>()?;
+        entries.retain(|entry| {
+            entry.meeting_id.as_ref().is_none_or(|meeting| {
+                !self
+                    .conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                        [meeting],
+                        |r| r.get::<_, bool>(0),
+                    )
+                    .unwrap_or(false)
+            })
+        });
+        entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+        Ok(entries.into_iter().next())
+    }
+
     /// Read terms under the caller's existing Store guard so note context and
     /// spelling changes can share one consistent database snapshot.
     pub(crate) fn terminology_entries(&self) -> Result<Vec<Entry>> {
@@ -237,10 +266,7 @@ impl Engine {
                     || e.kind == "memory" && prefs.use_memory
                     || e.kind == "note" && e.knowledge && prefs.use_knowledge)
         };
-        let previous = self
-            .library_entries()?
-            .into_iter()
-            .find(|e| e.id == entry.id);
+        let previous = self.store.lock().unwrap().entry_before_save(&entry.id)?;
         let was_context = previous.as_ref().is_some_and(relevant);
         let was_term = previous.as_ref().is_some_and(|e| e.kind == "term");
         if !["note", "term", "memory"].contains(&entry.kind.as_str())
