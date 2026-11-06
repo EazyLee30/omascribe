@@ -1,7 +1,7 @@
 use crate::{overlay, AppState, Reply};
 #[cfg(target_os = "linux")]
 use gtk::prelude::*;
-use omascribe_core::Snapshot;
+use omascribe_core::{Snapshot, SnapshotPoll, TranscriptSnapshot};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -201,6 +201,29 @@ pub fn transcript_snapshot(
     active_id(engine.inner(), &views)
         .map(|id| engine.snapshot(&id).map_err(|e| e.to_string()))
         .transpose()
+}
+#[tauri::command]
+pub async fn poll_transcript(
+    engine: tauri::State<'_, AppState>,
+    views: tauri::State<'_, ViewState>,
+    revision: Option<String>,
+) -> Reply<Option<SnapshotPoll<TranscriptSnapshot>>> {
+    let Some(id) = active_id(engine.inner(), &views) else {
+        return Ok(None);
+    };
+    let worker = engine.inner().clone();
+    let requested = id.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        worker.poll_transcript(&requested, revision.as_deref())
+    })
+    .await
+    .map_err(crate::err)?;
+    // Following a recording can select a different meeting without a view event.
+    // Never deliver the previous meeting's payload after that selection changes.
+    if active_id(engine.inner(), &views).as_deref() != Some(id.as_str()) {
+        return Ok(None);
+    }
+    result.map(Some).map_err(crate::err)
 }
 #[tauri::command]
 pub async fn set_view_settings(
@@ -433,8 +456,146 @@ pub async fn display_monitors(app: tauri::AppHandle) -> Reply<Vec<MonitorInfo>> 
     .map_err(|e| e.to_string())?;
     receive.await.map_err(|e| e.to_string())
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct CaptionTarget {
+    meeting: String,
+    translation_mode: String,
+}
+
+#[derive(Default)]
+struct CaptionPoll {
+    target: Option<CaptionTarget>,
+    generation: u64,
+    pending: bool,
+}
+impl CaptionPoll {
+    fn select(&mut self, target: Option<CaptionTarget>) -> bool {
+        if self.target == target {
+            return false;
+        }
+        self.target = target;
+        self.generation = self.generation.wrapping_add(1);
+        true
+    }
+
+    fn begin(&mut self) -> Option<(u64, CaptionTarget)> {
+        if self.pending {
+            return None;
+        }
+        let target = self.target.clone()?;
+        self.pending = true;
+        Some((self.generation, target))
+    }
+
+    fn complete(&mut self, generation: u64, target: &CaptionTarget) -> bool {
+        self.pending = false;
+        self.generation == generation && self.target.as_ref() == Some(target)
+    }
+}
+
+fn caption_target(
+    engine: &AppState,
+    views: &Views,
+    prefs: &CaptionPreferences,
+) -> Option<CaptionTarget> {
+    if !prefs.enabled {
+        return None;
+    }
+    active_id(engine, views).map(|meeting| CaptionTarget {
+        meeting,
+        translation_mode: engine.preferences.lock().unwrap().translation_mode.clone(),
+    })
+}
+
+fn clamp_caption(text: &str, prefs: &CaptionPreferences) -> String {
+    let limit = (prefs.width_percent as usize * 3).min(300) * prefs.lines as usize;
+    text.split('\n')
+        .map(|line| {
+            let chars: Vec<_> = line.chars().collect();
+            if chars.len() > limit {
+                format!(
+                    "…{}",
+                    chars[chars.len() - limit..].iter().collect::<String>()
+                )
+            } else {
+                line.into()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+// Database reads and translation provenance checks can touch the filesystem.
+// Keep them off the UI thread and allow only one outstanding lookup, even when
+// the selected meeting or translation mode changes while a lookup is running.
+fn poll_captions(
+    app: &tauri::AppHandle,
+    engine: &AppState,
+    views: &Views,
+    captions: &CaptionPreferences,
+    state: &Arc<Mutex<CaptionPoll>>,
+) {
+    let target = caption_target(engine, views, captions);
+    let (changed, request) = {
+        let mut poll = state.lock().unwrap();
+        let changed = poll.select(target);
+        (changed, poll.begin())
+    };
+    if changed {
+        overlay::render(app, "", captions);
+    }
+    let Some((generation, target)) = request else {
+        return;
+    };
+    let engine = engine.clone();
+    let meeting = target.meeting.clone();
+    let handle = app.clone();
+    let state = state.clone();
+    tauri::async_runtime::spawn(async move {
+        let frame = tauri::async_runtime::spawn_blocking(move || engine.caption_frame(&meeting))
+            .await
+            .ok()
+            .and_then(Result::ok);
+        let render_handle = handle.clone();
+        let render_state = state.clone();
+        if handle
+            .run_on_main_thread(move || {
+                let engine = render_handle.state::<AppState>();
+                let views = render_handle.state::<ViewState>();
+                let mut captions = views.prefs.lock().unwrap().captions.clone();
+                let current = caption_target(engine.inner(), &views, &captions);
+                let (changed, accepted) = {
+                    let mut poll = render_state.lock().unwrap();
+                    let changed = poll.select(current);
+                    (changed, poll.complete(generation, &target))
+                };
+                if changed {
+                    overlay::render(&render_handle, "", &captions);
+                }
+                if !accepted {
+                    return;
+                }
+                let text = frame
+                    .filter(|frame| frame.translation_mode == target.translation_mode)
+                    .map(|frame| clamp_caption(&frame.text, &captions))
+                    .unwrap_or_default();
+                if target.translation_mode == "bilingual" {
+                    captions.lines = captions.lines.max(2);
+                }
+                overlay::render(&render_handle, &text, &captions);
+            })
+            .is_err()
+        {
+            // The event loop may be shutting down. Never leave a failed dispatch
+            // marked pending in case the application is still running.
+            state.lock().unwrap().pending = false;
+        }
+    });
+}
+
 pub fn start(app: &tauri::AppHandle) {
     let handle = app.clone();
+    let caption_poll = Arc::new(Mutex::new(CaptionPoll::default()));
     // Signature of the theme currently mirrored, plus when it was last checked.
     let theme_watch = Arc::new(Mutex::new((
         omascribe_core::desktheme::signature(),
@@ -469,38 +630,13 @@ pub fn start(app: &tauri::AppHandle) {
             let _ = handle.emit("companion-error", error);
             views.mark_dirty();
         }
-        if prefs.captions.enabled {
-            let text = active_id(engine.inner(), &views)
-                .and_then(|id| {
-                    let status = engine.status.lock().unwrap().clone();
-                    let mode = engine.preferences.lock().unwrap().translation_mode.clone();
-                    let model = engine.preferences.lock().unwrap().llm_model.clone();
-                    let db = engine.store.lock().unwrap();
-                    let meeting = db.meeting(&id).ok()?;
-                    let segments = db.recent_segments(&meeting, 1).ok()?;
-                    let text = if mode == "off" && status.meeting_id.as_deref() == Some(&id) && !status.partial.is_empty() {
-                        status.partial
-                    } else if let Some(segment) = segments.last() {
-                        let translated = omascribe_core::translation::target_language(&mode, &segment.text).and_then(|target| {
-                            db.conn.query_row("SELECT json FROM translations WHERE segment_id=?1 AND revision=?2 AND target=?3 AND model=?4", (&segment.id,segment.revision,target,&model), |r|r.get::<_,String>(0)).ok().and_then(|v|serde_json::from_str::<omascribe_core::translation::Translation>(&v).ok())
-                        });
-                        match translated {
-                            Some(t) if mode == "bilingual" => format!("{}\n{} · {}",segment.text.replace('\n'," "),t.target.to_uppercase(), t.text.replace('\n'," ")),
-                            Some(t) => format!("{} · {}",t.target.to_uppercase(), t.text),
-                            None => segment.text.clone(),
-                        }
-                    } else { status.partial };
-                    let limit = (prefs.captions.width_percent as usize * 3).min(300)
-                        * prefs.captions.lines as usize;
-                    Some(text.split('\n').map(|line| { let chars:Vec<_>=line.chars().collect(); if chars.len()>limit {format!("…{}", chars[chars.len()-limit..].iter().collect::<String>())}else{line.into()} }).collect::<Vec<String>>().join("\n"))
-                })
-                .unwrap_or_default();
-            let mut captions = prefs.captions.clone();
-            if engine.preferences.lock().unwrap().translation_mode == "bilingual" {
-                captions.lines = captions.lines.max(2);
-            }
-            overlay::render(&handle, &text, &captions);
-        }
+        poll_captions(
+            &handle,
+            engine.inner(),
+            &views,
+            &prefs.captions,
+            &caption_poll,
+        );
         if views.dirty.swap(false, Ordering::SeqCst) && views.persist().is_err() {
             views.dirty.store(true, Ordering::SeqCst);
         }
@@ -646,5 +782,78 @@ mod preference_tests {
         assert!(
             restored.sidebar_collapsed && restored.notebook_collapsed && restored.minutes_collapsed
         );
+    }
+}
+
+#[cfg(test)]
+mod caption_tests {
+    use super::{clamp_caption, CaptionPoll, CaptionPreferences, CaptionTarget};
+
+    fn target(meeting: &str, mode: &str) -> CaptionTarget {
+        CaptionTarget {
+            meeting: meeting.into(),
+            translation_mode: mode.into(),
+        }
+    }
+
+    #[test]
+    fn a_slow_caption_lookup_does_not_queue_more_work_or_restore_an_old_meeting() {
+        let mut poll = CaptionPoll::default();
+        assert!(poll.select(Some(target("first", "off"))));
+        let (generation, first) = poll.begin().unwrap();
+        assert!(poll.begin().is_none());
+        assert!(poll.select(Some(target("second", "off"))));
+        assert!(
+            poll.begin().is_none(),
+            "drain the old lookup before starting another"
+        );
+        assert!(!poll.complete(generation, &first));
+        let (generation, second) = poll.begin().unwrap();
+        assert_eq!(second.meeting, "second");
+        assert!(poll.complete(generation, &second));
+        assert!(poll.begin().is_some(), "normal refresh resumes");
+    }
+
+    #[test]
+    fn hiding_and_reopening_captions_rejects_the_old_frame_even_for_the_same_meeting() {
+        let mut poll = CaptionPoll::default();
+        let selected = target("meeting", "bilingual");
+        poll.select(Some(selected.clone()));
+        let (generation, _) = poll.begin().unwrap();
+        assert!(poll.select(None));
+        assert!(poll.begin().is_none());
+        assert!(poll.select(Some(selected.clone())));
+        assert!(!poll.complete(generation, &selected));
+        let (generation, _) = poll.begin().unwrap();
+        assert!(!poll.select(Some(selected.clone())));
+        assert!(poll.complete(generation, &selected));
+    }
+
+    #[test]
+    fn changing_translation_mode_rejects_a_pending_frame() {
+        let mut poll = CaptionPoll::default();
+        poll.select(Some(target("meeting", "bilingual")));
+        let (generation, bilingual) = poll.begin().unwrap();
+        assert!(poll.select(Some(target("meeting", "off"))));
+        assert!(!poll.complete(generation, &bilingual));
+        let (generation, source) = poll.begin().unwrap();
+        assert_eq!(source.translation_mode, "off");
+        assert!(poll.complete(generation, &source));
+        poll.select(None);
+        assert!(poll.begin().is_none());
+    }
+
+    #[test]
+    fn caption_clipping_keeps_each_language_line_and_complete_unicode_characters() {
+        let prefs = CaptionPreferences {
+            width_percent: 1,
+            lines: 1,
+            ..CaptionPreferences::default()
+        };
+        assert_eq!(
+            clamp_caption("一二三四五\nEN · abcde", &prefs),
+            "…三四五\n…cde"
+        );
+        assert_eq!(clamp_caption("短文\nEN", &prefs), "短文\nEN");
     }
 }

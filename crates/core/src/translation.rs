@@ -41,17 +41,9 @@ fn closed_source_plan(text: &str, names: &names::Names) -> Option<names::Repair>
     plan.anchor_source_clause(text).then_some(plan)
 }
 
-fn closed_retention_text(input: &str, names: &names::Names, chinese: bool) -> Option<String> {
+fn closed_retention_text(input: &str, chinese: bool) -> Option<String> {
     let anchor = notes::retention_anchor(input, chinese)?;
-    // Explicit glossary/name bindings take precedence over a generic audio
-    // noun. Never consume a protected spelling into a translated source atom.
-    if !names.spellings().is_empty()
-        || !anchor.text.contains(anchor.required_object_phrase)
-        || names
-            .spans(input)
-            .iter()
-            .any(|span| span.start < anchor.source_span.end && anchor.source_span.start < span.end)
-    {
+    if !anchor.text.contains(anchor.required_object_phrase) {
         return None;
     }
     let mut fields = Vec::new();
@@ -72,7 +64,9 @@ fn closed_retention_text(input: &str, names: &names::Names, chinese: bool) -> Op
 }
 
 fn retention_plan(input: &str, names: &names::Names, chinese: bool) -> Option<names::Repair> {
-    closed_source_plan(&closed_retention_text(input, names, chinese)?, names)
+    // closed_source_plan rejects every protected spelling before accepting a
+    // generic retention noun. A nonempty name set cannot enter this plan.
+    closed_source_plan(&closed_retention_text(input, chinese)?, names)
 }
 
 fn name_plan(
@@ -461,6 +455,8 @@ fn current_environment(
 }
 
 fn current_terms(db: &Store, meeting: &Meeting) -> Result<crate::terminology::Terms> {
+    #[cfg(test)]
+    TERMS_HISTORY_LOADS.with(|count| count.set(count.get() + 1));
     Ok(
         crate::terminology::Terms::new(&db.notes(&meeting.id)?, &db.terminology_entries()?)
             .with_actor_spellings(
@@ -531,6 +527,7 @@ pub(crate) fn minutes_cache_selection_is_bounded(sources: &[crate::Segment]) -> 
 std::thread_local! {
     // Per-calling-thread counters, so unrelated parallel tests cannot inflate
     // a bounded-query check. No production telemetry or content is retained.
+    static TERMS_HISTORY_LOADS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
     static MINUTES_CACHE_COUNTS: std::cell::Cell<(usize, usize)> = const {
         std::cell::Cell::new((0, 0))
     };
@@ -569,6 +566,29 @@ pub(crate) fn cached_for_minutes(
         return Ok(HashMap::new());
     }
     cached_for_target(engine, db, meeting, prefs, Some(target), Some(sources))
+}
+
+/// The desktop caption uses the same source, terminology and runtime receipts
+/// as the transcript, while selecting only its current source row.
+pub(crate) fn cached_for_caption(
+    engine: &Engine,
+    db: &Store,
+    meeting: &Meeting,
+    prefs: &Preferences,
+    source: &crate::Segment,
+) -> Result<Option<Translation>> {
+    let Some(target) = target_language(&prefs.translation_mode, &source.text) else {
+        return Ok(None);
+    };
+    Ok(cached_for_target(
+        engine,
+        db,
+        meeting,
+        prefs,
+        Some(target),
+        Some(std::slice::from_ref(source)),
+    )?
+    .remove(&source.id))
 }
 
 fn cached_for_target(
@@ -653,17 +673,21 @@ fn cached_for_target(
                 == Some(t.target.as_str())
             && !t.cache_key.is_empty()
         {
-            if terms.is_none() {
-                terms = Some(current_terms(db, meeting)?);
-            }
             // Exact rederivation is independent of any old runtime identity.
-            // This also safely migrates nonempty legacy literal keys: no old
-            // generated wording is accepted merely because a runtime is absent.
-            if literal_caption(&s.text, &t.target, terms.as_ref().unwrap())
-                .is_some_and(|text| text == t.text)
-            {
-                result.insert(t.segment_id.clone(), t);
-                continue;
+            // Only a matching source-only candidate needs the full name scope.
+            // Normal model rows use the dependency digest below, without
+            // materializing every historical passage on each caption tick.
+            if literal_candidate(&s.text, &t.target).is_some_and(|text| text == t.text) {
+                if terms.is_none() {
+                    terms = Some(current_terms(db, meeting)?);
+                }
+                if names::Names::new(terms.as_ref().unwrap(), &s.text)
+                    .spellings()
+                    .is_empty()
+                {
+                    result.insert(t.segment_id.clone(), t);
+                    continue;
+                }
             }
             if environment.is_none() {
                 environment = Some(current_environment(engine, db, meeting, prefs)?);
@@ -1314,16 +1338,22 @@ fn literal_caption(
     target: &str,
     terms: &crate::terminology::Terms,
 ) -> Option<String> {
-    let names = names::Names::new(terms, source);
-    if !names.hint().is_empty() {
-        return None;
-    }
+    let candidate = literal_candidate(source, target)?;
+    names::Names::new(terms, source)
+        .spellings()
+        .is_empty()
+        .then_some(candidate)
+}
+
+// This is only a candidate. Callers must still reject all protected spellings
+// before accepting it, even when its text matches a saved legacy caption.
+fn literal_candidate(source: &str, target: &str) -> Option<String> {
     if let Some(chinese) = match target {
         "zh" => Some(true),
         "en" => Some(false),
         _ => None,
     } {
-        if let Some(text) = closed_retention_text(source, &names, chinese) {
+        if let Some(text) = closed_retention_text(source, chinese) {
             return Some(text);
         }
     }
@@ -1614,6 +1644,114 @@ mod tests {
     }
 
     #[test]
+    fn warm_generated_caption_reuses_receipts_without_materializing_term_history() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        let executable = observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Long meeting caption receipts")?;
+        let source =
+            cache_fixture_source(&meeting, 1001, "Alice will check the report on Thursday.");
+        {
+            let db = engine.store.lock().unwrap();
+            db.conn.execute_batch("BEGIN")?;
+            for seq in 1..=1000 {
+                db.save_segment(&cache_fixture_source(
+                    &meeting,
+                    seq,
+                    "The report is still pending review.",
+                ))?;
+            }
+            db.save_segment(&source)?;
+            db.conn.execute_batch("COMMIT")?;
+            // Initial environment derivation may scan source actor context.
+            // Polling the unchanged cache should reuse that dependency receipt.
+            let environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            store_fixture_translation(
+                &db,
+                &source,
+                &prefs,
+                "Alice将在周四检查报告。",
+                crate::inference_cache::translation_key(&environment, &source, "zh"),
+            )?;
+            TERMS_HISTORY_LOADS.with(|count| count.set(0));
+            assert_eq!(cached(&engine, &db, &meeting, &prefs)?.len(), 1);
+            take_minutes_cache_counts();
+            take_minutes_cache_sql_work();
+            let hashed = engine.inference_fingerprints.hashed_bytes();
+            for _ in 0..5 {
+                assert_eq!(
+                    cached_for_caption(&engine, &db, &meeting, &prefs, &source)?
+                        .context("Current generated caption must remain available")?
+                        .text,
+                    "Alice将在周四检查报告。"
+                );
+            }
+            assert_eq!(TERMS_HISTORY_LOADS.with(std::cell::Cell::get), 0);
+            assert_eq!(engine.inference_fingerprints.hashed_bytes(), hashed);
+            assert_eq!(take_minutes_cache_counts(), (5, 0));
+            let (steps, scans) = take_minutes_cache_sql_work();
+            assert_eq!(scans, 0, "Selected caption query must not scan history");
+            assert!(
+                steps < 1000,
+                "Selected caption query executed {steps} steps"
+            );
+            for changed in ["text", "revision", "speaker"] {
+                let mut changed_source = source.clone();
+                match changed {
+                    "text" => changed_source.text = "Alice will check it on Friday.".into(),
+                    "revision" => changed_source.revision += 1,
+                    _ => changed_source.speaker = Some("speaker-2".into()),
+                }
+                assert!(
+                    cached_for_caption(&engine, &db, &meeting, &prefs, &changed_source)?.is_none()
+                );
+            }
+            let mut disabled = prefs.clone();
+            disabled.translation_mode = "off".into();
+            assert!(cached_for_caption(&engine, &db, &meeting, &disabled, &source)?.is_none());
+            disabled.translation_mode = "zh-en".into();
+            assert!(cached_for_caption(&engine, &db, &meeting, &disabled, &source)?.is_none());
+        }
+        assert_eq!(
+            engine.caption_frame(&meeting.id)?.text,
+            "Alice will check the report on Thursday.\nZH · Alice将在周四检查报告。"
+        );
+        {
+            let _blocked = engine
+                .inference_fingerprints
+                .block_directory(executable.parent().unwrap())?;
+            std::fs::remove_file(&executable)?;
+        }
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, source.text);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn caption_term_change_invalidates_generated_text_before_display() -> Result<()> {
+        let (_root, engine, prefs) = runtime_fixture()?;
+        observe_fixture_runtime(&engine, &prefs)?;
+        let meeting = engine.create_meeting("Caption terms update")?;
+        let source = cache_fixture_source(&meeting, 1, "We will test CedarLedger on Thursday.");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&source)?;
+            let environment = crate::inference_cache::environment(&engine, &db, &meeting, &prefs)?;
+            store_fixture_translation(
+                &db,
+                &source,
+                &prefs,
+                "我们将在周四测试CedarLedger。",
+                crate::inference_cache::translation_key(&environment, &source, "zh"),
+            )?;
+        }
+        assert!(engine.caption_frame(&meeting.id)?.text.contains("ZH ·"));
+        engine.save_note(&meeting.id, None, "CedarLedger", "term", 0)?;
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, source.text);
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        Ok(())
+    }
+
+    #[test]
     fn unknown_runtime_rejects_model_rows_but_rederives_legacy_literal_captions() -> Result<()> {
         let (_root, engine, prefs) = runtime_fixture()?;
         let executable = observe_fixture_runtime(&engine, &prefs)?;
@@ -1668,7 +1806,11 @@ mod tests {
             engine.snapshot(&meeting.id)?.translations[&literal.id].text,
             "和"
         );
+        TERMS_HISTORY_LOADS.with(|count| count.set(0));
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, "AND\nZH · 和");
+        assert_eq!(TERMS_HISTORY_LOADS.with(std::cell::Cell::get), 1);
         engine.save_note(&meeting.id, None, "AND", "term", 0)?;
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, "AND");
         let snapshot = engine.snapshot(&meeting.id)?;
         assert!(!snapshot.translations.contains_key(&literal.id));
         assert!(pending(&snapshot));

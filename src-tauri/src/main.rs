@@ -27,8 +27,8 @@ use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::DialogExt;
 use updates::*;
 use views::{
-    display_monitors, drag_transcript, get_view_settings, set_view_meeting, set_view_settings,
-    show_main_window, transcript_snapshot,
+    display_monitors, drag_transcript, get_view_settings, poll_transcript, set_view_meeting,
+    set_view_settings, show_main_window, transcript_snapshot,
 };
 use workspace::*;
 type AppState = Arc<Engine>;
@@ -414,6 +414,7 @@ fn main() {
         set_view_settings,
         set_view_meeting,
         transcript_snapshot,
+        poll_transcript,
         show_main_window,
         drag_transcript,
         companion::set_companion_expanded,

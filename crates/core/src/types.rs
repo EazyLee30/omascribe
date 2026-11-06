@@ -132,12 +132,29 @@ pub struct Snapshot {
     #[serde(default)]
     pub translations: std::collections::HashMap<String, crate::translation::Translation>,
 }
+/// The floating transcript never needs personal notes or generated minutes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TranscriptSnapshot {
+    pub meeting: Meeting,
+    pub segments: Vec<Segment>,
+    pub runtime: RuntimeStatus,
+    pub translation_mode: String,
+    pub translations: std::collections::HashMap<String, crate::translation::Translation>,
+}
+
+/// A verified caption frame. Looking up a frame never starts inference.
+#[derive(Debug)]
+pub struct CaptionFrame {
+    pub text: String,
+    pub translation_mode: String,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub enum SnapshotPoll {
+pub enum SnapshotPoll<T = Snapshot> {
     Full {
         revision: Option<String>,
-        snapshot: Box<Snapshot>,
+        snapshot: Box<T>,
     },
     Runtime {
         duration_ms: u64,

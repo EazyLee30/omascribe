@@ -543,17 +543,43 @@ impl Engine {
         self.snapshot_body(&db, id, prefs, meeting, runtime)
     }
     pub fn poll_snapshot(&self, id: &str, known_revision: Option<&str>) -> Result<SnapshotPoll> {
+        self.poll_view(
+            id,
+            known_revision,
+            "meeting",
+            |db, prefs, meeting, runtime| self.snapshot_body(db, id, prefs, meeting, runtime),
+        )
+    }
+    pub fn poll_transcript(
+        &self,
+        id: &str,
+        known_revision: Option<&str>,
+    ) -> Result<SnapshotPoll<TranscriptSnapshot>> {
+        self.poll_view(
+            id,
+            known_revision,
+            "transcript",
+            |db, prefs, meeting, runtime| self.transcript_body(db, prefs, meeting, runtime),
+        )
+    }
+    fn poll_view<T>(
+        &self,
+        id: &str,
+        known_revision: Option<&str>,
+        view: &str,
+        body: impl FnOnce(&Store, crate::preferences::Preferences, Meeting, RuntimeStatus) -> Result<T>,
+    ) -> Result<SnapshotPoll<T>> {
         let prefs = self.preferences.lock().unwrap().clone();
         let db = self.store.lock().unwrap();
-        // Caption visibility depends on model/runtime receipts outside SQLite.
-        // Only the original-text view can use a storage-only revision.
+        // Translations also depend on receipts outside SQLite. Until those are
+        // part of the revision, always validate them when translation is on.
         let revision = if prefs.translation_mode == "off" && db.conn.is_autocommit() {
             db.conn
                 .pragma_query_value(None, "data_version", |row| row.get::<_, i64>(0))
                 .ok()
                 .map(|external| {
                     format!(
-                        "{}:{}:{external}:{id}",
+                        "{}:{}:{external}:{view}:{id}",
                         self.snapshot_session.simple(),
                         db.conn.total_changes()
                     )
@@ -570,7 +596,42 @@ impl Engine {
         }
         Ok(SnapshotPoll::Full {
             revision,
-            snapshot: Box::new(self.snapshot_body(&db, id, prefs, meeting, runtime)?),
+            snapshot: Box::new(body(&db, prefs, meeting, runtime)?),
+        })
+    }
+    pub fn caption_frame(&self, id: &str) -> Result<CaptionFrame> {
+        let prefs = self.preferences.lock().unwrap().clone();
+        let db = self.store.lock().unwrap();
+        let (meeting, runtime) = self.snapshot_state(&db, id)?;
+        let partial = if runtime.meeting_id.as_deref() == Some(id) {
+            runtime.partial
+        } else {
+            String::new()
+        };
+        let text = if prefs.translation_mode == "off" && !partial.is_empty() {
+            partial
+        } else if let Some(source) = db.recent_segments(&meeting, 1)?.pop() {
+            // A stale or unavailable receipt must fall back to the current
+            // source. Never display a raw cache row just because IDs match.
+            let translated =
+                crate::translation::cached_for_caption(self, &db, &meeting, &prefs, &source)
+                    .unwrap_or(None);
+            match translated {
+                Some(t) if prefs.translation_mode == "bilingual" => format!(
+                    "{}\n{} · {}",
+                    source.text.replace('\n', " "),
+                    t.target.to_uppercase(),
+                    t.text.replace('\n', " ")
+                ),
+                Some(t) => format!("{} · {}", t.target.to_uppercase(), t.text),
+                None => source.text,
+            }
+        } else {
+            partial
+        };
+        Ok(CaptionFrame {
+            text,
+            translation_mode: prefs.translation_mode,
         })
     }
     fn snapshot_state(&self, db: &Store, id: &str) -> Result<(Meeting, RuntimeStatus)> {
@@ -596,13 +657,29 @@ impl Engine {
         m: Meeting,
         runtime: RuntimeStatus,
     ) -> Result<Snapshot> {
+        let transcript = self.transcript_body(db, prefs, m, runtime)?;
         Ok(Snapshot {
-            translations: crate::translation::cached(self, db, &m, &prefs)?,
-            translation_mode: prefs.translation_mode,
-            segments: db.segments(&m)?,
+            translations: transcript.translations,
+            translation_mode: transcript.translation_mode,
+            segments: transcript.segments,
             notes: db.notes(id)?,
             suggestions: db.suggestions(id)?,
-            meeting: m,
+            meeting: transcript.meeting,
+            runtime: transcript.runtime,
+        })
+    }
+    fn transcript_body(
+        &self,
+        db: &Store,
+        prefs: crate::preferences::Preferences,
+        meeting: Meeting,
+        runtime: RuntimeStatus,
+    ) -> Result<TranscriptSnapshot> {
+        Ok(TranscriptSnapshot {
+            translations: crate::translation::cached(self, db, &meeting, &prefs)?,
+            translation_mode: prefs.translation_mode,
+            segments: db.segments(&meeting)?,
+            meeting,
             runtime,
         })
     }
@@ -1712,7 +1789,7 @@ pub fn timestamp(ms: u64) -> String {
 mod snapshot_poll_tests {
     use super::*;
 
-    fn full(poll: SnapshotPoll) -> (Option<String>, Box<Snapshot>) {
+    fn full<T>(poll: SnapshotPoll<T>) -> (Option<String>, Box<T>) {
         let SnapshotPoll::Full { revision, snapshot } = poll else {
             panic!("expected a full snapshot");
         };
@@ -1748,6 +1825,15 @@ mod snapshot_poll_tests {
         let (revision, snapshot) = full(initial);
         assert_eq!(snapshot.segments.len(), 5_000);
         let revision = revision.unwrap();
+        // A token for the main notebook cannot skip the floating window's first
+        // payload. Notes and minutes are never part of its serialized shape.
+        let projected = engine.poll_transcript(&meeting.id, Some(&revision))?;
+        let projected_json = serde_json::to_value(&projected)?;
+        assert!(projected_json["snapshot"].get("notes").is_none());
+        assert!(projected_json["snapshot"].get("suggestions").is_none());
+        let (transcript_revision, transcript) = full(projected);
+        assert_eq!(transcript.segments.len(), 5_000);
+        assert_ne!(transcript_revision.as_deref(), Some(revision.as_str()));
         {
             let mut runtime = engine.status.lock().unwrap();
             runtime.meeting_id = Some(meeting.id.clone());
@@ -1771,7 +1857,134 @@ mod snapshot_poll_tests {
         assert_eq!(runtime.partial, "Review is in progress");
         assert_eq!(runtime.level, 0.4);
         assert!(initial_bytes > 1_000_000 && update_bytes < 1_024);
-        println!("5000 passages: {initial_bytes} bytes full, {update_bytes} bytes runtime");
+        let floating_update =
+            engine.poll_transcript(&meeting.id, transcript_revision.as_deref())?;
+        assert!(matches!(floating_update, SnapshotPoll::Runtime { .. }));
+        assert_eq!(serde_json::to_vec(&floating_update)?.len(), update_bytes);
+        println!("5000 passages: {initial_bytes} bytes full, {update_bytes} bytes runtime (main and floating)");
+        Ok(())
+    }
+
+    fn source(meeting: &Meeting, seq: u32, text: &str) -> Segment {
+        Segment {
+            id: format!("{}:1:{seq}", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq,
+            start_ms: u64::from(seq - 1) * 1000,
+            end_ms: u64::from(seq) * 1000,
+            text: text.into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        }
+    }
+
+    #[test]
+    fn floating_projection_tracks_source_edits_without_loading_note_bodies() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Projected transcript")?;
+        let segment = source(&meeting, 1, "Current words");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&segment)?;
+            // Corrupt unrelated payloads prove the projection doesn't decode
+            // documents just to display the current transcript.
+            for table in ["notes", "suggestions"] {
+                db.conn.execute(
+                    &format!("INSERT INTO {table} VALUES(?1,?2,?3)"),
+                    (table, &meeting.id, "invalid JSON"),
+                )?;
+            }
+        }
+        assert!(engine.snapshot(&meeting.id).is_err());
+        let (before, transcript) = full(engine.poll_transcript(&meeting.id, None)?);
+        assert_eq!(transcript.segments[0].text, segment.text);
+        let separate = Store {
+            conn: rusqlite::Connection::open(root.path().join("meetings.sqlite3"))?,
+        };
+        let mut edited = segment;
+        edited.text = "Corrected proper name".into();
+        edited.revision += 1;
+        separate.save_segment(&edited)?;
+        let (after, transcript) = full(engine.poll_transcript(&meeting.id, before.as_deref())?);
+        assert_ne!(before, after);
+        assert_eq!(transcript.segments[0].text, edited.text);
+        assert!(matches!(
+            engine.poll_transcript(&meeting.id, after.as_deref())?,
+            SnapshotPoll::Runtime { .. }
+        ));
+        // A mode change must revalidate out-of-database runtime receipts, even
+        // when no stored passage or meeting row changed.
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        let (revision, transcript) = full(engine.poll_transcript(&meeting.id, after.as_deref())?);
+        assert!(revision.is_none());
+        assert_eq!(transcript.translation_mode, "bilingual");
+        engine.preferences.lock().unwrap().translation_mode = "off".into();
+        separate
+            .conn
+            .execute("INSERT INTO deleted_meetings VALUES(?1)", [&meeting.id])?;
+        assert!(engine
+            .poll_transcript(&meeting.id, after.as_deref())
+            .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn caption_frame_uses_only_selected_meeting_and_current_run() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let meeting = engine.create_meeting("Caption source")?;
+        let other = engine.create_meeting("Recording elsewhere")?;
+        {
+            let mut runtime = engine.status.lock().unwrap();
+            runtime.meeting_id = Some(other.id.clone());
+            runtime.recording = true;
+            runtime.partial = "Other meeting must stay private".into();
+        }
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, "");
+        assert_eq!(
+            engine.caption_frame(&other.id)?.text,
+            "Other meeting must stay private"
+        );
+        let first = source(&meeting, 1, "Earlier line");
+        let latest = source(&meeting, 2, "Last saved line");
+        {
+            let db = engine.store.lock().unwrap();
+            db.save_segment(&first)?;
+            db.save_segment(&latest)?;
+        }
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, latest.text);
+        engine.status.lock().unwrap().meeting_id = Some(meeting.id.clone());
+        engine.status.lock().unwrap().partial = "Own in-progress words".into();
+        assert_eq!(
+            engine.caption_frame(&meeting.id)?.text,
+            "Own in-progress words"
+        );
+        engine.preferences.lock().unwrap().translation_mode = "bilingual".into();
+        // In translated mode, wait for verified saved text rather than pairing
+        // a partial from a different revision with an older translation.
+        let frame = engine.caption_frame(&meeting.id)?;
+        assert_eq!(frame.text, latest.text);
+        assert_eq!(frame.translation_mode, "bilingual");
+        {
+            let db = engine.store.lock().unwrap();
+            let mut new_run = meeting.clone();
+            new_run.run += 1;
+            db.save_meeting(&new_run)?;
+        }
+        engine.status.lock().unwrap().partial.clear();
+        assert_eq!(engine.caption_frame(&meeting.id)?.text, "");
+        engine
+            .store
+            .lock()
+            .unwrap()
+            .conn
+            .execute("INSERT INTO deleted_meetings VALUES(?1)", [&meeting.id])?;
+        assert!(engine.caption_frame(&meeting.id).is_err());
+        assert!(engine.caption_frame("missing-meeting").is_err());
+        assert_eq!(engine.inference_pool.status().starts, 0);
         Ok(())
     }
 
