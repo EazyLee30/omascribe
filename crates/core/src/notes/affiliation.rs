@@ -4,7 +4,7 @@
 use crate::{Segment, Source};
 use anyhow::{ensure, Result};
 use regex::Regex;
-use std::{collections::BTreeSet, ops::Range, sync::OnceLock};
+use std::{borrow::Cow, collections::BTreeSet, ops::Range, sync::OnceLock};
 
 const MAX_BYTES: usize = 120_000;
 const MAX_FRAMES: usize = 64;
@@ -158,6 +158,19 @@ fn pairs(text: &str) -> Result<Vec<Pair<'_>>> {
     Ok(result)
 }
 
+// A generated horizontal title gap is presentation, not permission to hide a
+// person from final affiliation/report checks. Only callers validating generated
+// prose use this view; source parsers, recovery planning and stored bytes do not.
+pub(super) fn generated_report_view(body: &str) -> Cow<'_, str> {
+    if body.len() > MAX_BYTES {
+        return Cow::Borrowed(body);
+    }
+    static TITLE_GAP: OnceLock<Regex> = OnceLock::new();
+    TITLE_GAP
+        .get_or_init(|| Regex::new(r"[ \t]+(?P<title>教授|博士)").unwrap())
+        .replace_all(body, "$title")
+}
+
 impl<'a> View<'a> {
     pub(super) fn new(segments: &'a [Segment], meeting: &str) -> Result<Self> {
         ensure!(
@@ -193,7 +206,8 @@ impl<'a> View<'a> {
         })
     }
     pub(super) fn validate(&self, body: &str, sources: &[Source]) -> Result<()> {
-        for candidate in pairs(body)? {
+        let body = generated_report_view(body);
+        for candidate in pairs(&body)? {
             // Extra veto only for a person with an actually parsed original
             // pair (including the explicit generic大学). Unknown source forms
             // retain the old guards, never become guessed affiliation evidence.

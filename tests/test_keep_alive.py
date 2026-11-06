@@ -44,6 +44,18 @@ class KeepAliveTests(unittest.TestCase):
                          row("finished", dict(committed=True, items=1))])
         return rows
 
+    def admitted_events(self):
+        rows = []
+        for row in self.events():
+            if row["phase"] == "worker":
+                for index, stage in enumerate(benchmark_keep_alive.ADMISSION_STAGES):
+                    for phase, metrics in (
+                            ("admission_started", dict(stage=stage)),
+                            ("admission_finished", dict(stage=stage, status="ready", elapsed_ms=(index+1)*10))):
+                        rows.append(dict(schema=1, job=row["job"], task=row["task"], phase=phase, metrics=metrics))
+            rows.append(row)
+        return rows
+
     def idle(self, ttl=10, idle_age_ms=0, zero_reason="batch_end"):
         remaining = ttl*1000-idle_age_ms
         def worker(at):
@@ -129,6 +141,79 @@ class KeepAliveTests(unittest.TestCase):
         next(row for row in uncommitted if row["phase"] == "finished")["metrics"]["committed"] = False
         with self.assertRaises(ValueError):
             inference_summary(uncommitted)
+
+    def test_admission_cost_is_observed_separately_from_chat_tokens_and_worker_startup(self):
+        events = self.admitted_events()
+        summary = inference_summary(events)
+        self.assertEqual(summary["attempted_requests"], 2)
+        self.assertEqual(summary["startup"]["cold"]["startup_total_ms"], 420)
+        self.assertEqual(summary["admission"]["duration_ms"], 200)
+        self.assertEqual(summary["admission"]["observed_stage_ms"]["model_verification"], 20)
+        costs = incurred_inference_costs(events)
+        self.assertEqual((costs["request_ms"], costs["input_tokens"], costs["output_tokens"]), (400, 60, 20))
+        self.assertEqual(costs["admission"]["duration_ms"], 200)
+        self.assertEqual(costs["trace_error_count"], 0)
+        # Old trace versions had no admission observation; do not invent zero cost.
+        self.assertIsNone(inference_summary(self.events())["admission"]["duration_ms"])
+
+    def test_malformed_admission_metadata_never_qualifies_and_keeps_observed_chat_cost(self):
+        changes = [lambda m: m.update(stage="unknown-stage"),
+                   lambda m: m.update(status="passed"),
+                   lambda m: m.update(elapsed_ms=True),
+                   lambda m: m.update(elapsed_ms=-1),
+                   lambda m: m.update(elapsed_ms=2**64),
+                   lambda m: m.pop("elapsed_ms"),
+                   lambda m: m.update(path="must-not-be-accepted")]
+        for change in changes:
+            events = self.admitted_events()
+            change(next(row["metrics"] for row in events if row["phase"] == "admission_finished"))
+            with self.assertRaises(ValueError):
+                inference_summary(events)
+            costs = incurred_inference_costs(events)
+            self.assertGreater(costs["trace_error_count"], 0)
+            self.assertEqual(costs["observed_request_ms"], 400)
+            self.assertIsNone(costs["admission"]["duration_ms"])
+
+    def test_admission_pairs_and_order_are_required_before_worker_evidence(self):
+        original = self.admitted_events()
+        unfinished = copy.deepcopy(original)
+        del unfinished[next(i for i, row in enumerate(unfinished) if row["phase"] == "admission_finished")]
+        wrong_pair = copy.deepcopy(original)
+        next(row for row in wrong_pair if row["phase"] == "admission_finished")["metrics"]["stage"] = "backend_selection"
+        reversed_stages = copy.deepcopy(original)
+        reversed_stages[1:5] = reversed_stages[3:5]+reversed_stages[1:3]
+        late = copy.deepcopy(original)
+        moved = late.pop(1)
+        late.insert(next(i for i, row in enumerate(late) if row["phase"] == "worker")+1, moved)
+        for events in (unfinished, wrong_pair, reversed_stages, late):
+            with self.assertRaises(ValueError):
+                inference_summary(events)
+        costs = incurred_inference_costs(unfinished)
+        self.assertIsNone(costs["admission"]["duration_ms"])
+        self.assertEqual(costs["admission"]["unfinished_stages"], 1)
+        self.assertEqual(costs["admission"]["observed_duration_ms"], 190)
+
+    def test_failed_cancelled_and_open_admission_remain_unqualified_with_costs_retained(self):
+        for status in ("failed", "cancelled"):
+            events = [dict(schema=1, task="minutes", job="stopped", phase="started", metrics={}),
+                      dict(schema=1, task="minutes", job="stopped", phase="admission_started", metrics=dict(stage="model_verification")),
+                      dict(schema=1, task="minutes", job="stopped", phase="admission_finished",
+                           metrics=dict(stage="model_verification", status=status, elapsed_ms=17)),
+                      dict(schema=1, task="minutes", job="stopped", phase="finished", metrics=dict(committed=False, items=0))]
+            with self.assertRaises(ValueError):
+                inference_summary(events)
+            costs = incurred_inference_costs(events)
+            self.assertEqual(costs["admission"]["duration_ms"], 17)
+            self.assertEqual(costs["admission"]["statuses"], {status: 1})
+            self.assertEqual(costs["observed_attempted_requests"], 0)
+            self.assertEqual(costs["trace_error_count"], 0)
+        open_events = events[:2]
+        with self.assertRaises(ValueError):
+            inference_summary(open_events)
+        costs = incurred_inference_costs(open_events)
+        self.assertIsNone(costs["admission"]["duration_ms"])
+        self.assertIsNone(costs["admission"]["observed_duration_ms"])
+        self.assertEqual(costs["admission"]["unfinished_stages"], 1)
 
     def test_failed_requests_repair_and_unknown_tokens_remain_in_cost(self):
         events = self.events()

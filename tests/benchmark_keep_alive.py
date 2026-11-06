@@ -42,7 +42,20 @@ ADVERSE_COUNTERS = ("other_releases", "resource_stops", "admission_refusals", "r
 # Schema 1 phases emitted by TaskTrace in notes.rs and translation.rs.
 TRACE_PHASES = frozenset(("started", "worker", "request_started", "generation", "finished", "abandoned",
                           "retrieval", "article_state", "article_prompt", "article_repair", "chunk",
-                          "literal_caption", "validation_failed", "source_unit_repair", "source_week_repair", "batch"))
+                          "literal_caption", "validation_failed", "source_unit_repair", "source_week_repair", "batch",
+                          "admission_started", "admission_finished"))
+ADMISSION_STAGES = ("model_verification", "backend_selection", "runtime_verification", "worker_checkout")
+
+
+def admission_metadata(phase, metrics):
+    fields = {"stage"} if phase == "admission_started" else {"stage", "status", "elapsed_ms"}
+    if set(metrics) != fields or metrics.get("stage") not in ADMISSION_STAGES:
+        raise ValueError("Invalid admission stage metadata")
+    if phase == "admission_finished" and (
+            metrics.get("status") not in ("ready", "cancelled", "failed")
+            or type(metrics.get("elapsed_ms")) is not int
+            or not 0 <= metrics["elapsed_ms"] <= 2**64-1):
+        raise ValueError("Invalid admission result or duration")
 
 
 def measured(value):
@@ -147,16 +160,36 @@ def inference_summary(events):
         if job not in jobs:
             if phase != "started":
                 raise ValueError("Inference job lacks its start")
-            jobs[job] = dict(task=row["task"], closed=False, worker=False, seen=set(), pending=set(), completed=False)
+            jobs[job] = dict(task=row["task"], closed=False, worker=False, seen=set(), pending=set(), completed=False,
+                             admission_active=None, admission_index=0, admission_observed=False)
             continue
         state = jobs[job]
         if state["task"] != row["task"] or state["closed"] or phase == "started":
             raise ValueError("Inference job identity/start/terminal order is invalid")
         if phase in ("abandoned", "aborted", "cancelled", "failed", "admission_failed", "admission_refused"):
             raise ValueError("An inference job was abandoned or aborted")
+        if state["admission_active"] is not None and phase != "admission_finished":
+            raise ValueError("Admission stage lacks its terminal observation")
+        if phase in ("admission_started", "admission_finished"):
+            admission_metadata(phase, metrics)
+            if state["worker"] or state["seen"]:
+                raise ValueError("Admission stage appeared after worker or request admission")
+            if phase == "admission_started":
+                index = state["admission_index"]
+                if index >= len(ADMISSION_STAGES) or metrics["stage"] != ADMISSION_STAGES[index]:
+                    raise ValueError("Admission stage order is invalid")
+                state["admission_active"] = metrics["stage"]
+                state["admission_observed"] = True
+            else:
+                if state["admission_active"] != metrics["stage"] or metrics["status"] != "ready":
+                    raise ValueError("Admission stage is unpaired, failed or cancelled")
+                state["admission_active"] = None
+                state["admission_index"] += 1
         if phase == "worker":
             if state["worker"] or state["seen"]:
                 raise ValueError("An inference job has duplicate or late worker evidence")
+            if state["admission_observed"] and state["admission_index"] != len(ADMISSION_STAGES):
+                raise ValueError("Worker lacks complete admission evidence")
             state["worker"] = True
         if phase in ("request_started", "generation"):
             attempt = metrics.get("attempt")
@@ -176,6 +209,7 @@ def inference_summary(events):
         if phase == "finished":
             if (metrics.get("committed") is not True or type(metrics.get("items")) is not int
                     or metrics["items"] < 0 or state["pending"]
+                    or state["admission_observed"] and state["admission_index"] != len(ADMISSION_STAGES)
                     or state["seen"] and not state["completed"]):
                 raise ValueError("Unsuccessful or incomplete inference job")
             state["closed"] = True
@@ -227,6 +261,7 @@ def inference_summary(events):
             startup_p50_ms=percentile(times, .5), startup_p95_ms=percentile(times, .95),
             startup_total_ms=sum(times))
     return dict(tasks=results, workers=len(workers), startup=startups,
+                admission=incurred_inference_costs(events)["admission"],
                 phases=dict(collections.Counter(row["phase"] for row in events)),
                 attempted_requests=sum(row["attempted_requests"] for row in results.values()))
 
@@ -248,12 +283,42 @@ def incurred_inference_costs(events):
         if phase == "generation" and metrics.get("usage") is not None and not isinstance(metrics["usage"], dict):
             errors["nonobject_usage"] += 1
             metrics = dict(metrics, usage=None)
-        rows.append(dict(phase=phase, metrics=metrics))
+        if phase in ("admission_started", "admission_finished"):
+            try:
+                admission_metadata(phase, metrics)
+                if not isinstance(row.get("job"), str) or not row["job"]:
+                    raise ValueError("Missing admission job")
+            except ValueError:
+                errors["invalid_admission_metadata"] += 1
+        rows.append(dict(phase=phase, metrics=metrics, job=row.get("job")))
     generated = [row["metrics"] for row in rows if row["phase"] == "generation"]
     attempted = sum(row["phase"] == "request_started" and row["metrics"].get("endpoint") == "chat" for row in rows)
     complete = bool(events) and not errors and attempted == len(generated)
     known_times = [row["request_ms"] for row in generated if measured(row.get("request_ms"))]
+    admissions = [row for row in rows if row["phase"] in ("admission_started", "admission_finished")]
+    admission_starts, admission_finishes = collections.Counter(), collections.Counter()
+    stage_times = collections.defaultdict(list)
+    for row in admissions:
+        metrics = row["metrics"]
+        stage, job = metrics.get("stage"), row["job"]
+        if isinstance(job, str) and job and isinstance(stage, str) and stage in ADMISSION_STAGES:
+            counter = admission_starts if row["phase"] == "admission_started" else admission_finishes
+            counter[job, stage] += 1
+        if (row["phase"] == "admission_finished" and isinstance(stage, str) and stage in ADMISSION_STAGES
+                and type(metrics.get("elapsed_ms")) is int and 0 <= metrics["elapsed_ms"] <= 2**64-1):
+            stage_times[stage].append(metrics["elapsed_ms"])
+    known_admission_times = [value for values in stage_times.values() for value in values]
+    admission_complete = bool(admissions) and not errors and admission_starts == admission_finishes
+    admission = dict(observed_starts=sum(row["phase"] == "admission_started" for row in admissions),
+        observed_finishes=sum(row["phase"] == "admission_finished" for row in admissions),
+        duration_ms=sum(known_admission_times) if admission_complete else None,
+        observed_duration_ms=sum(known_admission_times) if known_admission_times else None,
+        unfinished_stages=sum((admission_starts-admission_finishes).values()),
+        statuses=dict(collections.Counter(row["metrics"]["status"] for row in admissions
+            if row["phase"] == "admission_finished" and row["metrics"].get("status") in ("ready", "cancelled", "failed"))),
+        observed_stage_ms={stage: sum(values) for stage, values in stage_times.items()})
     return dict(trace_error_count=sum(errors.values()), trace_errors=dict(errors),
+                admission=admission,
                 observed_attempted_requests=attempted if events else None,
                 observed_generation_rows=len(generated) if events else None,
                 unmeasured_response_costs=sum(not measured(row.get("request_ms")) for row in generated),

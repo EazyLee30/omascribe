@@ -5,6 +5,7 @@ use anyhow::{bail, ensure, Context, Result};
 use regex::{Regex, RegexBuilder};
 use serde_json::json;
 use std::{
+    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
     ops::Range,
     sync::OnceLock,
@@ -147,12 +148,26 @@ fn reported_data(text: &str) -> serde_json::Value {
     json!({"spellings":data.ranges.into_iter().map(|range| &text[range]).collect::<Vec<_>>(),
         "truncated":data.truncated})
 }
+// Final spelling checks must see a label even when presentation inserts a
+// horizontal gap before its title. This read-only view changes neither the
+// label's internal bytes nor the strict source-occurrence/recovery API above.
+fn reported_spelling_view(text: &str) -> Cow<'_, str> {
+    if text.len() > REPORTED_SCAN_BYTES {
+        return Cow::Borrowed(text);
+    }
+    static TITLE_GAP: OnceLock<Regex> = OnceLock::new();
+    TITLE_GAP
+        .get_or_init(|| Regex::new(r"[ \t]+(?P<title>教授|博士)").unwrap())
+        .replace_all(text, "$title")
+}
+
 pub(super) fn validate_reported(
     source: &str,
     body: &str,
     canonical: impl Fn(&str) -> String,
 ) -> Result<()> {
-    let candidates = reported_spans(body);
+    let body = reported_spelling_view(body);
+    let candidates = reported_spans(&body);
     ensure!(
         !candidates.truncated,
         "纪要报道名称校验超出有界范围，原文已保留"
@@ -164,6 +179,8 @@ pub(super) fn validate_reported(
         source.len() <= REPORTED_SCAN_BYTES,
         "纪要来源名称校验超出有界范围，原文已保留"
     );
+    // Keep source authority strict: presentation normalization must not grant a
+    // name that the original report/affiliation parsers cannot substantiate.
     for range in candidates.ranges {
         let candidate = &body[range];
         // Scan the complete selected source, not the truncated prompt legend.

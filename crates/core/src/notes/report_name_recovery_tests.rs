@@ -187,3 +187,120 @@ fn folding_cannot_authorize_institution_recovery_through_a_split_person() -> Res
     assert!(mismatched.edits.is_empty());
     Ok(())
 }
+
+// Exercise the pre-existing ordinary route too: recovery cannot authorize a
+// generated spelling merely because the ordinary lexical parser misses it.
+#[test]
+fn gapped_unknown_report_name_cannot_pass_final_chinese_article_validation() -> Result<()> {
+    let snapshot = snapshot(&ORIGINAL_SOURCES);
+    for (case, second) in [
+        (
+            "changed spelling with title gap",
+            ORIGINAL_SOURCES[3].replace("潘 MALE FERGUSON教授", "PAN MALE FERGUSON 教授"),
+        ),
+        (
+            "changed spelling with title gap and omitted hedge",
+            ORIGINAL_SOURCES[3]
+                .replace("潘 MALE FERGUSON教授", "PAN MALE FERGUSON 教授")
+                .replace("似乎确实存在危害性", "确实存在危害性"),
+        ),
+    ] {
+        let raw = format!("{}。{}。{}", ORIGINAL_SOURCES[1], second, MUSIC);
+        let ordinary_result = ordinary(&snapshot, &[0, 1, 2, 3, 4], &raw, None);
+        assert!(
+            ordinary_result.is_err(),
+            "{case}: ordinary final result = {ordinary_result:?}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn horizontal_title_gaps_preserve_observed_names_and_stored_prose() -> Result<()> {
+    let snapshot = snapshot(&ORIGINAL_SOURCES);
+    let before = serde_json::to_value(&snapshot)?;
+    for gap in [" ", "  ", "\t"] {
+        let raw = format!(
+            "{}。{}。{}",
+            ORIGINAL_SOURCES[1].replace("森教授", &format!("森{gap}教授")),
+            ORIGINAL_SOURCES[3].replace("FERGUSON教授", &format!("FERGUSON{gap}教授")),
+            MUSIC,
+        );
+        let accepted = ordinary(&snapshot, &[0, 1, 2, 3, 4], &raw, None)?;
+        assert_eq!(accepted.len(), 1);
+        assert_eq!(accepted[0].text, writer::paragraphs(&raw).join("\n\n"));
+    }
+    // Display tolerance must not rewrite or manufacture original source labels.
+    assert!(crate::translation::reported_name_occurrences(
+        &ORIGINAL_SOURCES[3].replace("FERGUSON教授", "FERGUSON 教授")
+    )?
+    .is_empty());
+    assert_eq!(serde_json::to_value(&snapshot)?, before);
+    Ok(())
+}
+
+#[test]
+fn horizontal_title_gaps_cannot_hide_wrong_affiliation_or_report_payload() -> Result<()> {
+    let snapshot = snapshot(&ORIGINAL_SOURCES);
+    let correct = ORIGINAL_SOURCES[3].replace("FERGUSON教授", "FERGUSON 教授");
+    for (case, changed) in [
+        (
+            "wrong institution for an observed name",
+            correct.replace("邓迪大学", "当迪大学"),
+        ),
+        (
+            "music wrongly attributed to the observed professor",
+            correct.replace(
+                "记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+                "主舞台的音乐可能已经结束，但嘉年华仍可能有部分区域持续演奏至深夜",
+            ),
+        ),
+        (
+            "changed whitespace inside the literal name",
+            correct.replace("潘 MALE FERGUSON", "潘 MALE  FERGUSON"),
+        ),
+    ] {
+        let raw = format!("{}。{}。{}", ORIGINAL_SOURCES[1], changed, MUSIC);
+        assert!(
+            ordinary(&snapshot, &[0, 1, 2, 3, 4], &raw, None).is_err(),
+            "{case}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn horizontal_title_gaps_cannot_drop_a_source_report_condition() -> Result<()> {
+    let report = ORIGINAL_SOURCES[3];
+    for prefix in ["如果消息属实，", "据称，"] {
+        let source = format!("{prefix}{report}。");
+        let snapshot = snapshot(&[&source]);
+        let displayed = source.replace("FERGUSON教授", "FERGUSON 教授");
+        let accepted = ordinary(&snapshot, &[0], &displayed, None)?;
+        assert_eq!(accepted[0].text, displayed);
+        let unqualified = format!("{}。", report.replace("FERGUSON教授", "FERGUSON 教授"));
+        assert!(
+            ordinary(&snapshot, &[0], &unqualified, None).is_err(),
+            "removed outer condition: {prefix}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn source_title_gap_cannot_authorize_a_new_affiliation() -> Result<()> {
+    let original = "北岭大学的 ALICE SMITH 教授表示项目需要复核。";
+    let snapshot = snapshot(&[original]);
+    assert!(crate::translation::reported_name_occurrences(original)?.is_empty());
+    // Keep the original-copy result observable. Unknown source syntax may
+    // conservatively abstain; it must never grant a different affiliation.
+    let unchanged = ordinary(&snapshot, &[0], original, None);
+    eprintln!("original source-only title gap: {unchanged:?}");
+    let changed = original.replace("北岭大学", "南河大学");
+    let changed = ordinary(&snapshot, &[0], &changed, None);
+    assert!(
+        changed.is_err(),
+        "source-only title gap authorized another institution: {changed:?}"
+    );
+    Ok(())
+}

@@ -434,17 +434,75 @@ fn worker_identity(
         runtime,
     ))
 }
+#[cfg(test)]
 pub(crate) fn open_session(
     engine: &Arc<Engine>,
     prefs: &crate::preferences::Preferences,
     meeting: &str,
     run: u32,
 ) -> Result<SessionLease> {
+    open_session_with_trace(engine, prefs, meeting, run, None)
+}
+
+pub(crate) fn open_session_observed(
+    engine: &Arc<Engine>,
+    prefs: &crate::preferences::Preferences,
+    meeting: &str,
+    run: u32,
+    trace: &crate::inference_trace::TaskTrace,
+) -> Result<SessionLease> {
+    open_session_with_trace(engine, prefs, meeting, run, Some(trace))
+}
+
+fn admission_cancelled(engine: &Engine) -> bool {
+    engine.note_cancel.load(Ordering::SeqCst) || engine.maintenance.load(Ordering::SeqCst)
+}
+
+fn check_admission(engine: &Engine) -> Result<()> {
+    if admission_cancelled(engine) {
+        return Err(crate::model_integrity::VerificationCancelled.into());
+    }
+    Ok(())
+}
+
+fn admission_stage<T>(
+    trace: Option<&crate::inference_trace::TaskTrace>,
+    stage: &'static str,
+    operation: impl FnOnce() -> Result<T>,
+) -> Result<T> {
+    let started = Instant::now();
+    if let Some(trace) = trace {
+        trace.event("admission_started", json!({"stage":stage}));
+    }
+    let result = operation();
+    if let Some(trace) = trace {
+        let status = match &result {
+            Ok(_) => "ready",
+            Err(error) if crate::model_integrity::is_cancelled(error) => "cancelled",
+            Err(_) => "failed",
+        };
+        trace.event(
+            "admission_finished",
+            json!({"stage":stage,"status":status,"elapsed_ms":started.elapsed().as_millis() as u64}),
+        );
+    }
+    result
+}
+
+fn open_session_with_trace(
+    engine: &Arc<Engine>,
+    prefs: &crate::preferences::Preferences,
+    meeting: &str,
+    run: u32,
+    trace: Option<&crate::inference_trace::TaskTrace>,
+) -> Result<SessionLease> {
     admission_attempt(engine, || {
-        let session = open_session_inner(engine, prefs, meeting, run)?;
+        let session = open_session_inner(engine, prefs, meeting, run, trace)?;
+        check_admission(engine)?;
         // CPU fallback recurses with changed preferences. Bind its actual spec
         // under the original caller configuration as well, never infer it from prefs.
         session.record_runtime(engine, prefs)?;
+        check_admission(engine)?;
         Ok(session)
     })
 }
@@ -469,43 +527,56 @@ fn open_session_inner(
     prefs: &crate::preferences::Preferences,
     meeting: &str,
     run: u32,
+    trace: Option<&crate::inference_trace::TaskTrace>,
 ) -> Result<SessionLease> {
     let ttl = if prefs.resource_mode == "eco" {
         0
     } else {
         prefs.llm_keep_alive_seconds
     };
-    let receipt = match engine.verified_model(&prefs.llm_model) {
+    let receipt = match admission_stage(trace, "model_verification", || {
+        check_admission(engine)?;
+        engine.verified_model_cancellable(&prefs.llm_model, &|| admission_cancelled(engine))
+    }) {
         Ok(receipt) => receipt,
         Err(error) => {
             engine.inference_pool.invalidate();
             return Err(error);
         }
     };
-    let spec = crate::inference::launch_spec(engine, prefs)?;
-    let (key, runtime) =
-        match worker_identity(engine, prefs, meeting, run, &spec, receipt.fingerprint()) {
-            Ok(identity) => identity,
-            Err(error) => {
-                engine.inference_pool.invalidate();
-                return Err(error);
-            }
-        };
+    let spec = admission_stage(trace, "backend_selection", || {
+        check_admission(engine)?;
+        crate::inference::launch_spec(engine, prefs)
+    })?;
+    let (key, runtime) = match admission_stage(trace, "runtime_verification", || {
+        check_admission(engine)?;
+        worker_identity(engine, prefs, meeting, run, &spec, receipt.fingerprint())
+    }) {
+        Ok(identity) => identity,
+        Err(error) => {
+            engine.inference_pool.invalidate();
+            return Err(error);
+        }
+    };
+    check_admission(engine)?;
     if spec.backend == crate::inference::Backend::Metal
         && engine.inference_pool.metal_rejected(&key)
     {
         let mut cpu = prefs.clone();
         cpu.inference_backend = "cpu".into();
-        return open_session_inner(engine, &cpu, meeting, run);
+        return open_session_inner(engine, &cpu, meeting, run, trace);
     }
-    let result = checkout(engine, key.clone(), Duration::from_secs(ttl.into()), || {
-        spawn_session(
-            engine,
-            prefs,
-            &spec,
-            Some(Duration::from_secs(ttl.into())),
-            Some(runtime),
-        )
+    let result = admission_stage(trace, "worker_checkout", || {
+        check_admission(engine)?;
+        checkout(engine, key.clone(), Duration::from_secs(ttl.into()), || {
+            spawn_session(
+                engine,
+                prefs,
+                &spec,
+                Some(Duration::from_secs(ttl.into())),
+                Some(runtime),
+            )
+        })
     });
     if result
         .as_ref()
@@ -521,7 +592,7 @@ fn open_session_inner(
         engine.inference_pool.invalidate();
         let mut cpu = prefs.clone();
         cpu.inference_backend = "cpu".into();
-        return open_session_inner(engine, &cpu, meeting, run);
+        return open_session_inner(engine, &cpu, meeting, run, trace);
     }
     result
 }
@@ -537,6 +608,7 @@ fn retryable_start_failure(engine: &Engine, error: &anyhow::Error) -> bool {
     !engine.note_cancel.load(Ordering::SeqCst)
         && !engine.maintenance.load(Ordering::SeqCst)
         && !crate::inference_cache::integrity_error(error)
+        && !crate::model_integrity::is_cancelled(error)
         && !error.chain().any(|error| {
             let message = error.to_string();
             message.starts_with("writer:resource-")
@@ -865,7 +937,10 @@ fn spawn_session(
     pooled: Option<Duration>,
     prepared_runtime: Option<crate::inference_cache::RuntimeReceipt>,
 ) -> Result<LocalSession> {
-    let receipt = engine.verified_model(&prefs.llm_model)?;
+    check_admission(engine)?;
+    let receipt =
+        engine.verified_model_cancellable(&prefs.llm_model, &|| admission_cancelled(engine))?;
+    check_admission(engine)?;
     let runtime_receipt = match prepared_runtime {
         Some(receipt) => {
             receipt.check_current()?;
@@ -903,6 +978,7 @@ fn spawn_session(
     let log = File::create(engine.root.join("llm-runtime.log"))?;
     receipt.check_current()?;
     runtime_receipt.check_current()?;
+    check_admission(engine)?;
     let child = command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -1019,6 +1095,7 @@ fn spawn_session(
     let auth = format!("Bearer {token}");
     let start = Instant::now();
     loop {
+        check_admission(engine)?;
         runtime_receipt.check_current()?;
         if resource_stop.load(Ordering::SeqCst) {
             if budget_stop.load(Ordering::SeqCst) {
@@ -1045,9 +1122,7 @@ fn spawn_session(
             }
             break;
         }
-        if engine.note_cancel.load(Ordering::SeqCst) {
-            bail!("Inference cancelled");
-        }
+        check_admission(engine)?;
         if start.elapsed() > Duration::from_secs(120) {
             bail!("笔记模型启动超时");
         }
@@ -1058,6 +1133,7 @@ fn spawn_session(
     runtime_receipt.check_current()?;
     // Direct calibration launches bypass checkout but need the same actual binding.
     crate::inference_cache::record_runtime(engine, prefs, spec, &runtime_receipt)?;
+    check_admission(engine)?;
     Ok(LocalSession {
         model_receipt: Some(receipt),
         runtime_receipt: Some(runtime_receipt),
@@ -1099,6 +1175,48 @@ mod memory_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cancelled_admission_never_reads_model_or_creates_a_worker() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().to_path_buf())?;
+        let prefs = crate::preferences::Preferences::default();
+        let mut trace = crate::inference_trace::TaskTrace::start(
+            root.path(),
+            "minutes",
+            "cancel-before-admission",
+        );
+        engine.note_cancel.store(true, Ordering::SeqCst);
+        let error = open_session_observed(&engine, &prefs, "never-started", 1, &trace)
+            .err()
+            .expect("cancelled admission must fail before model resolution");
+        assert!(crate::model_integrity::is_cancelled(&error));
+        assert!(!retryable_start_failure(&engine, &error));
+        // Even if a future caller resets the shared flag, the typed cancellation
+        // result must not be reclassified as a GPU startup failure.
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        assert!(!retryable_start_failure(&engine, &error));
+        assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+        assert_eq!(engine.inference_worker_status().starts, 0);
+        assert!(!engine.inference_worker_status().leased);
+        assert_eq!(engine.llm_pid.load(Ordering::SeqCst), 0);
+        assert!(!root.path().join("last-writer-resource.json").exists());
+        assert!(!root.path().join("last-metal-fallback.json").exists());
+        trace.finish(false, Some(0));
+        let rows: Vec<serde_json::Value> =
+            std::fs::read_to_string(root.path().join("inference-trace.jsonl"))?
+                .lines()
+                .map(serde_json::from_str)
+                .collect::<std::result::Result<_, _>>()?;
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[1]["phase"], "admission_started");
+        assert_eq!(rows[1]["metrics"], json!({"stage":"model_verification"}));
+        assert_eq!(rows[2]["phase"], "admission_finished");
+        assert_eq!(rows[2]["metrics"]["status"], "cancelled");
+        assert!(rows[2]["metrics"]["elapsed_ms"].is_u64());
+        assert_eq!(rows[2]["metrics"].as_object().unwrap().len(), 3);
+        Ok(())
+    }
 
     #[test]
     #[ignore = "isolated selector environment fixture; never starts a model worker"]

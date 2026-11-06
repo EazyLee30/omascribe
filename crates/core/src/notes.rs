@@ -55,7 +55,9 @@ mod week_qualifiers;
 mod writer;
 #[cfg(test)]
 mod writer_final_guard_tests;
+#[cfg(test)]
 pub(crate) use crate::inference_worker::open_session;
+pub(crate) use crate::inference_worker::open_session_observed;
 use crate::Engine;
 use anyhow::{bail, Context, Result};
 pub(crate) use lexical::Cache as RetrievalCache;
@@ -600,7 +602,7 @@ fn generate_inner(
     }
     engine.status.lock().unwrap().notes_status = "writer:loading".into();
     engine.status.lock().unwrap().notes_elapsed_ms = 0;
-    let session = open_session(engine, prefs, meeting, snapshot.meeting.run)?;
+    let session = open_session_observed(engine, prefs, meeting, snapshot.meeting.run, trace)?;
     work.diagnostic.observe_execution(engine, prefs, &session);
     trace.event(
         "worker",

@@ -47,6 +47,29 @@ impl fmt::Display for IntegrityError {
 
 impl std::error::Error for IntegrityError {}
 
+/// Cancellation is not evidence of corruption and must not try another copy.
+#[derive(Debug)]
+pub(crate) struct VerificationCancelled;
+
+impl fmt::Display for VerificationCancelled {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Inference cancelled")
+    }
+}
+
+impl std::error::Error for VerificationCancelled {}
+
+pub(crate) fn is_cancelled(error: &anyhow::Error) -> bool {
+    error.downcast_ref::<VerificationCancelled>().is_some()
+}
+
+fn check_cancelled(cancelled: Option<&dyn Fn() -> bool>) -> Result<()> {
+    if cancelled.is_some_and(|cancelled| cancelled()) {
+        return Err(VerificationCancelled.into());
+    }
+    Ok(())
+}
+
 fn failure(message: impl Into<String>) -> anyhow::Error {
     IntegrityError(message.into()).into()
 }
@@ -239,11 +262,31 @@ impl Cache {
     }
 
     pub(crate) fn verify(&self, directory: &Path, spec: &Model) -> Result<Receipt> {
+        self.verify_inner(directory, spec, None)
+    }
+
+    pub(crate) fn verify_cancellable(
+        &self,
+        directory: &Path,
+        spec: &Model,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<Receipt> {
+        self.verify_inner(directory, spec, Some(cancelled))
+    }
+
+    fn verify_inner(
+        &self,
+        directory: &Path,
+        spec: &Model,
+        cancelled: Option<&dyn Fn() -> bool>,
+    ) -> Result<Receipt> {
+        check_cancelled(cancelled)?;
         let key = CacheKey {
             directory: directory.to_path_buf(),
             catalog: CatalogKey::new(spec)?,
         };
         if let Some(receipt) = self.current_key(&key)? {
+            check_cancelled(cancelled)?;
             return Ok(receipt);
         }
         let gate = {
@@ -264,10 +307,26 @@ impl Cache {
         };
         // Waiting and hashing hold only this exact key's gate. Other models,
         // including ASR during a large language-model hash, remain independent.
-        let _flight = gate
-            .lock()
-            .map_err(|_| failure("model verification flight lock poisoned"))?;
+        let _flight = if cancelled.is_some() {
+            loop {
+                check_cancelled(cancelled)?;
+                match gate.try_lock() {
+                    Ok(flight) => break flight,
+                    Err(std::sync::TryLockError::WouldBlock) => {
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    Err(std::sync::TryLockError::Poisoned(_)) => {
+                        return Err(failure("model verification flight lock poisoned"));
+                    }
+                }
+            }
+        } else {
+            gate.lock()
+                .map_err(|_| failure("model verification flight lock poisoned"))?
+        };
+        check_cancelled(cancelled)?;
         if let Some(receipt) = self.current_key(&key)? {
+            check_cancelled(cancelled)?;
             return Ok(receipt);
         }
         #[cfg(test)]
@@ -290,7 +349,8 @@ impl Cache {
         #[cfg(target_os = "linux")]
         observer.check_current(directory)?;
         for (asset, expected) in key.catalog.files.iter().zip(&before.files) {
-            self.verify_asset(directory, asset, expected)?;
+            check_cancelled(cancelled)?;
+            self.verify_asset(directory, asset, expected, cancelled)?;
         }
         #[cfg(target_os = "linux")]
         observer.check_current(directory)?;
@@ -301,6 +361,7 @@ impl Cache {
         if after? != before {
             return Err(failure("model directory changed during verification"));
         }
+        check_cancelled(cancelled)?;
         let fingerprint = fingerprint(&key, &before);
         let receipt = Receipt(Arc::new(Verified {
             key: key.clone(),
@@ -315,6 +376,7 @@ impl Cache {
             .successes
             .lock()
             .map_err(|_| failure("verification cache lock poisoned"))?;
+        check_cancelled(cancelled)?;
         // Catalog subsets can share a directory (for example an encoder model
         // and its tokenizer). Keep their independent successful receipts so a
         // smaller verification does not evict the full model's evidence.
@@ -371,6 +433,7 @@ impl Cache {
         directory: &Path,
         asset: &Descriptor,
         expected: &Identity,
+        cancelled: Option<&dyn Fn() -> bool>,
     ) -> Result<()> {
         let path = directory.join(&asset.name);
         let (mut file, before) = open_checked(&path, false)?;
@@ -380,14 +443,23 @@ impl Cache {
                 path.display()
             )));
         }
-        let digest = hash_stream(&mut file, asset.bytes, |bytes| {
+        let digest = hash_stream(&mut file, asset.bytes, cancelled, |bytes| {
             #[cfg(test)]
             self.hashed_bytes
                 .fetch_add(bytes as u64, std::sync::atomic::Ordering::Relaxed);
             #[cfg(not(test))]
             let _ = bytes;
         })
-        .map_err(|error| io_failure("cannot hash", &path, error))?;
+        .map_err(|error| {
+            if error
+                .get_ref()
+                .is_some_and(|source| source.is::<VerificationCancelled>())
+            {
+                VerificationCancelled.into()
+            } else {
+                io_failure("cannot hash", &path, error)
+            }
+        })?;
         if digest != asset.sha256.to_ascii_lowercase() {
             return Err(failure(format!("SHA-256 mismatch: {}", path.display())));
         }
@@ -458,12 +530,19 @@ impl RetainedHandles {
 fn hash_stream(
     input: &mut impl Read,
     expected_bytes: u64,
+    cancelled: Option<&dyn Fn() -> bool>,
     mut on_read: impl FnMut(usize),
 ) -> std::io::Result<String> {
     let mut buffer = [0_u8; READ_BUFFER_BYTES];
     let mut hash = Sha256::new();
     let mut bytes = 0_u64;
     loop {
+        if cancelled.is_some_and(|cancelled| cancelled()) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                VerificationCancelled,
+            ));
+        }
         // One byte beyond the catalog length proves excess data. Even a file
         // being continually appended cannot make this loop run unboundedly.
         let remaining = expected_bytes.saturating_sub(bytes).saturating_add(1);
@@ -897,6 +976,119 @@ mod tests {
         first.check_current().unwrap();
         cache.invalidate(&directory);
         assert!(cache.current(&directory, &spec).unwrap().is_none());
+    }
+
+    #[test]
+    fn cancelled_hash_stops_after_one_buffer_without_publishing_a_receipt() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let bytes = vec![37_u8; READ_BUFFER_BYTES * 8];
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", &bytes)]);
+        let cache = Cache::default();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let trigger = Arc::clone(&cancelled);
+        READ_HOOK.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(move || trigger.store(true, Ordering::SeqCst)));
+        });
+        let result =
+            cache.verify_cancellable(&directory, &spec, &|| cancelled.load(Ordering::SeqCst));
+        let error = result.unwrap_err();
+        assert!(is_cancelled(&error));
+        assert!(error.downcast_ref::<IntegrityError>().is_none());
+        assert_eq!(cache.hashed_bytes(), READ_BUFFER_BYTES as u64);
+        assert!(cache.current(&directory, &spec).unwrap().is_none());
+        cancelled.store(false, Ordering::SeqCst);
+        let receipt = cache
+            .verify_cancellable(&directory, &spec, &|| cancelled.load(Ordering::SeqCst))
+            .unwrap();
+        receipt.check_current().unwrap();
+        assert_eq!(
+            cache.hashed_bytes(),
+            (READ_BUFFER_BYTES + bytes.len()) as u64
+        );
+        assert_eq!(cache.verification_count(), 2);
+    }
+
+    #[test]
+    fn cancelled_request_cannot_reuse_a_valid_cached_receipt() {
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", b"valid cached weights")]);
+        let cache = Cache::default();
+        let existing = cache.verify(&directory, &spec).unwrap();
+        let bytes = cache.hashed_bytes();
+        let error = cache
+            .verify_cancellable(&directory, &spec, &|| true)
+            .unwrap_err();
+        assert!(is_cancelled(&error));
+        assert_eq!(cache.hashed_bytes(), bytes);
+        // Cancellation does not corrupt or revoke an independently valid receipt.
+        existing.check_current().unwrap();
+        assert!(cache.current(&directory, &spec).unwrap().is_some());
+    }
+
+    #[test]
+    fn cancelled_waiter_leaves_the_same_models_active_verifier_alone() {
+        use std::{
+            sync::{
+                atomic::{AtomicBool, Ordering},
+                mpsc,
+            },
+            thread,
+            time::{Duration, Instant},
+        };
+        let bytes = vec![11_u8; READ_BUFFER_BYTES * 2];
+        let (_temp, directory, spec) = fixture(&[("weights.gguf", &bytes)]);
+        let cache = Arc::new(Cache::default());
+        let key = CacheKey {
+            directory: directory.clone(),
+            catalog: CatalogKey::new(&spec).unwrap(),
+        };
+        let (started_tx, started_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let active_cache = Arc::clone(&cache);
+        let active_directory = directory.clone();
+        let active_spec = spec.clone();
+        let active = thread::spawn(move || {
+            READ_HOOK.with(|slot| {
+                *slot.borrow_mut() = Some(Box::new(move || {
+                    started_tx.send(()).unwrap();
+                    release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                }));
+            });
+            active_cache.verify(&active_directory, &active_spec)
+        });
+        started_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let waiting_cancelled = Arc::clone(&cancelled);
+        let waiting_cache = Arc::clone(&cache);
+        let waiting = thread::spawn(move || {
+            waiting_cache.verify_cancellable(&directory, &spec, &|| {
+                waiting_cancelled.load(Ordering::SeqCst)
+            })
+        });
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while cache
+            .in_flight
+            .lock()
+            .unwrap()
+            .get(&key)
+            .unwrap()
+            .strong_count()
+            < 2
+        {
+            assert!(
+                Instant::now() < deadline,
+                "waiter did not reach the held hash gate"
+            );
+            thread::yield_now();
+        }
+        cancelled.store(true, Ordering::SeqCst);
+        let error = waiting.join().unwrap().unwrap_err();
+        assert!(is_cancelled(&error));
+        assert!(!active.is_finished());
+        assert_eq!(cache.hashed_bytes(), READ_BUFFER_BYTES as u64);
+        release_tx.send(()).unwrap();
+        active.join().unwrap().unwrap().check_current().unwrap();
+        assert_eq!(cache.hashed_bytes(), bytes.len() as u64);
+        assert_eq!(cache.verification_count(), 1);
     }
 
     #[test]
@@ -1473,7 +1665,7 @@ mod tests {
             largest_read: 0,
         };
         let expected = READ_BUFFER_BYTES as u64 * 2 + 5;
-        assert!(hash_stream(&mut input, expected, |_| {}).is_err());
+        assert!(hash_stream(&mut input, expected, None, |_| {}).is_err());
         assert_eq!(input.count as u64, expected + 1);
         assert_eq!(input.largest_read, READ_BUFFER_BYTES);
     }

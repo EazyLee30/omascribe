@@ -738,7 +738,8 @@ impl<'a> ReportedView<'a> {
     }
 
     pub(super) fn validate(&self, body: &str, sources: &[Source], terms: &Terms) -> Result<()> {
-        for candidate in named_reports(body, terms)? {
+        let body = super::affiliation::generated_report_view(body);
+        for candidate in named_reports(&body, terms)? {
             for field in &candidate.fields {
                 ensure!(
                     self.same_scope

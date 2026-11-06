@@ -379,10 +379,20 @@ pub(crate) fn record_runtime(
 }
 /// Cold admission only. No caller may hold Store, preferences or pool locks here.
 pub(crate) fn refresh_environment(engine: &Engine, prefs: &Preferences) -> Result<()> {
+    let cancelled = || {
+        engine.note_cancel.load(std::sync::atomic::Ordering::SeqCst)
+            || engine.maintenance.load(std::sync::atomic::Ordering::SeqCst)
+    };
+    let check = || -> Result<()> {
+        anyhow::ensure!(!cancelled(), crate::model_integrity::VerificationCancelled);
+        Ok(())
+    };
+    check()?;
     // Optional authorization needs a verified model receipt. A UI poll must never do this work.
     if active_binding(engine, prefs).is_some() {
-        engine.verified_model(&prefs.llm_model)?;
+        engine.verified_model_cancellable(&prefs.llm_model, &cancelled)?;
     }
+    check()?;
     let spec = crate::inference::launch_spec(engine, prefs)?;
     let path = if spec.backend == crate::inference::Backend::Mlx {
         engine.runtime_dir.join("mlx/runner.py")
@@ -390,8 +400,13 @@ pub(crate) fn refresh_environment(engine: &Engine, prefs: &Preferences) -> Resul
         spec.directory
             .join(crate::platform::executable("llama-server"))
     };
+    // Runtime executable verification still performs one complete observation;
+    // cancellation is checked around it, not between executable hash reads.
+    check()?;
     let receipt = engine.inference_fingerprints.refresh(&path)?;
-    record_runtime(engine, prefs, &spec, &receipt)
+    check()?;
+    record_runtime(engine, prefs, &spec, &receipt)?;
+    check()
 }
 fn current_runtime(engine: &Engine, prefs: &Preferences) -> Result<Value> {
     let context = {
@@ -491,6 +506,54 @@ pub(crate) fn translation_key(environment: &str, source: &crate::Segment, target
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cancelled_cold_refresh_does_not_read_or_publish_an_environment() -> Result<()> {
+        use std::sync::atomic::Ordering;
+        for maintenance in [false, true] {
+            let root = tempfile::tempdir()?;
+            let mut engine = Engine::open(root.path().into())?;
+            let isolated = Arc::get_mut(&mut engine).context("Fresh engine must be unique")?;
+            isolated.models = root.path().join("no-models");
+            isolated.runtime_dir = root.path().join("fixture-runtime");
+            let prefs = Preferences {
+                inference_backend: "cpu".into(),
+                ..Default::default()
+            };
+            let executable = engine
+                .runtime_dir
+                .join("llama")
+                .join(crate::platform::executable("llama-server"));
+            fs::create_dir_all(executable.parent().unwrap())?;
+            let bytes = b"cold admission runtime fixture";
+            fs::write(&executable, bytes)?;
+            if maintenance {
+                engine.maintenance.store(true, Ordering::SeqCst);
+            } else {
+                engine.note_cancel.store(true, Ordering::SeqCst);
+            }
+            let error = refresh_environment(&engine, &prefs).unwrap_err();
+            assert!(crate::model_integrity::is_cancelled(&error));
+            assert!(!integrity_error(&error));
+            assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+            assert_eq!(engine.inference_fingerprints.hashed_bytes(), 0);
+            {
+                let state = engine.inference_fingerprints.state.lock().unwrap();
+                assert!(state.entries.is_empty());
+                assert!(state.contexts.is_empty());
+            }
+            // The same real entry would observe and bind this fixture without
+            // cancellation; no worker launch or synthetic lifecycle is involved.
+            engine.maintenance.store(false, Ordering::SeqCst);
+            engine.note_cancel.store(false, Ordering::SeqCst);
+            refresh_environment(&engine, &prefs)?;
+            assert_eq!(
+                engine.inference_fingerprints.hashed_bytes(),
+                bytes.len() as u64
+            );
+            current_runtime(&engine, &prefs)?;
+        }
+        Ok(())
+    }
     #[test]
     fn runtime_fingerprint_changes_when_executable_changes() -> Result<()> {
         let root = tempfile::tempdir()?;

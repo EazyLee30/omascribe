@@ -942,7 +942,8 @@ fn run_inner(
                 )?;
             }
             let opening = Instant::now();
-            let worker = notes::open_session(engine, &prefs, meeting, snapshot.meeting.run)?;
+            let worker =
+                notes::open_session_observed(engine, &prefs, meeting, snapshot.meeting.run, trace)?;
             // Preserve the existing post-startup recording work allowance while
             // charging any preceding literal work to the same batch budget.
             startup_elapsed = opening.elapsed();

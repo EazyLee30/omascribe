@@ -358,6 +358,7 @@ pub(crate) fn with_cpu_fallback<T>(
     if result.is_err()
         && !result.as_ref().is_err_and(|error| {
             crate::inference_cache::integrity_error(error)
+                || crate::model_integrity::is_cancelled(error)
                 || error
                     .chain()
                     .any(|e| e.to_string().starts_with("model:integrity:"))
@@ -1908,6 +1909,17 @@ mod tests {
             bail!("cancelled")
         }) as Result<()>;
         assert!(result.is_err());
+        assert_eq!(calls, 1);
+        // A cancellation result remains terminal even if the shared flag was
+        // cleared before this frame observed it and a GPU failure was recorded.
+        engine.note_cancel.store(false, Ordering::SeqCst);
+        calls = 0;
+        let result = with_cpu_fallback(&engine, || {
+            calls += 1;
+            reject(&engine, "fixture", true);
+            Err(crate::model_integrity::VerificationCancelled.into())
+        }) as Result<()>;
+        assert!(crate::model_integrity::is_cancelled(&result.unwrap_err()));
         assert_eq!(calls, 1);
         Ok(())
     }

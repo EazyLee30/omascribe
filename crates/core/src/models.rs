@@ -141,6 +141,13 @@ impl Engine {
     pub(crate) fn verified_model(&self, id: &str) -> Result<crate::model_integrity::Receipt> {
         self.verify_model_spec(model(id)?)
     }
+    pub(crate) fn verified_model_cancellable(
+        &self,
+        id: &str,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec_with_cancel(model(id)?, Some(cancelled))
+    }
     pub fn verify_model_integrity(&self, id: &str) -> Result<serde_json::Value> {
         self.require_available()?;
         let before = self.cached_model(id)?;
@@ -180,21 +187,45 @@ impl Engine {
         self.verify_model_spec(spec)
     }
     fn verify_model_spec(&self, spec: &Model) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec_with_cancel(spec, None)
+    }
+    fn verify_model_spec_with_cancel(
+        &self,
+        spec: &Model,
+        cancelled: Option<&dyn Fn() -> bool>,
+    ) -> Result<crate::model_integrity::Receipt> {
+        let check = || -> Result<()> {
+            if cancelled.is_some_and(|cancelled| cancelled()) {
+                return Err(crate::model_integrity::VerificationCancelled.into());
+            }
+            Ok(())
+        };
+        check()?;
         let directories = self.model_candidates(spec);
         // A valid bundled receipt can serve the identical pinned model even if
         // a corrupt managed copy exists, without rereading that bad copy per job.
         for directory in &directories {
+            check()?;
             if let Some(receipt) = self.model_integrity.current(directory, spec)? {
+                check()?;
                 return Ok(receipt);
             }
         }
         let mut failure = None;
         for directory in directories {
+            check()?;
             if directory.symlink_metadata().is_err() {
                 continue;
             }
-            match self.model_integrity.verify(&directory, spec) {
+            let verified = match cancelled {
+                Some(cancelled) => self
+                    .model_integrity
+                    .verify_cancellable(&directory, spec, cancelled),
+                None => self.model_integrity.verify(&directory, spec),
+            };
+            match verified {
                 Ok(receipt) => return Ok(receipt),
+                Err(error) if crate::model_integrity::is_cancelled(&error) => return Err(error),
                 Err(error) => failure = Some(error),
             }
         }
