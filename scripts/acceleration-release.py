@@ -1,0 +1,449 @@
+#!/usr/bin/env python3
+"""Exact-source candidate publication; no key material, SDKs or app installers here."""
+import argparse
+import base64
+import hashlib
+import importlib.util
+import io
+import json
+import os
+import pathlib
+import re
+import subprocess
+import tempfile
+import threading
+import zipfile
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPOSITORY = "EazyLee30/omascribe"
+spec = importlib.util.spec_from_file_location("component_packaging", ROOT / "scripts/acceleration-components.py")
+packaging = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(packaging)
+
+
+def version_ok(version):
+    return (packaging.version_ok(version) and version != "acceleration-v1"
+            and all(packaging.name_ok(f"OmaScribe-{backend}-{target}-{version}.tar.bz2")
+                    for backend in packaging.BACKENDS for target in packaging.TARGETS))
+
+
+def context(event, event_name, repository, sha, run_id, version="", publish=False, promote=False):
+    """Use the same exact head for checks/builds; signing needs explicit authority."""
+    if repository != REPOSITORY or not re.fullmatch(r"[1-9][0-9]*", str(run_id)):
+        raise ValueError("Unsupported repository/run")
+    if event_name == "pull_request":
+        pr = event["pull_request"]
+        sha = pr["head"]["sha"]
+        labels = {label["name"] for label in pr["labels"]}
+        publish = (pr["head"]["repo"]["full_name"] == repository
+                   and {"build-acceleration-components", "sign-acceleration-candidate"} <= labels)
+        if promote:
+            raise ValueError("A PR cannot update the stable catalog pointer")
+        version = f"acceleration-{'candidate' if publish else 'ci'}-{run_id}"
+    elif event_name != "workflow_dispatch":
+        raise ValueError("Unsupported release event")
+    if not re.fullmatch(r"[0-9a-f]{40}", sha) or not version_ok(version):
+        raise ValueError("Invalid source/version")
+    if promote and not publish:
+        raise ValueError("Promotion requires explicit signed publication")
+    return dict(source_sha=sha, version=version, sign=bool(publish), promote=bool(promote))
+
+
+def execution_context():
+    if os.environ.get("REUSE_CANDIDATE") == "true":
+        event = json.loads(pathlib.Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        return reuse_context(event, os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REPOSITORY"])
+    return context(json.loads(pathlib.Path(os.environ["GITHUB_EVENT_PATH"]).read_text()),
+                   os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REPOSITORY"],
+                   os.environ["GITHUB_SHA"], os.environ["GITHUB_RUN_ID"],
+                   os.environ.get("REQUESTED_VERSION", ""), os.environ.get("SIGN_REQUESTED") == "true",
+                   os.environ.get("PROMOTE_REQUESTED") == "true")
+
+
+def reuse_context(event, event_name, repository):
+    match = re.fullmatch(r"sign-acceleration-run-([1-9][0-9]{0,19})", event.get("label", {}).get("name", ""))
+    pr = event.get("pull_request", {})
+    if (event_name != "pull_request" or event.get("action") != "labeled" or not match
+            or repository != REPOSITORY or pr.get("head", {}).get("repo", {}).get("full_name") != repository
+            or not re.fullmatch(r"[0-9a-f]{40}", pr.get("head", {}).get("sha", ""))):
+        raise ValueError("Reuse signing requires a one-shot label on a same-repository PR")
+    return dict(source_sha=pr["head"]["sha"], version="acceleration-ci-"+match[1],
+                sign=True, promote=False, reuse_run_id=match[1])
+
+
+def native_fingerprint(read):
+    """Compiled inputs, runner matrix and exact SDK/build/package commands.
+
+    Delivery orchestration and newly added acceptance tests are outside the
+    native compiler inputs. Original job checkout commits are verified from
+    immutable logs; prepared checkouts bind the new exact source. Only workflow
+    parsing normalizes CRLF; stored compiler inputs and signed bytes stay exact.
+    """
+    workflow = read(".github/workflows/acceleration-components.yml").decode().replace("\r\n", "\n")
+    build = workflow.split("  build:\n", 1)[1].split("  catalog:\n", 1)[0]
+    checkout = build.split("    steps:\n", 1)[1].split("      - uses: actions/setup-python@", 1)[0]
+    recognized = ["      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n        with:\n          ref: ${{ needs.prepare.outputs.source_sha }}\n"]
+    if checkout not in recognized:
+        raise ValueError("Unrecognized native source checkout; cannot reuse its artifacts")
+    parts = {path: read(path) for path in ["models.lock.json", "scripts/acceleration-components.py", "scripts/runtime_inventory.py"]}
+    parts["runner-matrix"] = build.split("    strategy:\n", 1)[1].split("    steps:\n", 1)[0].encode()
+    parts["sdk-build-package"] = build.split("      - name: Pinned CMake for Blackwell architecture suffixes\n", 1)[1].split("      - name: Base installer directory must remain untouched\n", 1)[0].encode()
+    digest = hashlib.sha256()
+    for key, value in sorted(parts.items()):
+        digest.update(key.encode()+b"\0"+value+b"\0")
+    return digest.hexdigest()
+
+
+def require_windows_core(sha):
+    runs = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/actions/workflows/acceleration-components.yml/runs?head_sha={sha}&per_page=100"], text=True))["workflow_runs"]
+    for run in runs:
+        if run["head_sha"] != sha:
+            continue
+        jobs = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/actions/runs/{run['id']}/jobs?per_page=100"], text=True))["jobs"]
+        for job in jobs:
+            if job["name"] == "windows-core" and job.get("conclusion") is not None:
+                if job["conclusion"] == "success":
+                    return
+                raise ValueError("Windows-core failed for the current source")
+    raise ValueError("Current source needs successful Windows-core checks before candidate signing")
+
+
+def checkout_sha(prefix):
+    lines = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", prefix.decode("utf-8", errors="replace")).splitlines()
+    commits = set()
+    for line, following in zip(lines, lines[1:]):
+        if re.search(r'\bgit(?:\.exe)?"?\s+log -1 --format=%H(?:\s|$)', line):
+            match = re.search(r"(?:^|\s)([0-9a-f]{40})\s*$", following)
+            if match:
+                commits.add(match[1])
+    if len(commits) != 1:
+        raise ValueError("Original job has no unique recognized exact checkout source")
+    return commits.pop()
+
+
+def checkout_sha_for_job(job_id):
+    # Only read the bounded checkout prefix, not megabytes of CUDA compilation.
+    # Terminating this local read never cancels the remote Actions job.
+    # Keep only a bounded classification on failure. Never print job contents,
+    # signed download URLs, headers or arbitrary CLI stderr into another job.
+    errors = tempfile.TemporaryFile()
+    process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/jobs/{job_id}/logs"],
+                               stdout=subprocess.PIPE, stderr=errors)
+    expired = threading.Event()
+    def stop():
+        expired.set()
+        try:
+            process.kill()
+        except OSError:
+            pass
+    timer = threading.Timer(30, stop)
+    timer.start()
+    try:
+        prefix = process.stdout.read(128 * 1024)
+    finally:
+        process.stdout.close()
+        if process.poll() is None:
+            process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        timer.cancel()
+        errors.seek(0)
+        error_prefix = errors.read(4096)
+        errors.close()
+    if expired.is_set():
+        raise ValueError(f"Original checkout log read timed out for job {job_id}")
+    try:
+        return checkout_sha(prefix)
+    except ValueError as error:
+        raise ValueError(f"Original checkout source missing for job {job_id}: "
+                         f"{log_read_diagnostic(prefix, error_prefix, process.returncode)}") from error
+
+
+def log_read_diagnostic(prefix, errors, code):
+    kind = "zip" if prefix.startswith(b"PK\x03\x04") else "gzip" if prefix.startswith(b"\x1f\x8b") else "json" if prefix.lstrip().startswith(b"{") else "text" if prefix else "empty"
+    # GitHub CLI error formats include `(HTTP 403)`; emit the number only.
+    status = re.search(rb"HTTP ([1-5][0-9]{2})", errors)
+    return dict(bytes=len(prefix), kind=kind, exit_code=code,
+                http_status=int(status[1]) if status else None)
+
+
+def archive_checkout_sources(blob, jobs):
+    """Read each exact job's checkout step, without extracting arbitrary paths."""
+    if len(blob) > 32 * 1024 * 1024:
+        raise ValueError("Original run log archive exceeds the download budget")
+    with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+        entries = archive.infolist()
+        if len(entries) > 4096 or sum(i.file_size for i in entries) > 256 * 1024 * 1024:
+            raise ValueError("Original run log inventory exceeds the budget")
+        if len({job["id"] for job in jobs}) != len(jobs) or len({job["name"] for job in jobs}) != len(jobs):
+            raise ValueError("Original native job identities are ambiguous")
+        proofs = []
+        for job in jobs:
+            name = job["name"]
+            if not re.fullmatch(r"build \([A-Za-z0-9 ,_.()-]{1,180}\)", name):
+                raise ValueError("Unsupported original native job name")
+            directory = name + "/"
+            steps = [i for i in entries if i.filename.startswith(directory)
+                     and re.fullmatch(r"[0-9]+_Run actions_checkout@v[0-9]+\.txt", i.filename[len(directory):])]
+            # GitHub can retain the complete flat job log without step files
+            # for older finished jobs. Match its exact API-reported job name.
+            flat = [i for i in entries if re.fullmatch(r"[0-9]+_"+re.escape(name)+r"\.txt", i.filename)]
+            if len(steps) > 1 or len(flat) > 1 or not steps and not flat:
+                raise ValueError("Original run needs a unique native job/checkout log")
+            evidence = []
+            for entry in [*flat, *steps]:
+                with archive.open(entry) as stream:
+                    prefix = stream.read(128 * 1024)
+                evidence.append(dict(checkout=checkout_sha(prefix),
+                                     prefix_sha256=hashlib.sha256(prefix).hexdigest(),
+                                     prefix_bytes=len(prefix)))
+            if len({row["checkout"] for row in evidence}) != 1:
+                raise ValueError("Original job and checkout-step logs disagree")
+            proofs.append(dict(job_id=job["id"], checkout=evidence[0]["checkout"],
+                               checkout_log_sha256=evidence[0]["prefix_sha256"], logs=evidence))
+        return proofs
+
+
+def run_log_checkout_sources(run_id, jobs):
+    # The documented run-log archive is an independent authenticated API path.
+    # It proves the same four job checkouts; no current moving PR ref is used.
+    with tempfile.TemporaryFile() as errors:
+        process = subprocess.Popen(["gh", "api", f"repos/{REPOSITORY}/actions/runs/{run_id}/logs"],
+                                   stdout=subprocess.PIPE, stderr=errors)
+        def stop():
+            try:
+                process.kill()
+            except OSError:
+                pass
+        timer = threading.Timer(45, stop)
+        timer.start()
+        try:
+            blob = process.stdout.read(32 * 1024 * 1024 + 1)
+            if len(blob) > 32 * 1024 * 1024:
+                raise ValueError("Original run logs exceed the download budget")
+            code = process.wait(timeout=5)
+            if code:
+                errors.seek(0)
+                raise ValueError(f"Original run-log API failed: {log_read_diagnostic(blob, errors.read(4096), code)}")
+        finally:
+            process.stdout.close()
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+            timer.cancel()
+    return archive_checkout_sources(blob, jobs), hashlib.sha256(blob).hexdigest()
+
+
+def native_file_at(commit, path):
+    exists = subprocess.run(["git", "cat-file", "-e", commit+"^{commit}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if exists.returncode == 0:
+        return subprocess.check_output(["git", "show", f"{commit}:{path}"])
+    # Historical PR merge refs can disappear after newer pushes. Read the
+    # immutable logged commit, never today's refs/pull/N/merge or PR base/head.
+    value = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/contents/{path}?ref={commit}"], text=True))
+    if value.get("encoding") != "base64" or value.get("size", 0) > 1024*1024:
+        raise ValueError("Unsupported historical native input")
+    return base64.b64decode(value["content"])
+
+
+def check_reuse(selected, directory):
+    def api(path):
+        return json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/{path}"], text=True))
+    run_id = selected["reuse_run_id"]
+    run = api("actions/runs/"+run_id)
+    if (run["status"] != "completed" or run["conclusion"] != "success"
+            or run["path"] != ".github/workflows/acceleration-components.yml"
+            or run["head_repository"]["full_name"] != REPOSITORY):
+        raise ValueError("Original complete component workflow has not passed")
+    sha = run["head_sha"]
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise ValueError("Invalid original source")
+    jobs = api(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
+    builds = [job for job in jobs if job["name"].startswith("build (")]
+    if len(builds) != 4 or any(job["conclusion"] != "success" for job in builds):
+        raise ValueError("All four original native jobs must pass")
+    proofs = []
+    archive_hash = None
+    method = "per_job_log_prefix"
+    try:
+        for job in builds:
+            proofs.append(dict(job_id=job["id"], checkout=checkout_sha_for_job(job["id"])))
+    except ValueError as error:
+        print(f"Per-job checkout reader unavailable: {error}", flush=True)
+        archived, archive_hash = run_log_checkout_sources(run_id, builds)
+        for proof in proofs:
+            if not any(row["job_id"] == proof["job_id"] and row["checkout"] == proof["checkout"] for row in archived):
+                raise ValueError("Per-job and run-log checkout proofs disagree")
+        proofs = archived
+        method = "run_log_archive_checkout_steps"
+    checkouts = {proof["checkout"] for proof in proofs}
+    if len(checkouts) != 1:
+        raise ValueError("Original native jobs checked out different sources")
+    checkout = checkouts.pop()
+    def at(commit):
+        return native_fingerprint(lambda path: native_file_at(commit, path))
+    fingerprint = at(sha)
+    if at(checkout) != fingerprint or at(selected["source_sha"]) != fingerprint:
+        raise ValueError("Native compiler/SDK/package inputs changed; cannot reuse old binaries")
+    artifacts = api(f"actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
+    required = {f"accelerator-{target}-{backend}" for target in packaging.TARGETS for backend in packaging.BACKENDS} | {"acceleration-catalog"}
+    usable = [a for a in artifacts if a["name"] in required and not a["expired"]]
+    if len(usable) != 5 or {a["name"] for a in usable} != required:
+        raise ValueError("Complete non-expired four-way artifacts and catalog are required")
+    directory.mkdir(parents=True, exist_ok=True)
+    packaging.write_json(directory / "candidate-build-evidence.json", dict(schema=1,
+        publishing_source_sha=selected["source_sha"], build_source_sha=sha, checkout_source_sha=checkout, native_input_sha256=fingerprint,
+        checkout_method=method, job_checkout_proofs=proofs, run_log_archive_sha256=archive_hash,
+        build_run_id=run_id, artifact_ids={a["name"]:a["id"] for a in usable}, version=selected["version"]))
+
+
+def require_green_ci(sha):
+    runs = json.loads(subprocess.check_output([
+        "gh", "api", f"repos/{REPOSITORY}/actions/workflows/ci.yml/runs?head_sha={sha}&per_page=100"
+    ], text=True))["workflow_runs"]
+    matching = [run for run in runs if run["head_sha"] == sha]
+    if not matching or matching[0]["status"] != "completed" or matching[0]["conclusion"] != "success":
+        raise ValueError("Application CI for this exact source must pass before signing")
+
+
+def verify_catalog(directory, version, cli):
+    directory = pathlib.Path(directory)
+    before = (directory / "index.payload").read_bytes()
+    if (directory / "candidate-build-evidence.json").exists():
+        compare_reuse(directory)
+    index = packaging.index(directory, version)  # All four archives and every member hash.
+    if (directory / "index.payload").read_bytes() != before:
+        raise ValueError("Signed catalog differs from the complete package inventory")
+    envelope = json.loads((directory / "index.json").read_text())
+    signature = (directory / "index.payload.sig").read_text().strip()
+    if envelope != dict(payload=before.decode("utf-8"), signature=signature):
+        raise ValueError("Envelope differs from exact signed bytes")
+    expected_key = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["plugins"]["updater"]["pubkey"]
+    if (directory / "updater.pub").read_text().strip() != expected_key:
+        raise ValueError("Catalog must use the embedded application release key")
+    verified = json.loads(subprocess.check_output([
+        str(cli), "verify-update", str(directory / "index.payload"), str(directory / "index.payload.sig"),
+        str(directory / "updater.pub"), version
+    ], text=True))
+    if verified != dict(verified=True, version=version):
+        raise ValueError("App verifier did not accept the catalog")
+    return index
+
+
+def compare_reuse(directory):
+    if (directory / "index.payload").read_bytes() != (directory / "original-index.payload").read_bytes():
+        raise ValueError("Reused candidate payload differs from the original complete catalog")
+
+
+def release(tag, missing_ok=False):
+    # The tag lookup endpoint describes published releases. An authenticated
+    # listing includes drafts and prevents duplicate/hidden partial candidates.
+    pages = json.loads(subprocess.check_output([
+        "gh", "api", "--paginate", "--slurp", f"repos/{REPOSITORY}/releases?per_page=100"
+    ], text=True))
+    matching = [item for page in pages for item in page if item["tag_name"] == tag]
+    if len(matching) > 1 or (not matching and not missing_ok):
+        raise ValueError("Release lookup is missing or ambiguous")
+    return matching[0] if matching else None
+
+
+def require_tag(version, expected_sha=None):
+    value = json.loads(subprocess.check_output(["gh", "api", f"repos/{REPOSITORY}/git/ref/tags/{version}"], text=True))
+    if value["object"]["type"] != "commit" or not re.fullmatch(r"[0-9a-f]{40}", value["object"]["sha"]):
+        raise ValueError("Expected a maintainer-created immutable lightweight candidate tag")
+    if expected_sha is not None and value["object"]["sha"] != expected_sha:
+        raise ValueError("Candidate tag does not bind the exact compiled source")
+
+
+def publish(directory, version, source_sha, cli, promote=False):
+    if not re.fullmatch(r"[0-9a-f]{40}", source_sha) or not version_ok(version):
+        raise ValueError("Invalid immutable source/version")
+    directory = pathlib.Path(directory)
+    index = verify_catalog(directory, version, cli)
+    if release(version, missing_ok=True) is not None:
+        raise ValueError("Immutable release exists; use a new version, including after a failed draft upload")
+    evidence = json.loads((directory/"candidate-build-evidence.json").read_text()) if (directory/"candidate-build-evidence.json").exists() else None
+    # GITHUB_TOKEN cannot create tags targeting commits with workflow changes.
+    # A maintainer pre-creates this exact tag; the signer may never retarget it.
+    require_tag(version, evidence["build_source_sha"] if evidence else source_sha)
+    provenance = directory / "candidate-provenance.json"
+    packaging.write_json(provenance, dict(schema=1, source_sha=source_sha, version=version,
+        workflow_run=os.environ.get("GITHUB_RUN_ID"), runtime_revision=index["runtime_revision"],
+        reused_build=evidence,
+        catalog_sha256=packaging.digest(directory / "index.json"),
+        note="Audit metadata; app trust comes from the signed catalog and archive/member hashes, not this unsigned note."))
+    files = [directory / component["archive"]["name"] for component in index["components"]]
+    files += [directory / "index.json", provenance]
+    def run(*args):
+        subprocess.run(["gh", "release", *map(str, args), "--repo", REPOSITORY], check=True)
+    # A failed/partial upload stays a draft and is never exposed as a valid catalog.
+    run("create", version, "--verify-tag", "--draft", "--prerelease", "--latest=false",
+        "--title", "Optional GPU validation candidate · " + version,
+        "--notes", "Signed optional GPU components for explicit device acceptance. No stable catalog promotion. Base installers do not include these files.")
+    run("upload", version, *files)
+    uploaded = release(version)
+    assets = {asset["name"]: asset for asset in uploaded["assets"]}
+    if not uploaded["draft"] or set(assets) != {p.name for p in files}:
+        raise ValueError("Incomplete or unexpected remote candidate assets")
+    for path in files:
+        asset = assets[path.name]
+        if asset["state"] != "uploaded" or asset["size"] != path.stat().st_size or asset.get("digest") != "sha256:" + packaging.digest(path):
+            raise ValueError("Remote upload digest/size mismatch; candidate remains a draft")
+    run("edit", version, "--draft=false", "--prerelease", "--latest=false")
+    if promote:
+        pointer = release("acceleration-v1", missing_ok=True)
+        if pointer is not None and pointer["draft"]:
+            raise ValueError("Stable pointer draft requires maintainer inspection")
+        if pointer is None:
+            require_tag("acceleration-v1")
+            run("create", "acceleration-v1", "--verify-tag", "--prerelease", "--latest=false",
+                "--title", "Optional acceleration catalog", "--notes", "Signed catalog consumed by OmaScribe settings.")
+        run("upload", "acceleration-v1", directory / "index.json", "--clobber")
+        pointer = release("acceleration-v1")
+        uploaded_index = [a for a in pointer["assets"] if a["name"] == "index.json"]
+        if len(uploaded_index) != 1 or uploaded_index[0].get("digest") != "sha256:" + packaging.digest(directory / "index.json"):
+            raise ValueError("Stable pointer upload digest mismatch")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["context", "reuse-context", "check-ci", "check-reuse", "compare-reuse", "publish"])
+    parser.add_argument("--directory", type=pathlib.Path, default=ROOT / "release-assets/accelerators")
+    parser.add_argument("--cli", type=pathlib.Path, default=ROOT / "target/debug/omascribe-cli")
+    args = parser.parse_args()
+    selected = execution_context()
+    if args.command in ["context", "reuse-context"]:
+        if os.environ["GITHUB_EVENT_NAME"] == "pull_request" and selected["sign"]:
+            event = json.loads(pathlib.Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+            subprocess.run(["git", "merge-base", "--is-ancestor", event["pull_request"]["base"]["sha"], selected["source_sha"]], check=True)
+        with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a") as out:
+            for key, value in selected.items():
+                out.write(f"{key}={str(value).lower() if isinstance(value, bool) else value}\n")
+    elif not selected["sign"]:
+        raise ValueError("Signed publication was not authorized by the workflow context")
+    elif args.command == "check-ci":
+        require_green_ci(selected["source_sha"])
+        require_tag(selected["version"], selected["source_sha"])
+    elif args.command == "check-reuse":
+        require_green_ci(selected["source_sha"])
+        require_windows_core(selected["source_sha"])
+        check_reuse(selected, args.directory)
+        evidence=json.loads((args.directory/"candidate-build-evidence.json").read_text())
+        require_tag(selected["version"], evidence["build_source_sha"])
+    elif args.command == "compare-reuse":
+        if not selected.get("reuse_run_id"):
+            raise ValueError("No original candidate was selected")
+        compare_reuse(args.directory)
+    else:
+        require_green_ci(selected["source_sha"])
+        if selected.get("reuse_run_id"):
+            require_windows_core(selected["source_sha"])
+            check_reuse(selected, args.directory)
+        publish(args.directory, selected["version"], selected["source_sha"], args.cli, selected["promote"])
+
+
+if __name__ == "__main__":
+    main()

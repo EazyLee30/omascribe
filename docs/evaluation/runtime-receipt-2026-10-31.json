@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source_commit": "cff909c281d13f8a87c93e7b280e8cd35f1e201b",
+  "parent_commit": "03b77c85b3dcb6d45814548bd6f5fd42796e5c33",
+  "status": "SOURCE_CI_PASS_NATIVE_PLATFORM_ACCEPTANCE_PENDING",
+  "checks": {
+    "core": {
+      "passed": 589,
+      "ignored": 12
+    },
+    "cli": {
+      "passed": 2
+    },
+    "asr_unit_and_binary": {
+      "passed": [4, 18]
+    },
+    "integration": {
+      "passed": [8, 2, 24]
+    },
+    "workspace_test_exit": 0,
+    "workspace_clippy_all_targets_deny_warnings_exit": 0,
+    "fmt_and_diff_check_exit": 0
+  },
+  "failures_retained": [
+    "Original equal-size/restored-mtime metadata-cache RED retained separately at its original revision.",
+    "Two caller test compilation failures: SQLite COUNT is read as i64, not usize/u64.",
+    "First executed core run: 583 pass/6 fail; context-wrapped runtime errors were not recognized by a chain-only type scan. Error::is now recognizes anyhow typed context. Tests remain strict.",
+    "First strict Clippy rejected a cfg(test) callback type; introduced a type alias, no allow and no production behavior change."
+  ],
+  "implemented": [
+    "Cold complete runtime-entry hash limited to 256MiB, 64KiB streaming buffer, observed before and after read; admission outside Store/preferences/pool/global map locks.",
+    "Mac kqueue and Linux inotify ordinary-mutation observations; Windows retained deny-write/delete handles. Fast checks do not hash or read runtime contents. Unknown rejects model reuse and retains original source display.",
+    "Worker key and loaded lease share the observed receipt; startup, request, reuse and existing precommit checks consume it. Typed integrity failures do not blacklist GPUs or trigger CPU retry. MLX observes the executed runner path.",
+    "Process-local runtime environment records actual backend/spec/receipt including CPU fallback under the original request configuration. Translation v32 keys and parts are rebound to actual identity.",
+    "Closed literal captions use a separate key and are exactly rederived with current Terms. Mixed batches commit literal work before missing-runtime deferral; a cold runtime refresh can reuse already valid stored model output before launching a worker.",
+    "Component removal revokes all live receipt owners, including cache-evicted clones; joins in-flight admission, refuses late publication and unblocks after errors. Existing rejected-removal conditions unchanged."
+  ],
+  "limits": [
+    "No ASR/LLM generation, native GPU qualification, model or SDK/component download, release CLI rebuild, installer build or release publication.",
+    "Local Mac file/DB/fake-worker controls do not establish native Windows/Linux runtime behavior or whole-app speed/energy/RSS improvement.",
+    "No immutable native loader snapshot: mmap, remote filesystems, dependencies/libraries, default driver discovery and later path reopening are outside this receipt guarantee.",
+    "No same-input model-failure suppression implemented; full runtime/component/driver identity remains incomplete.",
+    "FLEURS real-audio name misses and original Q16 minutes quality failures remain open. Stable release remains0.3.4;0.3.5 unpublished."
+  ],
+  "evidence_sha256": "9526c0d359c199ba2eaabab9b8ce38f58b87016236b5cb78091d759189c2b63a",
+  "original_red_report": "runtime-fingerprint-open-2026-10-31.json",
+  "source_files_sha256": {
+    "crates/core/src/acceleration.rs": "11857869d79591d90c5d29fe2c5bf9848715ab8b16358364d998b14f4b473cef",
+    "crates/core/src/components.rs": "f5bf9cb686665932a3cb0fc766bc925ec9a185963bfb443f9aa30275d084ccf8",
+    "crates/core/src/inference_cache.rs": "5e2807a33e442faa8d87a59bfe428cf0f3c920b4094628d8c097d7bd248da585",
+    "crates/core/src/inference_cache/runtime_file.rs": "a70b24e45dfe81c8cf1077602172a79f2a9940d0e7c5117d650945462ef65f19",
+    "crates/core/src/inference_cache/runtime_file/linux.rs": "c213c43f3b1c147ec164b76b4647a8c7c5c22defabe9b0ada971f24973ef9a7a",
+    "crates/core/src/inference_cache/runtime_file/macos.rs": "be365b80d5b20726a8194543cee03a8c3252ff085d260f96dfb8fc07678150ec",
+    "crates/core/src/inference_worker.rs": "484e1b1ceab1bcf8bb0fff103c0faee5713de1a8ae2907d7d49032ccf2db72f2",
+    "crates/core/src/inference_worker/lifecycle.rs": "d4f620f9307dd5d983d6213c2e9495f240fba33acde12cb786afbe1c25159b4a",
+    "crates/core/src/notes/incremental.rs": "5dfa362885b4bc94124579e7a1aba98493aeca9a8a84745611928f9a4761ab01",
+    "crates/core/src/translation.rs": "2af676084b61546994b26d8814f0353367f6d9746d6941b5b7e64c8e25b3d62e"
+  },
+  "check_logs_sha256": {
+    "core-controls-attempt-4.log": "504cbe3e32985a33e534dd7c05ff5271e231f0184238372edfbd3dc6da432d4f",
+    "workspace-tests.log": "6a166efcc032e25537062aa7a56422c32ca3dc61956a857c0d76bd93262f8f72",
+    "workspace-clippy-final-2.log": "37fb7cfe66fc9aa7c4598e61670b9ce4c756d960ee6c45c85d0cc7df9f1b190e"
+  },
+  "source_ci": {
+    "sha256": "f63f050b231e95f7798c82a19d6ef7ce86f8bce9e05672472a0aa827ea3beba9",
+    "head": "cff909c281d13f8a87c93e7b280e8cd35f1e201b",
+    "success": ["linux", "prepare", "ubuntu22", "validate", "windows-core"],
+    "skipped": ["build", "catalog"],
+    "checks": [
+      {
+        "name": "catalog",
+        "conclusion": "skipped",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463848/job/124558972129"
+      },
+      {
+        "name": "build",
+        "conclusion": "skipped",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463848/job/124558326195"
+      },
+      {
+        "name": "windows-core",
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463848/job/124558324580"
+      },
+      {
+        "name": "linux",
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463864/job/124558291180"
+      },
+      {
+        "name": "prepare",
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463848/job/124558291102"
+      },
+      {
+        "name": "ubuntu22",
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463826/job/124558291017"
+      },
+      {
+        "name": "validate",
+        "conclusion": "success",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/41208463846/job/124558290877"
+      }
+    ]
+  }
+}

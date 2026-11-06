@@ -81,6 +81,13 @@ export interface Snapshot {
     { text: string; target: string; revision: number }
   >;
 }
+export type TranscriptSnapshot = Pick<
+  Snapshot,
+  "meeting" | "segments" | "runtime" | "translation_mode" | "translations"
+>;
+export type SnapshotPoll<T = Snapshot> =
+  | { kind: "full"; revision: string | null; snapshot: T }
+  | { kind: "runtime"; duration_ms: number; runtime: Runtime };
 export interface Diagnostic {
   data_dir: string;
   asr_ready: boolean;

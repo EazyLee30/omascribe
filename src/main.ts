@@ -10,6 +10,7 @@ import { t, locale, setLocale, type Key, type Locale } from "./i18n";
 import type {
   Meeting,
   Snapshot,
+  SnapshotPoll,
   Note,
   Diagnostic,
   MeetingFiles,
@@ -28,6 +29,7 @@ import {
 import { tr, glyph, navItems, type PageHandle } from "./workspace-ui";
 import { speakerDialog, speakerName } from "./speaker-ui";
 import { NotebookEditor } from "./editor";
+import { noteCandidates, renderNoteCandidates } from "./note-candidates";
 import {
   getViewSettings,
   setViewSettings,
@@ -108,8 +110,8 @@ let current: string | null = null,
 let transcriptSignature = "",
   noteSignature = "",
   suggestionSignature = "",
-  busy = false,
   chosenDevice = localStorage.getItem("omascribe-device") || "auto";
+let pollScope: { revision: string | null; pending: boolean } | null = null;
 const timers = new Map<string, ReturnType<typeof setTimeout>>(),
   queues = new Map<string, Promise<unknown>>();
 const drafts = new Map<string, { note: Note; content: string; kind: string }>();
@@ -192,6 +194,7 @@ function togglePanel(panel: Panel) {
   return update;
 }
 function shell() {
+  pollScope = null;
   document.body.classList.add("main-window");
   document.body.classList.toggle(
     "platform-macos",
@@ -213,6 +216,7 @@ function shell() {
   applyViews();
 }
 function meetingShell() {
+  pollScope = { revision: null, pending: false };
   dock?.dispose();
   dock = null;
   page = "meeting";
@@ -425,12 +429,35 @@ function stateText(s: Snapshot) {
   );
 }
 async function refresh() {
-  if (!current || busy || page !== "meeting") return;
-  busy = true;
+  const scope = pollScope;
+  if (!current || !scope || scope.pending || page !== "meeting") return;
+  scope.pending = true;
   const id = current;
+  const revision = scope.revision;
   try {
-    const data = await invoke<Snapshot>("snapshot", { id });
-    if (current !== id || page !== "meeting") return;
+    const result = await invoke<SnapshotPoll>("poll_snapshot", {
+      id,
+      revision,
+    });
+    if (scope !== pollScope || current !== id || page !== "meeting") return;
+    const previous = snap;
+    let data: Snapshot;
+    let savedChanged = false;
+    if (result.kind === "full") {
+      data = result.snapshot;
+      if (data.meeting.id !== id) return;
+      savedChanged =
+        result.revision === null ||
+        result.revision !== revision ||
+        previous?.meeting.id !== id;
+    } else {
+      if (revision === null || !previous || previous.meeting.id !== id) return;
+      data = {
+        ...previous,
+        meeting: { ...previous.meeting, duration_ms: result.duration_ms },
+        runtime: result.runtime,
+      };
+    }
     snap = data;
     $("#speaker-label").textContent = data.runtime.diarization_busy
       ? tr("分析中…", "Analyzing…")
@@ -510,16 +537,33 @@ async function refresh() {
     if (recording && r.elapsed_ms - r.processed_ms > 2500)
       $("#state-label").textContent +=
         ` · ${t("lag")} ${((r.elapsed_ms - r.processed_ms) / 1000).toFixed(1)}${t("seconds")}`;
-    renderNotes();
-    renderSuggestions();
-    renderTranscript();
-    $("#coverage").textContent =
-      `${t("coverage")} ${data.meeting.notes_cursor} / ${data.segments.length}`;
+    if (savedChanged) {
+      renderNotes();
+      renderSuggestions();
+      $("#coverage").textContent =
+        `${t("coverage")} ${data.meeting.notes_cursor} / ${data.segments.length}`;
+    }
+    const previousPartial =
+      previous?.runtime.meeting_id === id ? previous.runtime.partial : "";
+    renderTranscript(
+      savedChanged || previousPartial !== (own ? r.partial : ""),
+    );
+    if (result.kind === "full") scope.revision = result.revision;
+  } catch (error) {
+    if (scope !== pollScope || current !== id || page !== "meeting") return;
+    scope.revision = null;
+    throw error;
   } finally {
-    busy = false;
+    scope.pending = false;
   }
 }
 function localizedStatus(status: string) {
+  if (status === "自动整理已暂停：请修改笔记或转写，或点击“整理”重试")
+    return tr(
+      `自动整理已暂停。修改内容或点击“${t("generate")}”重试。`,
+      `Auto notes paused. Edit your content or select ${t("generate")} to retry.`,
+      `自動整理已暫停。修改內容或點擊「${t("generate")}」重試。`,
+    );
   if (
     status.includes("Unsupported speaker attribution:") ||
     status.includes("Ambiguous speaker attribution:")
@@ -635,7 +679,8 @@ async function persist(id: string) {
   try {
     await job;
   } catch (e) {
-    if (!drafts.has(id)) drafts.set(id, draft);
+    // A newer queued save owns recovery even while its draft is in flight.
+    if (queues.get(id) === job && !drafts.has(id)) drafts.set(id, draft);
     throw e;
   }
 }
@@ -677,7 +722,7 @@ function showCitation(id: string) {
     `<button class="subtle" data-edit-suggestion="${esc(s.id)}">${icon("edit")}${t("editLock")}</button><button class="subtle" data-dismiss="${esc(s.id)}">${t("dismiss")}</button>`,
   );
 }
-function renderTranscript() {
+function renderTranscript(checkRows = true) {
   if (!snap) return;
   const status = document.querySelector<HTMLElement>("#translation-status");
   if (status) {
@@ -697,6 +742,7 @@ function renderTranscript() {
   const select = document.querySelector<HTMLSelectElement>("#translation-mode");
   if (select && document.activeElement !== select)
     select.value = snap.translation_mode || "off";
+  if (!checkRows) return;
   const query = $<HTMLInputElement>("#search").value.toLowerCase().trim();
   const partial =
     snap.runtime.meeting_id === current ? snap.runtime.partial : "";
@@ -772,6 +818,7 @@ async function leavePage() {
   await pageHandle?.close();
   pageHandle = null;
   await flushNotes();
+  pollScope = null;
   notebookEditor?.destroy();
   notebookEditor = null;
   dock?.dispose();
@@ -811,7 +858,7 @@ async function navigate(
         await navigate("meetings");
       },
       language: async (l) => {
-        setLocale(l);
+        await setLocale(l);
         await pageHandle?.close();
         pageHandle = null;
         shell();
@@ -1020,11 +1067,41 @@ async function play(start: number, end?: number) {
 async function editTranscript(id: string) {
   const s = snap?.segments.find((s) => s.id === id);
   if (!s) return;
+  const note = snap?.notes.find((n) => n.kind === "document");
+  const content = note
+    ? ((noteSignature === note.id
+        ? notebookEditor?.getMarkdown()
+        : undefined) ??
+      drafts.get(note.id)?.content ??
+      note.content)
+    : "";
   modal(
     t("editTranscript"),
-    `<textarea id="edit-text" class="modal-text" rows="6">${esc(s.text)}</textarea>`,
-    `<button class="primary" id="save-edit">${t("save")}</button>`,
+    `<textarea id="edit-text" class="modal-text" rows="6">${esc(s.text)}</textarea><div id="edit-note-terms" class="edit-note-terms" hidden></div>`,
+    `<button class="outline" id="listen-edit">${tr("回听本段", "Listen to passage", "回聽本段")}</button><button class="primary" id="save-edit">${t("save")}</button>`,
   );
+  const input = $<HTMLTextAreaElement>("#edit-text");
+  const terms = $("#edit-note-terms");
+  const renderTerms = (values: string[]) => {
+    if (!terms.isConnected || !$<HTMLDialogElement>("#modal").open) return;
+    const candidates = noteCandidates(content, values);
+    renderNoteCandidates(
+      terms,
+      input,
+      candidates,
+      tr(
+        "笔记中的词：选择转写中的错误文字后点击替换；未选择时插入光标位置。请先回听核对。",
+        "Words from your notes: select transcript text to replace, or insert at the cursor. Listen and check first.",
+        "筆記中的詞：選取轉寫中的錯誤文字後點擊替換；未選取時插入游標位置。請先回聽核對。",
+      ),
+    );
+  };
+  renderTerms([]);
+  if (content)
+    void invoke<string[]>("extract_focus_terms", { content })
+      .then(renderTerms)
+      .catch(() => {});
+  $("#listen-edit").onclick = () => guard(() => play(s.start_ms, s.end_ms));
   $("#save-edit").onclick = () =>
     guard(async () => {
       await invoke("edit_segment", {
@@ -1119,7 +1196,15 @@ function shortcuts() {
 }
 async function quit() {
   await pageHandle?.flush?.();
-  if (current) snap = await invoke<Snapshot>("snapshot", { id: current });
+  const id = current;
+  const scope = pollScope;
+  if (id) {
+    const data = await invoke<Snapshot>("snapshot", { id });
+    if (current === id && pollScope === scope) {
+      snap = data;
+      if (scope) pollScope = { revision: null, pending: false };
+    }
+  }
   await flushNotes();
   if (
     snap?.runtime.recording ||

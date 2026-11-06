@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "parent": "2fc3dc5",
+  "status": "REJECTED after one unchanged original manual Q16 trial; default integration reverted, no admission",
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "9e41cd48ced2ea6279a8a070eb8bf4bc2c7fef47b4612247ec44589c6ab916ad",
+    "crates/core/src/notes/composition.rs": "465c128bf7f45bf83a3703c47f5de55d215b77d1ff3a475d7dfdefd6091e67c7",
+    "crates/core/src/notes/entity_refs.rs": "30068a5fe1849de137fbe33682b3fec7f50156905fc187e06ac683fdf99eb5bb",
+    "crates/core/src/notes/source_language.rs": "8d7cb8b29f86297d5a07de292f4c2cd4fea539585ea7a70f73d66533b889b4b2",
+    "crates/core/src/notes/validation.rs": "d427939dc4a8316d6649d5213e99d2640cfd97f0c8fb908d590d9a41ea2b2df0",
+    "crates/core/src/notes/writer.rs": "703634eb48ba7073a020efa1dfbe910d3f325a9ada8cf2560b3004fa81826995",
+    "crates/core/src/translation.rs": "89bc0b9a1ec3f16a9d59a75f5e82c86ae6cac6c09aab83580d66a329b4551a55"
+  },
+  "scope": [
+    "Rejected experimental integration used typed source units only for composition after missing-source preparation; it was not promoted. All implementation and tests remain recoverable at2314c56.",
+    "Per-source exact literal name references are rendered by Rust; original Names admission is unchanged, similar spellings/identities are not merged. Active input membership replaces a global historical-name requirement.",
+    "Each sentence is checked with its own cited original evidence before rendering; original ordinals and full source/version scope remain. Final article checks still enforce whole-document completion, metrics, qualifiers, budget corrections, historical citation retention, language and transactional staleness.",
+    "Sentence closure and exact paragraph range mappings prevent newline/quote folding from crossing sources. Paragraph citations derive from their actual sentences rather than all selected context.",
+    "Chinese completion word permits still require an entire unchanged Prepared target sentence (one neutral terminal period allowed), the real source citation and exact unit/paragraph body. General translated paraphrases do not earn this capability.",
+    "Each active source ordinal is assigned once. This is structure, not semantic entailment or completeness; real model output and the unchanged factual corpus still govern admission."
+  ],
+  "limits": {
+    "chat_requests_per_task_including_prepare_and_cpu_fallback": 2,
+    "max_output_tokens": 440,
+    "q16_context": 2048,
+    "paragraphs": 2,
+    "sentences": 12,
+    "raw_response_bytes": 65536,
+    "input_bytes": 16384,
+    "name_refs": 48,
+    "name_admission": "Existing bounded Names spellings only"
+  },
+  "checks": {
+    "core_passed": 472,
+    "core_ignored": 8,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "diff_check": "PASS",
+    "name_refs_focused": 9,
+    "composition_focused": 11,
+    "bridge_exact_sentence_control": "PASS",
+    "unit_local_vs_final_coverage_controls": 2,
+    "meaning": "Static checks passed before the real model failure; they did not admit the producer or0.3.5."
+  },
+  "review_repairs": [
+    "Closed quotes alone are not sentence boundaries; program now appends an actual external stop.",
+    "Unit-local checks do not require unrelated pending/metric/qualifier facts to be repeated in every sentence; final whole-article checks remain.",
+    "Original whole-article budget validation restored on the typed-document branch.",
+    "Background remains context/preferences, never current meeting evidence."
+  ],
+  "trial_protocol": "One unchanged original manual zh_recorded_mixed_prose_fidelity case, default preferences plus existing fixture zh, same installed assets/runtime, no automatic captions and no extra request/output/context budget. If quality, names, history or completion fails, stop this trial rather than tune prompts, relax guards or repeat the model.",
+  "release": "Stable0.3.4, no0.3.5 publication. CUDA/Vulkan remain optional separate components; no model/SDK/runtime/GPU package/native installer rebuilt. All P0/P1/P2/P3/G1/G2 work remains active.",
+  "trial_source": "2314c56465fa9a4bf2a2892251981a99eec4ad56",
+  "revert_source": "a69b9de",
+  "production_source_equivalence": "git diff --exit-code 2fc3dc5 HEAD -- crates/core/src crates/asr/src src-tauri/src returned0 after revert. All production inference/ASR/Tauri source bytes equal checked2fc3dc5; observed-state diagnostics are retained.",
+  "actual_trial": {
+    "passed": false,
+    "report": "artifacts/source-unit-producer-2026-10-30/trial/report.json",
+    "report_sha256": "c293ee7a3b9addcde64355f9f1d44bec51246465cfe311b8672bc2fa4c10f8ea",
+    "review": "artifacts/source-unit-producer-2026-10-30/trial/actual-review.json",
+    "review_sha256": "cea820af4533087df24e5dca482a21b0ae5f60ec85e1f4e86e12ff5d2e254f2c",
+    "model": "qwen3-1.7b",
+    "backend": "metal",
+    "preferences": "unchanged default plus original fixture zh",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "seconds": 13.42,
+    "requests": 4,
+    "input_tokens": 1500,
+    "output_tokens": 748,
+    "total_tokens": 2248,
+    "request_ms": 10869,
+    "validation_failures": 2,
+    "result": "Both batches selected sources1..5 because neither committed. Both completed JSON outputs assigned source IDs [1,2], [3,4], [1,5], repeating source1; structural validation rejected them. Actual cursor0, zero suggestions/history, source6 never reached generation.",
+    "semantic_review": "Raw output retained uncertain music/end-to-deep-night and used literal name refs, but repeated the music three times and concatenated unrelated music/professor facts. No new journalist response was seen. There was no final article; spelling/ID structure does not prove semantics.",
+    "stop_loss": "No prompt, protocol, fixture, request, output or context adjustment and no model retry after the failed trial. Do not remove the repeated-ID check solely to rescue this output: raw repetition and unrelated concatenation remain quality failures.",
+    "diagnostics": "The previously fixed P0 path reported both final validation failures, committed=false/outcome validation_rejected and actual cursor0 consistently. This is diagnostic confirmation, not producer quality approval.",
+    "cleanup": "All six owned APFS clones and per-run borrowed links removed; original weights/runtime/CLI hashes and metadata unchanged; no owned evaluator/CLI/llama survivors or unknown exits; no signals."
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "Production source veto and voice-identity control integrated; Q16 remains open",
+  "production_patch": "52912a2",
+  "integration_source": "1d404b34d3210b611c3e8fe1032c96d0bd7d7537",
+  "resource_component_pr": 13,
+  "scope": "Bounded Chinese reported-conditional participant attribution checks. No general entailment or whole-document coverage proof. Original transcript, quotes, canonical-name rules, two-request quota and runtime defaults retained.",
+  "actual_regression": {
+    "fixture": "zh_recorded_mixed_prose_fidelity",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "captured_output_source": "8da076757065edfacad2a5d87299317eafd11a76",
+    "previous_result": "Two generated articles invented a journalist response/decision and were committed; the full-validator replay first demonstrated actual false acceptance (0 passed/1 failed).",
+    "current_result": "Both original captured articles are rejected by the typed attribution check; a faithful conditional summary remains accepted."
+  },
+  "behavior": [
+    "A participant in an explicit reported conditional event does not thereby become the actual speaker, assessor or decision maker.",
+    "Each cited original source is parsed separately; a later independently asserted corresponding event by the same actor can authorize it. Uncited or unrelated actors/events cannot.",
+    "Unknown neighboring identity, long modifiers or payloads require an entire unchanged cited clause rather than an inferred subject.",
+    "Source literal names stay opaque to grammar. No role strings become hotwords or canonical aliases.",
+    "A real bound voice can report its complete unchanged quote. Author identity does not authorize a different payload, plan, assessment or decision; source/index and real sentence boundaries are checked.",
+    "Converting a complete model numbered presentation into prose retains item sentence boundaries. It does not merge the next actor speech into the preceding conditional participant."
+  ],
+  "bounds": {
+    "body_and_each_source_bytes": 65536,
+    "total_source_bytes": 262144,
+    "sources": 256,
+    "actors": 24,
+    "events_per_actor": 24,
+    "regex_compilation": "One event regex per literal actor, reused across body and cited sources",
+    "extra_model_requests": 0
+  },
+  "checks": {
+    "roles_core_passed": 420,
+    "roles_core_ignored": 8,
+    "integrated_core_passed": 429,
+    "integrated_core_ignored": 8,
+    "cli_tests_passed": 2,
+    "integration_tests_passed": 23,
+    "python_tests_run": 125,
+    "python_tests_skipped": 1,
+    "python_failures": 0,
+    "rustfmt": "PASS",
+    "strict_workspace_clippy": "PASS",
+    "diff_check": "PASS",
+    "clippy_initial_issue": "Single-argument concat lint failed, fixed without relaxing warnings; initial log retained."
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/replay-red.log",
+      "sha256": "2b2f13dec42e8eb61e10c054c93481df85e7653c36f71bda54d13187d31c9b9b"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/bound-speaker-red.log",
+      "sha256": "30b4104cf906314ce860ea048815e03dad09f14727ed87eaef17428d6b77a4cc"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/core-final.log",
+      "sha256": "7e6cbf87ccef760d4c16d3913357f778a515ebcf61a6b2d143a37e04bedd2a37"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/clippy-final.log",
+      "sha256": "7a53a631cad24eb8425483d91f9e8c4011578e6f0b96bbbba0facaea90f5654e"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/clippy-repaired.log",
+      "sha256": "c6eac5c708aa37c730d4b14559d14e1cd363bfa3c7e714f38f120136fd587dd2"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/integrated-core.log",
+      "sha256": "8cc4b6b1f70d06f01872a51f36dcf3877425a30c19daa9cdb61c576507357da7"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/integrated-python.log",
+      "sha256": "32e2355c81d02b5540e65fa19220ed18c538809b362b9b42870ae07e8f7fccb5"
+    },
+    {
+      "path": "artifacts/conditional-attribution-2026-10-30/integrated-clippy.log",
+      "sha256": "12f759499cd913d99c1bd8d2838b552b2face0a9cae5ebf2964fbcb8e612add1"
+    }
+  ],
+  "selection_note": "An earlier replay command selected zero tests because its exact name omitted the module prefix. Retained as replay-empty-selection.log and not counted as red evidence.",
+  "new_file_sha256": "5dab658b2d48461051525bbbdb424bce6643a6d46d70b1d3d7985414a2635fe0",
+  "resource_integration": {
+    "source": "127a100b423903d94c9ed529ca5ecebd2842dfa2",
+    "merged_into_integration": "1d404b34d3210b611c3e8fe1032c96d0bd7d7537",
+    "evidence": "docs/evaluation/apple-worker-retention-2026-10-30.json",
+    "actual_model_trial_source": "7dec40069d290c7605138ef92d87be86f3226331",
+    "default_llm_keep_alive_seconds": 0,
+    "decision": "Do not promote positive TTL: fewer cold starts but 3.83/4.91 times RSS area with no generation speedup on this bounded M5 workload. Real measured observations are not quality or release approval."
+  },
+  "remaining": [
+    "Original manual Q16 generation acceptance is still unproven; the current source-preparation/prose uncertain-completion mismatch is not resolved by this attribution veto.",
+    "Loss of substantive historical topics or names despite complete citations still needs source-bound content coverage.",
+    "Existing captions can weaken uncertain past completion; unchanged real resource corpus output remains a separate quality limitation.",
+    "No new native installer, SDK, weights or GPU component built; 0.3.5 has not been published."
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "status": "FAIL_STOPPED_CURRENT_PUBLIC_DEFAULT_NOT_RELEASE_READY",
+  "source": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+  "production_code": "317b1a76575de970aade706ad4470960b0df0481",
+  "build_info": {
+    "profile": "release",
+    "revision_at_compile": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "schema": 1,
+    "source_sha256": "e6bc104acb8884da18d5969d01f196604a00e7c0169d733be5a3d6e78f4c8eb8",
+    "target": "aarch64-apple-darwin"
+  },
+  "input_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2",
+  "setup_failure": {
+    "model_requests": 0,
+    "completed_responses": 0,
+    "wall_seconds": 2.429,
+    "error": [
+      "RuntimeError: Infrastructure notes status: 笔记模型尚未安装，请运行 scripts/bin/setup"
+    ],
+    "all_processes_exited": true,
+    "owned_assets_released": true,
+    "evidence": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/run/state.json",
+      "sha256": "e712e475cdb2640f32c07f0a6aaa4ec9a9248a84cfd159eba495b182885e1782"
+    }
+  },
+  "setup_correction": {
+    "change": "COW model destinations moved directly to managed workspace/model-store; early readiness check, fixed new claim and frozen dependency on original zero-request failure",
+    "production_input_sampling_or_budget_change": false,
+    "hardlinks": 0,
+    "unexecuted_hardlink_draft": "Reviewed and replaced before execution; its metadata retained, no model requests or clones in that draft.",
+    "runner": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/run-model-layout.py",
+      "sha256": "bae82e85fedf223eeb417e47b6c7d8c67285640ca323918fac0c1b39149e67f5"
+    },
+    "diff": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/model-layout-correction.diff",
+      "sha256": "f4ca2816304ce523a83208408f69d50dc175369e02b7dba83751f5960823240d"
+    }
+  },
+  "actual_result": {
+    "completed_job_count": 1,
+    "chat_requests": 2,
+    "completed_responses": 2,
+    "cursor_before": 0,
+    "cursor_after": 0,
+    "active_articles": 0,
+    "source6_selected_or_generated": false,
+    "name_field_edits": 0,
+    "stop_reason": "no_progress",
+    "oracle_errors": [
+      "Stopped after first no-progress generation",
+      "Q16 did not reach full frontier6"
+    ],
+    "attempts": [
+      {
+        "attempt": 1,
+        "mode": "compose",
+        "raw_sha256": "c2ea16d0562fab83ad4d5473bc050972e649f70070075e4e115b7bd7f13600e1",
+        "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+        "field_edits": [],
+        "usage": {
+          "completion_tokens": 187,
+          "prompt_tokens": 434,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "timings": {
+            "cache_n": 0,
+            "predicted_ms": 2453.738,
+            "predicted_n": 187,
+            "predicted_per_second": 75.80271406319665,
+            "predicted_per_token_ms": 13.192139784946235,
+            "prompt_ms": 194.381,
+            "prompt_n": 434,
+            "prompt_per_second": 2232.7285074158485,
+            "prompt_per_token_ms": 0.44788248847926265
+          },
+          "total_tokens": 621
+        }
+      },
+      {
+        "attempt": 2,
+        "mode": "compose",
+        "raw_sha256": "6f1e854422199d6c0a56616c4d7cac42a2fc6b3eb0b25cc9f420a08b95515d0e",
+        "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+        "field_edits": [],
+        "usage": {
+          "completion_tokens": 145,
+          "prompt_tokens": 471,
+          "prompt_tokens_details": {
+            "cached_tokens": 200
+          },
+          "timings": {
+            "cache_n": 200,
+            "predicted_ms": 1990.241,
+            "predicted_n": 145,
+            "predicted_per_second": 72.35304669133035,
+            "predicted_per_token_ms": 13.821118055555557,
+            "prompt_ms": 132.245,
+            "prompt_n": 271,
+            "prompt_per_second": 2049.2268138681993,
+            "prompt_per_token_ms": 0.487988929889299
+          },
+          "total_tokens": 616
+        }
+      }
+    ]
+  },
+  "manual_review": {
+    "status": "FAIL",
+    "summary": "Both responses copy repeated English music lines and misspell PAMELA FURGO森 as PAMELA FURGO 森. First also changes 潘 to PAN. No coherent Chinese article or current committed section. The raw responses retain two music MAY scopes and the photo if/apparent-risk condition and do not visibly attribute music to the professors, but those limited preserved claims do not make the output usable.",
+    "name_recovery_scope": "No complete independent bare report in the original unpunctuated English-plus-report line stack; no raw evidence permission is manufactured from presentation folding. The positive name-restoration controls do not prove this actual path recovered names.",
+    "evidence": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/independent-semantic-review.json",
+      "sha256": "f09a9cbcd14f2321249971fbda4a166cdb15eeaa102a6db7b006d4df552d778b"
+    }
+  },
+  "costs": {
+    "setup_failed_stage_wall_seconds": 2.429,
+    "corrected_stage_wall_seconds": 9.363,
+    "generation_command_seconds": 7.121,
+    "chat_request_ms_observed": 4776,
+    "prompt_tokens": 905,
+    "completion_tokens": 332,
+    "process_cpu_seconds_sampled_lower_bound": 1.8705900160000002,
+    "peak_generation_tree_rss_mib": 1480.34375,
+    "gpu_allocations_energy_setup_cleanup_cpu": "unknown",
+    "performance_claim": "none; invalid output, no successful same-work performance comparison"
+  },
+  "runtime": {
+    "backend_trace": [
+      {
+        "backend": "metal",
+        "budget_mib": 4096,
+        "reused": false,
+        "startup_ms": 1681
+      }
+    ],
+    "layers": [
+      [
+        "29",
+        "29"
+      ]
+    ],
+    "fallback": null,
+    "model_worker_log_present": true,
+    "device_lines": [
+      "0.00.272.175 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free"
+    ],
+    "passed": true
+  },
+  "sampling_evidence": {
+    "source_static": {
+      "seed": 42,
+      "max_tokens": 440,
+      "temperature": 0.1,
+      "thinking": false,
+      "shared_job_budget": 2
+    },
+    "actual_wire_request_sha256": null,
+    "server_inherited_sampling": "unknown",
+    "unchanged_existing_protocols": true
+  },
+  "cleanup": {
+    "all_processes_exited": true,
+    "original_model_files": 6,
+    "original_runtime_files": 2,
+    "originals_sha_and_metadata_pre_post_unchanged": true,
+    "owned_clone_files_per_setup": 9,
+    "both_owned_sets_released": true,
+    "model_or_component_downloads": 0,
+    "installer_builds": 0
+  },
+  "ci": [
+    {
+      "conclusion": "success",
+      "databaseId": 42014171641,
+      "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+      "status": "completed",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171641",
+      "workflowName": "Linux compatibility"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 42014171606,
+      "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+      "status": "completed",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171606",
+      "workflowName": "Optional acceleration components"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 42014171561,
+      "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+      "status": "completed",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171561",
+      "workflowName": "Website validation"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 42014171564,
+      "headSha": "aa8c52fb49ab4253d953c120ab796f967229fa94",
+      "status": "completed",
+      "url": "https://github.com/EazyLee30/omascribe/actions/runs/42014171564",
+      "workflowName": "CI"
+    }
+  ],
+  "evidence": {
+    "state": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/run-model-layout/state.json",
+      "sha256": "5abc259fcaa7a914db8d9ba9d744af8431906e1aa3e985a1f7bf679943c73ec5"
+    },
+    "request_audit": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/run-model-layout/job-1/request-audit.json",
+      "sha256": "6b36c5fffc165e57e31233c0c0d4141e0325644d79a56ca2a6cdb079e4333517"
+    },
+    "frozen_inputs": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/frozen-inputs-model-layout.json",
+      "sha256": "72d1ef9cfa7885acc549d320be0e0cd85a70eda370e1821dc79ec96fc576c103"
+    },
+    "build": {
+      "path": "artifacts/current-report-acceptance-2026-11-05/build-proof.json",
+      "sha256": "e7aa5fe2c2630c69dad35515a4917d46b048d5e4ddaf6ed0a68efe39099c79ef"
+    }
+  },
+  "next_action": "Address complex observed literal spelling in the actual initial generation path without relaxing final names/facts/language/current citation checks or enlarging the request budget. Full article availability, source6, real audio names and native cross-platform acceptance remain open."
+}

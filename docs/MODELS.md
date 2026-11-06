@@ -1,6 +1,6 @@
 # Models and native runtimes
 
-Bundled assets are pinned in [`models.lock.json`](../models.lock.json); selectable/downloadable models are pinned in [`model-catalog.json`](../model-catalog.json). `bin/setup` verifies downloaded weights before installing them. Runtime inference never downloads assets.
+Bundled assets are pinned in [`models.lock.json`](../models.lock.json); selectable/downloadable models are pinned in [`model-catalog.json`](../model-catalog.json). `scripts/bin/setup` verifies downloaded weights before installing them. Runtime inference never downloads assets.
 
 | Component | Pinned choice | Role |
 | --- | --- | --- |
@@ -16,17 +16,17 @@ The initial prototype used Qwen3.5-0.8B. It is no longer the default. The docume
 ## Reproduce setup
 
 ```bash
-bin/setup --models-only
-bin/setup --runtime-only   # llama.cpp and caption library
-bin/setup --overlay-only   # caption library only
-bin/setup --verify         # verify installed weight hashes
+scripts/bin/setup --models-only
+scripts/bin/setup --runtime-only   # llama.cpp and caption library
+scripts/bin/setup --overlay-only   # caption library only
+scripts/bin/setup --verify         # verify installed weight hashes
 ```
 
 Builds are pinned and use one job. Linux caption support is built into the user's data directory; it does not replace system libraries. If Meson/Ninja are unavailable, setup creates an isolated build-tools virtual environment. The Linux overlay requires GTK3, Wayland and wayland-protocols development files; macOS skips this Linux-only build. The x86-64 llama.cpp preset requires AVX2. Apple Silicon builds enable Metal and Accelerate with embedded Metal kernels.
 
 ## Licenses
 
-OmaScribe code and original SVG artwork are MIT. Qwen3-1.7B weights are Apache-2.0; sherpa-onnx and the selected Zipformer model card specify Apache-2.0. Native packages include upstream model cards and dependency license notices. llama.cpp is MIT. gtk-layer-shell as a library is LGPL-3.0-or-later, with individual portions under MIT/GPL notices; all provided notices are retained in `licenses/` and its source is pinned above. It is loaded as a separate replaceable shared library. Tauri, Tiptap, GTK and the remaining dependencies retain their own licenses. The app's MIT license does not relicense these components.
+OmaScribe code and original SVG artwork are MIT. Qwen3-1.7B weights are Apache-2.0; sherpa-onnx and the selected Zipformer model card specify Apache-2.0. Native packages include upstream model cards and dependency license notices. llama.cpp is MIT. gtk-layer-shell as a library is LGPL-3.0-or-later, with individual portions under MIT/GPL notices; all provided notices are retained in `packaging/licenses/` and its source is pinned above. It is loaded as a separate replaceable shared library. Tauri, Tiptap, GTK and the remaining dependencies retain their own licenses. The app's MIT license does not relicense these components.
 
 Primary sources: [ASR model documentation](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html), [Qwen model repository](https://huggingface.co/unsloth/Qwen3-1.7B-GGUF), [llama.cpp](https://github.com/ggml-org/llama.cpp), [gtk-layer-shell](https://github.com/wmww/gtk-layer-shell).
 

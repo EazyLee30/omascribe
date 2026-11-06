@@ -227,12 +227,67 @@ impl Engine {
         self.diarize_with_count(id, None)
     }
     pub fn diarize_with_count(self: &Arc<Self>, id: &str, count: Option<u32>) -> Result<()> {
-        let _gate = self.config_lock.lock().unwrap();
-        self.require_available()?;
-        self.configuration_idle()?;
+        self.diarize_with_admission_readers(
+            id,
+            count,
+            || self.verified_model("speaker-diarization"),
+            crate::platform::available_memory_mib,
+        )
+    }
+    // The public entry always uses the catalog verifier and platform memory
+    // reader. Injection only makes their existing admission order observable.
+    fn diarize_with_admission_readers(
+        self: &Arc<Self>,
+        id: &str,
+        count: Option<u32>,
+        verify_model: impl FnOnce() -> Result<crate::model_integrity::Receipt>,
+        available_memory: impl Fn() -> Option<u64>,
+    ) -> Result<()> {
         if count.is_some_and(|n| n > 16) {
             bail!("Speaker count must be 0–16");
         }
+        // Only inexpensive metadata is needed to reject an already-ineligible
+        // action. Never decode/clone a long meeting's source rows here, and
+        // release every gate before cold model verification reads weights.
+        {
+            let _gate = self.config_lock.lock().unwrap();
+            self.require_available()?;
+            self.configuration_idle()?;
+            let (mut meeting, has_segments) = {
+                let db = self.store.lock().unwrap();
+                let meeting = db.meeting(id)?;
+                if db.conn.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM deleted_meetings WHERE id=?1)",
+                    [id],
+                    |row| row.get::<_, bool>(0),
+                )? {
+                    bail!("This meeting is in Deleted; restore it from Settings → Storage");
+                }
+                let has_segments = db.has_segments(&meeting)?;
+                (meeting, has_segments)
+            };
+            if !has_segments {
+                bail!("Transcribe audio before separating speakers");
+            }
+            {
+                let runtime = self.status.lock().unwrap();
+                if runtime.meeting_id.as_deref() == Some(id) {
+                    meeting.duration_ms = meeting.duration_ms.max(runtime.elapsed_ms);
+                }
+            }
+            if meeting.duration_ms > 7_200_000 {
+                bail!("Speaker analysis supports recordings up to two hours; split longer recordings first");
+            }
+            let required = 700 + meeting.duration_ms * 64 / 1024 / 1024;
+            if available_memory().is_none_or(|m| m < required) {
+                bail!("Not enough memory for speaker analysis");
+            }
+        }
+        let verified = verify_model()?;
+        let _gate = self.config_lock.lock().unwrap();
+        self.require_available()?;
+        self.configuration_idle()?;
+        verified.check_current()?;
         let before = self.snapshot(id)?;
         if before.segments.is_empty() {
             bail!("Transcribe audio before separating speakers");
@@ -241,14 +296,15 @@ impl Engine {
             bail!("Speaker analysis supports recordings up to two hours; split longer recordings first");
         }
         let required = 700 + before.meeting.duration_ms * 64 / 1024 / 1024;
-        if crate::platform::available_memory_mib().is_none_or(|m| m < required) {
+        if available_memory().is_none_or(|m| m < required) {
             bail!("Not enough memory for speaker analysis");
         }
-        let dir = self.model_directory("speaker-diarization")?;
+        let dir = verified.directory();
         let prefs = self.preferences.lock().unwrap().clone();
         let job = uuid::Uuid::new_v4().to_string();
         let output = self.root.join(format!("speaker-{job}.json"));
-        let mut child = crate::platform::child_command(self.worker_path())
+        let mut command = crate::platform::child_command(self.worker_path());
+        command
             .arg("--diarize")
             .arg(dir.join("segmentation.onnx"))
             .arg(dir.join("embedding.onnx"))
@@ -258,9 +314,16 @@ impl Engine {
             .arg(prefs.threads.to_string())
             .stdin(Stdio::null())
             .stdout(Stdio::null())
-            .stderr(std::fs::File::create(self.root.join("diarization.log"))?)
+            .stderr(std::fs::File::create(self.root.join("diarization.log"))?);
+        verified.check_current()?;
+        let mut child = command
             .spawn()
             .context("Unable to start speaker analysis")?;
+        if let Err(error) = verified.check_current() {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(error);
+        }
         self.diarization_pid.store(child.id(), Ordering::SeqCst);
         self.diarization_cancelled.lock().unwrap().remove(id);
         {
@@ -287,6 +350,7 @@ impl Engine {
                     }
                     std::thread::sleep(Duration::from_millis(250));
                 }
+                verified.check_current()?;
                 if std::fs::metadata(&output)?.len() > 16 * 1024 * 1024 {
                     bail!("Speaker result too large");
                 }
@@ -376,6 +440,282 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sha2::{Digest, Sha256};
+
+    fn admission_model(engine: &Engine) -> Result<crate::models::Model> {
+        let mut model = crate::models::model("speaker-diarization")?.clone();
+        let directory = engine.root.join("model-store").join(&model.id);
+        std::fs::create_dir_all(&directory)?;
+        for asset in &mut model.files {
+            asset.bytes = 4;
+            asset.sha256 = format!("{:x}", Sha256::digest(b"good"));
+            std::fs::write(directory.join(&asset.name), b"good")?;
+        }
+        Ok(model)
+    }
+
+    fn admission_source(engine: &Engine, meeting: &crate::Meeting) -> Result<()> {
+        engine.store.lock().unwrap().save_segment(&Segment {
+            id: format!("{}:1:1", meeting.id),
+            meeting_id: meeting.id.clone(),
+            run: meeting.run,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "录音仍待核对。".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        })
+    }
+
+    fn assert_admission_never_started(engine: &Engine) {
+        assert_eq!(engine.diarization_pid.load(Ordering::SeqCst), 0);
+        let status = engine.status.lock().unwrap();
+        assert!(!status.diarization_busy);
+        assert!(status.diarization_meeting_id.is_none());
+        assert!(!status.notes_busy);
+        drop(status);
+        assert!(!engine.note_busy.load(Ordering::SeqCst));
+        assert_eq!(engine.inference_pool.status().starts, 0);
+        assert!(!engine.root.join("diarization.log").exists());
+    }
+
+    fn admission_asset_hash(path: &std::path::Path, expected: u64) -> Result<String> {
+        use std::io::Read;
+        let mut input = std::fs::File::open(path)?;
+        let mut hash = Sha256::new();
+        let mut buffer = [0u8; 64 * 1024];
+        let mut bytes = 0u64;
+        loop {
+            let n = input.read(&mut buffer)?;
+            if n == 0 {
+                break;
+            }
+            bytes = bytes.checked_add(n as u64).context("Asset size overflow")?;
+            anyhow::ensure!(bytes <= expected, "Asset grew during fixture hashing");
+            hash.update(&buffer[..n]);
+        }
+        anyhow::ensure!(bytes == expected, "Asset shrank during fixture hashing");
+        Ok(format!("{:x}", hash.finalize()))
+    }
+
+    #[test]
+    fn cold_speaker_admission_rejections_do_not_hash_model_assets() -> Result<()> {
+        // These are valid catalog-descriptor fixtures, not executable ONNX
+        // models. Each path must reach its existing admission error without
+        // constructing a worker, so native model execution is impossible.
+        let mut observations = Vec::new();
+        for rejection in ["recording", "empty", "too_long", "memory"] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let mut meeting = engine.create_meeting("Speaker admission")?;
+            let model = admission_model(&engine)?;
+            if rejection != "empty" {
+                admission_source(&engine, &meeting)?;
+            }
+            if rejection == "recording" {
+                engine.status.lock().unwrap().recording = true;
+            }
+            if rejection == "too_long" {
+                meeting.duration_ms = 7_200_001;
+                engine.store.lock().unwrap().save_meeting(&meeting)?;
+            }
+            let expected = match rejection {
+                "recording" => "Finish recording, transcription and writing before changing models",
+                "empty" => "Transcribe audio before separating speakers",
+                "too_long" => "Speaker analysis supports recordings up to two hours; split longer recordings first",
+                _ => "Not enough memory for speaker analysis",
+            };
+            assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+            let error = engine
+                .diarize_with_admission_readers(
+                    &meeting.id,
+                    None,
+                    || engine.test_verify_model_spec(&model),
+                    || Some(if rejection == "memory" { 0 } else { u64::MAX }),
+                )
+                .expect_err("known ineligible actions cannot start speaker analysis");
+            assert_eq!(error.to_string(), expected, "{rejection}");
+            assert_admission_never_started(&engine);
+            let bytes = engine.model_integrity.hashed_bytes();
+            println!("SPEAKER_PREFLIGHT_REJECTION={rejection} MODEL_BYTES_HASHED={bytes}");
+            observations.push((rejection, bytes));
+        }
+        assert!(
+            observations.iter().all(|(_, bytes)| *bytes == 0),
+            "cold admission refusals must not read model weights: {observations:?}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn eligible_speaker_admission_verifies_then_rechecks_each_original_gate() -> Result<()> {
+        for change in ["recording", "run", "segments", "duration", "memory"] {
+            let root = tempfile::tempdir()?;
+            let engine = Engine::open(root.path().into())?;
+            let mut meeting = engine.create_meeting("Speaker hash recheck")?;
+            meeting.duration_ms = 1000;
+            engine.store.lock().unwrap().save_meeting(&meeting)?;
+            admission_source(&engine, &meeting)?;
+            let model = admission_model(&engine)?;
+            let memory = std::cell::Cell::new(u64::MAX);
+            let verified = std::cell::Cell::new(false);
+            let error = engine
+                .diarize_with_admission_readers(
+                    &meeting.id,
+                    None,
+                    || {
+                        // The eligible path must reach real asset verification
+                        // with no configuration/Store/preferences lock held.
+                        assert!(engine.config_lock.try_lock().is_ok());
+                        assert!(engine.store.try_lock().is_ok());
+                        assert!(engine.preferences.try_lock().is_ok());
+                        let receipt = engine.test_verify_model_spec(&model)?;
+                        verified.set(true);
+                        match change {
+                            "recording" => engine.status.lock().unwrap().recording = true,
+                            "run" => {
+                                let mut current = meeting.clone();
+                                current.run += 1;
+                                engine.store.lock().unwrap().save_meeting(&current)?;
+                            }
+                            "segments" => {
+                                engine.store.lock().unwrap().conn.execute(
+                                    "DELETE FROM segments WHERE meeting_id=?1 AND run=?2",
+                                    rusqlite::params![meeting.id, meeting.run],
+                                )?;
+                            }
+                            "duration" => {
+                                let mut current = meeting.clone();
+                                current.duration_ms = 7_200_001;
+                                engine.store.lock().unwrap().save_meeting(&current)?;
+                            }
+                            _ => memory.set(0),
+                        }
+                        Ok(receipt)
+                    },
+                    || Some(memory.get()),
+                )
+                .expect_err("a passed metadata hint cannot authorize changed execution state");
+            let expected = match change {
+                "recording" => "Finish recording, transcription and writing before changing models",
+                "run" | "segments" => "Transcribe audio before separating speakers",
+                "duration" => "Speaker analysis supports recordings up to two hours; split longer recordings first",
+                _ => "Not enough memory for speaker analysis",
+            };
+            assert_eq!(error.to_string(), expected, "{change}");
+            assert!(verified.get());
+            assert_eq!(engine.model_integrity.hashed_bytes(), 8, "{change}");
+            assert_admission_never_started(&engine);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn old_run_speaker_rows_do_not_admit_an_empty_current_run() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let mut meeting = engine.create_meeting("Speaker current run")?;
+        admission_source(&engine, &meeting)?;
+        meeting.run += 1;
+        engine.store.lock().unwrap().save_meeting(&meeting)?;
+        let model = admission_model(&engine)?;
+        let error = engine
+            .diarize_with_admission_readers(
+                &meeting.id,
+                None,
+                || engine.test_verify_model_spec(&model),
+                || Some(u64::MAX),
+            )
+            .expect_err("a previous run cannot authorize current speaker analysis");
+        assert_eq!(
+            error.to_string(),
+            "Transcribe audio before separating speakers"
+        );
+        assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+        assert_admission_never_started(&engine);
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "explicit pinned local speaker asset copy/hash control; never runs an ONNX model"]
+    fn live_public_recording_speaker_rejection_does_not_hash_assets() -> Result<()> {
+        use std::{fs, path::PathBuf};
+        let original = PathBuf::from(std::env::var("OMASCRIBE_TEST_SPEAKER_MODELS")?);
+        let model = crate::models::model("speaker-diarization")?;
+        let root = tempfile::tempdir()?;
+        let engine = Engine::open(root.path().into())?;
+        let directory = root.path().join("model-store").join(&model.id);
+        fs::create_dir_all(&directory)?;
+        let mut originals = Vec::new();
+        for asset in &model.files {
+            let path = original.join(&asset.name);
+            let before = fs::symlink_metadata(&path)?;
+            anyhow::ensure!(before.file_type().is_file() && before.len() == asset.bytes);
+            let before_hash = admission_asset_hash(&path, asset.bytes)?;
+            assert_eq!(before_hash, asset.sha256);
+            let owned = directory.join(&asset.name);
+            #[cfg(target_os = "macos")]
+            {
+                let mut command = std::process::Command::new("/bin/cp");
+                command.arg("-c").arg(&path).arg(&owned);
+                crate::probe::capture(&mut command, Duration::from_secs(30), 4096)?;
+            }
+            #[cfg(not(target_os = "macos"))]
+            fs::copy(&path, &owned)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::MetadataExt;
+                let copy = fs::symlink_metadata(&owned)?;
+                assert_ne!((before.dev(), before.ino()), (copy.dev(), copy.ino()));
+            }
+            assert_eq!(admission_asset_hash(&owned, asset.bytes)?, asset.sha256);
+            originals.push((path, before, before_hash));
+        }
+        let meeting = engine.create_meeting("Public speaker admission")?;
+        admission_source(&engine, &meeting)?;
+        engine.status.lock().unwrap().recording = true;
+        assert_eq!(engine.model_integrity.hashed_bytes(), 0);
+        let error = engine.diarize(&meeting.id).unwrap_err();
+        assert_admission_never_started(&engine);
+        let bytes = engine.model_integrity.hashed_bytes();
+        println!("PUBLIC_SPEAKER_PREFLIGHT_MODEL_BYTES_HASHED={bytes}");
+        // Windows cached receipts must be released before owned file cleanup.
+        drop(engine);
+        fs::remove_dir_all(&directory)?;
+        assert!(!directory.exists());
+        for (path, before, before_hash) in originals {
+            assert_eq!(admission_asset_hash(&path, before.len())?, before_hash);
+            let after = fs::symlink_metadata(path)?;
+            assert_eq!(after.len(), before.len());
+            assert_eq!(after.modified()?, before.modified()?);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::MetadataExt;
+                assert_eq!((after.dev(), after.ino()), (before.dev(), before.ino()));
+                assert_eq!(
+                    (after.ctime(), after.ctime_nsec()),
+                    (before.ctime(), before.ctime_nsec())
+                );
+            }
+        }
+        println!(
+            "PUBLIC_SPEAKER_PREFLIGHT_SETUP_HASH_BYTES={} OWNED_MODEL_BYTES={}",
+            model.files.iter().map(|asset| asset.bytes).sum::<u64>() * 3,
+            model.files.iter().map(|asset| asset.bytes).sum::<u64>()
+        );
+        assert_eq!(
+            error.to_string(),
+            "Finish recording, transcription and writing before changing models"
+        );
+        assert_eq!(
+            bytes, 0,
+            "public recording refusal must not hash speaker assets"
+        );
+        Ok(())
+    }
+
     #[test]
     fn cancelling_suspends_automatic_retries_until_reenabled() {
         let root = tempfile::tempdir().unwrap();

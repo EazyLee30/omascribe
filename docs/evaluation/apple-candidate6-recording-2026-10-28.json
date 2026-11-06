@@ -1,0 +1,1051 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-27T17:32:15.851864+00:00",
+  "candidate": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+  "scope": "Actual Engine paced public-PCM replay: two reversed-order ASR-only / Metal caption+minutes trials. Functional latency/finalization check, not physical microphone or overall ASR quality acceptance.",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "d52a1a6a5a2f402e0274cea6df5b7fff6acdc8b63c248b2bc7971e3c1cbc2fff",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "f7eea00d5534438d73e6e3a1be9325eb54cd3e03a451799a20535798a2eec9cc",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "cfc9b6ffb82751b81194f7935ab52d8152a011c4da40715141a9a2ea1ec4e16d",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "9bfbfc088a8fcaa471ccee31057a8f99fe4fde66",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "bindings": {
+    "artifacts/benchmarks/apple-candidate6-recording-20261028.json": "2848758cdab05b40e4531dba1e98bc36fa8bce53431dcf73b61bcf6543a9d69f",
+    "artifacts/benchmarks/apple-candidate6-recording-20261028-build.json": "dbb395e23788acc5df8ea7724f2cdc7f7e187a98c6e1daca4711a696257e7a1a",
+    "artifacts/benchmarks/apple-candidate5-recording-20261028.json": "a3eb3ed9a7a64095b7442ac029c0f0dc82bc06a974e5ce5bc904ef0e35b53c50"
+  },
+  "product_sources_equal_candidate_at_build": true,
+  "asr_worker_sha256": "085111cd6bea4579cd9997323b438ec14d350f1fa18330406b7f436eefb3d33a",
+  "runtime_files": {
+    "build-info.json": {
+      "bytes": 93,
+      "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+    },
+    "llama-server": {
+      "bytes": 18953328,
+      "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+    }
+  },
+  "models": {
+    "zipformer-small": [
+      {
+        "name": "encoder-epoch-99-avg-1.int8.onnx",
+        "url": "",
+        "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb",
+        "bytes": 42980793
+      },
+      {
+        "name": "decoder-epoch-99-avg-1.onnx",
+        "url": "",
+        "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906",
+        "bytes": 13877276
+      },
+      {
+        "name": "joiner-epoch-99-avg-1.int8.onnx",
+        "url": "",
+        "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9",
+        "bytes": 3228485
+      },
+      {
+        "name": "tokens.txt",
+        "url": "",
+        "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+        "bytes": 56317
+      },
+      {
+        "name": "bpe.model",
+        "url": "",
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
+        "bytes": 244836
+      }
+    ],
+    "qwen3-1.7b": [
+      {
+        "name": "Qwen3-1.7B-Q4_K_M.gguf",
+        "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+        "bytes": 1107409472
+      }
+    ]
+  },
+  "fixture": {
+    "case": {
+      "name": "fleurs_mixed_zh_en_02",
+      "language": "mixed",
+      "file": "fleurs_mixed_zh_en_02.wav",
+      "reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+      "sha256": "dd812d13c76ace12fbb023e372b3ddd8e90dd0582dc0b7787d4df1d6f9ba28db",
+      "kind": "constructed-language-switches",
+      "gap_ms": 250,
+      "pieces": [
+        {
+          "case": "fleurs_en_us_1771",
+          "file": "en_us-2589557553267364799-16k.wav",
+          "sha256": "a391840f808d7e487bd612497ff1385abf3fe9ee616068896d5c0018972dd76b",
+          "start_sample": 0,
+          "end_sample": 143040
+        },
+        {
+          "case": "fleurs_cmn_hans_cn_1843",
+          "file": "cmn_hans_cn-14716260585206763911-16k.wav",
+          "sha256": "4554124b47de848335d6e1bcb028b6a80754752c7e347be786265d37108e20e5",
+          "start_sample": 147040,
+          "end_sample": 285280
+        },
+        {
+          "case": "fleurs_en_us_1914",
+          "file": "en_us-621925716775998155-16k.wav",
+          "sha256": "96f6c50da52309d088aaffab75a7b18b9c9da13ecbe81d3ae5c3d8d1e6ffbd76",
+          "start_sample": 289280,
+          "end_sample": 383360
+        }
+      ],
+      "limitation": "Spliced held-out utterances, not natural code-switching or diarization labels"
+    },
+    "seconds": 78,
+    "reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressedremember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressedremember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+    "reference_units": [
+      "remember",
+      "that",
+      "even",
+      "though",
+      "music",
+      "on",
+      "the",
+      "main",
+      "stages",
+      "may",
+      "have",
+      "finished",
+      "there",
+      "may",
+      "be",
+      "sections",
+      "of",
+      "the",
+      "festival",
+      "that",
+      "will",
+      "keep",
+      "playing",
+      "music",
+      "until",
+      "late",
+      "into",
+      "the",
+      "night",
+      "邓",
+      "迪",
+      "大",
+      "学",
+      "university",
+      "of",
+      "dundee",
+      "的",
+      "pamela",
+      "ferguson",
+      "教",
+      "授",
+      "指",
+      "出",
+      "记",
+      "者",
+      "如",
+      "果",
+      "公",
+      "布",
+      "嫌",
+      "疑",
+      "人",
+      "的",
+      "照",
+      "片",
+      "等",
+      "信",
+      "息",
+      "的",
+      "话",
+      "似",
+      "乎",
+      "确",
+      "实",
+      "存",
+      "在",
+      "危",
+      "害",
+      "性",
+      "twentieth",
+      "century",
+      "research",
+      "has",
+      "shown",
+      "that",
+      "there",
+      "are",
+      "two",
+      "pools",
+      "of",
+      "genetic",
+      "variation",
+      "hidden",
+      "and",
+      "expressed",
+      "remember",
+      "that",
+      "even",
+      "though",
+      "music",
+      "on",
+      "the",
+      "main",
+      "stages",
+      "may",
+      "have",
+      "finished",
+      "there",
+      "may",
+      "be",
+      "sections",
+      "of",
+      "the",
+      "festival",
+      "that",
+      "will",
+      "keep",
+      "playing",
+      "music",
+      "until",
+      "late",
+      "into",
+      "the",
+      "night",
+      "邓",
+      "迪",
+      "大",
+      "学",
+      "university",
+      "of",
+      "dundee",
+      "的",
+      "pamela",
+      "ferguson",
+      "教",
+      "授",
+      "指",
+      "出",
+      "记",
+      "者",
+      "如",
+      "果",
+      "公",
+      "布",
+      "嫌",
+      "疑",
+      "人",
+      "的",
+      "照",
+      "片",
+      "等",
+      "信",
+      "息",
+      "的",
+      "话",
+      "似",
+      "乎",
+      "确",
+      "实",
+      "存",
+      "在",
+      "危",
+      "害",
+      "性",
+      "twentieth",
+      "century",
+      "research",
+      "has",
+      "shown",
+      "that",
+      "there",
+      "are",
+      "two",
+      "pools",
+      "of",
+      "genetic",
+      "variation",
+      "hidden",
+      "and",
+      "expressed",
+      "remember",
+      "that",
+      "even",
+      "though",
+      "music",
+      "on",
+      "the",
+      "main",
+      "stages",
+      "may",
+      "have",
+      "finished",
+      "there",
+      "may",
+      "be",
+      "sections",
+      "of",
+      "the",
+      "festival",
+      "that",
+      "will",
+      "keep",
+      "playing",
+      "music",
+      "until",
+      "late",
+      "into",
+      "the",
+      "night",
+      "邓",
+      "迪",
+      "大",
+      "学",
+      "university",
+      "of",
+      "dundee",
+      "的",
+      "pamela",
+      "ferguson",
+      "教",
+      "授",
+      "指",
+      "出",
+      "记",
+      "者",
+      "如",
+      "果",
+      "公",
+      "布",
+      "嫌",
+      "疑",
+      "人",
+      "的",
+      "照",
+      "片",
+      "等",
+      "信",
+      "息",
+      "的",
+      "话",
+      "似",
+      "乎",
+      "确",
+      "实",
+      "存",
+      "在",
+      "危",
+      "害",
+      "性",
+      "twentieth",
+      "century",
+      "research",
+      "has",
+      "shown",
+      "that",
+      "there",
+      "are",
+      "two",
+      "pools",
+      "of",
+      "genetic",
+      "variation",
+      "hidden",
+      "and",
+      "expressed"
+    ],
+    "expected_pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+    "input_wav_sha256": "ff4f1c89f5bccc9d971201cb3efa77ece75c1959dac4a10e13cd5516937080f0",
+    "manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69"
+  },
+  "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+  "audio_samples": 1248000,
+  "audio_seconds": 78,
+  "all_four_pcm_and_asr_units_identical": true,
+  "same_public_pcm_and_asr_units_as_candidate5": true,
+  "ordered_trials": [
+    {
+      "trial": 1,
+      "arm": "asr-only",
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": false,
+        "translation_mode": "off",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "scheduler": {
+        "live_catchup": "0",
+        "post_capture_drain": "1"
+      },
+      "telemetry": {
+        "samples": 379,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 212,
+        "lag_p50_ms": 152.0,
+        "lag_p95_ms": 392.0,
+        "lag_max_ms": 576,
+        "capture_wall_overhead_ms": 249,
+        "asr_compute_rtf": 0.05387618121794872,
+        "live_translations": 0,
+        "live_notes_cursor": 0,
+        "live_worker_samples": 0,
+        "worker_starts": 0,
+        "worker_reuses": 0
+      },
+      "asr_score": {
+        "substitutions": 16,
+        "deletions": 60,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.30196078431372547
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 0,
+        "wall_ms": 78249
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0
+      },
+      "metal_evidence": {
+        "last_worker_layers": [],
+        "log_sha256": null,
+        "fallback": false,
+        "worker_events": [],
+        "trace_sha256": null
+      },
+      "passed": true,
+      "errors": [],
+      "process": {
+        "code": 0,
+        "seconds": 78.313,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 291,
+          "processes_seen": 3,
+          "cpu_seconds_sampled": 5.375909719999999,
+          "peak_tree_rss_mib": 222.796875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "asr_assets": {
+        "model": "zipformer-small",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 42980793,
+            "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13877276,
+            "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228485,
+            "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          },
+          {
+            "name": "bpe.model",
+            "bytes": 244836,
+            "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161648,
+          "sha256": "085111cd6bea4579cd9997323b438ec14d350f1fa18330406b7f436eefb3d33a"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      }
+    },
+    {
+      "trial": 1,
+      "arm": "metal-concurrent",
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "scheduler": {
+        "live_catchup": "0",
+        "post_capture_drain": "1"
+      },
+      "telemetry": {
+        "samples": 391,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 214,
+        "lag_p50_ms": 152.0,
+        "lag_p95_ms": 392.0,
+        "lag_max_ms": 456,
+        "capture_wall_overhead_ms": 197,
+        "asr_compute_rtf": 0.051544444564102565,
+        "live_translations": 6,
+        "live_notes_cursor": 4,
+        "live_worker_samples": 50,
+        "worker_starts": 8,
+        "worker_reuses": 1
+      },
+      "asr_score": {
+        "substitutions": 16,
+        "deletions": 60,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.30196078431372547
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 4,
+        "sections": 1,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 2907,
+        "wall_ms": 81105
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 6,
+        "sections": 1
+      },
+      "metal_evidence": {
+        "last_worker_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "log_sha256": "7761f2592375f3795a477ee3a34cd4010ca1fa61fe62a0559bc5e208bb09649a",
+        "fallback": false,
+        "worker_events": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 632
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 413
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 412
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 414
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 422
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 412
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 413
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 409
+          }
+        ],
+        "trace_sha256": "e14c38f29d62004fa220932252f643da8a00586e0eae4becc3da701a30575910"
+      },
+      "passed": true,
+      "errors": [],
+      "process": {
+        "code": 0,
+        "seconds": 81.178,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 302,
+          "processes_seen": 11,
+          "cpu_seconds_sampled": 10.80181044,
+          "peak_tree_rss_mib": 1724.0,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "asr_assets": {
+        "model": "zipformer-small",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 42980793,
+            "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13877276,
+            "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228485,
+            "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          },
+          {
+            "name": "bpe.model",
+            "bytes": 244836,
+            "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161648,
+          "sha256": "085111cd6bea4579cd9997323b438ec14d350f1fa18330406b7f436eefb3d33a"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      }
+    },
+    {
+      "trial": 2,
+      "arm": "metal-concurrent",
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "scheduler": {
+        "live_catchup": "0",
+        "post_capture_drain": "1"
+      },
+      "telemetry": {
+        "samples": 391,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 214,
+        "lag_p50_ms": 152.0,
+        "lag_p95_ms": 392.0,
+        "lag_max_ms": 456,
+        "capture_wall_overhead_ms": 240,
+        "asr_compute_rtf": 0.05126606226923077,
+        "live_translations": 6,
+        "live_notes_cursor": 4,
+        "live_worker_samples": 49,
+        "worker_starts": 8,
+        "worker_reuses": 1
+      },
+      "asr_score": {
+        "substitutions": 16,
+        "deletions": 60,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.30196078431372547
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 4,
+        "sections": 1,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 2924,
+        "wall_ms": 81165
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 6,
+        "sections": 1
+      },
+      "metal_evidence": {
+        "last_worker_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "log_sha256": "3037a75cad942cabc82a750ed883f08024eee0ca0b4e7b0d05cba6018ff4b163",
+        "fallback": false,
+        "worker_events": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 412
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 418
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 423
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 419
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 418
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 415
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 413
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 408
+          }
+        ],
+        "trace_sha256": "5f926c1b6c994122fc21cdc017606ffe4795f9405fda11df1be935474ee38ed8"
+      },
+      "passed": true,
+      "errors": [],
+      "process": {
+        "code": 0,
+        "seconds": 81.263,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 302,
+          "processes_seen": 11,
+          "cpu_seconds_sampled": 10.758933623999999,
+          "peak_tree_rss_mib": 1726.5,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "asr_assets": {
+        "model": "zipformer-small",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 42980793,
+            "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13877276,
+            "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228485,
+            "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          },
+          {
+            "name": "bpe.model",
+            "bytes": 244836,
+            "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161648,
+          "sha256": "085111cd6bea4579cd9997323b438ec14d350f1fa18330406b7f436eefb3d33a"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      }
+    },
+    {
+      "trial": 2,
+      "arm": "asr-only",
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": false,
+        "translation_mode": "off",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "scheduler": {
+        "live_catchup": "0",
+        "post_capture_drain": "1"
+      },
+      "telemetry": {
+        "samples": 379,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 214,
+        "lag_p50_ms": 152.0,
+        "lag_p95_ms": 392.0,
+        "lag_max_ms": 456,
+        "capture_wall_overhead_ms": 212,
+        "asr_compute_rtf": 0.05204488778205128,
+        "live_translations": 0,
+        "live_notes_cursor": 0,
+        "live_worker_samples": 0,
+        "worker_starts": 0,
+        "worker_reuses": 0
+      },
+      "asr_score": {
+        "substitutions": 16,
+        "deletions": 60,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.30196078431372547
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 0,
+        "wall_ms": 78212
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0
+      },
+      "metal_evidence": {
+        "last_worker_layers": [],
+        "log_sha256": null,
+        "fallback": false,
+        "worker_events": [],
+        "trace_sha256": null
+      },
+      "passed": true,
+      "errors": [],
+      "process": {
+        "code": 0,
+        "seconds": 78.272,
+        "failure": null,
+        "resources": {
+          "schema": 1,
+          "method": "psutil sampled descendant tree",
+          "psutil_version": "7.1.3",
+          "interval_seconds": 0.25,
+          "samples": 291,
+          "processes_seen": 3,
+          "cpu_seconds_sampled": 5.179626583999999,
+          "peak_tree_rss_mib": 224.046875,
+          "peak_tree_pss_mib": null,
+          "gpu_memory_mib": null,
+          "energy_joules": null,
+          "sample_errors": 0,
+          "sampler_stopped": true,
+          "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+        }
+      },
+      "asr_assets": {
+        "model": "zipformer-small",
+        "files": [
+          {
+            "name": "encoder-epoch-99-avg-1.int8.onnx",
+            "bytes": 42980793,
+            "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+          },
+          {
+            "name": "decoder-epoch-99-avg-1.onnx",
+            "bytes": 13877276,
+            "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+          },
+          {
+            "name": "joiner-epoch-99-avg-1.int8.onnx",
+            "bytes": 3228485,
+            "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+          },
+          {
+            "name": "tokens.txt",
+            "bytes": 56317,
+            "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+          },
+          {
+            "name": "bpe.model",
+            "bytes": 244836,
+            "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+          }
+        ],
+        "worker": {
+          "name": "omascribe-asr",
+          "bytes": 27161648,
+          "sha256": "085111cd6bea4579cd9997323b438ec14d350f1fa18330406b7f436eefb3d33a"
+        },
+        "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+      }
+    }
+  ],
+  "passed": true,
+  "release_eligible": false,
+  "historical_quality": {
+    "candidate5_mer": 0.30196078431372547,
+    "candidate6_mer": 0.30196078431372547,
+    "previous_live_mer": 0.2784313725490196,
+    "previous_different_live_result_unresolved": true,
+    "earlier_same_pcm_old_debug_release_control": "docs/evaluation/apple-candidate5-recording-2026-10-28.json"
+  },
+  "limitations": [
+    "Public replay, not physical microphone, natural long speech, speaker identities or install/upgrade acceptance.",
+    "Explicit post-capture drain=1 equals the production enabled default; live catchup/incremental=0. Overrides are recorded, not claimed absent.",
+    "No change to the original2500ms lag/90s settle gates. OS/model cache not flushed; cold/warm startup and ordering are not controlled.",
+    "Sampled CPU is a lower bound; tree RSS can double-count shared pages. GPU memory and energy were not measured.",
+    "Same outputs on this public PCM are not a universal no-regression or ASR accuracy improvement claim.",
+    "Borrowed model/runtime links released; source models and all prior failures retained."
+  ]
+}

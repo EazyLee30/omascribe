@@ -1,0 +1,1233 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "windows_shared116_automatic_minutes_and_native_regression",
+  "passed": true,
+  "application_source": "301e914c71e2b0c3ec85e6a0827a4e3a0bce9a20",
+  "shared_source": "116469ea201e932c1f1f0b49a97e74cf1d5a95ad",
+  "minutes": {
+    "passed": true,
+    "execution": "automatic-scheduler",
+    "catchup_enabled": true,
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "301e914c71e2b0c3ec85e6a0827a4e3a0bce9a20",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "1c297f40b9206a2d74130e860126e2039d95efca8f9d66c8c823639e8436c9d5",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "80db5a7deda75155ada3000af9c6df4cee1cdda3311abe30100f9fa6f2194637",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "7010103d71003c2497a08b37b74309e9d7a113d3596b76074a2d2b60cd4565e0",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "301e914c71e2b0c3ec85e6a0827a4e3a0bce9a20",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture_sha256": "93809b7032e43f41fa2533eb879851324586ecefcc091429333fe151ae680bb9",
+    "raw_report_sha256": "ab17af48aa489c21b99abd9e7effb2739eb54f359bfe23be283c2677c1c4c8f0",
+    "passed_cases": 19,
+    "cases": [
+      {
+        "case": "zh_budget_guess",
+        "passed": true,
+        "errors": [],
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 17.75,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "43ff9872-19e3-4b53-b045-56f5f0f9aa77",
+            "kind": "section",
+            "meeting_id": "0f2bf9bf-9822-4bc7-9934-04f465a57ce0",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "张老师周五给测试结果，预算先不定，下周再看。",
+                "revision": 1,
+                "segment_id": "0f2bf9bf-9822-4bc7-9934-04f465a57ce0:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "张老师周五将提供测试结果，预算尚未确定，计划下周再进行评估。"
+          }
+        ]
+      },
+      {
+        "case": "en_owner_and_deadline",
+        "passed": true,
+        "errors": [],
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 17.547,
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "cfa2d823-5e01-448c-93e9-7081e3d55b21",
+            "kind": "section",
+            "meeting_id": "98e59630-9bee-4282-8db6-4eea9bcf1267",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+                "revision": 1,
+                "segment_id": "98e59630-9bee-4282-8db6-4eea9bcf1267:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Morgan will send the release report on Thursday. We have not yet approved the launch date."
+          }
+        ]
+      },
+      {
+        "case": "zh_correction",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 20.953,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "9ce57df8-2988-4d86-a5da-d94aa904daba",
+            "kind": "section",
+            "meeting_id": "d0aa0e40-7085-4578-aeb2-a1e2c9d055f3",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。",
+                "revision": 1,
+                "segment_id": "d0aa0e40-7085-4578-aeb2-a1e2c9d055f3:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算先按3000算，李明负责。",
+                "revision": 1,
+                "segment_id": "d0aa0e40-7085-4578-aeb2-a1e2c9d055f3:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算初始按3000元计算，由李明负责。随后更正为最终预算2000元，负责人改为王华，李明不再负责。"
+          }
+        ]
+      },
+      {
+        "case": "bilingual_scope",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 33.25,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "c4c6906b-0b42-4c6e-8a6d-684a51c2ab8c",
+            "kind": "section",
+            "meeting_id": "a4b63ae5-254c-46b2-b8a5-98daff20bf19",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+                "revision": 1,
+                "segment_id": "a4b63ae5-254c-46b2-b8a5-98daff20bf19:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+                "revision": 1,
+                "segment_id": "a4b63ae5-254c-46b2-b8a5-98daff20bf19:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "离线转录原型已准备好评审，将于周五进行测试。当前阶段仅实现麦克风录音与实时转写功能，系统音频采集将推迟至下一个版本。"
+          }
+        ]
+      },
+      {
+        "case": "zh_calendar_citations",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 21.797,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "7c1a2737-c2b3-4c97-8201-e86258616070",
+            "kind": "section",
+            "meeting_id": "639b2e5a-a2c2-4cb3-aa9a-54c5af59ebe1",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "会议日期是二〇二四年五月八日，本次先确认测试安排。",
+                "revision": 1,
+                "segment_id": "639b2e5a-a2c2-4cb3-aa9a-54c5af59ebe1:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。",
+                "revision": 1,
+                "segment_id": "639b2e5a-a2c2-4cb3-aa9a-54c5af59ebe1:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "本次会议讨论了录音和转写流程，确认了测试安排。会议日期为二〇二四年五月八日，会议先对测试安排进行了确认。"
+          }
+        ]
+      },
+      {
+        "case": "zh_connected_minutes",
+        "passed": true,
+        "errors": [],
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 28.593,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "cf338876-10d9-4a19-a207-dcfcea210f69",
+            "kind": "section",
+            "meeting_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd",
+            "sources": [
+              {
+                "end_ms": 40000,
+                "quote": "还有实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。",
+                "revision": 1,
+                "segment_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "引用放在正文旁边的小标里就行，点一下再看原话。",
+                "revision": 1,
+                "segment_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "AI纪要这块还是一小句一小句地显示，阅读起来不连贯。",
+                "revision": 1,
+                "segment_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "这两项调整还没有完成，先记录下来，完成以后再一起验证。",
+                "revision": 1,
+                "segment_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "嗯，我们今天主要是在测离线会议笔记，那个，实时转写已经能显示出来了。",
+                "revision": 1,
+                "segment_id": "7361ea3b-bed0-49b1-8538-3e446a7cdddd:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "实时转写和实时字幕功能目前尚未完成，需在完成后与AI纪要功能一同验证。AI纪要仍存在断句不连贯的问题，需优化显示方式，建议将引用置于正文旁的小标中，并支持点击查看原话。实时转写和实时字幕的入口应放在工具栏，而非二级菜单中。"
+          }
+        ]
+      },
+      {
+        "case": "zh_product_spelling",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 20.766,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "108b773a-9013-46da-92a0-38094badf0f0",
+            "kind": "section",
+            "meeting_id": "5698665f-833c-4c0a-b683-f7c8f6cb9d9e",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "OmaScribe的会议纪要仍然需要优化，这项调整尚未完成。",
+                "revision": 2,
+                "segment_id": "5698665f-833c-4c0a-b683-f7c8f6cb9d9e:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "我正在测试OmaScribe的转写功能。",
+                "revision": 2,
+                "segment_id": "5698665f-833c-4c0a-b683-f7c8f6cb9d9e:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "OmaScribe的转写功能正在测试中，当前会议纪要仍需优化，相关调整尚未完成。"
+          }
+        ]
+      },
+      {
+        "case": "zh_empty_greetings",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 0 个章节",
+        "seconds": 6.109,
+        "document": []
+      },
+      {
+        "case": "zh_phased_correction",
+        "passed": true,
+        "errors": [],
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 46.578,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "4ccafc31-d625-4fb2-9b82-b73490d2498a",
+            "kind": "section",
+            "meeting_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea",
+            "sources": [
+              {
+                "end_ms": 40000,
+                "quote": "模型下载是可选联网功能，录音内容不会上传。",
+                "revision": 1,
+                "segment_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。",
+                "revision": 1,
+                "segment_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "离线转写需要保留原始录音，失败后能够重新处理。",
+                "revision": 1,
+                "segment_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "离线转写先覆盖麦克风录音，系统音频还没有做。",
+                "revision": 1,
+                "segment_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算暂按3000元安排，负责人是李明。",
+                "revision": 1,
+                "segment_id": "4876a7cc-734f-45b9-852d-66a5b5a0ddea:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算暂按3000元安排，负责人是李明；离线转写先覆盖麦克风录音，系统音频尚未完成；离线转写需保留原始录音，失败后可重新处理；模型下载为可选联网功能，录音内容不会上传。更正了之前的预算和负责人，最终预算改为2000元，王华负责，李明不再负责。"
+          }
+        ]
+      },
+      {
+        "case": "zh_named_speakers",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 23.609,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "9032c8a9-7e24-480d-a45a-cec5af823b58",
+            "kind": "section",
+            "meeting_id": "254832d3-dc7b-4ed8-b915-eb4b6fd9d4b7",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "我负责双语字幕界面，这周还不能交付，交付时间尚未确定。",
+                "revision": 1,
+                "segment_id": "254832d3-dc7b-4ed8-b915-eb4b6fd9d4b7:1:2",
+                "speaker_name": "陈明",
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "实时转写的延迟测试由我负责，结果周四提交。",
+                "revision": 1,
+                "segment_id": "254832d3-dc7b-4ed8-b915-eb4b6fd9d4b7:1:1",
+                "speaker_name": "林悦",
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "林悦负责的实时转写延迟测试结果将于周四提交，陈明负责的双语字幕界面尚未交付，交付时间尚未确定。"
+          }
+        ]
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 35.359,
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "02b8303d-bc97-493b-8a78-08b225938483",
+            "kind": "section",
+            "meeting_id": "362166a7-0dea-44f0-8194-ff12138e97ba",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "这次只做离线转写，模型由用户手动下载。",
+                "revision": 1,
+                "segment_id": "362166a7-0dea-44f0-8194-ff12138e97ba:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "录音、转写和纪要不上传服务器。系统音频采集还没有实现。",
+                "revision": 1,
+                "segment_id": "362166a7-0dea-44f0-8194-ff12138e97ba:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The meeting discussed the topic of offline transcription, with the agreement that the model will be manually downloaded by the user. It was noted that the recording, transcription, and summary processes are not uploaded to the server, and that the system for audio collection has not been implemented yet. The meeting concluded with the understanding that the current work is limited to offline transcription, and that the system for audio collection remains pending. No further actions were proposed, and the meeting ended with the final status indicating that the current work is complete and the system for audio collection is not yet implemented."
+          }
+        ]
+      },
+      {
+        "case": "zh_minutes_from_en",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 19.563,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "aa62e596-0a39-4516-a298-fe73b431f621",
+            "kind": "section",
+            "meeting_id": "d415f9e2-074f-43f9-acbe-11c81682bafb",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+                "revision": 1,
+                "segment_id": "d415f9e2-074f-43f9-acbe-11c81682bafb:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+                "revision": 1,
+                "segment_id": "d415f9e2-074f-43f9-acbe-11c81682bafb:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Morgan 负责交付延迟报告，将于周四交付。离线记录器已准备好内部测试，但尚未通过公共发布审核。"
+          }
+        ]
+      },
+      {
+        "case": "zh_long_context_state",
+        "passed": true,
+        "errors": [],
+        "coverage": 10,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 77.578,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "2ac77eb0-ae1d-4445-85a3-9cb14ad55010",
+            "kind": "section",
+            "meeting_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 70000,
+                "quote": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:7",
+                "speaker_name": null,
+                "start_ms": 60000
+              },
+              {
+                "end_ms": 60000,
+                "quote": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:6",
+                "speaker_name": null,
+                "start_ms": 50000
+              },
+              {
+                "end_ms": 50000,
+                "quote": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              },
+              {
+                "end_ms": 90000,
+                "quote": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:9",
+                "speaker_name": null,
+                "start_ms": 80000
+              },
+              {
+                "end_ms": 80000,
+                "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:8",
+                "speaker_name": null,
+                "start_ms": 70000
+              },
+              {
+                "end_ms": 100000,
+                "quote": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+                "revision": 1,
+                "segment_id": "2770d3b3-3211-4c30-ae3f-4c530c6d613e:1:10",
+                "speaker_name": null,
+                "start_ms": 90000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "离线转写工具由林悦负责测试，目前仅完成内部验证，尚未公开发布。用户需保存每一段原始录音，确保修改后的转写不被自动结果覆盖。录音中暂停应保留音频边界，继续录音后的时间戳必须连续。噪声场景优先测试风扇和键盘声音，避免将安静时段编成文字。英文和中文均需测试，混合说话时需保留英文产品名称的正确拼写。字幕界面需明确展示原文和翻译，翻译使用本地模型。模型下载需联网，录音和纪要处理完全离线，不共享会议内容。测试报告需包含字错率、词错率和转写延迟，不能仅写处理成功。今日仅讨论验收要求，系统音频采集尚未完成，新版本发布日期未确定。最后确认，公开发布尚未批准，林悦将于周四提交测试报告。"
+          }
+        ]
+      },
+      {
+        "case": "zh_human_paragraph_protected",
+        "passed": true,
+        "errors": [],
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 34.094,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "bd4c4e96-c19e-466f-9201-440bcd8bc617",
+            "kind": "section",
+            "meeting_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "预算还没有确定，先等测试报告。",
+                "revision": 1,
+                "segment_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "accepted",
+            "text": "人工确认：预算仍未确定，先等测试报告。"
+          },
+          {
+            "focus": "会议纪要",
+            "id": "0d34e888-65b3-4d2a-9a6a-ce55998d682a",
+            "kind": "section",
+            "meeting_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+                "revision": 1,
+                "segment_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "模型下载可以联网，会议录音不会上传。",
+                "revision": 1,
+                "segment_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "预算还没有确定，先等测试报告。",
+                "revision": 1,
+                "segment_id": "ec2d146b-1954-4bdf-ab07-d1423ec8b475:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "预算尚未确定，需等待测试报告完成。离线模型下载由陈明负责，下载前必须获得用户同意。模型下载可联网，会议录音不会上传。"
+          }
+        ]
+      },
+      {
+        "case": "zh_note_name_spelling",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 22.188,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "a92ce20b-f66e-4def-a60b-1779bc1b6f89",
+            "kind": "section",
+            "meeting_id": "137fed34-7907-49f3-81f9-d619b0422209",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "这个 OmaScribe 的实时转写还有延迟，说话人分配也有问题，尚未修复。",
+                "revision": 2,
+                "segment_id": "137fed34-7907-49f3-81f9-d619b0422209:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "我们下次再测试字幕，目前还没有完成。",
+                "revision": 1,
+                "segment_id": "137fed34-7907-49f3-81f9-d619b0422209:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "OmaScribe 的实时转写存在延迟，说话人分配存在问题，尚未修复。目前未完成测试字幕工作。"
+          }
+        ]
+      },
+      {
+        "case": "en_generic_note_name",
+        "passed": true,
+        "errors": [],
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 18.422,
+        "document": [
+          {
+            "focus": "Meeting minutes",
+            "id": "bbe232dd-6ac8-4d49-bd71-969f96095ac1",
+            "kind": "section",
+            "meeting_id": "9db2bfb2-ab36-4ae0-b486-97628d1f852e",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The PixelLedger import still fails. We will investigate it after the review.",
+                "revision": 2,
+                "segment_id": "9db2bfb2-ab36-4ae0-b486-97628d1f852e:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The PixelLedger import is still failing, and we will investigate it after the review."
+          }
+        ]
+      },
+      {
+        "case": "zh_name_context_is_not_evidence",
+        "passed": true,
+        "errors": [],
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 18.375,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "660bdcf9-2c71-4777-ab2c-c243bc9fd6d7",
+            "kind": "section",
+            "meeting_id": "2f3518ba-98bc-4f64-b688-6bb9e1b8d8c9",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "今天只讨论麦克风权限，尚未决定使用哪个产品，预算也没有确定。",
+                "revision": 1,
+                "segment_id": "2f3518ba-98bc-4f64-b688-6bb9e1b8d8c9:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "今天讨论了麦克风权限问题，尚未决定使用哪个产品，预算也未确定。"
+          }
+        ]
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "passed": true,
+        "errors": [],
+        "coverage": 5,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 16.156,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "59ce7627-31c1-4ed7-9c5e-69b1840febbe",
+            "kind": "section",
+            "meeting_id": "e9441871-77c5-49c6-9d38-b1d804da15a2",
+            "sources": [
+              {
+                "end_ms": 50000,
+                "quote": "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。",
+                "revision": 2,
+                "segment_id": "e9441871-77c5-49c6-9d38-b1d804da15a2:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "CHECKING CHECKING",
+                "revision": 1,
+                "segment_id": "e9441871-77c5-49c6-9d38-b1d804da15a2:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              },
+              {
+                "end_ms": 20000,
+                "quote": "嗯 TRY MY OWN ALMOST TRIP NOW",
+                "revision": 1,
+                "segment_id": "e9441871-77c5-49c6-9d38-b1d804da15a2:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "嗯",
+                "revision": 1,
+                "segment_id": "e9441871-77c5-49c6-9d38-b1d804da15a2:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "AND",
+                "revision": 1,
+                "segment_id": "e9441871-77c5-49c6-9d38-b1d804da15a2:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "转写中提到 PixelLedger 的人员分配有问题，需要核对。"
+          }
+        ]
+      },
+      {
+        "case": "zh_windows_gpu_keyword_lines",
+        "passed": true,
+        "errors": [],
+        "coverage": 2,
+        "status": "文档已同步 · 1 个章节",
+        "seconds": 22.359,
+        "document": [
+          {
+            "focus": "会议纪要",
+            "id": "8c98b17e-98e0-47d7-88d4-9df070d59aea",
+            "kind": "section",
+            "meeting_id": "62541f00-af73-443c-97f7-29b10d46e1dc",
+            "sources": [
+              {
+                "end_ms": 20000,
+                "quote": "gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。",
+                "revision": 1,
+                "segment_id": "62541f00-af73-443c-97f7-29b10d46e1dc:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 10000,
+                "quote": "这个 OmaScribe 的功能目前还没有正常运行。",
+                "revision": 2,
+                "segment_id": "62541f00-af73-443c-97f7-29b10d46e1dc:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "OmaScribe 的功能目前尚未正常运行，gtx1650 需要针对 nvidia 显卡进行优化，但优化尚未完成。"
+          }
+        ]
+      }
+    ]
+  },
+  "native": {
+    "identity": {
+      "app_sha256": "b274ba31cb181a02c74c0fca365841055f32988ab4657ed30a6bf943265aede1",
+      "source": "301e914c71e2b0c3ec85e6a0827a4e3a0bce9a20",
+      "fixture_sha256": "72a1d3c0e3fdec620587447a987ca1a52c0e9a6aaa00b4024c510cc7797fa366",
+      "removed_overrides": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ],
+      "path_restricted": true,
+      "exit_code": 0
+    },
+    "report": {
+      "checks": [
+        "Open native companion/transcript follow five language changes and preserve expansion",
+        "Native hardware reaches settings while activation still requires component verification"
+      ],
+      "hardware": {
+        "apple_silicon": false,
+        "arch": "x86_64",
+        "available_memory_mib": 6252,
+        "backends": [
+          "cpu"
+        ],
+        "cores": 8,
+        "cpu": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz",
+        "free_disk_bytes": 134377275392,
+        "gpus": {
+          "cuda_driver_version": 13050,
+          "devices": [
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:1453c7ca",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            },
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:00028e70",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            },
+            {
+              "budget_bytes": 3507224576,
+              "budget_source": "dxgi_probe_process_budget",
+              "dedicated_memory_bytes": 4126146560,
+              "device_id": 8089,
+              "driver": null,
+              "driver_version": "9007199255791669",
+              "integrated": null,
+              "local_id": "00000000:00028197",
+              "name": "NVIDIA GeForce GTX 1650",
+              "shared_memory_bytes": 8541593600,
+              "vendor": "nvidia",
+              "vendor_id": 4318
+            }
+          ],
+          "error": null,
+          "schema": 1,
+          "status": "detected"
+        },
+        "os": "Windows 10 Pro",
+        "platform": "windows",
+        "recommended": {
+          "appearance": {
+            "accent": "#d83b36",
+            "background": "",
+            "font": "system",
+            "font_size": 13,
+            "foreground": "",
+            "mode": "system",
+            "theme": "neutral"
+          },
+          "asr_model": "zipformer-small",
+          "auto_notes": true,
+          "context_size": 2048,
+          "diarization": false,
+          "inference_backend": "auto",
+          "llm_keep_alive_seconds": 0,
+          "llm_model": "qwen3-1.7b",
+          "memory_budget_mib": 0,
+          "minutes_language": "auto",
+          "resource_mode": "balanced",
+          "speaker_count": 0,
+          "threads": 2,
+          "translation_mode": "off",
+          "use_knowledge": false,
+          "use_memory": false
+        },
+        "resource_presets": [
+          {
+            "id": "eco",
+            "name": "eco",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-small",
+              "auto_notes": true,
+              "context_size": 2048,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-0.6b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "eco",
+              "speaker_count": 0,
+              "threads": 1,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          },
+          {
+            "id": "balanced",
+            "name": "balanced",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-small",
+              "auto_notes": true,
+              "context_size": 2048,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-1.7b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "balanced",
+              "speaker_count": 0,
+              "threads": 2,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          },
+          {
+            "id": "quality",
+            "name": "quality",
+            "preferences": {
+              "appearance": {
+                "accent": "#d83b36",
+                "background": "",
+                "font": "system",
+                "font_size": 13,
+                "foreground": "",
+                "mode": "system",
+                "theme": "neutral"
+              },
+              "asr_model": "zipformer-bilingual",
+              "auto_notes": true,
+              "context_size": 4096,
+              "diarization": false,
+              "inference_backend": "auto",
+              "llm_keep_alive_seconds": 0,
+              "llm_model": "qwen3-4b",
+              "memory_budget_mib": 0,
+              "minutes_language": "auto",
+              "resource_mode": "quality",
+              "speaker_count": 0,
+              "threads": 4,
+              "translation_mode": "off",
+              "use_knowledge": false,
+              "use_memory": false
+            }
+          }
+        ],
+        "tier": "balanced",
+        "total_memory_mib": 16291
+      },
+      "languages": [
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "en",
+            "start": "Start recording"
+          },
+          "locale": "en",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "Live captions",
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-CN",
+            "start": "开始录音"
+          },
+          "locale": "zh-CN",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "实时字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-TW",
+            "start": "開始錄音"
+          },
+          "locale": "zh-TW",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-TW",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "即時字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-TW",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "en",
+            "start": "Start recording"
+          },
+          "locale": "en",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "Live captions",
+            "errors": [],
+            "expanded": null,
+            "lang": "en",
+            "start": null
+          }
+        },
+        {
+          "companion": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": "true",
+            "lang": "zh-CN",
+            "start": "开始录音"
+          },
+          "locale": "zh-CN",
+          "main": {
+            "captionLabel": null,
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          },
+          "transcript": {
+            "captionLabel": "实时字幕",
+            "errors": [],
+            "expanded": null,
+            "lang": "zh-CN",
+            "start": null
+          }
+        }
+      ],
+      "limits": [
+        "Functional native-window checks; screenshots are separate visual evidence.",
+        "No settings download/activation claim before a signed candidate catalog is available."
+      ],
+      "method": "native ui-test feature / fixed cross-window DOM probes",
+      "passed": true,
+      "windows": [
+        {
+          "label": "main",
+          "maximized": false,
+          "position": [
+            52,
+            52
+          ],
+          "size": [
+            1160,
+            780
+          ],
+          "visible": true
+        },
+        {
+          "label": "companion",
+          "maximized": false,
+          "position": [
+            1540,
+            686
+          ],
+          "size": [
+            380,
+            340
+          ],
+          "visible": true
+        },
+        {
+          "label": "transcript",
+          "maximized": false,
+          "position": [
+            1364,
+            60
+          ],
+          "size": [
+            540,
+            420
+          ],
+          "visible": true
+        }
+      ]
+    },
+    "raw_report_sha256": "27e57dd2d5322f18042df61e485289d0d6ae378a2ac5963ab40b9aec8ba5cbba"
+  },
+  "checks": {
+    "core_passed": 105,
+    "core_opt_in_ignored": 5,
+    "python_passed": 62,
+    "ui_test_all_targets_clippy": "passed"
+  },
+  "identities": {
+    "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "cpu_server_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5"
+  },
+  "limits": [
+    "Experimental catch-up explicitly enabled for this real automatic19-case run; production default remains off.",
+    "Fictional text fixtures, no ASR/physical-microphone accuracy or recording-performance claim.",
+    "First Windows setup omitted .exe and did not run cases; retained in artifacts/shared116-auto19.log. Corrected fresh-r2 run uses explicit executable.",
+    "Status concurrency guard follows this frozen source checkpoint; its focused regression and native lifecycle are separate."
+  ]
+}

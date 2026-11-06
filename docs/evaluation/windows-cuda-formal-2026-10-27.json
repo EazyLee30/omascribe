@@ -1,0 +1,241 @@
+{
+  "passed": true,
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "7ac4a518207dfd071d5b019e17aa80b7360232d1",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "1291ba6680885fdaeff85bfa83191d486b7875038c34b2c4069202cee9266e92",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "250844cb45890ab923158e30445aae269d7b94f68459bf0aa08cd738d3e5ba36",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "44d7c8f72c9417551560d0fa05b48ed7a5cbbc1e5adbc3f48fd534e331bdc5e2",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "908c7766e8adcf538d0cc993f189ead8518281d0",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+  "process_driver_override": false,
+  "driver_manifest_sha256": null,
+  "limitation": "Two fictional extraction requests, cold start; no warm throughput, ASR/minutes quality, power or broad compatibility claim. Resource samples unavailable. Runtime-only: production settings download, activation and persistence require separate end-to-end acceptance.",
+  "trials": [
+    {
+      "passed": true,
+      "backend": "cpu",
+      "server_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+      "startup_ms": 1579,
+      "runs": [
+        {
+          "ms": 3984,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 86,
+            "total_tokens": 120,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        },
+        {
+          "ms": 3969,
+          "facts": {
+            "day": "thursday",
+            "rejected_day": "friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 83,
+            "total_tokens": 119,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        }
+      ],
+      "total_ms": 9594,
+      "offloaded_layers": 0,
+      "peak_rss_mib": null,
+      "gpu_memory_mib": null,
+      "dependency_audit": [],
+      "formal_environment": true,
+      "removed_override_keys": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ]
+    },
+    {
+      "passed": true,
+      "backend": "cuda",
+      "server_sha256": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+      "startup_ms": 1610,
+      "runs": [
+        {
+          "ms": 813,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 28,
+            "prompt_tokens": 86,
+            "total_tokens": 114,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        },
+        {
+          "ms": 859,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 83,
+            "total_tokens": 117,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        }
+      ],
+      "total_ms": 3688,
+      "offloaded_layers": 29,
+      "peak_rss_mib": null,
+      "gpu_memory_mib": null,
+      "dependency_audit": [
+        {
+          "name": "cublas64_12.dll",
+          "source": "component"
+        },
+        {
+          "name": "cublaslt64_12.dll",
+          "source": "component"
+        },
+        {
+          "name": "cudart64_12.dll",
+          "source": "component"
+        },
+        {
+          "name": "nvcuda.dll",
+          "source": "system_driver"
+        }
+      ],
+      "formal_environment": true,
+      "removed_override_keys": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ]
+    }
+  ],
+  "kind": "formal_component_runtime_acceptance",
+  "component": {
+    "manifest_sha256": "6e4c3243b09c9c208637efc3ac291462fc0595b704759f00f8622b11aaa9d880",
+    "archive_sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+    "files_verified": 7,
+    "backend": "cuda",
+    "target": "windows-x86_64",
+    "runtime_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "archive_name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+  },
+  "cuda_driver_api": 13050,
+  "schema": 1,
+  "date": "2026-10-27",
+  "workflow": {
+    "run_id": 40367160891,
+    "url": "https://github.com/EazyLee30/omascribe/actions/runs/40367160891",
+    "head_sha": "164371e285a499e9261afa5239d1d563a1aadb57",
+    "artifact_id": 12679264764,
+    "artifact_zip_sha256": "6fef374bfdd8da2c385ecd099061cd3ff76b429e23b787584c1af45cafabedf3",
+    "version": "acceleration-ci-40367160891"
+  },
+  "driver": {
+    "nvidia": "621.01",
+    "cuda_driver_api": 13050
+  },
+  "component_manifest": {
+    "archive": {
+      "bytes": 657339453,
+      "name": "OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+      "sha256": "1244d42e2c51b923edbb58879135f569f015029eb1d1dee67aaa7cec8566f77f",
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-cuda-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+    },
+    "backend": "cuda",
+    "entrypoint": "llama-server.exe",
+    "files": [
+      {
+        "bytes": 133,
+        "name": "build-info.json",
+        "sha256": "8c484fb1bc4652a09f2a78f26462a3eff62adec86e5c70451081f670a3289d4e",
+        "url": ""
+      },
+      {
+        "bytes": 113716224,
+        "name": "cublas64_12.dll",
+        "sha256": "9513540e4ec4c51ee9e7304138c2cc255c29a8c181f9e80c38efa25738becd99",
+        "url": ""
+      },
+      {
+        "bytes": 674667520,
+        "name": "cublasLt64_12.dll",
+        "sha256": "b199d1ff892a81b7fd3d57ba1781549609b41500b36008fef326038393ad46c7",
+        "url": ""
+      },
+      {
+        "bytes": 103460,
+        "name": "CUDA-EULA.html",
+        "sha256": "6722d4c310a2ec9ad869ede3371a648fe2cfc2baaf8e1ece2c35e1dccc05752c",
+        "url": ""
+      },
+      {
+        "bytes": 573952,
+        "name": "cudart64_12.dll",
+        "sha256": "c2c9a9c22a9bcba90e261825968836787b331038047a26770cffb7a583c28344",
+        "url": ""
+      },
+      {
+        "bytes": 132499456,
+        "name": "llama-server.exe",
+        "sha256": "1345eb32c15d5a85de6d90aa7d76d1ab384088ee577bab7e428d696fd00501fb",
+        "url": ""
+      },
+      {
+        "bytes": 1099,
+        "name": "llama.cpp-LICENSE.txt",
+        "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+        "url": ""
+      }
+    ],
+    "id": "cuda-windows-x86_64",
+    "license": "MIT + NVIDIA CUDA EULA",
+    "name": "CUDA \u00b7 windows-x86_64",
+    "target": "windows-x86_64"
+  },
+  "toolkit_limit": "Host has pre-existing CUDA11.5; SDK variables and PATH excluded and observed DLL origins audited. Not a physically SDK-free host.",
+  "cache_limit": "Fresh server process; OS/model/driver caches not controlled after prior tests.",
+  "signed_settings_lifecycle": "pending; not represented by this runtime-only trial"
+}

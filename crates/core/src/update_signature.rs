@@ -3,18 +3,7 @@ use anyhow::{bail, Context, Result};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::{io::Read, path::Path};
 pub fn verify(file: &Path, signature: &str, public_key: &str, version: &str) -> Result<()> {
-    let key_text = String::from_utf8(STANDARD.decode(public_key.trim())?)?;
-    let signature_text = String::from_utf8(STANDARD.decode(signature.trim())?)?;
-    let key = minisign_verify::PublicKey::decode(&key_text)?;
-    let signature = minisign_verify::Signature::decode(&signature_text)?;
-    let signed_version = signature
-        .trusted_comment()
-        .split('\t')
-        .find_map(|field| field.strip_prefix("version:"))
-        .context("Update signature has no signed version")?;
-    if signed_version != version {
-        bail!("Update signature version mismatch");
-    }
+    let (key, signature) = checked_signature(signature, public_key, version)?;
     let mut verifier = key.verify_stream(&signature)?;
     let mut input = std::fs::File::open(file)?;
     let mut buffer = [0u8; 64 * 1024];
@@ -27,6 +16,32 @@ pub fn verify(file: &Path, signature: &str, public_key: &str, version: &str) -> 
     }
     verifier.finalize()?;
     Ok(())
+}
+pub fn verify_bytes(bytes: &[u8], signature: &str, public_key: &str, version: &str) -> Result<()> {
+    let (key, signature) = checked_signature(signature, public_key, version)?;
+    let mut verifier = key.verify_stream(&signature)?;
+    verifier.update(bytes);
+    verifier.finalize()?;
+    Ok(())
+}
+fn checked_signature(
+    signature: &str,
+    public_key: &str,
+    version: &str,
+) -> Result<(minisign_verify::PublicKey, minisign_verify::Signature)> {
+    let key_text = String::from_utf8(STANDARD.decode(public_key.trim())?)?;
+    let signature_text = String::from_utf8(STANDARD.decode(signature.trim())?)?;
+    let key = minisign_verify::PublicKey::decode(&key_text)?;
+    let signature = minisign_verify::Signature::decode(&signature_text)?;
+    let signed_version = signature
+        .trusted_comment()
+        .split('\t')
+        .find_map(|field| field.strip_prefix("version:"))
+        .context("Update signature has no signed version")?;
+    if signed_version != version {
+        bail!("Update signature version mismatch");
+    }
+    Ok((key, signature))
 }
 
 #[cfg(test)]

@@ -1,0 +1,357 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "source_commit": "e77f9113b472800865e801af5d03270d8f8b2848",
+  "base_commit": "a0b0789815bae03d7989892b878f506232453cb3",
+  "status": "Source fixes pushed; no stable release or new model-quality claim",
+  "ambiguous_alias": {
+    "original_actual_red": "Public release CLI compiled at eea, documentation-only a0 equivalent: two canonical terms share CedarLedge. Product note save incorrectly changed source revision1 to CedarLedger revision2 and rewrote pending minutes plus exact citation; zero inference jobs.",
+    "fix": "Keep sorted ambiguous spellings as opaque exact and near-match spans, including spaced/concatenated forms. Check eligible claims beyond the80 selected term budget without adding candidates; revoke derived model spellings only when their owner is ambiguous, preserving uniquely declared literal aliases.",
+    "cache": "Only environments with ambiguous spellings use terms-v8, binding sorted conflicts. Unambiguous v5/v6 digests remain unchanged; no extra regular-expression scan or compact-subspan allocations in the unambiguous path.",
+    "late_conflict": "An added conflict restores automatically corrected ASR from archived original evidence. A prior article lacking proof of a reversible spelling substitution retains its text/old citation and is marked stale; original canonical speech is preserved. No reverse prose guess or model call.",
+    "unicode": "Independent review reproduced U+017F long-s Scribely alias being transformed into ſCribelyx on c2f8d48 actual CLI. A separate Unicode-casefolded ambiguity matcher protects the complete span without treating lowercase as casefold equivalence.",
+    "controls": "51 terminology controls before the final Unicode control,8 model identifier and19 note-context integrations. Original5 red, cap-model red, initial6/7 model-priority regression, independent unique-literal regression and Unicode CLI/unit red remain preserved; no assertions were weakened.",
+    "limit": "Prevents ambiguous mapping revival; it is not arbitrary phonetic-name recognition or general semantic attribution. A completely unselected, unrelated explicit name can still be drawn toward a selected near name; that wider candidate-budget behavior remains open."
+  },
+  "writer_lookup": {
+    "fix": "Load writer candidate bodies instead of materializing every historical meeting/document/note. Retain lightweight persisted JSON-ID shadow ownership and only matching linked-note overlays. Keep full terminology, knowledge ranking, newest note content, original stable order, serde defaults and40/8/3 output budgets.",
+    "tests": "Original full-view unrelated-history deserialization red;4 writer equivalence/visibility/default/order/overlay controls and9 library tests pass,2 explicit measurement tests ignored by default.",
+    "measurement": {
+      "build": {
+        "profile": "debug",
+        "revision_at_compile": "a0b0789815bae03d7989892b878f506232453cb3",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "fd5ecf2e019d163ac2c75cc540b660026825e6b48a55b931b39b838f3e373a61",
+        "target": "aarch64-apple-darwin"
+      },
+      "context_exact_equal": true,
+      "full_entries": 492,
+      "full_retained_entry_capacity_bytes": 24064086,
+      "full_serialized_bytes": 24042209,
+      "historical_meetings": 320,
+      "historical_notes": 320,
+      "kind": "controlled-synthetic-writer-lookup",
+      "limitation": "Alternating warm synthetic lookup only. Capacity is actual returned Vec/String retained capacity, excludes allocator metadata and transient SQL/serde/overlay allocations; not allocation totals, process RSS, model inference, or whole-app performance. SQL may scan JSON metadata, but unrelated history bodies are not transferred into Rust.",
+      "linked_knowledge_rows": 6,
+      "lookup_full_us": [
+        67373,
+        68134,
+        68334,
+        65411,
+        67761,
+        70013,
+        67434,
+        65400
+      ],
+      "lookup_selected_us": [
+        56250,
+        59307,
+        59287,
+        68983,
+        56648,
+        55946,
+        57701,
+        65280
+      ],
+      "memory_rows": 12,
+      "selected_entries": 58,
+      "selected_retained_entry_capacity_bytes": 420128,
+      "selected_serialized_bytes": 416967,
+      "term_rows": 40,
+      "unrelated_persisted_note_rows": 120
+    },
+    "median_full_lookup_us": 67597.5,
+    "median_selected_lookup_us": 58494.0,
+    "measurement_binding": "One warm synthetic debug observation before final alias reviews; library.rs SHA equals the final source exactly. Embedded compile revision a0 is the parent of that working build, not a claim that the measured full working tree was committed a0 or final e77.",
+    "limits": "Retained returned Vec/String capacity excludes allocator metadata, transient SQL/serde/overlay allocations and process RSS. SQL still scans notes JSON metadata to preserve real JSON-ID matching. No whole-app/ASR/LLM speed or battery claim."
+  },
+  "checks": {
+    "core_passed": 491,
+    "core_ignored": 11,
+    "asr_passed": 9,
+    "cli_tests_passed": 2,
+    "integration_passed": 29,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "source_config_files_unchanged": 160,
+    "new_llm_requests": 0,
+    "frontend": "Unchanged; no new frontend build required for these Rust-only changes"
+  },
+  "windows_peer": {
+    "source": "fd2afdcfe854fc6b9fd87a328b10e9e1f0ec2d2a",
+    "report_commit": "3196979647b7795e5db798976d982d81da0440bd",
+    "sha256": "8c6837bf19cd48af39cd4e9464300637ec039fbe22c6cc2a5e1260044dc6d6d6",
+    "original_bytes_verified": true,
+    "scope": "One same-Engine replay_audio/save_note/worker synthetic20s recording. Active speech retained old words until observed7200ms endpoint; subsequent speech used new words.640000 PCM bytes exact; proxy forwards stdout but adds a process.",
+    "limits": "Independent earlier-source timing evidence only; not final e77 acceptance, real names/microphone/UI/GPU or after-endpoint-before-first-block race."
+  },
+  "cleanup": "Temporary synthetic databases and lookup fixtures use TempDir/TemporaryDirectory and were removed on normal completion. Raw red/green evidence kept. No original models, user meetings or private research modified; no SDK/model/GPU component download or installer rebuild.",
+  "release": "0.3.5 unpublished; stable0.3.4. Original Q16 semantic-attribution/coverage failure remains unpassed; no new model trial in this batch. Full P0/P1/P2/P3/G1/G2 objective and platform/recording/install gates remain active.",
+  "source_files_sha256": {
+    "crates/core/src/library.rs": "3516388fbe53062a4075a3c60cd5b16b2816a819ed1fd1cd0acf3b33157cf625",
+    "crates/core/src/terminology.rs": "9caeb77759771bba6a0b2908994e1b89eb845213f641b72be3c1aa9e2580eec1",
+    "crates/core/tests/model_identifier_terms.rs": "03e5523547c60c0d21a761a98ebf5f47fb23a94dd13f5e2c68c177db6301f800",
+    "crates/core/tests/note_context_corrections.rs": "7d6a21a86f72bfd1c52f056c8f2d6fb77c5469b02766f4ebcbdd9280b69cf2d1",
+    "crates/core/src/notes/writer.rs": "8b9e2832a348edb22dde48853f5ad08fc3de05ebf74a32d3a9b2a0827d956538",
+    "models.lock.json": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36"
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/canonical-red.log",
+      "sha256": "64d56ed44737221b09a84f28050f3af0defd2931cf2e682805bd7fa583db4afc"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/cli-green.json",
+      "sha256": "832dec179c9792ebacb9e0eec7eb9b0a969a069cee95dc5569d84227388372c7"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/cli-red.json",
+      "sha256": "a228b7e35aaa2db281c7f7f3313ed45821c56ea894a7a95bf1d54444fe6a81c3"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/distinct-literal-fixed-green.log",
+      "sha256": "f62c8640fffac156f73293921fa81b7d25ba07377917caffdd7655a64992267c"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/distinct-literal-review-source.json",
+      "sha256": "67978fb99078ed4ada8cfca0e4349eb8804d82699f6caf7b262e11a85d585cbf"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/distinct-literal-review.log",
+      "sha256": "94e2a43943e8a737ea45308796a1764acc02d97318764468b9ce57e88fb61750"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/green.log",
+      "sha256": "3c5598e860468698502cedb9c14c943505a078ef747613384029dafc75e0e368"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/integration-frozen-green.log",
+      "sha256": "ba93b11d5b4574d0fe18d23e4d0ca31f6bc0ca8bf7d7785d448642c0ead93dad"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/integration-model-priority-regression.log",
+      "sha256": "bec1acf025b6f8431515e66fd074ae675a9ff4b5fd66fbe431048ca32e47e7a0"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/integration-red.log",
+      "sha256": "25d568a3f4ea583189f3c7c19f3c8972fd9be385922c950ba750fcc4ee1aedd7"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/model-cap-red.log",
+      "sha256": "cfeb419663e0ceb936909d4425154530a7c23bfba4ff4c5f417aab42997a0ef2"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/reproduce.py",
+      "sha256": "1ec54475330512a9994066ba14b8e1a0d1629bdeda61a62d78a32a9815232be9"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/terminology-distinct-fixed-green.log",
+      "sha256": "fcb076b65f470822bbdf5d1e9fa159617a93c5286df02ecfada068634d4141b7"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/terminology-final-green.log",
+      "sha256": "624b640e19c28b1e5fe68f960105d675185ea17e38b2555a98a638945c4bad3b"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/terminology-frozen-green.log",
+      "sha256": "f0a3b0a3a44266c222e5ffd5c494b2d1a4d84c04d9ed33ddb6bcc4490437ddf9"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/terminology-green.log",
+      "sha256": "4e140a41c0081334fc203dc09ae8a20d3b4f4dc79c9b283caf6b7765eb39c0ff"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unicode-cli-green.json",
+      "sha256": "7b78993637065cecb13fe29321d40a29915ac7663819fbdb867eebaf1378fd8f"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unicode-cli-red.json",
+      "sha256": "4de55d8c90d0e2d4e0df4c0601612fd99cb5f9d8c5ef43c3928eb9d41b2ba66a"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unicode-reproduce.py",
+      "sha256": "6e2756f2140994a3cf68e4e794ee0d6bf5ed0302d04dd76f1fb1f6e132a76eb4"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unicode-unit-green.log",
+      "sha256": "40be70c8327aa24a55eebce239e5c4d539d4f32e152791933446182367646554"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unicode-unit-red.log",
+      "sha256": "9624af7c80a0d159de8b1e5a758a8de9608651f875867dbea2caa27aa3dcca2d"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unit-red-source.json",
+      "sha256": "1376d66d7f5e8d7413688527c32bfb372be18047859965e384df3adf20b096eb"
+    },
+    {
+      "path": "artifacts/ambiguous-alias-2026-10-30/unit-red.log",
+      "sha256": "cb69acace0bb9e32540ad9fea360379e1a7d3a9e80a6b5cc5e2e6b48a985df7e"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/baseline.json",
+      "sha256": "b2a9de5b712ff25fd29bb2599fe8c54a3fc5ce15e79e0b40a5abcdeb4a6cb661"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/build-cli.log",
+      "sha256": "2ae43f8c5a41276131127835bb373c18b2fbc5b31c4e343986dc44665c5607dd"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/cli-build-info.json",
+      "sha256": "ebda1655f79114d077a8e719cabca64bc30c8c9157cb8a7fe445b61750a12a30"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/clippy.log",
+      "sha256": "eff01c72f6042f25fe874a7d21b50c99a152f5bbfeb1fc75e18c069ae062dc95"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/core-asr-before-test-format.log",
+      "sha256": "c6ad293b8b130e314eae265ab0531737d95165eb1ccd4c2b51c66e7b95f87bc6"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/core-asr-pre-review.log",
+      "sha256": "e6eb89c1e532ef2224025c6c07cf69ea8e3466b36bfc538aad724020d830f5c9"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/core-asr.log",
+      "sha256": "dcc708780d4f95c5acae9a637f437a308b815d190e97642b43692996f8d2915f"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/fmt-initial.log",
+      "sha256": "2092874c39e8759017750030922941cfa5251b09c4ce6b66892eda8190de8ff3"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-review-source.json",
+      "sha256": "737676ec4fcd64c91f05332b9e0176ffc4aa252f226817999aa841ccc83eeec6"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/build-cli.log",
+      "sha256": "a8c9605cc60c257efd1b5a682b3c0f24bb4db0d4febf25056f5ef37775d460bd"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/clippy.log",
+      "sha256": "988686fa98c1f2d63edac2e12108e825aee16dae2fcf67588b71aacba814ec28"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/core-asr.log",
+      "sha256": "bea2665d29ee9051f861acb055c505064e89748071950aca45546f63cafce6a7"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/source-after.json",
+      "sha256": "fd81ce2a900896d3209e041c4d71f7bf1f43c9517868245b6704c489744b4fb8"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/pre-unicode/source-before.json",
+      "sha256": "fd81ce2a900896d3209e041c4d71f7bf1f43c9517868245b6704c489744b4fb8"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/source-after.json",
+      "sha256": "11727c527a0e1f1d507715ac4ec270eea84fb45cd2a8aaa5988becc3595cd197"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/source-before-test-format.json",
+      "sha256": "ec36821b08b334cc718f364ca5adcb4ffe9a1e9da46e139da698409ab9aa24a1"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/source-before.json",
+      "sha256": "11727c527a0e1f1d507715ac4ec270eea84fb45cd2a8aaa5988becc3595cd197"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/windows-live-note-peer.json",
+      "sha256": "8c6837bf19cd48af39cd4e9464300637ec039fbe22c6cc2a5e1260044dc6d6d6"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/evidence.json",
+      "sha256": "4df745eceb5cf3ff295a4e32f9072e5cdc1c0b0e71c03d99337bd9024b544714"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/green-command.json",
+      "sha256": "8b70bfffe16d3249511f86ba0b1b44806460837a4cdb1fb96e4a083f25dcf123"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/green.log",
+      "sha256": "690e5b4809656f4c9264f089a511c8ffdb65839add1db34c55ea72a01ffd2959"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/library-command.json",
+      "sha256": "49c08a15e8dad52e08aed68dabdb098ec021d5449bfae46188f13b0ba3ee32fb"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/library.log",
+      "sha256": "f404070c7264975556c45501aeca800ae2155db01e076e9b47c95987f7c01c39"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/library.patch",
+      "sha256": "a3549119be400f90430bb22b97f179ef0234d305118e22de404b746686aa1c82"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/measurement-command.json",
+      "sha256": "f4638436782c1f4afa44661f2da3bb9a72d8b36d88fc2f154764b70b65ece75a"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/measurement.log",
+      "sha256": "d19d5bf3bd976a988cf9d40eefbbf48cf315d279583a2cb1e0da3b2876838457"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/red-command.json",
+      "sha256": "8b70bfffe16d3249511f86ba0b1b44806460837a4cdb1fb96e4a083f25dcf123"
+    },
+    {
+      "path": "artifacts/writer-library-2026-10-30/red.log",
+      "sha256": "15ac2cb89b86cc35abb09cc5b831b485556e706213a451f79e5786202872a6fe"
+    },
+    {
+      "path": "artifacts/context-alias-2026-10-30/exact-source-ci.json",
+      "sha256": "685a84c40567695f1e1e98b4682134fc61c14c18161d54aa3e327776a9a31811"
+    }
+  ],
+  "final_cli_build": {
+    "profile": "release",
+    "revision_at_compile": "e77f9113b472800865e801af5d03270d8f8b2848",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "schema": 1,
+    "source_sha256": "2f8f124d37e678fc867b04b4d0c515f8034bf106426fa43c791b76c6f91dc3eb",
+    "target": "aarch64-apple-darwin",
+    "cli_sha256": "20069d411334bb08f3849619e18a5535f1e964b9e888bb2f9e551da7538dc014"
+  },
+  "public_cli_controls": {
+    "cli-green.json": {
+      "passed": true,
+      "inference_jobs": 0,
+      "source_revision": 1,
+      "article_and_quote_unchanged": true,
+      "original_asr_unchanged": true,
+      "history_rows": 0
+    },
+    "unicode-cli-green.json": {
+      "passed": true,
+      "inference_jobs": 0,
+      "source_revision": 1,
+      "article_and_quote_unchanged": true,
+      "original_asr_unchanged": true,
+      "history_rows": 0
+    }
+  },
+  "platform_ci": {
+    "source": "e77f9113b472800865e801af5d03270d8f8b2848",
+    "checks": {
+      "linux": "SUCCESS",
+      "ubuntu22": "SUCCESS",
+      "prepare": "SUCCESS",
+      "validate": "SUCCESS",
+      "windows-core": "SUCCESS",
+      "build": "SKIPPED",
+      "catalog": "SKIPPED"
+    },
+    "actual_gpu_acceptance": false
+  }
+}

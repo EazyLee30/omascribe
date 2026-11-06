@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -74,7 +74,7 @@ pub struct Download {
 #[derive(Default)]
 pub struct Downloads {
     pub status: Mutex<HashMap<String, Download>>,
-    cancel: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    pub(crate) cancel: Mutex<HashMap<String, Arc<AtomicBool>>>,
 }
 #[derive(Serialize)]
 pub struct ModelStatus {
@@ -86,9 +86,11 @@ pub struct ModelStatus {
     pub download: Option<Download>,
 }
 fn complete(path: &Path, spec: &Model) -> bool {
-    spec.files
-        .iter()
-        .all(|a| fs::metadata(path.join(&a.name)).is_ok_and(|m| m.is_file() && m.len() == a.bytes))
+    fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_dir())
+        && spec.files.iter().all(|a| {
+            fs::symlink_metadata(path.join(&a.name))
+                .is_ok_and(|m| m.file_type().is_file() && m.len() == a.bytes)
+        })
 }
 impl Engine {
     pub fn recover_downloads(&self) -> Result<()> {
@@ -111,10 +113,14 @@ impl Engine {
         for cancel in self.downloads.cancel.lock().unwrap().values() {
             cancel.store(true, Ordering::SeqCst);
         }
+        self.component_downloads.cancel_all();
     }
     pub fn model_directory(&self, id: &str) -> Result<PathBuf> {
         let spec = model(id)?;
-        let managed = self.root.join("model-store").join(id);
+        self.model_directory_for_spec(spec)
+    }
+    pub(crate) fn model_directory_for_spec(&self, spec: &Model) -> Result<PathBuf> {
+        let managed = self.root.join("model-store").join(&spec.id);
         if complete(&managed, spec) {
             return Ok(managed);
         }
@@ -130,6 +136,129 @@ impl Engine {
         }
         bail!("Model not installed: {}", spec.name)
     }
+    /// Execution admission only. UI/status callers must keep using metadata-only
+    /// resolution; hashing is streamed once per unchanged model in this process.
+    pub(crate) fn verified_model(&self, id: &str) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec(model(id)?)
+    }
+    pub(crate) fn verified_model_cancellable(
+        &self,
+        id: &str,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec_with_cancel(model(id)?, Some(cancelled))
+    }
+    pub fn verify_model_integrity(&self, id: &str) -> Result<serde_json::Value> {
+        self.require_available()?;
+        let before = self.cached_model(id)?;
+        let started = std::time::Instant::now();
+        let receipt = self.verified_model(id)?;
+        Ok(serde_json::json!({"model":id,"state":"verified",
+            "cached":before.as_ref().is_some_and(|old|old.fingerprint()==receipt.fingerprint()),
+            "elapsed_ms":started.elapsed().as_millis(),
+            "bytes":model(id)?.files.iter().map(|asset|asset.bytes).sum::<u64>(),
+            "receipt":receipt.fingerprint()}))
+    }
+    pub(crate) fn cached_model(&self, id: &str) -> Result<Option<crate::model_integrity::Receipt>> {
+        let spec = model(id)?;
+        for directory in self.model_candidates(spec) {
+            if let Some(receipt) = self.model_integrity.current(&directory, spec)? {
+                return Ok(Some(receipt));
+            }
+        }
+        Ok(None)
+    }
+    fn model_candidates(&self, spec: &Model) -> Vec<PathBuf> {
+        let mut directories = vec![self.root.join("model-store").join(&spec.id)];
+        if spec.bundled {
+            directories.push(if spec.kind == "asr" {
+                self.models.join("zipformer")
+            } else {
+                self.models.clone()
+            });
+        }
+        directories
+    }
+    #[cfg(test)]
+    pub(crate) fn test_verify_model_spec(
+        &self,
+        spec: &Model,
+    ) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec(spec)
+    }
+    fn verify_model_spec(&self, spec: &Model) -> Result<crate::model_integrity::Receipt> {
+        self.verify_model_spec_with_cancel(spec, None)
+    }
+    fn verify_model_spec_with_cancel(
+        &self,
+        spec: &Model,
+        cancelled: Option<&dyn Fn() -> bool>,
+    ) -> Result<crate::model_integrity::Receipt> {
+        let check = || -> Result<()> {
+            if cancelled.is_some_and(|cancelled| cancelled()) {
+                return Err(crate::model_integrity::VerificationCancelled.into());
+            }
+            Ok(())
+        };
+        check()?;
+        let directories = self.model_candidates(spec);
+        // A valid bundled receipt can serve the identical pinned model even if
+        // a corrupt managed copy exists, without rereading that bad copy per job.
+        for directory in &directories {
+            check()?;
+            if let Some(receipt) = self.model_integrity.current(directory, spec)? {
+                check()?;
+                return Ok(receipt);
+            }
+        }
+        let mut failure = None;
+        for directory in directories {
+            check()?;
+            if directory.symlink_metadata().is_err() {
+                continue;
+            }
+            let verified = match cancelled {
+                Some(cancelled) => self
+                    .model_integrity
+                    .verify_cancellable(&directory, spec, cancelled),
+                None => self.model_integrity.verify(&directory, spec),
+            };
+            match verified {
+                Ok(receipt) => return Ok(receipt),
+                Err(error) if crate::model_integrity::is_cancelled(&error) => return Err(error),
+                Err(error) => failure = Some(error),
+            }
+        }
+        Err(failure.unwrap_or_else(|| anyhow::anyhow!("Model not installed: {}", spec.name)))
+    }
+    pub(crate) fn verified_asr_model(
+        &self,
+        id: &str,
+    ) -> Result<Vec<crate::model_integrity::Receipt>> {
+        let primary = self.verified_model(id)?;
+        let mut receipts = vec![primary];
+        if id == "zipformer-bilingual" {
+            // The native decoder prefers a local BPE file. This model does not
+            // ship one: do not let an unlisted file override the pinned tokenizer.
+            if receipts[0]
+                .directory()
+                .join("bpe.model")
+                .symlink_metadata()
+                .is_ok()
+            {
+                bail!("model:integrity:unexpected-bilingual-tokenizer");
+            }
+            let mut tokenizer = model("zipformer-small")?.clone();
+            tokenizer
+                .files
+                .retain(|a| ["tokens.txt", "bpe.model"].contains(&a.name.as_str()));
+            if tokenizer.files.len() != 2 {
+                bail!("model:integrity:missing-tokenizer-catalog");
+            }
+            receipts.push(self.verify_model_spec(&tokenizer)?);
+        }
+        Ok(receipts)
+    }
     /// Keep verified model files outside the replaceable application before a runtime-only update.
     pub fn preserve_bundled_models(&self) -> Result<()> {
         let store = self.root.join("model-store");
@@ -137,6 +266,7 @@ impl Engine {
         for spec in catalog().iter().filter(|s| s.bundled) {
             let target = store.join(&spec.id);
             if complete(&target, spec) {
+                self.model_integrity.verify(&target, spec)?;
                 continue;
             }
             let source = if spec.kind == "asr" {
@@ -241,21 +371,38 @@ impl Engine {
             || current.inference_backend != prefs.inference_backend
             || current.resource_mode != prefs.resource_mode
             || current.memory_budget_mib != prefs.memory_budget_mib
+            || current.llm_keep_alive_seconds != prefs.llm_keep_alive_seconds
         {
             self.configuration_idle()?;
+            self.inference_pool.invalidate();
+            if current.llm_model != prefs.llm_model
+                || current.threads != prefs.threads
+                || current.context_size != prefs.context_size
+                || current.inference_backend != prefs.inference_backend
+                || current.resource_mode != prefs.resource_mode
+                || current.memory_budget_mib != prefs.memory_budget_mib
+            {
+                crate::acceleration::reject(self, "configuration_changed", false);
+            }
         }
         let context_changed = current.use_memory != prefs.use_memory
             || current.use_knowledge != prefs.use_knowledge
             || current.llm_model != prefs.llm_model
             || current.minutes_language != prefs.minutes_language;
+        let translation_changed = current.translation_mode != prefs.translation_mode;
         prefs.save(&self.root)?;
-        if current.translation_mode != prefs.translation_mode
-            && self.status.lock().unwrap().translation_busy
-        {
-            self.note_cancel.store(true, Ordering::SeqCst);
-        }
         *current = prefs.clone();
         drop(current);
+        if translation_changed {
+            // Keep the translation stage stable until its owned worker accepts
+            // the stop. A follow-up minutes task must not replace it between
+            // observing translation_busy and signalling the active Server.
+            let status = self.status.lock().unwrap();
+            if status.translation_busy {
+                self.note_cancel.store(true, Ordering::SeqCst);
+                self.inference_pool.cancel_active(self);
+            }
+        }
         if context_changed {
             self.invalidate_background()?;
         }
@@ -329,6 +476,10 @@ impl Engine {
         if p.asr_model == id || p.llm_model == id {
             bail!("Select another model before deleting this one");
         }
+        drop(p);
+        if self.note_busy.load(Ordering::SeqCst) || self.inference_pool.status().leased {
+            bail!("Finish local inference before deleting a model");
+        }
         if self.downloads.cancel.lock().unwrap().contains_key(id) {
             bail!("Cancel the download first");
         }
@@ -337,12 +488,18 @@ impl Engine {
             if path.symlink_metadata()?.file_type().is_symlink() {
                 bail!("Refusing to delete a linked model directory");
             }
+            // Windows verification receipts retain read handles to exclude
+            // timestamp-invisible writes. Release them before confirmed removal.
+            self.inference_pool.invalidate();
+            self.model_integrity.invalidate(&path);
             fs::remove_dir_all(path)?;
         } else {
             bail!(
                 "Bundled models belong to the application; only downloaded copies can be deleted"
             );
         }
+        self.model_integrity
+            .invalidate(&self.root.join("model-store").join(id));
         self.downloads.status.lock().unwrap().remove(id);
         Ok(())
     }
@@ -367,10 +524,7 @@ fn download(
             bail!("Download cancelled");
         }
         engine.require_model_network()?;
-        if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
-            p.downloaded = baseline;
-        }
-        match download_once(engine, id, asset, target, cancel) {
+        match download_once(engine, id, asset, target, cancel, baseline) {
             Ok(()) => return Ok(()),
             Err(e)
                 if attempt < 2
@@ -399,11 +553,48 @@ fn download_once(
     asset: &Asset,
     target: &Path,
     cancel: &AtomicBool,
+    baseline: u64,
 ) -> Result<()> {
     if cancel.load(Ordering::SeqCst) {
         bail!("Download cancelled");
     }
-    // A queued worker must recheck the device-local policy before opening HTTP.
+    // Only this live install owns the staging path. Retries can resume its
+    // prefix, but no partial download is adopted across separate install jobs.
+    engine.require_model_network()?;
+    let mut out = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(target)?;
+    let mut hasher = Sha256::new();
+    let mut bytes = 0u64;
+    let mut buf = [0u8; 128 * 1024];
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            bail!("Download cancelled");
+        }
+        let n = out.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        bytes += n as u64;
+        if bytes > asset.bytes {
+            bail!("Downloaded file exceeds catalog size");
+        }
+        hasher.update(&buf[..n]);
+    }
+    if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
+        p.downloaded = baseline + bytes;
+    }
+    if bytes == asset.bytes {
+        if format!("{:x}", hasher.finalize()) != asset.sha256 {
+            bail!("Checksum mismatch; model was not installed");
+        }
+        out.sync_all()?;
+        return Ok(());
+    }
+    // Recheck policy after prefix hashing before opening another connection.
     engine.require_model_network()?;
     let agent = ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(20))
@@ -412,15 +603,49 @@ fn download_once(
     if cancel.load(Ordering::SeqCst) {
         bail!("Download cancelled");
     }
-    let response = agent
-        .get(&asset.url)
-        .call()
-        .context("Model download failed")?;
+    let mut request = agent.get(&asset.url).set("Accept-Encoding", "identity");
+    if bytes > 0 {
+        request = request.set("Range", &format!("bytes={bytes}-"));
+    }
+    let response = request.call().context("Model download failed")?;
+    if response
+        .header("Content-Encoding")
+        .is_some_and(|encoding| !encoding.eq_ignore_ascii_case("identity"))
+    {
+        bail!("Encoded model response cannot be verified as a byte range");
+    }
+    let remaining = match response.status() {
+        206 => {
+            if bytes == 0
+                || !response
+                    .header("Content-Range")
+                    .is_some_and(|range| valid_content_range(range, bytes, asset.bytes))
+            {
+                bail!("Model response has an invalid byte range");
+            }
+            asset.bytes - bytes
+        }
+        200 => asset.bytes,
+        _ => bail!("Unexpected model download response"),
+    };
+    if response
+        .header("Content-Length")
+        .is_some_and(|length| length.parse::<u64>().ok() != Some(remaining))
+    {
+        bail!("Model response size differs from the pinned asset");
+    }
+    // Some origins ignore Range and return the whole file. Only a validated
+    // full response may replace the prefix; never append it to partial bytes.
+    if response.status() == 200 && bytes > 0 {
+        out.set_len(0)?;
+        out.seek(SeekFrom::Start(0))?;
+        bytes = 0;
+        hasher = Sha256::new();
+        if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
+            p.downloaded = baseline;
+        }
+    }
     let mut reader = response.into_reader();
-    let mut out = File::create(target)?;
-    let mut hasher = Sha256::new();
-    let mut bytes = 0u64;
-    let mut buf = [0u8; 128 * 1024];
     loop {
         if cancel.load(Ordering::SeqCst) {
             bail!("Download cancelled");
@@ -436,14 +661,35 @@ fn download_once(
         out.write_all(&buf[..n])?;
         hasher.update(&buf[..n]);
         if let Some(p) = engine.downloads.status.lock().unwrap().get_mut(id) {
-            p.downloaded += n as u64;
+            p.downloaded = baseline + bytes;
         }
     }
     out.sync_all()?;
-    if bytes != asset.bytes || format!("{:x}", hasher.finalize()) != asset.sha256 {
+    if bytes != asset.bytes {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "Model response ended before the pinned file size",
+        )
+        .into());
+    }
+    if format!("{:x}", hasher.finalize()) != asset.sha256 {
         bail!("Checksum mismatch; model was not installed");
     }
     Ok(())
+}
+fn valid_content_range(header: &str, start: u64, total: u64) -> bool {
+    let Some((range, size)) = header
+        .strip_prefix("bytes ")
+        .and_then(|v| v.split_once('/'))
+    else {
+        return false;
+    };
+    let Some((first, last)) = range.split_once('-') else {
+        return false;
+    };
+    first.parse::<u64>().ok() == Some(start)
+        && last.parse::<u64>().ok() == total.checked_sub(1)
+        && size.parse::<u64>().ok() == Some(total)
 }
 fn install(engine: &Engine, spec: &Model, stage: &Path, cancel: &AtomicBool) -> Result<()> {
     if cancel.load(Ordering::SeqCst) {
@@ -518,6 +764,8 @@ fn install(engine: &Engine, spec: &Model, stage: &Path, cancel: &AtomicBool) -> 
 }
 #[derive(Serialize)]
 pub struct Hardware {
+    pub platform: String,
+    pub gpus: crate::hardware::GpuInventory,
     pub os: String,
     pub arch: String,
     pub cpu: String,
@@ -550,6 +798,11 @@ pub fn hardware(root: &Path) -> Hardware {
     };
     let prefs = preset(tier);
     Hardware {
+        platform: std::env::consts::OS.into(),
+        gpus: crate::hardware::detect(
+            root,
+            &crate::platform::asset_dir(root, "runtime", "OMASCRIBE_RUNTIME_DIR"),
+        ),
         os: sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.into()),
         arch: std::env::consts::ARCH.into(),
         cpu: sys
@@ -692,6 +945,276 @@ mod tests {
         );
         assert!(!stage.exists());
     }
+    fn download_fixture_engine() -> (tempfile::TempDir, Arc<Engine>) {
+        let root = tempfile::tempdir().unwrap();
+        let engine = Engine::open(root.path().into()).unwrap();
+        engine
+            .set_network_policy(crate::network::NetworkPolicy {
+                allow_model_downloads: true,
+                ..Default::default()
+            })
+            .unwrap();
+        engine.downloads.status.lock().unwrap().insert(
+            "fixture".into(),
+            Download {
+                downloaded: 11,
+                total: 19,
+                ..Default::default()
+            },
+        );
+        (root, engine)
+    }
+
+    fn download_http_fixture(
+        responses: Vec<(String, Vec<u8>)>,
+    ) -> (String, std::thread::JoinHandle<Result<Vec<String>>>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let mut requests = Vec::new();
+            for (headers, body) in responses {
+                let deadline = std::time::Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error)
+                            if error.kind() == std::io::ErrorKind::WouldBlock
+                                && std::time::Instant::now() < deadline =>
+                        {
+                            std::thread::sleep(Duration::from_millis(10));
+                        }
+                        Err(error) => return Err(error.into()),
+                    }
+                };
+                // Accepted sockets inherit nonblocking mode on macOS. Only
+                // the accept loop polls; protocol reads use the bounded timeout.
+                stream.set_nonblocking(false)?;
+                stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+                let mut request = Vec::new();
+                let mut byte = [0u8; 1];
+                while !request.ends_with(b"\r\n\r\n") && request.len() < 8192 {
+                    stream.read_exact(&mut byte)?;
+                    request.push(byte[0]);
+                }
+                requests.push(String::from_utf8(request)?.to_lowercase());
+                write!(stream, "HTTP/1.1 {headers}\r\nConnection: close\r\n\r\n")?;
+                stream.write_all(&body)?;
+            }
+            Ok(requests)
+        });
+        (format!("http://{address}/model"), server)
+    }
+
+    fn download_fixture_model(url: String) -> Model {
+        Model {
+            id: "fixture".into(),
+            name: "fixture".into(),
+            kind: "llm".into(),
+            format: "gguf".into(),
+            license: "fixture".into(),
+            source: String::new(),
+            memory_mib: 1,
+            bundled: false,
+            archive: None,
+            files: vec![Asset {
+                name: "test.gguf".into(),
+                url,
+                sha256: format!("{:x}", Sha256::digest(b"goodfile")),
+                bytes: 8,
+            }],
+        }
+    }
+
+    #[test]
+    fn model_download_retries_resume_owned_prefix_with_exact_ranges() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        engine
+            .downloads
+            .status
+            .lock()
+            .unwrap()
+            .get_mut("fixture")
+            .unwrap()
+            .downloaded = 0;
+        let (url, server) = download_http_fixture(vec![
+            (
+                "200 OK\r\nContent-Length: 11".into(),
+                b"first-asset".to_vec(),
+            ),
+            ("200 OK\r\nContent-Length: 8".into(), b"go".to_vec()),
+            (
+                "206 Partial Content\r\nContent-Length: 6\r\nContent-Range: bytes 2-7/8".into(),
+                b"od".to_vec(),
+            ),
+            (
+                "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8".into(),
+                b"file".to_vec(),
+            ),
+        ]);
+        let mut spec = download_fixture_model(url.clone());
+        spec.files.insert(
+            0,
+            Asset {
+                name: "first.gguf".into(),
+                url,
+                sha256: format!("{:x}", Sha256::digest(b"first-asset")),
+                bytes: 11,
+            },
+        );
+        let stage = root.path().join("model-store/.resume");
+        let result = install(&engine, &spec, &stage, &AtomicBool::new(false));
+        let requests = server.join().unwrap()?;
+        eprintln!("retry requests: {requests:?}; result: {result:?}");
+        result?;
+        assert_eq!(requests.len(), 4);
+        assert!(!requests[0].contains("\r\nrange:"));
+        assert!(!requests[1].contains("\r\nrange:"));
+        assert!(requests[2].contains("\r\nrange: bytes=2-\r\n"));
+        assert!(requests[3].contains("\r\nrange: bytes=4-\r\n"));
+        assert!(requests
+            .iter()
+            .all(|request| request.contains("\r\naccept-encoding: identity\r\n")));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/first.gguf"))?,
+            b"first-asset"
+        );
+        assert!(!stage.exists());
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_retries_clean_short_eof_without_content_length() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![
+            ("200 OK".into(), b"go".to_vec()),
+            (
+                "206 Partial Content\r\nContent-Range: bytes 2-7/8".into(),
+                b"odfile".to_vec(),
+            ),
+        ]);
+        let stage = root.path().join("model-store/.resume");
+        let result = install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        );
+        let requests = server.join().unwrap()?;
+        result?;
+        assert_eq!(requests.len(), 2);
+        assert!(requests[1].contains("\r\nrange: bytes=2-\r\n"));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_restarts_safely_when_origin_ignores_range() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![(
+            "200 OK\r\nContent-Length: 8".into(),
+            b"goodfile".to_vec(),
+        )]);
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"good")?;
+        install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        )?;
+        let requests = server.join().unwrap()?;
+        assert!(requests[0].contains("\r\nrange: bytes=4-\r\n"));
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn model_resume_rejects_wrong_ranges_encoding_and_checksum_without_publication() -> Result<()> {
+        for headers in [
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 3-7/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-6/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/9",
+            "206 Partial Content\r\nContent-Length: 4",
+            "206 Partial Content\r\nContent-Length: 5\r\nContent-Range: bytes 4-7/8",
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8\r\nContent-Encoding: gzip",
+        ] {
+            let (root, engine) = download_fixture_engine();
+            let (url, server) = download_http_fixture(vec![(headers.into(), b"file".to_vec())]);
+            let stage = root.path().join("model-store/.resume");
+            fs::create_dir_all(&stage)?;
+            let target = stage.join("test.gguf");
+            fs::write(&target, b"good")?;
+            assert!(install(&engine, &download_fixture_model(url), &stage, &AtomicBool::new(false)).is_err(), "{headers}");
+            assert_eq!(server.join().unwrap()?.len(), 1);
+            assert_eq!(fs::read(&target)?, b"good", "invalid response changed the prefix: {headers}");
+            assert!(!root.path().join("model-store/fixture").exists());
+        }
+        let (root, engine) = download_fixture_engine();
+        let (url, server) = download_http_fixture(vec![(
+            "206 Partial Content\r\nContent-Length: 4\r\nContent-Range: bytes 4-7/8".into(),
+            b"FAIL".to_vec(),
+        )]);
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"good")?;
+        let error = install(
+            &engine,
+            &download_fixture_model(url),
+            &stage,
+            &AtomicBool::new(false),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("Checksum mismatch"));
+        assert_eq!(server.join().unwrap()?.len(), 1);
+        assert!(!root.path().join("model-store/fixture").exists());
+        Ok(())
+    }
+
+    #[test]
+    fn complete_model_prefix_is_verified_without_another_request() -> Result<()> {
+        let (root, engine) = download_fixture_engine();
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+        listener.set_nonblocking(true)?;
+        let spec = download_fixture_model(format!("http://{}/model", listener.local_addr()?));
+        let stage = root.path().join("model-store/.resume");
+        fs::create_dir_all(&stage)?;
+        fs::write(stage.join("test.gguf"), b"goodfile")?;
+        install(&engine, &spec, &stage, &AtomicBool::new(false))?;
+        assert_eq!(
+            listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        assert_eq!(
+            fs::read(root.path().join("model-store/fixture/test.gguf"))?,
+            b"goodfile"
+        );
+        assert_eq!(
+            engine.downloads.status.lock().unwrap()["fixture"].downloaded,
+            19
+        );
+        Ok(())
+    }
+
     #[test]
     fn running_jobs_prevent_model_changes_and_selected_model_deletion() {
         let root = tempfile::tempdir().unwrap();

@@ -1,0 +1,824 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "source": "7470018ca3a4de72b9e2cf75c69c291ac0be9f77",
+  "terminology_source": "237dbf0",
+  "parent_trial_source": "39c3d6df70561d507cc0f47a0a6eb9a527355e1d",
+  "fixed_release_candidate_unchanged": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "stable_release": "0.3.4",
+  "changes": [
+    "Active admitted note names and explicit legal aliases retain priority before the 80-term bound; punctuation names remain display spellings.",
+    "Ordinary focus words no longer enter approximate spelling correction, preserving original transcription plurals.",
+    "Shared captions/minutes validation admits only the closed, cited transcription incompleteness equivalent, preserving every other unfinished source.",
+    "Terms-aware opaque name masks and the existing approval-state guard prevent literal-name and approval-state laundering in the new fallback."
+  ],
+  "original_failure": {
+    "result": "FAIL",
+    "case": "en_generic_note_keeps_source_plural",
+    "seconds": 120.14,
+    "observed_generation_requests": 12,
+    "committed_jobs": 0,
+    "source_text": "The transcriptions are incomplete. The report is not approved.",
+    "draft": "语音转录不完整，报告未批准。",
+    "reason": "Shared unfinished guard recognized English incomplete but not Chinese 不完整; valid caption and article rejected, repeated scheduler requests did not commit.",
+    "retained": true
+  },
+  "fixed_targeted_run": {
+    "passed": true,
+    "cases": 6,
+    "mode": "actual local automatic scheduler; fictional seeded transcript, no microphone/ASR accuracy claim",
+    "environment": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "7470018ca3a4de72b9e2cf75c69c291ac0be9f77",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "e8e8b81e825fe90600ba14d75d7e658a00475242dfbe0afeddd343fbef1b14a7",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "e354ccb30b4deddf6094190b7dc8b2daf5fd8e7b594a56cf01359d34d576b135",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "7470018ca3a4de72b9e2cf75c69c291ac0be9f77",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "environment_unchanged": true,
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 1,
+      "context_size": 2048,
+      "memory_budget_mib": 4096,
+      "inference_backend": "metal",
+      "resource_mode": "balanced",
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "minutes_language": "zh",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false,
+      "llm_keep_alive_seconds": 0
+    },
+    "results": [
+      {
+        "name": "en_generic_note_keeps_source_plural",
+        "passed": true,
+        "error": null,
+        "seconds": 6.881,
+        "errors": [],
+        "requests": 2,
+        "responses": 2,
+        "finished_commits": 2,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_keeps_source_plural.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      {
+        "name": "en_punctuation_note_captions",
+        "passed": true,
+        "error": null,
+        "seconds": 7.139,
+        "errors": [],
+        "requests": 2,
+        "responses": 2,
+        "finished_commits": 2,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/en_punctuation_note_captions.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      {
+        "name": "en_unused_punctuation_notes_add_no_names",
+        "passed": true,
+        "error": null,
+        "seconds": 6.911,
+        "errors": [],
+        "requests": 2,
+        "responses": 2,
+        "finished_commits": 2,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/en_unused_punctuation_notes_add_no_names.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      {
+        "name": "en_generic_note_name",
+        "passed": true,
+        "error": null,
+        "seconds": 6.931,
+        "errors": [],
+        "requests": 2,
+        "responses": 2,
+        "finished_commits": 2,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_name.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      {
+        "name": "zh_noisy_name_no_added_topics",
+        "passed": true,
+        "error": null,
+        "seconds": 7.749,
+        "errors": [],
+        "requests": 5,
+        "responses": 5,
+        "finished_commits": 3,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/zh_noisy_name_no_added_topics.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      {
+        "name": "en_existing_document_spelling_only_sync",
+        "passed": true,
+        "error": null,
+        "seconds": 10.35,
+        "errors": [],
+        "requests": 3,
+        "responses": 3,
+        "finished_commits": 3,
+        "report": "artifacts/incomplete-state-2026-10-30/live-7470018/en_existing_document_spelling_only_sync.json",
+        "model_copy_cleanup": {
+          "released": true,
+          "logical_bytes": 1167797244,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      }
+    ],
+    "visible_outputs": [
+      {
+        "case": "en_generic_note_keeps_source_plural",
+        "minutes": [
+          {
+            "focus": "会议纪要",
+            "id": "9c5dd6cd-7ef7-48dc-a33e-f545c6b63c2b",
+            "kind": "section",
+            "meeting_id": "be52b2f1-8728-4884-af96-9243a9f11486",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The transcriptions are incomplete. The report is not approved.",
+                "revision": 1,
+                "segment_id": "be52b2f1-8728-4884-af96-9243a9f11486:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "转录不完整。报告未批准。"
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "be52b2f1-8728-4884-af96-9243a9f11486:1:1",
+            "meeting_id": "be52b2f1-8728-4884-af96-9243a9f11486",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "The transcriptions are incomplete. The report is not approved."
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "b4422d57d5e2cccde6937630ef3aa4e922a47470baff230f7faf0983f62e649b",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "be52b2f1-8728-4884-af96-9243a9f11486:1:1",
+            "target": "zh",
+            "text": "转录不完整。报告未批准。"
+          }
+        ]
+      },
+      {
+        "case": "en_punctuation_note_captions",
+        "minutes": [
+          {
+            "focus": "会议纪要",
+            "id": "1e4d7fe1-2fd4-47e7-853a-a7c708f15c7c",
+            "kind": "section",
+            "meeting_id": "f2f0e60c-053c-44c6-893d-dafc1cbce7b7",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "C++ and Node.js have not completed the local test. GPT-4 is not approved for release.",
+                "revision": 1,
+                "segment_id": "f2f0e60c-053c-44c6-893d-dafc1cbce7b7:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "C++ 和 Node.js 未完成本地测试。GPT-4 未批准发布。"
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "f2f0e60c-053c-44c6-893d-dafc1cbce7b7:1:1",
+            "meeting_id": "f2f0e60c-053c-44c6-893d-dafc1cbce7b7",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "ad344af8f71b48d356bbae6ecd2d22d50854196dac5b99ffb805c26b65a3dd9d",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "f2f0e60c-053c-44c6-893d-dafc1cbce7b7:1:1",
+            "target": "zh",
+            "text": "C++ 和 Node.js 未完成本地测试。GPT-4 未批准发布。"
+          }
+        ]
+      },
+      {
+        "case": "en_unused_punctuation_notes_add_no_names",
+        "minutes": [
+          {
+            "focus": "会议纪要",
+            "id": "0500bcbc-8470-4ea9-94fa-322924925406",
+            "kind": "section",
+            "meeting_id": "dedf1e45-d5eb-4f31-ba6a-dc3bd2156fe6",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The report remains unapproved.",
+                "revision": 1,
+                "segment_id": "dedf1e45-d5eb-4f31-ba6a-dc3bd2156fe6:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "报告尚未批准。"
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "dedf1e45-d5eb-4f31-ba6a-dc3bd2156fe6:1:1",
+            "meeting_id": "dedf1e45-d5eb-4f31-ba6a-dc3bd2156fe6",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "The report remains unapproved."
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "f104d5a8efd3a396191e3ba4056bebcfa4af2c91778936ef75832d8e2b100107",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "dedf1e45-d5eb-4f31-ba6a-dc3bd2156fe6:1:1",
+            "target": "zh",
+            "text": "报告尚未批准。"
+          }
+        ]
+      },
+      {
+        "case": "en_generic_note_name",
+        "minutes": [
+          {
+            "focus": "Meeting minutes",
+            "id": "b374e2a1-1ff6-4499-9056-21baa4554db0",
+            "kind": "section",
+            "meeting_id": "5957bc06-45ea-447e-a642-e936a5b73cf6",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "The PixelLedger import still fails. We will investigate it after the review.",
+                "revision": 2,
+                "segment_id": "5957bc06-45ea-447e-a642-e936a5b73cf6:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The PixelLedger import still fails. We will investigate it after the review."
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "5957bc06-45ea-447e-a642-e936a5b73cf6:1:1",
+            "meeting_id": "5957bc06-45ea-447e-a642-e936a5b73cf6",
+            "revision": 2,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "The PixelLedger import still fails. We will investigate it after the review."
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "0e39179c029e0d35ec2a5d5a832c59483bf1535d6bf409079b42ef3ed80d10e2",
+            "model": "qwen3-1.7b",
+            "revision": 2,
+            "segment_id": "5957bc06-45ea-447e-a642-e936a5b73cf6:1:1",
+            "target": "zh",
+            "text": "PixelLedger 导入仍然失败。我们将在评审之后进行调查。"
+          }
+        ]
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "minutes": [
+          {
+            "focus": "会议纪要",
+            "id": "881de727-86ca-4544-8e33-7f9b405a18d2",
+            "kind": "section",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "sources": [
+              {
+                "end_ms": 50000,
+                "quote": "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。",
+                "revision": 2,
+                "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:5",
+                "speaker_name": null,
+                "start_ms": 40000
+              },
+              {
+                "end_ms": 20000,
+                "quote": "嗯 TRY MY OWN ALMOST TRIP NOW",
+                "revision": 1,
+                "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:2",
+                "speaker_name": null,
+                "start_ms": 10000
+              },
+              {
+                "end_ms": 30000,
+                "quote": "嗯",
+                "revision": 1,
+                "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:3",
+                "speaker_name": null,
+                "start_ms": 20000
+              },
+              {
+                "end_ms": 40000,
+                "quote": "AND",
+                "revision": 1,
+                "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:4",
+                "speaker_name": null,
+                "start_ms": 30000
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "转写中提到 PixelLedger 的人员分配好像有问题，需要核对。"
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:1",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "CHECKING CHECKING"
+          },
+          {
+            "end_ms": 20000,
+            "id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:2",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "revision": 1,
+            "run": 1,
+            "seq": 2,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 10000,
+            "text": "嗯 TRY MY OWN ALMOST TRIP NOW"
+          },
+          {
+            "end_ms": 30000,
+            "id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:3",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "revision": 1,
+            "run": 1,
+            "seq": 3,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 20000,
+            "text": "嗯"
+          },
+          {
+            "end_ms": 40000,
+            "id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:4",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "revision": 1,
+            "run": 1,
+            "seq": 4,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 30000,
+            "text": "AND"
+          },
+          {
+            "end_ms": 50000,
+            "id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:5",
+            "meeting_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950",
+            "revision": 2,
+            "run": 1,
+            "seq": 5,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 40000,
+            "text": "这个 PixelLedger 的人员分配好像有问题，转写还需要核对。"
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "97db57af472fc35810c01f78537925ceeb5f892784f9beccec9ad9ce2706a10f",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:1",
+            "target": "zh",
+            "text": "检查 检查"
+          },
+          {
+            "cache_key": "34944f7f312d57a7f43afb0f336b8d198ea0f56d9a9e3a4502b33a82c824c573",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:2",
+            "target": "en",
+            "text": "TRY MY OWN ALMOST TRIP NOW"
+          },
+          {
+            "cache_key": "a4c89d196c9c74270f6bdc03d3d76e30254401a539ac9680fc6f1e74a1b06559",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:3",
+            "target": "en",
+            "text": "Hmm"
+          },
+          {
+            "cache_key": "ade63396715f0f5d1e4d2ac73d16875e8306723baff51b017b2aa78ba94b3bce",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:4",
+            "target": "zh",
+            "text": "和"
+          },
+          {
+            "cache_key": "8fba054d482c47e4a1fb117d5015b6ea17846fb3be26186e5f4ad3ac425d8d1c",
+            "model": "qwen3-1.7b",
+            "revision": 2,
+            "segment_id": "bf0b8bd2-c5a2-4ff4-adff-484edce41950:1:5",
+            "target": "en",
+            "text": "The personnel allocation for PixelLedger seems to have issues, and the transcription still needs to be verified."
+          }
+        ]
+      },
+      {
+        "case": "en_existing_document_spelling_only_sync",
+        "minutes": [
+          {
+            "focus": "Meeting minutes",
+            "id": "c9556684-078d-45ab-bf1d-29c13ec5379f",
+            "kind": "section",
+            "meeting_id": "afcf3de7-a56b-484b-9008-47697c417c70",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "CedarLedger has not completed the local test. The budget has not been approved.",
+                "revision": 2,
+                "segment_id": "afcf3de7-a56b-484b-9008-47697c417c70:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "CedarLedger has not completed the local test. The budget has not been approved."
+          }
+        ],
+        "transcript": [
+          {
+            "end_ms": 10000,
+            "id": "afcf3de7-a56b-484b-9008-47697c417c70:1:1",
+            "meeting_id": "afcf3de7-a56b-484b-9008-47697c417c70",
+            "revision": 2,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "CedarLedger has not completed the local test. The budget has not been approved."
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "56d663047ae4bd015fbbdc8b974910b4e27aefa6172fb27509ac39b3d87bdb67",
+            "model": "qwen3-1.7b",
+            "revision": 2,
+            "segment_id": "afcf3de7-a56b-484b-9008-47697c417c70:1:1",
+            "target": "zh",
+            "text": "CedarLedger 未完成本地测试。预算未获批准。"
+          }
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "core_passed": 374,
+    "core_ignored": 7,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_workspace_clippy": true,
+    "commands": [
+      {
+        "name": "core",
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "omascribe-core",
+          "--locked",
+          "--quiet"
+        ],
+        "exit_code": 0,
+        "seconds": 4.321,
+        "log": "/Users/eazylee/build/omascribe/artifacts/incomplete-state-2026-10-30/core.log"
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 7.204,
+        "log": "/Users/eazylee/build/omascribe/artifacts/incomplete-state-2026-10-30/clippy.log"
+      },
+      {
+        "name": "diff",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.016,
+        "log": "/Users/eazylee/build/omascribe/artifacts/incomplete-state-2026-10-30/diff.log"
+      }
+    ],
+    "exact_source_ci": {
+      "headRefOid": "7470018ca3a4de72b9e2cf75c69c291ac0be9f77",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:31:02Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911997002/job/123582139909",
+          "name": "linux",
+          "startedAt": "2026-10-29T16:29:00Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:29:07Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911997051/job/123582140550",
+          "name": "prepare",
+          "startedAt": "2026-10-29T16:29:00Z",
+          "status": "COMPLETED",
+          "workflowName": "Optional acceleration components"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:29:18Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911996985/job/123582139291",
+          "name": "validate",
+          "startedAt": "2026-10-29T16:29:00Z",
+          "status": "COMPLETED",
+          "workflowName": "Website validation"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:31:33Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911997051/job/123582239123",
+          "name": "windows-core",
+          "startedAt": "2026-10-29T16:29:10Z",
+          "status": "COMPLETED",
+          "workflowName": "Optional acceleration components"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:29:08Z",
+          "conclusion": "SKIPPED",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911997051/job/123582240599",
+          "name": "build",
+          "startedAt": "2026-10-29T16:29:08Z",
+          "status": "COMPLETED",
+          "workflowName": "Optional acceleration components"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-29T16:31:33Z",
+          "conclusion": "SKIPPED",
+          "detailsUrl": "https://github.com/EazyLee30/omascribe/actions/runs/40911997051/job/123583674381",
+          "name": "catalog",
+          "startedAt": "2026-10-29T16:31:33Z",
+          "status": "COMPLETED",
+          "workflowName": "Optional acceleration components"
+        }
+      ]
+    }
+  },
+  "assets": {
+    "existing_sdk_runtime_models_reused": true,
+    "source_assets_unchanged": true,
+    "owned_clone_cleanup": {
+      "removed": true,
+      "logical_bytes": 1167797179,
+      "files": 6,
+      "originals_unchanged": true,
+      "note": "Only manifest-owned APFS clones removed. Logical bytes are not physical reclaimed disk space. Raw failure/success evidence retained."
+    },
+    "base_installer_or_gpu_payload_rebuilt": false
+  },
+  "limitations": [
+    "No complete 68-case frozen-candidate run or installer/update acceptance at this new source.",
+    "Candidate12 and original failed outcomes remain unchanged; no 0.3.5 installer or release was created.",
+    "Actual ASR phonetic/confusable name accuracy, physical Windows/Linux/Mac capture, GPU energy and whole-meeting resource improvements remain unproved by seeded-text checks.",
+    "The scoped incomplete fallback intentionally abstains on unknown subjects, opaque names, quoted, conditional or modal context; it is not general semantic entailment.",
+    "Pattern PASS does not prove every fact or wording. In the noisy case one ambiguous uppercase caption remains as observed, and GPT-4 未批准发布 retains state but passive phrasing can be improved."
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/term-priority-2026-10-29/live-39c3d6d/status.json",
+      "bytes": 138430,
+      "sha256": "1d486be009104687ec5ee4f98806960ce2fed4f10c9ed0e20fe7cbdab3075d6d"
+    },
+    {
+      "path": "artifacts/term-priority-2026-10-29/live-39c3d6d/request-summary.json",
+      "bytes": 1002,
+      "sha256": "794183d98ea86fe0ccd5949447ecfdd8388cd0a9b0ccfc5038472092ef7d7692"
+    },
+    {
+      "path": "artifacts/term-priority-2026-10-29/live-39c3d6d/en_generic_note_keeps_source_plural.json",
+      "bytes": 41383,
+      "sha256": "f31ebf70f750e589b7c2e10e327a83393334317c4e539fa5f06f9f2c130d45e0"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/status.json",
+      "bytes": 3494,
+      "sha256": "8718d2ef91fd8c09f30bac76348d68df0777be25fcb912fc06aea84556a04f84"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/environment-before.json",
+      "bytes": 1025,
+      "sha256": "f8dc57b17daff378c2257874fb2d8fc0014b6c5861a0b3c02f902898cb399ec1"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/environment-after.json",
+      "bytes": 1025,
+      "sha256": "f8dc57b17daff378c2257874fb2d8fc0014b6c5861a0b3c02f902898cb399ec1"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/assets-before.json",
+      "bytes": 2741,
+      "sha256": "35a0bc8c6e71ffc381f065a023761acd674205ae98c3185c84ccf796af1220bd"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/assets-after.json",
+      "bytes": 2741,
+      "sha256": "35a0bc8c6e71ffc381f065a023761acd674205ae98c3185c84ccf796af1220bd"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/checks.json",
+      "bytes": 841,
+      "sha256": "b61e28f38b57877356d5cad16cd4be059d0a1e34718c6ab4014b26ead1766f24"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/core.log",
+      "bytes": 1123,
+      "sha256": "c43b42ca77dbbbbee2a27746276c258bfe9cb7600c950e2e115b3aac130676e6"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/clippy.log",
+      "bytes": 291,
+      "sha256": "afbf37a1c77ce8fa708639341c86accb9516e3607ea1bce9e8cd3890ec8adae6"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/release-build.json",
+      "bytes": 315,
+      "sha256": "c90e7c2c905e65b40a37b03aa1b2a137b9f98e1674e9793d4a79de7aeb86efb6"
+    },
+    {
+      "path": "artifacts/term-priority-2026-10-29/live-39c3d6d/owned-clone-cleanup.json",
+      "bytes": 244,
+      "sha256": "94536a5cc5e1045bc0d8481a63a10d26a416db0dcfe4e167701575002347833b"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_keeps_source_plural.json",
+      "bytes": 14259,
+      "sha256": "e8478e02f792b1c9cc9df05cc2d7a679bb1aea2e5120e514910bcdfc8547b00f"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_keeps_source_plural.artifacts/en_generic_note_keeps_source_plural/phase-1/batch-1/stdout.txt",
+      "bytes": 2585,
+      "sha256": "9a481236f6363975fa0c295b4beab35b0ec244072269e08b3a9e0ef3ace3d3a5"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_punctuation_note_captions.json",
+      "bytes": 14412,
+      "sha256": "6809a7746b9cf87b4ceed54167647206cd0823b65b265efd14505d84b30e6e5a"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_punctuation_note_captions.artifacts/en_punctuation_note_captions/phase-1/batch-1/stdout.txt",
+      "bytes": 2679,
+      "sha256": "3771a52b8815ec700a5a2028227e43d55bf147aa0298fdd99199431059588d5c"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_unused_punctuation_notes_add_no_names.json",
+      "bytes": 14110,
+      "sha256": "23dbd2f4b32cee16d8aba1df4ff4602727dab19bf25316d79ede0c168bd7f925"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_unused_punctuation_notes_add_no_names.artifacts/en_unused_punctuation_notes_add_no_names/phase-1/batch-1/stdout.txt",
+      "bytes": 2495,
+      "sha256": "a4e4835c5d4d482324d04a872c84d740c8cfef8a3412836e448fd6eabd7aafe7"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_name.json",
+      "bytes": 14460,
+      "sha256": "09c250caf248ca0b5f0f58b6f3cb462766dbe39865c0bd258e3b37132c9ab19d"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_generic_note_name.artifacts/en_generic_note_name/phase-1/batch-1/stdout.txt",
+      "bytes": 2675,
+      "sha256": "b45748139243c14f8e1cfc1f7dddd8a023a9b7a860fe5b7a13e43798e03ed94b"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/zh_noisy_name_no_added_topics.json",
+      "bytes": 26825,
+      "sha256": "273d91f2a0c9d84fba87552614c87c4ae938bf6516389394359010077d255d5d"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/zh_noisy_name_no_added_topics.artifacts/zh_noisy_name_no_added_topics/phase-1/batch-1/stdout.txt",
+      "bytes": 5933,
+      "sha256": "f53df5fc1ad534b0e9faba772482a8574f5390ac29d75849c2b2068586e2653c"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_existing_document_spelling_only_sync.json",
+      "bytes": 22629,
+      "sha256": "7b39f641a1b179f9f690b9300bef9f44a3beecbaecf2d8ad83528651d43faa5b"
+    },
+    {
+      "path": "artifacts/incomplete-state-2026-10-30/live-7470018/en_existing_document_spelling_only_sync.artifacts/en_existing_document_spelling_only_sync/phase-2/batch-1/stdout.txt",
+      "bytes": 2675,
+      "sha256": "7c8d8fdceae7db94eaed0dd8970c3e50332a97fe12fb3740d34e9ecdc7930455"
+    }
+  ]
+}

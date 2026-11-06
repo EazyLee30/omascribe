@@ -1,0 +1,309 @@
+{
+  "schema": 1,
+  "kind": "paired-minutes-models-summary",
+  "date": "2026-10-26",
+  "hardware": "Apple M5",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "9d1fae274c2b48e40ad995bb024f3bbd0fa23f59",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "6ff5143c7392397725f8c31fe23da0964753951371eafc931833d20d53153436",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "a31e14e48639b2fecf4252b0fbd97e9007f98220e0ad92a9a4495386baf80f23",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "25f91024f24c622491a6c7af2afd42aa839bedd155ee029f87b42f16f6f94ff4",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "eee1c5d540e046d676d059ced17614edef2842f7",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixed_preferences": {
+    "inference_backend": "cpu",
+    "threads": 1,
+    "context_size": 2048,
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": false,
+    "translation_mode": "off",
+    "diarization": false,
+    "use_memory": false,
+    "use_knowledge": false
+  },
+  "fixture_sha256": "058fd8dece47adfac54e906291c4122695a7eefa5445b074628fd685023e4afa",
+  "cases": [
+    "zh_budget_guess",
+    "en_owner_and_deadline",
+    "zh_correction",
+    "bilingual_scope",
+    "zh_calendar_citations",
+    "zh_connected_minutes",
+    "zh_product_spelling",
+    "zh_empty_greetings",
+    "zh_phased_correction",
+    "zh_named_speakers",
+    "en_minutes_from_zh",
+    "zh_minutes_from_en",
+    "zh_long_context_state",
+    "zh_human_paragraph_protected",
+    "zh_note_name_spelling",
+    "en_generic_note_name",
+    "zh_name_context_is_not_evidence",
+    "zh_noisy_name_no_added_topics"
+  ],
+  "model_assets": {
+    "qwen3-1.7b": [
+      {
+        "name": "Qwen3-1.7B-Q4_K_M.gguf",
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+        "bytes": 1107409472,
+        "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf"
+      }
+    ],
+    "qwen3-0.6b": [
+      {
+        "name": "Qwen3-0.6B-Q4_K_M.gguf",
+        "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+        "bytes": 396705472,
+        "url": "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/50968a4468ef4233ed78cd7c3de230dd1d61a56b/Qwen3-0.6B-Q4_K_M.gguf"
+      }
+    ]
+  },
+  "runtime_files": {
+    "build-info.json": {
+      "bytes": 93,
+      "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+    },
+    "llama-server": {
+      "bytes": 18953328,
+      "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+    }
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "comparable": true,
+      "arms": [
+        {
+          "model": "qwen3-1.7b",
+          "exit_code": 0,
+          "passed": true,
+          "source_tree_dirty": false,
+          "summary": {
+            "cases": 18,
+            "passed_cases": 18,
+            "case_seconds": 243.949,
+            "generation_commands": 21,
+            "process_seconds": 243.803,
+            "attempts": 21,
+            "repairs": 1,
+            "rejected_attempts": 1,
+            "attempt_seconds": 217.408,
+            "input_tokens": 4919,
+            "output_tokens": 978,
+            "sampled_cpu_seconds": 230.30112681699998,
+            "sampled_cpu_known_seconds": 230.30112681699998,
+            "commands_missing_cpu": 0,
+            "peak_tree_rss_mib": 2526.796875,
+            "commands_missing_rss": 0,
+            "peak_tree_pss_mib": null,
+            "commands_missing_pss": 21,
+            "gpu_memory_mib": null,
+            "energy_joules": null
+          },
+          "failed_cases": [],
+          "resource_method": {
+            "method": "psutil sampled descendant tree",
+            "interval_seconds": 0.25,
+            "psutil_version": "7.1.3"
+          }
+        },
+        {
+          "model": "qwen3-0.6b",
+          "exit_code": 1,
+          "passed": false,
+          "source_tree_dirty": false,
+          "summary": {
+            "cases": 18,
+            "passed_cases": 16,
+            "case_seconds": 118.031,
+            "generation_commands": 23,
+            "process_seconds": 117.87,
+            "attempts": 26,
+            "repairs": 4,
+            "rejected_attempts": 8,
+            "attempt_seconds": 98.377,
+            "input_tokens": 6106,
+            "output_tokens": 994,
+            "sampled_cpu_seconds": 106.075113169,
+            "sampled_cpu_known_seconds": 106.075113169,
+            "commands_missing_cpu": 0,
+            "peak_tree_rss_mib": 1173.296875,
+            "commands_missing_rss": 0,
+            "peak_tree_pss_mib": null,
+            "commands_missing_pss": 23,
+            "gpu_memory_mib": null,
+            "energy_joules": null
+          },
+          "failed_cases": [
+            {
+              "case": "bilingual_scope",
+              "status": "纪要输出语言与选择不符，原话仍待整理",
+              "errors": [
+                "Phase 1: uncovered transcript",
+                "No document: 纪要输出语言与选择不符，原话仍待整理",
+                "Missing: 录音",
+                "Missing: 离线|线下转录",
+                "Missing: 转写|转录",
+                "Missing: 周五|星期五",
+                "Missing: 系统音频",
+                "Missing: 下一?个版本|后续版本"
+              ]
+            },
+            {
+              "case": "zh_minutes_from_en",
+              "status": "纪要输出语言与选择不符，原话仍待整理",
+              "errors": [
+                "Phase 1: uncovered transcript",
+                "No document: 纪要输出语言与选择不符，原话仍待整理",
+                "Missing: 离线",
+                "Missing: Morgan",
+                "Missing: 周四|星期四",
+                "Missing: 未|待",
+                "Related evidence was not synthesized"
+              ]
+            }
+          ],
+          "resource_method": {
+            "method": "psutil sampled descendant tree",
+            "interval_seconds": 0.25,
+            "psutil_version": "7.1.3"
+          }
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "comparable": true,
+      "arms": [
+        {
+          "model": "qwen3-0.6b",
+          "exit_code": 1,
+          "passed": false,
+          "source_tree_dirty": false,
+          "summary": {
+            "cases": 18,
+            "passed_cases": 16,
+            "case_seconds": 118.767,
+            "generation_commands": 23,
+            "process_seconds": 118.58500000000001,
+            "attempts": 26,
+            "repairs": 4,
+            "rejected_attempts": 8,
+            "attempt_seconds": 99.22,
+            "input_tokens": 6106,
+            "output_tokens": 994,
+            "sampled_cpu_seconds": 107.986435434,
+            "sampled_cpu_known_seconds": 107.986435434,
+            "commands_missing_cpu": 0,
+            "peak_tree_rss_mib": 1173.375,
+            "commands_missing_rss": 0,
+            "peak_tree_pss_mib": null,
+            "commands_missing_pss": 23,
+            "gpu_memory_mib": null,
+            "energy_joules": null
+          },
+          "failed_cases": [
+            {
+              "case": "bilingual_scope",
+              "status": "纪要输出语言与选择不符，原话仍待整理",
+              "errors": [
+                "Phase 1: uncovered transcript",
+                "No document: 纪要输出语言与选择不符，原话仍待整理",
+                "Missing: 录音",
+                "Missing: 离线|线下转录",
+                "Missing: 转写|转录",
+                "Missing: 周五|星期五",
+                "Missing: 系统音频",
+                "Missing: 下一?个版本|后续版本"
+              ]
+            },
+            {
+              "case": "zh_minutes_from_en",
+              "status": "纪要输出语言与选择不符，原话仍待整理",
+              "errors": [
+                "Phase 1: uncovered transcript",
+                "No document: 纪要输出语言与选择不符，原话仍待整理",
+                "Missing: 离线",
+                "Missing: Morgan",
+                "Missing: 周四|星期四",
+                "Missing: 未|待",
+                "Related evidence was not synthesized"
+              ]
+            }
+          ],
+          "resource_method": {
+            "method": "psutil sampled descendant tree",
+            "interval_seconds": 0.25,
+            "psutil_version": "7.1.3"
+          }
+        },
+        {
+          "model": "qwen3-1.7b",
+          "exit_code": 0,
+          "passed": true,
+          "source_tree_dirty": false,
+          "summary": {
+            "cases": 18,
+            "passed_cases": 18,
+            "case_seconds": 245.754,
+            "generation_commands": 21,
+            "process_seconds": 245.61100000000002,
+            "attempts": 21,
+            "repairs": 1,
+            "rejected_attempts": 1,
+            "attempt_seconds": 218.502,
+            "input_tokens": 4919,
+            "output_tokens": 978,
+            "sampled_cpu_seconds": 232.778169921,
+            "sampled_cpu_known_seconds": 232.778169921,
+            "commands_missing_cpu": 0,
+            "peak_tree_rss_mib": 2526.46875,
+            "commands_missing_rss": 0,
+            "peak_tree_pss_mib": null,
+            "commands_missing_pss": 21,
+            "gpu_memory_mib": null,
+            "energy_joules": null
+          },
+          "failed_cases": [],
+          "resource_method": {
+            "method": "psutil sampled descendant tree",
+            "interval_seconds": 0.25,
+            "psutil_version": "7.1.3"
+          }
+        }
+      ]
+    }
+  ],
+  "comparison_complete": true,
+  "quality_all_passed": false,
+  "default_promotion": false,
+  "conclusion": "Keep the 1.7B default. The 0.6B model uses less sampled CPU/RSS but failed the same two Chinese-output cases in both orders, including repair attempts. Smaller weights alone do not satisfy the quality gate.",
+  "raw_report": {
+    "local_path": "artifacts/benchmarks/minutes-models-eee1c5d.json",
+    "sha256": "310edc330466b75b441a37a3024a51d20c68f4733b4578da98d547009d995ff6"
+  },
+  "limitations": [
+    "Targeted fictional pattern/citation/coverage/human-edit checks. Each generation command opens a CLI; worker retention across commands is not measured. CPU is sampled lower-bound, RSS may double-count shared pages; PSS/GPU/energy may be unknown. Includes all attempts and failed cases. No automatic model promotion or cross-model fallback simulation.",
+    "CLI build identity records the core source at compilation; suite commits changed only YAML/docs during the run. Core/harness digests match across all arms and CLI/model/runtime hashes were revalidated.",
+    "This corpus predates the new Windows fixture/name validator in PR #2; rerun the integrated full set before any model promotion.",
+    "The app resource ceiling is not a whole-system RAM limit. Sampled process-tree RSS is not model-file size or guaranteed steady-state memory."
+  ]
+}

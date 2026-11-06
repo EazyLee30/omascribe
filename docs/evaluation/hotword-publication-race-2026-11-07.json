@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_commit": "3497c77dec8c3e429ed0bc8836a011806694a4ce",
+  "production_file": "crates/core/src/engine.rs",
+  "production_file_sha256": "ca39a4101be54000886a9d668de60381f6ad7745cd7180be6eb37de841abab8c",
+  "issue": "Startup or live refresh can capture old note terms, then publish them after a newer save_note has completed. Cleared terms can also reappear.",
+  "change": {
+    "entry_points": [
+      "Engine::spawn_asr -> publish_current_hotwords",
+      "Engine::refresh_live_hotwords -> publish_current_hotwords"
+    ],
+    "serialization": "One Engine-owned mutex covers current Terms capture, hotwords.txt replacement and best-effort diagnostic replacement. No captured candidate list enters the gate.",
+    "lock_order": "config (startup only) -> hotword_publication -> store; active/store guards are released by callers before publication; helper does not acquire config/active/notes_target.",
+    "resource_scope": "No new worker, thread, model load, inference call, polling loop or dependency. Gate covers term extraction and bounded hotword publication only."
+  },
+  "regression": {
+    "method": "Thread-local barrier after Terms capture and before file write. Probe the gate before starting the second writer only to choose a deadlock-free schedule; final pass criteria are actual save completion, joined threads, exact current DB wire/stats and unchanged test PCM.",
+    "red": "Behavior-preserving helper extraction, unused publication gate, unchanged old publication behavior. Four deterministic failures: ASTERLABS overwrites ORBITFORGE or empty context, through both startup-shared and live-refresh paths.",
+    "green": "Same hook position and assertions; acquire gate before Terms capture. All four regressions pass.",
+    "timeout_limits": "Channel receives have a 10-second failure bound; no timeout is accepted as evidence of serialization. Thread joins do not constitute a separate hard wall-clock deadline.",
+    "audio": "Public synthetic bytes used only to assert no mutation; no native capture/decoder started."
+  },
+  "checks": [
+    {
+      "command": "cargo test -p omascribe-core hotword_publication_tests -- --nocapture",
+      "passed": 6,
+      "failed": 0,
+      "new_regressions": 4
+    },
+    {
+      "command": "cargo test -p omascribe-core --lib terminology::",
+      "passed": 95,
+      "failed": 0
+    },
+    {
+      "command": "cargo test -p omascribe-core --lib library::",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 2
+    },
+    {
+      "command": "cargo test -p omascribe-core --test note_context_corrections",
+      "passed": 38,
+      "failed": 0
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy -p omascribe-core --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "review": {
+    "independent_lock_order": "No inverse store/active/config/notes_target edge found. Both production call sites use the helper.",
+    "test_review": "No production bypass found. Lock-state observation selects schedule only; final assertions use current persisted data."
+  },
+  "limits": [
+    "Guarantee is within one Engine process. The two files are individually replaced, not one transaction; diagnostic JSON remains best effort.",
+    "Not a native decoding or microphone test, acoustic recall gain, minutes quality gain or whole-device performance benchmark.",
+    "Existing Q9 and Q16 quality failures remain open. No new model run, installer, default model/backend change or release.",
+    "Development checks are scoped to affected paths; no local full corpus or full package rebuild was repeated."
+  ],
+  "coordination": {
+    "windows_pr": 14,
+    "head": "a693919ff257178344c83fa2a6618faebd68bd24",
+    "status": "unchanged; device-selection/UMA/conflict remains with original owner; no duplicate implementation",
+    "linux": "No new separate open Linux PR found; validate the shared source."
+  },
+  "artifacts": {
+    "red.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/red.log",
+      "bytes": 2675,
+      "sha256": "582963986d311ce0c0318dc93608882974a27ee171a7f4ce25f7ad7b28212556"
+    },
+    "red.patch": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/red.patch",
+      "bytes": 7952,
+      "sha256": "d8062d76f9796952691ddd4bdb3798cd6bbbc161a32d295ef711dc4475fdb699"
+    },
+    "green.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/green.log",
+      "bytes": 1809,
+      "sha256": "a90a5ecfd6e0c8dde7116924f78bdbe02f952f3718fee24b2b901f9ff486cde4"
+    },
+    "terminology.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/terminology.log",
+      "bytes": 10138,
+      "sha256": "e5a22f4931757f6ca49d3583893ac4eab2df4566c233560d6d469ebba243ee35"
+    },
+    "library.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/library.log",
+      "bytes": 1343,
+      "sha256": "9293db41959c62cc659484e41c23e2e799d3384b3199bec5dc2adc374d3b65d6"
+    },
+    "note-context.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/note-context.log",
+      "bytes": 3463,
+      "sha256": "3ad97c8273ba5c92b5160574f85c809b9c2567c54bf20d1afe0d54c9019fd3f1"
+    },
+    "clippy.log": {
+      "path": "artifacts/hotword-publication-race-2026-11-07/clippy.log",
+      "bytes": 140,
+      "sha256": "05b2e69e32791f4ad78ebf0bd4b317a8c00748431c89c07ee339cc9f78fd4c7c"
+    }
+  }
+}

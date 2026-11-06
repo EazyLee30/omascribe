@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "parent_commit": "04b50ff85e3045699b1436ba65505a68ae7f5da2",
+  "status": "LOCAL_REGRESSIONS_STRICT_WORKSPACE_INDEPENDENT_REVIEW_AND_PLATFORM_CI_PASS",
+  "source_sha256": {
+    "crates/core/src/notes/corrections.rs": "763297961038b96f20cbd37060cd84059d707e893d36258c5c93d06caa6ea7ae"
+  },
+  "observed_failure": {
+    "source": "04b50ff",
+    "input": [
+      "预算3000元尚未确定。",
+      "预算改为5000元，仍未确定。"
+    ],
+    "result": "The comma split pending state off the new amount. Existing BudgetView abstained, so the normal writer document gate did not reject the stale amount. New test reproduced one actual failure before the fix."
+  },
+  "behavior": [
+    "A standalone bare budget amount can retain one immediately following Chinese pending-state clause across a comma. Reuse the existing pending-state vocabulary and amount, currency, scope and latest-value checks.",
+    "Only whitespace may precede the original full amount match or separate it from the comma. Conditions, questions, quotes, newlines, nonadjacent clauses and differently named states do not gain this binding.",
+    "If the amount regex spans beyond the clause boundary, abstain before any slice; the dedicated control first reproduced an actual range panic during development.",
+    "Current-value validation now rejects old3000 and accepts still-pending5000 for this input. Source transcript bytes remain unchanged; another invoice may retain the same3000 amount."
+  ],
+  "checks": {
+    "original_comma_red": {
+      "passed": 1,
+      "failed": 1
+    },
+    "development_unit_range_red": {
+      "passed": 0,
+      "failed": 1
+    },
+    "new_controls": 4,
+    "core": 614,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "strict_workspace_clippy": "passed offline",
+    "independent_read_only_review": "passed at exact source SHA",
+    "platform_ci": {
+      "source": "82866cbf229e56be20ba03420f97dbc32f691904",
+      "checks": [
+        {
+          "name": "catalog",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126717858936"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716132455"
+        },
+        {
+          "name": "windows-core",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716130399"
+        },
+        {
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515013/job/126716007955"
+        },
+        {
+          "name": "ubuntu22",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515713/job/126715992188"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515494/job/126715987974"
+        },
+        {
+          "name": "linux",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/EazyLee30/omascribe/actions/runs/41870515119/job/126715986923"
+        }
+      ]
+    }
+  },
+  "controls": [
+    "Normal writer.document rejects stale budget and accepts corrected pending value; original text remains byte-identical.",
+    "Chinese-comma status, optional bare but-still status, leading spaces and unapproved state.",
+    "Conditions before and after the amount, unrelated topics, duplicate commas, fields, questions, quotes, Markdown/backticks/brackets and separate sources abstain.",
+    "Budget5000 and invoice3000 stay distinct. Chinese, CRLF and English currency matches spanning a newline abstain without panic."
+  ],
+  "limits": [
+    "This extends only an explicit simple current-budget rule, not general discourse or field identity. Unsupported scopes remain on the normal evidence path.",
+    "No model, ASR, SDK/GPU payload download, native GPU benchmark, installer build or release was performed for this fix.",
+    "The separately frozen private grouped-Q16 experiment does not contain this production patch. Q16 and actual-audio proper-name recall remain open."
+  ],
+  "evidence_directory": "artifacts/grouped-minutes-admission-2026-11-04",
+  "raw_sha256": {
+    "production-budget-comma-original-tests.patch": "5b4f90ceaae4699e989ca7c0dd702f9ae90a550a406fdccfb4e39ab9823f5780",
+    "production-budget-comma-red.log": "a1c6060a52c354bdf4b320472303d5b06536a36233e0921ef2f106f7513951e0",
+    "production-budget-unit-range-red.log": "93cb5b913fa292a2e9b6148ab80431ebd4d2cd4f336d92cd8b4f5566d81c4a49",
+    "production-budget-comma-and-range-core.log": "4ceb4f9243cdc065b7221da9762fd512167883e2732beece4cb70cee2746f7ea",
+    "production-budget-comma-and-range-clippy.log": "fecccd30f3d020b3a684b72d0ac26d7139e6520adb264d23b45d5aea5d9f00b9"
+  },
+  "release_published": false
+}

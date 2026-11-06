@@ -1,0 +1,3679 @@
+{
+  "schema": 1,
+  "draft": false,
+  "status": "reviewed_affected_scope_pass_ci_not_accepted",
+  "source_revision": "9ffa53cef5de759d55e7b0bc04c633ace014516d",
+  "release_approved": false,
+  "full_corpus_acceptance": false,
+  "full_semantic_acceptance": false,
+  "scope": "Only completed owned session 23896: closed-state-check 3 automatic cases + 1 translation-off case, and separate 8-arm closed-state-caption pair repeat. No803 counts, later local style change, candidate9 full corpus, installer, ASR or multi-platform acceptance is included.",
+  "identity": {
+    "before": "r001",
+    "after": "r002",
+    "actual": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "9ffa53cef5de759d55e7b0bc04c633ace014516d",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "3ba2ac4e2cefe4ff63f0fb443614dfcf8108ed18e034b23bc3b5cdbb6ca40984",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "321e79a2cafe46d3d33aa55244ad980f2fe3e5e9ef987172d82341d63fe0c992",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "e3dbaba5286614bc58b9cfb35b2e38ad0baf276df0588653a0bd94bd752f97c1",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "9ffa53cef5de759d55e7b0bc04c633ace014516d",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "before_after_exact_equal": true,
+    "runner": "r003",
+    "terminal_status": "r004",
+    "steps": [
+      {
+        "step": "pair",
+        "exit_code": 0
+      },
+      {
+        "step": "auto",
+        "exit_code": 0
+      },
+      {
+        "step": "minutes",
+        "exit_code": 0
+      }
+    ],
+    "overall_runtime_runner_exit_code": 0
+  },
+  "static_frozen_checks": {
+    "core": {
+      "ref": "r005",
+      "passed": 291,
+      "failed": 0,
+      "ignored": 7
+    },
+    "clippy": {
+      "ref": "r006",
+      "result": "PASS on local Rust1.94.1"
+    },
+    "cli_build": {
+      "ref": "r007",
+      "result": "PASS"
+    }
+  },
+  "ci_is_separate": {
+    "frozen_commit_ci_result": "FAIL",
+    "raw_log": "r008",
+    "observed_lint": "clippy::question_mark",
+    "observed_source": "crates/core/src/translation/closed_state.rs:46:16",
+    "observed_toolchain_reference": "rust-clippy/rust-1.99.0",
+    "meaning": "Linux CI -D warnings rejects an Option branch that can use ?. This is a real CI failure for the frozen commit; successful Mac runtime cases do not clear it.",
+    "later_local_work": "Parent reports a behavior-preserving ? rewrite applied locally after this freeze. Local logs exist, but are NOT frozen9ffa CI success or part of the measured exact CLI.",
+    "later_local_only_checks": {
+      "clippy": "r009",
+      "three_closed_state_tests": "r010"
+    },
+    "not_claimed": "No Rust1.99 or whole-workspace CI success for the later unpublished change."
+  },
+  "original_targeted_results": {
+    "auto": {
+      "passed": 3,
+      "total": 3
+    },
+    "translation_off": {
+      "passed": 1,
+      "total": 1
+    },
+    "original_errors": []
+  },
+  "cases": [
+    {
+      "mode": "auto",
+      "case": "zh_long_context_state",
+      "raw_report": "r011",
+      "original_fixture": "r012",
+      "original_fixture_sha256": "212bfcc1e884ebe84775f1728e008f8534783abb69d47983d77a741a1f39d035",
+      "original_flags": {
+        "passed": true,
+        "errors": [],
+        "seconds": 18.575,
+        "coverage": 10,
+        "status": "文档已同步 · 1 个章节"
+      },
+      "execution": "automatic-scheduler",
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "focus": "**离线转写** **发布** **负责人**",
+      "fixture_preferences": {},
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": "r013",
+          "stderr": "r014",
+          "process": {
+            "code": 0,
+            "seconds": 8.279,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 32,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.2179964,
+              "peak_tree_rss_mib": 1496.125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 5,
+          "caption_count": 5,
+          "meeting": {
+            "id": "418d5c15-7e78-4439-b507-faf9ec072c1d",
+            "status": "ready",
+            "notes_cursor": 5,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "fd6838ac-41f2-47dc-9a09-4b06766569b2",
+              "focus": "会议纪要",
+              "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r015",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 0,
+              "cursor_after": 5,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 1316,
+                  "first_token_ms": 152,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "snapshot": "r016",
+          "stderr": "r017",
+          "process": {
+            "code": 0,
+            "seconds": 10.282,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 39,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.9629472000000003,
+              "peak_tree_rss_mib": 1497.0,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 10,
+          "caption_count": 10,
+          "meeting": {
+            "id": "418d5c15-7e78-4439-b507-faf9ec072c1d",
+            "status": "ready",
+            "notes_cursor": 10,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "fd6838ac-41f2-47dc-9a09-4b06766569b2",
+              "focus": "会议纪要",
+              "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:9",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:7",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:10",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:6",
+                "418d5c15-7e78-4439-b507-faf9ec072c1d:1:8"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:9",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:7",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:10",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:6",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:8",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r018",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 5,
+              "cursor_after": 10,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 2735,
+                  "first_token_ms": 204,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "final_sources": [
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+          "seq": 1,
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+          "seq": 2,
+          "revision": 1,
+          "start_ms": 10000,
+          "end_ms": 20000,
+          "text": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+          "seq": 3,
+          "revision": 1,
+          "start_ms": 20000,
+          "end_ms": 30000,
+          "text": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+          "seq": 4,
+          "revision": 1,
+          "start_ms": 30000,
+          "end_ms": 40000,
+          "text": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5",
+          "seq": 5,
+          "revision": 1,
+          "start_ms": 40000,
+          "end_ms": 50000,
+          "text": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:6",
+          "seq": 6,
+          "revision": 1,
+          "start_ms": 50000,
+          "end_ms": 60000,
+          "text": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:7",
+          "seq": 7,
+          "revision": 1,
+          "start_ms": 60000,
+          "end_ms": 70000,
+          "text": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:8",
+          "seq": 8,
+          "revision": 1,
+          "start_ms": 70000,
+          "end_ms": 80000,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:9",
+          "seq": 9,
+          "revision": 1,
+          "start_ms": 80000,
+          "end_ms": 90000,
+          "text": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。"
+        },
+        {
+          "id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:10",
+          "seq": 10,
+          "revision": 1,
+          "start_ms": 90000,
+          "end_ms": 100000,
+          "text": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        }
+      ],
+      "final_captions": [
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:1",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "Offline transcription tool is being tested by 林悦, and currently only for internal validation; public release has not yet been approved.",
+          "cache_key": "2ef8b6fce372789bf7e9e06d6328703501f2b7e095abb48c675879f1a9b45e72"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:2",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "To save each segment of the original recording, the modified transcription cannot be automatically overwritten by the output result.",
+          "cache_key": "59fc1f653323732347df7ece29d497d5c5e1f15622fd87e947a3521236c69a6d"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:3",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The audio boundaries should be preserved when the recording is paused, and the timestamp after resuming the recording must be continuous.",
+          "cache_key": "2fa96483670857259e7dabc89ded63dcea3532842a51756942bfd32dc1b98195"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:4",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "Noise scenario: measure fan and keyboard sounds, do not convert quiet periods into text.",
+          "cache_key": "8806593e04de90b5a8030b123094bddb98f405a4a3fa0aa460dcb800c8b07a69"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:5",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "English and Chinese should both be tested, and English product names should be spelled correctly when mixed speech occurs.",
+          "cache_key": "9accaa3e5aca37ad86eb3878df69627775b051124ba4793190372aa9cd07ac65"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:6",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The subtitle interface should clearly display the original text and translation, using a local model for the translation.",
+          "cache_key": "fa6260cb25a8027310eb449cbb736c55015a5097acb95a9f8f55d135cd7ad824"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:7",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "Model download requires internet, recording and note processing are completely offline, and no sharing of meeting content is allowed.",
+          "cache_key": "5a596744cf16a08b34087162f962c29638a93815d6996478dd5cf68b9223f1af"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:8",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.",
+          "cache_key": "780b7b3ec474ba8960b827fe466137db665c0f03dc152ff3c80c2b33fda21eaa"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:9",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "Today's discussion is limited to these acceptance requirements. System audio capture has not been completed. The release date of the new version has not been determined.",
+          "cache_key": "351abf9bd6aeb2178cb968f3dba39ada390eb7aaf24d0a3d407aec5bc35947a9"
+        },
+        {
+          "segment_id": "418d5c15-7e78-4439-b507-faf9ec072c1d:1:10",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "Finally confirm that public release has not yet been approved, 林悦 is to submit the test report on Thursday.",
+          "cache_key": "886a3e68208fac5206e453f5929fe18e73ae4b66ebe9581dc4f7750b6caea28b"
+        }
+      ],
+      "caption_source_revision_bindings_verified": true,
+      "notes": [
+        {
+          "anchor_ms": 0,
+          "content": "**离线转写** **发布** **负责人**",
+          "id": "0e5ddc9a-09eb-49c3-8d60-74b74e1953fb",
+          "kind": "document",
+          "meeting_id": "418d5c15-7e78-4439-b507-faf9ec072c1d",
+          "updated_at": "2026-10-28T17:12:34.965728+00:00"
+        }
+      ],
+      "last_rejected_translation": {
+        "ref": "r019",
+        "actual": {
+          "error": "chunk_evidence_mismatch: Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses.",
+          "input": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+          "raw": "{\n  \"translation\": \"The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.\"\n}",
+          "stage": "validation"
+        },
+        "kind": "Last saved rejected draft, NOT a final committed caption or full retry history."
+      },
+      "workspace_last_generation": {
+        "ref": "r020",
+        "summary": {
+          "model": "qwen3-1.7b",
+          "backend": "metal",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "cursor_before": 5,
+          "cursor_after": 10,
+          "attempt": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 2735,
+              "first_token_ms": 204,
+              "validation_error": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0
+            }
+          ]
+        }
+      },
+      "runtime": {
+        "trace": "r021",
+        "phase_counts": {
+          "started": 3,
+          "worker": 3,
+          "chunk": 7,
+          "generation": 7,
+          "literal_caption": 1,
+          "validation_failed": 2,
+          "batch": 2,
+          "finished": 3,
+          "retrieval": 1,
+          "article_state": 1,
+          "article_prompt": 1
+        },
+        "worker_metrics": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 415
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 417
+          }
+        ],
+        "runtime_log": "r022",
+        "actual_device_offload_lines": [
+          "0.00.045.255 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+          "0.00.136.263 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+          "0.00.178.988 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+          "0.00.258.241 I load_tensors: offloaded 29/29 layers to GPU"
+        ]
+      },
+      "model_cleanup": {
+        "ref": "r023",
+        "actual": {
+          "released": true,
+          "logical_bytes": 1107409537,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      "independent_affected_fact_review": {
+        "result": "PASS_FOR_REVIEWED_STATE_FACTS",
+        "observed": "Final article retains unapproved public release, system audio capture not completed, new release date not determined, original 林悦 spelling and future Thursday test report submission. CER/WER and latency requirements remain distinct.",
+        "caption_mode": "Ten captions including seq9 with finite has not been completed / has not been determined; no without-completing substitution committed."
+      }
+    },
+    {
+      "mode": "auto",
+      "case": "zh_unspoken_honorific_note",
+      "raw_report": "r024",
+      "original_fixture": "r025",
+      "original_fixture_sha256": "212bfcc1e884ebe84775f1728e008f8534783abb69d47983d77a741a1f39d035",
+      "original_flags": {
+        "passed": true,
+        "errors": [],
+        "seconds": 7.122,
+        "coverage": 1,
+        "status": "文档已同步 · 1 个章节"
+      },
+      "execution": "automatic-scheduler",
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "focus": "**刘老师** **录音**",
+      "fixture_preferences": {
+        "minutes_language": "zh"
+      },
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": "r026",
+          "stderr": "r027",
+          "process": {
+            "code": 0,
+            "seconds": 7.112,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.94091066,
+              "peak_tree_rss_mib": 1462.65625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 1,
+          "caption_count": 1,
+          "meeting": {
+            "id": "f89e5cde-09e9-4f02-b640-b3f30e291f68",
+            "status": "ready",
+            "notes_cursor": 1,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "aa97ce89-04cc-4e36-b209-f89535427868",
+              "focus": "会议纪要",
+              "text": "星期五不是截止日期。会议笔记中的录音应保留在这台电脑上。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "f89e5cde-09e9-4f02-b640-b3f30e291f68:1:1"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "f89e5cde-09e9-4f02-b640-b3f30e291f68:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r028",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 0,
+              "cursor_after": 1,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 337,
+                  "first_token_ms": 101,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "final_sources": [
+        {
+          "id": "f89e5cde-09e9-4f02-b640-b3f30e291f68:1:1",
+          "seq": 1,
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        }
+      ],
+      "final_captions": [
+        {
+          "segment_id": "f89e5cde-09e9-4f02-b640-b3f30e291f68:1:1",
+          "revision": 1,
+          "target": "zh",
+          "model": "qwen3-1.7b",
+          "text": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+          "cache_key": "838af770dd6eb8eacb46b610f792022cbb12bac9cea445fe7726073c61a5354c"
+        }
+      ],
+      "caption_source_revision_bindings_verified": true,
+      "notes": [
+        {
+          "anchor_ms": 0,
+          "content": "**刘老师** **录音**",
+          "id": "d4338121-fcf4-41bc-8fa5-b7cca7ad35ee",
+          "kind": "document",
+          "meeting_id": "f89e5cde-09e9-4f02-b640-b3f30e291f68",
+          "updated_at": "2026-10-28T17:12:53.692813+00:00"
+        }
+      ],
+      "last_rejected_translation": {
+        "present": false,
+        "limit": "Absence of a saved rejection is not complete retry-history proof."
+      },
+      "workspace_last_generation": {
+        "ref": "r029",
+        "summary": {
+          "model": "qwen3-1.7b",
+          "backend": "metal",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "cursor_before": 0,
+          "cursor_after": 1,
+          "attempt": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 337,
+              "first_token_ms": 101,
+              "validation_error": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0
+            }
+          ]
+        }
+      },
+      "runtime": {
+        "trace": "r030",
+        "phase_counts": {
+          "started": 2,
+          "chunk": 1,
+          "literal_caption": 1,
+          "batch": 1,
+          "finished": 2,
+          "retrieval": 1,
+          "article_state": 1,
+          "worker": 1,
+          "article_prompt": 1,
+          "generation": 1
+        },
+        "worker_metrics": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 416
+          }
+        ],
+        "runtime_log": "r031",
+        "actual_device_offload_lines": [
+          "0.00.039.655 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+          "0.00.128.722 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+          "0.00.170.146 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+          "0.00.248.085 I load_tensors: offloaded 29/29 layers to GPU"
+        ]
+      },
+      "model_cleanup": {
+        "ref": "r032",
+        "actual": {
+          "released": true,
+          "logical_bytes": 1107409537,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      "independent_affected_fact_review": {
+        "result": "PASS_FOR_REVIEWED_STATE_NAME_FACTS",
+        "observed": "Caption and article preserve Friday not deadline, recording IN meeting notes, should modality and this-computer destination. 刘老师/Liu from focus is absent.",
+        "fixture_difference_from803": "This NEW fixture explicitly sets minutes_language=zh. The separate803 original language-mismatch FAIL remains unchanged and is not retroactively passed."
+      }
+    },
+    {
+      "mode": "auto",
+      "case": "zh_incremental_withdrawal",
+      "raw_report": "r033",
+      "original_fixture": "r034",
+      "original_fixture_sha256": "212bfcc1e884ebe84775f1728e008f8534783abb69d47983d77a741a1f39d035",
+      "original_flags": {
+        "passed": true,
+        "errors": [],
+        "seconds": 21.197,
+        "coverage": 3,
+        "status": "文档已同步 · 1 个章节"
+      },
+      "execution": "automatic-scheduler",
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "focus": "**展览** **预算** **刘老师**",
+      "fixture_preferences": {},
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": "r035",
+          "stderr": "r036",
+          "process": {
+            "code": 0,
+            "seconds": 7.068,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.581491076,
+              "peak_tree_rss_mib": 1488.390625,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 1,
+          "caption_count": 1,
+          "meeting": {
+            "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547",
+            "status": "ready",
+            "notes_cursor": 1,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "fb95eef2-d4d2-4e2b-9a65-bacfaef68783",
+              "focus": "会议纪要",
+              "text": "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r037",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 0,
+              "cursor_after": 1,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 378,
+                  "first_token_ms": 102,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "snapshot": "r038",
+          "stderr": "r039",
+          "process": {
+            "code": 0,
+            "seconds": 5.472,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 21,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.5015150739999998,
+              "peak_tree_rss_mib": 1483.828125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 2,
+          "caption_count": 2,
+          "meeting": {
+            "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547",
+            "status": "ready",
+            "notes_cursor": 2,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "fb95eef2-d4d2-4e2b-9a65-bacfaef68783",
+              "focus": "会议纪要",
+              "text": "展览暂定周五开放，刘老师负责布置。周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r040",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 1,
+              "cursor_after": 2,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 719,
+                  "first_token_ms": 145,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "phase": 3,
+          "batch": 1,
+          "snapshot": "r041",
+          "stderr": "r042",
+          "process": {
+            "code": 0,
+            "seconds": 8.637,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 33,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 2.615604544,
+              "peak_tree_rss_mib": 1494.453125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 3,
+          "caption_count": 3,
+          "meeting": {
+            "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547",
+            "status": "ready",
+            "notes_cursor": 3,
+            "auto_notes": true
+          },
+          "articles": [
+            {
+              "id": "fb95eef2-d4d2-4e2b-9a65-bacfaef68783",
+              "focus": "会议纪要",
+              "text": "展览暂定周五开放，刘老师负责布置，预算改为5000元但仍未确定。周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:3",
+                "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:3",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r043",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 2,
+              "cursor_after": 3,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 1125,
+                  "first_token_ms": 148,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "final_sources": [
+        {
+          "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1",
+          "seq": 1,
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "展览暂定周五开放，刘老师负责布置，预算3000元还没有确定。"
+        },
+        {
+          "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+          "seq": 2,
+          "revision": 1,
+          "start_ms": 10000,
+          "end_ms": 20000,
+          "text": "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。"
+        },
+        {
+          "id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:3",
+          "seq": 3,
+          "revision": 1,
+          "start_ms": 20000,
+          "end_ms": 30000,
+          "text": "参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+        }
+      ],
+      "final_captions": [
+        {
+          "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:1",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The exhibition is tentatively open on Friday, 刘老师 is responsible for setting up, and the budget of 3000 yuan has not yet been determined.",
+          "cache_key": "83ccc53abc92379e320a9a539c55b2a45d76de7df3794c5be6f9dc70fa27987b"
+        },
+        {
+          "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:2",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The schedule for the Friday arrangement has been canceled, the new date has not been decided, 刘老师 continues to be responsible for setting up, and the budget has been changed to 5000 yuan but is still not determined.",
+          "cache_key": "3e3ecf8d9a5079acee2c57bc71094fe2696903322a2fdfb1139a9a24492883a6"
+        },
+        {
+          "segment_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547:1:3",
+          "revision": 1,
+          "target": "en",
+          "model": "qwen3-1.7b",
+          "text": "The test link is to be sent on Wednesday next week. 陈老师 is responsible for the tour reservation page, which has not yet been completed.",
+          "cache_key": "d5ddd8f8e88b7de52b82a502e5124d792971047151739e7a70aca85774a037e8"
+        }
+      ],
+      "caption_source_revision_bindings_verified": true,
+      "notes": [
+        {
+          "anchor_ms": 0,
+          "content": "**展览** **预算** **刘老师**",
+          "id": "f120fc68-f320-40a2-afe6-3d79afe55be5",
+          "kind": "document",
+          "meeting_id": "0e758efb-0a32-4dc1-85c1-e8fb54512547",
+          "updated_at": "2026-10-28T17:13:00.966271+00:00"
+        }
+      ],
+      "last_rejected_translation": {
+        "ref": "r044",
+        "actual": {
+          "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+          "input": "周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。",
+          "raw": "{\"translation\": \"The schedule for the Friday opening was canceled, the new date has not been decided, Mr. Liu continues to be responsible for setting up, and the budget has been changed to 5000 yuan but is still not determined.\"}",
+          "stage": "validation"
+        },
+        "kind": "Last saved rejected draft, NOT a final committed caption or full retry history."
+      },
+      "workspace_last_generation": {
+        "ref": "r045",
+        "summary": {
+          "model": "qwen3-1.7b",
+          "backend": "metal",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "cursor_before": 2,
+          "cursor_after": 3,
+          "attempt": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 1125,
+              "first_token_ms": 148,
+              "validation_error": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0
+            }
+          ]
+        }
+      },
+      "runtime": {
+        "trace": "r046",
+        "phase_counts": {
+          "started": 2,
+          "worker": 2,
+          "chunk": 6,
+          "generation": 7,
+          "validation_failed": 3,
+          "batch": 1,
+          "finished": 2,
+          "retrieval": 1,
+          "article_state": 1,
+          "article_prompt": 1
+        },
+        "worker_metrics": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 422
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          }
+        ],
+        "runtime_log": "r047",
+        "actual_device_offload_lines": [
+          "0.00.038.240 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+          "0.00.129.491 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+          "0.00.170.693 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+          "0.00.249.610 I load_tensors: offloaded 29/29 layers to GPU"
+        ]
+      },
+      "model_cleanup": {
+        "ref": "r048",
+        "actual": {
+          "released": true,
+          "logical_bytes": 1107409537,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      "independent_affected_fact_review": {
+        "result": "PASS_FOR_REVIEWED_NAME_ACTION_WITHDRAWAL_FACTS",
+        "observed": "Captions preserve exact 刘老师/陈老师 without guessed Mr./Ms., setting-up responsibility, Friday withdrawal, replacement date undecided, budget3000→5000 still undetermined, next-Wednesday test link and unfinished reservation page. Articles retain those states.",
+        "editorial_limit": "Final article repeats budget/responsibility and places historical tentative Friday before explicit withdrawal; this is not polished general summary quality."
+      }
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_long_context_state",
+      "raw_report": "r049",
+      "original_fixture": "r050",
+      "original_fixture_sha256": "212bfcc1e884ebe84775f1728e008f8534783abb69d47983d77a741a1f39d035",
+      "original_flags": {
+        "passed": true,
+        "errors": [],
+        "seconds": 6.359,
+        "coverage": 10,
+        "status": "文档已同步 · 1 个章节"
+      },
+      "execution": "explicit-generation",
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "focus": "**离线转写** **发布** **负责人**",
+      "fixture_preferences": {},
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": "r051",
+          "stderr": "r052",
+          "process": {
+            "code": 0,
+            "seconds": 2.556,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 10,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.120796206,
+              "peak_tree_rss_mib": 1455.328125,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 5,
+          "caption_count": 0,
+          "meeting": {
+            "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da",
+            "status": "ready",
+            "notes_cursor": 5,
+            "auto_notes": false
+          },
+          "articles": [
+            {
+              "id": "c2f10001-b9fe-4a57-9137-d9c5a0b91c5e",
+              "focus": "会议纪要",
+              "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:1",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:2",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:4",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:3",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:5"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:4",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:3",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:5",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r053",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 0,
+              "cursor_after": 5,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 1453,
+                  "first_token_ms": 157,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "snapshot": "r054",
+          "stderr": "r055",
+          "process": {
+            "code": 0,
+            "seconds": 3.791,
+            "failure": null,
+            "resources": {
+              "interval_seconds": 0.25,
+              "samples": 15,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.400972388,
+              "peak_tree_rss_mib": 1454.9375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "source_count": 10,
+          "caption_count": 0,
+          "meeting": {
+            "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da",
+            "status": "ready",
+            "notes_cursor": 10,
+            "auto_notes": false
+          },
+          "articles": [
+            {
+              "id": "c2f10001-b9fe-4a57-9137-d9c5a0b91c5e",
+              "focus": "会议纪要",
+              "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。",
+              "status": "pending",
+              "stale": false,
+              "cited_source_ids": [
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:9",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:1",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:2",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:3",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:7",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:5",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:4",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:10",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:6",
+                "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:8"
+              ]
+            }
+          ],
+          "source_binding_checks": [
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:9",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:1",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:2",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:3",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:7",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:5",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:4",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:10",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:6",
+              "revision": 1,
+              "exact_quote_time_match": true
+            },
+            {
+              "segment_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:8",
+              "revision": 1,
+              "exact_quote_time_match": true
+            }
+          ],
+          "last_generation": {
+            "ref": "r056",
+            "summary": {
+              "model": "qwen3-1.7b",
+              "backend": "metal",
+              "resource_mode": "balanced",
+              "memory_budget_mib": 4096,
+              "cursor_before": 5,
+              "cursor_after": 10,
+              "attempt": 1,
+              "attempts": [
+                {
+                  "attempt": 1,
+                  "mode": "compose",
+                  "elapsed_ms": 2641,
+                  "first_token_ms": 208,
+                  "validation_error": null,
+                  "week_qualifier_corrections": 0,
+                  "unitless_yuan_corrections": 0
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "final_sources": [
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:1",
+          "seq": 1,
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:2",
+          "seq": 2,
+          "revision": 1,
+          "start_ms": 10000,
+          "end_ms": 20000,
+          "text": "要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:3",
+          "seq": 3,
+          "revision": 1,
+          "start_ms": 20000,
+          "end_ms": 30000,
+          "text": "录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:4",
+          "seq": 4,
+          "revision": 1,
+          "start_ms": 30000,
+          "end_ms": 40000,
+          "text": "噪声场景先测风扇和键盘声音，不要把安静时段编成文字。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:5",
+          "seq": 5,
+          "revision": 1,
+          "start_ms": 40000,
+          "end_ms": 50000,
+          "text": "英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:6",
+          "seq": 6,
+          "revision": 1,
+          "start_ms": 50000,
+          "end_ms": 60000,
+          "text": "字幕界面需要明确展示原文和翻译，翻译使用本地模型。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:7",
+          "seq": 7,
+          "revision": 1,
+          "start_ms": 60000,
+          "end_ms": 70000,
+          "text": "模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:8",
+          "seq": 8,
+          "revision": 1,
+          "start_ms": 70000,
+          "end_ms": 80000,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:9",
+          "seq": 9,
+          "revision": 1,
+          "start_ms": 80000,
+          "end_ms": 90000,
+          "text": "今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。"
+        },
+        {
+          "id": "0cea1948-2fad-4a29-9a72-ee458b8b24da:1:10",
+          "seq": 10,
+          "revision": 1,
+          "start_ms": 90000,
+          "end_ms": 100000,
+          "text": "最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+        }
+      ],
+      "final_captions": [],
+      "caption_source_revision_bindings_verified": true,
+      "notes": [
+        {
+          "anchor_ms": 0,
+          "content": "**离线转写** **发布** **负责人**",
+          "id": "29e242d4-45b6-4a34-ae69-89dcb27af213",
+          "kind": "document",
+          "meeting_id": "0cea1948-2fad-4a29-9a72-ee458b8b24da",
+          "updated_at": "2026-10-28T17:13:22.377917+00:00"
+        }
+      ],
+      "last_rejected_translation": {
+        "present": false,
+        "limit": "Absence of a saved rejection is not complete retry-history proof."
+      },
+      "workspace_last_generation": {
+        "ref": "r057",
+        "summary": {
+          "model": "qwen3-1.7b",
+          "backend": "metal",
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "cursor_before": 5,
+          "cursor_after": 10,
+          "attempt": 1,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "elapsed_ms": 2641,
+              "first_token_ms": 208,
+              "validation_error": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0
+            }
+          ]
+        }
+      },
+      "runtime": {
+        "trace": "r058",
+        "phase_counts": {
+          "started": 1,
+          "retrieval": 1,
+          "article_state": 1,
+          "worker": 1,
+          "article_prompt": 1,
+          "generation": 1,
+          "finished": 1
+        },
+        "worker_metrics": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 425
+          }
+        ],
+        "runtime_log": "r059",
+        "actual_device_offload_lines": [
+          "0.00.032.360 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+          "0.00.123.354 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+          "0.00.165.390 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+          "0.00.243.776 I load_tensors: offloaded 29/29 layers to GPU"
+        ]
+      },
+      "model_cleanup": {
+        "ref": "r060",
+        "actual": {
+          "released": true,
+          "logical_bytes": 1107409537,
+          "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+        }
+      },
+      "independent_affected_fact_review": {
+        "result": "PASS_FOR_REVIEWED_STATE_FACTS",
+        "observed": "Final article retains unapproved public release, system audio capture not completed, new release date not determined, original 林悦 spelling and future Thursday test report submission. CER/WER and latency requirements remain distinct.",
+        "caption_mode": "Translation off: no captions expected or produced. This arm does not independently exercise English state translation."
+      }
+    }
+  ],
+  "paired_repeat": {
+    "raw_report": "r103",
+    "original_passed": true,
+    "original_errors": [],
+    "identities": {
+      "baseline": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "68a0b7efde202f3bb90de53d5808866d25bc3c05055c9e35d7be7624c4c14d49",
+          "target": "aarch64-apple-darwin"
+        },
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "dee7955173b5e9bfb8e8fc9cfd987c18de14493304befeeb838edab2be39121e",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "candidate": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "9ffa53cef5de759d55e7b0bc04c633ace014516d",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "3ba2ac4e2cefe4ff63f0fb443614dfcf8108ed18e034b23bc3b5cdbb6ca40984",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "321e79a2cafe46d3d33aa55244ad980f2fe3e5e9ef987172d82341d63fe0c992",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "e3dbaba5286614bc58b9cfb35b2e38ad0baf276df0588653a0bd94bd752f97c1",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "9ffa53cef5de759d55e7b0bc04c633ace014516d",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      }
+    },
+    "preferences": {
+      "llm_model": "qwen3-1.7b",
+      "inference_backend": "metal",
+      "threads": 1,
+      "context_size": 2048,
+      "memory_budget_mib": 4096,
+      "resource_mode": "balanced",
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": false,
+      "translation_mode": "bilingual",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false
+    },
+    "runtime_before": {
+      "llama/build-info.json": {
+        "bytes": 93,
+        "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+      },
+      "llama/llama-server": {
+        "bytes": 18953328,
+        "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+      },
+      "omascribe-asr": {
+        "bytes": 26296592,
+        "sha256": "c42b59fe44e812b4005e01cbf1eb670e9418883c74430dc2835920c64f40bde6"
+      },
+      "omascribe-cli": {
+        "bytes": 12328784,
+        "sha256": "57db1b0563abeb838a494f7b32a4d7777de8e53e6a21a341fe7cd86ffbfc96f5"
+      }
+    },
+    "runtime_after": {
+      "llama/build-info.json": {
+        "bytes": 93,
+        "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+      },
+      "llama/llama-server": {
+        "bytes": 18953328,
+        "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+      },
+      "omascribe-asr": {
+        "bytes": 26296592,
+        "sha256": "c42b59fe44e812b4005e01cbf1eb670e9418883c74430dc2835920c64f40bde6"
+      },
+      "omascribe-cli": {
+        "bytes": 12328784,
+        "sha256": "57db1b0563abeb838a494f7b32a4d7777de8e53e6a21a341fe7cd86ffbfc96f5"
+      }
+    },
+    "runtime_hashes_exact_equal": true,
+    "model_files_before": [
+      {
+        "name": "Qwen3-1.7B-Q4_K_M.gguf",
+        "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+        "bytes": 1107409472
+      }
+    ],
+    "model_after": {
+      "Qwen3-1.7B-Q4_K_M.gguf": {
+        "bytes": 1107409472,
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+      }
+    },
+    "actual_four_arm_caption_bytes_equal": {
+      "closed_fields": true,
+      "mixed_factual": true
+    },
+    "statistics": {
+      "closed_fields": {
+        "baseline": {
+          "wall_seconds": [
+            3.178,
+            3.063
+          ],
+          "median_wall_seconds": 3.1205,
+          "sampled_cpu_seconds": [
+            1.905289936,
+            2.0227527260000002
+          ],
+          "peak_sampled_tree_rss_mib": [
+            1479.0625,
+            1479.421875
+          ],
+          "worker_counts_per_arm": [
+            1,
+            1
+          ],
+          "generation_request_counts_per_arm": [
+            2,
+            2
+          ]
+        },
+        "candidate": {
+          "wall_seconds": [
+            0.571,
+            0.514
+          ],
+          "median_wall_seconds": 0.5425,
+          "sampled_cpu_seconds": [
+            0.267759283,
+            0.266637283
+          ],
+          "peak_sampled_tree_rss_mib": [
+            17.265625,
+            17.296875
+          ],
+          "worker_counts_per_arm": [
+            0,
+            0
+          ],
+          "generation_request_counts_per_arm": [
+            0,
+            0
+          ]
+        }
+      },
+      "mixed_factual": {
+        "baseline": {
+          "wall_seconds": [
+            3.704,
+            3.667
+          ],
+          "median_wall_seconds": 3.6855,
+          "sampled_cpu_seconds": [
+            2.1529764080000002,
+            2.1840027639999997
+          ],
+          "peak_sampled_tree_rss_mib": [
+            1481.046875,
+            1482.140625
+          ],
+          "worker_counts_per_arm": [
+            1,
+            1
+          ],
+          "generation_request_counts_per_arm": [
+            4,
+            4
+          ]
+        },
+        "candidate": {
+          "wall_seconds": [
+            1.659,
+            1.652
+          ],
+          "median_wall_seconds": 1.6555,
+          "sampled_cpu_seconds": [
+            1.026803528,
+            1.019417255
+          ],
+          "peak_sampled_tree_rss_mib": [
+            1479.75,
+            1478.828125
+          ],
+          "worker_counts_per_arm": [
+            1,
+            1
+          ],
+          "generation_request_counts_per_arm": [
+            2,
+            2
+          ]
+        }
+      }
+    },
+    "cache_seconds_range": [
+      0.451,
+      0.555
+    ],
+    "arms": [
+      {
+        "trial": 1,
+        "case": "closed_fields",
+        "variant": "baseline",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r063",
+        "cached_snapshot": "r064",
+        "process": {
+          "code": 0,
+          "seconds": 3.178,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 12,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 1.905289936,
+            "peak_tree_rss_mib": 1479.0625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.453,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.268780036,
+            "peak_tree_rss_mib": 12.046875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "78cfb175-28dd-45ad-a8d5-9e0b7a586ad0:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "85cd8a04c4d28c51f855a7f2e2bdf59060a44a28279364d8e619084536568850"
+          },
+          {
+            "source_id": "78cfb175-28dd-45ad-a8d5-9e0b7a586ad0:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "2bdd7cc637b8b68b90d15ab6fef0d3ea548ab10f79ef42f8bf6229d4dd10939d"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r061",
+          "phase_counts": {
+            "started": 2,
+            "worker": 1,
+            "chunk": 2,
+            "generation": 2,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 627
+            }
+          ],
+          "runtime_log": "r062",
+          "actual_device_offload_lines": [
+            "0.00.108.329 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.200.352 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.242.362 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.335.300 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 2,
+        "model_cleanup": {
+          "ref": "r065",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        }
+      },
+      {
+        "trial": 1,
+        "case": "closed_fields",
+        "variant": "candidate",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r067",
+        "cached_snapshot": "r068",
+        "process": {
+          "code": 0,
+          "seconds": 0.571,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.267759283,
+            "peak_tree_rss_mib": 17.265625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.451,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.268940578,
+            "peak_tree_rss_mib": 12.046875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "5b2dfe6f-4866-4196-b03f-e55f9b7cc80e:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "ab35af436f3836d8f8bf9ee04e01ca41ee4dffe1f81d47194ff8b8349ea384b7"
+          },
+          {
+            "source_id": "5b2dfe6f-4866-4196-b03f-e55f9b7cc80e:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "3ef00484269086d00a956a1148785ae8d4fa508b2e82a115a3e50b02f61e3da5"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r066",
+          "phase_counts": {
+            "started": 2,
+            "chunk": 2,
+            "literal_caption": 2,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [],
+          "runtime_log": null,
+          "actual_device_offload_lines": []
+        },
+        "generation_request_count": 0,
+        "model_cleanup": {
+          "ref": "r069",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        }
+      },
+      {
+        "trial": 1,
+        "case": "mixed_factual",
+        "variant": "baseline",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r072",
+        "cached_snapshot": "r073",
+        "process": {
+          "code": 0,
+          "seconds": 3.704,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 14,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 2.1529764080000002,
+            "peak_tree_rss_mib": 1481.046875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.453,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.26930450100000003,
+            "peak_tree_rss_mib": 12.015625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "853cd583-cd87-4e7d-8c44-740749bcddb5:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "f4ad3108ccf7bf5cfde59d11f95c4ddce886c1dceef1cf64e0d874f21ae35fda"
+          },
+          {
+            "source_id": "853cd583-cd87-4e7d-8c44-740749bcddb5:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "44190439707e99d56d5b3cbb9560d0184e3ba3d02cada82a962574565a5031d0"
+          },
+          {
+            "source_id": "853cd583-cd87-4e7d-8c44-740749bcddb5:1:3",
+            "source_seq": 3,
+            "revision": 1,
+            "source": "Morgan will send the report on Thursday.",
+            "target": "zh",
+            "caption": "Morgan将于周四发送报告。",
+            "cache_key": "663a494175497d07c54f97cf33ba4522db66128e3bcd593fa702037835f0cf0f"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r070",
+          "phase_counts": {
+            "started": 2,
+            "worker": 1,
+            "chunk": 4,
+            "generation": 4,
+            "validation_failed": 1,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 422
+            }
+          ],
+          "runtime_log": "r071",
+          "actual_device_offload_lines": [
+            "0.00.031.427 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.119.464 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.161.543 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.238.080 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 4,
+        "model_cleanup": {
+          "ref": "r074",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        },
+        "last_rejected_translation": {
+          "ref": "r075",
+          "actual": {
+            "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+            "input": "Morgan will send the report on Thursday.",
+            "raw": "{\"translation\": \"莫根将在周四发送报告。\"}",
+            "stage": "validation"
+          },
+          "kind": "Rejected earlier name draft, not final Morgan caption."
+        }
+      },
+      {
+        "trial": 1,
+        "case": "mixed_factual",
+        "variant": "candidate",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r078",
+        "cached_snapshot": "r079",
+        "process": {
+          "code": 0,
+          "seconds": 1.659,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 7,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 1.026803528,
+            "peak_tree_rss_mib": 1479.75,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.451,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.27139836700000003,
+            "peak_tree_rss_mib": 11.984375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "8cca68e2-9492-4e20-8015-64ac333c6591:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "344f2329d113253918023fe5b15041c8375b357ec01481b4fda4132e19890355"
+          },
+          {
+            "source_id": "8cca68e2-9492-4e20-8015-64ac333c6591:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "1b323d8851ac0fd21ed5c61b5e7011efb564424d7e589954c0e7a83727bb1eb6"
+          },
+          {
+            "source_id": "8cca68e2-9492-4e20-8015-64ac333c6591:1:3",
+            "source_seq": 3,
+            "revision": 1,
+            "source": "Morgan will send the report on Thursday.",
+            "target": "zh",
+            "caption": "Morgan将于周四发送报告。",
+            "cache_key": "646eb622ee95c8932870db62f0951872a5e5c2e8f608a5676a54c292110d2579"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r076",
+          "phase_counts": {
+            "started": 2,
+            "chunk": 4,
+            "literal_caption": 2,
+            "worker": 1,
+            "generation": 2,
+            "validation_failed": 1,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 415
+            }
+          ],
+          "runtime_log": "r077",
+          "actual_device_offload_lines": [
+            "0.00.032.245 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.121.882 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.164.083 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.242.949 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 2,
+        "model_cleanup": {
+          "ref": "r080",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        },
+        "last_rejected_translation": {
+          "ref": "r081",
+          "actual": {
+            "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+            "input": "Morgan will send the report on Thursday.",
+            "raw": "{\"translation\": \"莫根将在周四发送报告。\"}",
+            "stage": "validation"
+          },
+          "kind": "Rejected earlier name draft, not final Morgan caption."
+        }
+      },
+      {
+        "trial": 2,
+        "case": "closed_fields",
+        "variant": "candidate",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r083",
+        "cached_snapshot": "r084",
+        "process": {
+          "code": 0,
+          "seconds": 0.514,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.266637283,
+            "peak_tree_rss_mib": 17.296875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.555,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.241334205,
+            "peak_tree_rss_mib": 12.0,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "f1344dfb-42f3-40aa-b787-214e8d75ed44:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "c6825706407c3962616997746786b8da286e8163ed46aa0dee366fabf65a9da0"
+          },
+          {
+            "source_id": "f1344dfb-42f3-40aa-b787-214e8d75ed44:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "da5ebfc46cddecd00ef05d03c96a7a2a10a79b4fe8c422c45c476974d3649703"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r082",
+          "phase_counts": {
+            "started": 2,
+            "chunk": 2,
+            "literal_caption": 2,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [],
+          "runtime_log": null,
+          "actual_device_offload_lines": []
+        },
+        "generation_request_count": 0,
+        "model_cleanup": {
+          "ref": "r085",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        }
+      },
+      {
+        "trial": 2,
+        "case": "closed_fields",
+        "variant": "baseline",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r088",
+        "cached_snapshot": "r089",
+        "process": {
+          "code": 0,
+          "seconds": 3.063,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 12,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 2.0227527260000002,
+            "peak_tree_rss_mib": 1479.421875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.459,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.270862253,
+            "peak_tree_rss_mib": 11.96875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "8441e195-5f9c-4d12-9738-4536d9eb0ba8:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "b830c0f4b78c5bed64a024bd7b14c7a07f9c930232db98e3ee501b9604685a31"
+          },
+          {
+            "source_id": "8441e195-5f9c-4d12-9738-4536d9eb0ba8:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "3e02bd7163ff9fcfdaeeb847a0293e8021913e13a25ed3a966a2d4c091999836"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r086",
+          "phase_counts": {
+            "started": 2,
+            "worker": 1,
+            "chunk": 2,
+            "generation": 2,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 422
+            }
+          ],
+          "runtime_log": "r087",
+          "actual_device_offload_lines": [
+            "0.00.032.362 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.120.370 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.161.391 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.239.599 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 2,
+        "model_cleanup": {
+          "ref": "r090",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        }
+      },
+      {
+        "trial": 2,
+        "case": "mixed_factual",
+        "variant": "candidate",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r093",
+        "cached_snapshot": "r094",
+        "process": {
+          "code": 0,
+          "seconds": 1.652,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 7,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 1.019417255,
+            "peak_tree_rss_mib": 1478.828125,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.47,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.26984979800000003,
+            "peak_tree_rss_mib": 12.0,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "afc34c27-d494-4f2e-9e24-64fbf7211a91:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "69bdea05b6fb68f1ade48755f234a6b43b3f70d1a3cc92d5d9b7868d6e19c2bc"
+          },
+          {
+            "source_id": "afc34c27-d494-4f2e-9e24-64fbf7211a91:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "010fbb818d3f8ff97dd120f6a1da3b5858369997ed956d2090b83bce947e59d8"
+          },
+          {
+            "source_id": "afc34c27-d494-4f2e-9e24-64fbf7211a91:1:3",
+            "source_seq": 3,
+            "revision": 1,
+            "source": "Morgan will send the report on Thursday.",
+            "target": "zh",
+            "caption": "Morgan将于周四发送报告。",
+            "cache_key": "f66f0c8f8638cf4db0a3a19e4ebd65b7b5fcd944b4f24b1efa2cb0bc7e5edd54"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r091",
+          "phase_counts": {
+            "started": 2,
+            "chunk": 4,
+            "literal_caption": 2,
+            "worker": 1,
+            "generation": 2,
+            "validation_failed": 1,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 421
+            }
+          ],
+          "runtime_log": "r092",
+          "actual_device_offload_lines": [
+            "0.00.032.249 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.121.104 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.163.266 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.242.682 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 2,
+        "model_cleanup": {
+          "ref": "r095",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        },
+        "last_rejected_translation": {
+          "ref": "r096",
+          "actual": {
+            "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+            "input": "Morgan will send the report on Thursday.",
+            "raw": "{\"translation\": \"莫根将在周四发送报告。\"}",
+            "stage": "validation"
+          },
+          "kind": "Rejected earlier name draft, not final Morgan caption."
+        }
+      },
+      {
+        "trial": 2,
+        "case": "mixed_factual",
+        "variant": "baseline",
+        "original_flags": {
+          "passed": true,
+          "errors": []
+        },
+        "snapshot": "r099",
+        "cached_snapshot": "r100",
+        "process": {
+          "code": 0,
+          "seconds": 3.667,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 14,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 2.1840027639999997,
+            "peak_tree_rss_mib": 1482.140625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "cached_process": {
+          "code": 0,
+          "seconds": 0.455,
+          "failure": null,
+          "resources": {
+            "interval_seconds": 0.25,
+            "samples": 2,
+            "processes_seen": 1,
+            "cpu_seconds_sampled": 0.27180854800000004,
+            "peak_tree_rss_mib": 12.015625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true
+          }
+        },
+        "source_caption_bindings": [
+          {
+            "source_id": "9a7f44fa-6eed-4ecc-bf6a-537dcb5be134:1:1",
+            "source_seq": 1,
+            "revision": 1,
+            "source": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+            "cache_key": "3ae229fc8b8bbe06d52f0fb56f2e0d6efd71ec7821ad2d376f2c192e22884ec2"
+          },
+          {
+            "source_id": "9a7f44fa-6eed-4ecc-bf6a-537dcb5be134:1:2",
+            "source_seq": 2,
+            "revision": 1,
+            "source": "Recording and meeting notes should stay on this computer.",
+            "target": "zh",
+            "caption": "录音和会议笔记应保留在这台电脑上。",
+            "cache_key": "ba7579af43c728e5b523fd78dacf13466fbb55707858ff38b9c80635a0ada180"
+          },
+          {
+            "source_id": "9a7f44fa-6eed-4ecc-bf6a-537dcb5be134:1:3",
+            "source_seq": 3,
+            "revision": 1,
+            "source": "Morgan will send the report on Thursday.",
+            "target": "zh",
+            "caption": "Morgan将于周四发送报告。",
+            "cache_key": "0270ecd7bc622b2c2d95e5ff3a10d7330e8c5380690d9ea875a7cd8e064fe3ea"
+          }
+        ],
+        "unchanged_cache_source_and_captions_equal": true,
+        "cached_phase_counts": {
+          "started": 1,
+          "finished": 1
+        },
+        "runtime": {
+          "trace": "r097",
+          "phase_counts": {
+            "started": 2,
+            "worker": 1,
+            "chunk": 4,
+            "generation": 4,
+            "validation_failed": 1,
+            "batch": 1,
+            "finished": 2
+          },
+          "worker_metrics": [
+            {
+              "backend": "metal",
+              "budget_mib": 4096,
+              "reused": false,
+              "startup_ms": 420
+            }
+          ],
+          "runtime_log": "r098",
+          "actual_device_offload_lines": [
+            "0.00.032.408 I cmn  common_param:   - MTL0    : Apple M5 (18186 MiB, 18185 MiB free)",
+            "0.00.122.471 I common_memory_breakdown_print: |   - MTL0 (Apple M5)    | 18186 = 18185 + (1298 =  1050 +     224 +      23) +       -1297 |",
+            "0.00.164.123 I llama_prepare_model_devices: using device MTL0 (Apple M5) (unknown id) - 18185 MiB free",
+            "0.00.245.672 I load_tensors: offloaded 29/29 layers to GPU"
+          ]
+        },
+        "generation_request_count": 4,
+        "model_cleanup": {
+          "ref": "r101",
+          "actual": {
+            "released": true,
+            "logical_bytes": 1107409537,
+            "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+          }
+        },
+        "last_rejected_translation": {
+          "ref": "r102",
+          "actual": {
+            "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+            "input": "Morgan will send the report on Thursday.",
+            "raw": "{\"translation\": \"莫根将在周四发送报告。\"}",
+            "stage": "validation"
+          },
+          "kind": "Rejected earlier name draft, not final Morgan caption."
+        }
+      }
+    ],
+    "independent_affected_fact_review": "All4 arms per case have byte-identical final captions: Friday negation, recording IN meeting notes versus recording AND meeting notes, should + local destination preserved; separate Morgan source retains exact name, future Thursday report-sending. Mixed first rejected transliterated 莫根 drafts are not final outputs.",
+    "limits": [
+      "This repeat compares candidate9ffa against candidate8 1ff, not803 against9ffa.",
+      "Two narrow fictional batches in two orders; not whole-meeting, actual ASR, representative full-corpus quality, energy, or all-platform evidence.",
+      "Closed savings eliminate startup AND generation. Mixed unknown Morgan is a separate segment, not unknown context inside a closed segment.",
+      "Fresh processes do not prove cold OS file cache; page cache, thermals and physical/GPU shared allocations were not controlled.",
+      "CPU is sampled lower bound and summed tree RSS can double-count shared pages; energy/PSS/GPU memory remain unmeasured."
+    ]
+  },
+  "cleanup_proof": {
+    "borrowed_workspaces": 12,
+    "all_saved_model_cleanup_released": true,
+    "saved_owned_process_records": 36,
+    "all_saved_own_samplers_stopped": true,
+    "process_records": [
+      {
+        "ref": "r104",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r105",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r106",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r107",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r108",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r109",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r110",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r111",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r112",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r113",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r114",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r115",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r116",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r117",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r118",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r119",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r120",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r121",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r122",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r123",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r124",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r125",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r126",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r127",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r128",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r129",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r130",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r131",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r132",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r133",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r134",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r135",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r136",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r137",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r138",
+        "code": 0,
+        "sampler_stopped": true
+      },
+      {
+        "ref": "r139",
+        "code": 0,
+        "sampler_stopped": true
+      }
+    ],
+    "limits": [
+      "12 isolated borrowed model copies/links released; original shared source store remains. Logical released bytes are not physical reclaimed disk bytes.",
+      "This verifies saved owned samplers; it is not an independent whole-system process-zero audit."
+    ]
+  },
+  "limits": [
+    "Original 803 failures and evidence remain separately preserved. These are fresh9ffa observations, not overwrites or combined pass totals.",
+    "Four selected runtime cases plus8paired arms do not establish full corpus acceptance, release readiness, native window/upgrade validation, or generic semantic correctness.",
+    "Exact source id/revision/quote/time bindings were checked per phase; provenance equality alone is not semantic proof.",
+    "Source-level closed_state unknown-context/question controls belong to frozen unit evidence. The paired benchmark does not empirically exercise every unknown-context combination.",
+    "CI question_mark failure remains explicitly separate. A later local syntax change needs its own new identity and CI; it cannot borrow9ffa runtime results as same-build evidence."
+  ],
+  "raw_evidence": {
+    "r001": {
+      "path": "artifacts/closed-state-check-frozen-source.json",
+      "sha256": "9fa4962cf056e19a6d9ea2c583cd5f1bcc0d7a897b038bc6af1f612d4efdc298",
+      "bytes": 1023
+    },
+    "r002": {
+      "path": "artifacts/closed-state-check-source-after.json",
+      "sha256": "9fa4962cf056e19a6d9ea2c583cd5f1bcc0d7a897b038bc6af1f612d4efdc298",
+      "bytes": 1023
+    },
+    "r003": {
+      "path": "artifacts/run-closed-state-checks.py",
+      "sha256": "6f9f2238b5c5e4d54ea10d2fbea245b30aca995cebc5c9cdccc21e19b7899dfd",
+      "bytes": 1949
+    },
+    "r004": {
+      "path": "artifacts/closed-state-check-run-status.json",
+      "sha256": "495ee683210b06d6491a6f68323959bcf30912b1bdd7926c084832591579a766",
+      "bytes": 226
+    },
+    "r005": {
+      "path": "artifacts/closed-state-core-tests.log",
+      "sha256": "117534d713945a48fedd565b900f857dc75ec3f168b6db37074c037e10627d84",
+      "bytes": 29744
+    },
+    "r006": {
+      "path": "artifacts/closed-state-clippy.log",
+      "sha256": "85f4176a0b02b3a5d8405f64b4aa04b0e0289fa86f3222ca1c47a050ddd3758c",
+      "bytes": 140
+    },
+    "r007": {
+      "path": "artifacts/closed-state-cli-build.log",
+      "sha256": "523fedeb5968c236f36b8c6f652f8f73f2472110e9815f3124426687ff3afd25",
+      "bytes": 140
+    },
+    "r008": {
+      "path": "artifacts/9ffa-linux-ci-failure.log",
+      "sha256": "8d9622d3763b3e163d57f39125bc074df569c0897c32f44373dda03f3147f679",
+      "bytes": 7237
+    },
+    "r009": {
+      "path": "artifacts/closed-state-ci-style-clippy.log",
+      "sha256": "8878728b5dfb3a774e3fc854ebae5314f6fc6c6e3f1793d6c7fa8cc4a3e64e12",
+      "bytes": 140
+    },
+    "r010": {
+      "path": "artifacts/closed-state-ci-style-tests.log",
+      "sha256": "7d023cd93ecc3a82ebe2d6f709b725d63c59fa4fa876c80635bddbab9bcc5665",
+      "bytes": 660
+    },
+    "r011": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.json",
+      "sha256": "39929bc33563164b33a311617ecfd85d3b8696e800381d33d3ba3b322e485d15",
+      "bytes": 54795
+    },
+    "r012": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/input.json",
+      "sha256": "f00e4dca589e3aa66503119559877b452cc57a357bc636261d392c55a3465bfc",
+      "bytes": 2381
+    },
+    "r013": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/stdout.txt",
+      "sha256": "5c0de02479a6b0c79f3a87c6dd2479e33f2c6f5407123d86a8e40f2be250630f",
+      "bytes": 7609
+    },
+    "r014": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r015": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/last-generation.json",
+      "sha256": "1799ae7c53a77c7ef717cb7a493c9cb80c4e5aec51889adb3e40d317bdfcbeec",
+      "bytes": 4977
+    },
+    "r016": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/stdout.txt",
+      "sha256": "06f5da7b3810baabb1e6c325170023f9bd4f13a1b6096007ecb98855ad5365ee",
+      "bytes": 13743
+    },
+    "r017": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r018": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/last-generation.json",
+      "sha256": "b11033df6c508134a69fa7557832ffc11918f542ccdce54e979a58f70d5d9498",
+      "bytes": 7864
+    },
+    "r019": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/workspace/translation-diagnostic.json",
+      "sha256": "7a396a11bd9228c98d18b831e147ea04c231c9e9f83f7b5e995599a03c0eb0de",
+      "bytes": 650
+    },
+    "r020": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/workspace/last-generation.json",
+      "sha256": "b11033df6c508134a69fa7557832ffc11918f542ccdce54e979a58f70d5d9498",
+      "bytes": 7864
+    },
+    "r021": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/workspace/inference-trace.jsonl",
+      "sha256": "d6675edad98b13ffbf8cf544744350a07bfa2842a1c6fc7279074317c4729f01",
+      "bytes": 8007
+    },
+    "r022": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/workspace/llm-runtime.log",
+      "sha256": "23133b20e13f8fe2d280b2dc2eeb52583b0d0f738c11b540d5efa4b760059ef5",
+      "bytes": 20681
+    },
+    "r023": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r024": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.json",
+      "sha256": "201833251fb70b1caa27da43d7e8497dcab96da818b300dfa8fe0bf621411731",
+      "bytes": 12869
+    },
+    "r025": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/zh_unspoken_honorific_note/input.json",
+      "sha256": "ba8acd2bd9b00deb13227dce1fc31b8b35d394b6a8be80ca2ecf34a23eadeef8",
+      "bytes": 852
+    },
+    "r026": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/zh_unspoken_honorific_note/phase-1/batch-1/stdout.txt",
+      "sha256": "18705a7eb739b170e43ad0c46e7e4063047eb81c6ad5b257777e2e3f13523ce1",
+      "bytes": 2721
+    },
+    "r027": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/zh_unspoken_honorific_note/phase-1/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r028": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/zh_unspoken_honorific_note/phase-1/batch-1/last-generation.json",
+      "sha256": "0933f61a35ed2632c391ca134490170dd0e066d2e88c5ac4435c5c00c7337040",
+      "bytes": 2697
+    },
+    "r029": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/workspace/last-generation.json",
+      "sha256": "0933f61a35ed2632c391ca134490170dd0e066d2e88c5ac4435c5c00c7337040",
+      "bytes": 2697
+    },
+    "r030": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/workspace/inference-trace.jsonl",
+      "sha256": "ec69d2f93dc748cc7b5680741e7836c89fa89ebcc029a681743402810079af77",
+      "bytes": 2634
+    },
+    "r031": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/workspace/llm-runtime.log",
+      "sha256": "10d9b3b896b9f444d0eb91ae06cad0f301321311ec1e929acfda00ea20068c88",
+      "bytes": 18544
+    },
+    "r032": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r033": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.json",
+      "sha256": "19905bc4a0c8415b6c6526b95542e7e024861480c33c38a6e2435feef125d8eb",
+      "bytes": 49570
+    },
+    "r034": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/input.json",
+      "sha256": "4da717fd1a76e1ca30b9c75a10eeca58af010d6a951a8994565045ac8296ebd6",
+      "bytes": 2356
+    },
+    "r035": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-1/batch-1/stdout.txt",
+      "sha256": "aa7d6ade8c46a1a2d72e444e0d39a23c65cd281019a6c2dc93cd9fad7b88d343",
+      "bytes": 2784
+    },
+    "r036": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-1/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r037": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-1/batch-1/last-generation.json",
+      "sha256": "1c4ac214e427302cd1e5cdb01a8713274cd1e7b03066129f3425c25173b50472",
+      "bytes": 2667
+    },
+    "r038": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-2/batch-1/stdout.txt",
+      "sha256": "50f0e14609a6d97e4d550732ed9b5a11f4ed38b70f9b45e7fa400c7e69d2d340",
+      "bytes": 4168
+    },
+    "r039": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-2/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r040": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-2/batch-1/last-generation.json",
+      "sha256": "fe2f315e28ec89d52a3fe7be52642a4c55e56a3b773145ae72805008cee728d1",
+      "bytes": 3281
+    },
+    "r041": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-3/batch-1/stdout.txt",
+      "sha256": "7f64a498774c8fc9297275cdcd9759a739de01cd770f405c625d559c15adfc40",
+      "bytes": 5429
+    },
+    "r042": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-3/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r043": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-3/batch-1/last-generation.json",
+      "sha256": "d109a5f1fb0ec9d0ea5cf8923de8628d562e7c8afdb52aba2a2728913d1e2878",
+      "bytes": 4011
+    },
+    "r044": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/workspace/translation-diagnostic.json",
+      "sha256": "a6e776c32eb787aaec26e4b6620ad59d114275868f253221863b0988386dbeb8",
+      "bytes": 518
+    },
+    "r045": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/workspace/last-generation.json",
+      "sha256": "d109a5f1fb0ec9d0ea5cf8923de8628d562e7c8afdb52aba2a2728913d1e2878",
+      "bytes": 4011
+    },
+    "r046": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/workspace/inference-trace.jsonl",
+      "sha256": "77f67f5755e85e9b0ac2270abc2cfcbb3c1d93a5a4be7b2c609f4ad5ac5f1ea4",
+      "bytes": 6920
+    },
+    "r047": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/workspace/llm-runtime.log",
+      "sha256": "0de29c492abf7f30e951464c75d3206cca749be01f8367cb5bb1f7cdeb87bc24",
+      "bytes": 31724
+    },
+    "r048": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r049": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.json",
+      "sha256": "b680dcd53e6baf7fe24dd7b5e2127354e9178e9dba9553d0b624be6fead6b1c3",
+      "bytes": 30815
+    },
+    "r050": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/input.json",
+      "sha256": "f00e4dca589e3aa66503119559877b452cc57a357bc636261d392c55a3465bfc",
+      "bytes": 2381
+    },
+    "r051": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/stdout.txt",
+      "sha256": "6f6054015be4fbd8851a0fa93d87b6f9ca506cef4d8da907b8805fdfda7e2dff",
+      "bytes": 5498
+    },
+    "r052": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r053": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/last-generation.json",
+      "sha256": "6e7fb9762d43a0f1d85eac5818b1d12f781759b0cc02f6a1a94dab2a8feb1bb8",
+      "bytes": 4975
+    },
+    "r054": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/stdout.txt",
+      "sha256": "04921f94104ab7b99e2c73af01961092fe99adb955b57103ed3fb5b69986407a",
+      "bytes": 9463
+    },
+    "r055": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "r056": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/last-generation.json",
+      "sha256": "683410452fb10e55e40860f0698a455ac338fe12cdcf39feb4235a7f9d1c3032",
+      "bytes": 7862
+    },
+    "r057": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/workspace/last-generation.json",
+      "sha256": "683410452fb10e55e40860f0698a455ac338fe12cdcf39feb4235a7f9d1c3032",
+      "bytes": 7862
+    },
+    "r058": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/workspace/inference-trace.jsonl",
+      "sha256": "42f58949947309e7a621fef9293ad785ad76c04e50e750ae0e172e5f614c739a",
+      "bytes": 1571
+    },
+    "r059": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/workspace/llm-runtime.log",
+      "sha256": "5c00e704e2eca60d9877b37d97c6697a9996b3c1eb3605a8db2943a7b35fed15",
+      "bytes": 18736
+    },
+    "r060": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r061": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/workspace/inference-trace.jsonl",
+      "sha256": "6944eccb400653560c6a1a603826a772c541429050c192570adf6e72e16894e3",
+      "bytes": 2460
+    },
+    "r062": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/workspace/llm-runtime.log",
+      "sha256": "3f8483aabfc9032170b3d61cb81d6c6f70477a5e9de33d9ba505e4d2bec8c518",
+      "bytes": 20816
+    },
+    "r063": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/translate/stdout.txt",
+      "sha256": "9e879b5f625bc8d12aba53a6e8b50f0e08affa4237df1922ab7f9c0fdbd06528",
+      "bytes": 2683
+    },
+    "r064": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/cached/stdout.txt",
+      "sha256": "0a7ca1b233596551129a9b773711faf11da35a2ee55dc75228a8ea0f98b38031",
+      "bytes": 2680
+    },
+    "r065": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r066": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/workspace/inference-trace.jsonl",
+      "sha256": "eb7e10f68209ce7c9bcb6670c1b007a7990528cf517cf0d337a0c61468e71617",
+      "bytes": 1915
+    },
+    "r067": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/translate/stdout.txt",
+      "sha256": "360d3d84aad183b05d864e1a083fdf66f87ba4f58d337d8038711c5a9bfc4632",
+      "bytes": 2680
+    },
+    "r068": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/cached/stdout.txt",
+      "sha256": "360d3d84aad183b05d864e1a083fdf66f87ba4f58d337d8038711c5a9bfc4632",
+      "bytes": 2680
+    },
+    "r069": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r070": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/workspace/inference-trace.jsonl",
+      "sha256": "24786bd11086217e89fa4982e3f971db2187a7a003b55b437bf53ecd2ef9b5ea",
+      "bytes": 3971
+    },
+    "r071": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/workspace/llm-runtime.log",
+      "sha256": "8f5bd3697195f64bfe219041991146a3a9654ccf642646eddc875c0bd6315d44",
+      "bytes": 25186
+    },
+    "r072": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/translate/stdout.txt",
+      "sha256": "91c404a290f0a6e3c5d2ced184ebf6ee7539fdc681c30fecf365d4a8b2dddc7c",
+      "bytes": 3354
+    },
+    "r073": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/cached/stdout.txt",
+      "sha256": "522f5735581feb717a4870e6fb04000064ab0ed62882fcf18542f83b881d7f5b",
+      "bytes": 3351
+    },
+    "r074": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r075": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/workspace/translation-diagnostic.json",
+      "sha256": "922b53a25daf67681bdbd93d128be24132f6f0679ff8d830e28558c7086ff008",
+      "bytes": 257
+    },
+    "r076": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/workspace/inference-trace.jsonl",
+      "sha256": "3b8aca1da9829cb498e8cd391c2fd8e13cc83b4c3bfd38c69872383c721a6396",
+      "bytes": 3662
+    },
+    "r077": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/workspace/llm-runtime.log",
+      "sha256": "2329ca0c7106d1656b424a9857a5156238320e82e83fdaf7705ec3cad6290766",
+      "bytes": 20769
+    },
+    "r078": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/translate/stdout.txt",
+      "sha256": "b0a91abd798c1947b9dd4ab7ca3417c210c9e34442b9a5589e7e3aba80f6e924",
+      "bytes": 3353
+    },
+    "r079": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/cached/stdout.txt",
+      "sha256": "b5f5eabbc946134330f0a848f26517c5d242517979349b3e4ab1450535715daa",
+      "bytes": 3351
+    },
+    "r080": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r081": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/workspace/translation-diagnostic.json",
+      "sha256": "922b53a25daf67681bdbd93d128be24132f6f0679ff8d830e28558c7086ff008",
+      "bytes": 257
+    },
+    "r082": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/workspace/inference-trace.jsonl",
+      "sha256": "383ad3ba0f090f7cf1761e9ed9af6dee507225bb53f13165f9b0952f7ac81438",
+      "bytes": 1915
+    },
+    "r083": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/translate/stdout.txt",
+      "sha256": "28a886fcd1a93a0f112f15b7b3530e0d7da4fff3aaa262187027a346bd8cce8e",
+      "bytes": 2680
+    },
+    "r084": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/cached/stdout.txt",
+      "sha256": "28a886fcd1a93a0f112f15b7b3530e0d7da4fff3aaa262187027a346bd8cce8e",
+      "bytes": 2680
+    },
+    "r085": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r086": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/workspace/inference-trace.jsonl",
+      "sha256": "7737aef02484d4d214f3ecbb47c516a93231aebecc26b1fc5166c1b0e59eff98",
+      "bytes": 2459
+    },
+    "r087": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/workspace/llm-runtime.log",
+      "sha256": "7e8541fd1476244de9f26bcdd7ea4e5bc0a4f4b74dd46f8149b74e85f0af8902",
+      "bytes": 20816
+    },
+    "r088": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/translate/stdout.txt",
+      "sha256": "1cf2d326f71dc07c472ddbd71fc2f3316ed357a446326044020d394e3ff2ba48",
+      "bytes": 2683
+    },
+    "r089": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/cached/stdout.txt",
+      "sha256": "14d8de670096c3cf628b6d2ad4fc50fcb83ac5cff4bb4c0677d081b6dea95b65",
+      "bytes": 2680
+    },
+    "r090": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r091": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/workspace/inference-trace.jsonl",
+      "sha256": "8ff1349382dd8b9ab628fb001bf4cf813bb6cdf69276f10522c183c61d28d727",
+      "bytes": 3660
+    },
+    "r092": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/workspace/llm-runtime.log",
+      "sha256": "c91e68f36694f217c88d786d032caa0788cf6bb45e597507bd83908586b80b06",
+      "bytes": 20769
+    },
+    "r093": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/translate/stdout.txt",
+      "sha256": "a3049670568ae9e0a279d602f0ad72156ff6ec72547571746ccb816c579a61ce",
+      "bytes": 3353
+    },
+    "r094": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/cached/stdout.txt",
+      "sha256": "ad3692d793a9d0346e353e6099bc322937161c15341d447979790aa0a08e7754",
+      "bytes": 3351
+    },
+    "r095": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r096": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/workspace/translation-diagnostic.json",
+      "sha256": "922b53a25daf67681bdbd93d128be24132f6f0679ff8d830e28558c7086ff008",
+      "bytes": 257
+    },
+    "r097": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/workspace/inference-trace.jsonl",
+      "sha256": "ea792d4ac760a19318c4053d58f0604a9853e1cccdd98db70989414cb043367c",
+      "bytes": 3968
+    },
+    "r098": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/workspace/llm-runtime.log",
+      "sha256": "f7c9e9cd68e3ef9d1e3e81347f1bfa1d1a9379215caf0b391a9fcf85311c4f23",
+      "bytes": 25186
+    },
+    "r099": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/translate/stdout.txt",
+      "sha256": "fc67d045d33d4fffcd523dad119e22813da9823539a843822f9d53333587c34d",
+      "bytes": 3354
+    },
+    "r100": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/cached/stdout.txt",
+      "sha256": "86d430958794663a2a540e98fa58eb8fce3410d1889271342b8b1db067cfcd3c",
+      "bytes": 3351
+    },
+    "r101": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/workspace/model-copy-cleanup.json",
+      "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864",
+      "bytes": 179
+    },
+    "r102": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/workspace/translation-diagnostic.json",
+      "sha256": "922b53a25daf67681bdbd93d128be24132f6f0679ff8d830e28558c7086ff008",
+      "bytes": 257
+    },
+    "r103": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.json",
+      "sha256": "8c7e3978d8b66914e494ffd6d4801a369da85cbc4bb68e2fe4a97a4e382040b9",
+      "bytes": 28671
+    },
+    "r104": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/diagnose/process.json",
+      "sha256": "a614b0d3a1a4c9d09d9c3928265a1f21b8572c8524b5b670d0a463e73b85e95f",
+      "bytes": 757
+    },
+    "r105": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/process.json",
+      "sha256": "53815986c7e622f214570bc769fe1a3e7a53227b297cd2cc3f09c2625a85efac",
+      "bytes": 810
+    },
+    "r106": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/process.json",
+      "sha256": "100f8585fe0f242ada8c413c6ba992197459a10a7dea0da1b18daa3263709043",
+      "bytes": 818
+    },
+    "r107": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/diagnose/process.json",
+      "sha256": "abff1a6c04a6e7873bbb88c7510a37cda4f02d99b052b92b5e755cf2809f6e61",
+      "bytes": 758
+    },
+    "r108": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_unspoken_honorific_note.artifacts/zh_unspoken_honorific_note/phase-1/batch-1/process.json",
+      "sha256": "10a8b48a2a8abf700662f07414277639267f23f55e0e864e4bb4fd0c4f448fd0",
+      "bytes": 813
+    },
+    "r109": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/diagnose/process.json",
+      "sha256": "30f8e433bbf6fa2d969bb4e553d74e51dad200d7f3b9977d36fb2f8c8464ea6f",
+      "bytes": 757
+    },
+    "r110": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-1/batch-1/process.json",
+      "sha256": "2c147284e8cfe2abc683da9f618ff59246e46da35587d6df72b9603d729acd92",
+      "bytes": 815
+    },
+    "r111": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-2/batch-1/process.json",
+      "sha256": "27b9d41876ca1b05ee4706a87842ce0da01758d0590a215ef142005e6e9fa61c",
+      "bytes": 822
+    },
+    "r112": {
+      "path": "artifacts/benchmarks/closed-state-check-auto-20261029/zh_incremental_withdrawal.artifacts/zh_incremental_withdrawal/phase-3/batch-1/process.json",
+      "sha256": "78670edf7ddd2d43551ce89822a80d55ca8f16b45cb2024e2e9bfec6c5ce2e72",
+      "bytes": 815
+    },
+    "r113": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/diagnose/process.json",
+      "sha256": "7ec349d5dbe8a6b3c4edb05f17db7a9b8cef92ac429bad8841230a95d6c2c3e2",
+      "bytes": 755
+    },
+    "r114": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-1/batch-1/process.json",
+      "sha256": "dd15c7b808ad7c332bd135a67af123cc0d2696f6abe1c3bac3b8a62bfc7c7d52",
+      "bytes": 806
+    },
+    "r115": {
+      "path": "artifacts/benchmarks/closed-state-check-minutes-20261029/zh_long_context_state.artifacts/zh_long_context_state/phase-2/batch-1/process.json",
+      "sha256": "145c0683bb06150acfa036ea3be830b554cbc3f0a9c8f1dd556e6d12eba9f472",
+      "bytes": 804
+    },
+    "r116": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/cached/process.json",
+      "sha256": "6e460246c655acd47d8495ab21e9e4f7adf1d0edcf65e27331fc34d26e9713e4",
+      "bytes": 820
+    },
+    "r117": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/prepare/process.json",
+      "sha256": "5888d8f8aa8089b2a14a5790840df913523c947d5236d921d4db32058b0db12a",
+      "bytes": 783
+    },
+    "r118": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-baseline/translate/process.json",
+      "sha256": "6114945e31fadc86efa7beb45da36e10e6598ddce6eb419f7f76d553607cbfe0",
+      "bytes": 821
+    },
+    "r119": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/cached/process.json",
+      "sha256": "68f6f39a6e2aed9d86ce3878799d6173886b5d865cca32fa53a5f4570a544078",
+      "bytes": 804
+    },
+    "r120": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/prepare/process.json",
+      "sha256": "fcff00f2cb56fc5e042a28b7144055ea47bc695bb2a0f43b657fbeb215f1ee41",
+      "bytes": 757
+    },
+    "r121": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-closed_fields-candidate/translate/process.json",
+      "sha256": "80fee583d7ba425f7f6565d88e4c3479cb689130f491679d5ab5d6ccd44428f7",
+      "bytes": 804
+    },
+    "r122": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/cached/process.json",
+      "sha256": "6d68fda18609f8662bb2ed5a142d78f0ad97d48899be8fca2a543896083fba4d",
+      "bytes": 828
+    },
+    "r123": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/prepare/process.json",
+      "sha256": "5d0c1597ac7173cf81ba6e38c743b8826bd6a2921980e13a890768e1ebb5ce5e",
+      "bytes": 774
+    },
+    "r124": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-baseline/translate/process.json",
+      "sha256": "68d2274b3c0c674031af35e7514c2c5d7a535b27b450a5d8334a7f471ac50ace",
+      "bytes": 830
+    },
+    "r125": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/cached/process.json",
+      "sha256": "a9fd776d602c88d226bc30e8b9e8e22c553d726ed45e3e70325a5f7fe22d7a70",
+      "bytes": 812
+    },
+    "r126": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/prepare/process.json",
+      "sha256": "5a6493b2e37543aeac92fb563f7cc36629717b77fc7ab21535548f2752089595",
+      "bytes": 765
+    },
+    "r127": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/1-mixed_factual-candidate/translate/process.json",
+      "sha256": "d75fb4d8cdb11b2a71ab97d3d80994d190cf106f38f2ffc2f51b3032ff37d46b",
+      "bytes": 802
+    },
+    "r128": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/cached/process.json",
+      "sha256": "31b8616946b68581986bb14189ba94bd677a26399beae18e4282d394f9ce6366",
+      "bytes": 819
+    },
+    "r129": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/prepare/process.json",
+      "sha256": "92d1d338acaddcf569dd4c46a97d0f410cbba2e0901abeb942199fe9b177329a",
+      "bytes": 772
+    },
+    "r130": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-baseline/translate/process.json",
+      "sha256": "f305d8b4ef946819c6d926246f303910ed755591f323daf048805e7c388dbc53",
+      "bytes": 830
+    },
+    "r131": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/cached/process.json",
+      "sha256": "3fbc8e1443697ea1bc3e7849843f65086f3aa36fffad1a5ffb7804583c62f498",
+      "bytes": 799
+    },
+    "r132": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/prepare/process.json",
+      "sha256": "64987ba297c466298e1819dbdb865bc538ecaf09c9982f8e0511aae6f0552594",
+      "bytes": 756
+    },
+    "r133": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-closed_fields-candidate/translate/process.json",
+      "sha256": "9e95ed3dbf95e1496c9a1dbc3100b9461540012eafc1a340be70c38c184c6a34",
+      "bytes": 804
+    },
+    "r134": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/cached/process.json",
+      "sha256": "e27959496df09ea651e9a22ad86d3eb7f1a8e5e55a77b2097bbb72b3af5bd25f",
+      "bytes": 828
+    },
+    "r135": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/prepare/process.json",
+      "sha256": "95e675464c4a86ff4a155485e76b65c0d37c42cd1c9a9d52cf587be951ba9ac2",
+      "bytes": 773
+    },
+    "r136": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-baseline/translate/process.json",
+      "sha256": "0dfb22afd2cba8b4f108d527e3f2e5e48ac87eae958dd872b273792724a2e8f4",
+      "bytes": 830
+    },
+    "r137": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/cached/process.json",
+      "sha256": "0455e902ae0415de2c9ee55cc9925771e268a2166c160e7ae0256426f66ba145",
+      "bytes": 806
+    },
+    "r138": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/prepare/process.json",
+      "sha256": "188e3e952bf3d2467040d6735503d8bd1e8c76f44a8e6e2231bf9774e95bf720",
+      "bytes": 758
+    },
+    "r139": {
+      "path": "artifacts/benchmarks/closed-state-caption-pair-20261029.artifacts/2-mixed_factual-candidate/translate/process.json",
+      "sha256": "ba78f7027ea5b9f57a2fb10d398e191541851afba13d8092559e8076cef42c6e",
+      "bytes": 806
+    }
+  },
+  "release_accepted": false
+}

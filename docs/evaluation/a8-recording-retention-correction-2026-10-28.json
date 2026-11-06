@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "date": "2026-10-28",
+  "scope": "Post-hoc correction of explicit recording-retention semantic coverage in one a8 fictional seeded-text case on Mac and Windows. Original raw reports and prior reviews remain unchanged.",
+  "source_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+  "case": "zh_windows_uppercase_asr",
+  "assessment": {
+    "original_automatic_pass_retained": true,
+    "entire_case_semantic_acceptance": false,
+    "release_accepted": false,
+    "finding": "Both committed Chinese captions and final minutes omit an explicit recording/audio concept from source segment 3. The Mac says 会议记录 and the Windows says 会议纪要; neither by itself establishes preservation of RECORDING.",
+    "correction": "The prior local record retention statement must be qualified to written meeting-note/record retention. Explicit recording-retention semantic preservation was not established and must not be reported as passed.",
+    "citation_integrity_is_semantic_coverage": false,
+    "citation_limit": "Exact source quotes, source IDs, revisions and timings establish provenance. A complete citation containing RECORDING cannot substitute for retaining that concept in generated caption or article prose."
+  },
+  "original_source": {
+    "kind": "Fictional fixture text seeded directly into the evaluation; not new microphone or ASR output.",
+    "fixture_path": "tests/fixtures/document-cases.json",
+    "fixture_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+    "frozen_fixture_sha256": "6129a4ec1a3ecdc37be8d79bc8e83dc6117f2c0095593d26a412096800adc6e1",
+    "fixture_pointer": "case[name=zh_windows_uppercase_asr]/transcript/2",
+    "source_seq": 3,
+    "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+    "literal_IN_preserved": true,
+    "interpretation_limit": "The ASR-style source is awkward and says RECORDING IN MEETING NOTES, not RECORDING AND MEETING NOTES. This correction neither rewrites IN to AND nor adds a stronger coordination claim."
+  },
+  "observations": {
+    "mac": {
+      "source_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "cli_sha256": "9626789ecb68f82e4d6958a3666e38528723682bf5505dc8ce2142f0c1b0a98b",
+      "backend": "metal",
+      "backend_evidence": {
+        "scope": "Locally retained runtime log inspected for this correction.",
+        "log": {
+          "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/llm-runtime.log",
+          "sha256": "1dce2c53a00bd94c3e49c17eeb59c218f47dbb14e85c3453fd36a9fc7b453e45"
+        },
+        "device": "MTL0 (Apple M5)",
+        "offloaded_layers": [
+          29,
+          29
+        ]
+      },
+      "report": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.json",
+        "sha256": "e376c473c8900df8b5285cd6f43ed77f4662f909e9f22a06d19f633ec245ff32"
+      },
+      "final_snapshot": {
+        "path": "artifacts/benchmarks/source-action-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stdout.txt",
+        "sha256": "de7591ed4a3b7babb927088ac7d9753d8767be4130c6a359a1395936dd9ae71d"
+      },
+      "original_automatic_pass": true,
+      "case_seconds": 8.749,
+      "caption": {
+        "source_seq": 3,
+        "source_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:3",
+        "source_revision": 1,
+        "target": "zh",
+        "text": "星期五不是截止日期，会议记录应留在此电脑上"
+      },
+      "final_article_text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期，会议记录应留在此电脑上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 尚未获批。 ALICE将检查UN VIDEO CARD",
+      "seq3_citation": {
+        "end_ms": 30000,
+        "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+        "revision": 1,
+        "segment_id": "a634ef5f-5f43-4794-9906-b4f443c4ba3b:1:3",
+        "speaker_name": null,
+        "start_ms": 20000
+      },
+      "semantic_result": "FAIL for explicit recording/audio retention; not a claim that actual audio data was lost."
+    },
+    "windows": {
+      "source_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+      "platform": "Windows x86_64; NVIDIA GeForce GTX 1650; driver 621.01",
+      "cli_sha256": "541c897c7f61eb4af6796351b06e017df2c66006477efc27791fafe9bad3edfc",
+      "model": "qwen3-1.7b Q4_K_M",
+      "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+      "backend": {
+        "reported_worker_backends": [
+          "cuda",
+          "cuda",
+          "cuda"
+        ],
+        "reported_offloaded_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "scope": "Reported by the Windows peer. Local peer-report byte SHA verified here; original Windows CUDA runtime files were not independently reread on this Mac."
+      },
+      "peer_report": {
+        "path": "artifacts/windows-a8f1058-targeted-peer.json",
+        "sha256": "d2b0bab3f3079955f36e547568e3addc4687e095001bc1b1f2b202a6caea67e6"
+      },
+      "peer_evidence_comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6469854324",
+      "peer_evidence_commit": "https://github.com/EazyLee30/omascribe/commit/7c33bb233cce830da0d7856bfad5f541842b473e",
+      "reported_raw_evaluation_sha256": "166d3f58a977520cf84ef2e9456d98357de3c5a4928181342a0bc279e15de342",
+      "raw_evaluation_hash_scope": "Hash carried in the verified peer report; raw evaluation file is not a separate locally hashed artifact here.",
+      "original_automatic_pass": true,
+      "case_seconds": 19.719,
+      "caption": {
+        "source_seq": 3,
+        "target": "zh",
+        "text": "星期五不是截止日期，会议纪要应留在此电脑上"
+      },
+      "final_article_text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期，会议纪要应留在此电脑上 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试 Windows 版本。预算为 3000 美元 尚未获批。 ALICE将检查UN VIDEO CARD",
+      "reported_all_five_citations_exact": true,
+      "seq3_citation_quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+      "peer_assistant_semantic_review": "fail: subtitle and minutes omit RECORDING from third source segment; ALICE checks UN VIDEO CARD with correct subject/object; all five source citations are exact.",
+      "human_review": "not performed"
+    }
+  },
+  "prior_assertions_and_omission": {
+    "published_report": {
+      "path": "docs/evaluation/apple-source-action-language-2026-10-28.json",
+      "sha256": "3adbe4f7d7b060ea6250777f58604b62a60a78ac9e0bcf082ac07241373589d6"
+    },
+    "published_case_review_pointer": "/automatic_cases/0/assistant_review",
+    "published_case_review_exact": "PASS identified role/approval repair: seq5 and article say passive 尚未获批 and ALICE checks UN VIDEO CARD, with no guessed name or check date. Thursday Windows test, 3000 dollars, Friday-not-deadline and local retention remain. Article still repeats noisy fragments.",
+    "independent_review": {
+      "path": "artifacts/source-action-uppercase-review.json",
+      "sha256": "66316086f89a7e81e4eb1b877259057c57cd686e5de965aa31992c078e3bf318"
+    },
+    "independent_review_claim_pointer": "/confirmed/2",
+    "independent_review_claim_exact": "3000 dollars, Thursday Windows-version test, Friday-not-deadline and local record retention remain; no check date is invented for ALICE.",
+    "published_independent_review_claim_pointer": "/semantic_review/independent_reviews/0/confirmed/2",
+    "old_targeted_semantic_review_passed_retained_as_historical": true,
+    "historical_review_status_correction": "The old broad targeted-semantic pass cannot establish full case semantics. Its actor/future/passive-approval result is narrower and remains supported; its recording-retention implication is withdrawn.",
+    "frozen_case_article_required_patterns": [
+      "周四|星期四",
+      "周五|星期五",
+      "预算",
+      "未|不.*批准",
+      "本机|本地|电脑|计算机",
+      "3000|三千",
+      "ILLMIS\\s+CRIBE",
+      "LLAS\\s+CRIBE",
+      "(?<![A-Za-z0-9])LICE(?![A-Za-z0-9])",
+      "ENVY A CARD",
+      "ALICE",
+      "UN VIDEO CARD"
+    ],
+    "frozen_caption_assertion_sequences": [
+      5
+    ],
+    "automatic_assertion_gap": "The frozen article requirements checked local-computer wording but did not require recording/audio/录音/音频/录制. Caption-specific assertions covered seq5 only; seq3 had no recording-retention assertion.",
+    "assistant_review_gap": "The review verified exact citations and broad local-retention wording but did not separately require the explicit RECORDING concept in final caption and article. This was a review omission.",
+    "original_files_modified_by_this_correction": false
+  },
+  "retained_scoped_closures": {
+    "scope": "The four previously identified 841 defects remain independent narrow claims; they do not constitute whole-case or release acceptance.",
+    "prior_flag_retained": true,
+    "exact_prior_closures": [
+      {
+        "case": "zh_windows_uppercase_asr",
+        "result": "ALICE checks UN VIDEO CARD; passive not-approved state; no actor/object reversal or guessed name survives accepted output."
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "result": "Budget-review responsibility and unitless amounts preserved; unsupported generated 元 removed; no deferred caption and all4 phases complete. Article retains current5000/unapproved, Morgan/Thursday and independent Riley/Tuesday. New caption qualifier drift stays separate and OPEN."
+      },
+      {
+        "case": "en_test_link_schedule",
+        "mode": "explicit minutes",
+        "result": "Reversed-owner prefix is absent from accepted repair; 陈老师 responsible for reservation page, test link next Wednesday, page incomplete."
+      },
+      {
+        "case": "en_actual_page_publication",
+        "mode": "explicit minutes",
+        "result": "Generic Han 预约页面 rejected, checked-prose repair yields Appointment Page; future page publication and already-sent link remain distinct."
+      }
+    ],
+    "seq5_mac_caption": "尚未获批。 ALICE将检查UN VIDEO CARD。",
+    "seq5_windows_caption": "尚未获批。 ALICE将检查UN VIDEO CARD。",
+    "name_and_direction_scope": "ALICE remains future checker of literal UN VIDEO CARD with passive pending approval. No NVIDIA identity is inferred."
+  },
+  "new_red_assertion": {
+    "log": {
+      "path": "artifacts/recording-retention-original-failure.log",
+      "sha256": "beee20e7620042b3a178ff127857cc93f327f54e4d7bfb8048fddb95f131cb26"
+    },
+    "test": "notes::validation::tests::recording_retention_cannot_be_replaced_by_meeting_notes_alone",
+    "observed_result": "FAILED; 0 passed, 1 failed, 256 filtered out.",
+    "failed_expectation": "validate_translation(\"星期五不是截止日期，会议记录应留在此电脑上。\", &source, \"m\").is_err()",
+    "meaning": "The validator accepted the omitted-recording translation when the new regression assertion expected rejection.",
+    "provenance_limit": "This newly added assertion ran in the in-progress tree after a8, not an independently rebuilt clean a8 tree. The log does not record an exact standalone compile revision. It is pre-fix failure evidence, not a frozen candidate or successful repair result."
+  },
+  "limits": [
+    "No claim that real recording files were deleted, uploaded, lost, or retained is made by these seeded-text translation results.",
+    "No new ML, build or test was run for this correction; it reads retained evidence only.",
+    "Windows evidence covers the selected peer case; it is not full-corpus, microphone, real ASR, install/upgrade or release acceptance.",
+    "The new core repair is not frozen in this correction. No future repair effectiveness or follow-up ML result is included."
+  ],
+  "new_fix_results_included": false
+}

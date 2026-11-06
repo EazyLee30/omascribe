@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "PUBLIC_LITERAL_AFFILIATION_VETO_LOCAL_CHECKS_PASS_CI_PENDING",
+  "source": "fe1b9660a22c9e13d2fcdf274a154126f01d3e88",
+  "checked_private_source": "4daf0e62754653c66003911709d8e65eb28ca068",
+  "production_and_test_files_equal": true,
+  "scope": [
+    "Additional veto for parsed CJK university/college + exact mixed-script reported-person pairs. Each paragraph needs that same pair in its own current cited original segment; global independent membership and near-name guesses cannot authorize it.",
+    "Source generic大学 stays literal; affiliation omission is allowed. Same meeting/run and exact cited id/revision remain required. Unknown unparsed forms keep existing guards instead of gaining alias authority.",
+    "Read complete repeated name occurrences within 120000 related bytes and 64 frames. Unrelated text has a fast path. Structural来自 and prior report-payload boundaries preserve the checked compatible cases.",
+    "Existing name, modal, confirmation, completion, language, SourceRepair, Scope and transaction guards are unchanged. The rejection uses the existing name-repair hint branch and two-request budget. No extra model call."
+  ],
+  "red": {
+    "source": "67c83b927c5eff8a759b0dfdb38fd281aba036a2",
+    "passed": 1,
+    "failed": 4,
+    "received_raw_body_sha256": "6b2d199a121fb636919e87f939a63cd933520d6c642bc72a1b39050dda595216"
+  },
+  "compatibility": {
+    "first_fix": "815a1a6f28ca1f0d6824343ba67a11f7e76f269e",
+    "initial_targeted_passed": 8,
+    "counterexample_source": "3fcd00b231fd65fd98713007753c77224300cd69",
+    "passed": 8,
+    "failed": 3,
+    "failures": [
+      "来自 swallowed into institution",
+      "earlier reported payload condition wraps next affiliation",
+      "unrelated text enters new scan budget"
+    ],
+    "budget_precondition_revision": "The newly introduced budget control now uses an over-limit related institution source instead of plain x. Same rejection assertion, 120001 threshold and 64-frame limit retained; unrelated text explicitly bypasses this additional analysis. Original five controls and prior 17 modal assertions unchanged."
+  },
+  "checks": {
+    "core_passed": 680,
+    "explicit_asset_model_tests_ignored": 13,
+    "cli_passed": 2,
+    "integration_passed": 34,
+    "strict_workspace_clippy": "PASS",
+    "fmt": "PASS",
+    "exact_source_ci": "pending at record",
+    "independent_read_only_review": "retained_review at exact4daf: three known compatibility issues resolved; source/quote binding and existing guards remain; no new blocker within bounded scope."
+  },
+  "limits": [
+    "Not general entity resolution, institution aliases, Chinese-only names or an arbitrary English affiliation parser. Conditional/quotation support is bounded; no identity merging.",
+    "The stopped model pair still failed and source6 model generation never ran. Model-free institution controls do not prove full article availability or real-audio name recall.",
+    "No new model execution after the pair, no speed/energy/VRAM claim, no app or installer build or 0.3.5 release."
+  ],
+  "evidence_directory": "artifacts/writer-zh-modal-2026-11-05",
+  "raw_sha256": {
+    "production-affiliation-67c83b9-red.log": "c9100a82e81ed59f2e11c09fd6950563d05d23d22a814fa088e65647fcdd2598",
+    "production-affiliation-815a1a6-targeted.log": "de9d24b4be8cbba7093c0296260a9c08ce0fc43b08062a6d6427b501fa8fad10",
+    "production-affiliation-3fcd00b-compat-red.log": "f085a5a666923bc340eb807b9b8b3ce4e95909e1ab07c4d4932f89193414d2b9",
+    "production-affiliation-4daf0e6-core.log": "df05cd236618353c138f9e8bb1468c2aa0c5844531b442f37a3c1721ef33f0fc",
+    "production-affiliation-4daf0e6-clippy.log": "03e06c12a435e45489bcdd8bdb29ba46daef181a9a070f4bccdd8cc4dda20269",
+    "production-affiliation-4daf0e6-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "release_published": false
+}

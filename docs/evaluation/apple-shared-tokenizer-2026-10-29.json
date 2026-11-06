@@ -1,0 +1,251 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "source": "e30460a95362cfaa10207b61c1dc1aeb9180110b",
+  "parent_integrity_source": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+  "fixed_release_candidate_unchanged": "dd6d90cac30f992b3b642f77deed3d6b55d1ff4e",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "discovery": {
+    "peer_source": "c40d99806bd18a807ebfa0f7deb0399cb1cb6b75",
+    "peer_comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6499934875",
+    "production_source_hash_verified": true,
+    "boundary": "Retaining a read directory handle does not prevent creating a new child. Windows directory metadata may not change during immediate creation; the old vocabulary function would then switch from verified shared BPE to a new local BPE.",
+    "peer_probe": {
+      "source_revision": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+      "local_date": "2026-10-29",
+      "platform": "Windows x86_64",
+      "production_code_path": "crates/asr/src/hotwords.rs",
+      "production_code_sha256": "60ec53f9793fafc6d1588c92e319cdd400f6e7825efb19f181f16a3bff0aed88",
+      "isolated_harness_sha256": "4c1eed4adfd9afb5bed7b44c43f7805839c0eeed37a1d14288c4a79db141157f",
+      "isolated_binary_sha256": "7cbeb4e350afdb77ae626a0d5fda540bd3650de50be3f3576ad2200fac50c4d9",
+      "function_probe": {
+        "method": "Independent offline Rust program copies exact pinned hotwords.rs, creates fictional model/shared/audio directories and minimal fictional BPE data, holds a Windows directory handle with FILE_SHARE_READ and the same open flags, calls actual vocabulary function before and after creating model/bpe.model.",
+        "initial_shared_vocabulary_selected": true,
+        "local_file_creation_succeeded_while_directory_handle_retained": true,
+        "later_local_vocabulary_selected": true,
+        "command": "cargo +1.99.0 run --offline",
+        "result": "pass",
+        "fixture_cleanup": true,
+        "preparation_note": "First Cargo invocation stopped before compiling because its temporary crate was nested under another workspace. An independent workspace declaration was added and the probe then passed."
+      },
+      "directory_metadata_probes": [
+        {
+          "trials": 100,
+          "unchanged_last_write_and_change_times": 68,
+          "other_identity_fields_compared": false
+        },
+        {
+          "trials": 100,
+          "unchanged_volume_file_id_directory_size_last_write_and_change_times": 44,
+          "all_product_directory_identity_fields_compared": true
+        }
+      ],
+      "limits": [
+        "Separate synthetic directory trials on one machine; counts are not a cross-system failure rate.",
+        "The isolated program exercises the exact hotwords vocabulary function and equivalent native directory-open flags, not the complete product receipt or worker lifecycle.",
+        "It establishes local child creation and vocabulary selection drift but does not show a real worker loading a tampered user model or any actual exploitation.",
+        "No user model, microphone, recording, GPU, or network data was used."
+      ]
+    },
+    "peer_receipt_audit": {
+      "source_revision": "b569e320ddc669eb64fb5eaebc57827012d330f8",
+      "local_date": "2026-10-29",
+      "platform": "Windows 10 Pro 10.0.19045 build 19045; x86_64; Rust 1.99.0",
+      "original_source_run": {
+        "source_worktree_clean_before_run": true,
+        "command": "cargo +1.99.0 test -p omascribe-core --lib --locked model_integrity::tests",
+        "tests_passed": 19,
+        "tests_failed": 0,
+        "tests_ignored": 0,
+        "includes_original_windows_ci_failed_tests": [
+          "detects_secondary_change_after_it_was_hashed",
+          "same_size_corruption_invalidates_cached_receipt",
+          "secondary_asset_change_invalidates_whole_model"
+        ],
+        "additional_existing_windows_coverage": [
+          "existing writer",
+          "receipt clone",
+          "cache clear",
+          "directory replacement",
+          "same-size file mutation",
+          "mtime restoration"
+        ],
+        "default_test_parallelism": true,
+        "log_sha256": "8d58ee2c07cf162d3a692e6909e28e0d9777e99c202e49fee0b5b3fde8a318fe"
+      },
+      "test_only_wrapper_run": {
+        "command": "cargo +1.99.0 test -p omascribe-core --lib --locked windows_audit_",
+        "tests_passed": 2,
+        "tests_failed": 0,
+        "tests_ignored": 0,
+        "test_only_diff_sha256": "ef46915e2467162a62a9bee515eab8c34c4dae558d4a6b0709dfaabb210d3152",
+        "instrumented_test_binary_sha256": "7655d92cf8a5840405a260f2d0bd71f4bc6003bde17ce186a30e82a91efc8426",
+        "log_sha256": "b81fc3b969f3723bab93af2edb5c475783f614e96b459ca29a61fc772b8aa6a5",
+        "checks": [
+          "Existing writer was opened before admission; verification failed closed, then succeeded after writer release.",
+          "After successful admission, opening another writer was denied until both cache and receipt owners released handles.",
+          "For two model assets, clearing cache and dropping the original receipt did not release protections held by two clones; dropping one clone still blocked modification.",
+          "Immediately after the final clone was released, same-length corruption of a secondary asset succeeded, and a fresh SHA-based admission rejected it.",
+          "After clearing the cache and releasing the only receipt, an immediate same-length primary asset modification was rejected by fresh admission."
+        ]
+      },
+      "limits": [
+        "The first run is the unmodified fixed-source model_integrity unit test subset, not the entire Windows CI job.",
+        "The second run appends test-only functions in a separate local worktree; production logic was not modified or committed.",
+        "Synthetic temporary files only; no user model, audio or private contents were accessed.",
+        "No GPU component, SDK, installer, real model loading, external mmap/native reopen path, or release acceptance was tested.",
+        "Windows-only observations do not establish Linux or macOS behavior."
+      ]
+    }
+  },
+  "change": {
+    "shared_argument": "Authoritative when Some; exact nonempty bounded token inventories must match. A later primary/bpe.model cannot override it.",
+    "without_shared_argument": "Continues to use local BPE.",
+    "read_bounds": {
+      "each_token_inventory_bytes": 1000001,
+      "bpe_bytes": 2000001,
+      "rule": "Read at most limit+1 then reject overflow before parsing or rewriting export."
+    }
+  },
+  "local_validation": {
+    "asr_unit_tests_passed": 9,
+    "unit_case": "explicit_shared_tokenizer_cannot_be_overridden_by_new_local_bpe",
+    "actual_worker_crate_unit": true,
+    "checks": [
+      "Shared A before local file exists",
+      "Shared A remains after a new local B appears",
+      "None explicitly chooses local B",
+      "Mismatched token inventory rejects",
+      "Oversized BPE rejects before rewriting prior exported B"
+    ],
+    "pinned_sdk_cpu_worker_build": "pass",
+    "strict_workspace_clippy": "pass",
+    "existing_sdk_model_runtime_assets_unchanged": 23,
+    "worker": {
+      "source_revision": "e30460a95362cfaa10207b61c1dc1aeb9180110b",
+      "source_file_sha256": "f3f483b943c260ba8e80b65f4e93832717ce05168702519fcaa7c3835426a5ac",
+      "artifact": "target/debug/omascribe-asr",
+      "bytes": 27212624,
+      "sha256": "5e7284cd833090d300e4218ba845a5df911e4f74a34d0be601a46cd459d9d928",
+      "sdk_assets_unchanged": true,
+      "sdk_assets": 15,
+      "build_identity_encoded_in_worker": false,
+      "actual_bilingual_neural_model_run": false
+    }
+  },
+  "ci": {
+    "state": "passed",
+    "exact_source": "e30460a95362cfaa10207b61c1dc1aeb9180110b",
+    "runs": [
+      {
+        "conclusion": "success",
+        "databaseId": 40896560533,
+        "name": "Optional acceleration components",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40896560533"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40896558918,
+        "name": "Website validation",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40896558918"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40896559282,
+        "name": "CI",
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40896559282"
+      }
+    ],
+    "optional_jobs": [
+      {
+        "name": "prepare",
+        "conclusion": "success"
+      },
+      {
+        "name": "windows-core",
+        "conclusion": "success"
+      },
+      {
+        "name": "build",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "catalog",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  "limits": [
+    "The synthetic protobuf fixture tests actual vocabulary function code in the worker crate, not a full bilingual acoustic-model session or physical recording.",
+    "Peer Windows original receipt tests19 and separate test-only wrapper2 are preserved as separate b569 results; they are not e304 full native or release acceptance.",
+    "The older arbitrary-path native CLI admission and broader mmap/native reopen boundaries remain; the explicit-shared selection fix closes this particular precedence condition only.",
+    "No model, SDK, signed CUDA/Vulkan payload or installer was rebuilt or downloaded for the tokenizer fix. The CPU Rust worker was relinked with the existing pinned static SDK.",
+    "Candidate12 remains fixed. Original Windows source36 failures and b569 directory/tokenizer discovery are retained; not relabelled as full product passes."
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/model-integrity-2026-10-29/windows-b569-integrity-audit-2026-10-29.json",
+      "bytes": 2722,
+      "sha256": "46e26f4b9ca1ec2d270171ddf913858b3fa51152a3aeb2ddd960c1fee63fa267"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/windows-b569-integrity-audit-wrapper-2026-10-29.diff",
+      "bytes": 2607,
+      "sha256": "ef46915e2467162a62a9bee515eab8c34c4dae558d4a6b0709dfaabb210d3152"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/windows-b569-tokenizer-boundary-2026-10-29.json",
+      "bytes": 2130,
+      "sha256": "9dda38f2115f1a11ca65d2e310d75df6989cf156d0dfc1a10c4bdfcfec2737fb"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-checks.json",
+      "bytes": 667,
+      "sha256": "01cdfe0dcb532c1a2c119c06143e7b71715919d90522e93d9c17cd8a423ee3ca"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-native-tests.log",
+      "bytes": 1244,
+      "sha256": "9373df342fdfe9e7a7bdb2f8d6945295e36c048879f556feece7f866e6f62b00"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-native-build.log",
+      "bytes": 138,
+      "sha256": "254d018009a5d70c1af629edd9df389271d59878ab882fb440d5e95c640bc5bd"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-clippy.log",
+      "bytes": 291,
+      "sha256": "80097152cfd531d689acb68d6aee20de747cec592ac9282af1284eff59c4df3d"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-worker.json",
+      "bytes": 448,
+      "sha256": "8cc44a85a75114fa409d39d9991ac016a0d590278e771496c86fd07c53b1e9bc"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/tokenizer-assets-after.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-e304-all.json",
+      "bytes": 513,
+      "sha256": "4bdf8b633e0eb9b35f9153910a4ba38988f89a54404a22cd63446b6eb2447d09"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-e304-optional.json",
+      "bytes": 4508,
+      "sha256": "893834f92c0899845aae6368d5554ed8b948dee87d98236b0383933c08518aee"
+    },
+    {
+      "path": "artifacts/model-integrity-2026-10-29/ci-e304-windows-log.log",
+      "bytes": 190010,
+      "sha256": "fcaac42698bebee922e63de67f13d8ecdf92599e685ddd3aafe1b969aa159b1a"
+    }
+  ]
+}

@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
-export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
-cargo fmt --all --check
-cargo test -p omascribe-core --locked
-npm run build
-python3 -m unittest discover -s tests -p 'test_*.py'

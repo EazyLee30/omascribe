@@ -1,0 +1,1169 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "source_revision": "cf3bb65994e38995155aad56ec48537023ec3f83",
+  "result": "STOP: optional Qwen MLX hotword candidate is not admitted for automatic transcript replacement.",
+  "scope": "One separate frozen full-corpus attempt, after earlier seven-clip discovery. Model and all generation parameters unchanged; original 100-source order, three original note conditions. Source reference annotations frozen before execution. No production integration or whole-corpus quality result.",
+  "candidate": {
+    "model_id": "mlx-community/Qwen3-ASR-0.6B-4bit",
+    "revision": "313d850181767edf09f00a9c289becca70e58cd0",
+    "license": "apache-2.0",
+    "weights_bytes": 708236945,
+    "weights_sha256": "70c7e67e588062adce4f10796e47ad42ead51c6671eda61a0987eae38ca95ddf",
+    "mlx_audio_version": "0.6.4",
+    "python_version": "3.11.12",
+    "component_policy": "Independent optional component; not bundled with installer."
+  },
+  "protocol": {
+    "planned_source_clusters": 100,
+    "planned_asr_requests": 300,
+    "actual_model_loads": 1,
+    "actual_requests": 9,
+    "unexecuted_requests": 291,
+    "completed_source_clusters": 3,
+    "retries": 0,
+    "limits": {
+      "max_requests": 300,
+      "per_request_seconds": 30,
+      "total_seconds": 240,
+      "max_process_tree_rss_bytes": 3221225472,
+      "retries": 0,
+      "model_loads": 1,
+      "gpu_memory_policy": "Record MLX active/peak separately; do not equate unified-memory metrics with process-tree RSS."
+    },
+    "total_wall_seconds": 3.846315416973084,
+    "load_seconds": 0.7970002089859918,
+    "summed_request_seconds": 2.242200042004697,
+    "complete": false,
+    "execution_passed": false
+  },
+  "primary_failure": {
+    "case": "fleurs_en_hotword_003",
+    "arm": "negative",
+    "note": "**Giza**",
+    "actual_hotwords": [
+      "GIZA"
+    ],
+    "reference": "You can use boda-boda (motorcycle taxi) to get around Goma. The normal (local) price is ~500 Congolese Francs for the short ride.",
+    "baseline": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+    "positive": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+    "negative": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 GIZA French for the short ride.",
+    "explanation": "The designated absent name Giza is injected into the currency phrase while target Goma remains correct. A target-name presence check and improved aggregate WER cannot make this safe for automatic replacement."
+  },
+  "additional_observations": [
+    "001 retains a corrupted person name even with the original positive note, and changes the accused to he accused; note presence does not guarantee correct recognition.",
+    "002 preserves the source list and F1 in the three emitted arms.",
+    "003 retains 500 but omits the source approximation mark in all arms; without a fresh audio audit, preservation of approximation cannot be claimed.",
+    "Only 001–003 executed. The other 97 source clusters and the seven original discovery sentinels were not reached in this separate run; previous successful seven-clip evidence is retained, not replayed or promoted."
+  ],
+  "source_annotation_preparation": {
+    "cases": 100,
+    "source_literal_spans_checked": 187,
+    "numeric_facts": 95,
+    "polarity_and_limitation_facts": 92,
+    "scope": "Agent source-reference annotation; no candidate output was used to author it. Finite explicit facts, not a complete semantic verifier or independent human/audio audit."
+  },
+  "guards": {
+    "original_pcm_wire_verified": true,
+    "original_600_captures_rechecked": true,
+    "all_8378_frozen_files_match_before_after": true,
+    "single_full_chunk_observed_each_request": true,
+    "actual_system_prompts_match_wire": true,
+    "all_observation_errors_empty": true,
+    "processes_exit_confirmed": true,
+    "alive_after_finish": [],
+    "exit_code": 0,
+    "quality_gate_passed": false,
+    "release_admission": false,
+    "old_evidence_overwritten": false
+  },
+  "measured_costs": {
+    "resources": {
+      "schema": 1,
+      "method": "psutil sampled descendant tree",
+      "psutil_version": "7.1.3",
+      "interval_seconds": 0.1,
+      "samples": 28,
+      "processes_seen": 2,
+      "cpu_seconds_sampled": 2.048877432,
+      "peak_tree_rss_mib": 877.84375,
+      "peak_tree_pss_mib": null,
+      "gpu_memory_mib": null,
+      "energy_joules": null,
+      "sample_errors": 0,
+      "optional_pss_unavailable": 48,
+      "optional_pss_errors": 48,
+      "sampler_stopped": true,
+      "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected.",
+      "observed_processes": [
+        {
+          "pid": 62629,
+          "create_time": 1793997277.167582,
+          "last_seen_elapsed_seconds": 3.1231019160477445
+        },
+        {
+          "pid": 62630,
+          "create_time": 1793997278.046553,
+          "last_seen_elapsed_seconds": 3.1231019160477445
+        }
+      ],
+      "timeline_truncated": false,
+      "timeline_dropped_samples": 0,
+      "tree_rss_mib_seconds_sampled": 2107.9759780953045,
+      "integration_method": "Trapezoid between adjacent recorded samples with known RSS; no unsampled endpoints or unavailable values are imputed. Truncated timelines exclude dropped samples.",
+      "processes_exit_confirmed": true,
+      "alive_after_finish": [],
+      "exit_check_errors": 0
+    },
+    "max_mlx_active_bytes": 733848346,
+    "max_mlx_peak_bytes": 1499584228,
+    "max_mlx_cache_bytes": 4327456
+  },
+  "cost_limits": "Three clips/nine calls only. No matched current-source small-model speed trial, live capture, whole-meeting throughput or energy result. Sampled RSS and MLX memory are distinct, nonadditive measurements.",
+  "partial_aggregates": {
+    "complete": false,
+    "execution_passed": false,
+    "source_fidelity": "manual_review_required",
+    "quality_gate_passed": false,
+    "release_admission": false,
+    "results": 9,
+    "expected_results": 300,
+    "errors": [
+      "requests: ValueError: Frozen source-fidelity stop: ['designated unspoken name inserted']"
+    ],
+    "arms": {
+      "baseline": {
+        "measured": 3,
+        "expected": 100,
+        "qwen_names": 2,
+        "historical_small_names": 1,
+        "reference_words": 56,
+        "qwen_word_edits": 4,
+        "historical_small_word_edits": 33,
+        "qwen_wer": 0.07142857142857142,
+        "historical_small_wer": 0.5892857142857143
+      },
+      "positive": {
+        "measured": 3,
+        "expected": 100,
+        "qwen_names": 2,
+        "historical_small_names": 1,
+        "reference_words": 56,
+        "qwen_word_edits": 4,
+        "historical_small_word_edits": 35,
+        "qwen_wer": 0.07142857142857142,
+        "historical_small_wer": 0.625
+      },
+      "negative": {
+        "measured": 3,
+        "expected": 100,
+        "qwen_names": 2,
+        "historical_small_names": 1,
+        "reference_words": 56,
+        "qwen_word_edits": 6,
+        "historical_small_word_edits": 38,
+        "qwen_wer": 0.10714285714285714,
+        "historical_small_wer": 0.6785714285714286
+      }
+    }
+  },
+  "runner_checks": {
+    "tests": 12,
+    "result": "passed",
+    "seconds": 2.957,
+    "model_requests": 0,
+    "scope": "Real fake-worker lifecycle and protocol checks; not recognition or production app validation."
+  },
+  "decision": [
+    "Stop this automatic whole-transcript integration route. Do not change aliases, samples, decoding or the absent-name guard and retry the remaining 291 requests.",
+    "Preserve original numeric, negation, human-edit, citation and release constraints. A different source-validated mechanism requires its own pre-frozen validation; candidate text alone is not authority to rewrite facts.",
+    "Keep the earlier seven-clip gain and this wider negative-control failure together. Q9 and Q16 remain open; no new default or 0.3.5 release follows.",
+    "Prioritize existing production name-sync and minutes blockers; this finding is shared evidence, not a new Windows/Linux implementation task. Optional GPU components remain external to installers."
+  ],
+  "executed_inputs": [
+    {
+      "id": "fleurs_en_hotword_001",
+      "reference": "Police superintendent Chandra Shekhar Solanki said the accused appeared in court with covered faces.",
+      "normalized_reference": "police superintendent chandra shekhar solanki said the accused appeared in court with covered faces",
+      "expected_name": "Chandra Shekhar Solanki",
+      "forbidden_name": "Lakkha Singh",
+      "protected_numbers": {},
+      "original_discovery_case": false,
+      "arms": [
+        {
+          "name": "baseline",
+          "note": "",
+          "hotwords": [],
+          "wire_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "small": {
+            "raw_text": "所以是不是 INTENDED SHAR SHANGHAI SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERT FACES",
+            "corrected_text": "所以是不是 INTENDED SHAR SHANGHAI SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERT FACES",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.7142857142857143,
+            "source_json_pointer": "/pairs/0/results/legacy"
+          }
+        },
+        {
+          "name": "positive",
+          "note": "**Chandra Shekhar Solanki**",
+          "hotwords": [
+            "CHANDRA SHEKHAR SOLANKI"
+          ],
+          "wire_sha256": "1e09adeda20473611dd8aaedd9a7b84d0a450cb0ad9c6849de7b653befa26bf0",
+          "small": {
+            "raw_text": "所以是不是 INTENDING SHANRA SHANK HAR SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERED FACES",
+            "corrected_text": "所以是不是 INTENDING SHANRA SHANK HAR SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERED FACES",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.7142857142857143,
+            "source_json_pointer": "/pairs/1/results/legacy"
+          }
+        },
+        {
+          "name": "negative",
+          "note": "**Lakkha Singh**",
+          "hotwords": [
+            "LAKKHA SINGH"
+          ],
+          "wire_sha256": "4f57d22fa3d2994c31e685efd7f786b33fe5db797865144ced835d01967f316b",
+          "small": {
+            "raw_text": "所以是不是 INTENDING SHANRA SHANK HAR SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERED FACES",
+            "corrected_text": "所以是不是 INTENDING SHANRA SHANK HAR SO LASKY SAID HE CUES APPEAR IN COURT WITH COVERED FACES",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.7142857142857143,
+            "source_json_pointer": "/pairs/2/results/legacy"
+          }
+        }
+      ],
+      "audio": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/stream-name-equivalence-2026-11-06/run/cases/fleurs_en_hotword_001/baseline/legacy/workspace/meetings/e0ba9032-164f-48dd-9acf-e8226b32d582/audio/000000.pcm",
+        "bytes": 292480,
+        "sha256": "00cb630b02e2d92271d69365be577459cfb481332f3861e2c3de348d37546f43",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples": 146240,
+        "encoding": "s16le",
+        "start_ms": 0,
+        "end_ms": 9140.0,
+        "canonical": {
+          "decoder": "native_wav_import",
+          "input_sha256": "29b3ce54bc3d8f2a6c665478f48ea1ec0844c6f50cc5702127ba7b774d238fae",
+          "pcm_bytes": 292480,
+          "pcm_sha256": "00cb630b02e2d92271d69365be577459cfb481332f3861e2c3de348d37546f43",
+          "sample_rate": 16000,
+          "samples": 146240,
+          "schema": 1
+        }
+      }
+    },
+    {
+      "id": "fleurs_en_hotword_002",
+      "reference": "Popular sports include football, basketball, volleyball, water-polo, fencing, rugby, cycling, ice hockey, roller hockey and F1 motor racing.",
+      "normalized_reference": "popular sports include football basketball volleyball water-polo fencing rugby cycling ice hockey roller hockey and f1 motor racing",
+      "expected_name": "F1",
+      "forbidden_name": "FBI",
+      "protected_numbers": {},
+      "original_discovery_case": false,
+      "arms": [
+        {
+          "name": "baseline",
+          "note": "",
+          "hotwords": [],
+          "wire_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "small": {
+            "raw_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEBALL WATERPOLO FENCING RUGBE FIGHTLING ICE HAWKY RULER HAWKY AND F ONE MOTOR RACING",
+            "corrected_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEBALL WATERPOLO FENCING RUGBE FIGHTLING ICE HAWKY RULER HAWKY AND F ONE MOTOR RACING",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.5789473684210527,
+            "source_json_pointer": "/pairs/5/results/legacy"
+          }
+        },
+        {
+          "name": "positive",
+          "note": "**F1**",
+          "hotwords": [
+            "F1"
+          ],
+          "wire_sha256": "deae2d4d75857c1081f113bcfc950dca567dd5a2e14e6ac8fb8e5785ff4dd5ec",
+          "small": {
+            "raw_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEBALL WATERPOLO FENCING RUGBE FIGHTLING ICE HAWKY RULER HAWKY AND F ONE MOTOR RACING",
+            "corrected_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEBALL WATERPOLO FENCING RUGBE FIGHTLING ICE HAWKY RULER HAWKY AND F ONE MOTOR RACING",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.5789473684210527,
+            "source_json_pointer": "/pairs/3/results/legacy"
+          }
+        },
+        {
+          "name": "negative",
+          "note": "**FBI**",
+          "hotwords": [
+            "FBI"
+          ],
+          "wire_sha256": "c6cd4cf936fd5ad884ed4c278d147982124a6b7df27d95ddf58cd7a60660664c",
+          "small": {
+            "raw_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEY BALL WATER PULL OF FENCING RUG BIKLING ICE HAWKY RULER HAWKY AND F ONE MODER RACING",
+            "corrected_text": "POPULAR SPORTS INCLUDE FOOTBALL BASKE BALL VOLLEY BALL WATER PULL OF FENCING RUG BIKLING ICE HAWKY RULER HAWKY AND F ONE MODER RACING",
+            "raw_name_present": false,
+            "corrected_name_present": false,
+            "raw_wer": 0.7368421052631579,
+            "source_json_pointer": "/pairs/4/results/legacy"
+          }
+        }
+      ],
+      "audio": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/stream-name-equivalence-2026-11-06/run/cases/fleurs_en_hotword_002/baseline/legacy/workspace/meetings/f90d7378-519d-49a8-bce9-8ab2465fa8ee/audio/000000.pcm",
+        "bytes": 332160,
+        "sha256": "739733513c3726ee12a6e1db86c5b2ea681745e8f7bcb91e1b069b9379cda8fc",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples": 166080,
+        "encoding": "s16le",
+        "start_ms": 0,
+        "end_ms": 10380.0,
+        "canonical": {
+          "decoder": "native_wav_import",
+          "input_sha256": "ac42ed89ac1ac8f28cf12266f9444ca70eae5de8a4f3b04149db08008da0843a",
+          "pcm_bytes": 332160,
+          "pcm_sha256": "739733513c3726ee12a6e1db86c5b2ea681745e8f7bcb91e1b069b9379cda8fc",
+          "sample_rate": 16000,
+          "samples": 166080,
+          "schema": 1
+        }
+      }
+    },
+    {
+      "id": "fleurs_en_hotword_003",
+      "reference": "You can use boda-boda (motorcycle taxi) to get around Goma. The normal (local) price is ~500 Congolese Francs for the short ride.",
+      "normalized_reference": "you can use boda-boda motorcycle taxi to get around goma. the normal local price is ~500 congolese francs for the short ride",
+      "expected_name": "Goma",
+      "forbidden_name": "Giza",
+      "protected_numbers": {},
+      "original_discovery_case": false,
+      "arms": [
+        {
+          "name": "baseline",
+          "note": "",
+          "hotwords": [],
+          "wire_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "small": {
+            "raw_text": "YOU CAN USE BOD ABODE MORE A CYCLE TAXIET TOGETHER AROUND GOMA THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "corrected_text": "YOU CAN USE BOD ABODE MORE A CYCLE TAXIET TOGETHER AROUND GOMA THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "raw_name_present": true,
+            "corrected_name_present": true,
+            "raw_wer": 0.5217391304347826,
+            "source_json_pointer": "/pairs/7/results/legacy"
+          }
+        },
+        {
+          "name": "positive",
+          "note": "**Goma**",
+          "hotwords": [
+            "GOMA"
+          ],
+          "wire_sha256": "d7d7b95be188630af86624508605b38841b909467c06fefd47e9e98fc3a6b685",
+          "small": {
+            "raw_text": "BONA MORE A CYCLE TAXIET TOGETHER AROUND GOMA THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "corrected_text": "BONA MORE A CYCLE TAXIET TOGETHER AROUND Goma THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "raw_name_present": true,
+            "corrected_name_present": true,
+            "raw_wer": 0.6086956521739131,
+            "source_json_pointer": "/pairs/8/results/legacy"
+          }
+        },
+        {
+          "name": "negative",
+          "note": "**Giza**",
+          "hotwords": [
+            "GIZA"
+          ],
+          "wire_sha256": "e3a5ceeda4703188fc0c54cc3d8b7a8886863234c907910fb226f3e227cbd666",
+          "small": {
+            "raw_text": "BONA MORE A CYCLE TAXIET TOGETHER AROUND GOMA THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "corrected_text": "BONA MORE A CYCLE TAXIET TOGETHER AROUND GOMA THE NORMAL LOCAL PRICE IS FIVE HUNDRED A CONGO THESE FRANCS FOR THE SHORT RIDE",
+            "raw_name_present": true,
+            "corrected_name_present": true,
+            "raw_wer": 0.6086956521739131,
+            "source_json_pointer": "/pairs/6/results/legacy"
+          }
+        }
+      ],
+      "audio": {
+        "path": "/Users/eazylee/build/omascribe/artifacts/stream-name-equivalence-2026-11-06/run/cases/fleurs_en_hotword_003/baseline/legacy/workspace/meetings/a18eebbd-beff-40a1-b571-641dd3cd1a0f/audio/000000.pcm",
+        "bytes": 426880,
+        "sha256": "571687f012e3e302dfbd48a71c7399c359d77a383b63c149fe350c351f193fdd",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples": 213440,
+        "encoding": "s16le",
+        "start_ms": 0,
+        "end_ms": 13340.0,
+        "canonical": {
+          "decoder": "native_wav_import",
+          "input_sha256": "f41d9a92d8c9e1e26571e04772701737b0e181b075d7ffd2f2798477f1efb968",
+          "pcm_bytes": 426880,
+          "pcm_sha256": "571687f012e3e302dfbd48a71c7399c359d77a383b63c149fe350c351f193fdd",
+          "sample_rate": 16000,
+          "samples": 213440,
+          "schema": 1
+        }
+      }
+    }
+  ],
+  "raw_results": [
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_001",
+      "arm": "baseline",
+      "output": {
+        "text": "Police Superintendent Shonra Shankar Solansky said he accused appeared in court with covered faces.",
+        "segments": [
+          {
+            "text": "Police Superintendent Shonra Shankar Solansky said he accused appeared in court with covered faces.",
+            "language": "English",
+            "start": 0.0,
+            "end": 9.14
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 134,
+        "generation_tokens": 24,
+        "total_tokens": 158,
+        "prompt_tps": 583.8444955996376,
+        "generation_tps": 104.56916339097988,
+        "total_time": 0.22951316833496094
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 134,
+          "input_token_sha256": "d15779bcbf96b3f79120d16e9a0c992abfe3ef61dbb983081f93b2c334244df2"
+        },
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 134,
+          "input_token_sha256": "d15779bcbf96b3f79120d16e9a0c992abfe3ef61dbb983081f93b2c334244df2"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 146240,
+          "float32_sha256": "66842d1dfb574053f3c9366d98445c1a77c523d28312edf408aa7192a9881d7e"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "00cb630b02e2d92271d69365be577459cfb481332f3861e2c3de348d37546f43",
+      "hotwords": [],
+      "seconds": 0.23016141704283655,
+      "cpu_user_seconds": 0.06870099999999996,
+      "cpu_system_seconds": 0.07996800000000004,
+      "mlx_active_bytes": 733846298,
+      "mlx_peak_bytes": 1428464900,
+      "mlx_cache_bytes": 3233808,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": false,
+        "wer": {
+          "substitutions": 4,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 14,
+          "wer": 0.2857142857142857
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_001",
+      "arm": "positive",
+      "output": {
+        "text": "Police Superintendent Shanta Shankar Solansky said he accused appeared in court with covered faces.",
+        "segments": [
+          {
+            "text": "Police Superintendent Shanta Shankar Solansky said he accused appeared in court with covered faces.",
+            "language": "English",
+            "start": 0.0,
+            "end": 9.14
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 144,
+        "generation_tokens": 22,
+        "total_tokens": 166,
+        "prompt_tps": 782.6765791741449,
+        "generation_tps": 119.5755884849388,
+        "total_time": 0.18398404121398926
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "CHANDRA SHEKHAR SOLANKI",
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 144,
+          "input_token_sha256": "678746262a7ef0bd83147a90db046961d4726689a16addac97dee8246030ff7f"
+        },
+        {
+          "system_prompt": "CHANDRA SHEKHAR SOLANKI",
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 144,
+          "input_token_sha256": "678746262a7ef0bd83147a90db046961d4726689a16addac97dee8246030ff7f"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 146240,
+          "float32_sha256": "66842d1dfb574053f3c9366d98445c1a77c523d28312edf408aa7192a9881d7e"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "00cb630b02e2d92271d69365be577459cfb481332f3861e2c3de348d37546f43",
+      "hotwords": [
+        "CHANDRA SHEKHAR SOLANKI"
+      ],
+      "seconds": 0.18425874994136393,
+      "cpu_user_seconds": 0.05740599999999996,
+      "cpu_system_seconds": 0.053873000000000004,
+      "mlx_active_bytes": 733848346,
+      "mlx_peak_bytes": 1428594404,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": false,
+        "wer": {
+          "substitutions": 4,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 14,
+          "wer": 0.2857142857142857
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_001",
+      "arm": "negative",
+      "output": {
+        "text": "Police Superintendent Shanta Shankar Solansky said he accused appeared in court with covered faces.",
+        "segments": [
+          {
+            "text": "Police Superintendent Shanta Shankar Solansky said he accused appeared in court with covered faces.",
+            "language": "English",
+            "start": 0.0,
+            "end": 9.14
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 142,
+        "generation_tokens": 22,
+        "total_tokens": 164,
+        "prompt_tps": 806.1809494288565,
+        "generation_tps": 124.90127385517495,
+        "total_time": 0.17613911628723145
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "LAKKHA SINGH",
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 142,
+          "input_token_sha256": "679cffdb26b03642b0c616880ae76d0b66a47de84edfb55cf5223ad639be3561"
+        },
+        {
+          "system_prompt": "LAKKHA SINGH",
+          "language": null,
+          "audio_tokens": 119,
+          "input_tokens": 142,
+          "input_token_sha256": "679cffdb26b03642b0c616880ae76d0b66a47de84edfb55cf5223ad639be3561"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 146240,
+          "float32_sha256": "66842d1dfb574053f3c9366d98445c1a77c523d28312edf408aa7192a9881d7e"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "00cb630b02e2d92271d69365be577459cfb481332f3861e2c3de348d37546f43",
+      "hotwords": [
+        "LAKKHA SINGH"
+      ],
+      "seconds": 0.1763982919510454,
+      "cpu_user_seconds": 0.056652000000000036,
+      "cpu_system_seconds": 0.05477599999999999,
+      "mlx_active_bytes": 733848346,
+      "mlx_peak_bytes": 1428603108,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": false,
+        "wer": {
+          "substitutions": 4,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 14,
+          "wer": 0.2857142857142857
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_002",
+      "arm": "baseline",
+      "output": {
+        "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+        "segments": [
+          {
+            "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+            "language": "English",
+            "start": 0.0,
+            "end": 10.38
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 150,
+        "generation_tokens": 33,
+        "total_tokens": 183,
+        "prompt_tps": 675.9918341033631,
+        "generation_tps": 148.71820350273987,
+        "total_time": 0.22189617156982422
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 150,
+          "input_token_sha256": "aa89967eae3ee9cd2da8c8ef0d2ee2611834dd411945d432d6dbe80f700234c0"
+        },
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 150,
+          "input_token_sha256": "aa89967eae3ee9cd2da8c8ef0d2ee2611834dd411945d432d6dbe80f700234c0"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 166080,
+          "float32_sha256": "80f21725b9113cfc7d195ee46c94975e07d6ba86ea1f531aa5cbba9db3fcace5"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "739733513c3726ee12a6e1db86c5b2ea681745e8f7bcb91e1b069b9379cda8fc",
+      "hotwords": [],
+      "seconds": 0.22218770801555365,
+      "cpu_user_seconds": 0.07792900000000003,
+      "cpu_system_seconds": 0.059892999999999974,
+      "mlx_active_bytes": 733846298,
+      "mlx_peak_bytes": 1446720228,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 19,
+          "wer": 0.0
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_002",
+      "arm": "positive",
+      "output": {
+        "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+        "segments": [
+          {
+            "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+            "language": "English",
+            "start": 0.0,
+            "end": 10.38
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 153,
+        "generation_tokens": 33,
+        "total_tokens": 186,
+        "prompt_tps": 697.8275680207566,
+        "generation_tps": 150.51182839663377,
+        "total_time": 0.2192518711090088
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "F1",
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 153,
+          "input_token_sha256": "3525d3a1dd8376c872bb69ff739fad423dbc7aa8acdd2d87e2656ceaaa63903d"
+        },
+        {
+          "system_prompt": "F1",
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 153,
+          "input_token_sha256": "3525d3a1dd8376c872bb69ff739fad423dbc7aa8acdd2d87e2656ceaaa63903d"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 166080,
+          "float32_sha256": "80f21725b9113cfc7d195ee46c94975e07d6ba86ea1f531aa5cbba9db3fcace5"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "739733513c3726ee12a6e1db86c5b2ea681745e8f7bcb91e1b069b9379cda8fc",
+      "hotwords": [
+        "F1"
+      ],
+      "seconds": 0.21953350002877414,
+      "cpu_user_seconds": 0.07687500000000003,
+      "cpu_system_seconds": 0.05751200000000001,
+      "mlx_active_bytes": 733848346,
+      "mlx_peak_bytes": 1446718180,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 19,
+          "wer": 0.0
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_002",
+      "arm": "negative",
+      "output": {
+        "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+        "segments": [
+          {
+            "text": "Popular sports include football, basketball, volleyball, water polo, fencing, rugby, cycling, ice hockey, roller hockey, and F1 motor racing.",
+            "language": "English",
+            "start": 0.0,
+            "end": 10.38
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 153,
+        "generation_tokens": 33,
+        "total_tokens": 186,
+        "prompt_tps": 693.251669315173,
+        "generation_tps": 149.5248698522922,
+        "total_time": 0.22069907188415527
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "FBI",
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 153,
+          "input_token_sha256": "bd46fc7b9440ebab8d4ed75e2f24af559c37708cc98de8e5e7001e60f1e1691f"
+        },
+        {
+          "system_prompt": "FBI",
+          "language": null,
+          "audio_tokens": 135,
+          "input_tokens": 153,
+          "input_token_sha256": "bd46fc7b9440ebab8d4ed75e2f24af559c37708cc98de8e5e7001e60f1e1691f"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 166080,
+          "float32_sha256": "80f21725b9113cfc7d195ee46c94975e07d6ba86ea1f531aa5cbba9db3fcace5"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "739733513c3726ee12a6e1db86c5b2ea681745e8f7bcb91e1b069b9379cda8fc",
+      "hotwords": [
+        "FBI"
+      ],
+      "seconds": 0.22098829201422632,
+      "cpu_user_seconds": 0.07746199999999992,
+      "cpu_system_seconds": 0.05830599999999997,
+      "mlx_active_bytes": 733846298,
+      "mlx_peak_bytes": 1446720228,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 19,
+          "wer": 0.0
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": false
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_003",
+      "arm": "baseline",
+      "output": {
+        "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+        "segments": [
+          {
+            "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+            "language": "English",
+            "start": 0.0,
+            "end": 13.34
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 189,
+        "generation_tokens": 37,
+        "total_tokens": 226,
+        "prompt_tps": 754.7590745501285,
+        "generation_tps": 147.75706750452252,
+        "total_time": 0.2504110336303711
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 189,
+          "input_token_sha256": "5bad2fd310d2cc8d7bb934f27d8ba1505d402b0166412b02d7121c8f32673277"
+        },
+        {
+          "system_prompt": null,
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 189,
+          "input_token_sha256": "5bad2fd310d2cc8d7bb934f27d8ba1505d402b0166412b02d7121c8f32673277"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 213440,
+          "float32_sha256": "9d3c84edf9a3ffb6ccd25c5fa8cb5851c6526db2d24b36d8cebd19a339dfb0ab"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "571687f012e3e302dfbd48a71c7399c359d77a383b63c149fe350c351f193fdd",
+      "hotwords": [],
+      "seconds": 0.2507520830258727,
+      "cpu_user_seconds": 0.08606599999999998,
+      "cpu_system_seconds": 0.065527,
+      "mlx_active_bytes": 733848346,
+      "mlx_peak_bytes": 1499582180,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 23,
+          "wer": 0.0
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": true
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_003",
+      "arm": "positive",
+      "output": {
+        "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+        "segments": [
+          {
+            "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 Congolese Francs for the short ride.",
+            "language": "English",
+            "start": 0.0,
+            "end": 13.34
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 193,
+        "generation_tokens": 37,
+        "total_tokens": 230,
+        "prompt_tps": 394.3007740368621,
+        "generation_tps": 75.59134010033108,
+        "total_time": 0.4894740581512451
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "GOMA",
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 193,
+          "input_token_sha256": "f2896f6bff86faea2aee3e8eb6380edd52bb0f9eda69dc62699bec5df6b4e1ad"
+        },
+        {
+          "system_prompt": "GOMA",
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 193,
+          "input_token_sha256": "f2896f6bff86faea2aee3e8eb6380edd52bb0f9eda69dc62699bec5df6b4e1ad"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 213440,
+          "float32_sha256": "9d3c84edf9a3ffb6ccd25c5fa8cb5851c6526db2d24b36d8cebd19a339dfb0ab"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "571687f012e3e302dfbd48a71c7399c359d77a383b63c149fe350c351f193fdd",
+      "hotwords": [
+        "GOMA"
+      ],
+      "seconds": 0.4898548750206828,
+      "cpu_user_seconds": 0.08869499999999997,
+      "cpu_system_seconds": 0.064438,
+      "mlx_active_bytes": 733848346,
+      "mlx_peak_bytes": 1499584228,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 23,
+          "wer": 0.0
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": true
+    },
+    {
+      "kind": "result",
+      "case": "fleurs_en_hotword_003",
+      "arm": "negative",
+      "output": {
+        "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 GIZA French for the short ride.",
+        "segments": [
+          {
+            "text": "You can use Boda Boda Motorcycle Taxi to get around Goma. The normal local price is 500 GIZA French for the short ride.",
+            "language": "English",
+            "start": 0.0,
+            "end": 13.34
+          }
+        ],
+        "language": [
+          "English"
+        ],
+        "prompt_tokens": 193,
+        "generation_tokens": 36,
+        "total_tokens": 229,
+        "prompt_tps": 779.1871741758623,
+        "generation_tps": 145.3406127996427,
+        "total_time": 0.2476940155029297
+      },
+      "actual_prompts": [
+        {
+          "system_prompt": "GIZA",
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 193,
+          "input_token_sha256": "44c4628838ac1eebeb94615459c84bd94cc7df6f674aa8c283993a93fc79be1d"
+        },
+        {
+          "system_prompt": "GIZA",
+          "language": null,
+          "audio_tokens": 174,
+          "input_tokens": 193,
+          "input_token_sha256": "44c4628838ac1eebeb94615459c84bd94cc7df6f674aa8c283993a93fc79be1d"
+        }
+      ],
+      "actual_chunks": [
+        {
+          "samples": 213440,
+          "float32_sha256": "9d3c84edf9a3ffb6ccd25c5fa8cb5851c6526db2d24b36d8cebd19a339dfb0ab"
+        }
+      ],
+      "observation_errors": [],
+      "pcm_sha256": "571687f012e3e302dfbd48a71c7399c359d77a383b63c149fe350c351f193fdd",
+      "hotwords": [
+        "GIZA"
+      ],
+      "seconds": 0.24806512496434152,
+      "cpu_user_seconds": 0.08644800000000008,
+      "cpu_system_seconds": 0.06382900000000002,
+      "mlx_active_bytes": 733846298,
+      "mlx_peak_bytes": 1499584228,
+      "mlx_cache_bytes": 4327456,
+      "source_fidelity": "review_required",
+      "controls": {
+        "problems": [
+          "designated unspoken name inserted"
+        ],
+        "numbers": {},
+        "expected_name_present": true,
+        "wer": {
+          "substitutions": 2,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_units": 23,
+          "wer": 0.08695652173913043
+        },
+        "source_fidelity": "review_required"
+      },
+      "historical_small_raw_name_present": true
+    }
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/FULL-PROTOCOL.md",
+      "bytes": 3267,
+      "sha256": "055097a3a85b6576068691f121f4ab8e0e9e83cab58fce914ec5bc9899439413"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-fixture-manifest.json",
+      "bytes": 389035,
+      "sha256": "aac233b626015e963b7e7d456544dbb129b068684df3ab5bd21f4b6559fb332d"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-source-facts-001-050.json",
+      "bytes": 46671,
+      "sha256": "b3b22b45182bf832d24beee061a77e659ae42b261b5f0f4705510776d20afd01"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-source-facts-051-100.json",
+      "bytes": 52568,
+      "sha256": "30024c13df2411345e44250e42cf57fd96599a2b435cf6ab25aa4184a1eb5c92"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-execution-freeze.json",
+      "bytes": 2338324,
+      "sha256": "97e844f3dbba8770ca5156cc51f44ec361c7e3bdba0b6bcd78d53955db043f6c"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run.py",
+      "bytes": 17610,
+      "sha256": "7e03b782135652065685f135de3831c81aa99422b15110ce1ab19ea3e1f142f8"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-worker.py",
+      "bytes": 5719,
+      "sha256": "3fc44b1114231b10e03a3fcfe431cc47fdd4fe6ef70d32dcab72b1a1d99180c4"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run-lifecycle-tests.py",
+      "bytes": 8292,
+      "sha256": "afb2b88cffe6ea482964c004f53bc8f2f5f01e7ce2c931226f8bea9c41147085"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run-lifecycle-tests.log",
+      "bytes": 1727,
+      "sha256": "b14ece9f421276a830de37103e812c1f846f154243fb774f1c1b02db1bca98b3"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-execution.log",
+      "bytes": 216,
+      "sha256": "4e22025e0ae038ed3f3517b37e3b86878801daa61b9dca367bbc4d8966d08ed8"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run/report.json",
+      "bytes": 76693,
+      "sha256": "35be80846f851454246a2d1dde64ff702b632b4c1ec329eebbcb11531dcbd651"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run/stdout.jsonl",
+      "bytes": 13398,
+      "sha256": "5fd09a64e758ca43118b116c72cd724f93490872c677f1a94ce609326e64bb74"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-run/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-aggregates.json",
+      "bytes": 1261,
+      "sha256": "21bf1a048ce984f051586e580d5d143f87b824c13cfcf850b2ed7d19fe4e3a8b"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-semantic-review.json",
+      "bytes": 21491,
+      "sha256": "c211e3b7d37d635f462284a172aba3a148f9b69a6f50357663a08b28468f13bd"
+    },
+    {
+      "path": "artifacts/qwen-asr-mlx-discovery-2026-11-07/full-runtime-cleanup.json",
+      "bytes": 4164,
+      "sha256": "f14c1007bc5df1ff27dad67fffbe684afaf79ab90b00119d4de690b0ce11ba2f"
+    }
+  ],
+  "independent_semantic_review": {
+    "cases": 3,
+    "requests": 9,
+    "unexecuted_cases": 97,
+    "source_text_discrepancy_not_fresh_audio_assessment": true,
+    "conclusion": "001 corrupted identity and subject; 002 source list retained; 003 absent-name insertion into currency; approximation not explicitly retained in all three source-text comparisons."
+  },
+  "cleanup": {
+    "removed": "task-owned runtime/venv only",
+    "removed_regular_logical_bytes": 450354863,
+    "actual_disk_reclaimed_bytes": null,
+    "external_python_and_model_unchanged": true,
+    "model_copy_retained": 1,
+    "source_dependency_lock_and_evidence_retained": true,
+    "identity_scope": "8378-file before/after verification completed before deliberate runtime cleanup; freeze cannot be re-executed until this pinned disposable environment is reconstructed."
+  }
+}

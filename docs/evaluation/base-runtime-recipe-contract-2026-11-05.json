@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "parent_commit": "e21d93251a590ea267bfca28eabd21e6f10c950a",
+  "status": "LOCAL_PACKAGING_AND_FOUR_TARGET_EQUIVALENCE_PASS_CI_PENDING",
+  "behavior": "Extract the existing bundled format2 static CPU/Metal build recipe into one helper. Preserve exact native configure flags, descriptor shape, native platform flags and package contents. Optional acceleration payloads remain separate.",
+  "producer_contract": {
+    "format": 2,
+    "optional_gpu_backends": [],
+    "shared_libraries": false,
+    "runtime_backend_loading": false,
+    "openmp_blas_curl_ssl": false,
+    "cuda_hip_vulkan_sycl": false,
+    "embedded_metal": "aarch64-apple-darwin only"
+  },
+  "checks": {
+    "packaging_and_release_tests_passed": 28,
+    "new_contract_tests": 2,
+    "target_profiles_compared": 4,
+    "exact_configure_flag_sequence_unchanged": true,
+    "independent_source_review": "passed",
+    "actual_native_builds": 0,
+    "model_runs": 0,
+    "downloads": 0,
+    "installer_builds": 0,
+    "platform_ci": "pending"
+  },
+  "equivalence_method": "Invoke both the original e21d932 prepare and the refactored prepare on four owned fictional filesystem/archive fixtures. Mock every subprocess and download, capture the first real configure invocation, stop before compilation and compare the entire ordered -D vector. All fixtures are released by TemporaryDirectory.",
+  "limits": [
+    "This is producer-recipe evidence, not a verification of installed binaries, post-signing byte identity, runtime loaded dependency closure or GPU performance.",
+    "The process-local automatic rejection gate remains private and unqualified. A RED metadata/Engine control at143749 reproduced unchanged rejection re-entry after backoff; the gate has not been enabled in production.",
+    "No Rust runtime, model catalog, product defaults, updater or release behavior changed."
+  ],
+  "source_sha256": {
+    "scripts/native-package.py": "132e7854b5dd6aa1210568face5c43b668dacb323d26daea7708a4a03a75df2a",
+    "tests/test_acceleration_components.py": "33ecee0e6cd572f3547c5f33ffff40503e087c1a745a3a89f9933d930cb12696"
+  },
+  "evidence_directory": "artifacts/automatic-minutes-rejection-2026-11-05",
+  "raw_sha256": {
+    "check-recipe-equivalence.py": "afc914063a1758bf79590d4ef14a7ce194a3b593a1cddde7c244fd5e8234ba29",
+    "base-runtime-recipe-equivalence.json": "afea0cfef71582613fb466801ab3f42cdeb8cef661ee1a246ac1b3ead283512e",
+    "packaging-contracts.log": "912f9ec8290f69882a3887877c13c02b674c29731c2cbfdf1dc008d4e6e61193"
+  },
+  "release_published": false
+}

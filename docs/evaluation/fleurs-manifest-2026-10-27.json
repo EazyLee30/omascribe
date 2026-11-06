@@ -1,0 +1,180 @@
+{
+  "schema": 2,
+  "dataset": "google/fleurs",
+  "revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+  "license": "CC-BY-4.0",
+  "attribution": "FLEURS: Few-shot Learning Evaluation of Universal Representations of Speech, Google (2022)",
+  "selection": "First four distinct sentence IDs in each official test.tsv; one recording per sentence.",
+  "cases": [
+    {
+      "name": "fleurs_cmn_hans_cn_1779",
+      "language": "cmn_hans_cn",
+      "file": "cmn_hans_cn-10325559490685159122-16k.wav",
+      "reference": "特朗普与土耳其总统雷杰普·塔伊普·埃尔多安recep tayyip erdoğan通话后发表了声明",
+      "original_text": "特朗普与土耳其总统雷杰普·塔伊普·埃尔多安（Recep Tayyip Erdoğan）通话后发表了声明。",
+      "gender": "MALE",
+      "sha256": "4864013763f9ea7bc86e700b4cdbcfd5c1f2aca5d9b3736cfa0ea402cc7099f0",
+      "source_audio_sha256": "8ef25b2f964e60f5aa25b11179d5a9c9182c66119c5333fc9e2e2d8e8d951b5f",
+      "source_member": "test/10325559490685159122.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/cmn_hans_cn/audio/test.tar.gz",
+      "archive_sha256": "09d19ad18f5d7e91076880807e866cd16abd924c7052b55f71cdae91714fc166"
+    },
+    {
+      "name": "fleurs_cmn_hans_cn_1780",
+      "language": "cmn_hans_cn",
+      "file": "cmn_hans_cn-10369927130798325266-16k.wav",
+      "reference": "在 昆 达 里 尼 瑜 伽 中 昆 达 里 尼 能 量 启 迪 能 量 通 过 瑜 伽 姿 势 呼 吸 练 习 念 语 和 视 觉 形 象 被 唤 醒",
+      "original_text": "在昆达里尼瑜伽中，昆达里尼能量（启迪能量）通过瑜伽姿势、呼吸练习、念语和视觉形象被唤醒。",
+      "gender": "MALE",
+      "sha256": "e9b2dff3acba88e1a675f1f3f1056df49d1cdefae3afaa3219c1dac99208e405",
+      "source_audio_sha256": "7fe486fad6f5d25438efa3d201d4c95b1654ccd836985200e9f7dd6eeefbeaba",
+      "source_member": "test/10369927130798325266.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/cmn_hans_cn/audio/test.tar.gz",
+      "archive_sha256": "09d19ad18f5d7e91076880807e866cd16abd924c7052b55f71cdae91714fc166"
+    },
+    {
+      "name": "fleurs_cmn_hans_cn_1843",
+      "language": "cmn_hans_cn",
+      "file": "cmn_hans_cn-14716260585206763911-16k.wav",
+      "reference": "邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性",
+      "original_text": "邓迪大学（University of Dundee）的 Pamela Ferguson 教授指出：“记者如果公布嫌疑人的照片等信息的话，似乎确实存在危害性。”",
+      "gender": "FEMALE",
+      "sha256": "4554124b47de848335d6e1bcb028b6a80754752c7e347be786265d37108e20e5",
+      "source_audio_sha256": "565ac6c79e751d7924666ad3144d9baa6814dbadc1fd7fe150066c22f317d9de",
+      "source_member": "test/14716260585206763911.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/cmn_hans_cn/audio/test.tar.gz",
+      "archive_sha256": "09d19ad18f5d7e91076880807e866cd16abd924c7052b55f71cdae91714fc166"
+    },
+    {
+      "name": "fleurs_cmn_hans_cn_1847",
+      "language": "cmn_hans_cn",
+      "file": "cmn_hans_cn-7669819575583671099-16k.wav",
+      "reference": "他 受 到 了 新 加 坡 副 总 理 黄 根 成 的 欢 迎 并 与 新 加 坡 总 理 李 显 龙 探 讨 了 贸 易 和 恐 怖 主 义 问 题",
+      "original_text": "他受到了新加坡副总理黄根成的欢迎，并与新加坡总理李显龙探讨了贸易和恐怖主义问题。",
+      "gender": "MALE",
+      "sha256": "f8d7905357dfe9335b8d90880ed92b674681b9e9056c9d628880f320ba517d7c",
+      "source_audio_sha256": "652051e69758e2c24199f90df9ab21deff6612efe105226bd13730e40be30d9a",
+      "source_member": "test/7669819575583671099.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/cmn_hans_cn/audio/test.tar.gz",
+      "archive_sha256": "09d19ad18f5d7e91076880807e866cd16abd924c7052b55f71cdae91714fc166"
+    },
+    {
+      "name": "fleurs_en_us_1669",
+      "language": "en_us",
+      "file": "en_us-8173060820032255320-16k.wav",
+      "reference": "police superintendent chandra shekhar solanki said the accused appeared in court with covered faces",
+      "original_text": "Police superintendent Chandra Shekhar Solanki said the accused appeared in court with covered faces.",
+      "gender": "MALE",
+      "sha256": "29b3ce54bc3d8f2a6c665478f48ea1ec0844c6f50cc5702127ba7b774d238fae",
+      "source_audio_sha256": "06e28072fe3853efcfd1d1c3bc3613ba5ec76c0931e9018e44aac5d946d4e210",
+      "source_member": "test/8173060820032255320.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/en_us/audio/test.tar.gz",
+      "archive_sha256": "d9c2e37b41aacd41bc283554a0a82b5476b36887049774ecb2819dcaaa55a356"
+    },
+    {
+      "name": "fleurs_en_us_1771",
+      "language": "en_us",
+      "file": "en_us-2589557553267364799-16k.wav",
+      "reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night",
+      "original_text": "Remember that even though music on the main stages may have finished, there may be sections of the festival that will keep playing music until late into the night.",
+      "gender": "FEMALE",
+      "sha256": "a391840f808d7e487bd612497ff1385abf3fe9ee616068896d5c0018972dd76b",
+      "source_audio_sha256": "5db6068216c1f013f1fda5068e1f3b4e326a533bb361682ef05795f35549aa4f",
+      "source_member": "test/2589557553267364799.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/en_us/audio/test.tar.gz",
+      "archive_sha256": "d9c2e37b41aacd41bc283554a0a82b5476b36887049774ecb2819dcaaa55a356"
+    },
+    {
+      "name": "fleurs_en_us_1914",
+      "language": "en_us",
+      "file": "en_us-621925716775998155-16k.wav",
+      "reference": "twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+      "original_text": "Twentieth century research has shown that there are two pools of genetic variation: hidden and expressed.",
+      "gender": "FEMALE",
+      "sha256": "96f6c50da52309d088aaffab75a7b18b9c9da13ecbe81d3ae5c3d8d1e6ffbd76",
+      "source_audio_sha256": "cf4c405546467f94f1589e574bec7c07cfe2a709bdc40b65660ed24f74d13d60",
+      "source_member": "test/621925716775998155.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/en_us/audio/test.tar.gz",
+      "archive_sha256": "d9c2e37b41aacd41bc283554a0a82b5476b36887049774ecb2819dcaaa55a356"
+    },
+    {
+      "name": "fleurs_en_us_1980",
+      "language": "en_us",
+      "file": "en_us-12741024238657315067-16k.wav",
+      "reference": "unfortunately studying traffic flow is difficult because driver behavior cannot be predicted with one-hundred percent certainty",
+      "original_text": "Unfortunately, studying traffic flow is difficult because driver behavior cannot be predicted with one-hundred percent certainty.",
+      "gender": "MALE",
+      "sha256": "8ee338bb248e8b22294fb6d5c3a955bbc655488ac9e2bc26585f05ce71349877",
+      "source_audio_sha256": "3e76cc5728bfd7c24f1039b5c9a47e8d79c7f225605862e977833a4f79249bff",
+      "source_member": "test/12741024238657315067.wav",
+      "source": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/en_us/audio/test.tar.gz",
+      "archive_sha256": "d9c2e37b41aacd41bc283554a0a82b5476b36887049774ecb2819dcaaa55a356"
+    },
+    {
+      "name": "fleurs_mixed_zh_en_01",
+      "language": "mixed",
+      "file": "fleurs_mixed_zh_en_01.wav",
+      "reference": "特朗普与土耳其总统雷杰普·塔伊普·埃尔多安recep tayyip erdoğan通话后发表了声明 police superintendent chandra shekhar solanki said the accused appeared in court with covered faces 在 昆 达 里 尼 瑜 伽 中 昆 达 里 尼 能 量 启 迪 能 量 通 过 瑜 伽 姿 势 呼 吸 练 习 念 语 和 视 觉 形 象 被 唤 醒",
+      "sha256": "dd0b6b82448154cde1ff9e307c12ab65f1c094323e8f006494fafab9dea33c98",
+      "kind": "constructed-language-switches",
+      "gap_ms": 250,
+      "pieces": [
+        {
+          "case": "fleurs_cmn_hans_cn_1779",
+          "file": "cmn_hans_cn-10325559490685159122-16k.wav",
+          "sha256": "4864013763f9ea7bc86e700b4cdbcfd5c1f2aca5d9b3736cfa0ea402cc7099f0",
+          "start_sample": 0,
+          "end_sample": 242560
+        },
+        {
+          "case": "fleurs_en_us_1669",
+          "file": "en_us-8173060820032255320-16k.wav",
+          "sha256": "29b3ce54bc3d8f2a6c665478f48ea1ec0844c6f50cc5702127ba7b774d238fae",
+          "start_sample": 246560,
+          "end_sample": 392800
+        },
+        {
+          "case": "fleurs_cmn_hans_cn_1780",
+          "file": "cmn_hans_cn-10369927130798325266-16k.wav",
+          "sha256": "e9b2dff3acba88e1a675f1f3f1056df49d1cdefae3afaa3219c1dac99208e405",
+          "start_sample": 396800,
+          "end_sample": 647680
+        }
+      ],
+      "limitation": "Spliced held-out utterances, not natural code-switching or diarization labels"
+    },
+    {
+      "name": "fleurs_mixed_zh_en_02",
+      "language": "mixed",
+      "file": "fleurs_mixed_zh_en_02.wav",
+      "reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+      "sha256": "dd812d13c76ace12fbb023e372b3ddd8e90dd0582dc0b7787d4df1d6f9ba28db",
+      "kind": "constructed-language-switches",
+      "gap_ms": 250,
+      "pieces": [
+        {
+          "case": "fleurs_en_us_1771",
+          "file": "en_us-2589557553267364799-16k.wav",
+          "sha256": "a391840f808d7e487bd612497ff1385abf3fe9ee616068896d5c0018972dd76b",
+          "start_sample": 0,
+          "end_sample": 143040
+        },
+        {
+          "case": "fleurs_cmn_hans_cn_1843",
+          "file": "cmn_hans_cn-14716260585206763911-16k.wav",
+          "sha256": "4554124b47de848335d6e1bcb028b6a80754752c7e347be786265d37108e20e5",
+          "start_sample": 147040,
+          "end_sample": 285280
+        },
+        {
+          "case": "fleurs_en_us_1914",
+          "file": "en_us-621925716775998155-16k.wav",
+          "sha256": "96f6c50da52309d088aaffab75a7b18b9c9da13ecbe81d3ae5c3d8d1e6ffbd76",
+          "start_sample": 289280,
+          "end_sample": 383360
+        }
+      ],
+      "limitation": "Spliced held-out utterances, not natural code-switching or diarization labels"
+    }
+  ]
+}

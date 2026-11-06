@@ -1,0 +1,1985 @@
+{
+  "schema": 1,
+  "kind": "bounded_caption_factual_repair",
+  "date": "2026-10-27",
+  "current_production_commit": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+  "release_eligible": false,
+  "source_checks": {
+    "core": "167 passed/7 ignored",
+    "workspace_all_targets_strict_clippy": "passed",
+    "native_ui_test_all_targets_strict_clippy": "passed"
+  },
+  "limits": {
+    "max_translation_requests_per_batch": 8,
+    "max_attempts_per_chunk_per_batch": 2,
+    "live_time_budget_seconds": 8,
+    "repair_order": "After every other selected passage has had its first turn; same worker, original ASR/cancellation and stale-commit gates remain.",
+    "note_generation_attempt_limit": "unchanged at 2"
+  },
+  "prior_d520_full_automatic": [
+    {
+      "case": "zh_budget_guess",
+      "exit_code": 1,
+      "passed": false,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/release035-stop-drain-full-auto/zh_budget_guess.artifacts/zh_budget_guess/phase-1/batch-1"
+      ],
+      "report_sha256": "e5badceca446cb0bf8cea4dc40e5b974610a26e903495b7de3394591c083959d"
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "5b30430d07cec3c7431c5980103ef7702097f0ccecd23a534a343897182f7261"
+    },
+    {
+      "case": "zh_correction",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "4ec13af393b1d35be9b29e73b80ee5723ca532adee7367297e44b2f864c46346"
+    },
+    {
+      "case": "bilingual_scope",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "94febe86e6692bbef1e0c1c7cdefab10091b7c6f84ceff707d46df5a2d0b23c6"
+    },
+    {
+      "case": "zh_calendar_citations",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "9a5728f256b977f558484a1470bbefb988d1186b9ffdc34327126fc8a65a3ad2"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "3fde0e60ce26aacd70d85e500087b3b642640beb714f0f00e13780f699cdc5a9"
+    },
+    {
+      "case": "zh_product_spelling",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "2a31b336f1a83bf96989cdbf4d9f1513ce6fe552ffc1b173bd015e53a68e9788"
+    },
+    {
+      "case": "zh_empty_greetings",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "3f7d27f09368b363b2c0f21817de832d90bf90c23c86209959d6e7e3a93c30c5"
+    },
+    {
+      "case": "zh_phased_correction",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "1f915cd337811eddfda97e23d3382d815348d7e429c137ab9ad48f6e6d67d885"
+    },
+    {
+      "case": "zh_named_speakers",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "528ed7632d3e52c43498cbfb63fbd4b9fda69ebd39d896bfe250de8c76d010f3"
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "b16c04bdd98b3f18872f95e340ed66724565bf38ab0b68a5a1236027c2380288"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "8c3adbc6f992b31634a58dc87f2d53e10338904f3ebce797059b91a9fc2b29a4"
+    },
+    {
+      "case": "zh_long_context_state",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "f2eb8f2053f282f6317b4a420324ec61fb6382676b597ef40c81ef67e097d6c9"
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "7c9d03d6380847f3309e015c948d0d7e0dc88037e57e1e307f8bf5643935391d"
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "51b9831a26c937da1f7fc8d8aa1c2520d355704138d153c550c2faa80546f843"
+    },
+    {
+      "case": "en_generic_note_name",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "e69542772a3bc8ebf4227e07a09a31fab81f4df80ce1c1a0a79672787be9afe2"
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "cb1373bda2e41f3f169be4506df778de6cd9796eaa9bfee71291e61e83f22ae3"
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "0230be11fc34807cbb5bab36002d1f71e84ffd0e95470609de9ded84355a3dae"
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "88b69b133c299d6d91443f47b29bd99c2df0ce438f8abf5b0e74ff50b933ced0"
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "a3db7f743b9f8197d96e892ff8189240239577970967df72e3bcd469719bc94d"
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "66380346cc2aaacbe1db5dbbcce7e930ad890101405ee6fbe3023d75ec007622"
+    },
+    {
+      "case": "en_incremental_completion",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "f36e42e02cf1898ef86361ba96483dd274ab9167b197ffdf2bedc67dcd75c2d5"
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "exit_code": 1,
+      "passed": false,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/release035-stop-drain-full-auto/en_sparse_unapproved.artifacts/en_sparse_unapproved/phase-1/batch-1"
+      ],
+      "report_sha256": "1a2c6fae196b600c8fb5bd083bb8512f07fcea092ed551be26b450df3d5d6adb"
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "26f42714525bffd12dbdfe3de726bcc940e643d8ea0a82425854df3528fa92e8"
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "407b73ca60d70b2958921ed5c5a34654ce126f128129a1f4da169554ea267f9b"
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "ba9cf5dc058f995d1da35e818b38bf816c161ff7b0a5ec52dee6527f2c87ce62"
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "060e3d794b59e5fd7afbdb2555df52cbaaace04cdb6f91cecad07dfcb8d46660"
+    },
+    {
+      "case": "zh_incremental_completion",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "885ee35bc3d2bc010099a0d374d284dcc332b6974b09daaa350038725654a9bd"
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "c1f2d4abe0ebe4bc0f4b05c129ea53e301cca14d892c9d69aa03499982ff544b"
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "77fbda89ed5dc621fda5beeb13efb4a4acd823c9eb5c457ba116385c3a5e4e4b"
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "f20c25eeffe64b64bf3412011f20b520fc2bf15f854d63bc547745178f1d7a81"
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "exit_code": 0,
+      "passed": true,
+      "errors": [],
+      "report_sha256": "3511f30fd3b790160804aa9f3f740e9e07bd1f34540953dbd714e18f979d3370"
+    }
+  ],
+  "development_negative_evidence": [
+    {
+      "case": "zh_budget_guess",
+      "exit_code": 1,
+      "passed": false,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/release035-caption-fidelity-auto/zh_budget_guess.artifacts/zh_budget_guess/phase-1/batch-1"
+      ],
+      "report_sha256": "04b7e829537379ef601109eea3338ea4d3c65a15f3c0907cced40aa16ccc5bfd",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: 文档可能遗漏待确认状态，本轮未提交",
+        "input": "张老师周五给测试结果，预算先不定，下周再看。",
+        "raw": "{\n  \"translation\": \"Mr. Zhang gave the test results on Friday, the budget was not determined yet, and it will be reviewed next week.\"\n}"
+      },
+      "diagnostic_sha256": "bfb7424f9c94cb269a78250d29f8042b528948e5f8da58bc17730b71b85a692c"
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "exit_code": 1,
+      "passed": false,
+      "errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/release035-caption-fidelity-auto/en_budget_invoice_same_amount.artifacts/en_budget_invoice_same_amount/phase-1/batch-1"
+      ],
+      "report_sha256": "d2928fc610ad49602bc75ac0b6c7be24fda9ec02d088083de8322c6ef070d3ec",
+      "diagnostic": {
+        "error": "chunk_evidence_mismatch: 文档增加了原话未给出的币种（yuan），请保留未指定的单位；本轮未提交",
+        "input": "An invoice for 3000 is awaiting review.",
+        "raw": "{\"translation\": \"3000元的发票正在等待审核。\"}"
+      },
+      "diagnostic_sha256": "c5367742e1d16600c7e6cdac739f022c73c53a886daebc9683ac6e8af1118c7a"
+    }
+  ],
+  "affected_runs": [
+    {
+      "case": "zh_budget_guess",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 6.854,
+      "report_sha256": "1b0710c29219b6b188ebedf0f1b3ba98f014eee9b36040129f93229c7be986c2",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 1,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_budget_guess",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "76e8329e1ed042a45473adabce8821ae953cddaa1db2ebc50ea7109761b4af0c"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "b0810062-dc90-41a8-8818-5cdd1d3428b6",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 6.845,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 26,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.365034688,
+            "peak_tree_rss_mib": 1453.109375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "f8138b3f2da2c1caa045b10cdb1ab4b3e1cd2a9de741d9458f42dd8dbd962d1e"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.263,
+      "report_sha256": "764bc4b05d06b93f27aa21863af3f9a458d3d4b60c2f0a05aa2194b0340ca246",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 3,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_budget_invoice_same_amount",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "9a10f516adabd6c608091c4f839facddbcc732741be541fd63bb4c5cf2406551"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 1,
+      "translation_batches": [
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "716c9008-a874-4779-b711-b0f7b4106589",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.256,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 28,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.691873336,
+            "peak_tree_rss_mib": 1487.75,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "e8b4970cfdcbdc542b6fe17db73229607efa80439116e7ca36324f2448552cf5"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.118,
+      "report_sha256": "3c85d88f65a6d59f0baea7ff322d64d3daded86390b006ae3fdc22ef14dcf875",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 1,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_sparse_unapproved",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "644dd1ad0e896f6cbfeba42113709b4069717dfecb02c3bf3357306da7596acc"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "d6c71125-1e6e-4da0-af4b-88aed168a016",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.109,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 27,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.313906636,
+            "peak_tree_rss_mib": 1488.453125,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "d0a9a6c2415e6be8c059e1bc7ebb968029b5c1724c1c4f2e22559d24c2f07368"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.08,
+      "report_sha256": "b52bc874529037ffc4e26af06a9eb4418207471cf064d5568b7887389c405857",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 1,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_sparse_unapproved_passive",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "d3bcdb3491be3e2394c9cf0b16b42e2b823b6f57b8926b30abef4e28ffde047a"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "833cf8d9-37ec-42ab-a743-46621056840d",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.073,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 27,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.3034838400000002,
+            "peak_tree_rss_mib": 1487.984375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "8c7d9a98d4ae780d80ec4d63a4cccd674bbc4540060e5cc5f0cd9d5ae91a1dfc"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_phased_correction",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 12.954,
+      "report_sha256": "d6b3db20e850ffc85baccf32764da1fc7ce0a6d3d33c3a9aeb5965410989f728",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 5,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_phased_correction",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "5e20d90702073a2f923630a32d428a1aaf697ec920671a2ce43e9bcbf61fc513"
+          },
+          {
+            "case": "zh_phased_correction",
+            "phase": 2,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "4e8c8bb5318980a5506bcaef876d808fbe5fe6127fbde3f5646c14fd270bc14b"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        },
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "worker_starts": 3,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "dd61258a-45f6-4ce8-8f43-0c2fbbfea2d4",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.077,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 27,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.3239916360000001,
+            "peak_tree_rss_mib": 1455.046875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        },
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "dd61258a-45f6-4ce8-8f43-0c2fbbfea2d4",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 5.863,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 22,
+            "processes_seen": 2,
+            "cpu_seconds_sampled": 1.5080602239999998,
+            "peak_tree_rss_mib": 1455.359375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "5b792a8e6ab9fa7aa01eb958f52e75ea5fb56b407505511db6d75f50567c3727",
+        "6ef50155f17fe44426aa2daa44f7e8b0c573dcaea618618726dc23111ad791e8"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_correction",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.317,
+      "report_sha256": "ae27a623d243b9945727c1583ca2d252e2c85d354e756bf986dc0cedb8ef372c",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 2,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_correction",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "bb8db14fff29b01d82104fd344ab4cd1b8b180e899a9cfde414ab66de6bdbf8a"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "7ee66f91-dde2-4d98-bb17-f58a9f3a996b",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.308,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 28,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.440051328,
+            "peak_tree_rss_mib": 1452.890625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "5f13e4dd12e58bdcbe416600a529c27fab8326115d5bfa95bac7062d2d11204a"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "bilingual_scope",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.123,
+      "report_sha256": "a8fb99fd22984e0e2ffffa04c47dfe4f5c935dc25d5973e1c2a07da9b83e0e2d",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 2,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "bilingual_scope",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "154d606247be5081ac8bcfc5b7be49ac7b1eeb5b4a1a747c2c25d214ab282d82"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "b5c09a3b-ff54-4b8d-a8d5-efb1a03a17ea",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.116,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 27,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.3265095040000001,
+            "peak_tree_rss_mib": 1483.21875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "b6c8efc8104207e7ed8071e7ab73d9884a77a0e6fbb09de50e4eb3cb67b586af"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.948,
+      "report_sha256": "0f608578ec4899601342f6d25ba94c182181f75eb27f87025e9ef5be983dcbdc",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 3,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_long_acceptance",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "f8df81bc5118880b704c7b7f54fa73a6e4b24801d85c8376f8fc4599155d08d8"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "195adbe1-93d1-463d-bbfb-ca011067e9ed",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.94,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 30,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.917688472,
+            "peak_tree_rss_mib": 1489.9375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "7d66d520cc93668615db86f0e8f2d16876d6ddc1c969ba4e25c0915188b23d6c"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.999,
+      "report_sha256": "3d5251ef721b9738f8016347288d401011a662a74ed39747024b81f3060ccd0e",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 3,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_windows_long_acceptance",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "008cad0ac8a3e77c3647b1f81df3178ee170b1b1bc9595a628dc4f182942c05f"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "93a8b562-9a82-4b83-aa8c-6cbd6e743b71",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.992,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 30,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.888803592,
+            "peak_tree_rss_mib": 1491.265625,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "9344a227418f9d2c73824b6e9277d2b18e249720b16da2c5dbf4b67835b340dd"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 10.56,
+      "report_sha256": "641b7b8e40a422a89ec29c817f5ceeb3c14199dfd95315852d1dd1d7897b07af",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 5,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_windows_uppercase_asr",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "5e2e1755e1af602a470d49e9381d95f7621096fb3dff79b0b2b19008adf8376a"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 4,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        },
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "1f211b96-c82c-454c-a8a9-d86a2a07cd01",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 10.553,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 40,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 2.611767856,
+            "peak_tree_rss_mib": 1521.359375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "2f2c8d63c3f594fdca940a6c63d50ab9f41fd22f8cdfcdb8943df803fa614ccd"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "stage": "release035-caption-repair-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 16.048,
+      "report_sha256": "0a86c8fc891cb38f1dab244bd7c3bc1b425e5e2121db980c88dfad3a447810ce",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b3d7d6d65de1a30e1f3d30258a4ef78d5facc7f36f50a0997d23af836b633e04",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "752da6d45b14a41d18a044a23ef4518433cbc147df346fe71eb037ba947980ce",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "29360ea9bf301babe1ae98fb97f646d1a42347cd79d5874d1f43db3660c0e98d",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "91d9030f97da664a9a3a8b825774b96279e3c6de",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 6,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_recorded_mixed_prose_fidelity",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "afef41e9630edab8b006d68c55e8485a09931d15bf16ef7eddc5c8033e696c28"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 4,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        },
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "worker_starts": 3,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "6dfeef76-8d90-4235-9462-04b7df9f434e",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 16.04,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 60,
+            "processes_seen": 4,
+            "cpu_seconds_sampled": 4.242678344,
+            "peak_tree_rss_mib": 1524.375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "c68b2ebdc1eda5e17cb83c467c9a50999914e00a82f171242094c4e7f05fdf0a"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "stage": "release035-caption-repair-final-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.305,
+      "report_sha256": "a992ce0f7ddbe401d8f95c565a090dc5e63d93b887aed329b696eeb560d88f41",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b41274f3d2859b8f75ee8f3976279da122722e09725ee718c96f3bac4e4904fb",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "00e395280afadc734438f7c0c7b2915aee618bffc47725668be5960bb338ac7b",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "4846d175bceaa8cb99a5d86673f174cc7116e877fd93b4b75769aadb5b04c59e",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 3,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_budget_invoice_same_amount",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "e50f5edda01ed0eb33c0a9cf90d1fcaa359d845a302539779f430d017ebc9225"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 1,
+      "translation_batches": [
+        {
+          "committed": 3,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "aef1900e-bda5-48a2-839d-148b7687482a",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.297,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 28,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.8363334,
+            "peak_tree_rss_mib": 1489.96875,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "910b4e12e5eb6187341e85e6ce79de24c7041d8f7071166faa1d7cca7ae75ed4"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "zh_budget_guess",
+      "stage": "release035-caption-repair-final-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 6.873,
+      "report_sha256": "a036d7288a3ba806a8d648f9ec6770c26723e1f4d719e60cf76118a664688228",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b41274f3d2859b8f75ee8f3976279da122722e09725ee718c96f3bac4e4904fb",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "00e395280afadc734438f7c0c7b2915aee618bffc47725668be5960bb338ac7b",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "4846d175bceaa8cb99a5d86673f174cc7116e877fd93b4b75769aadb5b04c59e",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 1,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "zh_budget_guess",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "e424c51e89680243e98c526ac75abd2b90dec35bbbf05ec142772ef29a9cdfec"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "daba07fd-8d7a-403b-b930-0449d36e58bb",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 6.866,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 26,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.177502232,
+            "peak_tree_rss_mib": 1452.609375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "5b880e3208707b965459fe9706081c6bda30f621faebe516430f711f3e90268e"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "stage": "release035-caption-repair-final-auto",
+      "passed_mechanical_checks": true,
+      "full_caption_semantics_passed": null,
+      "seconds": 7.123,
+      "report_sha256": "c2872f422ecc0b2dcb1974371fe2b585b076922ae66f5e9b24a768956edbb08a",
+      "fixture_sha256": "e1ce6005e12132a9c66a0561377308b9b2977ec66819f17546877eecb01b327c",
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "b41274f3d2859b8f75ee8f3976279da122722e09725ee718c96f3bac4e4904fb",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "00e395280afadc734438f7c0c7b2915aee618bffc47725668be5960bb338ac7b",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "4846d175bceaa8cb99a5d86673f174cc7116e877fd93b4b75769aadb5b04c59e",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "a22f0818b6de65b9dd146d5cebd7d9b3e2992b9c",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "coverage": 1,
+      "status": "文档已同步 · 1 个章节",
+      "metal_evidence": {
+        "commands": [
+          {
+            "case": "en_sparse_unapproved",
+            "phase": 1,
+            "batch": 1,
+            "requested_backend": "metal",
+            "actual_backend": "metal",
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "positive_offload": true,
+            "log_sha256": "821b46d5b93825d824b2284660f07f9fb7ec56b16e8afc854cbde88896a696b3"
+          }
+        ],
+        "errors": [],
+        "passed": true
+      },
+      "caption_repairs": 0,
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "worker_starts": 2,
+      "processes": [
+        {
+          "command": [
+            "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+            "settle",
+            "baede10f-befd-4c76-a413-989e37cf60a1",
+            "120"
+          ],
+          "code": 0,
+          "seconds": 7.114,
+          "failure": null,
+          "resources": {
+            "schema": 1,
+            "method": "psutil sampled descendant tree",
+            "psutil_version": "7.1.3",
+            "interval_seconds": 0.25,
+            "samples": 27,
+            "processes_seen": 3,
+            "cpu_seconds_sampled": 1.284356968,
+            "peak_tree_rss_mib": 1486.984375,
+            "peak_tree_pss_mib": null,
+            "gpu_memory_mib": null,
+            "energy_joules": null,
+            "sample_errors": 0,
+            "sampler_stopped": true,
+            "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+          }
+        }
+      ],
+      "snapshot_sha256": [
+        "79d52a9634c16ed69f0e5c627569f9ca2e7bf59e87a8c07e6cef417de90bffe2"
+      ],
+      "borrowed_models_cleanup": {
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      }
+    }
+  ],
+  "manual_review": {
+    "minutes": "Reviewed source/status/amount/qualifier/citation coverage in the 11 affected documents. Raw ASR spelling variants, repetition and an English festival token remain. This does not certify every per-statement attribution, natural speech accuracy or publication-quality prose; candidate semantic review is still required.",
+    "final_three": "Budget remains not yet determined and will be reviewed next week; bare 3000 budget/invoice remains unitless; budget correction to5000 does not replace the separate3000 invoice.",
+    "caption_semantics_passed": false,
+    "remaining_caption_issues": [
+      {
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "source_name": "当迪大学",
+        "unsupported_translation": "University of Denver",
+        "required_behavior": "Preserve source name or verified alias; never infer a different university."
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "source_name": "Alice",
+        "translated_name": "艾莉丝",
+        "required_behavior": "Preserve the supplied name spelling."
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "issue": "An all-caps passage remains English and ambiguous ASR names are interpreted as ordinary words.",
+        "required_behavior": "Complete target-language translation without inventing identities; keep source recoverable."
+      }
+    ]
+  },
+  "limitations": [
+    "Automatic pattern/coverage/citation checks are not semantic entailment proof; pending caption issues remain open.",
+    "11 checks bind91d9030; final3 bind a22f081 after currency-feedback wording only. Do not claim final32 passed or splice versions into candidate acceptance.",
+    "Currency and pending-budget guards are targeted, not a complete units/semantic parser.",
+    "No installer, native GUI, physical microphone, energy, older M-series or current Windows/Linux hardware validation in this run.",
+    "Sampled CPU is a lower bound and tree RSS can double-count shared pages. Previous120s failures and successful new elapsed times are observations across source changes, not an isolated universal speed or energy benchmark."
+  ]
+}

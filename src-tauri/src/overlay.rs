@@ -18,13 +18,14 @@ impl LayerApi {
     fn load(runtime: &Path) -> Result<Arc<Self>, String> {
         // The small LGPL library is dynamically loaded, so it can be replaced independently.
         unsafe {
-            let library =
-                libloading::Library::new(runtime.join("platform/libgtk-layer-shell.so.0"))
-                    .or_else(|_| libloading::Library::new("libgtk-layer-shell.so.0"))
-                    .map_err(|_| {
-                        "Desktop captions need gtk-layer-shell. Run bin/setup --overlay-only."
-                            .to_string()
-                    })?;
+            let library = libloading::Library::new(
+                runtime.join("platform/libgtk-layer-shell.so.0"),
+            )
+            .or_else(|_| libloading::Library::new("libgtk-layer-shell.so.0"))
+            .map_err(|_| {
+                "Desktop captions need gtk-layer-shell. Run scripts/bin/setup --overlay-only."
+                    .to_string()
+            })?;
             let supported: unsafe extern "C" fn() -> i32 = *library
                 .get::<unsafe extern "C" fn() -> i32>(b"gtk_layer_is_supported\0")
                 .map_err(|e| e.to_string())?;

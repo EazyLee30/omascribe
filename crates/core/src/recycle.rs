@@ -16,16 +16,27 @@ impl Engine {
     pub fn set_meeting_deleted(&self, id: &str, deleted: bool) -> Result<()> {
         let _gate = self.config_lock.lock().unwrap();
         self.configuration_idle()?;
-        let db = self.store.lock().unwrap();
+        let mut db = self.store.lock().unwrap();
         db.meeting(id)?;
+        let tx = db.conn.transaction()?;
         if deleted {
-            db.conn
-                .execute("INSERT OR IGNORE INTO deleted_meetings VALUES(?1)", [id])?;
+            tx.execute("INSERT OR IGNORE INTO deleted_meetings VALUES(?1)", [id])?;
+            tx.execute("DELETE FROM translations WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
+            tx.execute("DELETE FROM translation_parts WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
+            tx.execute("DELETE FROM term_checks WHERE segment_id IN (SELECT id FROM segments WHERE meeting_id=?1)",[id])?;
+            tx.execute("DELETE FROM term_queue WHERE meeting_id=?1", [id])?;
+            tx.execute("DELETE FROM cache_dependencies WHERE meeting_id=?1", [id])?;
         } else {
-            db.conn
-                .execute("DELETE FROM deleted_meetings WHERE id=?1", [id])?;
+            tx.execute("DELETE FROM deleted_meetings WHERE id=?1", [id])?;
+        }
+        tx.commit()?;
+        if deleted {
+            self.legacy_minutes_failures.lock().unwrap().forget(id);
         }
         drop(db);
+        if deleted {
+            self.retrieval_cache.clear_meeting(id);
+        }
         self.invalidate_background()
     }
     pub fn delete_speaker(&self, meeting: &str, id: &str) -> Result<()> {
@@ -102,13 +113,63 @@ mod tests {
         entry.deleted = false;
         e.save_library_entry(entry)?;
         assert_eq!(e.snapshot(&m.id)?.notes[0].content, "Original document");
+        let source = crate::Segment {
+            id: "retained-source".into(),
+            meeting_id: m.id.clone(),
+            run: 1,
+            seq: 1,
+            start_ms: 0,
+            end_ms: 1000,
+            text: "Original speech".into(),
+            revision: 1,
+            speaker: None,
+            speaker_manual: false,
+        };
+        {
+            let db = e.store.lock().unwrap();
+            db.save_segment(&source)?;
+            db.conn.execute(
+                "INSERT INTO translations VALUES(?1,1,'zh','fixture','{}')",
+                [&source.id],
+            )?;
+            db.conn.execute(
+                "INSERT INTO translation_parts VALUES(?1,'fixture','{}')",
+                [&source.id],
+            )?;
+            db.set_cache_dependency(&m.id, "terms", "fixture")?;
+            // Any failure must roll back both the deletion marker and the cache purge.
+            db.conn.execute_batch("CREATE TRIGGER reject_purge BEFORE DELETE ON translations BEGIN SELECT RAISE(ABORT,'simulated failure'); END;")?;
+        }
+        assert!(e.set_meeting_deleted(&m.id, true).is_err());
+        assert_eq!(e.meetings()?.len(), 1);
+        e.store
+            .lock()
+            .unwrap()
+            .conn
+            .execute_batch("DROP TRIGGER reject_purge;")?;
         e.set_meeting_deleted(&m.id, true)?;
         assert!(e.meetings()?.is_empty());
         assert!(e.library_entries()?.is_empty());
         assert_eq!(e.deleted_meetings()?.len(), 1);
+        {
+            let db = e.store.lock().unwrap();
+            for table in [
+                "translations",
+                "translation_parts",
+                "term_checks",
+                "term_queue",
+                "cache_dependencies",
+            ] {
+                let count: u32 =
+                    db.conn
+                        .query_row(&format!("SELECT count(*) FROM {table}"), [], |r| r.get(0))?;
+                assert_eq!(count, 0, "{table}");
+            }
+        }
         e.set_meeting_deleted(&m.id, false)?;
         assert_eq!(e.meetings()?.len(), 1);
         assert_eq!(e.snapshot(&m.id)?.notes[0].content, "Original document");
+        assert_eq!(e.snapshot(&m.id)?.segments[0].text, source.text);
         Ok(())
     }
     #[test]

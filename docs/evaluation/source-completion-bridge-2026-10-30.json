@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "Partial production fix verified; original manual Q16 still FAIL; release remains held",
+  "parent_source": "72b935d",
+  "source_files_sha256": {
+    "crates/core/src/notes.rs": "390506e6ba8e4d54ef90d2073312f3d8ad622237b1747706ba113201a064945d",
+    "crates/core/src/notes/source_language.rs": "e3368970a3c8f5ff083f066499175b0cf546ab9930d363d2fc076e6696e71ff8",
+    "crates/core/src/notes/validation.rs": "fe4614940ec492e0c9dd0b7e693f3e30570e4a5320146b2b71aab3176c5c71ac",
+    "crates/core/src/notes/writer.rs": "7bd8749234c786c0129d559c71e9361db8f7c781376cb835bc8709d92aa165a1"
+  },
+  "problem": "A checked English may-have-finished source translation was rejected again when copied into a multi-source Chinese article, because the original raw quotation did not contain the Chinese completion token.",
+  "scope": [
+    "Request-local, private evidence for individual 已完成/已经完成 occurrences copied exactly from the actual validated translation and applied composition input.",
+    "Rebind original source identity, terminology and actor spelling digests, target language, actual source ID, full body and corresponding cited original quote. All-or-none exact presentation proof; no substring, additional text, open logical scope or altered speaker metadata.",
+    "Normalization or repairs changing the body cannot inherit copy ranges. Original transcript, quote/revision and all other factual validators stay unchanged.",
+    "No prompt, fixture, preference, request quota, model weight, runtime, SDK or installer changes."
+  ],
+  "checks": {
+    "focused_validation_passed": 6,
+    "core_passed": 445,
+    "core_ignored": 8,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "independent_static_review": "No new blocking issue; not model or release approval",
+    "exact_source_remote_ci": "Linux, Ubuntu22, Windows-core, Website validate and prepare SUCCESS; GPU build/catalog SKIPPED"
+  },
+  "initial_lint_failures": "Dead-code compatibility wrapper and nonminimal boolean expression repaired without allowing warnings; first log retained.",
+  "evidence": {
+    "core": "artifacts/completion-bridge-2026-10-30/core-final.log",
+    "clippy": "artifacts/completion-bridge-2026-10-30/clippy-green.log",
+    "first_clippy": "artifacts/completion-bridge-2026-10-30/clippy-first.log"
+  },
+  "limits": [
+    "This proof transports an already validated local uncertain-completion wording; it is not general semantic entailment or historical topic/name coverage.",
+    "The unchanged original manual model replay remains FAIL; partial uncertain-completion progress does not satisfy whole-article quality or source6 coverage.",
+    "Candidate 14 remains rejected and immutable. No 0.3.5 release has been published."
+  ],
+  "production_source": "5d82499239ce2714fba6905e39242c84e4df19f5",
+  "original_model_replay": {
+    "source": "5d82499239ce2714fba6905e39242c84e4df19f5",
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "passed": false,
+    "errors": [
+      "Phase 1: uncovered transcript"
+    ],
+    "report": "artifacts/completion-bridge-2026-10-30/trial/report.json",
+    "report_sha256": "468532b9fe9926e315a096b7b56a19df0ab157f8d7dfd91464547908bb88a5b8",
+    "backend": "metal",
+    "model": "qwen3-1.7b",
+    "default_preferences": {},
+    "actual_result": "Batch1 prepares and commits five original sources with exact completion proof. Body still repeats the music passage three times. Batch2 is not an exact checked copy and fails the existing attribution guard; the prior article remains and actual cursor stays at five, leaving source6 uncovered.",
+    "diagnostic_limit": "last-generation planned cursor_after=6 and top-level null validation_error are not successful commits. Use report coverage/status, actual document and stage-specific validation_error.",
+    "requests": 4,
+    "input_tokens": 1357,
+    "output_tokens": 448,
+    "total_tokens": 1805,
+    "request_ms": 5919,
+    "no_quality_or_performance_claim": true,
+    "actual_review": {
+      "path": "artifacts/completion-bridge-2026-10-30/trial/actual-review.json",
+      "sha256": "a26a660a62de34908d01c157f04fd9d62bfce9dc2629c11abaf5fc6f24cf6295"
+    },
+    "instrumentation_limit": "Task trace reports zero validation failures despite the final attempt-specific attribution rejection. Do not infer factual acceptance from that counter or last-generation top-level fields."
+  },
+  "cleanup": "All six owned APFS model clones and per-run borrowed links removed; no owned evaluator/CLI/llama survives. Original model/runtime identity and hash/metadata unchanged; raw evidence retained."
+}

@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "source": "d945a0172a809bc7a943aa8c744fa297343048a1",
+  "main_meeting_poll": {
+    "workload": "5,000 fictional saved transcript passages with a runtime-only recording update, app core on Mac M5, captions off",
+    "full_response_json_bytes": 1346421,
+    "runtime_response_json_bytes": 453,
+    "revision_scope": "Engine session + meeting id + SQLite same-connection changes + external data_version; changes to saved data give a full response. Caption translation enabled or an unavailable revision always gives a full response.",
+    "checks": [
+      "Long meeting initial snapshot and live duration/level/partial/status in runtime-only reply",
+      "Local note write and another SQLite connection refresh the saved data",
+      "Different meeting and deleted meeting cannot reuse a previous reply",
+      "Mounted Chromium verifies pause and duration, notes status, unchanged editor and history, changed partial, caption fallback and stale reply after a meeting switch"
+    ],
+    "limitations": [
+      "The byte measurement is JSON payload at the actual Rust poll result, not a CPU, latency or power benchmark.",
+      "Main meeting shell only. Background scheduler and floating transcript window still use their existing snapshot paths. The renderer rechecks rows if the live partial changes."
+    ]
+  },
+  "gpu_download": {
+    "red_source": "8efa68590153b1f70f027ba8b6ffe87a0f761c38",
+    "red_failure": "Progress cannot move to a different version",
+    "admitted_identity": [
+      "component ID",
+      "signed version and archive",
+      "channel",
+      "job UUID"
+    ],
+    "checks": [
+      "Old active job remains cancellable through stable-catalog arrival or cache loss before its files are installed",
+      "A stale same-version cancel/cleanup cannot act on a retry",
+      "Bounded registry reuses terminal slots only; network permission revocation still cancels all active jobs",
+      "Mounted Windows/Linux settings regressions use mocked IPC; no native device, archive download or fresh package build"
+    ],
+    "cancellation_ipc": "The current UI supplies version and job UUID. Version-less download selection is preserved. Cancelling a component by ID alone is no longer exposed."
+  },
+  "local_checks": {
+    "rust_core_passed": 744,
+    "rust_core_ignored": 14,
+    "integration_passed": 44,
+    "desktop_shell_passed": 4,
+    "asr_passed": 18,
+    "cli_passed": 2,
+    "strict_clippy_and_fmt": "passed",
+    "python_passed": 165,
+    "python_skipped": 1,
+    "frontend_build_and_format": "passed",
+    "chromium_checks_passed": 23
+  },
+  "minutes_q16": {
+    "evaluation_commit": "666f37e121c2a4f67cbc8fc40a6e7a6f1a82a3ce",
+    "raw_report_sha256": "fed1c7354ac741f557b32f44f65e1f575e41419b8faa5429c578624b1f93ee6c",
+    "read_only_replay_review": "Both rejected drafts include the two institutions. No article was committed after the mixed-script name and unproven reporting boundaries. Existing recovery accepts the same gap in a proven independent report. Raw soft lines do not prove report attribution. No model request or grammar relaxation this turn.",
+    "stable_release": "v0.3.4",
+    "v0.3.5_published": false
+  }
+}

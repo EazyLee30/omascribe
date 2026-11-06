@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "status": "FAIL; default producer guard order verified but coherent Chinese composition remains unresolved",
+  "source_commit": "e81c0b35245b12f9bcd3e57318560e834a57ba88",
+  "compiled_revision": "e77f9113b472800865e801af5d03270d8f8b2848",
+  "compile_input_sha256": "2f8f124d37e678fc867b04b4d0c515f8034bf106426fa43c791b76c6f91dc3eb",
+  "identity": {
+    "workspace_and_compile_differ_only_in": [
+      "docs/development/release-0.3.5.md",
+      "docs/evaluation/ambiguous-alias-writer-lookup-2026-10-31.json"
+    ],
+    "source_dirty": false,
+    "cli_sha256": "20069d411334bb08f3849619e18a5535f1e964b9e888bb2f9e551da7538dc014",
+    "pre_post_source_cli_assets_runtime_equal": true,
+    "runner_sha256": "de9553a4ac2ad10e43d9d0101bbc171c0d3103cca2b32e91863f7008cdff62e1",
+    "runner_rechecked_after_run": true
+  },
+  "policy": {
+    "per_batch": 2,
+    "max_output_tokens": 440,
+    "context_size": 2048,
+    "seed": 42,
+    "fixture_changes": false,
+    "extra_retries": false
+  },
+  "execution": {
+    "invocations": 1,
+    "automatic_schedule": false,
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "fixture": "zh_recorded_mixed_prose_fidelity",
+    "fixture_preferences": {
+      "minutes_language": "zh"
+    },
+    "base_preferences": {},
+    "retried_after_fail": false,
+    "report_sha256": "d1329608b4dcdee0c65bc6d2476e417f2830106d04419de2e4e1d9a894546b97"
+  },
+  "actual": {
+    "cursor": 0,
+    "articles": 0,
+    "history_rows": 0,
+    "source_count": 6,
+    "original_sources_exact": true,
+    "source_revisions_and_time_ranges_unchanged": true,
+    "committed": false
+  },
+  "costs": {
+    "requests": 4,
+    "responses": 4,
+    "completed_responses": 4,
+    "validation_failures": 4,
+    "input_tokens": 1810,
+    "output_tokens": 664,
+    "cached_tokens": 400,
+    "request_ms": 9904,
+    "total_tokens": 2474
+  },
+  "case_seconds": 12.754,
+  "attempts": [
+    {
+      "batch": "batch-1",
+      "attempt": 1,
+      "stage": "compose",
+      "mode": "compose",
+      "selected_source_seqs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "normalized_draft_is_null": true,
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "raw_body_sha256": "c2ea16d0562fab83ad4d5473bc050972e649f70070075e4e115b7bd7f13600e1",
+      "music_literal_paragraphs": 3,
+      "original_music_modal_and_late_night_present": true,
+      "source_university_literals_present": true,
+      "pamela_spacing_still_changed": true,
+      "ferguson_form": "PAN MALE FERGUSON",
+      "full_raw_path": "report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/last-generation.json"
+    },
+    {
+      "batch": "batch-1",
+      "attempt": 2,
+      "stage": "repair",
+      "mode": "compose",
+      "selected_source_seqs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "normalized_draft_is_null": true,
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "raw_body_sha256": "6f1e854422199d6c0a56616c4d7cac42a2fc6b3eb0b25cc9f420a08b95515d0e",
+      "music_literal_paragraphs": 2,
+      "original_music_modal_and_late_night_present": true,
+      "source_university_literals_present": true,
+      "pamela_spacing_still_changed": true,
+      "ferguson_form": "潘 MALE FERGUSON",
+      "full_raw_path": "report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/last-generation.json"
+    },
+    {
+      "batch": "batch-2",
+      "attempt": 1,
+      "stage": "compose",
+      "mode": "compose",
+      "selected_source_seqs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "normalized_draft_is_null": true,
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "raw_body_sha256": "c2ea16d0562fab83ad4d5473bc050972e649f70070075e4e115b7bd7f13600e1",
+      "music_literal_paragraphs": 3,
+      "original_music_modal_and_late_night_present": true,
+      "source_university_literals_present": true,
+      "pamela_spacing_still_changed": true,
+      "ferguson_form": "PAN MALE FERGUSON",
+      "full_raw_path": "report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-2/last-generation.json"
+    },
+    {
+      "batch": "batch-2",
+      "attempt": 2,
+      "stage": "repair",
+      "mode": "compose",
+      "selected_source_seqs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "normalized_draft_is_null": true,
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "raw_body_sha256": "6f1e854422199d6c0a56616c4d7cac42a2fc6b3eb0b25cc9f420a08b95515d0e",
+      "music_literal_paragraphs": 2,
+      "original_music_modal_and_late_night_present": true,
+      "source_university_literals_present": true,
+      "pamela_spacing_still_changed": true,
+      "ferguson_form": "潘 MALE FERGUSON",
+      "full_raw_path": "report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-2/last-generation.json"
+    }
+  ],
+  "findings": [
+    {
+      "kind": "expected_guard_order_observed",
+      "detail": "All four attempts fail reported-person spelling membership with normalized_draft=null. Unlike the earlier bda actor rejection after document normalization, the new spelling veto fires before document construction/actor and language checks."
+    },
+    {
+      "kind": "bounded_repair_observed",
+      "detail": "Each batch has one compose then one repair request, both mode=compose; no source_relations/article_repair event or checked-prose translation path is recorded. Repair outputs still copy generic English, repeat music twice, and keep PAMELA FURGO 森. PAN becomes 潘 in repair, but this partial spelling change does not make the output acceptable."
+    },
+    {
+      "kind": "source6_never_selected",
+      "detail": "Actual cursor remains0, so both batches select original sources1–5. Source6 exists unchanged in the database but is never sent; this is not proof that the model omitted a selected source6."
+    },
+    {
+      "kind": "raw_content_scope",
+      "detail": "Raw outputs retain MAY HAVE and UNTIL LATE INTO THE NIGHT, both university labels and the conditional photo-risk clauses. Compose copies music three times; repair copies it twice. Generic English remains instead of connected Chinese minutes. Missing-school/modal fixture errors refer to the absent committed article, not absence of those literals in raw."
+    },
+    {
+      "kind": "do_not_transfer_prior_trial_findings",
+      "detail": "This trial does not show the earlier819 PAMELA→music attribution or festival→迪大学演出 claim. The rejection itself is not proof of a newly fabricated reporter statement or decision. No final article exists for semantic acceptance."
+    }
+  ],
+  "request_payload_limitation": "Wire request text is not saved. Repair routing is supported by production code, stage/mode metadata and raw responses; no request-text reconstruction is presented as a captured request.",
+  "interpretation": "The newly retained spelling veto actually changes failure routing: normalization stops before actor/language checks and the bounded second call uses original sources with name feedback. The changed repair still copies English/repeats paragraphs and inserts a name space. No article was committed and source6 never entered a request because both batches retained cursor0. Earlier819 wrong-person music claims were not observed in this run; refusal does not prove a new hallucinated statement.",
+  "performance_limit": "4requests/2474tokens/12.754s count all failed work. No quality-qualified speedup, energy, physical memory, ASR/microphone, GPU comparison or installation claim follows. Source hashing/preparation/cleanup are outside case_seconds.",
+  "cleanup": {
+    "owned_model_clones_removed": 6,
+    "borrowed_links_released": true,
+    "owned_processes_alive": [],
+    "owned_processes_unknown": [],
+    "signals_sent": 0,
+    "original_models_unchanged": true,
+    "runtime_unchanged": true,
+    "raw_database_kept": true,
+    "physical_reclaimed_bytes": null
+  },
+  "scope": "No production source/prompt/fixture/quota/model/runtime change and no SDK or installer build. Current default frozen source was exercised once, with existing owned APFS model copies removed afterward.",
+  "next_action": "Do not retune or repeat this failed prompt. Keep Q16 closed while correcting the production path; separately inspect default scheduler isolation so one failing meeting cannot distort another meeting retry budget.",
+  "release": "0.3.5 unpublished;stable0.3.4. Full research implementation objective and source fidelity, platform/recording/installation gates remain active.",
+  "witnesses": [
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/expected-source.txt",
+      "sha256": "8d1d706af161f95e8c63d6ee36c97e70c57e5d1aae8a334c43a1b6ef15a9add7"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/fixture-binding.json",
+      "sha256": "02835bac82de7132c65665adcbb3ed3128c9d44e603c6c4cce8009811485a151"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/model-clones.json",
+      "sha256": "3729622275a57c28d270fff4856ae7e0084b00b9d8f64be634ddede92b70175c"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/preparation.json",
+      "sha256": "a180b43318ae3d7eebc1190bdc0fa048d64ee230172476e7120629e3b8ea83a1"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/run-output.log",
+      "sha256": "a564e4370afb14b36c8e96976d59ba42303d691ce052f059e8c0698a32a0b4c0"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/run-trial.py",
+      "sha256": "de9553a4ac2ad10e43d9d0101bbc171c0d3103cca2b32e91863f7008cdff62e1"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/runner-binding.json",
+      "sha256": "d9e72b3aa0df4815cb0a0bc2e71117e3c137f93d6deca775c113f4d99da6f66c"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/runner-diff.patch",
+      "sha256": "e65419088cc54157d87931abe7d6d449b2f3c6c75ed56ed6b5f0a4f951109314"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/runtime-before.json",
+      "sha256": "6c30c0f39f37290c4e66992afdd5f1d96ae9cc8fa934b8a18e2973b155954e43"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/runtime-metadata-before.json",
+      "sha256": "648af33f0c6aea03384b1f1fe9d36e2faa5d6c4e07a366609efbe59c3a520303"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/actual-review.json",
+      "sha256": "28066d63138bc9c82d1e05076fd5e4904370cd1ab08de34c5952c7866d2e746f"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/cleanup.json",
+      "sha256": "b14c68810e2d277d51626f6592bcb8f21796034ab4b2f366b3efd33ecefdfe09"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/last-generation.json",
+      "sha256": "53a233c2817c57e25b0f9c1c377b15cdcced4c60a5094e32e9e9cc7f5d122fff"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-2/last-generation.json",
+      "sha256": "38bb83318484c84afd14af535af3bce702ce3db250d092b621523c67761c3438"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/report.json",
+      "sha256": "d1329608b4dcdee0c65bc6d2476e417f2830106d04419de2e4e1d9a894546b97"
+    },
+    {
+      "path": "artifacts/q16-production-default-2026-10-31/trial/state.json",
+      "sha256": "8911fa3a8cf4855ee815767277477016fc43c582d0c315474895591f96081d75"
+    }
+  ]
+}

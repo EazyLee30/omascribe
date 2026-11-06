@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "status": "REJECTED; production renderer reverted; Q16 and 0.3.5 remain open",
+  "trial_source": "8da076757065edfacad2a5d87299317eafd11a76",
+  "revert_source": "ca76005",
+  "restored_core_equals": "a12b9083e61c710974c943ffc4a913bccd7b2788",
+  "case": "zh_recorded_mixed_prose_fidelity",
+  "execution": "explicit-generation",
+  "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+  "preferences": "unchanged default preferences plus original fixture minutes_language=zh override",
+  "bounded_change": "Keep internal JSON authority and original evidence unchanged; render prepared source text as paragraphs for the second composition request. No source removal, fuzzy deduplication, additional requests or relaxed final checks. One actual-model trial only; no further prompt sweep.",
+  "static_checks": {
+    "core_passed": 409,
+    "core_ignored": 8,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "independent_review": "PASS; no claim of model quality",
+    "revert_writer_tests": "PASS; full notes.rs/writer.rs bytes match a12b908"
+  },
+  "actual_trial": {
+    "passed": false,
+    "report_sha256": "09b1a9c79cf6a074569412b26cd1c4c8102a0209ee481f1a536240f30303d153",
+    "backend": "metal",
+    "model": "existing qwen3-1.7b",
+    "requests": 4,
+    "input_tokens": 1381,
+    "output_tokens": 337,
+    "total_tokens": 1718,
+    "case_seconds": 7.407,
+    "whole_parent_seconds": 7.545,
+    "peak_sampled_tree_rss_mib": 1492.125,
+    "gpu_memory_mib": null,
+    "energy_joules": null
+  },
+  "findings": [
+    "Raw composition becomes connected prose and the three music repetitions are summarized once. This is a style change, not a fidelity pass.",
+    "Batch1 invents 记者表示对此有疑问; batch2 invents 记者表示将根据情况决定是否公布. No original source contains a journalist response or decision.",
+    "Batch2 omits the explicit 邓迪大学 name and does not retain source6 FERGUSTON spelling; full source citations are still attached and validation_error is null.",
+    "Database confirms actual cursor5 to6 and two committed jobs/history versions. All original source text and citation quotes/revisions remain unchanged. This is a real false acceptance, not merely a planned cursor value.",
+    "Original pattern report fails only Missing邓迪大学; direct raw-output review finds the additional unsupported claims. Existing pattern checks and complete citations are insufficient as general fidelity evidence."
+  ],
+  "database": {
+    "raw_source_count": 6,
+    "raw_texts_equal_fixture": true,
+    "raw_revisions": 1,
+    "notes_cursor": 6,
+    "articles": 1,
+    "history_rows": 2,
+    "translations": 0,
+    "translation_parts": 0,
+    "jobs": "two committed"
+  },
+  "decision": "Revert renderer after this one trial. Preserve the earlier narrow single-source translation fix. Do not tune prompts further or expand the two-request quota to hide failure. Next work must address source-bound content coverage and conditional versus actual speech/action roles.",
+  "scope_limits": [
+    "No source preparation or final semantic checker has proved general entailment.",
+    "No performance or energy improvement is claimed from a failed fidelity trial.",
+    "No native installer/GPU package/model/SDK rebuilt, no release published.",
+    "The installed application was not replaced."
+  ],
+  "asset_cleanup": "All six task-owned APFS model clones and evaluator borrowed links released; installed model metadata/SHA256 and runtime hashes unchanged. Logical bytes do not equal measured physical reclamation.",
+  "raw_artifacts": "artifacts/q16-composition-render-2026-10-30; earlier trials remain separate",
+  "p1_independent": {
+    "pr": 13,
+    "head": "e9c1490b4aa8d6169f5b487a7222255cec1d1234",
+    "base_synchronized_to": "77de541",
+    "status": "Draft, not merged into integration; no resource default promotion",
+    "local_checks": {
+      "core_passed": 416,
+      "core_ignored": 8,
+      "keep_alive_tests": 34,
+      "harness_tests": 30,
+      "strict_workspace_clippy": "PASS after borrowing unchanged canonical dist solely as Tauri compile prerequisite",
+      "new_frontend_build": false
+    },
+    "exact_head_ci": {
+      "linux": 40944182744,
+      "windows_core_optional_workflow": 40944182680,
+      "status": "success; GPU build/catalog skipped"
+    },
+    "scope": "Retains stage-aware repair accounting and all lifecycle/cost rejection checks. No model or SDK trial. Initial missing-dist/npm/package-path prerequisite failures retained locally; borrowed dist link removed."
+  }
+}

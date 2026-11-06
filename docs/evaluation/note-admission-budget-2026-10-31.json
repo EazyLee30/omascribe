@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "production_commit": "b89389d617c33276533a2e6c9d96b0a82fcea696",
+  "base_source": "88ff00939798f9ce787ada0b6e1c7e10a0a4caae",
+  "problem": "Rejected ordinary ASCII words consumed the 80-entry note budget before a later admitted name. In mixed notes, weak ASR focus words could also block a later strong name before the existing global priority rules ran.",
+  "change": {
+    "name_authorization": "Unchanged named/term/concept/Chinese-focus predicates; no alias, fuzzy-distance, phonetic or writer-fact rule added.",
+    "candidate_budget": "At most80 retained strong and80 weak candidates; existing strong names/explicit terms take priority, merged output remains80, strong order remains occurrence order. Rejected scanned tokens do not allocate seen entries.",
+    "scanning": "Borrowed global keyword and exact bold indices; line-order scan with monotonic marked-span cursor and one model_identifier check per line. No per-token whole-note lines/contains/rfind rescans.",
+    "input_boundary": "note_words accepts complete notes up to the existing save_note limit of200000 characters; oversized direct/imported input abstains rather than clipping a token. This is not an overall Terms or filesystem-IO bound."
+  },
+  "real_engine_controls": {
+    "original_red": 4,
+    "green": 4,
+    "matrix": [
+      "English note / OmaScribe with existing ALMA SCRIBE correction",
+      "Mixed note / OmaScribe",
+      "English note / PixelLedger with existing PIXEL LEDGRE correction",
+      "Mixed note / PixelLedger"
+    ],
+    "original_public_paragraphs": "Unchanged raw_reference text from existing FLEURS fixtures042/012/076, composed into a note under1000 characters; only a name is appended to the same document ID.",
+    "observed": "With auto_notes=false, source revision1->2, existing pending prose and complete citation update together; raw source and document history retain revision1 and coverage stays1. Save creates zero inference jobs.",
+    "boundary_controls": [
+      "Near200000-character ordinary/mixed note with final admitted name",
+      "Weak ASR focus never becomes writer/caption/approximate name authority",
+      "Global keyword/overlapping bold/CRLF permission equivalence",
+      "Oversized input abstains without token clipping",
+      "Late names cannot revive an explicit conflicting alias",
+      "Original first80-of81 genuine names and human/Unicode/model protections retained"
+    ]
+  },
+  "verification": {
+    "full_core_pass": 563,
+    "full_core_ignored": 12,
+    "cli_pass": 2,
+    "integration_pass": 34,
+    "affected_unit_pass": 76,
+    "affected_unit_ignored": 1,
+    "strict_workspace_clippy_format_diff": "PASS",
+    "model_asr_llm_runs": 0,
+    "sdk_components_installer_builds": 0,
+    "release_cli": "Existing CLI remains compiled from6dc54e5; rebuild matching source before a later native/model run."
+  },
+  "evidence_sha256": {
+    "red.log": "9cefaf9418122bc1afe35cd67bd9c3fe6c4f3c8b7bc76b211671a603e1ba7317",
+    "original-red.patch": "8b378bd64f754179ec3d6ee35082d91cc3e5f836e0fa127e96ee73d641b2c92c",
+    "red-review.json": "d8e5bd4af1f7325894e68205808d865fe266e7023bec448b7eca3d7caa9ef58d",
+    "inputs.json": "3ac91e3522862050cba729e638c8594c4c4bd867f27fbb44d4b30fe28106d8f6",
+    "frozen-review.json": "d5fa5310835a6919c9573dc992205a56ebcc338a430fbf86e499485051716612",
+    "final-checks.json": "cabc739b43e662504c3e0611884fa247cee284f7ffd46b7cc41aa024b50491c3",
+    "root-checks.json": "86d3917dc7534fba929e078b618f3a09cf4da4014bcde5c31bee99775feb553a"
+  },
+  "previous_evaluation_jsons_unchanged": 106,
+  "limits": [
+    "This fixes admitted-name starvation, not the previously measured53 real-audio name misses.",
+    "Original Q16 generated article quality remainsFAIL; no new model run or relaxed validator.",
+    "No lower whole-app CPU, memory, GPU or energy claim from these storage/parser controls.",
+    "Automatic summarization after a substantive focus change retains its existing scheduling policy; zero-job assertion concerns the save operation."
+  ],
+  "release": {
+    "stable": "0.3.4",
+    "0.3.5": "unpublished",
+    "pr_1": "draft"
+  }
+}

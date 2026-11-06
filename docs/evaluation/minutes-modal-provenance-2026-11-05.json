@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "PRODUCTION_LOCAL_MODAL_VETO_INTEGRATED_LOCAL_CHECKS_PASS_SOURCE_CI_PENDING",
+  "source": "4e87e5e0566650b5cff3a8db910f60e95ce4fef5",
+  "reviewed_private_source": "857228ee12d574fd8c093fffce6846d191079d6f",
+  "production_test_files_equal_to_private": true,
+  "behavior": [
+    "Veto lost local uncertainty for two bounded literal predicates: main-stage music ending, and festival sections continuing to play until late into the night. Read the final selected original SOURCE, not notes-only facts or prepared captions.",
+    "A definite update requires a closed known assertion, later sequence in the same meeting/run, and exact source id/revision in this paragraph’s current citations. Quoted, conditional or unknown wrapped assertions cannot grant permission.",
+    "Both ordinary and checked-bridge writer paths validate final normalized document prose. Preserve the existing name, attribution, fact, completion, confirmation, language, source-replacement and transaction checks, and the shared two-request budget.",
+    "Bound source text to 262144 bytes and 64 observed frames. Add a typed modal repair hint to the existing second request; do not add a model call or edit source/user text."
+  ],
+  "original_evidence": {
+    "red_source": "af02cbc3877893aadf48e5f178c869680f43dd0c",
+    "red_passed": 1,
+    "red_failed": 8,
+    "actual_replayed_output": "The private c4bd53e article had already been accepted and committed, but changed MAY to definite music-ending/continuation claims. Original raw input, received body, fixture and oracle were retained.",
+    "first_fix_source": "3a0110380cfa2751a75469dbe301faa76a7bc2b2",
+    "first_fix_targeted_passed": 17,
+    "first_fix_full_core": {
+      "passed": 658,
+      "failed": 2,
+      "ignored": 12
+    },
+    "regression_resolution": "857228ee moves the new veto after existing fact/completion gates and recognizes local negative modal presentations despite discourse prefixes. Positive-source authority remains closed. The original 17 controls and both existing failed tests were unchanged."
+  },
+  "checks": {
+    "final_core_passed": 660,
+    "ignored_explicit_model_tests": 12,
+    "cli_passed": 2,
+    "integration_passed": 34,
+    "strict_workspace_clippy": "PASS",
+    "fmt": "PASS",
+    "exact_production_source_ci": "pending at record; no CI pass claim",
+    "independent_read_only_review": "admission_review at exact857228ee: final-source/citation binding, positive witness, unchanged guards/budget/Scope/transaction; no additional blocker. No Cargo or model execution by reviewer."
+  },
+  "limits": [
+    "This is an additional veto for two explicit predicates, not general MAY/entailment resolution, arbitrary synonyms or automatic repair of unselected historical paragraphs.",
+    "Model-free regression success does not establish faithful generated prose or full Q16 completion. Q16/Q9 and same-source three-platform native/install acceptance remain open.",
+    "Private c4bd53e stays stopped and isolated, is not promoted, and was not rerun. No model call, resource-benefit claim or 0.3.5 release follows from this production fix."
+  ],
+  "evidence_directory": "artifacts/writer-zh-grammar-2026-11-05",
+  "raw_sha256": {
+    "production-modal-3a01103-core.log": "f494b6594973abdf91ed09347aa40723928609695aedaec4dc602add35e66d4b",
+    "production-modal-3a01103-targeted.log": "ef756947aace9521d4af89b48d1e1f4c1fa70093097a74e681c1d7c1ff18a2a7",
+    "production-modal-857228e-clippy.log": "d2677743663959ce0e4ca8e6721ae14aade8dde3b06df713b830c89408a2a23a",
+    "production-modal-857228e-core.log": "07acf1a444ee4e2cbaa03e71fdc8137995ccebddb86ca48103417021f3e9af66",
+    "production-modal-857228e-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "production-modal-original-red.log": "f00e496ee9e6a1463d9d651fc78ab2addb282f01570506ef4051a491e706b680"
+  },
+  "release_published": false
+}

@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "PRIVATE_ZH_GRAMMAR_Q16_COMMITTED_BUT_REJECTED_MAY_FIDELITY",
+  "private_source": "c4bd53e5a2c195dcad48137ff374efa07aca2b22",
+  "parent_source": "7b491746d4067f51046a8a10678e1157d6bfafa6",
+  "scope": {
+    "comparison": "One same-private-binary original-Q16 flag off/on pair; existing Qwen3-1.7B Q4_K_M, unchanged prompt, two-request job budget and 440-token output cap.",
+    "flag": "OMASCRIBE_WRITER_ZH_GRAMMAR",
+    "private_cli_sha256": "e62bd1c894a9565aa2a91f4f55101699ea1b989960b5d1b8746a8e82e46db081",
+    "compile_input_sha256": "e67ee159c814fdd6cc2e133290de2da398d0b4384dee0a961c60be91f5f9b7e7",
+    "fixture_unmodified": true,
+    "fixture_collection_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "original_q16_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2"
+  },
+  "reviews": {
+    "retained_review": {
+      "reviewed_source": "c4bd53e5a2c195dcad48137ff374efa07aca2b22",
+      "scope": "Read-only exact-commit inventory/source-authority, strict-cap abstention, existing-protocol and actual-request digest review; no source blocker before trial, not quality approval."
+    },
+    "admission_review": {
+      "reviewed_source": "c4bd53e5a2c195dcad48137ff374efa07aca2b22",
+      "scope": "Independent read-only terminal raw trace, DB, costs, Metal, original-asset and cleanup audit.",
+      "artifact": "admission-runtime-review.json",
+      "sha256": "c8ae20853eddb4b93341379f2dd26c32f4730f71b9eb84ff4deefc55c55a923a"
+    },
+    "independent_semantics": {
+      "artifact": "independent-semantic-review.json",
+      "sha256": "2b07290e0fd0240a82b11441c85644663c79d632116f7c29a487c85377a0791c",
+      "verdict": "Both arms FAIL; original MAY oracle is not a false rejection. Full actual raw drafts and committed article reviewed."
+    }
+  },
+  "model_free_checks": {
+    "source": "c4bd53e5a2c195dcad48137ff374efa07aca2b22",
+    "direct_passed": 8,
+    "core_passed": 651,
+    "ignored_explicit_model_tests": 12,
+    "cli_passed": 2,
+    "integration_passed": 34,
+    "strict_workspace_clippy": "PASS on unchanged source after building the missing frontend dist; initial missing-dist failure retained.",
+    "quality_acceptance": false
+  },
+  "trial": {
+    "exclusive_pair": 1,
+    "control": {
+      "frontier": [
+        0,
+        0
+      ],
+      "requests": 2,
+      "prompt_tokens": 905,
+      "completion_tokens": 332,
+      "committed_sections": 0,
+      "terminal": "Both responses rejected by production reported-name spelling validation; English prose stacking remained."
+    },
+    "candidate": {
+      "frontier": [
+        0,
+        5
+      ],
+      "requests": 1,
+      "prompt_tokens": 434,
+      "completion_tokens": 76,
+      "committed_sections": 1,
+      "producer_outcome": "committed",
+      "preserved_names": [
+        "PAMELA FURGO森",
+        "潘 MALE FERGUSON"
+      ],
+      "unsupported_certainty": "音乐在主舞台已经结束，但嘉年华的某些部分仍将持续演奏至深夜。",
+      "terminal": "Unchanged external MAY-fidelity oracle and human review FAIL after production accepted and committed the Chinese body. This is a production validation gap, not merely a rejected draft."
+    },
+    "source6_attempted": false,
+    "full_q16_passed": false,
+    "retried_or_tuned": false
+  },
+  "actual_request": {
+    "candidate_compose_mode": "literal_zh",
+    "grammar_bytes": 232,
+    "grammar_sha256": "749f3934de7faf8df1666485e76f0470d00f64b771a021fbc9e0c351e7063722",
+    "matches_prefrozen_job1": true,
+    "actual_request_sha256": "d5db9a07fd14f6b17c3199de20a719888f37b4e23b388de323ae0b9717849090",
+    "observation": "Producer-side final request metrics immediately precede send; full wire envelopes unavailable. Frozen job2 grammar was not exercised."
+  },
+  "runtime_and_cost_limits": {
+    "both_arms": "Apple M5 MTL0, 29/29 layers offloaded; no CPU fallback observed.",
+    "all_completed_responses_retained": 3,
+    "trace_request_ms": {
+      "control": 12203,
+      "candidate": 3490
+    },
+    "timing_inconsistency": "Control repair native eval=48944.005ms/total=49568.62ms, versus trace request=4411ms, diagnostic=4412ms and whole-command wall=27.856s. Cause unproven; retain raw timings without combining clocks.",
+    "resource_gain_claim": false,
+    "limits": "Different outcomes and work amounts; sampled CPU is a lower bound, summed RSS may double-count shared pages. GPU allocation, energy and physical reclaimed bytes unknown."
+  },
+  "restoration_and_cleanup": {
+    "restored_production_source": "ec124daf66e8b6bd1e126c887143dd72f44aa31a",
+    "restored_compile_input_sha256": "0430e71aac17e49f5d39f0669d8b7fd66c809d19e30cd8687ca440929eb448e6",
+    "target_binaries_restored": true,
+    "private_promoted": false,
+    "private_source_preserved_isolated": true,
+    "protected_models_full_sha_and_metadata_unchanged": 6,
+    "protected_original_runtime_files_unchanged": 2,
+    "owned_clone_files_released": 12,
+    "owned_processes_exited": true,
+    "cow_binary_backups_deleted": 4,
+    "cow_deletion_fingerprint_and_no_open_handle_checked": true,
+    "logical_binary_bytes_deleted": 83999168,
+    "physical_reclaimed_bytes": null,
+    "raw_logs_fixture_oracle_preserved": true
+  },
+  "next_action": "The actual received body and exact first five original sources reproduce the public production miss: nine ordinary-path controls, one passing and eight semantic assertion failures. Implement scoped modal/object/predicate and own-citation validation through the existing bounded repair path. Do not rerun or promote c4bd53e. Q16, Q9 and native/install acceptance remain open.",
+  "evidence_directory": "artifacts/writer-zh-grammar-2026-11-05",
+  "raw_sha256": {
+    "frozen-inputs.json": "d1d34437d465a75ec5b36030234827f113b779867e46c9490e9e03026a3259ef",
+    "grammar-control-proof.json": "1f404a1c24814e7bb12248989ff734fcfd257548a1faf89ee8c3941bf554cba7",
+    "private-source.json": "b21b268217d9081ef7d50aedfd886f39ac280ad9922f2f2860de4c79acca7066",
+    "private-built.json": "ffb1c6169e35eb62eb349067cc2a7bcc0b7a56f103a4e8934980a8377105a000",
+    "candidate-c4bd53e-controls.log": "44a2d7f9be947a663d24c0d2d8e0411ba44b36ccc83cd233cfd4c6dc14f2fa68",
+    "candidate-c4bd53e-core.log": "9eb9c2bd0b9e15845016631780478cc7cb805cecc992fd560bf14c1dfb55694a",
+    "candidate-c4bd53e-clippy.log": "1e584be970fd9d25563aa5d509a4c3e040988b55034f1f36dbaf2e2d3e0c4964",
+    "candidate-c4bd53e-clippy-rerun.log": "68ab7e5a019c18581ce2d45cee61e80ff7e229ee0f2b44da0e5fceb62440fdf0",
+    "frontend-for-clippy.log": "539f80a5ed3c4c041da1fdb19c974a33361f970611b6a859ab6f8062d0a48080",
+    "q16/state.json": "31f013baf5d80b7f5f92258f2a3a4022268f0b9340b7b050a1cecc8d69225a65",
+    "q16/owned-assets.json": "df1ded0361b8f1c0ef6ad7169e79c1b211692e5cd6633ce9737bcab4fc8a3ea4",
+    "admission-runtime-review.json": "c8ae20853eddb4b93341379f2dd26c32f4730f71b9eb84ff4deefc55c55a923a",
+    "public-restoration.json": "5fe353a6783c6efa7e0a77d9d077f173999bb3fb6a1fd1d04336bdf87d8c6a2c",
+    "rejected-binaries-cleanup.json": "eecbe34ca2a5cc0075d9a5edb941e2b8e2e1b48594a50d0ab7d8fe86d348476b",
+    "independent-semantic-review.json": "2b07290e0fd0240a82b11441c85644663c79d632116f7c29a487c85377a0791c",
+    "production-modal-original-red.log": "f00e496ee9e6a1463d9d651fc78ab2addb282f01570506ef4051a491e706b680"
+  },
+  "release_published": false,
+  "production_red": {
+    "source": "af02cbc3877893aadf48e5f178c869680f43dd0c",
+    "body_sha256": "055507d4f1538fc37021c90c4263cf1ad8eadf7ca3aee594c9349513c18afedf",
+    "raw_body_equals_received_model_output": true,
+    "source_rows_equal_original_first_five": true,
+    "controls": 9,
+    "passed": 1,
+    "failed": 8,
+    "classification": "ACTUAL_PRODUCTION_SEMANTIC_ASSERTION_FAILURE",
+    "log": "production-modal-original-red.log",
+    "implementation_status": "in progress; not validated or integrated"
+  }
+}

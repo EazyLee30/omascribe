@@ -1,0 +1,547 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "Pinned FLEURS CPU ASR baseline plus constructed switches",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "6f8d5f522df4fbc2fb716e63f023d0939effb887",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "58628fee92166c18aba99d650cc6da4be52abf9cc0ff4860c8829d8c1811f86b",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "cef91e023cfccd8fc8853c16dfa5ade87657228280cd8237572ec4db575f0bcb",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "00e3c6e7b28d83b7e7cfa0e22788fb5bc839629974433d9e4c4de5c1a970d64c",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "ac6cdfa0c8d26f81501de0fc71b48c8779107170",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "scorer": "asr-v2-cer-wer-mer",
+  "fixture_manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69",
+  "assets": {
+    "zipformer-small": {
+      "model": "zipformer-small",
+      "files": [
+        {
+          "name": "encoder-epoch-99-avg-1.int8.onnx",
+          "bytes": 42980793,
+          "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+        },
+        {
+          "name": "decoder-epoch-99-avg-1.onnx",
+          "bytes": 13877276,
+          "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+        },
+        {
+          "name": "joiner-epoch-99-avg-1.int8.onnx",
+          "bytes": 3228485,
+          "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+        },
+        {
+          "name": "tokens.txt",
+          "bytes": 56317,
+          "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+        },
+        {
+          "name": "bpe.model",
+          "bytes": 244836,
+          "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+        }
+      ],
+      "worker": {
+        "name": "omascribe-asr",
+        "bytes": 27393168,
+        "sha256": "afa015b563bcbc7b056c2c9bb3d07f1381f0e058284ce708e757f4ad8ee9430f"
+      },
+      "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+    },
+    "zipformer-bilingual": {
+      "model": "zipformer-bilingual",
+      "files": [
+        {
+          "name": "encoder-epoch-99-avg-1.int8.onnx",
+          "bytes": 181895032,
+          "sha256": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b"
+        },
+        {
+          "name": "decoder-epoch-99-avg-1.onnx",
+          "bytes": 13876452,
+          "sha256": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d"
+        },
+        {
+          "name": "joiner-epoch-99-avg-1.int8.onnx",
+          "bytes": 3228404,
+          "sha256": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0"
+        },
+        {
+          "name": "tokens.txt",
+          "bytes": 56317,
+          "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+        }
+      ],
+      "worker": {
+        "name": "omascribe-asr",
+        "bytes": 27393168,
+        "sha256": "afa015b563bcbc7b056c2c9bb3d07f1381f0e058284ce708e757f4ad8ee9430f"
+      },
+      "limitation": "Worker/model hashes verified; platform/system dependency inventory is not complete"
+    }
+  },
+  "synthetic_assets": {
+    "silence.wav": {
+      "bytes": 320044,
+      "sha256": "ee7bea4232762775f8fce9b3e27e4d3948c8ac6a45a87ca769f703d6eed0b448"
+    },
+    "quiet-noise.wav": {
+      "bytes": 320044,
+      "sha256": "73d0c794b401ba3250d591ebc6c6e8ef3f3f515327e021f8b0b73c7a64837c84"
+    }
+  },
+  "aggregates": {
+    "zipformer-small/cmn_hans_cn": {
+      "edits": 61,
+      "reference_units": 188,
+      "error_rate": 0.324468085106383,
+      "clips": 4,
+      "scored_clips": 4,
+      "audio_seconds": 51.3,
+      "known_audio_seconds": 51.3,
+      "missing_audio_clips": 0,
+      "wall_seconds": 4.3469999999999995,
+      "substitutions": 18,
+      "deletions": 42,
+      "insertions": 1,
+      "error_rate_interval_95": [
+        0.15789473684210525,
+        0.45664739884393063
+      ],
+      "wall_p50": 0.6765000000000001,
+      "wall_p95": 2.2479499999999994,
+      "rtf_p50": 0.01633454481292517,
+      "rtf_p95": 0.016446706404431695,
+      "peak_process_tree_rss_mib": 189.640625,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 2.036767802,
+      "process_tree_cpu_known_seconds": 2.036767802,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 4,
+      "gpu_memory_mib": null
+    },
+    "zipformer-small/en_us": {
+      "edits": 26,
+      "reference_units": 76,
+      "error_rate": 0.34210526315789475,
+      "clips": 4,
+      "scored_clips": 4,
+      "audio_seconds": 36.6,
+      "known_audio_seconds": 36.6,
+      "missing_audio_clips": 0,
+      "wall_seconds": 2.508,
+      "substitutions": 21,
+      "deletions": 2,
+      "insertions": 3,
+      "error_rate_interval_95": [
+        0.1346153846153846,
+        0.581646273637374
+      ],
+      "wall_p50": 0.678,
+      "wall_p95": 0.6807000000000001,
+      "rtf_p50": 0.016896546207205772,
+      "rtf_p95": 0.01709773482751306,
+      "peak_process_tree_rss_mib": 169.359375,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 1.501000861,
+      "process_tree_cpu_known_seconds": 1.501000861,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 4,
+      "gpu_memory_mib": null
+    },
+    "zipformer-small/mixed": {
+      "edits": 50,
+      "reference_units": 167,
+      "error_rate": 0.2994011976047904,
+      "clips": 2,
+      "scored_clips": 2,
+      "audio_seconds": 64.44,
+      "known_audio_seconds": 64.44,
+      "missing_audio_clips": 0,
+      "wall_seconds": 2.017,
+      "substitutions": 25,
+      "deletions": 24,
+      "insertions": 1,
+      "error_rate_interval_95": [
+        0.2823529411764706,
+        0.3170731707317073
+      ],
+      "wall_p50": 1.0085,
+      "wall_p95": 1.10435,
+      "rtf_p50": 0.016483912108166115,
+      "rtf_p95": 0.016549075935357514,
+      "peak_process_tree_rss_mib": 189.890625,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 2.135555645,
+      "process_tree_cpu_known_seconds": 2.135555645,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 2,
+      "gpu_memory_mib": null
+    },
+    "zipformer-bilingual/cmn_hans_cn": {
+      "edits": 53,
+      "reference_units": 188,
+      "error_rate": 0.28191489361702127,
+      "clips": 4,
+      "scored_clips": 4,
+      "audio_seconds": 51.3,
+      "known_audio_seconds": 51.3,
+      "missing_audio_clips": 0,
+      "wall_seconds": 4.135,
+      "substitutions": 15,
+      "deletions": 37,
+      "insertions": 1,
+      "error_rate_interval_95": [
+        0.15789473684210525,
+        0.3930635838150289
+      ],
+      "wall_p50": 1.088,
+      "wall_p95": 1.11225,
+      "rtf_p50": 0.03906850246889999,
+      "rtf_p95": 0.039273080587915725,
+      "peak_process_tree_rss_mib": 410.25,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 3.51723902,
+      "process_tree_cpu_known_seconds": 3.51723902,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 4,
+      "gpu_memory_mib": null
+    },
+    "zipformer-bilingual/en_us": {
+      "edits": 25,
+      "reference_units": 76,
+      "error_rate": 0.32894736842105265,
+      "clips": 4,
+      "scored_clips": 4,
+      "audio_seconds": 36.6,
+      "known_audio_seconds": 36.6,
+      "missing_audio_clips": 0,
+      "wall_seconds": 3.766,
+      "substitutions": 12,
+      "deletions": 11,
+      "insertions": 2,
+      "error_rate_interval_95": [
+        0.21212121212121213,
+        0.43103448275862066
+      ],
+      "wall_p50": 0.9005000000000001,
+      "wall_p95": 1.04665,
+      "rtf_p50": 0.040262018435015784,
+      "rtf_p95": 0.04187953184047512,
+      "peak_process_tree_rss_mib": 407.109375,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 2.804663858,
+      "process_tree_cpu_known_seconds": 2.804663858,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 4,
+      "gpu_memory_mib": null
+    },
+    "zipformer-bilingual/mixed": {
+      "edits": 51,
+      "reference_units": 167,
+      "error_rate": 0.30538922155688625,
+      "clips": 2,
+      "scored_clips": 2,
+      "audio_seconds": 64.44,
+      "known_audio_seconds": 64.44,
+      "missing_audio_clips": 0,
+      "wall_seconds": 3.573,
+      "substitutions": 13,
+      "deletions": 38,
+      "insertions": 0,
+      "error_rate_interval_95": [
+        0.23170731707317074,
+        0.3764705882352941
+      ],
+      "wall_p50": 1.7865,
+      "wall_p95": 2.06235,
+      "rtf_p50": 0.03930290154929246,
+      "rtf_p95": 0.039454984124790905,
+      "peak_process_tree_rss_mib": 408.265625,
+      "peak_process_tree_pss_mib": null,
+      "process_tree_cpu_seconds_sampled": 3.967175358,
+      "process_tree_cpu_known_seconds": 3.967175358,
+      "missing_cpu_clips": 0,
+      "missing_rss_clips": 0,
+      "missing_pss_clips": 2,
+      "gpu_memory_mib": null
+    }
+  },
+  "passed": true,
+  "errors": [],
+  "cases": [
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_cmn_hans_cn_1779",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 24,
+      "reference_units": 45,
+      "error_rate": 0.5333333333333333
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_cmn_hans_cn_1780",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 7,
+      "reference_units": 38,
+      "error_rate": 0.18421052631578946
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_cmn_hans_cn_1843",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 25,
+      "reference_units": 67,
+      "error_rate": 0.373134328358209
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_cmn_hans_cn_1847",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 5,
+      "reference_units": 38,
+      "error_rate": 0.13157894736842105
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_en_us_1669",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 10,
+      "reference_units": 14,
+      "error_rate": 0.7142857142857143
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_en_us_1771",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 2,
+      "reference_units": 29,
+      "error_rate": 0.06896551724137931
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_en_us_1914",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 6,
+      "reference_units": 16,
+      "error_rate": 0.375
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_en_us_1980",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 8,
+      "reference_units": 17,
+      "error_rate": 0.47058823529411764
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_mixed_zh_en_01",
+      "language": "mixed",
+      "passed": true,
+      "errors": [],
+      "edits": 26,
+      "reference_units": 82,
+      "error_rate": 0.3170731707317073
+    },
+    {
+      "model": "zipformer-small",
+      "case": "fleurs_mixed_zh_en_02",
+      "language": "mixed",
+      "passed": true,
+      "errors": [],
+      "edits": 24,
+      "reference_units": 85,
+      "error_rate": 0.2823529411764706
+    },
+    {
+      "model": "zipformer-small",
+      "case": "silence",
+      "language": "none",
+      "passed": true,
+      "errors": [],
+      "edits": null,
+      "reference_units": null,
+      "error_rate": null
+    },
+    {
+      "model": "zipformer-small",
+      "case": "synthetic_quiet_noise",
+      "language": "none",
+      "passed": true,
+      "errors": [],
+      "edits": null,
+      "reference_units": null,
+      "error_rate": null
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_cmn_hans_cn_1779",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 20,
+      "reference_units": 45,
+      "error_rate": 0.4444444444444444
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_cmn_hans_cn_1780",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 8,
+      "reference_units": 38,
+      "error_rate": 0.21052631578947367
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_cmn_hans_cn_1843",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 21,
+      "reference_units": 67,
+      "error_rate": 0.31343283582089554
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_cmn_hans_cn_1847",
+      "language": "cmn_hans_cn",
+      "passed": true,
+      "errors": [],
+      "edits": 4,
+      "reference_units": 38,
+      "error_rate": 0.10526315789473684
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_en_us_1669",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 7,
+      "reference_units": 14,
+      "error_rate": 0.5
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_en_us_1771",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 11,
+      "reference_units": 29,
+      "error_rate": 0.3793103448275862
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_en_us_1914",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 4,
+      "reference_units": 16,
+      "error_rate": 0.25
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_en_us_1980",
+      "language": "en_us",
+      "passed": true,
+      "errors": [],
+      "edits": 3,
+      "reference_units": 17,
+      "error_rate": 0.17647058823529413
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_mixed_zh_en_01",
+      "language": "mixed",
+      "passed": true,
+      "errors": [],
+      "edits": 19,
+      "reference_units": 82,
+      "error_rate": 0.23170731707317074
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "fleurs_mixed_zh_en_02",
+      "language": "mixed",
+      "passed": true,
+      "errors": [],
+      "edits": 32,
+      "reference_units": 85,
+      "error_rate": 0.3764705882352941
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "silence",
+      "language": "none",
+      "passed": true,
+      "errors": [],
+      "edits": null,
+      "reference_units": null,
+      "error_rate": null
+    },
+    {
+      "model": "zipformer-bilingual",
+      "case": "synthetic_quiet_noise",
+      "language": "none",
+      "passed": true,
+      "errors": [],
+      "edits": null,
+      "reference_units": null,
+      "error_rate": null
+    }
+  ],
+  "raw": {
+    "path": "artifacts/benchmarks/asr-public-ac6cdfa.json",
+    "sha256": "1e9ecaa18e367eeb6e3daf1ac21b204f7c7a5d20c46a47abadbbcef879308a16"
+  },
+  "license": "CC-BY-4.0",
+  "attribution": "FLEURS: Few-shot Learning Evaluation of Universal Representations of Speech, Google (2022)",
+  "dataset_revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+  "limitations": [
+    "Eight held-out read utterances and two constructed switches, not natural bilingual meetings or diarization gold.",
+    "No proper-name calibration or before/after ASR change claim. Default model/parameters unchanged.",
+    "Quality ceiling 45% is a smoke regression guard, not acceptable product accuracy. Individual clips exceed it.",
+    "Single ordered CPU run; timings/resources are descriptive, not an isolated comparative performance experiment; no energy/GPU/PSS measurement.",
+    "Original/raw hypotheses, PCM/timestamps and process failures are preserved locally; no private recording used."
+  ]
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "type": "PipeWire:Interface:Node",
+    "info": {
+      "props": {
+        "media.class": "Audio/Sink",
+        "node.name": "input.filter.sink.test-speaker-eq",
+        "node.description": "Test Speakers (EQ)",
+        "node.virtual": true
+      }
+    }
+  },
+  {
+    "type": "PipeWire:Interface:Node",
+    "info": {
+      "props": {
+        "media.class": "Audio/Sink",
+        "node.name": "alsa_output.test.analog-stereo",
+        "node.description": "Test Analog Stereo",
+        "device.class": "sound"
+      }
+    }
+  },
+  {
+    "type": "PipeWire:Interface:Node",
+    "info": {
+      "props": {
+        "media.class": "Audio/Source",
+        "node.name": "alsa_input.test.analog-stereo",
+        "node.description": "Test Analog Stereo Microphone",
+        "device.class": "sound"
+      }
+    }
+  }
+]

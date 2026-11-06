@@ -15,47 +15,208 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
+class DocumentCaseBudgetExpired(RuntimeError):
+    pass
+
+
+def document_result(output, name, fixture_sha256, returncode):
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert isinstance(report, dict) and report.get("schema") == 3, "Invalid document report schema"
+    assert report.get("fixture_sha256") == fixture_sha256, "Document fixture changed"
+    assert report.get("fixture_cases") == [name], "Wrong document fixture selection"
+    if returncode == 1 and report.get("passed") is False and report.get("failure_kind") == "budget":
+        raise DocumentCaseBudgetExpired("Document evaluator exhausted its command budget")
+    rows = report.get("cases")
+    assert isinstance(rows, list) and len(rows) == 1, "Incomplete document report"
+    row = rows[0]
+    assert isinstance(row, dict) and row.get("case") == name, "Wrong document case"
+    errors = row.get("errors")
+    assert isinstance(errors, list) and all(isinstance(e, str) and e for e in errors), "Invalid case errors"
+    if returncode == 1 and report.get("passed") is False and row.get("passed") is False \
+            and errors and row.get("failure_kind") == "budget":
+        raise DocumentCaseBudgetExpired("Document case exhausted its command budget")
+    runs = row.get("runs")
+    assert isinstance(runs, list) and runs, "Missing document execution evidence"
+    assert all(isinstance(run, dict) and isinstance(run.get("process"), dict)
+               and run["process"].get("code") == 0
+               and run["process"].get("failure") is None for run in runs), "Document execution failed"
+    if returncode == 0:
+        assert report.get("passed") is True and row.get("passed") is True, "Exit success disagrees with report"
+        assert not errors and row.get("failure_kind") is None, "Failed case reported success"
+        return "passed"
+    assert returncode == 1, f"Document evaluator exited {returncode}"
+    assert report.get("passed") is False and row.get("passed") is False, "Exit failure disagrees with report"
+    assert errors and row.get("failure_kind") == "expectation", "Document execution or report failed"
+    return "expectation_failed"
+
+
+def run_document_cases(cli, env, results, cases, *, target=None, budget_seconds=2100,
+                       fixture_path=None):
+    """Collect semantic failures once; incomplete execution still stops the gate."""
+    fixture_path = fixture_path or ROOT / "tests/fixtures/document-cases.json"
+    fixture_bytes = fixture_path.read_bytes()
+    assert json.loads(fixture_bytes) == cases, "Must run the complete current document fixture"
+    names = [c["name"] for c in cases]
+    assert names and len(set(names)) == len(names), "Empty or duplicate document cases"
+    assert all(isinstance(name, str) and pathlib.Path(name).name == name
+               and name not in (".", "..") for name in names), "Invalid document case name"
+    assert 0 < budget_seconds <= 2100, "Invalid document collection budget"
+    fixture_sha256 = hashlib.sha256(fixture_bytes).hexdigest()
+    results.mkdir(parents=True, exist_ok=True)
+    summary_path = results / "document-suite.json"
+    started = time.monotonic()
+    summary = dict(schema=1, passed=False, complete=False, target=target,
+                   commit=env.get("GITHUB_SHA"), fixture_sha256=fixture_sha256,
+                   planned_cases=names, cases=[], unattempted_cases=names,
+                   budget_seconds=budget_seconds, case_timeout_seconds=700,
+                   stopped_reason=None)
+
+    def save():
+        attempted = {row["case"] for row in summary["cases"]}
+        summary["unattempted_cases"] = [name for name in names if name not in attempted]
+        elapsed = time.monotonic() - started
+        summary["seconds"] = round(elapsed, 3)
+        if elapsed >= budget_seconds and summary["stopped_reason"] is None:
+            summary["stopped_reason"] = "collection_budget"
+        summary["complete"] = not summary["unattempted_cases"] and all(
+            row["state"] in ("passed", "expectation_failed") for row in summary["cases"])
+        summary["passed"] = summary["complete"] and summary["stopped_reason"] is None and all(
+            row["state"] == "passed" for row in summary["cases"])
+        temporary = summary_path.with_suffix(".json.part")
+        temporary.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(summary_path)
+
+    save()
+    for name in names:
+        remaining = budget_seconds - (time.monotonic() - started)
+        if remaining <= 0:
+            summary["stopped_reason"] = "collection_budget"
+            break
+        output = results / (name + ".json")
+        if output.exists():
+            summary["stopped_reason"] = "preexisting_case_report"
+            break
+        case_started = time.monotonic()
+        case_budget = min(700, remaining)
+        row = dict(case=name, report=output.name, artifacts=output.with_suffix(".artifacts").name,
+                   state="execution_failed", returncode=None)
+        summary["cases"].append(row)
+        try:
+            process = subprocess.run(
+                ["python", str(ROOT / "tests/evaluate.py"), "--cli", str(cli),
+                 "--case", name, "--output", str(output), "--budget-seconds", str(case_budget)],
+                env=env, check=False, timeout=case_budget + 30,
+            )
+            row["returncode"] = process.returncode
+            row["state"] = document_result(output, name, fixture_sha256, process.returncode)
+        except DocumentCaseBudgetExpired as error:
+            row["state"] = "budget_expired"
+            row["error"] = str(error)
+            summary["stopped_reason"] = "case_budget"
+        except subprocess.TimeoutExpired:
+            row["state"] = "timed_out"
+            summary["stopped_reason"] = "case_timeout"
+        except (OSError, ValueError, AssertionError, TypeError) as error:
+            row["error"] = f"{type(error).__name__}: {error}"
+            summary["stopped_reason"] = "execution_or_report_failure"
+        row["seconds"] = round(time.monotonic() - case_started, 3)
+        save()
+        if summary["stopped_reason"]:
+            break
+    save()
+    # Include final report work in admission, even after the last case passed.
+    if summary["passed"] and time.monotonic() - started >= budget_seconds:
+        summary["stopped_reason"] = "collection_budget"
+        save()
+    if not summary["passed"]:
+        raise RuntimeError(f"Document release gate failed; see {summary_path}")
+    return summary
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target", required=True)
     args = parser.parse_args()
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This installed-package check runs on GitHub Actions only")
+    from runtime_inventory import (
+        assert_mac_archive,
+        assert_nsis_members,
+        assert_package_tree,
+        write_package_receipt,
+    )
+
     windows = platform.system() == "Windows"
     linux = platform.system() == "Linux"
     suffix = ".exe" if windows else ""
     linux_packages = []
+    commit = os.environ["GITHUB_SHA"]
     product_name = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text(encoding="utf-8"))["productName"]
     results = ROOT / "ci-results"
     results.mkdir(exist_ok=True)
     bundle = ROOT / "target" / args.target / "release/bundle"
+    output = ROOT / "release-assets"
+    output.mkdir(exist_ok=True)
+    version = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
+    label = {
+        "aarch64-apple-darwin": "macOS-AppleSilicon",
+        "x86_64-apple-darwin": "macOS-Intel",
+        "x86_64-pc-windows-msvc": "Windows-x64",
+        "x86_64-unknown-linux-gnu": "Linux-x64",
+    }[args.target]
+    stem = f"OmaScribe_{version}_{label}"
+
+    def stage_artifact(source, extension=None):
+        # Read back the exact copy that will be checksummed and uploaded.
+        destination = output / (stem + (extension or source.suffix))
+        shutil.copy2(source, destination)
+        return destination
+
     if windows:
-        installer = next((bundle / "nsis").glob("*.exe"))
+        updater_source = next((bundle / "nsis").glob("*.exe"))
+        installer = stage_artifact(updater_source)
+        sevenzip = shutil.which("7z") or str(
+            pathlib.Path(os.environ["ProgramFiles"]) / "7-Zip/7z.exe"
+        )
+        listing = subprocess.check_output(
+            [sevenzip, "l", "-slt", "-sccUTF-8", str(installer)],
+            text=True,
+            encoding="utf-8",
+            timeout=120,
+        )
+        (results / "base-nsis-members.txt").write_text(listing, encoding="utf-8")
+        assert_nsis_members(listing)
         installed = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-installed"
+        if installed.exists() or installed.is_symlink():
+            raise RuntimeError("NSIS readback requires a fresh installation directory")
         subprocess.run(
             [str(installer), "/S", f"/D={installed}"], check=True, timeout=600
         )
         assets = installed / "native"
         app = installed / "omascribe.exe"
+        assert_package_tree(installed, assets, args.target)
     elif linux:
-        deb = next((bundle / "deb").glob("*.deb"))
-        appimage = next((bundle / "appimage").glob("*.AppImage"))
+        deb = stage_artifact(next((bundle / "deb").glob("*.deb")))
+        updater_source = next((bundle / "appimage").glob("*.AppImage"))
+        appimage = stage_artifact(updater_source)
         dependencies = subprocess.check_output(["dpkg-deb", "-f", str(deb), "Depends"], text=True).strip()
         assert all(dep in dependencies for dep in ["pipewire-bin", "ffmpeg", "libwebkit2gtk-4.1-0", "libgtk-3-0", "desktop-file-utils", "xdg-utils"]), dependencies
         (results / "linux-package-dependencies.json").write_text(json.dumps({"depends":dependencies}), encoding="utf-8")
         extracted = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-linux"
-        extracted.mkdir(exist_ok=True)
+        extracted.mkdir()
         subprocess.run(["dpkg-deb", "-x", str(deb), str(extracted / "deb")], check=True, timeout=180)
         appimage.chmod(0o755)
         with (ROOT / "build-assets/appimage-extract.log").open("wb") as log:
             subprocess.run([str(appimage), "--appimage-extract"], cwd=extracted, stdout=log, stderr=log, check=True, timeout=180)
         for source, folder in [(deb, extracted / "deb"), (appimage, extracted / "squashfs-root")]:
-            linux_packages.append((source, folder / "usr/lib" / product_name / "native", folder / "usr/bin/omascribe", folder))
+            native = folder / "usr/lib" / product_name / "native"
+            assert_package_tree(folder, native, args.target)
+            linux_packages.append((source, native, folder / "usr/bin/omascribe", folder))
         installer, assets, app, _ = linux_packages[0]
     else:
-        installer = next((bundle / "dmg").glob("*.dmg"))
+        installer = stage_artifact(next((bundle / "dmg").glob("*.dmg")))
         mount = pathlib.Path(os.environ["RUNNER_TEMP"]) / "omascribe-dmg"
-        mount.mkdir(exist_ok=True)
+        mount.mkdir()
         subprocess.run(
             [
                 "hdiutil",
@@ -73,9 +234,12 @@ def main():
             pathlib.Path(os.environ["RUNNER_TEMP"])
             / "omascribe-installed/OmaScribe.app"
         )
-        application.parent.mkdir(exist_ok=True)
         try:
             source = next(mount.glob("*.app"))
+            assert_package_tree(mount, source / "Contents/Resources/native", args.target)
+            if application.exists() or application.is_symlink():
+                raise RuntimeError("DMG readback requires a fresh application directory")
+            application.parent.mkdir(exist_ok=True)
             subprocess.run(
                 ["ditto", str(source), str(application)], check=True, timeout=120
             )
@@ -88,6 +252,16 @@ def main():
         app = application / "Contents/MacOS/omascribe"
     assert app.is_file(), app
     assert assets.is_dir(), (str(assets), [str(p) for p in assets.parent.parent.iterdir()] if assets.parent.parent.is_dir() else [])
+    installers = [item[0] for item in linux_packages] if linux else [installer]
+    checked_names = [path.name for path in installers]
+    (results / "installer-readback.json").write_text(
+        json.dumps(
+            {"schema": 1, "commit": commit, "target": args.target, "installers": checked_names},
+            indent=2,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    print("Base installer inventory passed:", ", ".join(checked_names), flush=True)
     runtime = assets / "runtime"
     cli = runtime / ("omascribe-cli" + suffix)
     results = ROOT / "ci-results"
@@ -200,23 +374,7 @@ def main():
         cases = json.loads(
             (ROOT / "tests/fixtures/document-cases.json").read_text(encoding="utf-8")
         )
-        assert cases and len({c["name"] for c in cases}) == len(cases)
-        for case in [c["name"] for c in cases]:
-            subprocess.run(
-                [
-                    "python",
-                    str(ROOT / "tests/evaluate.py"),
-                    "--cli",
-                    str(cli),
-                    "--case",
-                    case,
-                    "--output",
-                    str(results / (case + ".json")),
-                ],
-                env=env,
-                check=True,
-                timeout=700,
-            )
+        run_document_cases(cli, env, results, cases, target=args.target)
         # Smoke launch checks main process survival, not microphone permission or visual quality.
         with (results / "launch.log").open("wb") as log:
             process = subprocess.Popen(
@@ -236,7 +394,7 @@ def main():
             {
                 "passed": True,
                 "target": args.target,
-                "commit": os.environ["GITHUB_SHA"],
+                "commit": commit,
                 "checks": [
                     "installed assets",
                     "ASR multi-take and retranscription",
@@ -254,52 +412,39 @@ def main():
         ),
         encoding="utf-8",
     )
-    output = ROOT / "release-assets"
-    output.mkdir(exist_ok=True)
-    version = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
-    label = {
-        "aarch64-apple-darwin": "macOS-AppleSilicon",
-        "x86_64-apple-darwin": "macOS-Intel",
-        "x86_64-pc-windows-msvc": "Windows-x64",
-        "x86_64-unknown-linux-gnu": "Linux-x64",
-    }[args.target]
-    installers = [item[0] for item in linux_packages] if linux else [installer]
-    for package in installers:
-        destination = output / f"OmaScribe_{version}_{label}{package.suffix}"
-        shutil.copy2(package, destination)
-        with destination.open("rb") as f:
-            digest = hashlib.file_digest(f, "sha256").hexdigest()
-        assert 1_000_000 < destination.stat().st_size < 2_000_000_000
-        (output / (destination.name + ".sha256")).write_text(
-            digest + "  " + destination.name + "\n", encoding="utf-8", newline="\n"
-        )
     # Verify each updater payload and its signed version before publishing metadata.
     if windows:
-        updater = installer
-        updater_name = f"OmaScribe_{version}_{label}.exe"
+        destination = installer
     elif linux:
-        updater = appimage
-        updater_name = f"OmaScribe_{version}_{label}.AppImage"
+        destination = appimage
     else:
-        updater = next((bundle / "macos").glob("*.app.tar.gz"))
-        updater_name = f"OmaScribe_{version}_{label}.app.tar.gz"
-    destination = output / updater_name
-    if not destination.exists():
-        shutil.copy2(updater, destination)
-        with destination.open("rb") as f:
-            digest = hashlib.file_digest(f, "sha256").hexdigest()
-        (output / (updater_name + ".sha256")).write_text(digest + "  " + updater_name + "\n", encoding="utf-8", newline="\n")
+        updater_source = next((bundle / "macos").glob("*.app.tar.gz"))
+        destination = stage_artifact(updater_source, ".app.tar.gz")
+    updater_name = destination.name
     sig = output / (updater_name + ".sig")
-    shutil.copy2(pathlib.Path(str(updater) + ".sig"), sig)
+    shutil.copy2(pathlib.Path(str(updater_source) + ".sig"), sig)
     key_file = results / "updater.pub"
     key_file.write_text(json.loads((ROOT / "src-tauri/tauri.conf.json").read_text(encoding="utf-8"))["plugins"]["updater"]["pubkey"], encoding="utf-8")
     subprocess.run([str(cli), "verify-update", str(destination), str(sig), str(key_file), version], check=True, timeout=180)
+    if not (windows or linux):
+        assert_mac_archive(destination, args.target)
+        print("Full macOS updater inventory passed:", updater_name, flush=True)
     # Corrupted bytes and relabeled versions must be rejected by the same verifier.
     corrupt = results / "corrupt-update.bin"
     corrupt.write_bytes(b"not the signed installer")
     for payload, expected_version in [(corrupt, version), (destination, "99.0.0")]:
         result = subprocess.run([str(cli), "verify-update", str(payload), str(sig), str(key_file), expected_version], capture_output=True, timeout=180)
         assert result.returncode != 0, "Invalid update was accepted"
+    artifacts = installers if destination in installers else [*installers, destination]
+    for artifact in artifacts:
+        if artifact in installers:
+            assert 1_000_000 < artifact.stat().st_size < 2_000_000_000
+        with artifact.open("rb") as f:
+            digest = hashlib.file_digest(f, "sha256").hexdigest()
+        (output / (artifact.name + ".sha256")).write_text(
+            digest + "  " + artifact.name + "\n", encoding="utf-8", newline="\n"
+        )
+        write_package_receipt(artifact, target=args.target, commit=commit, digest=digest)
     (output / (updater_name + ".verified.json")).write_text(json.dumps({"verified": True, "version": version, "file": updater_name}), encoding="utf-8")
     shutil.make_archive(
         str(output / f"OmaScribe_{version}_{label}_validation"), "zip", results

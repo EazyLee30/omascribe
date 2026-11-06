@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "scope": "Affected production cases only; not a frozen candidate or complete release regression",
+  "passed": false,
+  "release_eligible": false,
+  "application_revision": "d02b3211d90de1f0469beb257c36c04bef04b9e5",
+  "binary_source_matches_application_revision": true,
+  "compile_identity_note": "Compiled immediately before the source commit; the stored source SHA is independently reconstructed from the committed tree using Rust Path component order and matches. The revision-at-compile label remains the preceding commit.",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "0944e72fb5028e972dfd663024f55300953b0375",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "3e36de76ffd96ad2806f576b9b81bb54b43cddf50ac596d2b432dfc9a84d5238",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "bf337d661826755cffb064c596a2818a627706d9501d6d709bac7b38bdc55674",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "fad18b9ff0e31ea4918c24b255477f7e0b2373f0c82f0a69ea64494474db2822",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "d02b3211d90de1f0469beb257c36c04bef04b9e5",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "preferences": {
+    "inference_backend": "metal",
+    "threads": 1,
+    "context_size": 2048,
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": false,
+    "translation_mode": "off",
+    "diarization": false,
+    "use_memory": false,
+    "use_knowledge": false,
+    "llm_model": "qwen3-1.7b"
+  },
+  "incremental_enabled": false,
+  "catchup_enabled": false,
+  "automatic_pattern_result": "8/8",
+  "manual_open_issue": "Q2: completion phase still says Morgan will run it on Thursday after confirming it is completed. The old unfinished-state guard demanded a past negative despite the later completion. Do not count the regex pass as semantic acceptance.",
+  "cases": [
+    {
+      "case": "en_budget_invoice_same_amount",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 3,
+      "body": [
+        "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+      ],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_budget_invoice_same_amount.json",
+      "raw_sha256": "e18ef7691aa803162e8c3504028763bb5b67be3ea4814df70aef0a9eef030673"
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 1,
+      "body": ["The meeting has ended, and no further action has been taken."],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_explicit_meeting_closure.json",
+      "raw_sha256": "3cfa86e1814e81869fa727fea0bb25bdcd37d7ebc6aeed562211bd4f62e15015"
+    },
+    {
+      "case": "en_incremental_completion",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 2,
+      "body": [
+        "The upload verification was not completed initially. Morgan will run it on Thursday. Later, Morgan confirms that the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+      ],
+      "manual_release_passed": false,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_incremental_completion.json",
+      "raw_sha256": "ab1de1adf260a380a9f769e01f435e4dba3b412f1b08db559e65932cee528d3d"
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 4,
+      "body": [
+        "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+      ],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_incremental_separate_topics.json",
+      "raw_sha256": "107a4152431bcc4127aaac8c0da7feb7c097f9c0dde61cf534be81afcf15938e"
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 1,
+      "body": ["The Budget of 3000 is not approved."],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_sparse_unapproved.json",
+      "raw_sha256": "1941fd4a4b2afb768015543c35d6b3786c8df04e0be3fe47010aa787c986c68f"
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 1,
+      "body": ["The Budget of 3000 has not been approved."],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/en_sparse_unapproved_passive.json",
+      "raw_sha256": "46d953923968c3addb0310be1e19914668ce08761156a9e6fab5217f4f4db769"
+    },
+    {
+      "case": "zh_correction",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 2,
+      "body": [
+        "预算先按3000算，李明负责。更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
+      ],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/zh_correction.json",
+      "raw_sha256": "cc9b990164fd2fdc364b79e87d854c3f2f59b0e48662ab0beb0cf89de1530d5b"
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "automated_passed": true,
+      "errors": [],
+      "coverage": 3,
+      "body": [
+        "展览暂定周五开放，刘老师负责布置。  \n周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。  \n参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+      ],
+      "manual_release_passed": true,
+      "raw_report": "artifacts/benchmarks/release035-grounding-d02b321/zh_incremental_withdrawal.json",
+      "raw_sha256": "3658198b736efc22590723f5907f0d5dfcc8293bc428143f3a3c124c1db061b9"
+    }
+  ],
+  "source_checks": "54 notes tests passed, 2 ignored; strict core clippy passed. Follow-up 4d18157 tightens current-vs-historical budget cue scope and passes the same notes checks; its model output has not been re-evaluated.",
+  "negative_evidence_retained": [
+    "artifacts/benchmarks/release035-current-view-dev3",
+    "artifacts/benchmarks/release035-current-view-dev4",
+    "artifacts/benchmarks/release035-current-view-dev5"
+  ]
+}

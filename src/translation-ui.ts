@@ -1,4 +1,4 @@
-import type { Segment, Snapshot } from "./types";
+import type { Segment, TranscriptSnapshot } from "./types";
 import { esc, tr } from "./workspace-ui";
 export const translationChoices = () => [
   ["off", tr("原文", "Original", "原文")],
@@ -14,7 +14,7 @@ export function translationSelect(id: string, value = "off") {
     )
     .join("")}</select>`;
 }
-export function passageHTML(segment: Segment, snapshot: Snapshot) {
+export function passageHTML(segment: Segment, snapshot: TranscriptSnapshot) {
   const mode = snapshot.translation_mode;
   const translated = snapshot.translations?.[segment.id];
   if (!mode || mode === "off") return `<p>${esc(segment.text)}</p>`;

@@ -1,0 +1,239 @@
+{
+  "schema": 1,
+  "observed_at": "2026-10-31T06:45:31.267488+00:00",
+  "status": "candidate_rejected_and_reverted",
+  "candidate_commit": "1a437c337b678ce75d531b0f1d0c7aa86bfee617",
+  "revert_commit": "8327d2daa784910184428f9d259b87558852069c",
+  "retained_inference_source": "d3b56dd47c9487902ba74aae771f591f5dfa5fb8",
+  "retained_bytes_equal_d3b56dd": true,
+  "release": {
+    "stable": "0.3.4",
+    "candidate": "0.3.5",
+    "published": false,
+    "q16_passed": false
+  },
+  "candidate": {
+    "change": "Fixed final application-owned language/prose reminder after unchanged ordinary source JSON",
+    "unchanged": [
+      "Source order and index1 bytes",
+      "Model/runtime, every validator, seed42,temperature0.1,max440,two-request quota",
+      "Prepared/incremental/typed repair protocols"
+    ],
+    "fit": "Complete reminder included before fit decisions",
+    "model_free_checks": {
+      "core_passed": 536,
+      "ignored": 12,
+      "cli": 2,
+      "integration": 29,
+      "core_clippy": true,
+      "format": true,
+      "independent_review": true
+    }
+  },
+  "actual": {
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "execution": "explicit-generation",
+    "automatic_scheduler": false,
+    "harness_invocations": 1,
+    "jobs": 1,
+    "harness_passed": false,
+    "asset_audit_passed": true,
+    "wall_seconds_including_preparation": 5.57,
+    "costs": {
+      "trace_error_count": 0,
+      "trace_errors": {},
+      "observed_attempted_requests": 2,
+      "observed_generation_rows": 2,
+      "unmeasured_response_costs": 0,
+      "attempted_requests": 2,
+      "observed_responses": 2,
+      "completed_responses": 2,
+      "validation_failures": 2,
+      "request_ms": 2069,
+      "observed_request_ms": 2069,
+      "input_tokens": 987,
+      "output_tokens": 138,
+      "cached_tokens": 200,
+      "prefill_ms": 359.182,
+      "decode_ms": 1704.94
+    },
+    "runs": [
+      {
+        "phase": 1,
+        "batch": 1,
+        "cursor": 0,
+        "actual_message_counts": [
+          3,
+          3
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "stage": "compose",
+            "mode": "compose",
+            "raw_body": "当迪大学的 PAMELA FURGO 森教授指出，尽管主舞台上的音乐已经结束，但嘉年华可能仍有部分区域继续播放音乐直到深夜。邓迪大学的潘 MALE FERGUSON 教授指出，如果记者公布嫌疑人的照片等信息，似乎存在危害性。",
+            "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+            "normalized_draft_is_null": true,
+            "usage": {
+              "completion_tokens": 68,
+              "prompt_tokens": 475,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 831.462,
+                "predicted_n": 68,
+                "predicted_per_second": 80.58095258712966,
+                "predicted_per_token_ms": 12.409880597014926,
+                "prompt_ms": 207.413,
+                "prompt_n": 475,
+                "prompt_per_second": 2290.116820064316,
+                "prompt_per_token_ms": 0.4366589473684211
+              },
+              "total_tokens": 543
+            }
+          },
+          {
+            "attempt": 2,
+            "stage": "repair",
+            "mode": "compose",
+            "raw_body": "当迪大学的 PAMELA FURGO 森教授指出，尽管主舞台的音乐已经结束，但 festival 中可能仍有部分区域继续播放音乐直到深夜。邓迪大学的潘 MALE FERGUSON 教授也指出，如果记者公布嫌疑人的照片等信息，似乎存在危害性。",
+            "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+            "normalized_draft_is_null": true,
+            "usage": {
+              "completion_tokens": 70,
+              "prompt_tokens": 512,
+              "prompt_tokens_details": {
+                "cached_tokens": 200
+              },
+              "timings": {
+                "cache_n": 200,
+                "predicted_ms": 873.478,
+                "predicted_n": 70,
+                "predicted_per_second": 78.99454823132352,
+                "predicted_per_token_ms": 12.659101449275362,
+                "prompt_ms": 151.769,
+                "prompt_n": 312,
+                "prompt_per_second": 2055.7557867548708,
+                "prompt_per_token_ms": 0.48643910256410255
+              },
+              "total_tokens": 582
+            }
+          }
+        ]
+      }
+    ],
+    "cursor_after": 0,
+    "article_committed": false,
+    "source6_selected": false,
+    "original_sources_and_notes_exact": true,
+    "translations_generated": 0,
+    "backend_observation": {
+      "backend": "metal",
+      "device": "Apple M5",
+      "offloaded_layers": "29/29",
+      "configured_budget_mib": 4096,
+      "worker_startup_ms": 618,
+      "quality_passed": false,
+      "limitation": "Actual native offload is observed for this rejected case, not a general speed, energy, memory or M-series acceptance claim"
+    }
+  },
+  "observations": [
+    "Raw Chinese prose assigns the music claim from anonymous sources1/3/5 to the professor in source2; that source actually reports conditional photograph-publication risk",
+    "Both raw attempts upgrade MAY HAVE FINISHED to 音乐已经结束; repair also retains the ordinary English word festival",
+    "Both raw drafts contain both university literals; final-report Missing university assertions concern no committed article, not absence of those raw literals",
+    "The observed first rejection is changed spelling PAMELA FURGO 森, with normalized_draft=null",
+    "The task_roles precheck ran without an error. Later document-level attribution, fact and language validation was not reached; manual raw review is not an observed validator rejection",
+    "First no-progress job stopped. Source6 remains pending, neither skipped nor falsely acknowledged",
+    "Rejected prose and different job counts do not establish a speed or resource improvement"
+  ],
+  "corrections": {
+    "generic_hint": "False hypothesis: the existing 专有名称 branch already returns the plain reported-name error. Unproven owned patch stopped/restored; compiler failure is not behavioral RED",
+    "joined_context": "False hypothesis: current Engine.writer_context probe finds space/newline joins identical with no spellings for selected/all Q16 sources",
+    "session_local_retry": "Not implemented: default worker retention0 and optional<=30s cannot bridge automatic failure delays90–360s. A same-live-worker guard would not fix the normal repeated-generation path"
+  },
+  "cleanup": {
+    "original_models": 6,
+    "installed_runtime_files": 4,
+    "original_hashes_and_metadata_unchanged": true,
+    "owned_clone_and_borrowed_stores_absent": true,
+    "owned_processes_gone": true,
+    "raw_evidence_preserved": true,
+    "physical_reclaimed_bytes": null,
+    "limitation": "Independent review rehashed originals/runtime and checked recorded processes. Per-clone pre-delete content is supported by runner records, not a fabricated independent deletion observation"
+  },
+  "next": {
+    "stop_current_candidate": true,
+    "no_retuning": true,
+    "automatic_identical_failure_suppression_still_open": true,
+    "producer_requirement": "Preserve actor-to-claim association and modality as well as exact names and target language; style alone cannot pass",
+    "research": {
+      "status": "Metadata only; no downloads, adapter, default, model or budget change",
+      "source": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507",
+      "verified_vendor_description": "4B qwen3 architecture, Apache-2.0, non-thinking only; generic vendor benchmarks do not verify these minutes",
+      "gguf": "Guessed official Qwen/Qwen3-4B-Instruct-2507-GGUF repo not found; no official quantization/size/hash binding assumed",
+      "future_gate": "Pin and verify a compatible artifact before any bounded difficult-case quality-and-total-cost comparison"
+    }
+  },
+  "limits": [
+    "One rejected original manual case on installed Apple Silicon/Metal assets; not general quality/hardware acceptance",
+    "Exactly two new model sends; no SDK/component/installer builds, weight downloads, extra request budget or retries",
+    "CLI rebuilt after revert; retained production inference files exactly match checked d3b56dd"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/state.json",
+      "sha256": "cc6d7c42af6b3416c5e9a99fde7024944f7ae0124c14232d42504f014344711a"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/trial/report.json",
+      "sha256": "e6e76fcfc87b0cdfcccbf6a3d0282136aaf224dd224babd9453fb089d6393aac"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/independent-review.json",
+      "sha256": "dace97370b32bd9d6af8f0158fbd2b99f8d6ed4caed77be5d60227852991c74c"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/cleanup-review.json",
+      "sha256": "4762467e6a079a3314e84183019b014c14bade550715f80605536da279d891f8"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/raw-trace-accounting.json",
+      "sha256": "3fb5115e794e4a763711f8f4479defb104c2e0d96f565147f5d554a34dac16a9"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/restored-cli.json",
+      "sha256": "41b9eab92286ecd7061bbe44faf0d7f248bbbc2b124d029efa77dc15dbcd0096"
+    },
+    {
+      "path": "artifacts/writer-task-reminder-candidate-2026-10-31/frozen-review.json",
+      "sha256": "4753c01b8bb3e90595e7c8aa6514e7f426253f91fc1c2e3fd4838d30da5f7b1f"
+    },
+    {
+      "path": "artifacts/writer-task-reminder-audit-2026-10-31/summary.json",
+      "sha256": "83e752279848f81d252e95b79a78c6bbddd709ca2f2a3acf862f08f0dfb685a7"
+    },
+    {
+      "path": "artifacts/writer-context-join-audit-2026-10-31/summary.json",
+      "sha256": "7d3fdf9d2288a5bfaf0fa6361384652e91b7df08ae5e906348a8408746b329c4"
+    },
+    {
+      "path": "artifacts/minutes-name-feedback-audit-2026-10-31/stopped.json",
+      "sha256": "0967cbfe4745098ec1ae0d0bb68fb2d10beef5ce47006c4aa12ad853450fdbad"
+    },
+    {
+      "path": "artifacts/reported-name-repair-2026-10-31/correction.json",
+      "sha256": "bc107440711eb9b2edb7ccb311246883ca35755e63e16098c3e7d866ce69522a"
+    },
+    {
+      "path": "artifacts/minutes-auto-retry-audit-2026-10-31/session-local-review.json",
+      "sha256": "ece8e49f10966d20b8572e379c79cc932bb1ea3b2d57b2c628c65bcb3d2043c8"
+    },
+    {
+      "path": "artifacts/q16-task-reminder-2026-10-31/trial/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/llm-runtime.log",
+      "sha256": "c135c304866e2ca296b01797924d91a3e120968e0eef5bd76014e0ddc679cfcf"
+    }
+  ]
+}

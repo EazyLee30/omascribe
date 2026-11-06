@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "status": "CHECKED_SOURCE_PUSHED_NO_RELEASE",
+  "production_source": "9679c144730c766fe0f3645c7400831ee23902a3",
+  "changes": [
+    "A plain or bold recording topic now uses the existing weak concept path. It remains ASR focus without forcing an English name or singularizing recordings.",
+    "Mac Models entry and polling skip the optional acceleration catalog with no Mac UI consumer. model_status and Windows/Linux component refresh behavior remain."
+  ],
+  "behavior_red": {
+    "note_source": "f5ef1b4",
+    "actual_result": "0 passed / 2 failed",
+    "observed_caption": "The recording are incomplete.",
+    "expected_caption": "The recordings are incomplete.",
+    "chinese_minutes_were_rejected": true,
+    "existing_product_and_explicit_term_control": "1 passed",
+    "mac_ui_source": "4997dd4370280a73aa200b7dee3e6430a0551bde",
+    "mac_ui_result": {
+      "exit": 1,
+      "pass_groups": 8,
+      "fail_groups": 1,
+      "failure": "macos optional component queries: initial Models entry, 1 !== 0"
+    },
+    "mac_component_queries_before": {
+      "initial": 1,
+      "five_ticks": 6,
+      "download_terminal": 12,
+      "reentry": 13
+    }
+  },
+  "checked_result": {
+    "core": {
+      "passed": 713,
+      "ignored": 14
+    },
+    "integration": 37,
+    "desktop_shell": 4,
+    "asr": 18,
+    "cli": 2,
+    "strict_workspace_clippy": "passed",
+    "workspace_fmt": "passed",
+    "mounted_settings_ui": "9/9 passed in real Chromium with mocked IPC and controlled ticks",
+    "mac_component_queries_after": {
+      "initial": 0,
+      "five_ticks": 0,
+      "download_terminal": 0,
+      "reentry": 0
+    },
+    "mac_model_status_calls_preserved": [
+      1,
+      6,
+      12,
+      13
+    ],
+    "model_download_states": [
+      "downloading",
+      "verifying",
+      "failed",
+      "installed"
+    ],
+    "windows_linux_component_queries_preserved": [
+      1,
+      6,
+      12,
+      13
+    ],
+    "existing_acceleration_ui": "passed",
+    "typescript_no_emit": "passed",
+    "affected_source_prettier": "passed",
+    "source_equivalence": "Root git diff --exit-code proved the checked UI files/test equal 20f261e and terminology/integration files equal 7ee3b22 after cherry-pick."
+  },
+  "protected_behavior": [
+    "Lowercase OmaScribe and nvidia still guide actual names.",
+    "Explicit kind=term recording still requires its declared spelling.",
+    "No change to model download polling or Windows/Linux component fallback refresh."
+  ],
+  "evidence": {
+    "artifacts/note-generic-focus-2026-11-06/f5ef1b4-positive-controls.log": "3a3cfc47fedafe00c23aa99b6ee5d479403ceaacec2dee8b82af359b7e07abbf",
+    "artifacts/note-generic-focus-2026-11-06/9679c14-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/note-generic-focus-2026-11-06/9679c14-workspace.log": "0dbec1f677adfb1f87d695777b326978f79f4b4940a5fdc13c5e886512a7ad89",
+    "artifacts/note-generic-focus-2026-11-06/f5ef1b4-note-context-red.log": "fee591fccc852b700b0201b49eb60bad26575180f59156a964b9c542deb3e410",
+    "artifacts/note-generic-focus-2026-11-06/9679c14-clippy.log": "f542ad60166155652585f2c1f62306a3ef145144c5bdf9b98340d97c6e4434f0"
+  },
+  "ui_proof_sha256": "1c40387e46c17b37dc0b0381462e153860c2dbd3f850f2159991f1da0d66cdab",
+  "same_source_ci": {
+    "production_source": "9679c144730c766fe0f3645c7400831ee23902a3",
+    "all_runs": "success",
+    "runs": [
+      {
+        "id": 42063545348,
+        "name": "Website validation",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545348"
+      },
+      {
+        "id": 42063545293,
+        "name": "Linux compatibility",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545293"
+      },
+      {
+        "id": 42063545339,
+        "name": "CI",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545339"
+      },
+      {
+        "id": 42063545281,
+        "name": "Optional acceleration components",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/42063545281"
+      }
+    ],
+    "windows_core_job": 127371456522,
+    "windows_core_conclusion": "success",
+    "optional_gpu_build_and_catalog": "skipped",
+    "scope": "Source checks only, no physical GPU or installer acceptance claim."
+  },
+  "limits": [
+    "These fixes performed zero model requests or downloads. The separately reported prepared-fact-node trial made two requests and failed.",
+    "No CPU/energy/latency percentage measured; the Mac claim is only the eliminated unused IPC/catalog checks.",
+    "No installer or release was built or published; physical Windows/Linux GPU and installation acceptance remain open."
+  ]
+}

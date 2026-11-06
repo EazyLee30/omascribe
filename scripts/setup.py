@@ -2,6 +2,7 @@
 """Pinned, checksum-verified offline assets. Network access is setup-only."""
 
 import argparse, hashlib, json, os, pathlib, platform, shutil, subprocess, tarfile, urllib.request
+from runtime_inventory import assert_base_runtime
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((REPO / "models.lock.json").read_text())
@@ -88,8 +89,10 @@ def runtime():
         stamp.exists()
         and json.loads(stamp.read_text()).get("revision") == spec["revision"]
         and json.loads(stamp.read_text()).get("metal", False) == metal
+        and json.loads(stamp.read_text()).get("optional_gpu_backends") == []
         and (target / "llama-server").exists()
     ):
+        assert_base_runtime(target)
         print("Pinned llama.cpp runtime already installed")
         return
     for program in ("git", "cmake", "c++"):
@@ -113,6 +116,10 @@ def runtime():
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=OFF",
         "-DGGML_BACKEND_DL=OFF",
+        "-DGGML_CUDA=OFF",
+        "-DGGML_HIP=OFF",
+        "-DGGML_VULKAN=OFF",
+        "-DGGML_SYCL=OFF",
         "-DGGML_METAL=" + ("ON" if metal else "OFF"),
         "-DGGML_METAL_EMBED_LIBRARY=" + ("ON" if metal else "OFF"),
         "-DGGML_ACCELERATE=" + ("ON" if metal else "OFF"),
@@ -145,10 +152,11 @@ def runtime():
     shutil.copy2(source / "LICENSE", target / "LICENSE")
     stamp.write_text(
         json.dumps(
-            dict(revision=spec["revision"], cpu=platform.machine(), metal=metal, build="local"), indent=2
+            dict(revision=spec["revision"], cpu=platform.machine(), metal=metal, optional_gpu_backends=[], build="local"), indent=2
         )
         + "\n"
     )
+    assert_base_runtime(target)
     print("Local inference runtime ready:", target, flush=True)
 
 
@@ -215,7 +223,7 @@ def overlay():
     shutil.copy2(
         build / "src/libgtk-layer-shell.so.0", target / "libgtk-layer-shell.so.0"
     )
-    for license in (REPO / "licenses").glob("gtk-layer-shell-*.txt"):
+    for license in (REPO / "packaging/licenses").glob("gtk-layer-shell-*.txt"):
         shutil.copy2(license, target / license.name)
     stamp.write_text(json.dumps(spec, indent=2) + "\n")
     print("Native Wayland captions ready:", target)

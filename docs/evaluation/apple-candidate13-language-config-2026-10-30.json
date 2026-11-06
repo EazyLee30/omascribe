@@ -1,0 +1,799 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "source": "67e04649189020438cdc4e7c393124f359a6dea1",
+  "candidate": 13,
+  "immutable_branch": "codex/release-0.3.5-candidate-13",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "stable_release": "0.3.4",
+  "interrupted_operator_trial": {
+    "reason": "Operator configuration mismatch: forced Chinese minutes conflicts with original English fixture constraints. Preserve original outputs/failures; re-run same source with original auto language.",
+    "parent": {
+      "pid": 99282,
+      "create_time": 1793292093.069175
+    },
+    "observed_children": [
+      {
+        "pid": 1042,
+        "create_time": 1793292308.246316,
+        "name": "omascribe-cli"
+      },
+      {
+        "pid": 1044,
+        "create_time": 1793292310.720041,
+        "name": "llama-server"
+      }
+    ],
+    "all_owned_children_exited": true,
+    "source": "67e04649189020438cdc4e7c393124f359a6dea1",
+    "completed_cases": 23,
+    "failed": [
+      "en_owner_and_deadline",
+      "en_incremental_separate_topics"
+    ],
+    "terminal": true,
+    "aborted": true,
+    "passed": false
+  },
+  "complete_trial": {
+    "passed": false,
+    "cases": 68,
+    "automatic_passes": 65,
+    "automatic_failures": 3,
+    "original65_all_pass": true,
+    "fixture_sha256": "e1e086da7d4a28435577c69f8f53ccc668d1237651e8cab93de97ef2571c6cb3",
+    "preferences": {
+      "inference_backend": "metal",
+      "threads": 1,
+      "context_size": 2048,
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false,
+      "llm_model": "qwen3-1.7b"
+    },
+    "environment_before": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "67e04649189020438cdc4e7c393124f359a6dea1",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "e8e8b81e825fe90600ba14d75d7e658a00475242dfbe0afeddd343fbef1b14a7",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "d08edb59fa376fa7a6a0e1f116d3a46dd9a4e83f1c1e5d9c5975ca64d51f9d15",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "67e04649189020438cdc4e7c393124f359a6dea1",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "environment_after": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "67e04649189020438cdc4e7c393124f359a6dea1",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "e8e8b81e825fe90600ba14d75d7e658a00475242dfbe0afeddd343fbef1b14a7",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "d08edb59fa376fa7a6a0e1f116d3a46dd9a4e83f1c1e5d9c5975ca64d51f9d15",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "67e04649189020438cdc4e7c393124f359a6dea1",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "environment_equal": true,
+    "existing23_assets_unchanged": true,
+    "results": [
+      {
+        "case": "zh_budget_guess",
+        "passed": true,
+        "seconds": 6.938,
+        "errors": []
+      },
+      {
+        "case": "en_owner_and_deadline",
+        "passed": true,
+        "seconds": 6.914,
+        "errors": []
+      },
+      {
+        "case": "zh_correction",
+        "passed": true,
+        "seconds": 7.321,
+        "errors": []
+      },
+      {
+        "case": "bilingual_scope",
+        "passed": true,
+        "seconds": 7.125,
+        "errors": []
+      },
+      {
+        "case": "zh_calendar_citations",
+        "passed": true,
+        "seconds": 7.118,
+        "errors": []
+      },
+      {
+        "case": "zh_connected_minutes",
+        "passed": true,
+        "seconds": 8.094,
+        "errors": []
+      },
+      {
+        "case": "zh_product_spelling",
+        "passed": true,
+        "seconds": 7.155,
+        "errors": []
+      },
+      {
+        "case": "zh_empty_greetings",
+        "passed": true,
+        "seconds": 6.06,
+        "errors": []
+      },
+      {
+        "case": "zh_phased_correction",
+        "passed": true,
+        "seconds": 12.77,
+        "errors": []
+      },
+      {
+        "case": "zh_named_speakers",
+        "passed": true,
+        "seconds": 7.068,
+        "errors": []
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "passed": true,
+        "seconds": 7.1,
+        "errors": []
+      },
+      {
+        "case": "zh_minutes_from_en",
+        "passed": true,
+        "seconds": 7.137,
+        "errors": []
+      },
+      {
+        "case": "zh_actual_report_publication",
+        "passed": true,
+        "seconds": 6.9,
+        "errors": []
+      },
+      {
+        "case": "zh_report_delivery_variant",
+        "passed": true,
+        "seconds": 6.889,
+        "errors": []
+      },
+      {
+        "case": "zh_physical_report_ownership",
+        "passed": true,
+        "seconds": 6.898,
+        "errors": []
+      },
+      {
+        "case": "zh_long_context_state",
+        "passed": true,
+        "seconds": 18.138,
+        "errors": []
+      },
+      {
+        "case": "zh_human_paragraph_protected",
+        "passed": true,
+        "seconds": 12.186,
+        "errors": []
+      },
+      {
+        "case": "zh_note_name_spelling",
+        "passed": true,
+        "seconds": 7.144,
+        "errors": []
+      },
+      {
+        "case": "en_generic_note_name",
+        "passed": true,
+        "seconds": 6.915,
+        "errors": []
+      },
+      {
+        "case": "zh_name_context_is_not_evidence",
+        "passed": true,
+        "seconds": 6.926,
+        "errors": []
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "passed": true,
+        "seconds": 7.693,
+        "errors": []
+      },
+      {
+        "case": "zh_windows_gpu_keyword_lines",
+        "passed": true,
+        "seconds": 7.279,
+        "errors": []
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "passed": true,
+        "seconds": 21.499,
+        "errors": []
+      },
+      {
+        "case": "zh_incremental_withdrawal",
+        "passed": true,
+        "seconds": 20.503,
+        "errors": []
+      },
+      {
+        "case": "en_incremental_completion",
+        "passed": true,
+        "seconds": 11.349,
+        "errors": []
+      },
+      {
+        "case": "en_sparse_unapproved",
+        "passed": true,
+        "seconds": 6.88,
+        "errors": []
+      },
+      {
+        "case": "en_sparse_unapproved_passive",
+        "passed": true,
+        "seconds": 6.895,
+        "errors": []
+      },
+      {
+        "case": "en_explicit_meeting_closure",
+        "passed": true,
+        "seconds": 6.887,
+        "errors": []
+      },
+      {
+        "case": "en_budget_invoice_same_amount",
+        "passed": true,
+        "seconds": 7.131,
+        "errors": []
+      },
+      {
+        "case": "en_completion_independent_pending",
+        "passed": true,
+        "seconds": 11.807,
+        "errors": []
+      },
+      {
+        "case": "zh_incremental_completion",
+        "passed": true,
+        "seconds": 10.462,
+        "errors": []
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "passed": true,
+        "seconds": 7.77,
+        "errors": []
+      },
+      {
+        "case": "en_windows_long_acceptance",
+        "passed": true,
+        "seconds": 7.734,
+        "errors": []
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "passed": true,
+        "seconds": 8.132,
+        "errors": []
+      },
+      {
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "passed": true,
+        "seconds": 17.041,
+        "errors": []
+      },
+      {
+        "case": "zh_mixed_script_task_owner",
+        "passed": true,
+        "seconds": 6.889,
+        "errors": []
+      },
+      {
+        "case": "en_phase_exclusive_scope",
+        "passed": true,
+        "seconds": 6.928,
+        "errors": []
+      },
+      {
+        "case": "en_phase_nonexclusive_scope",
+        "passed": true,
+        "seconds": 6.9,
+        "errors": []
+      },
+      {
+        "case": "en_toolbar_existing_state",
+        "passed": true,
+        "seconds": 6.961,
+        "errors": []
+      },
+      {
+        "case": "en_toolbar_requested_state",
+        "passed": true,
+        "seconds": 7.106,
+        "errors": []
+      },
+      {
+        "case": "en_compound_scope_and_request",
+        "passed": true,
+        "seconds": 7.336,
+        "errors": []
+      },
+      {
+        "case": "en_named_download_owner",
+        "passed": true,
+        "seconds": 7.484,
+        "errors": []
+      },
+      {
+        "case": "en_other_named_task_owner",
+        "passed": true,
+        "seconds": 7.338,
+        "errors": []
+      },
+      {
+        "case": "en_future_named_task_owner",
+        "passed": true,
+        "seconds": 6.895,
+        "errors": []
+      },
+      {
+        "case": "en_generic_task_actor",
+        "passed": true,
+        "seconds": 6.873,
+        "errors": []
+      },
+      {
+        "case": "en_metric_report_requirements",
+        "passed": true,
+        "seconds": 7.077,
+        "errors": []
+      },
+      {
+        "case": "en_word_metric_only",
+        "passed": true,
+        "seconds": 6.937,
+        "errors": []
+      },
+      {
+        "case": "en_sentence_metric_allowed",
+        "passed": true,
+        "seconds": 6.855,
+        "errors": []
+      },
+      {
+        "case": "en_closed_metric_request",
+        "passed": true,
+        "seconds": 6.923,
+        "errors": []
+      },
+      {
+        "case": "zh_metric_acronyms",
+        "passed": true,
+        "seconds": 6.937,
+        "errors": []
+      },
+      {
+        "case": "en_metric_with_following_fact",
+        "passed": true,
+        "seconds": 6.915,
+        "errors": []
+      },
+      {
+        "case": "en_submission_schedule",
+        "passed": true,
+        "seconds": 6.889,
+        "errors": []
+      },
+      {
+        "case": "en_test_link_schedule",
+        "passed": true,
+        "seconds": 7.122,
+        "errors": []
+      },
+      {
+        "case": "en_actual_submission_completion",
+        "passed": true,
+        "seconds": 6.683,
+        "errors": []
+      },
+      {
+        "case": "en_actual_page_publication",
+        "passed": true,
+        "seconds": 6.915,
+        "errors": []
+      },
+      {
+        "case": "zh_explicit_this_weekday",
+        "passed": true,
+        "seconds": 6.941,
+        "errors": []
+      },
+      {
+        "case": "zh_explicit_next_weekday",
+        "passed": true,
+        "seconds": 6.922,
+        "errors": []
+      },
+      {
+        "case": "zh_absolute_weekday_scope",
+        "passed": true,
+        "seconds": 6.901,
+        "errors": []
+      },
+      {
+        "case": "zh_recording_retention_local",
+        "passed": true,
+        "seconds": 7.348,
+        "errors": []
+      },
+      {
+        "case": "zh_notes_only_retention",
+        "passed": true,
+        "seconds": 6.924,
+        "errors": []
+      },
+      {
+        "case": "zh_unqualified_weekday",
+        "passed": true,
+        "seconds": 6.907,
+        "errors": []
+      },
+      {
+        "case": "zh_unspoken_honorific_note",
+        "passed": true,
+        "seconds": 7.401,
+        "errors": []
+      },
+      {
+        "case": "en_late_note_spelling_sync",
+        "passed": true,
+        "seconds": 6.964,
+        "errors": []
+      },
+      {
+        "case": "zh_adjacent_spoken_model",
+        "passed": true,
+        "seconds": 7.081,
+        "errors": []
+      },
+      {
+        "case": "en_existing_document_spelling_only_sync",
+        "passed": true,
+        "seconds": 10.516,
+        "errors": []
+      },
+      {
+        "case": "en_punctuation_note_captions",
+        "passed": false,
+        "seconds": 7.133,
+        "errors": [
+          "Missing: (?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+          "Missing: (?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+        ]
+      },
+      {
+        "case": "en_generic_note_keeps_source_plural",
+        "passed": false,
+        "seconds": 6.913,
+        "errors": [
+          "Missing: (?:转写|转录)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:完成|结束|完整)",
+          "Missing: (?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ]
+      },
+      {
+        "case": "en_unused_punctuation_notes_add_no_names",
+        "passed": false,
+        "seconds": 6.72,
+        "errors": [
+          "Missing: (?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ]
+      }
+    ],
+    "failed_new_controls": [
+      {
+        "case": "en_punctuation_note_captions",
+        "automatic_result": "FAIL",
+        "errors": [
+          "Missing: (?:尚未|未|没有|不)[^。]{0,25}(?:完成|结束)",
+          "Missing: (?:未|没有|不|尚未)[^。]{0,20}(?:批准|获批)"
+        ],
+        "seconds": 7.133,
+        "article": [
+          "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
+        ],
+        "captions": [
+          "C++ 和 Node.js 未完成本地测试。GPT-4 未批准发布。"
+        ],
+        "classification": "Language configuration omitted from new test: auto selected English minutes, while assertions require Chinese. Caption checks passed. No source/assertion/budget changes will be made.",
+        "planned_fix": "Declare preferences.minutes_language=zh in this appended fixture."
+      },
+      {
+        "case": "en_generic_note_keeps_source_plural",
+        "automatic_result": "FAIL",
+        "errors": [
+          "Missing: (?:转写|转录)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:完成|结束|完整)",
+          "Missing: (?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "seconds": 6.913,
+        "article": [
+          "The transcriptions are incomplete and the report is not approved."
+        ],
+        "captions": [
+          "转录不完整。报告未批准。"
+        ],
+        "classification": "Language configuration omitted from new test: auto selected English minutes, while assertions require Chinese. Caption checks passed. No source/assertion/budget changes will be made.",
+        "planned_fix": "Declare preferences.minutes_language=zh in this appended fixture."
+      },
+      {
+        "case": "en_unused_punctuation_notes_add_no_names",
+        "automatic_result": "FAIL",
+        "errors": [
+          "Missing: (?:报告|报表)[^。]{0,25}(?:尚未|未|没有|不)[^。]{0,20}(?:批准|获批)"
+        ],
+        "seconds": 6.72,
+        "article": [
+          "The report remains unapproved."
+        ],
+        "captions": [
+          "报告尚未批准。"
+        ],
+        "classification": "Language configuration omitted from new test: auto selected English minutes, while assertions require Chinese. Caption checks passed. No source/assertion/budget changes will be made.",
+        "planned_fix": "Declare preferences.minutes_language=zh in this appended fixture."
+      }
+    ]
+  },
+  "checked_configuration_fix": {
+    "original_fixture_sha256": "e1e086da7d4a28435577c69f8f53ccc668d1237651e8cab93de97ef2571c6cb3",
+    "new_fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "original65_same_objects": true,
+    "original65_same_byte_prefix": true,
+    "original_new_case_source_assertions_budgets_unchanged": true,
+    "changed_only": "preferences.minutes_language=zh on the three appended Chinese-output cases"
+  },
+  "code_changes": false,
+  "ci_change": "Include document fixture changes in the Windows core check trigger; SDK component build remains opt-in.",
+  "semantic_review": {
+    "first46_complete": true,
+    "first46_new_regressions": 0,
+    "original65_baseline": "Candidate12; references retained in shard reviews",
+    "last22": "Separate review artifact pending at report creation; not claimed complete here"
+  },
+  "checks": [
+    {
+      "name": "core-asr",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "omascribe-core",
+        "-p",
+        "omascribe-asr",
+        "--locked",
+        "--quiet"
+      ],
+      "exit_code": 0,
+      "seconds": 21.042,
+      "log": "artifacts/candidate13-2026-10-30/core-asr.log"
+    },
+    {
+      "name": "python",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.298,
+      "log": "artifacts/candidate13-2026-10-30/python.log"
+    },
+    {
+      "name": "frontend",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "seconds": 1.973,
+      "log": "artifacts/candidate13-2026-10-30/frontend.log"
+    },
+    {
+      "name": "format",
+      "command": [
+        "npm",
+        "run",
+        "format:check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.512,
+      "log": "artifacts/candidate13-2026-10-30/format.log"
+    },
+    {
+      "name": "rustfmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.338,
+      "log": "artifacts/candidate13-2026-10-30/rustfmt.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.901,
+      "log": "artifacts/candidate13-2026-10-30/clippy.log"
+    },
+    {
+      "name": "diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.012,
+      "log": "artifacts/candidate13-2026-10-30/diff.log"
+    }
+  ],
+  "limitations": [
+    "Original full trial remains 65/68 FAIL; configuration correction does not retroactively convert its result.",
+    "A new fixed commit and a complete correctly configured 68-case run are required.",
+    "No real ASR name-accuracy, physical platform, installation/upgrade or GPU-energy claims.",
+    "P1 TTL validator gaps were independently reproduced under ignored artifacts; no TTL experiment or default promotion was performed."
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/report.json",
+      "bytes": 1253850,
+      "sha256": "5870afd22d04919ffea0ccaf0c21e7b88443c1433f722a3860d3135defb99e4f"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/state.json",
+      "bytes": 298,
+      "sha256": "c1b39ec20b5fd7e9e4631f0f34eac7c03450779f7753e11bbc30ff052c07ceb8"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/environment-before.json",
+      "bytes": 1025,
+      "sha256": "21f7ff44d4b1e49261186e09181844f74306e3c56d2ac9384fe7fd1c7bb346e7"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/environment-after.json",
+      "bytes": 1025,
+      "sha256": "21f7ff44d4b1e49261186e09181844f74306e3c56d2ac9384fe7fd1c7bb346e7"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/assets-before.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/assets-after.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/model-cleanup.json",
+      "bytes": 167,
+      "sha256": "1feadd44b2e8982326eb6215fd86979de35aeee6e58dbdbafcd370cf9ff32683"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto/interruption.json",
+      "bytes": 778,
+      "sha256": "20049122b517ad04e3938eab719287bfd2dcfc5f501d5cb3ad40ba904a65e505"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto/report.json",
+      "bytes": 500120,
+      "sha256": "43b0b1842433c01f93751f74745328d5cde9f1431ebc8e766298fb0ec63bc6b5"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto/model-cleanup.json",
+      "bytes": 195,
+      "sha256": "d1e4ef15ac17876eab18e45b3ec7a464ed9800a935b34514d9878f1ae8159385"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/fixture-language-fix-proof.json",
+      "bytes": 427,
+      "sha256": "52732463fc387f3381d3629c4f09d0fad0d986ff56c5ff4eaa542ac9ca6d8d20"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/checks.json",
+      "bytes": 1667,
+      "sha256": "8ebed44c10a70f6bb6dc7897ad07398d0ce7d3901d0403a68319f503f2165b79"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/core-asr.log",
+      "bytes": 1245,
+      "sha256": "32df8d9006f1f65e779bc1f7cd9e9b6c32bd294b19fb6fd5a520135e65f699a9"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/python.log",
+      "bytes": 435,
+      "sha256": "1f6bc37ba302070c20b2ca092ba91cd24ff30dee080c70618079c34ffa008d17"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/clippy.log",
+      "bytes": 291,
+      "sha256": "64a3659307863e150ab0fc06e18c63237c91fec142620865ce6e6025297416c6"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/release-build.json",
+      "bytes": 272,
+      "sha256": "c1c08b0fcca83a69b81422e0ebe65aa601f44c1f0eac6b58328b9ad0d477574c"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/review-1-23-original-language.json",
+      "bytes": 136298,
+      "sha256": "c8aaf3bf6684ff16e4a2da68461a1617da9767281bf160fbce0d808b6873df68"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/review-24-46-original-language.json",
+      "bytes": 52683,
+      "sha256": "f1aa8d24b35a76e4559470e67237da89cb9cee457e4f35dafc94f51c08f12e5b"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/en_punctuation_note_captions.json",
+      "bytes": 14667,
+      "sha256": "a0b269d229711304d00273f6338945a5de0098a697589ff72bb9e1e0ecf8346e"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/en_generic_note_keeps_source_plural.json",
+      "bytes": 14572,
+      "sha256": "e4fcbc5588a4e26ebd0690bbdf14f35b302fbb5f0b08cd1f39ebe83e29f296cc"
+    },
+    {
+      "path": "artifacts/candidate13-2026-10-30/full-auto-original-language/en_unused_punctuation_notes_add_no_names.json",
+      "bytes": 14252,
+      "sha256": "89045de66898322be2ae81bbac69179358f00c2e2d1182d00b2e41c7e1d82212"
+    }
+  ]
+}

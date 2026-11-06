@@ -1,4 +1,5 @@
-import importlib.util, json, pathlib, tempfile, unittest
+import importlib.util, json, pathlib, tempfile, unittest, sys
+sys.path.insert(0, str(pathlib.Path(__file__).parents[1] / 'scripts'))
 
 spec = importlib.util.spec_from_file_location('manifest', pathlib.Path(__file__).parents[1] / 'scripts/update-manifest.py')
 module = importlib.util.module_from_spec(spec)
@@ -41,6 +42,14 @@ class RuntimeInventoryTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("runtime_update", pathlib.Path(__file__).parents[1] / "scripts/native-runtime-update.py")
         runtime = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(runtime)
-        runtime.assert_runtime_inventory("Path = update.exe\nPath = native\\runtime\\sherpa-onnx-c-api.dll\n")
+        listing = """Path = update.exe
+Type = Nsis
+----------
+Path = $INSTDIR\\native\\runtime\\omascribe-cli.exe
+Path = $INSTDIR\\native\\runtime\\omascribe-asr.exe
+Path = $INSTDIR\\native\\runtime\\llama\\llama-server.exe
+Path = $INSTDIR\\native\\runtime\\llama\\build-info.json
+"""
+        runtime.assert_runtime_inventory(listing + "Path = native\\runtime\\sherpa-onnx-c-api.dll\n")
         for member in ["native\\models\\tokens.txt", "native\\weights.gguf", "native\\encoder.onnx"]:
-            with self.assertRaises(AssertionError): runtime.assert_runtime_inventory("Path = update.exe\nPath = " + member)
+            with self.assertRaises(AssertionError): runtime.assert_runtime_inventory(listing + "Path = " + member)

@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "scope": "Bounded production local-inference cancellation, independent of minutes quality. Public fixture and read-only installed Qwen3-1.7B Q4_K_M/format1 Metal runtime; no user database or installed settings changed.",
+  "retained_failed_trials": [
+    {
+      "status": "failed",
+      "core_source_sha256": "2d2e137bb8d1d218097b90d7df5f7deffed70a5bfc35e2209ad51f9d05b88bac",
+      "trigger": "writer:writing:positive+note_busy+llm_pid",
+      "cancel_call_ms": 0,
+      "cancel_to_busy_observation_ms": 274,
+      "task_drain": true,
+      "before_shutdown_worker_released": true,
+      "processes_exit_confirmed": true,
+      "content_preserved": true,
+      "original_assets_unchanged": true,
+      "native_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ],
+      "cpu_seconds_sampled": 4.353609976,
+      "peak_summed_rss_mib": 1490.203125,
+      "errors": [],
+      "indeterminate": [],
+      "evidence": [
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/registration.json",
+          "sha256": "d940247bd599e909e1c6c2a50748956efb74195a97ab9dd818bfc6216b947c61"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/report.json",
+          "sha256": "0551645c88ba85f23420b0d7c594baed82f72fa0a4f8da5d11ed32cc17fd05c3"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/workspace/llm-runtime.log",
+          "sha256": "d56720bace482e1657be6c7603ccd1d0e25c32278e7e45eef2c7d48618b43a55"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/cancel/resources.json",
+          "sha256": "826e43530e3b5c862dd46a409d2d9e919063351436dd4dc11b2f082f0dbf99af"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/cleanup.json",
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-2026-11-07/run/native-exit-audit.json",
+          "sha256": "f6c2731c03ca0e553ed3f61973df7042bd3799caea8cacace8a29b8e5b97b3ea"
+        }
+      ],
+      "failure": "Engine and watchdog sent repeated SIGTERM; native log contains Received second interrupt and a Metal GGML_ASSERT. Original controller reported passed but native-exit-audit explicitly overrides that verdict."
+    },
+    {
+      "status": "failed",
+      "core_source_sha256": "822e652ee0f779354f54a215dabd428567a5d2091d72f49e2c5324bfef004545",
+      "trigger": "writer:writing:positive+note_busy+llm_pid",
+      "cancel_call_ms": 0,
+      "cancel_to_busy_observation_ms": 5001,
+      "task_drain": false,
+      "before_shutdown_worker_released": false,
+      "processes_exit_confirmed": true,
+      "content_preserved": true,
+      "original_assets_unchanged": true,
+      "native_offload_layers": [
+        [
+          "29",
+          "29"
+        ]
+      ],
+      "cpu_seconds_sampled": 4.3784139600000005,
+      "peak_summed_rss_mib": 1486.8125,
+      "errors": [
+        "cancellation did not finish within the registered 5-second response budget"
+      ],
+      "indeterminate": [
+        "one token-producing incomplete request not observed",
+        "active cancellation/reaped release before shutdown not proven",
+        "cancelled terminal diagnostic missing"
+      ],
+      "evidence": [
+        {
+          "path": "artifacts/metal-active-cancel-fixed-2026-11-07/run/registration.json",
+          "sha256": "4eb5db86fbd053b1b71402bc2be4ccaae3217ef64b2c02f7ebad597701c23492"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-fixed-2026-11-07/run/report.json",
+          "sha256": "06aa147fd158ac6ae24d58415aa8ffbade12199767c151375bf86fd4d32d50d1"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-fixed-2026-11-07/run/workspace/llm-runtime.log",
+          "sha256": "99b65770fae66b00aca0ef1777486694b287d1e514fcc9afb977f6016bc1b501"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-fixed-2026-11-07/run/cancel/resources.json",
+          "sha256": "b5740da0797e1d42e897f25f7ddc6ecf304fd8e2eefe849c456ede535f442a52"
+        },
+        {
+          "path": "artifacts/metal-active-cancel-fixed-2026-11-07/run/cleanup.json",
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        }
+      ],
+      "failure": "The shared soft stop removed duplicate interruption, but the live SSE request stayed blocked through the unchanged five-second cancellation budget and five-second shutdown task grace. Native task cancellation was observed only around probe exit; closing the client socket is the inferred cause. Final process exit does not qualify this failed trial."
+    }
+  ],
+  "final_followup": {
+    "status": "passed",
+    "source_changed": true,
+    "same_model_runtime_seed_preferences": true,
+    "acceptance_budget_ms": 5000,
+    "cancel_call_ms": 0,
+    "task_and_worker_released_before_shutdown": true,
+    "terminal_outcome": "cancelled",
+    "committed": false,
+    "one_incomplete_request": true,
+    "first_token_ms": 198,
+    "native_offload_layers": [
+      [
+        "29",
+        "29"
+      ]
+    ],
+    "native_process_identity_confirmed": "exact executable + PID + creation time, independently included in sampled exit confirmation",
+    "processes_exit_confirmed": true,
+    "owned_survivor_cleanup": [],
+    "no_observed_duplicate_interrupt_or_native_assert": true,
+    "external_kill": false,
+    "content_sources_cursor_history_preserved": true,
+    "original_model_runtime_unchanged": true,
+    "cpu_seconds_sampled": 4.331093896,
+    "peak_summed_rss_mib": 1488.375,
+    "sampled_rss_mib_seconds": 2205.9066496058576,
+    "native_exit_status": "not_captured; policy permits SIGKILL after grace, so no graceful-exit claim",
+    "evidence": [
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/plan.json",
+        "sha256": "a3737d6638dd658b5664ceb257e45dce1369bb48d010399cce932fc73b10ce52"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/registration.json",
+        "sha256": "c47c938e7ca1d091c6aa1c7ffbabdad56c7750c8478d6c9a2a2e97d7ddb8201f"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/report.json",
+        "sha256": "527616b6a8951e9ea998e8513e3d9bcaa67c3e8adef25ee03acfe4893f84a9d5"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/workspace/llm-runtime.log",
+        "sha256": "2710cc0650b4af1c40899a7b3381637e1a3a50e9a2cf3a565eac6ef3cf1eea2a"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/workspace/inference-trace.jsonl",
+        "sha256": "0fd6359951bc31c4577a760160c85a72850ffb729e9add48c88c24471ed531a7"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/cancel/resources.json",
+        "sha256": "737d34f902dd035e7e70594df773e01020555ac0a803d9cdef37dd71c8b7e1c4"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/cancel/process.json",
+        "sha256": "dd17c39e78d1cbf6cbabf48913dce6708c4820172df472ea81a6ab8634f6d90f"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/run/cleanup.json",
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      }
+    ],
+    "cancel_to_busy_observation_ms": 1020,
+    "timing_scope": "1020 ms measures cancel to observing note_busy=false; before-shutdown worker release and subsequent task drain/process exit are separately verified, not assigned that exact duration."
+  },
+  "validation": {
+    "duplicate_signal_red": {
+      "path": "artifacts/metal-active-cancel-fixed-2026-11-07/red.log",
+      "sha256": "4aed20cfaa76491dd543e5f48d30088168d87eb810695096efb998fe98c56ebf"
+    },
+    "blocked_sse_red": {
+      "path": "artifacts/metal-bounded-cancel-2026-11-07/sse-red.log",
+      "sha256": "f7fe35fb2184b14e0b21e3fc7bb91b579e1fe0330f97291fccce767cc49139f1"
+    },
+    "core": {
+      "passed": 803,
+      "ignored": 15
+    },
+    "cli_passed": 3,
+    "core_integration_passed": 48,
+    "asr_passed": 18,
+    "shell_passed": 8,
+    "strict_workspace_clippy": "passed",
+    "rust_format": "passed",
+    "independent_review": "no remaining P1/P2; stream EOF/process exit observation now shares the original five-second budget",
+    "controls": [
+      "Real child observes exactly one soft cancellation across Engine and watchdog, both pooled and direct Server paths",
+      "Real loopback SSE continues after SIGTERM; production stream reader must unblock and the child must exit within the unchanged five-second budget",
+      "Repeated cancellation preserves the first deadline; no second force request",
+      "Cancellation between spawn and registration reaches the child before display PID publication",
+      "Closing/late-clearing old Server does not stop or unregister a new child",
+      "Exit observed by try_wait closes the force gate before Drop"
+    ],
+    "final_logs": [
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/worker-green.log",
+        "sha256": "ace0e3ea8b4fb8834abbb9d11e43ade8d9423819f7589fa211da072d91e39b05"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/workspace.log",
+        "sha256": "5370e51125b6c8599184fc15b493dc86719d95f4f227513f5ca7b3bb662bb8b3"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/clippy.log",
+        "sha256": "0899f98afcf6115e125299f0db5322201fd5fafce33ff5a19920ad0ccf94926d"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/format.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "artifacts/metal-bounded-cancel-2026-11-07/build.log",
+        "sha256": "0f53f58a26f92efce3f39812fbf3d1442b3056bfbb69bdd3cb4b3dd96208452b"
+      }
+    ]
+  },
+  "limits": [
+    "Process reaping is not a graceful-exit verdict. Native ExitStatus and internal Child.kill are not separately reported.",
+    "The five-second response gate is an observation budget, not an OS scheduling guarantee.",
+    "Summed RSS can double-count shared pages; sampled CPU misses unsampled tails. GPU allocations and energy were not measured. No speed, energy or quality improvement claim.",
+    "All raw failures remain preserved. No retry changes model, prompt, threads, context or acceptance deadline. Each subsequent native observation requires a changed cancellation implementation.",
+    "No installer, GPU component or model downloaded/built; CUDA/Vulkan remain separate optional components. No 0.3.5 release qualification."
+  ],
+  "base_revision": "f6677aef414666c974ed5825c4204368694ae1fb",
+  "core_source_sha256": "85f9062c206d7887bc7b53579c52725b73f12db67a7e3af32f85af204006fd49",
+  "change": [
+    "Register each owned Server with a weak stop control. Engine cancellation and the watchdog share one synchronous soft-stop gate; registration rechecks cancellation after native spawn.",
+    "Keep the original stop cause and deadline. The existing watchdog prioritizes an accepted stop before resource/status sampling, allows one fixed second from the first signal, then requests at most one forceful stop if the owner has not closed the gate. Normal reader timeout is unchanged.",
+    "Serialize native signals with both production try_wait sites and Server Drop. Observed exit or wait errors close the gate before releasing it; clear the registration only when PID and control instance both match.",
+    "No additional watchdog thread, model call, retry, preference or database migration. The maintained inference_cancel_probe example observes real manual-generation content, cancellation and task drain; native process identity and exit remain independently checked by the runner."
+  ],
+  "source_files": [
+    {
+      "path": "crates/core/src/engine.rs",
+      "sha256": "795f17db5c65e04ed865ed49ef83940dfb3faa4547912de95580c89dd1d19495"
+    },
+    {
+      "path": "crates/core/src/inference_worker.rs",
+      "sha256": "1cd927a097456a5b8db4904336000d8f7c642c3da92ad02ba80607dff8c41ce5"
+    },
+    {
+      "path": "crates/core/examples/inference_cancel_probe.rs",
+      "sha256": "a41312e227736a68d38f82ad106126f990643fce1b77815492669926dc61ce5f"
+    }
+  ]
+}

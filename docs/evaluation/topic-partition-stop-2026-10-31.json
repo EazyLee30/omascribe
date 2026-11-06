@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "status": "REJECTED_AND_WITHDRAWN_NO_RETUNING",
+  "candidate_source": "f285653fe67436df7cf6d815ed03c1a79ffd3a31",
+  "restored_source": "6dc54e5dfb02078c25100fc280663a30fb04b612",
+  "retained_production_fix": "b858d66078f0f0859b6ac9ef5196d4b1175e3af0",
+  "proposal": "One default-off positional labels then fixed-body protocol for all ordinary full-compose rounds, with program-bound references and unchanged local/global fact, name, language and history gates.",
+  "model_free_controls": {
+    "topic_mechanism": 9,
+    "runner_preflight": 7,
+    "scope": "Synthetic prose exercises actual Store/retrieve 0->5->6, strict parsing, source identity, old paragraphs and shared two-send budget. These do not prove generated quality.",
+    "negative_control": "A source6-only body can pass structural/existing semantic gates while the original external university-name oracle still FAILS."
+  },
+  "native": {
+    "model": "qwen3-1.7b",
+    "backend": "metal",
+    "context_size": 2048,
+    "n_threads": 1,
+    "offloaded_layers": 29,
+    "total_layers": 29,
+    "device": "Apple M5",
+    "truncated_flags": [
+      0,
+      0
+    ],
+    "resource_policy": {
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "writer_resource": {
+        "available_before_mib": 5666,
+        "backend": "metal",
+        "budget_mib": 4096
+      }
+    }
+  },
+  "actual_result": {
+    "harness_invocations": 1,
+    "jobs": 1,
+    "complete_responses": 2,
+    "cursor": 0,
+    "articles": 0,
+    "references": 0,
+    "source6_selected": false,
+    "labels": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "labels_are_legal_not_a_schema_error": true,
+    "terminal": {
+      "outcome": "validation_rejected",
+      "first_guard": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "validation_failures": 1,
+      "later_checks": "Name membership stopped the body in the local group path. Do not claim downstream factual/language/global/history validators executed on this rejected body."
+    },
+    "manual_raw_findings": [
+      "The body additionally changes 潘 to PAN.",
+      "Music may have finished becomes already finished/completed.",
+      "The music claim is repeated and festival is left untranslated.",
+      "Photo-publication condition, risk attribution and late-night scope remain; do not claim these were inverted."
+    ],
+    "full_original_q16": "FAIL; no subsequent retrieval round ran"
+  },
+  "costs": {
+    "trace_error_count": 0,
+    "trace_errors": {},
+    "observed_attempted_requests": 2,
+    "observed_generation_rows": 2,
+    "unmeasured_response_costs": 0,
+    "attempted_requests": 2,
+    "observed_responses": 2,
+    "completed_responses": 2,
+    "validation_failures": 1,
+    "request_ms": 2015,
+    "observed_request_ms": 2015,
+    "input_tokens": 852,
+    "output_tokens": 124,
+    "cached_tokens": 3,
+    "prefill_ms": 462.418,
+    "decode_ms": 1549.012
+  },
+  "resource_observation": {
+    "sample": {
+      "schema": 1,
+      "method": "psutil sampled descendant tree",
+      "psutil_version": "7.1.3",
+      "interval_seconds": 0.25,
+      "samples": 12,
+      "processes_seen": 2,
+      "cpu_seconds_sampled": 1.188064224,
+      "peak_tree_rss_mib": 1517.375,
+      "peak_tree_pss_mib": null,
+      "gpu_memory_mib": null,
+      "energy_joules": null,
+      "sample_errors": 0,
+      "optional_pss_unavailable": 21,
+      "optional_pss_errors": 21,
+      "sampler_stopped": true,
+      "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+    },
+    "sampled_scope": "Generation CLI descendant tree only, not a matched whole-app/outer runner benchmark",
+    "request_total_ms": 2015,
+    "generation_cli_seconds": 3.175,
+    "harness_case_seconds": 3.192,
+    "runner_audit_seconds": 5.564,
+    "limitation": "Single failed unequal-output run. Sampled CPU lower bound and summed RSS may double-count shared pages. PSS/GPU memory/energy remain unknown; no faster/resource-saving claim."
+  },
+  "cleanup": {
+    "original_model_files_unchanged": 6,
+    "installed_runtime_files_unchanged": 4,
+    "observed_owned_identities_exited": 3,
+    "owned_and_borrowed_stores_absent": true,
+    "weight_logical_bytes": 1167797179,
+    "physical_reclaimed_bytes": null,
+    "raw_outputs_database_traces_and_costs_preserved": true
+  },
+  "restoration": {
+    "experiment_module_and_flag_removed": true,
+    "ordinary_writer_and_guards_equal_production": true,
+    "restored_core": 558,
+    "ignored": 12,
+    "cli": 2,
+    "integration": 30,
+    "strict_workspace_clippy_format": "PASS",
+    "matching_release_cli_rebuilt": true,
+    "sdk_component_installer_download_or_build": false
+  },
+  "evidence_sha256": {
+    "runner-freeze.json": "64b7fe83845857284cdba7d16a44fdc994839225022d6846213f63a15e5e1cc6",
+    "state.json": "5ae64e12d1463bf197b532524f6de2e29649363eb11a633c24287e787a86d1b1",
+    "independent-review.json": "bf336f020055ac5edecac30e46064f25bc79ce6930b93c580d76d5fa96c7e39e",
+    "raw-trace-accounting.json": "9161329b7b9bf0913341eb5242a6d1685de8db42bdee46d39018b5cfd1e17692",
+    "withdrawal.json": "142ed85f76bee085d29d465d29baf9c5af42f670c7f718139c7173549c9ffd89",
+    "restored-checks.json": "7b4e869627a592b628e04ff4af504402344a3181de29e9e689c6e9d8b7d0d2ef",
+    "restored-cli.json": "e31818e13330568f8bd9e5e9aaaa0302df28461fd36321ea5ab1d30b36850dfb"
+  },
+  "limits": [
+    "No second model run, prompt tuning, validator relaxation or expanded corpus after this FAIL.",
+    "A legal all-zero partition does not prove semantically correct topic grouping.",
+    "Unequal failed output cannot support speed, resource or energy improvements.",
+    "This experiment does not replace real-audio, hardware, installer/upgrade or release gates."
+  ],
+  "release": {
+    "stable": "0.3.4",
+    "0.3.5": "unpublished",
+    "pr_1": "draft"
+  }
+}

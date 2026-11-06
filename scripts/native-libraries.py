@@ -14,13 +14,16 @@ import urllib.request
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--target", required=True)
+parser.add_argument("--local", action="store_true", help="Prepare a matching native developer host")
 args = parser.parse_args()
-if os.environ.get("GITHUB_ACTIONS") != "true" or platform.system() not in [
+if (os.environ.get("GITHUB_ACTIONS") != "true" and not args.local) or platform.system() not in [
     "Darwin",
     "Linux",
     "Windows",
 ]:
-    raise SystemExit("Native GitHub runner required")
+    raise SystemExit("Native GitHub runner or explicit --local preparation required")
+if args.local and platform.system() == "Windows" and args.target != "x86_64-pc-windows-msvc":
+    raise SystemExit("Local Windows preparation requires x86_64-pc-windows-msvc")
 spec = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))[
     "native_asr"
 ]["targets"][args.target]
@@ -71,8 +74,9 @@ suffix = ".lib" if os.name == "nt" else ".a"
 name = "sherpa-onnx-c-api.lib" if os.name == "nt" else "libsherpa-onnx-c-api.a"
 assert (libraries / name).is_file()
 assert len(list(libraries.glob("*" + suffix))) >= 13
-with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as environment:
-    environment.write("SHERPA_ONNX_LIB_DIR=" + str(libraries) + "\n")
+if os.environ.get("GITHUB_ENV"):
+    with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as environment:
+        environment.write("SHERPA_ONNX_LIB_DIR=" + str(libraries) + "\n")
 print(
     "Verified ASR SDK:",
     libraries,

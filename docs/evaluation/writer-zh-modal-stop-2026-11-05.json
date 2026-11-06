@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "status": "SINGLE_PRIVATE_PAIR_SEMANTIC_FAIL_STOPPED_NOT_PROMOTED",
+  "source": "7842c8983485510935cb712178168e35fcdaaa8f",
+  "production_base": "0d45e8d8f0c3f98f760dc3cf55d80ae8fa6a3018",
+  "source_scope": "Fresh isolated worktree: unchanged original c4bd53e net grammar patch (stable patch-id ce29bfc13216cdf6186343438ff472f2238fe299), plus mechanical extraction of the existing ordinary SOURCE-retry block and one wiring control. Public modal/confirmation/final validation/shared budget and the original eight controls remain unchanged. Old c4 source, runner and evidence were not edited.",
+  "checks": {
+    "targeted_passed": 9,
+    "core_passed": 678,
+    "core_ignored": 13,
+    "cli_passed": 2,
+    "integration_passed": 34,
+    "strict_workspace_clippy": "PASS",
+    "fmt": "PASS",
+    "scope": "Model-free source checks; not private quality or release qualification."
+  },
+  "fixed_experiment": {
+    "comparison": "same rebuilt private binary, original grammar off/on; production modal veto active in both arms",
+    "executions": 1,
+    "original_q16_sha256": "5557341930f3807cc1f3c0dbe9e614e0cdcd09cd5a03880febd6e4fa3c1119e2",
+    "unchanged_fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "runner_sha256": "153a82510a498547d7021814abc92ac9c946764ef1a1049c9dd919bcf77dbd8e",
+    "intended_frontiers": [
+      0,
+      5,
+      6
+    ],
+    "jobs_per_arm_executed": 1,
+    "requests_per_job_cap": 2,
+    "max_output_tokens": 440,
+    "seed": 42,
+    "model": "qwen3-1.7b",
+    "backend_observed": "Metal, Apple M5, 29/29 layers offloaded; same verified native runtime identity",
+    "downloads": 0
+  },
+  "observed_outcomes": {
+    "control": {
+      "frontiers": [
+        0,
+        0
+      ],
+      "completed_responses": 2,
+      "active_sections": 0,
+      "result": "Name rejection on both English-copy drafts: PAMELA FURGO 森 differs from source; first PAN MALE FERGUSON also differs from 潘. No committed article."
+    },
+    "candidate": {
+      "frontiers": [
+        0,
+        5
+      ],
+      "completed_responses": 2,
+      "active_pending_sections": 1,
+      "result": "First raw body055507d4f1538fc37021c90c4263cf1ad8eadf7ca3aee594c9349513c18afedf exactly matches the old definite-music draft; the public typed modal veto now rejects it. Existing second SOURCE repair restores both local MAY scopes but commits the affiliation corruption 邓迪大学→迪大学 and repeats the same music sentence twice. Original oracle and independent full-text review FAIL; not an equivalent-name false rejection.",
+      "second_body_sha256": "6b2d199a121fb636919e87f939a63cd933520d6c642bc72a1b39050dda595216",
+      "positive_scope": "Source-present actor labels and conditional photograph-risk wording remain; music is not attributed to a professor. No new task, owner or deadline is observed."
+    },
+    "source6": "Stored unchanged but never selected or cited by an executed request. All actual selected and active citation sequences stop at 1–5; the second job did not run. FERGUSTON and its unspecified institution remain untested by this model pair."
+  },
+  "request_evidence": {
+    "candidate_grammar_bytes": 232,
+    "grammar_sha256_job1": "749f3934de7faf8df1666485e76f0470d00f64b771a021fbc9e0c351e7063722",
+    "actual_second_request_sha256": "a59b9126197faee8e69947f0053cde01e627244ac7330b7c2e2e8b87b35db330",
+    "actual_second_messages_sha256": "e70fad2f074c81a173473417331adb22cb32aa018aabfde4b2e2bb53e60d08ff",
+    "scope": "Both actual candidate sends retained literal_zh and distinct final request/messages digests. Producer metrics plus frozen wiring controls support original-SOURCE repair; the bound Plan source digest alone is not the second message hash. Full wire envelopes were not captured; job2 grammar was not exercised."
+  },
+  "costs": {
+    "stage_wall_seconds": 21.275,
+    "completed_responses": 4,
+    "prompt_tokens": 1832,
+    "completion_tokens": 502,
+    "producer_request_trace_elapsed_ms": 8953,
+    "diagnostic_attempt_elapsed_ms": 8975,
+    "control_tokens": [
+      905,
+      332
+    ],
+    "candidate_tokens": [
+      927,
+      170
+    ],
+    "pure_compute_ms": null,
+    "scope": "All rejected and committed responses counted. HTTP/request and diagnostic time are not pure compute. Startup, cache state, unequal failed outputs and partial coverage prevent a performance comparison; sampled CPU is a lower bound, GPU memory, PSS, energy and setup/cleanup CPU remain unknown. No resource-benefit claim."
+  },
+  "cleanup_and_restoration": {
+    "completed_pair": true,
+    "operational_audit_passed": true,
+    "all_owned_processes_exited": true,
+    "owned_clone_records_released": 12,
+    "original_model_files_unchanged": 6,
+    "original_runtime_files_unchanged": 2,
+    "private_binary_cow_copies_deleted": 2,
+    "logical_binary_bytes_deleted": 42058368,
+    "physical_reclaimed_bytes": null,
+    "public_source_restored": "0d45e8d8f0c3f98f760dc3cf55d80ae8fa6a3018",
+    "actual_public_cargo_build_exit_code": 0,
+    "public_build_source_sha256": "31033e3f7282838eb2a1adbe4b259e0f0af879d523166eef7fe28663624f5501",
+    "public_binary_sha256": {
+      "omascribe-cli": "87a4f878c3c4b756b9dbeb1587bdd4111a73114c72288784245ee1d60110d8a2",
+      "omascribe-asr": "74fb85cd9bf47f620b9d70ef7ff445f46ab6e641d51d0a10f3357bc2751c1ccd"
+    },
+    "scope": "Only task-owned clones/copies removed after identity/hash and closed-handle checks. Original assets, raw metadata, received prose, traces, DB and oracle retained. Public CLI/ASR were actually rebuilt; no app/installer build."
+  },
+  "next_action": "The received institution corruption reproduced on the public ordinary path and the bounded production affiliation veto is integrated at fe1b966, with raw RED and compatibility failures retained. This has not regenerated a qualified article. Both private prototypes remain stopped and unpromoted; full Q16/Q9/native acceptance remains open.",
+  "candidate_promoted": false,
+  "release_published": false,
+  "evidence_directory": "artifacts/writer-zh-modal-2026-11-05",
+  "raw_sha256": {
+    "private-source.json": "c09a9b5968776af5bf89fdec427cb70dcb3e50a4e0d3ff9277d1088135f065f3",
+    "private-built.json": "bb3e510b8b559c04717fd8128c04946f5566482bdd2a493d367ba381bbcda30a",
+    "grammar-control-proof.json": "e7b4e93fdcbca8bff16b5dc94504c40afab33fc0c6444b50eed6bbb6b7ca1a76",
+    "frozen-inputs.json": "fdfc7abbfd7b22cb5383d8ef87c52ecbea1ef7a16cb315ec01705bcda6830e9e",
+    "run-pair.py": "153a82510a498547d7021814abc92ac9c946764ef1a1049c9dd919bcf77dbd8e",
+    "q16/state.json": "398a3885246a9e92850754277acc8efac015918a21544194e6893b4aa7e95a9b",
+    "independent-semantic-review.json": "53d076765629765b7ee45be394cdb901a3fcb1dceb00d133a0d13fe8f071ae3b",
+    "admission-runtime-review.json": "c7a4bc57e9a0da7fafc23596fd3cf1b0c56d33a077f655b782bf61d415c2b254",
+    "private-binaries-cleanup.json": "3b2cffa7e4a9465596ca391ed5c17386fdddc7db8867d1ac54f906be29b9f169",
+    "public-restoration.json": "cfef4968cff5d5cc460390122c58df8c516100d204ea4b104b2d4ba7805c1809",
+    "public-restoration-build.log": "68b7d3f9f9cf6e0225637b6c5e9cd59316cb005c83361a273aa0dd7c8a798004",
+    "candidate-7842c89-controls.log": "304d22f232ee69c4923964e45f0448018cb148af57dc01bb26c96df6e8a09b04",
+    "candidate-7842c89-core.log": "1ec3b53a6e2bde07c26d32da88c62ab3aff612918c40b4724f5d75e55fa2216a",
+    "candidate-7842c89-clippy.log": "692c058f82c2e3b53e631585ad1547770dc89905c3de4612fca7c04de4a86350",
+    "candidate-7842c89-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "production-affiliation-67c83b9-red.log": "c9100a82e81ed59f2e11c09fd6950563d05d23d22a814fa088e65647fcdd2598"
+  },
+  "production_red": {
+    "source": "67c83b927c5eff8a759b0dfdb38fd281aba036a2",
+    "controls": 5,
+    "passed": 1,
+    "failed": 4,
+    "raw_body_sha256": "6b2d199a121fb636919e87f939a63cd933520d6c642bc72a1b39050dda595216",
+    "scope": "Actual received body and exact original five sources reach ordinary public final validation; source6 borrowed-affiliation is a model-free counterexample, not a model run."
+  }
+}

@@ -1,0 +1,1644 @@
+{
+  "schema": 1,
+  "date": "2026-10-28",
+  "source_revision": "c57a180e8ad48d4ea53488b0fe33e0143a250b44",
+  "scope": "Affected fictional/public seeded-text regression only: 8 bilingual automatic cases and 3 translation-off explicit-minute cases. Includes all four incremental budget phases; not the complete corpus, natural ASR, microphone, native UI, install/upgrade or release acceptance.",
+  "overall_result": "FAIL",
+  "release_accepted": false,
+  "full_semantic_acceptance": false,
+  "summary": {
+    "automatic": {
+      "results": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/results.json",
+        "sha256": "acc3b9381069ac035944ffe9916e68f986c48bc8c2577f1f63dd529db80cbb49"
+      },
+      "passed": 5,
+      "failed": 3,
+      "total": 8
+    },
+    "translation_off_explicit_minutes": {
+      "results": {
+        "path": "artifacts/benchmarks/week-retention-minutes-20261028/results.json",
+        "sha256": "2eabd5cfbc16c82831a10213b4d9bf643f707ca77a57421b806bafbb013baa94"
+      },
+      "passed": 2,
+      "failed": 1,
+      "total": 3
+    },
+    "passed": 7,
+    "failed": 4,
+    "failed_cases": [
+      {
+        "mode": "auto",
+        "case": "zh_windows_uppercase_asr"
+      },
+      {
+        "mode": "auto",
+        "case": "zh_absolute_weekday_scope"
+      },
+      {
+        "mode": "auto",
+        "case": "zh_recording_retention_local"
+      },
+      {
+        "mode": "minutes",
+        "case": "zh_recording_retention_local"
+      }
+    ],
+    "recording_retention_resolved": false,
+    "observed_week_scope": "Unqualified Tuesday stays unqualified in four-phase budget captions, standalone caption/article and translation-off article; explicit this/next Tuesday remain. Absolute numeric date and weekday survive the caption, but its article path fails.",
+    "release_blockers": [
+      "No recording-retention case produces a committed complete article; both automatic paths time out and explicit generation exhausts its attempts.",
+      "Generic focus keyword date is treated as a literal source name, blocking the absolute-date article despite a correct first date draft."
+    ]
+  },
+  "identity": {
+    "before": {
+      "path": "artifacts/week-retention-frozen-source.json",
+      "sha256": "62f477ced202f72e0c6327c9017031ac054f628c3138e0b9b2c6050763796cf9"
+    },
+    "after": {
+      "path": "artifacts/week-retention-source-after.json",
+      "sha256": "62f477ced202f72e0c6327c9017031ac054f628c3138e0b9b2c6050763796cf9"
+    },
+    "exact_parsed_before_after_equal": true,
+    "all_11_report_environments_match_freeze": true,
+    "frozen_environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "c57a180e8ad48d4ea53488b0fe33e0143a250b44",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "a7d776d0bda39ff8102e47e08ffdceecc8289cce4ecf2e352417e90f9e4fae25",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "6219fd3d12e33c90c6fbb169e7124510a11dfcd1b6290ce0011ef2e113780c65",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "9a4568a37a300a10f5f108dfab6787f5cdc2278331229a99a2b4e8e742c00f2f",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "c57a180e8ad48d4ea53488b0fe33e0143a250b44",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture": {
+      "path": "tests/fixtures/document-cases.json",
+      "revision": "c57a180e8ad48d4ea53488b0fe33e0143a250b44",
+      "sha256": "9a6e1905183fbea5b8e71b167cdfe87fee6a5415d40159d6b98fea0e4430a83c",
+      "cases": 61
+    },
+    "terminal_run_status": {
+      "path": "artifacts/week-retention-run-status.json",
+      "sha256": "c539f283e61b9483a2dfce989938ba6224ab734703460db0eeab8ee268e70b7f"
+    },
+    "terminal_driver_exit_code": 1,
+    "mode_exit_codes": [
+      {
+        "mode": "auto",
+        "exit_code": 1
+      },
+      {
+        "mode": "minutes",
+        "exit_code": 1
+      }
+    ],
+    "driver": {
+      "path": "artifacts/run-week-retention-affected.py",
+      "sha256": "d005e0036a06ce2c4ff3729faebd95a8c5f9520b215a92d099cda7eb73dfe27b"
+    }
+  },
+  "static_checks": {
+    "core": {
+      "passed": 257,
+      "ignored": 7,
+      "failed": 0,
+      "log": {
+        "path": "artifacts/week-retention-core-tests.log",
+        "sha256": "80802bd3bde514b382ee0f24e9c6a69f1382fe49be3fc2402582ffc4e6e47b02"
+      }
+    },
+    "harness": {
+      "passed": 27,
+      "log": {
+        "path": "artifacts/week-retention-harness-final-tests.log",
+        "sha256": "d934555ca79acdfc962b202b10f45652ce79b5c18c47ed76fe6f727772be2cde"
+      }
+    },
+    "clippy": {
+      "reported_strict_clippy_passed": true,
+      "log": {
+        "path": "artifacts/week-retention-clippy.log",
+        "sha256": "dbb3149b4045aa440d38f7482e2d095b420b863a0579e560bc6f51b8a48c9e6d"
+      }
+    },
+    "cli_build": {
+      "path": "artifacts/week-retention-cli-build.log",
+      "sha256": "e9bf3ae5c82176341a8c6a76b6a9e296d172ab02dd46dfd53ea4e530b386dc34"
+    }
+  },
+  "preferences": {
+    "common": {
+      "inference_backend": "metal",
+      "threads": 1,
+      "context_size": 2048,
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false,
+      "llm_model": "qwen3-1.7b"
+    },
+    "automatic": {
+      "auto_notes": true,
+      "translation_mode": "bilingual"
+    },
+    "explicit_minutes": {
+      "auto_notes": false,
+      "translation_mode": "off"
+    },
+    "note": "Fixture-specific minutes_language remains zh except the original English incremental article case."
+  },
+  "original_guard_red_examples": [
+    {
+      "test": "notes::validation::tests::unqualified_weekday_does_not_establish_this_week",
+      "log": {
+        "path": "artifacts/week-qualifier-original-failure.log",
+        "sha256": "a08896c8b32dbaccba2c26f0e915f4dafed426c2309614af88e5a51a925e2c2c"
+      },
+      "result": "FAILED: an unsupported 本周 qualifier was accepted.",
+      "failing_body": "Riley本周二将测试键盘可访问性，目前尚未完成任何测试。"
+    },
+    {
+      "test": "notes::validation::tests::recording_retention_cannot_be_replaced_by_meeting_notes_alone",
+      "log": {
+        "path": "artifacts/recording-retention-original-failure.log",
+        "sha256": "beee20e7620042b3a178ff127857cc93f327f54e4d7bfb8048fddb95f131cb26"
+      },
+      "result": "FAILED: the expectation to reject the omitted-recording body was not met.",
+      "failing_body": "星期五不是截止日期，会议记录应留在此电脑上。"
+    }
+  ],
+  "original_red_provenance_limit": "These retained pre-fix logs are separate historical unit assertions from in-progress trees, without an exact standalone compile revision in each log. They are not the frozen c57 inference outputs or new successful fixes.",
+  "independent_reviews": [
+    {
+      "artifact": {
+        "path": "artifacts/week-retention-week-review.json",
+        "sha256": "cb34c5182a7eb9d9f708dcaa6f89265f0c1157a5d85079902acd02da6cad9990"
+      },
+      "scope": "Independent assistant review of five automatic fictional-text week/date cases and one translation-off explicit-minute case, including all four budget phases. This reviewer did not implement the week module. No source/test/runtime/model edit, model call, build or test during review. Not human, natural-ASR, full candidate or release acceptance.",
+      "summary": {
+        "original_automatic_pattern_pass": 5,
+        "original_automatic_pattern_fail": 1,
+        "unqualified_week_drift_closed_in_observed_outputs": true,
+        "explicit_this_and_next_week_qualifiers_preserved": true,
+        "absolute_date_and_weekday_caption_preserved": true,
+        "absolute_date_article_committed": false,
+        "source_binding_counts": {
+          "snapshots": 9,
+          "citation_records": 13,
+          "caption_records": 14
+        },
+        "all_exact_citation_checks_match": true,
+        "all_caption_id_revision_checks_match": true,
+        "limit": "Exact citations establish provenance, not generated meaning. Failed absolute-date state contains a valid caption but no article or article citations.",
+        "week_qualifier_paths_completed": 5,
+        "week_qualifier_path_scope": "Four automatic paths (four-phase budget, unqualified Tuesday, explicit this Tuesday, explicit next Tuesday) plus one translation-off unqualified-Tuesday article. The separate absolute-date path is caption PASS/article FAIL."
+      },
+      "findings": [
+        {
+          "case": "zh_absolute_weekday_scope",
+          "status": "FAIL",
+          "category": "generic_focus_date_overconstrained_as_source_name",
+          "source": "The meeting date is Tuesday, 2024-5-7.",
+          "accepted_caption": "会议日期是2024年5月7日星期二。",
+          "first_rejected_article": "会议日期是2024年5月7日星期二。",
+          "second_rejected_article": "会议日期是2024年5月7日。",
+          "blocking_validation": "纪要遗漏原话中的专有名称：date",
+          "fixture_focus": "**date**",
+          "notes_cursor": 0,
+          "interpretation": "Preserve original120s failure. The generic focus **date** is overconstrained as a source name and rejects the first semantically correct complete date draft. Caption absolute-date control succeeds; article pipeline does not. The second raw draft drops weekday, but no evidence attributes that to week normalization."
+        },
+        {
+          "case": "en_incremental_separate_topics",
+          "status": "OPEN_LEXICAL_LIMITATION",
+          "source": "Mic check. Hello. Thank you.",
+          "caption": "微检。你好。谢谢。",
+          "interpretation": "Non-substantive lexical weakness retained; not added to task article."
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "path": "artifacts/week-retention-recording-review.json",
+        "sha256": "a30b30a6d85146e7a034b66b724e0bb80c6506460a88617aeaada6ff774e2a85"
+      },
+      "scope": "Independent read-only review of retained public/fictional fixture reports. No source, runtime, model or test changes; no inference invoked.",
+      "assessment": "Three recording-retention runs remain unsuccessful: no final article was committed, and missing/wrong containment must not be hidden by source citations or pattern passes. Both notes-only controls pass semantically without inventing recordings.",
+      "verification": {
+        "reports": 5,
+        "all_report_identities_match_frozen": true,
+        "retained_snapshot_count": 6,
+        "exact_citation_references_checked": 2,
+        "caption_identity_revision_checks": 5,
+        "limitation": "Citation identity checks are metadata verification only. Failed/no-body cases remain failures, and automatic regex passes are not substitutes for the above semantic review."
+      }
+    }
+  ],
+  "source_binding_audit": {
+    "snapshots": 15,
+    "source_records": 25,
+    "caption_records": 19,
+    "article_citation_records": 15,
+    "all_source_texts_found_in_frozen_case": true,
+    "all_caption_ids_revisions_match": true,
+    "all_exact_citation_bindings_match": true,
+    "limit": "Exact metadata/quote bindings establish provenance, not semantic entailment. Empty articles and absent captions remain failures. Counts include repeated historical source/caption records across phase snapshots."
+  },
+  "cases": [
+    {
+      "mode": "auto",
+      "case": "zh_windows_uppercase_asr",
+      "original_automatic_pass": false,
+      "original_errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/week-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1"
+      ],
+      "case_seconds": 120.75,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_windows_uppercase_asr.json",
+        "sha256": "5b29cf559bd4e6a027dafc82eacc06a51b707d87e06d453e4b59de0f7a2e3331"
+      },
+      "fixture_input": {
+        "relative_path": "zh_windows_uppercase_asr/input.json",
+        "sha256": "18c73615cf6ea94467fb4a553dd53387d4e1e54dc19eda4b7c934586c6d8db89"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "117f7ef3-f179-4b8a-89f1-85a41cb1e3ec:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A"
+        },
+        {
+          "seq": 2,
+          "id": "117f7ef3-f179-4b8a-89f1-85a41cb1e3ec:1:2",
+          "revision": 1,
+          "start_ms": 10000,
+          "end_ms": 20000,
+          "text": "LICE WILL CHECK THE ENVY A CARD"
+        },
+        {
+          "seq": 3,
+          "id": "117f7ef3-f179-4b8a-89f1-85a41cb1e3ec:1:3",
+          "revision": 1,
+          "start_ms": 20000,
+          "end_ms": 30000,
+          "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "seq": 4,
+          "id": "117f7ef3-f179-4b8a-89f1-85a41cb1e3ec:1:4",
+          "revision": 1,
+          "start_ms": 30000,
+          "end_ms": 40000,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN"
+        },
+        {
+          "seq": 5,
+          "id": "117f7ef3-f179-4b8a-89f1-85a41cb1e3ec:1:5",
+          "revision": 1,
+          "start_ms": 40000,
+          "end_ms": 50000,
+          "text": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "target": "zh",
+          "text": "LICE 将检查 ENVY A CARD"
+        },
+        {
+          "seq": 4,
+          "revision": 1,
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元"
+        },
+        {
+          "seq": 5,
+          "revision": 1,
+          "target": "zh",
+          "text": "尚未获批。 ALICE将检查UN VIDEO CARD。"
+        }
+      ],
+      "final_article": [],
+      "final_notes_cursor": 0,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_windows_uppercase_asr/failure-snapshot/stdout.txt",
+            "sha256": "238dccff8166d9e94d4bfdb33b2b470f75cf15e555ee19254f009982127ee5c6"
+          },
+          "snapshot_origin": "retained failure snapshot from isolated workspace; settle stdout was empty",
+          "notes_cursor": 0,
+          "process": {
+            "code": 1,
+            "seconds": 120.278,
+            "resource_sample": {
+              "samples": 451,
+              "processes_seen": 7,
+              "cpu_seconds_sampled": 6.9224077600000005,
+              "peak_tree_rss_mib": 1531.078125,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_windows_uppercase_asr/phase-1/batch-1/llm-runtime.log",
+            "sha256": "159f6ee4feb16355a96590ec98048f7626b0fcc79bc8435339814f89336ce0cd"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "rejected_article_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "body": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。  \nLICE 将检查 ENVY A CARD  \nFRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER  \n这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元  \n尚未获批。 ALICE将检查UN VIDEO CARD",
+              "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+              "week_qualifier_corrections": 0
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_checked_prose",
+              "body": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE将检查ENVY A CARD FRIDAY不是截止日期记录会议笔记应留在这个电脑 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 尚未获批。 ALICE将检查UN VIDEO CARD",
+              "validation_error": "译文遗漏原话的录音对象或本机保留限定",
+              "week_qualifier_corrections": 0
+            }
+          ],
+          "last_generation_diagnostic": {
+            "relative_path": "zh_windows_uppercase_asr/phase-1/batch-1/last-generation.json",
+            "sha256": "087520b3a8017af34a4b0cdaa33d7c1f4ed268ab9f74392d428ce6c16d7baf02"
+          },
+          "diagnostic_cursor_after_not_persisted_cursor": 5,
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "final_article": "Unavailable: timeout at 120.75s and zero committed sections. No conclusion of article correctness is possible.",
+        "failed_translation": "Latest rejected raw: 星期五不是截止日期，录音应留在此电脑上. Friday negation, recording object and local retention are present, but the IN meeting notes containment is absent; typed InNotesRelation rejection is substantively justified.",
+        "failed_minutes": "Second attempt raw has FRIDAY不是截止日期记录会议笔记应留在这个电脑. It still lacks the audio/recording object, so rejection is justified.",
+        "other_committed_captions": "Four available captions preserve ILLMIS CRIBE / LLAS CRIBE, LICE / ENVY A CARD, ALICE / UN VIDEO CARD, the Windows Thursday test, 3000 dollars and unapproved state. The incomplete trailing source fragments are not reconstructed. No seq3 caption was committed.",
+        "acceptance": "Fail; the guard blocks the old audio omission but the production chain does not yet deliver a correct full article/caption."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "relative_path": "workspace/translation-diagnostic.json",
+          "sha256": "f3f2afc426c603080a2d18899c606b871cfee952f6ea61704f1dcb00477d41ab"
+        },
+        "raw": "{\n  \"translation\": \"星期五不是截止日期，录音应留在此电脑上\"\n}",
+        "error": "chunk_evidence_mismatch: 译文改写了原话录音在会议笔记中的关系",
+        "stage": "validation",
+        "not_final_committed_caption": true
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_windows_uppercase_asr.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "en_incremental_separate_topics",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 21.758,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/en_incremental_separate_topics.json",
+        "sha256": "fd01bcf56700eaf1b51a755d084e53060753c6ff2bc22d84bbcb4ba69c13473d"
+      },
+      "fixture_input": {
+        "relative_path": "en_incremental_separate_topics/input.json",
+        "sha256": "ed905313722ee7400d99c26cab8521421fd21a44bc74834049099a5d054d804e"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "81ebe552-ab05-41bc-af91-d0ab9a15c5a1:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday."
+        },
+        {
+          "seq": 2,
+          "id": "81ebe552-ab05-41bc-af91-d0ab9a15c5a1:1:2",
+          "revision": 1,
+          "start_ms": 10000,
+          "end_ms": 20000,
+          "text": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        },
+        {
+          "seq": 3,
+          "id": "81ebe552-ab05-41bc-af91-d0ab9a15c5a1:1:3",
+          "revision": 1,
+          "start_ms": 20000,
+          "end_ms": 30000,
+          "text": "The budget amount is corrected to 5000, still not approved. Morgan keeps the Thursday deadline."
+        },
+        {
+          "seq": 4,
+          "id": "81ebe552-ab05-41bc-af91-d0ab9a15c5a1:1:4",
+          "revision": 1,
+          "start_ms": 30000,
+          "end_ms": 40000,
+          "text": "Mic check. Hello. Thank you."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan负责预算审核。3000尚未批准。审核截止日期为周四。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "target": "zh",
+          "text": "Riley 周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+        },
+        {
+          "seq": 3,
+          "revision": 1,
+          "target": "zh",
+          "text": "预算金额修正为5000，仍未通过。Morgan 保持周四的截止日期。"
+        },
+        {
+          "seq": 4,
+          "revision": 1,
+          "target": "zh",
+          "text": "微检。你好。谢谢。"
+        }
+      ],
+      "final_article": [
+        {
+          "text": "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline.",
+          "source_sequences": [
+            2,
+            3,
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 4,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "en_incremental_separate_topics/phase-1/batch-1/stdout.txt",
+            "sha256": "e0851cd326f593a2b969f6e28a5cbf7de47fd3d9f5eaad9303eefa352ca94737"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "article": [
+            {
+              "text": "Morgan owns the budget review. The amount of 3000 is not approved yet. The review deadline is Thursday.",
+              "source_sequences": [
+                1
+              ],
+              "status": "pending",
+              "stale": false
+            }
+          ],
+          "process": {
+            "code": 0,
+            "seconds": 7.142,
+            "resource_sample": {
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.573935036,
+              "peak_tree_rss_mib": 1486.90625,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "en_incremental_separate_topics/phase-1/batch-1/llm-runtime.log",
+            "sha256": "3299cdcc85edcdd25674585033bf74667ba60d8318ace02b75ffc0406a2cc349"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ]
+        },
+        {
+          "phase": 2,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "en_incremental_separate_topics/phase-2/batch-1/stdout.txt",
+            "sha256": "5189c0159f954adbd0543d81c27328150a3f56857c4cfc392fe045fb588007ae"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 2,
+          "article": [
+            {
+              "text": "Morgan owns the budget review, the amount of 3000 is not approved yet, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, and no accessibility test has been completed yet.",
+              "source_sequences": [
+                1,
+                2
+              ],
+              "status": "pending",
+              "stale": false
+            }
+          ],
+          "process": {
+            "code": 0,
+            "seconds": 5.314,
+            "resource_sample": {
+              "samples": 20,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.476244528,
+              "peak_tree_rss_mib": 1489.40625,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "en_incremental_separate_topics/phase-2/batch-1/llm-runtime.log",
+            "sha256": "58eafe7b834bab21a3abc243286095aebee0f306ea58ed6fa71612680cab673a"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ]
+        },
+        {
+          "phase": 3,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "en_incremental_separate_topics/phase-3/batch-1/stdout.txt",
+            "sha256": "9373662f4fd6046c2e744beffc62b901819a1da577d641dc7eedcb86d1ad2026"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 3,
+          "process": {
+            "code": 0,
+            "seconds": 5.043,
+            "resource_sample": {
+              "samples": 19,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.3372131980000002,
+              "peak_tree_rss_mib": 1488.953125,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "en_incremental_separate_topics/phase-3/batch-1/llm-runtime.log",
+            "sha256": "8793ce1838bac0f26d85db9bf7bc4977640d526fc0cbb3ab73f58fc9d9ba0a23"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        },
+        {
+          "phase": 4,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "en_incremental_separate_topics/phase-4/batch-1/stdout.txt",
+            "sha256": "8380e631bcfdcb9e184fec665cec3598821d99b1683f1d5cac0589f00ca029d0"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 4,
+          "process": {
+            "code": 0,
+            "seconds": 4.239,
+            "resource_sample": {
+              "samples": 16,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.069271178,
+              "peak_tree_rss_mib": 1489.46875,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "en_incremental_separate_topics/phase-4/batch-1/llm-runtime.log",
+            "sha256": "67ca4e6531e37a65d8dbfc897f005467703eca41bbcd5bff243d510e65b7369b"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "PASS_WEEK_AND_INCREMENTAL_FACTS",
+        "note": "All four phases complete. Phase1 preserves Morgan budget-review responsibility, unapproved unitless3000 and Thursday. From phase2 onward Riley caption says 周二, not 本周二/下周二; the independent keyboard-accessibility test remains incomplete. Phase3 article updates to unitless5000 still not approved, retains Morgan/Thursday and Riley/Tuesday, and does not retire the independent pending task. Phase4 greetings add no task or approval facts.",
+        "open_lexical_limit": "Mic check is still 微检 in the seq4 caption; the greeting fragment is not added to the article. This is not a full lexical-quality pass."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "relative_path": "workspace/translation-diagnostic.json",
+          "sha256": "c46d7188f54cb70a5d1c56aab8898e801671b989a91167ad0947101f56b0cf84"
+        },
+        "raw": "{\"translation\": \"预算金额已修正为5000，但仍未批准。莫根坚持周四的截止日期。\"}",
+        "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+        "stage": "validation",
+        "not_final_committed_caption": true
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/en_incremental_separate_topics.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_unqualified_weekday",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 6.906,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_unqualified_weekday.json",
+        "sha256": "04ba9febe5a2228cb49b3e32dcc765364f80c949d484aa917c2988180f41d902"
+      },
+      "fixture_input": {
+        "relative_path": "zh_unqualified_weekday/input.json",
+        "sha256": "20e5fb023ff1ad801ab4db399ee8cbdfb60a141ee34ac375865633122fbafa08"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "dde31b72-2f72-467e-9d93-7a25a1b76d2d:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "Riley 周二将测试键盘可访问性。尚未完成任何可访问性测试。"
+        }
+      ],
+      "final_article": [
+        {
+          "text": "Riley 周二将测试键盘可访问性。尚未完成任何可访问性测试。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_unqualified_weekday/phase-1/batch-1/stdout.txt",
+            "sha256": "46c884bab04408edf3afbc17d9c5f394f6baf731ad69b47352fb0f17e10f9556"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 6.901,
+            "resource_sample": {
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.253853842,
+              "peak_tree_rss_mib": 1461.46875,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_unqualified_weekday/phase-1/batch-1/llm-runtime.log",
+            "sha256": "7c8f5ee7a01b41369c7c75749d1140a3e811d47ede19e1be4e5585f68dc66d04"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "PASS",
+        "note": "Caption and article preserve Riley, Tuesday without a guessed week, keyboard-accessibility testing in the future, and no completed accessibility test."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_unqualified_weekday.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_explicit_this_weekday",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 6.929,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_explicit_this_weekday.json",
+        "sha256": "7d42940bd5a0a11e59f1945d9c7ca498be613e60249f27ce1042eab5847a5f35"
+      },
+      "fixture_input": {
+        "relative_path": "zh_explicit_this_weekday/input.json",
+        "sha256": "275d89de3ad4d3066f597b36ea0b36c1a17c87a41cb07b323cd43cfc79b8113d"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "a843ef9a-47e9-4f6e-a768-ddfa568e8c45:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Riley will test keyboard accessibility this Tuesday. No accessibility test has been completed yet."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "Riley 将在本周二进行键盘可访问性测试。尚未完成任何可访问性测试。"
+        }
+      ],
+      "final_article": [
+        {
+          "text": "Riley 将在本周二进行键盘可访问性测试。尚未完成任何可访问性测试。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_explicit_this_weekday/phase-1/batch-1/stdout.txt",
+            "sha256": "4df151077a988c1697f68fa92bc030ca30181290d8054f8298f0ec7427ce5e43"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 6.923,
+            "resource_sample": {
+              "samples": 26,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.23380569,
+              "peak_tree_rss_mib": 1460.25,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_explicit_this_weekday/phase-1/batch-1/llm-runtime.log",
+            "sha256": "75660abcabced744d5ecd23877c4960893d9a8c6f3f1d2e69384a4713510e70e"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "PASS",
+        "note": "Caption and article retain 本周二 for source this Tuesday, Riley and the not-completed state. The repair did not delete a genuinely explicit week qualifier or convert it to next/last week."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_explicit_this_weekday.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_explicit_next_weekday",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 7.114,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_explicit_next_weekday.json",
+        "sha256": "ff9a9687ce615cbd2768486720b06edf3e6af5b99f497c5094087f75ba16abb2"
+      },
+      "fixture_input": {
+        "relative_path": "zh_explicit_next_weekday/input.json",
+        "sha256": "1ae4054a0717c81bc282e94c9383a06aaa45b3ba826fbac3a91bef1f7358bffc"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "479882b2-10da-42f4-aa95-06fb497f602e:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Riley will test keyboard accessibility next Tuesday. No accessibility test has been completed yet."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "Riley 下周二将进行键盘可访问性测试。尚未完成任何可访问性测试。"
+        }
+      ],
+      "final_article": [
+        {
+          "text": "Riley 下周二将进行键盘可访问性测试。尚未完成任何可访问性测试。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_explicit_next_weekday/phase-1/batch-1/stdout.txt",
+            "sha256": "ba9b532dcb62606c2fc34afeb978998477d5418ad0eddbee82325f99d34db467"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 7.104,
+            "resource_sample": {
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.265303268,
+              "peak_tree_rss_mib": 1460.71875,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_explicit_next_weekday/phase-1/batch-1/llm-runtime.log",
+            "sha256": "0160aaf281336a9ef9b53b1cb5266040772f612481fc1f9502d689a9351031aa"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "PASS",
+        "note": "Caption and article retain 下周二 for source next Tuesday, Riley and no completed test. The explicit next-week qualifier is not deleted or changed to this week."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_explicit_next_weekday.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_absolute_weekday_scope",
+      "original_automatic_pass": false,
+      "original_errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/week-retention-auto-20261028/zh_absolute_weekday_scope.artifacts/zh_absolute_weekday_scope/phase-1/batch-1"
+      ],
+      "case_seconds": 120.647,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_absolute_weekday_scope.json",
+        "sha256": "7b6758d4a9b4bc384248221a52a7305cdc094dba218df83d7182fe850f78ee41"
+      },
+      "fixture_input": {
+        "relative_path": "zh_absolute_weekday_scope/input.json",
+        "sha256": "cb289f8fbc78d1929489fc8d0af5408fe9730075ca13284695918f27253e1e57"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "72bfa8aa-6320-43bd-ac1b-c9a3f2385384:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "The meeting date is Tuesday, 2024-5-7."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "会议日期是2024年5月7日星期二。"
+        }
+      ],
+      "final_article": [],
+      "final_notes_cursor": 0,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_absolute_weekday_scope/failure-snapshot/stdout.txt",
+            "sha256": "b32a3404f5e96eb82b6202029467c02ebd825b52b15079a6daa5928bb944efdd"
+          },
+          "snapshot_origin": "retained failure snapshot from isolated workspace; settle stdout was empty",
+          "notes_cursor": 0,
+          "process": {
+            "code": 1,
+            "seconds": 120.18,
+            "resource_sample": {
+              "samples": 450,
+              "processes_seen": 4,
+              "cpu_seconds_sampled": 2.764039032,
+              "peak_tree_rss_mib": 1483.859375,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_absolute_weekday_scope/phase-1/batch-1/llm-runtime.log",
+            "sha256": "3b39cb1c4a1d275d94a2d0a1fdc36317e60a8a78490fceea1a4b770f22206629"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "rejected_article_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "body": "会议日期是2024年5月7日星期二。",
+              "validation_error": "纪要遗漏原话中的专有名称：date。保留这些名称和对应原话的状态，不新增事实。Preserve these source names and their stated status.",
+              "week_qualifier_corrections": 0
+            },
+            {
+              "attempt": 2,
+              "mode": "compose",
+              "body": "会议日期是2024年5月7日。",
+              "validation_error": "纪要遗漏原话中的专有名称：date。保留这些名称和对应原话的状态，不新增事实。Preserve these source names and their stated status.",
+              "week_qualifier_corrections": 0
+            }
+          ],
+          "last_generation_diagnostic": {
+            "relative_path": "zh_absolute_weekday_scope/phase-1/batch-1/last-generation.json",
+            "sha256": "ffcc25cce5d2c565181b1d4620e60ea4f94f295cc2bd15acfab5fc18cc3c98b5"
+          },
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "FAIL_ARTICLE_PIPELINE_CAPTION_ABSOLUTE_DATE_PASS",
+        "note": "Persisted caption preserves 2024年5月7日星期二 without an invented relative week. No article commits: the first complete and semantically correct date draft is rejected for omitted source name date; fixture focus is **date**. The second raw draft omits 星期二 and is also rejected for date. No inference is made that the week normalizer removed the weekday: the raw second draft already lacks it, both attempts report zero week corrections. Actual notes_cursor remains0 despite diagnostic cursor_after1.",
+        "caption_date_review": "2024-05-07 is Tuesday (calendar calculation), matching both source weekday and numeric date.",
+        "failure_boundary": "The original settle exits1 after120.180s; case total120.647s. Report stdout is not a JSON snapshot. The caption and absence of article are independently read from the retained isolated SQLite; they are not a successful returned document."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "fixture_focus": "**date**",
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_absolute_weekday_scope.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_recording_retention_local",
+      "original_automatic_pass": false,
+      "original_errors": [
+        "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/week-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1"
+      ],
+      "case_seconds": 120.16,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_recording_retention_local.json",
+        "sha256": "b3e0858f6e53e3d82128eebf37599dbe0fefc35b988c31e7ae57ff2bd81587d3"
+      },
+      "fixture_input": {
+        "relative_path": "zh_recording_retention_local/input.json",
+        "sha256": "1c85ad5703eabe2c7a468aa42e0c61a795243d5d318a4918dd37c9e0e959dcc6"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "7041038c-bb88-4702-b954-2923d17efaef:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        }
+      ],
+      "final_captions": [],
+      "final_article": [],
+      "final_notes_cursor": 0,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_recording_retention_local/failure-snapshot/stdout.txt",
+            "sha256": "041bbb11a704263fb26bab53a2e626c66ea85734c8ec0e458d539b0ed5f61390"
+          },
+          "snapshot_origin": "retained failure snapshot from isolated workspace; settle stdout was empty",
+          "notes_cursor": 0,
+          "process": {
+            "code": 1,
+            "seconds": 120.134,
+            "resource_sample": {
+              "samples": 450,
+              "processes_seen": 7,
+              "cpu_seconds_sampled": 4.447173624,
+              "peak_tree_rss_mib": 1501.515625,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-1/llm-runtime.log",
+            "sha256": "e48448d7a093dac22ddf1d38001996113c7d03879c623d1d6fbd033f1ae3a9d1"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "rejected_article_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "body": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+              "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+              "week_qualifier_corrections": 0
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_checked_prose",
+              "body": "星期五不是截止日期。会议笔记的录音应保持在本计算机上。",
+              "validation_error": "译文遗漏原话的录音对象或本机保留限定",
+              "week_qualifier_corrections": 0
+            }
+          ],
+          "last_generation_diagnostic": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-1/last-generation.json",
+            "sha256": "387b7ab27e6fa079d5e2de688ee4b103e0cfa485463aa60370a0a67fb1a828c9"
+          },
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "final_article": "Unavailable; no committed section. Automatic mode times out, explicit generation exhausts its existing attempts.",
+        "source_obligations": [
+          "Friday is NOT the deadline.",
+          "The object is the recording.",
+          "The recording is IN meeting notes, not AND meeting notes.",
+          "The recording should remain on this computer."
+        ],
+        "failed_minutes": "Second prose: 星期五不是截止日期。会议笔记的录音应保持在本计算机上. The raw candidate retains Friday negation, recording, and this-computer destination. 的 records an association but is weaker than explicit 中的 containment; do not treat it as full semantic success.",
+        "guard_lexical_gap": "The reported RecordingOrLocalDestination error is also affected by local_action not recognizing 保持 and 本计算机. Do not describe this specific raw prose as omitting the entire recording/local fact. This vocabulary gap is distinct from proving the required IN relation.",
+        "failed_caption": "Automatic diagnostic raw: 星期五不是截止日期。录音应保持在本计算机上. It omits meeting-notes containment even though recording/local/Friday are present.",
+        "acceptance": "Fail; no final article exists, and exact source containment is not established by the candidates."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "last_rejected_translation_diagnostic": {
+        "artifact": {
+          "relative_path": "workspace/translation-diagnostic.json",
+          "sha256": "de237e84c387131c79f1f32e70f0bde41abd5ec98f67e3dd683613da2b9b4319"
+        },
+        "raw": "{\n  \"translation\": \"星期五不是截止日期。录音应保持在本计算机上。\"\n}",
+        "error": "chunk_evidence_mismatch: 译文遗漏原话的录音对象或本机保留限定",
+        "stage": "validation",
+        "not_final_committed_caption": true
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_recording_retention_local.artifacts"
+    },
+    {
+      "mode": "auto",
+      "case": "zh_notes_only_retention",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 7.124,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-auto-20261028/zh_notes_only_retention.json",
+        "sha256": "90c3173380386fa836a6d59df2a98674e7350e0133baec45a9a83f81e88cd803"
+      },
+      "fixture_input": {
+        "relative_path": "zh_notes_only_retention/input.json",
+        "sha256": "365e676f040e000968cf3b7398ad365fee776ca8275802b375708dcf1a397f33"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "ccb4d200-1a5c-44ce-a6e5-4890430a7ecc:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Meeting notes should stay on this computer."
+        }
+      ],
+      "final_captions": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "target": "zh",
+          "text": "会议纪要应留在此电脑上。"
+        }
+      ],
+      "final_article": [
+        {
+          "text": "会议纪要应留在此电脑上。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+            "sha256": "5b7e5ac16ff94986761b4202c3ad49f302426c87c9fae4d7056660462282a699"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 7.116,
+            "resource_sample": {
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.445864176,
+              "peak_tree_rss_mib": 1493.1875,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_notes_only_retention/phase-1/batch-1/llm-runtime.log",
+            "sha256": "530a5e22156a96bca2e2673113564c92dbfb415256f79cd3af99115c703d9e25"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "article": "Pass. Only meeting notes are required to remain on this computer; no recording/audio object is added.",
+        "caption": "Automatic caption is 会议纪要应留在此电脑上; explicit mode has translation disabled.",
+        "terminology": "会议纪要 / 会议记录 are reasonable renderings of meeting notes here; 保持在本计算机上 retains the stated local destination.",
+        "acceptance": "Semantic pass for this narrow no-invented-recording control."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-auto-20261028/zh_notes_only_retention.artifacts"
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_unqualified_weekday",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 1.516,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-minutes-20261028/zh_unqualified_weekday.json",
+        "sha256": "eeff86e84a768d458c15e289f27f8cd6cad866d479e55f27fc4a4895391c92da"
+      },
+      "fixture_input": {
+        "relative_path": "zh_unqualified_weekday/input.json",
+        "sha256": "20e5fb023ff1ad801ab4db399ee8cbdfb60a141ee34ac375865633122fbafa08"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "96d1a19c-032d-468f-96dd-8cdf231cfd3d:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Riley will test keyboard accessibility on Tuesday. No accessibility test has been completed yet."
+        }
+      ],
+      "final_captions": [],
+      "final_article": [
+        {
+          "text": "Riley 将在周二测试键盘可访问性。尚未完成任何可访问性测试。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_unqualified_weekday/phase-1/batch-1/stdout.txt",
+            "sha256": "d688454dffb462e2f9e72ac782676bacae9cd1c67d899d08ce879bcc3d41abcc"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 1.51,
+            "resource_sample": {
+              "samples": 6,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.8351650789999999,
+              "peak_tree_rss_mib": 1454.453125,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_unqualified_weekday/phase-1/batch-1/llm-runtime.log",
+            "sha256": "954e15d5e8651cf9e02521f54c09b4718d04859de771d460f2bf62156a9664be"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "result": "PASS",
+        "note": "Explicit translation-off article says Riley 将在周二测试键盘可访问性。尚未完成任何可访问性测试。 It preserves the future task and pending state without adding this/next/last week. Captions are intentionally absent."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-minutes-20261028/zh_unqualified_weekday.artifacts"
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_recording_retention_local",
+      "original_automatic_pass": false,
+      "original_errors": [
+        "Phase 1: uncovered transcript",
+        "No document: 译文遗漏原话的录音对象或本机保留限定",
+        "Missing: 录音|音频|录制",
+        "Missing: 会议(?:笔记|记录|纪要)",
+        "Missing: 本机|本地|电脑|计算机",
+        "Missing: 周五|星期五",
+        "Missing: 不是|并非|不.*截止"
+      ],
+      "case_seconds": 4.014,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-minutes-20261028/zh_recording_retention_local.json",
+        "sha256": "1c6b1f8ac9b1874aaa0a64f061c326ea16f0a29e6a2bca7a7b99c880fdc1b235"
+      },
+      "fixture_input": {
+        "relative_path": "zh_recording_retention_local/input.json",
+        "sha256": "1c85ad5703eabe2c7a468aa42e0c61a795243d5d318a4918dd37c9e0e959dcc6"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "a2e01b98-2eb8-4bdf-bfd7-490d1031f7c6:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        }
+      ],
+      "final_captions": [],
+      "final_article": [],
+      "final_notes_cursor": 0,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-1/stdout.txt",
+            "sha256": "853cc4dd2c78a98b0f9a32b2ed89937f8764fe446380394eda25f440d2cf5f81"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 0,
+          "process": {
+            "code": 0,
+            "seconds": 1.902,
+            "resource_sample": {
+              "samples": 8,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.131284119,
+              "peak_tree_rss_mib": 1495.453125,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-1/llm-runtime.log",
+            "sha256": "a19910f7e8d3b10dea747377aad581d412334f6b3d3bc0c787e27d6b7070f03d"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "rejected_article_attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "body": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+              "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+              "week_qualifier_corrections": 0
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_checked_prose",
+              "body": "星期五不是截止日期。会议笔记的录音应保持在本计算机上。",
+              "validation_error": "译文遗漏原话的录音对象或本机保留限定",
+              "week_qualifier_corrections": 0
+            }
+          ],
+          "last_generation_diagnostic": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-1/last-generation.json",
+            "sha256": "76db2db49d14d5ce40cfd2e3b0ea9895c5a0bffaf0f7c8ef3fac9d482efb7f7f"
+          },
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "article_equals_final_article": true
+        },
+        {
+          "phase": 1,
+          "batch": 2,
+          "snapshot": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-2/stdout.txt",
+            "sha256": "366425681f1b950f0f2ff834201ad31457e5d8673f30ea95555506a281d0033e"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 0,
+          "process": {
+            "code": 0,
+            "seconds": 2.102,
+            "resource_sample": {
+              "samples": 8,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.154592608,
+              "peak_tree_rss_mib": 1494.859375,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-2/llm-runtime.log",
+            "sha256": "cccf809c37a86aca2ee61460fbd2a335087f2cceb67d6e06eaad905524d3d9e9"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "last_generation_diagnostic": {
+            "relative_path": "zh_recording_retention_local/phase-1/batch-2/last-generation.json",
+            "sha256": "8d427eb7af126aec01fea3fc1695e30913aa604ef471fd4ec23da5bedcf7ada2"
+          },
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "article_equals_final_article": true,
+          "rejected_article_attempts_same_as_previous_saved_call": true
+        }
+      ],
+      "independent_assistant_review": {
+        "final_article": "Unavailable; no committed section. Automatic mode times out, explicit generation exhausts its existing attempts.",
+        "source_obligations": [
+          "Friday is NOT the deadline.",
+          "The object is the recording.",
+          "The recording is IN meeting notes, not AND meeting notes.",
+          "The recording should remain on this computer."
+        ],
+        "failed_minutes": "Second prose: 星期五不是截止日期。会议笔记的录音应保持在本计算机上. The raw candidate retains Friday negation, recording, and this-computer destination. 的 records an association but is weaker than explicit 中的 containment; do not treat it as full semantic success.",
+        "guard_lexical_gap": "The reported RecordingOrLocalDestination error is also affected by local_action not recognizing 保持 and 本计算机. Do not describe this specific raw prose as omitting the entire recording/local fact. This vocabulary gap is distinct from proving the required IN relation.",
+        "failed_caption": "Automatic diagnostic raw: 星期五不是截止日期。录音应保持在本计算机上. It omits meeting-notes containment even though recording/local/Friday are present.",
+        "acceptance": "Fail; no final article exists, and exact source containment is not established by the candidates."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-minutes-20261028/zh_recording_retention_local.artifacts"
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_notes_only_retention",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "case_seconds": 1.487,
+      "raw_report": {
+        "path": "artifacts/benchmarks/week-retention-minutes-20261028/zh_notes_only_retention.json",
+        "sha256": "88ae604fb35f9434de5c2c4b6505bae16930c16f32b25028735271b437e26ce0"
+      },
+      "fixture_input": {
+        "relative_path": "zh_notes_only_retention/input.json",
+        "sha256": "365e676f040e000968cf3b7398ad365fee776ca8275802b375708dcf1a397f33"
+      },
+      "source_segments": [
+        {
+          "seq": 1,
+          "id": "68e58af4-cd21-453c-b41f-cafed0e92056:1:1",
+          "revision": 1,
+          "start_ms": 0,
+          "end_ms": 10000,
+          "text": "Meeting notes should stay on this computer."
+        }
+      ],
+      "final_captions": [],
+      "final_article": [
+        {
+          "text": "会议记录应保持在本计算机上。",
+          "source_sequences": [
+            1
+          ],
+          "status": "pending",
+          "stale": false
+        }
+      ],
+      "final_notes_cursor": 1,
+      "phases": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "snapshot": {
+            "relative_path": "zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+            "sha256": "cc91f253df42a1d263a2b690000da7e0793b42b20bd1631b00025b098f338c9e"
+          },
+          "snapshot_origin": "returned stdout snapshot",
+          "notes_cursor": 1,
+          "process": {
+            "code": 0,
+            "seconds": 1.482,
+            "resource_sample": {
+              "samples": 6,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.99102594,
+              "peak_tree_rss_mib": 1492.71875,
+              "sample_errors": 0,
+              "sampler_stopped": true
+            }
+          },
+          "backend": "metal",
+          "runtime_log": {
+            "relative_path": "zh_notes_only_retention/phase-1/batch-1/llm-runtime.log",
+            "sha256": "9875cf34c625bd90e5c6e5bc6d194e1b8b6ca2ac70b30512a2a8dd6c75a910f8"
+          },
+          "apple_m5_mtl0_observed": true,
+          "offloaded_layers": [
+            [
+              29,
+              29
+            ]
+          ],
+          "article_equals_final_article": true
+        }
+      ],
+      "independent_assistant_review": {
+        "article": "Pass. Only meeting notes are required to remain on this computer; no recording/audio object is added.",
+        "caption": "Automatic caption is 会议纪要应留在此电脑上; explicit mode has translation disabled.",
+        "terminology": "会议纪要 / 会议记录 are reasonable renderings of meeting notes here; 保持在本计算机上 retains the stated local destination.",
+        "acceptance": "Semantic pass for this narrow no-invented-recording control."
+      },
+      "borrowed_model_cleanup": {
+        "relative_path": "workspace/model-copy-cleanup.json",
+        "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+      },
+      "artifact_base": "artifacts/benchmarks/week-retention-minutes-20261028/zh_notes_only_retention.artifacts"
+    }
+  ],
+  "failure_interpretation": {
+    "uppercase_recording": "No seq3 caption and no article commit. Latest rejected caption retains recording/local/Friday but omits IN meeting notes; rejected article still lacks a clear recording object. Four other captions remain, including literal ALICE future-checking UN VIDEO CARD with passive pending approval.",
+    "local_recording": "No caption/article commit. Raw 星期五不是截止日期。会议笔记的录音应保持在本计算机上。 retains Friday negation, recording, and local destination; do not describe it as losing the entire recording/local fact. The guard vocabulary does not recognize 保持/本计算机, while 的 association still does not explicitly prove source IN containment. Guard lexical breadth and relation fidelity require separate follow-up.",
+    "absolute_date": "Caption is 会议日期是2024年5月7日星期二。 Article attempt1 has the same complete date but is rejected for missing literal focus keyword date; attempt2 already lacks the weekday in its raw draft. Both report zero week corrections. The observed failure is not evidence that week cleanup deleted the date.",
+    "scope_of_passes": "The five automatic passes and two explicit passes have independent scoped semantic reviews. Mic check still renders 微检 in a caption and does not enter the final article; it remains an editorial limitation, not a hidden new task."
+  },
+  "resource_observations": {
+    "calls_with_saved_process_samples": 15,
+    "case_elapsed_seconds_sum": 418.405,
+    "saved_process_elapsed_seconds_sum": 417.37,
+    "sampled_cpu_seconds_sum": 28.901179,
+    "largest_sampled_tree_rss_mib": 1531.078125,
+    "all_saved_runtime_logs_metal_m5_29_of_29": true,
+    "method": "psutil 7.1.3 sampled descendant process tree at 0.25-second intervals; every own sampler stopped.",
+    "limit": "CPU is a sampled lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages. GPU allocation, PSS, energy, exact disk reclamation and a performance improvement are not established. The roughly120s automatic failures are actual costs, not successful latency measurements."
+  },
+  "cleanup": {
+    "borrowed_model_workspaces": 11,
+    "all_release_markers_true": true,
+    "all_own_samplers_stopped": true,
+    "logical_bytes_per_workspace": 1107409537,
+    "limit": "Borrowed copies/links were released; logical bytes are not guaranteed reclaimed physical disk space. Source model store and raw evidence remain. No claim that all unrelated system processes are absent."
+  },
+  "prior_a8_correction": {
+    "artifact": {
+      "path": "docs/evaluation/a8-recording-retention-correction-2026-10-28.json",
+      "sha256": "1b7b4c17faedefc01fa551fdd7176e552ce8bdd7d8eb314845f05538d33f148b"
+    },
+    "separate_revision": "a8f10580b9840e87d5e82a543d443822fbc0ba64",
+    "original_auto_pass_retained": true,
+    "limit": "The original recording omission and overly broad semantic-review wording remain separately corrected. This new failed batch does not overwrite that evidence or imply a working retention repair."
+  },
+  "next_scope": "Resolve generic keyword classification/isolate the absolute-date control and repair the recording vocabulary/relation path in a separate fixed candidate; preserve these failures and rerun affected paths before further release conclusions.",
+  "limits": [
+    "All source text is public/fictional fixture input; no new natural speech recognition was measured.",
+    "Reviews are independent assistant inspections, not human acceptance.",
+    "This report combines only the exact frozen c57 batch. Later source changes, future control isolation or repaired candidate outcomes are excluded."
+  ],
+  "artifact_reference_convention": "Inside each case, relative_path is resolved against that case artifact_base. Full path references elsewhere remain repository-relative. article_equals_final_article preserves the exact final_article body without duplicating it; repeated rejected attempts reference the preceding saved call."
+}

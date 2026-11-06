@@ -1,0 +1,754 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "candidate": 1,
+  "application_revision": "77999121ae15a14f57cd58b918ebaed18b97701a",
+  "passed": false,
+  "release_eligible": false,
+  "scope": "Complete 28-case fictional-source production minutes corpus; recording and installers are not accepted by this test",
+  "execution": "explicit-generation",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "77999121ae15a14f57cd58b918ebaed18b97701a",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "60d2057ff2fd1c3b319b33200a556421ffe897c17afaedb75a95c95240754530",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "6ec8813ac5d0c62f0ee78ce630d5586dd1c26a49ebf2bbc6611060fb255983d2",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "cf69117b53f4f23225e1bc3c9281f6f8d5e677d31fe16662782cc3d96dce4ec6",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "77999121ae15a14f57cd58b918ebaed18b97701a",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_sha256": "b9c19646c07c1a775a77817d6d796756a1bdbd15aba89b42a5cd0462e3201598",
+  "automated_passed": 26,
+  "total_cases": 28,
+  "known_manual_or_spelling_failures": {
+    "bilingual_scope": "Drops offline prototype/review and Friday testing.",
+    "zh_minutes_from_en": "Transliterates Morgan as 莫根.",
+    "zh_connected_minutes": "Turns the fragmented-minutes complaint into a request to split sentences.",
+    "en_minutes_from_zh": "Invents first/second meetings."
+  },
+  "backend_verification": {
+    "commands": 38,
+    "positive_offload_commands": 38,
+    "full_29_layer_commands": 38,
+    "command_manifest_sha256": "d28452754beca24d15c125d175ac19f7300ad7f4a66599a67ab281f187389615",
+    "raw_logs": "Per-case .artifacts/<case>/phase-*/batch-*/llm-runtime.log retained"
+  },
+  "source_checks": {
+    "core_passed": 144,
+    "core_ignored": 7,
+    "asr_passed": 5,
+    "desktop_passed": 4,
+    "python_tests": 63,
+    "python_skipped": 1,
+    "workspace_clippy": true,
+    "ui_test_feature_clippy": true,
+    "frontend_build": true,
+    "frontend_format": true
+  },
+  "windows_independent_report": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6433742115",
+  "cases": [
+    {
+      "case": "zh_budget_guess",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["张老师周五给测试结果，预算先不定，下周再看。"],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_budget_guess.json",
+      "raw_report_sha256": "b374262db2de4f444335b1c06321b3a2d5f66de74eb21f431cffe2eef094dda4"
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "Morgan will send the release report on Thursday, and we have not approved the launch date yet."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_owner_and_deadline.json",
+      "raw_report_sha256": "5ea0a763a6a65b797182b2cb07a918539154b48710c58ff94f900d643d4114d2"
+    },
+    {
+      "case": "zh_correction",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "预算先按3000算，李明负责。更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_correction.json",
+      "raw_report_sha256": "da34d9e0e6a6397034dc2c6a2a097af9620af8f1feaaa15147d7f751415efdec"
+    },
+    {
+      "case": "bilingual_scope",
+      "automated_passed": false,
+      "errors": ["Missing: 离线|线下转录", "Missing: 周五|星期五"],
+      "known_manual_or_contract_failure": "Drops offline prototype/review and Friday testing.",
+      "body": [
+        "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/bilingual_scope.json",
+      "raw_report_sha256": "fc1a33ca7989e6a2c5b5fe764b8ae33ce1bd0839aabbc18efb405c6d17124e0e"
+    },
+    {
+      "case": "zh_calendar_citations",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。会议日期是二〇二四年五月八日，本次先确认测试安排。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_calendar_citations.json",
+      "raw_report_sha256": "da0e3eb2cb5eb2a7eb662da1f2e6cfffe2d5623f4cb1294077911b09eb63efb5"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": "Turns the fragmented-minutes complaint into a request to split sentences.",
+      "body": [
+        "实时转写和实时字幕的入口应放在工具栏，而非二级菜单。AI纪要显示不连贯，需分句显示。引用应放在正文旁边的小标里，点一下再看原话。离线会议笔记的实时转写已显示，但AI纪要仍是一小句一小句地显示。两项调整尚未完成，先记录下来，完成后再一起验证。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_connected_minutes.json",
+      "raw_report_sha256": "9106c7e91015ce484f76b22e9340ce6db3dc3cb8bb901d21cb24654362f45f33"
+    },
+    {
+      "case": "zh_product_spelling",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["OmaScribe的会议纪要仍然需要优化，这项调整尚未完成。"],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_product_spelling.json",
+      "raw_report_sha256": "53ad0a3f50ba81c49a3d73f1c55f57c7778923fe42161efd574cf89ec37f5c1f"
+    },
+    {
+      "case": "zh_empty_greetings",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_empty_greetings.json",
+      "raw_report_sha256": "d403a392507437d078eb9b950c92e4cb6d53bffc3bbaec3138c6ca7e77901a1f"
+    },
+    {
+      "case": "zh_phased_correction",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "预算暂按3000元安排，负责人是李明。离线转写先覆盖麦克风录音，系统音频还没有做。离线转写需要保留原始录音，失败后能够重新处理。模型下载是可选联网功能，录音内容不会上传。更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_phased_correction.json",
+      "raw_report_sha256": "9b55e131a858cdcb96f356af55a3aa90e4cab551e3060792166cc75f2920c50f"
+    },
+    {
+      "case": "zh_named_speakers",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "林悦：实时转写的延迟测试由我负责，结果周四提交。  \n陈明：我负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_named_speakers.json",
+      "raw_report_sha256": "559dbe22cc1a6153af41ddfba6070be55dd0d3d5428a6fa110da53d499b47b71"
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": "Invents first/second meetings.",
+      "body": [
+        "In the first meeting, it was discussed that only offline transcription would be performed, with the model downloaded by the user. The recording, transcription, and summary were not uploaded to the server. The system for audio collection had not been implemented yet. In the second meeting, it was clarified that the transcription process was not yet integrated into the system, and the model was to be manually downloaded by the user."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_minutes_from_zh.json",
+      "raw_report_sha256": "3390230e329e9b8ae32ef5072e0c1e836df2653c58c6347af9fe09f87a0d9aba"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "automated_passed": false,
+      "errors": ["Missing: Morgan"],
+      "known_manual_or_contract_failure": "Transliterates Morgan as 莫根.",
+      "body": [
+        "离线记录器已准备好进行内部测试，公版发布尚未获批。莫根拥有延迟报告，将于周四交付。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "zh"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_minutes_from_en.json",
+      "raw_report_sha256": "5785fa07824d17584144d2ba45be2cba612c550049ce4ebfdcf9e2b7135e38bf"
+    },
+    {
+      "case": "zh_long_context_state",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_long_context_state.json",
+      "raw_report_sha256": "7a5659c1d1f7c3554e7669f57e7ac6ad0baa424f9d419fe33f965e8268536bb3"
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "人工确认：预算仍未确定，先等测试报告。",
+        "预算尚未确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_human_paragraph_protected.json",
+      "raw_report_sha256": "dd411eb662b19dfb3af116322e959a19a171415ccba472852c8cbe02b7d7ca72"
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "OmaScribe 的实时转写存在延迟，说话人分配存在问题，尚未修复。我们下次再测试字幕，目前还没有完成。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_note_name_spelling.json",
+      "raw_report_sha256": "3d9fd2c313d6a385bc07b33b69c081bf07231070277d6947e92477048bdcecf3"
+    },
+    {
+      "case": "en_generic_note_name",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "The PixelLedger import still fails, and we will investigate it after the review."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_generic_note_name.json",
+      "raw_report_sha256": "7faf810313e75c2d0c307e053bc98a4822ef445bfefd9317be899f7ae33bec65"
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["今天只讨论麦克风权限，尚未决定使用哪个产品，预算也没有确定。"],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_name_context_is_not_evidence.json",
+      "raw_report_sha256": "3184adbd9432dad0872f06ddd1810bd691232a90ad597097345ee679ed9e0877"
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["转写中提到 PixelLedger 的人员分配存在问题，需核对。"],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_noisy_name_no_added_topics.json",
+      "raw_report_sha256": "f944df63622aa8466c4c47b20ff50f69ccfb04f16e4c8205074279d7ef9e75a7"
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "OmaScribe 的功能目前尚未正常运行。gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_windows_gpu_keyword_lines.json",
+      "raw_report_sha256": "6438092d1cde277801d0bac4ed65c88a272b43aeb0754da77b6ea8476a25f60e"
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_incremental_separate_topics.json",
+      "raw_report_sha256": "fc044c5837a286d617b17d34a39e59708fa2efca5290015f8e1edc3e43418723"
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "展览暂定周五开放，刘老师负责布置。  \n周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定。  \n参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_incremental_withdrawal.json",
+      "raw_report_sha256": "f1d1c682396270c33614398601ef5dc6d83b7909737ef8046526cec6259a8b11"
+    },
+    {
+      "case": "en_incremental_completion",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "Morgan confirmed that the upload verification has been completed successfully on Thursday. There are no remaining upload tasks."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_incremental_completion.json",
+      "raw_report_sha256": "e60f6003d5e1e8b8e2ffa7bd47d34241236814ed3e6aac9731ab10d92deb27d9"
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["The Budget of 3000 is not approved."],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_sparse_unapproved.json",
+      "raw_report_sha256": "cb2b61ac3bae21969693ce15700d05040883baef897354a010801ccaeb7419be"
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["The Budget of 3000 has not been approved."],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_sparse_unapproved_passive.json",
+      "raw_report_sha256": "2755aceea55c1ccb83469026ef9eb84db4c4e00ec9d6ed3ea1c5f3837ddae024"
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["The meeting has ended, and no further action has been taken."],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_explicit_meeting_closure.json",
+      "raw_report_sha256": "2ae5b8b0c8296c04b3e243c332b03173673b9f3677e226a56c73cbd7f1140a54"
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_budget_invoice_same_amount.json",
+      "raw_report_sha256": "806527ffd1084177ad9f16f4b09a965331cc6dbe186f6a9a25cf939448dd89c2"
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": [
+        "The invoice review has not been completed, and Riley will run it on Friday. Morgan confirmed that the upload verification has been completed successfully on Thursday, with no remaining upload tasks."
+      ],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "en"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/en_completion_independent_pending.json",
+      "raw_report_sha256": "814666939d3af825eb66afb9242d8a1086f2c48c4fb7ca3a2a4569304156c75b"
+    },
+    {
+      "case": "zh_incremental_completion",
+      "automated_passed": true,
+      "errors": [],
+      "known_manual_or_contract_failure": null,
+      "body": ["发票核对尚未完成。上传验证现已完成。"],
+      "effective_preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b",
+        "minutes_language": "zh"
+      },
+      "raw_report": "artifacts/benchmarks/release035-candidate1-metal-full/zh_incremental_completion.json",
+      "raw_report_sha256": "6a7dee2172eb526c4d1759744c833a9d2ef60091f383ea26b8a4def9db2a1aac"
+    }
+  ]
+}

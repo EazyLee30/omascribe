@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "production_source": "48f58534a56d8567f9acabd67bd2bc7ffcce63b0",
+  "changes": {
+    "minutes_target_cache": "Reuse current checked translations in the internal minutes input independently of caption visibility. No translation/model job is scheduled. The real retry caller and generation admission share the same view.",
+    "integrity": "Current own-source tuple, model/runtime/config/terms identity and existing language/name/fact checks remain. Public captions, pending translation, original speech and accepted paragraphs are unchanged.",
+    "bounded_lookup": "Only the actual retrieved IDs drive the minutes cache primary-key lookups; maximum64 sources and bounded source/ID/row bytes. Unsupported or unusable rows clear the internal map without changing public caption state.",
+    "native_collection": "Run each original case once in its own workspace; collect expectation failures but stop on execution, malformed report or budget failure. All68 must complete and pass before publishing. Default total2100s, per-case700s plus30s cleanup allowance; native job90min unchanged."
+  },
+  "regressions": {
+    "original_target_cache_red": {
+      "passed": 1,
+      "failed": 6,
+      "evidence": {
+        "path": "artifacts/minutes-target-cache-2026-11-06/red.log",
+        "sha256": "02c6787fcca8c259ec577def3404ede23a60746d2176c9ba1eacfb22ce7f2784"
+      }
+    },
+    "first_green": {
+      "passed": 13,
+      "evidence": {
+        "path": "artifacts/minutes-target-cache-2026-11-06/green-first.log",
+        "sha256": "8556702828557f4b718e5c1330c7de877048177b8a60e07d234a23bc29dda837"
+      }
+    },
+    "additional_red": {
+      "passed": 13,
+      "failed": 2,
+      "problems": [
+        "Indexed meeting history was still scanned",
+        "Oversized fallback retained an unadmitted caption map in retry identity"
+      ],
+      "evidence": {
+        "path": "artifacts/minutes-target-cache-2026-11-06/bounded-query-red.log",
+        "sha256": "5a2c6e8fc1d6226e0f9f1f4af922a26d247e25f5c316637893cfe985b1f00351"
+      }
+    },
+    "final_target_tests": {
+      "passed": 15,
+      "evidence": {
+        "path": "artifacts/minutes-target-cache-2026-11-06/green-final.log",
+        "sha256": "a15bd2d2899407b3ae3cf2ec605ac9b6c991c2e2f16e22ff8f752ff645c101d5"
+      }
+    },
+    "query_vm_steps": {
+      "history1000_before": 10191,
+      "history5000_before": 50191,
+      "history1000_after": 194,
+      "history5000_after": 194,
+      "selected_ids": 5,
+      "scope": "The actual bundled-SQLite minutes cache statement only. Global retrieval/terms/budget/completion/serialization work is still history-dependent."
+    },
+    "first_workspace_failure": {
+      "passed_core": 731,
+      "failed_core": 1,
+      "ignored": 14,
+      "evidence": {
+        "path": "artifacts/minutes-target-cache-2026-11-06/canonical-workspace.log",
+        "sha256": "4385cf43787f2eb4b1d17e8353376d7c841b748ff6374940ea1cc05eb890fd59"
+      },
+      "resolution": "A source-less synthetic caption-map test is now scoped to InputDigest hashing with both original assertions retained. A separate real Engine negative rejects that unadmitted map; the existing real Store checked-translation positive remains unchanged."
+    }
+  },
+  "final_validation": {
+    "core_passed": 733,
+    "core_explicitly_ignored": 14,
+    "integration_passed": 44,
+    "desktop_shell_passed": 4,
+    "asr_passed": 18,
+    "cli_passed": 2,
+    "python_passed": 165,
+    "python_explicitly_skipped": 1,
+    "strict_clippy_and_fmt": "passed",
+    "checks": [
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "+1.99.0",
+          "test",
+          "--workspace",
+          "--offline",
+          "--locked"
+        ],
+        "exit": 0,
+        "seconds": 17.138,
+        "log": "artifacts/minutes-target-cache-2026-11-06/canonical-final-workspace.log",
+        "sha256": "99a35be7c91d1a0f5c7be0d0f533d0e51a4ecd3aa01be0c8fa5d7d55476ef6a3"
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "+1.99.0",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--offline",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit": 0,
+        "seconds": 4.958,
+        "log": "artifacts/minutes-target-cache-2026-11-06/canonical-final-clippy.log",
+        "sha256": "e66c215d3ff988a2e301d7d451bab2de8249585123ff29d40b2a93f95accee90"
+      },
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "+1.99.0",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 0.463,
+        "log": "artifacts/minutes-target-cache-2026-11-06/canonical-final-fmt.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "python",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_*.py"
+        ],
+        "exit": 0,
+        "seconds": 4.164,
+        "log": "artifacts/minutes-target-cache-2026-11-06/canonical-final-python.log",
+        "sha256": "c45e361fb02a29b037a80fade6df237954e6fae883f218e8d4767998c45eedbb"
+      }
+    ]
+  },
+  "native_candidate": {
+    "source": "c6706b652ad4448670b5c95c9a3edcfc8f435b2d",
+    "run": "https://github.com/EazyLee30/omascribe/actions/runs/42074653971",
+    "attempt": 1,
+    "publish": false,
+    "status": "completed/failure",
+    "native_installer_build_steps_passed": 4,
+    "each_target_passed_before_case35_failure": 34,
+    "each_target_unattempted": 33,
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "runtime_only_targets_tested": 0,
+    "package_artifacts": 0,
+    "clarification": "Linux raw shows a soft-line attribution diagnostic issue and untranslated English; guard diagnostic alone is not proof of invented speech. Windows and Intel logs report a name rewrite. No committed article on any target.",
+    "team_evidence": {
+      "path": "artifacts/release035-c670-native-2026-11-06/team-acceptance-clarifications.json",
+      "sha256": "79464d6d549139f486f5c5c9c82a943e3aa4eb8d47754a6f4bf0f6145a7f453e"
+    }
+  },
+  "limits": [
+    "No model requests or installer builds for these two fixes. The previous c670 native run is separate evidence.",
+    "Missing-cache Q16 and real-audio Q9 remain open; cache reuse does not prove new translation or full article quality.",
+    "No overall CPU, memory, energy or latency improvement is claimed.",
+    "Windows deadline cleanup and physical GPU/microphone acceptance remain unverified.",
+    "Public release CLI/ASR remain the earlier c670 release build; no new installed application or stable release is produced here."
+  ],
+  "release_status": "0.3.5 unpublished; stable0.3.4"
+}

@@ -1,0 +1,1446 @@
+{
+  "schema": 1,
+  "scope": "Carry independent later facts through the original single-source metric repair; six final scoped checks, not a new full corpus or release acceptance.",
+  "source_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+  "fixture_case_count": 51,
+  "targeted_continuation_gate_passed": true,
+  "full_semantic_acceptance": false,
+  "release_accepted": false,
+  "parent_checkpoint": {
+    "path": "docs/evaluation/apple-source-metric-types-2026-10-28.json",
+    "sha256": "3aa32e8c4bfcb702b3ba75b8d370f609a90429f9e27b974301f3355b31e96e40",
+    "source_revision": "b17a4704afb3c1efda1df85efcb7bfd3ae743c8d",
+    "automatic_passed": 11,
+    "explicit_minutes_passed": 5,
+    "note": "Parent 16 results retain their source; do not pool them as final c8 results."
+  },
+  "rejected_intermediate": {
+    "source_revision": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+    "automatic_passed": 3,
+    "explicit_minutes_failed": 1,
+    "reason": "Abstaining on a first closed metric list left no source predicate for the existing second attempt. The model added sentence error rate, correctly rejected by validation; no minutes committed.",
+    "results": [
+      {
+        "case": "en_closed_metric_request",
+        "execution": "automatic-scheduler",
+        "passed": true,
+        "seconds": 6.895,
+        "errors": [],
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "a72f5d5efb8d18fc553b3c4b0a4cd99eead5279df3fb6375a2527d4622958089",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "22be0c19e162ede983a0c7ef6179245a16f648a6782a21ecaa2b4e691fd025e3",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "827e36d711abd395cf3ff3dc92dca3590c4e5e651d91259d3e599e813fb0e195",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "source_segments": [
+          {
+            "end_ms": 10000,
+            "id": "b976175a-9883-481e-942a-43ce5df9766e:1:1",
+            "meeting_id": "b976175a-9883-481e-942a-43ce5df9766e",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "测试报告要包括字错率、词错率。"
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "838979602a42bc45181abdc9a5ece1bc585de4b9b04772731b19edf0175914aa",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "b976175a-9883-481e-942a-43ce5df9766e:1:1",
+            "target": "en",
+            "text": "The test report should include character error rate and word error rate."
+          }
+        ],
+        "minutes": [
+          {
+            "focus": "Meeting minutes",
+            "id": "369a6268-bf52-4080-8474-d1ee2b7ad25f",
+            "kind": "section",
+            "meeting_id": "b976175a-9883-481e-942a-43ce5df9766e",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "测试报告要包括字错率、词错率。",
+                "revision": 1,
+                "segment_id": "b976175a-9883-481e-942a-43ce5df9766e:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The test report should include character error rate and word error rate."
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "body_draft": "The test report should include character error rate and word error rate.",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 242,
+            "first_token_ms": 61,
+            "input_tokens": 111,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "The test report should include character error rate and word error rate.",
+            "selected": [
+              {
+                "id": "b976175a-9883-481e-942a-43ce5df9766e:1:1",
+                "revision": 1,
+                "seq": 1
+              }
+            ],
+            "translation_plan": null,
+            "usage": {
+              "completion_tokens": 14,
+              "prompt_tokens": 128,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 156.53,
+                "predicted_n": 14,
+                "predicted_per_second": 83.05117229923977,
+                "predicted_per_token_ms": 12.04076923076923,
+                "prompt_ms": 60.642,
+                "prompt_n": 128,
+                "prompt_per_second": 2110.748326242538,
+                "prompt_per_token_ms": 0.473765625
+              },
+              "total_tokens": 142
+            },
+            "validation_error": null
+          }
+        ],
+        "source_repairs": [],
+        "runtime_log_sha256": "72df760d579a7dfda065c9a1df0b7547eeb833b4c0fa3eed977aeb71aa67fc68",
+        "m5_metal_29_of_29": true,
+        "released_model_directory": true,
+        "raw_report": "artifacts/benchmarks/metric-following-fact-auto-20261028/en_closed_metric_request.json",
+        "raw_report_sha256": "c6378881d9d386e6a01118e75736e6340a9a689a38c33e3c8927b00cc889cff0",
+        "final_snapshot_sha256": "371e7508142250445a2e7c0364a3ec0dda2ca89ef9466728e566e84541636c46"
+      },
+      {
+        "case": "en_metric_report_requirements",
+        "execution": "automatic-scheduler",
+        "passed": true,
+        "seconds": 7.106,
+        "errors": [],
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "a72f5d5efb8d18fc553b3c4b0a4cd99eead5279df3fb6375a2527d4622958089",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "22be0c19e162ede983a0c7ef6179245a16f648a6782a21ecaa2b4e691fd025e3",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "827e36d711abd395cf3ff3dc92dca3590c4e5e651d91259d3e599e813fb0e195",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "source_segments": [
+          {
+            "end_ms": 10000,
+            "id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4:1:1",
+            "meeting_id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "075fee1335c574052c86b3a987ea43b7c0f6394349bfd6bcc39400a09beda248",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4:1:1",
+            "target": "en",
+            "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+          }
+        ],
+        "minutes": [
+          {
+            "focus": "Meeting minutes",
+            "id": "21767322-9574-4edb-80d2-122f0bdcf8c6",
+            "kind": "section",
+            "meeting_id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+                "revision": 1,
+                "segment_id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "body_draft": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 392,
+            "first_token_ms": 80,
+            "input_tokens": 122,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.",
+            "selected": [
+              {
+                "id": "0908152e-e7ce-4789-941a-a2c8a1b7a1f4:1:1",
+                "revision": 1,
+                "seq": 1
+              }
+            ],
+            "translation_plan": null,
+            "usage": {
+              "completion_tokens": 25,
+              "prompt_tokens": 139,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 292.779,
+                "predicted_n": 25,
+                "predicted_per_second": 81.97309233244188,
+                "predicted_per_token_ms": 12.199125,
+                "prompt_ms": 79.327,
+                "prompt_n": 139,
+                "prompt_per_second": 1752.240725099903,
+                "prompt_per_token_ms": 0.5706978417266186
+              },
+              "total_tokens": 164
+            },
+            "validation_error": null
+          }
+        ],
+        "source_repairs": [],
+        "runtime_log_sha256": "14d02b46fb835fa828447316e6d3001f7fcd55357c636403ae70eff3f76c00c9",
+        "m5_metal_29_of_29": true,
+        "released_model_directory": true,
+        "raw_report": "artifacts/benchmarks/metric-following-fact-auto-20261028/en_metric_report_requirements.json",
+        "raw_report_sha256": "e254aab5a85524b9174b9ad2a73bf2d9bb25ecb69c657d5c2cc5ded4e64518fa",
+        "final_snapshot_sha256": "b392140fc91bc5b4d4d1124c6e0bb4ea944ee4891c8a1ee2155a4e8111e7fa25"
+      },
+      {
+        "case": "en_metric_with_following_fact",
+        "execution": "automatic-scheduler",
+        "passed": true,
+        "seconds": 7.124,
+        "errors": [],
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "a72f5d5efb8d18fc553b3c4b0a4cd99eead5279df3fb6375a2527d4622958089",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "22be0c19e162ede983a0c7ef6179245a16f648a6782a21ecaa2b4e691fd025e3",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "827e36d711abd395cf3ff3dc92dca3590c4e5e651d91259d3e599e813fb0e195",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "source_segments": [
+          {
+            "end_ms": 10000,
+            "id": "9d2d031a-027f-4366-a613-695f30573b42:1:1",
+            "meeting_id": "9d2d031a-027f-4366-a613-695f30573b42",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "测试报告要包括字错率、词错率。缓存保存在本机。"
+          }
+        ],
+        "captions": [
+          {
+            "cache_key": "66b1d73e7e48a6c13b887384e23520a61979e5a59f5cf3c3a5a335268ee8c5f3",
+            "model": "qwen3-1.7b",
+            "revision": 1,
+            "segment_id": "9d2d031a-027f-4366-a613-695f30573b42:1:1",
+            "target": "en",
+            "text": "Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine."
+          }
+        ],
+        "minutes": [
+          {
+            "focus": "Meeting minutes",
+            "id": "75912352-e31d-47cd-a4a3-a3190dd7fafc",
+            "kind": "section",
+            "meeting_id": "9d2d031a-027f-4366-a613-695f30573b42",
+            "sources": [
+              {
+                "end_ms": 10000,
+                "quote": "测试报告要包括字错率、词错率。缓存保存在本机。",
+                "revision": 1,
+                "segment_id": "9d2d031a-027f-4366-a613-695f30573b42:1:1",
+                "speaker_name": null,
+                "start_ms": 0
+              }
+            ],
+            "stale": false,
+            "status": "pending",
+            "text": "Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine."
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "body_draft": "Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine.",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 433,
+            "first_token_ms": 81,
+            "input_tokens": 125,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "Test report should include character error rate (CER) and word error rate (WER). The cache is saved on the local machine.",
+            "selected": [
+              {
+                "id": "9d2d031a-027f-4366-a613-695f30573b42:1:1",
+                "revision": 1,
+                "seq": 1
+              }
+            ],
+            "translation_plan": null,
+            "usage": {
+              "completion_tokens": 28,
+              "prompt_tokens": 142,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 326.461,
+                "predicted_n": 28,
+                "predicted_per_second": 82.70513170026435,
+                "predicted_per_token_ms": 12.091148148148148,
+                "prompt_ms": 80.392,
+                "prompt_n": 142,
+                "prompt_per_second": 1766.3449099412878,
+                "prompt_per_token_ms": 0.5661408450704225
+              },
+              "total_tokens": 170
+            },
+            "validation_error": null
+          }
+        ],
+        "source_repairs": [],
+        "runtime_log_sha256": "42438aba522b422b47b5838cf8839476a55556f24b385376d1304b58a175ef7e",
+        "m5_metal_29_of_29": true,
+        "released_model_directory": true,
+        "raw_report": "artifacts/benchmarks/metric-following-fact-auto-20261028/en_metric_with_following_fact.json",
+        "raw_report_sha256": "154c594882c01be33e695ad43355db6775887c6526782f65f652f57104ca1650",
+        "final_snapshot_sha256": "ba31b1665474040e7e983e2f808d80368840ff00886f7d5fa6001dbc45347599"
+      },
+      {
+        "case": "en_metric_with_following_fact",
+        "execution": "explicit-generation",
+        "passed": false,
+        "seconds": 3.875,
+        "errors": [
+          "Phase 1: uncovered transcript",
+          "No document: Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses.",
+          "Missing: character error rate|CER",
+          "Missing: word error rate|WER",
+          "Missing: cache",
+          "Missing: local|device|computer|machine"
+        ],
+        "environment": {
+          "cli_build": {
+            "profile": "debug",
+            "revision_at_compile": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+            "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+            "schema": 1,
+            "source_sha256": "a72f5d5efb8d18fc553b3c4b0a4cd99eead5279df3fb6375a2527d4622958089",
+            "target": "aarch64-apple-darwin"
+          },
+          "core_and_harness_source_sha256": "22be0c19e162ede983a0c7ef6179245a16f648a6782a21ecaa2b4e691fd025e3",
+          "inference_source_tree_dirty": false,
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64",
+          "python": "3.13.3",
+          "cli_sha256": "827e36d711abd395cf3ff3dc92dca3590c4e5e651d91259d3e599e813fb0e195",
+          "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+          "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+          "suite_revision": "7a35c75ffe29a02d0164c551b6eecf5d996b4a8b",
+          "corpus": "public or fictional only",
+          "network_during_evaluation": "disabled optional services; inference uses local processes"
+        },
+        "source_segments": [
+          {
+            "end_ms": 10000,
+            "id": "1bf7d717-e21d-48ed-abcc-83156cbe4f14:1:1",
+            "meeting_id": "1bf7d717-e21d-48ed-abcc-83156cbe4f14",
+            "revision": 1,
+            "run": 1,
+            "seq": 1,
+            "speaker": null,
+            "speaker_manual": false,
+            "start_ms": 0,
+            "text": "测试报告要包括字错率、词错率。缓存保存在本机。"
+          }
+        ],
+        "captions": [],
+        "minutes": [],
+        "attempts": [
+          {
+            "attempt": 1,
+            "body_draft": "The test report should include word error rate and sentence error rate. The cache is saved on the local machine.",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 352,
+            "first_token_ms": 73,
+            "input_tokens": 117,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "The test report should include word error rate and sentence error rate. The cache is saved on the local machine.",
+            "selected": [
+              {
+                "id": "1bf7d717-e21d-48ed-abcc-83156cbe4f14:1:1",
+                "revision": 1,
+                "seq": 1
+              }
+            ],
+            "translation_plan": null,
+            "usage": {
+              "completion_tokens": 23,
+              "prompt_tokens": 134,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "timings": {
+                "cache_n": 0,
+                "predicted_ms": 252.894,
+                "predicted_n": 23,
+                "predicted_per_second": 86.99296938638322,
+                "predicted_per_token_ms": 11.495181818181818,
+                "prompt_ms": 72.686,
+                "prompt_n": 134,
+                "prompt_per_second": 1843.54621247558,
+                "prompt_per_token_ms": 0.5424328358208955
+              },
+              "total_tokens": 157
+            },
+            "validation_error": "Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses."
+          },
+          {
+            "attempt": 2,
+            "body_draft": "The report should include character error rate (CER), word error rate (WER), and sentence error rate (SER). The cache is saved on the local machine.",
+            "citation_scope": "selected_transcript_context",
+            "context_size": 2048,
+            "draft": "{\"sections\":[{\"body\":\"The report should include character error rate (CER), word error rate (WER), and sentence error rate (SER). The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "elapsed_ms": 493,
+            "first_token_ms": 57,
+            "input_tokens": 185,
+            "mode": "compose",
+            "normalized_draft": "{\"sections\":[{\"body\":\"The report should include character error rate (CER), word error rate (WER), and sentence error rate (SER). The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+            "prose_body": "The report should include character error rate (CER), word error rate (WER), and sentence error rate (SER). The cache is saved on the local machine.",
+            "selected": [
+              {
+                "id": "1bf7d717-e21d-48ed-abcc-83156cbe4f14:1:1",
+                "revision": 1,
+                "seq": 1
+              }
+            ],
+            "translation_plan": null,
+            "usage": {
+              "completion_tokens": 34,
+              "prompt_tokens": 202,
+              "prompt_tokens_details": {
+                "cached_tokens": 89
+              },
+              "timings": {
+                "cache_n": 89,
+                "predicted_ms": 435.296,
+                "predicted_n": 34,
+                "predicted_per_second": 75.81048298169522,
+                "predicted_per_token_ms": 13.190787878787878,
+                "prompt_ms": 55.613,
+                "prompt_n": 113,
+                "prompt_per_second": 2031.8990164170248,
+                "prompt_per_token_ms": 0.4921504424778761
+              },
+              "total_tokens": 236
+            },
+            "validation_error": "Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses."
+          }
+        ],
+        "source_repairs": [],
+        "runtime_log_sha256": "f96aa172d5c7ab7fbecea60160a0759ae371bc8dd291f03c4906ed0a84882b13",
+        "m5_metal_29_of_29": true,
+        "released_model_directory": true,
+        "raw_report": "artifacts/benchmarks/metric-following-fact-minutes-20261028/en_metric_with_following_fact.json",
+        "raw_report_sha256": "ba7b39e2755bd30c81088d8155f8f10239ba168658febaf3e76e69b4f770f65a",
+        "final_snapshot_sha256": "6378a35c281d02ba70e219f8abb4d7e006c8a7a449850a442bbe5aab2cebb3bb"
+      }
+    ]
+  },
+  "final_results": [
+    {
+      "case": "en_closed_metric_request",
+      "execution": "automatic-scheduler",
+      "passed": true,
+      "seconds": 6.937,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "c03e2092-bcba-4d20-898d-a989513b87c3:1:1",
+          "meeting_id": "c03e2092-bcba-4d20-898d-a989513b87c3",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "c37ea0d6649ab087577193590fdc532f569a720da0b3d89fade43a3b7983a8d7",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "c03e2092-bcba-4d20-898d-a989513b87c3:1:1",
+          "target": "en",
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "48c570d3-d290-415d-9964-23c791690b0c",
+          "kind": "section",
+          "meeting_id": "c03e2092-bcba-4d20-898d-a989513b87c3",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。",
+              "revision": 1,
+              "segment_id": "c03e2092-bcba-4d20-898d-a989513b87c3:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include character error rate and word error rate.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 244,
+          "first_token_ms": 62,
+          "input_tokens": 111,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate.",
+          "selected": [
+            {
+              "id": "c03e2092-bcba-4d20-898d-a989513b87c3:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 14,
+            "prompt_tokens": 128,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 156.968,
+              "predicted_n": 14,
+              "predicted_per_second": 82.81942816370216,
+              "predicted_per_token_ms": 12.074461538461538,
+              "prompt_ms": 61.343,
+              "prompt_n": 128,
+              "prompt_per_second": 2086.6276510767325,
+              "prompt_per_token_ms": 0.4792421875
+            },
+            "total_tokens": 142
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [],
+      "runtime_log_sha256": "03bcece9332a8d6b5a4650fa4a97c0e48f1ba83599872b7848adceb105cfe265",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-auto-20261028/en_closed_metric_request.json",
+      "raw_report_sha256": "a2800d82f49d6c890c7951be127c5117d5aa6ab7a7c0a860b43cde2b8bb8aefb",
+      "final_snapshot_sha256": "5159a7a1d4ac86508516565022efb2a24067a41962efab941c0a50eca89b60e2"
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "execution": "automatic-scheduler",
+      "passed": true,
+      "seconds": 7.094,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "a851afbf-f666-4ea3-9981-90ac32c52483:1:1",
+          "meeting_id": "a851afbf-f666-4ea3-9981-90ac32c52483",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "ee03f1b6d0e1da8cf10af39a653bad7aa9e0364d163f05a7dc04fdc52780679a",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "a851afbf-f666-4ea3-9981-90ac32c52483:1:1",
+          "target": "en",
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "e3d6c66c-ee91-422a-824b-9384f9498f07",
+          "kind": "section",
+          "meeting_id": "a851afbf-f666-4ea3-9981-90ac32c52483",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "a851afbf-f666-4ea3-9981-90ac32c52483:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 410,
+          "first_token_ms": 80,
+          "input_tokens": 122,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate and transcription latency, and should not only mention successful processing.",
+          "selected": [
+            {
+              "id": "a851afbf-f666-4ea3-9981-90ac32c52483:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 25,
+            "prompt_tokens": 139,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 298.371,
+              "predicted_n": 25,
+              "predicted_per_second": 80.43677167016902,
+              "predicted_per_token_ms": 12.432125,
+              "prompt_ms": 79.035,
+              "prompt_n": 139,
+              "prompt_per_second": 1758.7144935787942,
+              "prompt_per_token_ms": 0.5685971223021582
+            },
+            "total_tokens": 164
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [],
+      "runtime_log_sha256": "3c901a3151dd8f0a82575a68b0b37e3563f2236065bd142e312bebcea23ad05a",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-auto-20261028/en_metric_report_requirements.json",
+      "raw_report_sha256": "50bda87ca77775f377cda3153ff1e4feb40de493d7aec9bea5f889024129cd1d",
+      "final_snapshot_sha256": "4e073d1715b50dafa18ba4600eb5fb648539b616650ec179087cad42d388f07b"
+    },
+    {
+      "case": "en_metric_with_following_fact",
+      "execution": "automatic-scheduler",
+      "passed": true,
+      "seconds": 7.125,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a:1:1",
+          "meeting_id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率。缓存保存在本机。"
+        }
+      ],
+      "captions": [
+        {
+          "cache_key": "424d505ebe1c1d22599145c6e3f748d67b0e30c8d19f5efdfd25aa5fdc82c599",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a:1:1",
+          "target": "en",
+          "text": "The test report should include character error rate and word error rate. The cache is saved on the local machine."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "1e3ee12b-a3d3-4843-a125-a90fd38f4fcb",
+          "kind": "section",
+          "meeting_id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。缓存保存在本机。",
+              "revision": 1,
+              "segment_id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate. The cache is saved on the local machine."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include character error rate and word error rate. The cache is saved on the local machine.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 375,
+          "first_token_ms": 79,
+          "input_tokens": 120,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate. The cache is saved on the local machine.",
+          "selected": [
+            {
+              "id": "584ef990-3feb-4ffb-996a-eb5f48a6b75a:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 23,
+            "prompt_tokens": 137,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 273.816,
+              "predicted_n": 23,
+              "predicted_per_second": 80.34592573114793,
+              "predicted_per_token_ms": 12.446181818181817,
+              "prompt_ms": 78.836,
+              "prompt_n": 137,
+              "prompt_per_second": 1737.784768379928,
+              "prompt_per_token_ms": 0.5754452554744526
+            },
+            "total_tokens": 160
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [],
+      "runtime_log_sha256": "9eb1c77989dd766b32aa5c6472a7963777789545e91d5d9c54bc1b0f4e410fb1",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-auto-20261028/en_metric_with_following_fact.json",
+      "raw_report_sha256": "0df4ac42e46dc9a17ccab8ba80aa15d309f0c5d7dbf5417a6a3f4d121db8f256",
+      "final_snapshot_sha256": "ac33aa02b1834b64f4505c6f02c74f9116b38b0aef2365ce194fbc6f20ed1655"
+    },
+    {
+      "case": "en_closed_metric_request",
+      "execution": "explicit-generation",
+      "passed": true,
+      "seconds": 2.094,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "478becd2-81ad-4499-a678-9f396949982c:1:1",
+          "meeting_id": "478becd2-81ad-4499-a678-9f396949982c",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "0e8f0f5e-4972-4ac2-b968-caa91b6a3ecf",
+          "kind": "section",
+          "meeting_id": "478becd2-81ad-4499-a678-9f396949982c",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。",
+              "revision": 1,
+              "segment_id": "478becd2-81ad-4499-a678-9f396949982c:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include word error rate and sentence error rate.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 233,
+          "first_token_ms": 63,
+          "input_tokens": 110,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include word error rate and sentence error rate.",
+          "selected": [
+            {
+              "id": "478becd2-81ad-4499-a678-9f396949982c:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 14,
+            "prompt_tokens": 127,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 160.901,
+              "predicted_n": 14,
+              "predicted_per_second": 80.79502302658156,
+              "predicted_per_token_ms": 12.377,
+              "prompt_ms": 62.366,
+              "prompt_n": 127,
+              "prompt_per_second": 2036.365968636757,
+              "prompt_per_token_ms": 0.4910708661417323
+            },
+            "total_tokens": 141
+          },
+          "validation_error": "Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses."
+        },
+        {
+          "attempt": 2,
+          "body_draft": "{\n  \"translation\": \"The test report should include character error rate and word error rate.\"\n}",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 382,
+          "first_token_ms": 57,
+          "input_tokens": 115,
+          "mode": "translate_source_relations",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate.",
+          "selected": [
+            {
+              "id": "478becd2-81ad-4499-a678-9f396949982c:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 21,
+            "prompt_tokens": 131,
+            "prompt_tokens_details": {
+              "cached_tokens": 3
+            },
+            "timings": {
+              "cache_n": 3,
+              "predicted_ms": 298.811,
+              "predicted_n": 21,
+              "predicted_per_second": 66.93194025655013,
+              "predicted_per_token_ms": 14.940549999999998,
+              "prompt_ms": 56.319,
+              "prompt_n": 128,
+              "prompt_per_second": 2272.7676272661092,
+              "prompt_per_token_ms": 0.4399921875
+            },
+            "total_tokens": 152
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "runtime_log_sha256": "6bacd59e2cd52f216a06a9f1352198aa4c5d0453debf4f98d2578b0d1b6a3494",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-minutes-20261028/en_closed_metric_request.json",
+      "raw_report_sha256": "a2bd81f097c48448231245d6f972a0e7d67a9a8ef1eeb9e0a68abd826c967765",
+      "final_snapshot_sha256": "ed83639de00c14d13939a0b49481902f60632c5decc2ae564f991b32b1cc71d1"
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "execution": "explicit-generation",
+      "passed": true,
+      "seconds": 2.091,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "0e96cae1-77fa-47bd-b6c5-69dd66816391:1:1",
+          "meeting_id": "0e96cae1-77fa-47bd-b6c5-69dd66816391",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "5a252f74-fa73-4d31-abe9-5e95ba42e991",
+          "kind": "section",
+          "meeting_id": "0e96cae1-77fa-47bd-b6c5-69dd66816391",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。",
+              "revision": 1,
+              "segment_id": "0e96cae1-77fa-47bd-b6c5-69dd66816391:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 409,
+          "first_token_ms": 79,
+          "input_tokens": 120,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include word error rate, sentence error rate, and transcription delay, and should not only mention successful processing.",
+          "selected": [
+            {
+              "id": "0e96cae1-77fa-47bd-b6c5-69dd66816391:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 26,
+            "prompt_tokens": 137,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 303.796,
+              "predicted_n": 26,
+              "predicted_per_second": 82.29206441164466,
+              "predicted_per_token_ms": 12.15184,
+              "prompt_ms": 78.658,
+              "prompt_n": 137,
+              "prompt_per_second": 1741.7173078389992,
+              "prompt_per_token_ms": 0.5741459854014599
+            },
+            "total_tokens": 163
+          },
+          "validation_error": "Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses."
+        },
+        {
+          "attempt": 2,
+          "body_draft": "{\n  \"translation\": \"The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing.\"\n}",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 654,
+          "first_token_ms": 74,
+          "input_tokens": 125,
+          "mode": "translate_source_relations",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate as well as transcription delay, and should not only mention successful processing.",
+          "selected": [
+            {
+              "id": "0e96cae1-77fa-47bd-b6c5-69dd66816391:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 141,
+            "prompt_tokens_details": {
+              "cached_tokens": 3
+            },
+            "timings": {
+              "cache_n": 3,
+              "predicted_ms": 528.901,
+              "predicted_n": 34,
+              "predicted_per_second": 62.393529223805594,
+              "predicted_per_token_ms": 16.027303030303027,
+              "prompt_ms": 73.009,
+              "prompt_n": 138,
+              "prompt_per_second": 1890.177923269734,
+              "prompt_per_token_ms": 0.5290507246376812
+            },
+            "total_tokens": 175
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "runtime_log_sha256": "4c5380ba8a3d79031f69b86c6c0699e5787ad54f0fdb855bc91ba1ad5c179414",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-minutes-20261028/en_metric_report_requirements.json",
+      "raw_report_sha256": "05de687bc1a3b628fa60a1e214c089220057a3889862105acb580f4973e7e86b",
+      "final_snapshot_sha256": "b60f3200a35915eb0460346f29a746695a91b0329721f5ecae8e99b8669d38df"
+    },
+    {
+      "case": "en_metric_with_following_fact",
+      "execution": "explicit-generation",
+      "passed": true,
+      "seconds": 1.887,
+      "errors": [],
+      "environment": {
+        "cli_build": {
+          "profile": "debug",
+          "revision_at_compile": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+          "schema": 1,
+          "source_sha256": "409a96b8b81980165f8d14acf2a10dbd8b992e3d619cefc0c1fca9ac713bde46",
+          "target": "aarch64-apple-darwin"
+        },
+        "core_and_harness_source_sha256": "89e42b9e18c3ef6e80b2d2e21f5c73c57017e04a80b5dafe5f1f7c572164188e",
+        "inference_source_tree_dirty": false,
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "python": "3.13.3",
+        "cli_sha256": "c90d3412fc2bba679aadfc234e5091c01d6834e125e5816ea21fe55f05104614",
+        "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+        "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+        "suite_revision": "c8c1171f7dc78082d783f0f3914353734fbfeee8",
+        "corpus": "public or fictional only",
+        "network_during_evaluation": "disabled optional services; inference uses local processes"
+      },
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "84158fba-ceb1-4754-bca6-37763edf14f5:1:1",
+          "meeting_id": "84158fba-ceb1-4754-bca6-37763edf14f5",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "测试报告要包括字错率、词错率。缓存保存在本机。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "7dd59bcf-1681-4807-8adc-1a62ade9fb4b",
+          "kind": "section",
+          "meeting_id": "84158fba-ceb1-4754-bca6-37763edf14f5",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "测试报告要包括字错率、词错率。缓存保存在本机。",
+              "revision": 1,
+              "segment_id": "84158fba-ceb1-4754-bca6-37763edf14f5:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The test report should include character error rate and word error rate. The cache is saved on the local machine."
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "body_draft": "The test report should include word error rate and sentence error rate. The cache is saved on the local machine.",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 356,
+          "first_token_ms": 73,
+          "input_tokens": 117,
+          "mode": "compose",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include word error rate and sentence error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include word error rate and sentence error rate. The cache is saved on the local machine.",
+          "selected": [
+            {
+              "id": "84158fba-ceb1-4754-bca6-37763edf14f5:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 23,
+            "prompt_tokens": 134,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "timings": {
+              "cache_n": 0,
+              "predicted_ms": 263.115,
+              "predicted_n": 23,
+              "predicted_per_second": 83.6136290215305,
+              "predicted_per_token_ms": 11.959772727272728,
+              "prompt_ms": 72.105,
+              "prompt_n": 134,
+              "prompt_per_second": 1858.400943069135,
+              "prompt_per_token_ms": 0.5380970149253732
+            },
+            "total_tokens": 157
+          },
+          "validation_error": "Preserve each stated error-rate type: 字错率 is character error rate (CER), 词错率 is word error rate (WER), and 句错率 is sentence error rate (SER). Do not substitute one type for another or add an unstated metric. Preserve the report requirement, latency and all other source clauses."
+        },
+        {
+          "attempt": 2,
+          "body_draft": "{\n  \"translation\": \"The test report should include character error rate and word error rate. The cache is saved on the local machine.\"\n}",
+          "citation_scope": "selected_transcript_context",
+          "context_size": 2048,
+          "draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "elapsed_ms": 568,
+          "first_token_ms": 69,
+          "input_tokens": 122,
+          "mode": "translate_source_relations",
+          "normalized_draft": "{\"sections\":[{\"body\":\"The test report should include character error rate and word error rate. The cache is saved on the local machine.\",\"sources\":[1],\"title\":\"Meeting minutes\"}]}",
+          "prose_body": "The test report should include character error rate and word error rate. The cache is saved on the local machine.",
+          "selected": [
+            {
+              "id": "84158fba-ceb1-4754-bca6-37763edf14f5:1:1",
+              "revision": 1,
+              "seq": 1
+            }
+          ],
+          "translation_plan": null,
+          "usage": {
+            "completion_tokens": 30,
+            "prompt_tokens": 138,
+            "prompt_tokens_details": {
+              "cached_tokens": 3
+            },
+            "timings": {
+              "cache_n": 3,
+              "predicted_ms": 452.184,
+              "predicted_n": 30,
+              "predicted_per_second": 64.1331847212639,
+              "predicted_per_token_ms": 15.592551724137932,
+              "prompt_ms": 67.865,
+              "prompt_n": 135,
+              "prompt_per_second": 1989.243350769911,
+              "prompt_per_token_ms": 0.5027037037037037
+            },
+            "total_tokens": 168
+          },
+          "validation_error": null
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "runtime_log_sha256": "04dbefb467eca590979f1e0471e7750b01194f212db3e5dbaae74eba1bdec83c",
+      "m5_metal_29_of_29": true,
+      "released_model_directory": true,
+      "raw_report": "artifacts/benchmarks/metric-continuation-minutes-20261028/en_metric_with_following_fact.json",
+      "raw_report_sha256": "d767de3e4b3f60d72eab1e0905987e8568ecc25c09d42290313ae27fcf1e5af2",
+      "final_snapshot_sha256": "baa302f2e987956c2f0788acf65e43fb82028bccf63ae464c49f1df235000997"
+    }
+  ],
+  "static_checks": {
+    "core_library": {
+      "passed": 207,
+      "ignored": 7,
+      "log_sha256": "b1732e318d73cd674ff7d06142d826fd7a8b039bd813b8020f697ef51a2ec804"
+    },
+    "strict_core_all_targets_clippy": {
+      "passed": true,
+      "log_sha256": "1b2454e0429d123bbc7c24c4512dbed082ee5146d6e74955536b67dfaf1247dc"
+    },
+    "python_harness": {
+      "passed": 23,
+      "log_sha256": "eda4a13c5690418aa19215772befe6f7fe9d2c9608bfa730aff8afbf6f620527"
+    },
+    "cli_build_log_sha256": "2094b30c03a939b2cb111f6778a6c6ef825d880607590cb3f93628170421ce2c"
+  },
+  "repair": {
+    "original_source_retained": true,
+    "single_source_slot": true,
+    "new_requests": 0,
+    "larger_retry_budget": false,
+    "larger_time_budget": false,
+    "cache_schema": "v20-metric-source-continuation",
+    "explanation": "A complete first-sentence metric prefix with later source text ends in a required continuation space. Original evidence remains one item; the existing second minutes attempt must continue rather than finish the list as the entire source."
+  },
+  "assistant_review": {
+    "kind": "Assistant inspection of final fictional text and exact citation id/revision/quote/time; not human review.",
+    "confirmed": [
+      "New multi-sentence automatic caption and translation-off minutes preserve character error rate, word error rate and local cache fact without sentence error rate.",
+      "The latency/report requirement control retains transcription latency and cannot-only-report-success negation.",
+      "A metric-only closed list ends without inventing a second sentence.",
+      "Explicit cases use the original second attempt, source_predicates=1 and source_slots=1; automatic minutes can reuse validated captions."
+    ],
+    "limits": [
+      "Continuation requires substantive suffix text; it is not a general semantic proof that every later clause is conserved.",
+      "Type presence guards do not bind metric values, disambiguate every acronym or establish general negation/alternative handling.",
+      "English repeated conjunctions and wider semantic quality remain open."
+    ]
+  },
+  "cleanup": {
+    "final_model_directories_released": 6,
+    "intermediate_model_directories_released": 4,
+    "source_model_store_retained": true,
+    "raw_evidence_retained": true,
+    "reclaimed_disk_bytes": null
+  },
+  "platform_limits": [
+    "Actual M5 Metal 29/29 is observed in the ten retained runtime logs; seeded text functional results do not measure natural ASR quality, energy, speedup or memory improvement.",
+    "No model/runtime/SDK/GPU component download or rebuild and no installer compilation/release.",
+    "Native computer-use inventory after unlock reply still reported a locked Mac. No physical pointer acceptance was obtained this round; prior script-based 7+4 results retain their original source."
+  ],
+  "still_open": [
+    "Candidate6 remains rejected; no new candidate frozen.",
+    "Citation-marker translation, wider role/condition binding, natural ASR names and full same-candidate checks remain open.",
+    "Physical native input, three-platform install/upgrade/model retention and full P0-P3/G1-G2 plan remain pending."
+  ]
+}

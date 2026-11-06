@@ -1,0 +1,1749 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "candidate": 14,
+  "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+  "immutable_branch": "codex/release-0.3.5-candidate-14",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "stable_release": "0.3.4",
+  "scope": "Complete existing 68 fictional seeded-text cases through the real local automatic translation/minutes scheduler on one fixed source/CLI/harness/model/runtime configuration; not an ASR or physical-capture corpus.",
+  "configuration_fix": {
+    "only_new3_minutes_language": "zh",
+    "original65_byte_prefix_unchanged": true,
+    "all_sources_assertions_budgets_unchanged": true,
+    "ci_fixture_path_added": true,
+    "original_failures_retained": "docs/evaluation/apple-candidate13-language-config-2026-10-30.json",
+    "product_rust_source_unchanged_from_candidate13": true
+  },
+  "run": {
+    "passed": true,
+    "complete_cases": 68,
+    "uninterrupted": true,
+    "environment": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "8537e53064760a011bcf96b537a518dff15a590f1924c4a049b9eac019fc8ce6",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "2585c100b9dd7c07decd664a3c4ea80f2ce08b91b9db2c98ce16fd3e7aec2dff",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "cccca5a4e290fc86296c5ff453f9783352668542b1127c2f7526f76bd1b8e965",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "environment_before_after_equal": true,
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "base_preferences": {
+      "inference_backend": "metal",
+      "threads": 1,
+      "context_size": 2048,
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false,
+      "llm_model": "qwen3-1.7b"
+    },
+    "case_overrides": "The 3 appended Chinese-output controls explicitly select zh; earlier case settings unchanged.",
+    "cases": [
+      {
+        "case": "zh_budget_guess",
+        "passed": true,
+        "seconds": 6.891
+      },
+      {
+        "case": "en_owner_and_deadline",
+        "passed": true,
+        "seconds": 6.88
+      },
+      {
+        "case": "zh_correction",
+        "passed": true,
+        "seconds": 7.764
+      },
+      {
+        "case": "bilingual_scope",
+        "passed": true,
+        "seconds": 7.145
+      },
+      {
+        "case": "zh_calendar_citations",
+        "passed": true,
+        "seconds": 7.317
+      },
+      {
+        "case": "zh_connected_minutes",
+        "passed": true,
+        "seconds": 8.162
+      },
+      {
+        "case": "zh_product_spelling",
+        "passed": true,
+        "seconds": 7.111
+      },
+      {
+        "case": "zh_empty_greetings",
+        "passed": true,
+        "seconds": 6.272
+      },
+      {
+        "case": "zh_phased_correction",
+        "passed": true,
+        "seconds": 12.726
+      },
+      {
+        "case": "zh_named_speakers",
+        "passed": true,
+        "seconds": 7.082
+      },
+      {
+        "case": "en_minutes_from_zh",
+        "passed": true,
+        "seconds": 7.07
+      },
+      {
+        "case": "zh_minutes_from_en",
+        "passed": true,
+        "seconds": 7.129
+      },
+      {
+        "case": "zh_actual_report_publication",
+        "passed": true,
+        "seconds": 6.891
+      },
+      {
+        "case": "zh_report_delivery_variant",
+        "passed": true,
+        "seconds": 6.912
+      },
+      {
+        "case": "zh_physical_report_ownership",
+        "passed": true,
+        "seconds": 6.942
+      },
+      {
+        "case": "zh_long_context_state",
+        "passed": true,
+        "seconds": 18.106
+      },
+      {
+        "case": "zh_human_paragraph_protected",
+        "passed": true,
+        "seconds": 12.203
+      },
+      {
+        "case": "zh_note_name_spelling",
+        "passed": true,
+        "seconds": 7.129
+      },
+      {
+        "case": "en_generic_note_name",
+        "passed": true,
+        "seconds": 6.956
+      },
+      {
+        "case": "zh_name_context_is_not_evidence",
+        "passed": true,
+        "seconds": 6.921
+      },
+      {
+        "case": "zh_noisy_name_no_added_topics",
+        "passed": true,
+        "seconds": 7.754
+      },
+      {
+        "case": "zh_windows_gpu_keyword_lines",
+        "passed": true,
+        "seconds": 7.123
+      },
+      {
+        "case": "en_incremental_separate_topics",
+        "passed": true,
+        "seconds": 21.449
+      },
+      {
+        "case": "zh_incremental_withdrawal",
+        "passed": true,
+        "seconds": 20.382
+      },
+      {
+        "case": "en_incremental_completion",
+        "passed": true,
+        "seconds": 11.354
+      },
+      {
+        "case": "en_sparse_unapproved",
+        "passed": true,
+        "seconds": 6.894
+      },
+      {
+        "case": "en_sparse_unapproved_passive",
+        "passed": true,
+        "seconds": 6.892
+      },
+      {
+        "case": "en_explicit_meeting_closure",
+        "passed": true,
+        "seconds": 6.867
+      },
+      {
+        "case": "en_budget_invoice_same_amount",
+        "passed": true,
+        "seconds": 7.096
+      },
+      {
+        "case": "en_completion_independent_pending",
+        "passed": true,
+        "seconds": 11.732
+      },
+      {
+        "case": "zh_incremental_completion",
+        "passed": true,
+        "seconds": 10.49
+      },
+      {
+        "case": "zh_windows_long_acceptance",
+        "passed": true,
+        "seconds": 7.721
+      },
+      {
+        "case": "en_windows_long_acceptance",
+        "passed": true,
+        "seconds": 7.745
+      },
+      {
+        "case": "zh_windows_uppercase_asr",
+        "passed": true,
+        "seconds": 8.147
+      },
+      {
+        "case": "zh_recorded_mixed_prose_fidelity",
+        "passed": true,
+        "seconds": 15.186
+      },
+      {
+        "case": "zh_mixed_script_task_owner",
+        "passed": true,
+        "seconds": 6.879
+      },
+      {
+        "case": "en_phase_exclusive_scope",
+        "passed": true,
+        "seconds": 6.871
+      },
+      {
+        "case": "en_phase_nonexclusive_scope",
+        "passed": true,
+        "seconds": 6.759
+      },
+      {
+        "case": "en_toolbar_existing_state",
+        "passed": true,
+        "seconds": 7.323
+      },
+      {
+        "case": "en_toolbar_requested_state",
+        "passed": true,
+        "seconds": 7.113
+      },
+      {
+        "case": "en_compound_scope_and_request",
+        "passed": true,
+        "seconds": 7.131
+      },
+      {
+        "case": "en_named_download_owner",
+        "passed": true,
+        "seconds": 7.537
+      },
+      {
+        "case": "en_other_named_task_owner",
+        "passed": true,
+        "seconds": 7.505
+      },
+      {
+        "case": "en_future_named_task_owner",
+        "passed": true,
+        "seconds": 6.918
+      },
+      {
+        "case": "en_generic_task_actor",
+        "passed": true,
+        "seconds": 6.906
+      },
+      {
+        "case": "en_metric_report_requirements",
+        "passed": true,
+        "seconds": 6.882
+      },
+      {
+        "case": "en_word_metric_only",
+        "passed": true,
+        "seconds": 6.931
+      },
+      {
+        "case": "en_sentence_metric_allowed",
+        "passed": true,
+        "seconds": 6.888
+      },
+      {
+        "case": "en_closed_metric_request",
+        "passed": true,
+        "seconds": 6.902
+      },
+      {
+        "case": "zh_metric_acronyms",
+        "passed": true,
+        "seconds": 6.97
+      },
+      {
+        "case": "en_metric_with_following_fact",
+        "passed": true,
+        "seconds": 6.893
+      },
+      {
+        "case": "en_submission_schedule",
+        "passed": true,
+        "seconds": 6.919
+      },
+      {
+        "case": "en_test_link_schedule",
+        "passed": true,
+        "seconds": 7.096
+      },
+      {
+        "case": "en_actual_submission_completion",
+        "passed": true,
+        "seconds": 6.722
+      },
+      {
+        "case": "en_actual_page_publication",
+        "passed": true,
+        "seconds": 6.897
+      },
+      {
+        "case": "zh_explicit_this_weekday",
+        "passed": true,
+        "seconds": 6.93
+      },
+      {
+        "case": "zh_explicit_next_weekday",
+        "passed": true,
+        "seconds": 6.916
+      },
+      {
+        "case": "zh_absolute_weekday_scope",
+        "passed": true,
+        "seconds": 6.908
+      },
+      {
+        "case": "zh_recording_retention_local",
+        "passed": true,
+        "seconds": 7.304
+      },
+      {
+        "case": "zh_notes_only_retention",
+        "passed": true,
+        "seconds": 6.89
+      },
+      {
+        "case": "zh_unqualified_weekday",
+        "passed": true,
+        "seconds": 6.882
+      },
+      {
+        "case": "zh_unspoken_honorific_note",
+        "passed": true,
+        "seconds": 7.345
+      },
+      {
+        "case": "en_late_note_spelling_sync",
+        "passed": true,
+        "seconds": 6.947
+      },
+      {
+        "case": "zh_adjacent_spoken_model",
+        "passed": true,
+        "seconds": 6.945
+      },
+      {
+        "case": "en_existing_document_spelling_only_sync",
+        "passed": true,
+        "seconds": 10.337
+      },
+      {
+        "case": "en_punctuation_note_captions",
+        "passed": true,
+        "seconds": 7.116
+      },
+      {
+        "case": "en_generic_note_keeps_source_plural",
+        "passed": true,
+        "seconds": 6.913
+      },
+      {
+        "case": "en_unused_punctuation_notes_add_no_names",
+        "passed": true,
+        "seconds": 6.931
+      }
+    ],
+    "last3": [
+      {
+        "case": "en_punctuation_note_captions",
+        "passed": true,
+        "seconds": 7.116,
+        "source": [
+          "C++ and Node.js have not completed the local test. GPT-4 is not approved for release."
+        ],
+        "article": [
+          "C++ 和 Node.js 未完成本地测试。GPT-4 未批准发布。"
+        ],
+        "captions": [
+          "C++ 和 Node.js 未完成本地测试。GPT-4 未批准发布。"
+        ],
+        "preferences": {
+          "inference_backend": "metal",
+          "threads": 1,
+          "context_size": 2048,
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": true,
+          "translation_mode": "bilingual",
+          "diarization": false,
+          "use_memory": false,
+          "use_knowledge": false,
+          "llm_model": "qwen3-1.7b",
+          "minutes_language": "zh"
+        }
+      },
+      {
+        "case": "en_generic_note_keeps_source_plural",
+        "passed": true,
+        "seconds": 6.913,
+        "source": [
+          "The transcriptions are incomplete. The report is not approved."
+        ],
+        "article": [
+          "转录不完整。报告未批准。"
+        ],
+        "captions": [
+          "转录不完整。报告未批准。"
+        ],
+        "preferences": {
+          "inference_backend": "metal",
+          "threads": 1,
+          "context_size": 2048,
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": true,
+          "translation_mode": "bilingual",
+          "diarization": false,
+          "use_memory": false,
+          "use_knowledge": false,
+          "llm_model": "qwen3-1.7b",
+          "minutes_language": "zh"
+        }
+      },
+      {
+        "case": "en_unused_punctuation_notes_add_no_names",
+        "passed": true,
+        "seconds": 6.931,
+        "source": [
+          "The report remains unapproved."
+        ],
+        "article": [
+          "报告尚未批准。"
+        ],
+        "captions": [
+          "报告尚未批准。"
+        ],
+        "preferences": {
+          "inference_backend": "metal",
+          "threads": 1,
+          "context_size": 2048,
+          "resource_mode": "balanced",
+          "memory_budget_mib": 4096,
+          "llm_keep_alive_seconds": 0,
+          "auto_notes": true,
+          "translation_mode": "bilingual",
+          "diarization": false,
+          "use_memory": false,
+          "use_knowledge": false,
+          "llm_model": "qwen3-1.7b",
+          "minutes_language": "zh"
+        }
+      }
+    ]
+  },
+  "manual_review": {
+    "reviewed_cases": 68,
+    "snapshots": 83,
+    "caption_observations": 151,
+    "article_citations": 150,
+    "current_binding_errors": 0,
+    "first65_visible_payloads_equal_candidate12": true,
+    "last3_visible_payloads_equal_targeted_747": true,
+    "new_visible_regressions_found": 0,
+    "full_semantic_acceptance": false,
+    "limits": [
+      "Pattern gates plus assistant review are not proof of general semantic entailment.",
+      "Inherited physical paper→论文, repetition, weakened long-context caption qualifiers, ambiguous references and noisy citation relevance remain documented in the three shard artifacts.",
+      "The GPT-4 approval sentence preserves the negative state but its Chinese passive wording can be clearer."
+    ]
+  },
+  "spelling_only_reuse": {
+    "case": "en_existing_document_spelling_only_sync",
+    "passed": true,
+    "preservation": [
+      {
+        "phase": 2,
+        "passed": true,
+        "jobs_before": 1,
+        "jobs_after": 1,
+        "automatic_scheduler_verified": true,
+        "captions_verified": true,
+        "document_and_citations_unchanged": true
+      }
+    ]
+  },
+  "all_incurred_costs": {
+    "attempted_requests": 249,
+    "observed_responses": 249,
+    "phase_counts": {
+      "started": 166,
+      "worker": 161,
+      "chunk": 173,
+      "request_started": 249,
+      "generation": 249,
+      "validation_failed": 40,
+      "batch": 86,
+      "finished": 166,
+      "retrieval": 80,
+      "article_state": 80,
+      "article_prompt": 79,
+      "literal_caption": 6,
+      "source_unit_repair": 2,
+      "source_week_repair": 2,
+      "article_repair": 2
+    },
+    "workers": 161,
+    "case_seconds": 554.847,
+    "limitation": "Whole functional-run observations only, not a paired speed/energy benchmark. All attempted requests including repairs retained; missing usage remains null.",
+    "input_tokens": 42701,
+    "output_tokens": 7227,
+    "cached_tokens": 6527,
+    "prefill_ms": 23930.101,
+    "decode_ms": 91449.019
+  },
+  "metal": {
+    "worker_events": 161,
+    "all_recorded_worker_events_backend_metal": true,
+    "last_saved_native_logs": 80,
+    "all_saved_logs_positive_offload": true,
+    "proof_scope": "Per-batch last native log plus all worker-event metadata; not independent saved logs for every historical worker."
+  },
+  "checks": {
+    "local": [
+      {
+        "name": "core-asr",
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "omascribe-core",
+          "-p",
+          "omascribe-asr",
+          "--locked",
+          "--quiet"
+        ],
+        "exit_code": 0,
+        "seconds": 12.341,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/core-asr.log"
+      },
+      {
+        "name": "python",
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_*.py"
+        ],
+        "exit_code": 0,
+        "seconds": 1.339,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/python.log"
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 5.361,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/clippy.log"
+      },
+      {
+        "name": "frontend",
+        "command": [
+          "npm",
+          "run",
+          "build"
+        ],
+        "exit_code": 0,
+        "seconds": 1.992,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/frontend.log"
+      },
+      {
+        "name": "format",
+        "command": [
+          "npm",
+          "run",
+          "format:check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.498,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/format.log"
+      },
+      {
+        "name": "rustfmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.323,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/rustfmt.log"
+      },
+      {
+        "name": "diff",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.01,
+        "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "log": "artifacts/candidate14-2026-10-30/diff.log"
+      }
+    ],
+    "core_passed": 374,
+    "core_ignored": 7,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 21,
+    "strict_clippy": true,
+    "frontend": true,
+    "python": "See exact raw log; one explicitly skipped platform check retained.",
+    "exact_source_ci": [
+      {
+        "conclusion": "success",
+        "databaseId": 40917023264,
+        "headSha": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "jobs": [
+          {
+            "completedAt": "2026-10-29T17:01:49Z",
+            "conclusion": "success",
+            "databaseId": 123599882868,
+            "name": "linux",
+            "startedAt": "2026-10-29T16:59:58Z",
+            "status": "completed",
+            "steps": [
+              {
+                "completedAt": "2026-10-29T17:00:00Z",
+                "conclusion": "success",
+                "name": "Set up job",
+                "number": 1,
+                "startedAt": "2026-10-29T16:59:59Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:04Z",
+                "conclusion": "success",
+                "name": "Run actions/checkout@v4",
+                "number": 2,
+                "startedAt": "2026-10-29T17:00:00Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:07Z",
+                "conclusion": "success",
+                "name": "Run actions/setup-node@v4",
+                "number": 3,
+                "startedAt": "2026-10-29T17:00:04Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:15Z",
+                "conclusion": "success",
+                "name": "Run dtolnay/rust-toolchain@stable",
+                "number": 4,
+                "startedAt": "2026-10-29T17:00:07Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:54Z",
+                "conclusion": "success",
+                "name": "Linux desktop dependencies",
+                "number": 5,
+                "startedAt": "2026-10-29T17:00:15Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:10Z",
+                "conclusion": "success",
+                "name": "Run actions/cache@v4",
+                "number": 6,
+                "startedAt": "2026-10-29T17:00:54Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:13Z",
+                "conclusion": "success",
+                "name": "Run npm ci --ignore-scripts",
+                "number": 7,
+                "startedAt": "2026-10-29T17:01:10Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:15Z",
+                "conclusion": "success",
+                "name": "Run npm run format:check",
+                "number": 8,
+                "startedAt": "2026-10-29T17:01:13Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:21Z",
+                "conclusion": "success",
+                "name": "Run npm run build",
+                "number": 9,
+                "startedAt": "2026-10-29T17:01:15Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:21Z",
+                "conclusion": "success",
+                "name": "Run cargo fmt --all --check",
+                "number": 10,
+                "startedAt": "2026-10-29T17:01:21Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:36Z",
+                "conclusion": "success",
+                "name": "Run cargo test -p omascribe-core -p omascribe-asr --locked",
+                "number": 11,
+                "startedAt": "2026-10-29T17:01:21Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:43Z",
+                "conclusion": "success",
+                "name": "Run cargo clippy --workspace --all-targets --locked -- -D warnings",
+                "number": 12,
+                "startedAt": "2026-10-29T17:01:36Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:45Z",
+                "conclusion": "success",
+                "name": "Run python3 -m unittest discover -s tests -p 'test_*.py'",
+                "number": 13,
+                "startedAt": "2026-10-29T17:01:43Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:46Z",
+                "conclusion": "success",
+                "name": "Post Run actions/cache@v4",
+                "number": 24,
+                "startedAt": "2026-10-29T17:01:45Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:46Z",
+                "conclusion": "success",
+                "name": "Post Run actions/setup-node@v4",
+                "number": 25,
+                "startedAt": "2026-10-29T17:01:46Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:46Z",
+                "conclusion": "success",
+                "name": "Post Run actions/checkout@v4",
+                "number": 26,
+                "startedAt": "2026-10-29T17:01:46Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:46Z",
+                "conclusion": "success",
+                "name": "Complete job",
+                "number": 27,
+                "startedAt": "2026-10-29T17:01:46Z",
+                "status": "completed"
+              }
+            ],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917023264/job/123599882868"
+          }
+        ],
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917023264"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40917022948,
+        "headSha": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "jobs": [
+          {
+            "completedAt": "2026-10-29T17:00:03Z",
+            "conclusion": "success",
+            "databaseId": 123599882604,
+            "name": "prepare",
+            "startedAt": "2026-10-29T16:59:57Z",
+            "status": "completed",
+            "steps": [
+              {
+                "completedAt": "2026-10-29T16:59:58Z",
+                "conclusion": "success",
+                "name": "Set up job",
+                "number": 1,
+                "startedAt": "2026-10-29T16:59:58Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:00Z",
+                "conclusion": "success",
+                "name": "Run actions/checkout@v4",
+                "number": 2,
+                "startedAt": "2026-10-29T16:59:58Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:00Z",
+                "conclusion": "success",
+                "name": "Bind exact source and candidate-only publication authority",
+                "number": 3,
+                "startedAt": "2026-10-29T17:00:00Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:00Z",
+                "conclusion": "success",
+                "name": "Post Run actions/checkout@v4",
+                "number": 6,
+                "startedAt": "2026-10-29T17:00:00Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:00Z",
+                "conclusion": "success",
+                "name": "Complete job",
+                "number": 7,
+                "startedAt": "2026-10-29T17:00:00Z",
+                "status": "completed"
+              }
+            ],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022948/job/123599882604"
+          },
+          {
+            "completedAt": "2026-10-29T17:02:31Z",
+            "conclusion": "success",
+            "databaseId": 123599983867,
+            "name": "windows-core",
+            "startedAt": "2026-10-29T17:00:09Z",
+            "status": "completed",
+            "steps": [
+              {
+                "completedAt": "2026-10-29T17:00:12Z",
+                "conclusion": "success",
+                "name": "Set up job",
+                "number": 1,
+                "startedAt": "2026-10-29T17:00:10Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:19Z",
+                "conclusion": "success",
+                "name": "Run actions/checkout@v4",
+                "number": 2,
+                "startedAt": "2026-10-29T17:00:12Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:19Z",
+                "conclusion": "success",
+                "name": "Run actions/setup-python@v5",
+                "number": 3,
+                "startedAt": "2026-10-29T17:00:19Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:23Z",
+                "conclusion": "success",
+                "name": "Check component packaging without compiling GPU runtimes",
+                "number": 4,
+                "startedAt": "2026-10-29T17:00:19Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:36Z",
+                "conclusion": "success",
+                "name": "Run dtolnay/rust-toolchain@stable",
+                "number": 5,
+                "startedAt": "2026-10-29T17:00:23Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:01:03Z",
+                "conclusion": "success",
+                "name": "Run Swatinem/rust-cache@v2",
+                "number": 6,
+                "startedAt": "2026-10-29T17:00:36Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:01Z",
+                "conclusion": "success",
+                "name": "Run cargo test -p omascribe-core -p omascribe-asr --locked",
+                "number": 7,
+                "startedAt": "2026-10-29T17:01:03Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:06Z",
+                "conclusion": "success",
+                "name": "Link the CPU ASR worker against the pinned Windows SDK",
+                "number": 8,
+                "startedAt": "2026-10-29T17:02:01Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:16Z",
+                "conclusion": "success",
+                "name": "Run cargo clippy -p omascribe-core -p omascribe-asr --all-targets --locked -- -D warnings",
+                "number": 9,
+                "startedAt": "2026-10-29T17:02:06Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:27Z",
+                "conclusion": "success",
+                "name": "Inventory probe without opening a user workspace",
+                "number": 10,
+                "startedAt": "2026-10-29T17:02:16Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:28Z",
+                "conclusion": "success",
+                "name": "Post Run Swatinem/rust-cache@v2",
+                "number": 18,
+                "startedAt": "2026-10-29T17:02:27Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:28Z",
+                "conclusion": "success",
+                "name": "Post Run actions/setup-python@v5",
+                "number": 19,
+                "startedAt": "2026-10-29T17:02:28Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:30Z",
+                "conclusion": "success",
+                "name": "Post Run actions/checkout@v4",
+                "number": 20,
+                "startedAt": "2026-10-29T17:02:28Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:02:30Z",
+                "conclusion": "success",
+                "name": "Complete job",
+                "number": 21,
+                "startedAt": "2026-10-29T17:02:30Z",
+                "status": "completed"
+              }
+            ],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022948/job/123599983867"
+          },
+          {
+            "completedAt": "2026-10-29T17:00:06Z",
+            "conclusion": "skipped",
+            "databaseId": 123599987447,
+            "name": "build",
+            "startedAt": "2026-10-29T17:00:07Z",
+            "status": "completed",
+            "steps": [],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022948/job/123599987447"
+          },
+          {
+            "completedAt": "2026-10-29T17:02:31Z",
+            "conclusion": "skipped",
+            "databaseId": 123601395926,
+            "name": "catalog",
+            "startedAt": "2026-10-29T17:02:32Z",
+            "status": "completed",
+            "steps": [],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022948/job/123601395926"
+          }
+        ],
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022948"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 40917022950,
+        "headSha": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "jobs": [
+          {
+            "completedAt": "2026-10-29T17:00:11Z",
+            "conclusion": "success",
+            "databaseId": 123599882074,
+            "name": "validate",
+            "startedAt": "2026-10-29T16:59:57Z",
+            "status": "completed",
+            "steps": [
+              {
+                "completedAt": "2026-10-29T16:59:59Z",
+                "conclusion": "success",
+                "name": "Set up job",
+                "number": 1,
+                "startedAt": "2026-10-29T16:59:58Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:01Z",
+                "conclusion": "success",
+                "name": "Run actions/checkout@v4",
+                "number": 2,
+                "startedAt": "2026-10-29T16:59:59Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:02Z",
+                "conclusion": "success",
+                "name": "Run actions/setup-node@v4",
+                "number": 3,
+                "startedAt": "2026-10-29T17:00:01Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:07Z",
+                "conclusion": "success",
+                "name": "Run npm ci --no-audit --no-fund",
+                "number": 4,
+                "startedAt": "2026-10-29T17:00:02Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:10Z",
+                "conclusion": "success",
+                "name": "Run npm run check",
+                "number": 5,
+                "startedAt": "2026-10-29T17:00:07Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:10Z",
+                "conclusion": "success",
+                "name": "Post Run actions/setup-node@v4",
+                "number": 9,
+                "startedAt": "2026-10-29T17:00:10Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:10Z",
+                "conclusion": "success",
+                "name": "Post Run actions/checkout@v4",
+                "number": 10,
+                "startedAt": "2026-10-29T17:00:10Z",
+                "status": "completed"
+              },
+              {
+                "completedAt": "2026-10-29T17:00:10Z",
+                "conclusion": "success",
+                "name": "Complete job",
+                "number": 11,
+                "startedAt": "2026-10-29T17:00:10Z",
+                "status": "completed"
+              }
+            ],
+            "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022950/job/123599882074"
+          }
+        ],
+        "status": "completed",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40917022950"
+      }
+    ]
+  },
+  "assets": {
+    "existing23_sdk_model_runtime_assets_before_after_equal": true,
+    "source_model_bytes_and_recorded_identity_unchanged": true,
+    "cleanup": {
+      "removed": true,
+      "files": 6,
+      "originals_unchanged": true,
+      "logical_bytes": 1167797179,
+      "note": "Owned APFS clones only; not a physical disk-space claim"
+    },
+    "no_remaining_owned_native_process_paths": true,
+    "no_installer_or_optional_gpu_sdk_build": true,
+    "base_gpu_dependency_policy": "CUDA/HIP/Vulkan/SYCL explicitly disabled and staging gates reject optional dependencies; final candidate installer inventory remains untested."
+  },
+  "windows_peer": {
+    "source": "67e04649189020438cdc4e7c393124f359a6dea1",
+    "reports": [
+      {
+        "name": "q9-tail",
+        "commit": "3a11a7b344d24d709e2b8bf900b1dc0293c57625",
+        "path": "docs/evaluation/windows-candidate13-q9-tail-2026-10-30.json",
+        "bytes": 4189,
+        "sha256": "85c281384a390c0b88927f6b0ead3db4b9085ed7a0c56260f6e8909d7009efa9",
+        "verified": true
+      },
+      {
+        "name": "q10-stop",
+        "commit": "3a11a7b344d24d709e2b8bf900b1dc0293c57625",
+        "path": "docs/evaluation/windows-candidate13-q10-stop-2026-10-30.json",
+        "bytes": 2595,
+        "sha256": "5c75455e35fd00d4e7646e320e19486484232cb43e832cfb1d9cb045bf321db2",
+        "verified": true
+      },
+      {
+        "name": "q10-stages",
+        "commit": "b2561f968c98a9deb2e8efaca6a550c8f54e6292",
+        "path": "docs/evaluation/windows-candidate13-q10-stages-2026-10-30.json",
+        "bytes": 3001,
+        "sha256": "154b3495dea2e06a8d114ac1bd4f6b7a3864f88bb91b958835fc94e373325bef",
+        "verified": true
+      },
+      {
+        "name": "q10-release",
+        "commit": "6db9ea1433b4a8b257f98d00711e035947d7f1a4",
+        "path": "docs/evaluation/windows-candidate14-release-q10-2026-10-30.json",
+        "bytes": 5615,
+        "sha256": "8c4b0c30e4d49995aa540833d141d4cfbcf9ea59a5609c860ef57b4df6f193aa",
+        "verified": true
+      }
+    ],
+    "q9": "Retained 24.530s recording: Alice/NVIDIA exact targets match; OmaScribe/GTX1650/tail do not. Actual modified beam,6 hotwords,no fallback; all processed. Confirm target spoken spans before causal recall claims. No new physical recording.",
+    "q10": "Earlier2176ms debug-core/release-worker and2496ms debug-instrumented synthetic captures fail original4500ms minimum at5000ms external stop; preserved separately. The report later confirmed the original uninstrumented core was debug. Subsequent same-source release core/worker pass two bounded replay rounds; physical CPAL/UI/package acceptance remains open.",
+    "q10_release": {
+      "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+      "core_build": {
+        "profile": "release",
+        "revision_at_compile": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "f9e3d55b215536c5d381a4e9f3507e3380974b5aee8ed5cf25d176d8b480ed3a",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "positive_rounds": [
+        {
+          "round": 1,
+          "gate_passed": true,
+          "stop_request_late_by_ms": 0,
+          "metrics": {
+            "replay_return_ms": 831,
+            "stop_requested_ms": 5000,
+            "stop_return_ms": 5118,
+            "drain_complete_ms": 5176,
+            "capture_ms": 4800,
+            "processed_ms": 4800,
+            "segments": 1
+          },
+          "wav_duration_ms": 4800.0,
+          "wav_pcm_equal": true,
+          "fixture_pcm_exact_prefix": true,
+          "capture_done": true,
+          "capture_error": false,
+          "take_statuses": [
+            "ready"
+          ],
+          "first_capture_observation": "round1_first_observed_wall_ms=853 captured_ms=576",
+          "asr_hotword_input": "accepted",
+          "asr_fallback": null
+        },
+        {
+          "round": 2,
+          "gate_passed": true,
+          "stop_request_late_by_ms": 0,
+          "metrics": {
+            "replay_return_ms": 22,
+            "stop_requested_ms": 5000,
+            "stop_return_ms": 5114,
+            "drain_complete_ms": 5181,
+            "capture_ms": 5056,
+            "processed_ms": 5056,
+            "segments": 1
+          },
+          "wav_duration_ms": 5056.0,
+          "wav_pcm_equal": true,
+          "fixture_pcm_exact_prefix": true,
+          "capture_done": true,
+          "capture_error": false,
+          "take_statuses": [
+            "ready"
+          ],
+          "first_capture_observation": "round2_first_observed_wall_ms=64 captured_ms=64",
+          "asr_hotword_input": "accepted",
+          "asr_fallback": null
+        }
+      ],
+      "same_engine": true,
+      "first_receipt_not_cold_filesystem": true,
+      "negative_persisted_state_preserved": true,
+      "negative_process_trace_complete": false,
+      "harness_exceptions_retained": [
+        {
+          "stage": "initial positive result aggregation",
+          "failure": "Harness expected WAV in the audio directory; product stored it in the meeting files directory.",
+          "preserved_positive_execution": true,
+          "positive_driver_process_exit": 0,
+          "positive_completion_marker_present": true,
+          "negative_started_before_error": false,
+          "loss": "Sampled positive child list existed only in process memory and was not written before aggregation failed."
+        },
+        {
+          "stage": "negative fixture setup before start.request",
+          "failure": "Test harness attempted to create a meeting audio directory that the product had already created.",
+          "capture_started_before_failure": false,
+          "recovery": "Verified the owned waiting driver's PID and command line; continued the same attempt with synthetic sentinel files in the existing empty directory, without restarting the driver.",
+          "limits": "Original process-tree sampler did not survive the setup exception."
+        }
+      ],
+      "limits": [
+        "Release source build, not a formal packaged executable or installer.",
+        "OS page cache uncontrolled; copying and checking model before test warms page cache. First means first engine receipt, not cold filesystem.",
+        "External timer originates before replay; stop request and any delay are reported.",
+        "Synthetic FFmpeg replay is not real CPAL microphone or physical product UI stop.",
+        "Process sampling data was lost when the harness aggregation failed; later OS inspection found no driver, ASR worker or FFmpeg process, but does not prove that every short-lived child was sampled.",
+        "Negative test uses isolated zero-filled files with expected model file sizes; source inspection and rejection before capture support no-spawn, but no complete process trace survived.",
+        "Synthetic existing PCM and marker in the negative fixture are unchanged; no new take, capture data or marker was observed.",
+        "No user model files, user audio, microphone or GPU used."
+      ]
+    }
+  },
+  "remaining_release_gates": [
+    "Windows Q9 target-spoken-span/acoustic name evidence and Q10 physical CPAL/UI acceptance; two source-built release synthetic replay rounds pass, not package/microphone proof.",
+    "Linux/Omarchy native audio/desktop and final platform acceptance.",
+    "Final candidate installer and runtime-only upgrade preserving models and installed/active optional components."
+  ],
+  "independent_research": {
+    "ttl_study_not_started": true,
+    "ttl_validator_false_admission_evidence": "artifacts/ttl-review-2026-10-30/evidence.json",
+    "next": "Add cause-aware lifecycle/admission evidence before TTL attribution; not a new0.3.5 gate.",
+    "new_model_or_backend_defaults_promoted": false,
+    "gpu_memory_energy_whole_meeting_improvement_proved": false
+  },
+  "evidence": [
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/report.json",
+      "bytes": 1253124,
+      "sha256": "68a1476ac6fd11cc7cb7454fdbd698992f029df9b89f681c2fe944d54cadb695"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/state.json",
+      "bytes": 168,
+      "sha256": "943eb3aaf6ead35fa7d00f6aaae9bcbf651e8a992a3a235e086d16fe0bfab5f8"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/environment-before.json",
+      "bytes": 1025,
+      "sha256": "2d43f588085c515fe9ab712a20bd8a0617eb3c8eb1fb0f5bf38e0664496b002c"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/environment-after.json",
+      "bytes": 1025,
+      "sha256": "2d43f588085c515fe9ab712a20bd8a0617eb3c8eb1fb0f5bf38e0664496b002c"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/assets-before.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/assets-after.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/model-clones.json",
+      "bytes": 5765,
+      "sha256": "9f1596ac895489c9c8168e90456903b9d9ce59c9a4912420198f94fe7e7f8dff"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/model-cleanup.json",
+      "bytes": 167,
+      "sha256": "1feadd44b2e8982326eb6215fd86979de35aeee6e58dbdbafcd370cf9ff32683"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/checks.json",
+      "bytes": 2072,
+      "sha256": "bb1a2d6698a72e30e743c0deed7adb548e3a838e0e04c4cb0eb039d6dd24a0d0"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/core-asr.log",
+      "bytes": 1245,
+      "sha256": "7960eb8e170551a72068c28fceb7dfa3932418a493fb76e9bd5c18eeaf41e2f3"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/python.log",
+      "bytes": 435,
+      "sha256": "785a573e2091bf10f980f713beb4bcb0c8779ba0b757a1b35b296b37837d63da"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/clippy.log",
+      "bytes": 291,
+      "sha256": "b65e37725e3661972e90f782395bdbaf9a60963d0ea82c12c57bf8993f2fcf0e"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/frontend.log",
+      "bytes": 2063,
+      "sha256": "4e53a17265bff80ef00a570ec7a556b7bc5b41c9688c8905f228c3d42d8940f5"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/release-build.json",
+      "bytes": 273,
+      "sha256": "1c3e7835787edc4dcc658d242e9525b484fb2ef58332d837e383ccd8e2be2aff"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/cost-and-offload.json",
+      "bytes": 31347,
+      "sha256": "42c2708815b48e5f472f73ab05c391141c85e7331c75501b184e1134c7382316"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/review-1-23.json",
+      "bytes": 136631,
+      "sha256": "7b509d21a851653d23fcb70ab81672a77383cff9aedc1b9e44640757450ece9f"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/review-24-46.json",
+      "bytes": 65118,
+      "sha256": "4f2f3d8f5c86c32c0577c8d281dfa2d84cec7e270a08971134a77fd361887fee"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/review-47-68.json",
+      "bytes": 193615,
+      "sha256": "686a8dd9d60f0e80a0930bd5c048b9bf5823804d2bf08ed8aed1e95d9ab2af29"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/peer/manifest.json",
+      "bytes": 1167,
+      "sha256": "26ec6abe450576532ba949d8be91c5139527660bab1510f0418566fb86e5c739"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/peer/q9-tail.json",
+      "bytes": 4189,
+      "sha256": "85c281384a390c0b88927f6b0ead3db4b9085ed7a0c56260f6e8909d7009efa9"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/peer/q10-stop.json",
+      "bytes": 2595,
+      "sha256": "5c75455e35fd00d4e7646e320e19486484232cb43e832cfb1d9cb045bf321db2"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/peer/q10-stages.json",
+      "bytes": 3001,
+      "sha256": "154b3495dea2e06a8d114ac1bd4f6b7a3864f88bb91b958835fc94e373325bef"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_budget_guess.json",
+      "bytes": 16403,
+      "sha256": "3375f252dd3d1ff435d385cd825a22214c4bc40ffb787e6d9545fc52154f91af"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_owner_and_deadline.json",
+      "bytes": 16614,
+      "sha256": "2bd5e25dc240a73ff2ec499c6b777e8f4529b683700fac1dd83e0444a8c708be"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_correction.json",
+      "bytes": 16885,
+      "sha256": "401695fa7c57c4fc3a81c3632a604aab2056978b942e1e568223fcfc3f9af6c2"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/bilingual_scope.json",
+      "bytes": 19252,
+      "sha256": "ded3aac03d8588b18cc971414db673c1b82b78bf70e7183086fd27e45a39cdbb"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_calendar_citations.json",
+      "bytes": 17108,
+      "sha256": "9fa92dcbd10e601e76b7a48958e5e1b251590835524a108215439b8a836fd3a5"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_connected_minutes.json",
+      "bytes": 28271,
+      "sha256": "f065a8ff5df4c323034450b6b1518cf3a6cc46896f064ac05c73ea181f99e32a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_product_spelling.json",
+      "bytes": 16802,
+      "sha256": "1a9a74b4d423a31588876297a24632c3f6f71ca872eebffc8743fc4072dbdce6"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_empty_greetings.json",
+      "bytes": 10194,
+      "sha256": "bfbbc172b4676374106083c84186b95231485fa66a02b3406763100e92303e87"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_phased_correction.json",
+      "bytes": 35179,
+      "sha256": "fd0d11fc9db9ed4e229de2e59e144d59ca02c710aec4fe3c1415711c2292791a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_named_speakers.json",
+      "bytes": 19136,
+      "sha256": "e3f4fece87e0ce70f98d5a07bf3977d51ed2efbf596e930448be2305dcd02087"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_minutes_from_zh.json",
+      "bytes": 17349,
+      "sha256": "4a651498773e517be2fdce473350e87bbb876171752ae7d3f64f55f2f94557bb"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_minutes_from_en.json",
+      "bytes": 19028,
+      "sha256": "9cc9ac618f934291aff7c79b3bd780640597b7435ad9df432028c734894071ba"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_actual_report_publication.json",
+      "bytes": 16248,
+      "sha256": "ec032ef2889b949089d6072402e57a82e441f47c5bf96cbafda82b6559023404"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_report_delivery_variant.json",
+      "bytes": 16460,
+      "sha256": "a329ba3bb365a84b8fea493d046620a5d085fb7b031bc44a60ab0d61d8f2600c"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_physical_report_ownership.json",
+      "bytes": 16413,
+      "sha256": "e9726ec58acef2c235ed2706dc0b5573ae27e9bfad1e9a66d552cb80b85ecc1a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_long_context_state.json",
+      "bytes": 60320,
+      "sha256": "99f180bb876fc758b420d59eb19302b25180bc1dd896a0ebe5eb7c833ddd1a92"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_human_paragraph_protected.json",
+      "bytes": 33575,
+      "sha256": "fdb553c876d870ebb0bad4274621d34cf206918e2e7c69fdca821be3b18a739a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_note_name_spelling.json",
+      "bytes": 16974,
+      "sha256": "b620a2532378c70ef77debaf7cc9f3a27a901fd0d6f020aa7fc7f6914154cc96"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_generic_note_name.json",
+      "bytes": 14410,
+      "sha256": "c3899ad49fd5f4457a3288f0e48a327747e3ed447b4dc8ee12df0053266b98dc"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_name_context_is_not_evidence.json",
+      "bytes": 14534,
+      "sha256": "bdbc804e5feb4654b3ebb36309bdc7b69bd4d083adbf44346ce8cabb5502f9a7"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_noisy_name_no_added_topics.json",
+      "bytes": 26755,
+      "sha256": "c2e5d2d0fcbb8b04da046891d742e551cab833d61e32f2b6654067faa00180c8"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_windows_gpu_keyword_lines.json",
+      "bytes": 16895,
+      "sha256": "8a01f31270cd8499ebee374f790975e0dbfb8f77997a8ef21d9f9245583f2c7d"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_incremental_separate_topics.json",
+      "bytes": 63366,
+      "sha256": "fac0e88e2f0ab31e72e0af7adb95a8f5b0d56859a7ef898150d79d3ff742cf9a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_incremental_withdrawal.json",
+      "bytes": 54722,
+      "sha256": "2f1b4ced5c13a6a084d81587ad50f179bf0a1c9bbf6a9ee3a83952990bc457df"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_incremental_completion.json",
+      "bytes": 29084,
+      "sha256": "9e817b0c04570583ddb93cd07b668afdfd65831bd78f6bb183a3c5b5c22604cb"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_sparse_unapproved.json",
+      "bytes": 14130,
+      "sha256": "1030535f25ffca1baa79bb8c166a8274ec7bcfecccfb5418b9ae3eee9639d83a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_sparse_unapproved_passive.json",
+      "bytes": 14177,
+      "sha256": "d4e95082cd0b5f0a89b192dbece6d6225a466f881fcf18fd5b6ce604fdfacbf0"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_explicit_meeting_closure.json",
+      "bytes": 14302,
+      "sha256": "e6df492a261879d92f342e63d30ee9deb30dcdcc2e45118b05f6bd7adf09e944"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_budget_invoice_same_amount.json",
+      "bytes": 20969,
+      "sha256": "1393016d03d2fff4a1b21400921c5e7a38bc4aabf01c421d3c568034594420f2"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_completion_independent_pending.json",
+      "bytes": 32263,
+      "sha256": "a32d0af0a335dfda80c8c5b8f93de1034ce1dac67e4bf2430df747904decbb70"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_incremental_completion.json",
+      "bytes": 28593,
+      "sha256": "c29304fe818a9b5f7e817843429048b40561d00101461532139cb0773db96274"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_windows_long_acceptance.json",
+      "bytes": 20033,
+      "sha256": "cb4274e3c93a9754fbe07a8b8664a61e70bf20f063fa41cefd4e248f9ac02370"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_windows_long_acceptance.json",
+      "bytes": 20648,
+      "sha256": "ff1aed1a71f5e26143810abdc6b7a2b1599bd1e88e2d3f23e95a523fcede3da1"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_windows_uppercase_asr.json",
+      "bytes": 27763,
+      "sha256": "a5bf166fd4ff872474b4c335f17ae9cd519ddfe9bcb9f7f620747144b79324ca"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_recorded_mixed_prose_fidelity.json",
+      "bytes": 41097,
+      "sha256": "81dcd82addb6a42ec7aca44f9b59415b037241aacc5b91af13b42a3ef2b62275"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_mixed_script_task_owner.json",
+      "bytes": 14073,
+      "sha256": "668295158752fbae89c35d8bc369b5c291a5d8233c49e36458e9acda766babe0"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_phase_exclusive_scope.json",
+      "bytes": 14555,
+      "sha256": "5d6a8ca24ae09cbb55ce930f5b42712eeacd6ecc5b1e615b71dcfff0d777f95f"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_phase_nonexclusive_scope.json",
+      "bytes": 14333,
+      "sha256": "18f9b30f1f073dbf55eba810d96b327e98590e44e095bb8a29e9eab6910fb71d"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_toolbar_existing_state.json",
+      "bytes": 14691,
+      "sha256": "71366cfea8b80250298a8527e464847e1fbb9b99500c9745faaef3394076c48b"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_toolbar_requested_state.json",
+      "bytes": 19292,
+      "sha256": "48a97974eba03676db857c2832c800a5278ade1cfc2124b2659437018e371605"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_compound_scope_and_request.json",
+      "bytes": 21458,
+      "sha256": "3f9e45fca95610dd4131939d2fa6dee53f65a41629512c01d3387f1f3f8ae73e"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_named_download_owner.json",
+      "bytes": 20412,
+      "sha256": "cf189ff95f25d8171608bd24bc7bf1c110873b4e137fae43ed87a72544e50e2d"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_other_named_task_owner.json",
+      "bytes": 20269,
+      "sha256": "aae96ac88f1c74ae3c3111929f4a424853cbb95765bb0d10504ac316d9bf8470"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_future_named_task_owner.json",
+      "bytes": 16595,
+      "sha256": "47a3511e79c5e7443df01e9c8bd043aeddce57f7e4be5f97f3982f675be7b249"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_generic_task_actor.json",
+      "bytes": 16512,
+      "sha256": "a109678ca614c6dd6680a3334f05a52b7dc16cf01907402b6a81d76da3f2bfd0"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_metric_report_requirements.json",
+      "bytes": 16974,
+      "sha256": "207d9dce8354a552f81a328c5370b2d00c25e5a5487cffe87c6e0b9644d76380"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_word_metric_only.json",
+      "bytes": 14679,
+      "sha256": "00c5ebe9794f78c65647ef700aefdf3b090d1b7d93de820c62a836cee9739acb"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_sentence_metric_allowed.json",
+      "bytes": 14700,
+      "sha256": "71ec5e89ac27678bdf5d3bcfcdd74e5674dc3b6747706b19ce26463a7389023a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_closed_metric_request.json",
+      "bytes": 16457,
+      "sha256": "34e88d4c299783a1f2568fbc4edf533815c3dde88e5a17c4206fbb6d22599a1a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_metric_acronyms.json",
+      "bytes": 14513,
+      "sha256": "94b7eba9c5a48cfac2358c4189c2acad0c6e81e53f550df5d790feb96fad2397"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_metric_with_following_fact.json",
+      "bytes": 16748,
+      "sha256": "739da5e30ffc881b24f5a2cc9d648d6d64d3260900a151642328440bfa6c7e45"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_submission_schedule.json",
+      "bytes": 16746,
+      "sha256": "899dc7597de9cfb2544c685ae1c113393a2f899925ab874313d6624016289f36"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_test_link_schedule.json",
+      "bytes": 16914,
+      "sha256": "7c290aa11beecd2bf5fef725aaa171f4fee70e03865ac3864cf74c9893c3e751"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_actual_submission_completion.json",
+      "bytes": 14175,
+      "sha256": "c775aa47aa7b0d16182a8897ac4ee35b21d449c07c758c62cafac5ab515ef942"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_actual_page_publication.json",
+      "bytes": 14484,
+      "sha256": "6bbf8c9066f3b77221f1e8667ad1721de870b865e38171cd8d512cf259b37f15"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_explicit_this_weekday.json",
+      "bytes": 14544,
+      "sha256": "720648f662929017fa08306e1ff90c02bbf628877d40d02b7769b641adb74f98"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_explicit_next_weekday.json",
+      "bytes": 14508,
+      "sha256": "201eb3dc8cb3f00d65143a7b82ea3d072b6e9a0c60e1b86090eb1af1c0ce69f1"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_absolute_weekday_scope.json",
+      "bytes": 14179,
+      "sha256": "1a9a12ff01380ab00c09b42d79500093a8c3596ee51bcc78544547f892cb82f2"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_recording_retention_local.json",
+      "bytes": 13285,
+      "sha256": "b654cf854b27c6eaef5197514366ed9888b6a707987059b5b00648fa7233ed9d"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_notes_only_retention.json",
+      "bytes": 14144,
+      "sha256": "de043ffd613dfb1209875def382b0adadc2f92b6ea5c906bdda133ee6d8d4da1"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_unqualified_weekday.json",
+      "bytes": 14839,
+      "sha256": "c9cd83d02cd40be73a1ceeb239f36a49de0141f53f05016334938b85f0703224"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_unspoken_honorific_note.json",
+      "bytes": 13288,
+      "sha256": "7799be5b89ce3fd26d0ffa906625df8c0252fcf7e2c72128286a1028632fece9"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_late_note_spelling_sync.json",
+      "bytes": 15307,
+      "sha256": "3dd2b353d55192f3ccc50d3b14a7a2f6017f91d9ed8403405ce538a53f2791d7"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/zh_adjacent_spoken_model.json",
+      "bytes": 14405,
+      "sha256": "c41460f745e772e033511623e3613a6c40f91075ee3d343afd1479bccb550c3e"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_existing_document_spelling_only_sync.json",
+      "bytes": 22564,
+      "sha256": "74ed731fc61f89ada8cd3bd2f50176013af93644963f27e6e64b9b0cabc51931"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_punctuation_note_captions.json",
+      "bytes": 14349,
+      "sha256": "990ad8261ae393691c419f71988ef7edef0787cd787d7a30399ff895930e6309"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_generic_note_keeps_source_plural.json",
+      "bytes": 14173,
+      "sha256": "a1149a33eae786578bbcfa7b0682bfe318127a7ffc9fd7661af01a740a11a284"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/full-auto/en_unused_punctuation_notes_add_no_names.json",
+      "bytes": 14039,
+      "sha256": "43178e39a32bcdb791dbb04c3a89f72c04c0bce85ecc18835b7408ce1958c20a"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/ci-40917023264.json",
+      "bytes": 4980,
+      "sha256": "7d6234a16fecc6e8b37f5761d0a896eb745bcc896b036c772442671b4ca81e22"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/ci-40917022948.json",
+      "bytes": 6602,
+      "sha256": "2130a48013970d746b26ea01883c6501c8a667693c867b3109b4d429953d1791"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/ci-40917022950.json",
+      "bytes": 2585,
+      "sha256": "80845549e53546307ae5c5b929b2eea3f8e2d6aeb017342551f2c43ee00dab24"
+    },
+    {
+      "path": "artifacts/candidate14-2026-10-30/peer/q10-release.json",
+      "bytes": 5615,
+      "sha256": "8c4b0c30e4d49995aa540833d141d4cfbcf9ea59a5609c860ef57b4df6f193aa"
+    }
+  ]
+}

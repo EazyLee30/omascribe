@@ -1,0 +1,1722 @@
+{
+  "schema": 1,
+  "report_status": "reviewed_affected_scope_pass",
+  "date": "2026-10-28",
+  "source_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+  "scope": "Exactly five affected public/fictional seeded-text cases: three automatic bilingual and two translation-off explicit-minute runs on source1ff. No full corpus, candidate, actual ASR, native or release acceptance is established.",
+  "overall_result": "PASS_TARGETED_FIVE_ONLY",
+  "release_accepted": false,
+  "full_semantic_acceptance": false,
+  "summary": {
+    "auto": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "translation_off_explicit_minutes": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0
+    },
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "observed_narrow_fixes": [
+      "Friday negation, recording IN-notes containment and local-retention fields survive automatic caption/article and explicit-minute outputs.",
+      "No template-instruction leakage or unstated no-copy/no-other-device restriction appears in these final recording outputs.",
+      "Notes-only controls do not invent recordings; uppercase source names, action direction, amount and pending state survive."
+    ],
+    "limit": "These five passed flags and the assistant draft source inspection do not establish universal semantic accuracy, full-corpus/candidate acceptance or release approval."
+  },
+  "identity": {
+    "before": {
+      "path": "artifacts/closed-retention-frozen-source.json",
+      "sha256": "4a150b8aeedd34a879e9521d30a2c536b107323b409620054417d57930428676"
+    },
+    "after": {
+      "path": "artifacts/closed-retention-source-after.json",
+      "sha256": "4a150b8aeedd34a879e9521d30a2c536b107323b409620054417d57930428676"
+    },
+    "exact_parsed_before_after_equal": true,
+    "all_five_report_environments_match_freeze": true,
+    "frozen_environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "68a0b7efde202f3bb90de53d5808866d25bc3c05055c9e35d7be7624c4c14d49",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "510a45be59cb474a9462458e40a861df3eba3a88d63bf0b44fea58ca6bfb36f8",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "dee7955173b5e9bfb8e8fc9cfd987c18de14493304befeeb838edab2be39121e",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "fixture": {
+      "path": "tests/fixtures/document-cases.json",
+      "revision": "1ff746bd9acd6061278379d9de4e41d735e05c86",
+      "sha256": "9a6e1905183fbea5b8e71b167cdfe87fee6a5415d40159d6b98fea0e4430a83c",
+      "read_from_frozen_git_object": true,
+      "cases": 61
+    },
+    "terminal_run_status": {
+      "artifact": {
+        "path": "artifacts/closed-retention-run-status.json",
+        "sha256": "8a769fc65e27d98e7e0f55c45b8c1da59fef329869cf02a77debfd0ffdfa4875"
+      },
+      "results": [
+        {
+          "mode": "auto",
+          "exit_code": 0
+        },
+        {
+          "mode": "minutes",
+          "exit_code": 0
+        }
+      ],
+      "source_identity_equal": true
+    },
+    "note": "All source/CLI/harness/model identities are those retained for this terminal5-run batch; no later fix or full61-run result is mixed in.",
+    "driver": {
+      "path": "artifacts/run-closed-retention-affected.py",
+      "sha256": "0199d103a83ecad713c798705e4ed505978b229a8ee57d6675dc46fd4fc10b47"
+    }
+  },
+  "static_checks": {
+    "core": {
+      "passed": 279,
+      "failed": 0,
+      "ignored": 7,
+      "log": {
+        "path": "artifacts/closed-retention-core-final-tests.log",
+        "sha256": "c7b93762e8ef45cffac7cb58854fff158b355487ecaf7e336502c860df1fe46b"
+      }
+    },
+    "clippy": {
+      "reported_strict_passed": true,
+      "compile_finished_marker_present": true,
+      "log": {
+        "path": "artifacts/closed-retention-clippy-final.log",
+        "sha256": "7d3d5f958abdeed7d94cebc5efd53c5175e45b459e20232ca95076b5d89492a8"
+      }
+    },
+    "cli_build": {
+      "compile_finished_marker_present": true,
+      "log": {
+        "path": "artifacts/closed-retention-cli-final-build.log",
+        "sha256": "b523cce3241db51e46b02769e126f8a1b0fac39ea2bb19676a6953251adfd2ce"
+      }
+    },
+    "limit": "Static completion logs are retained; they are not semantic or release acceptance. The inference source/CLI/harness identities are independently frozen above."
+  },
+  "source_binding_audit": {
+    "snapshots": 5,
+    "source_records": 9,
+    "caption_records": 7,
+    "citation_records": 9,
+    "all_source_texts_match_retained_inputs": true,
+    "all_caption_ids_revisions_match_sources": true,
+    "all_exact_citation_identity_revision_quote_time_scope_bindings_match": true,
+    "limit": "Exact citation bindings establish provenance; the separate assistant draft semantic comments inspect actual output rather than treating citations as proof."
+  },
+  "cases": [
+    {
+      "mode": "auto",
+      "case": "zh_notes_only_retention",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "original_status": "文档已同步 · 1 个章节",
+      "original_coverage": 1,
+      "case_seconds": 7.065,
+      "raw_report": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.json",
+        "sha256": "8d87e85444e2d1a25de3917907a9a1dc6a25583fb7522a56edd5e79980d83480"
+      },
+      "input_artifact": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/input.json",
+        "sha256": "365e676f040e000968cf3b7398ad365fee776ca8275802b375708dcf1a397f33"
+      },
+      "input": {
+        "name": "zh_notes_only_retention",
+        "focus": "",
+        "preferences": {
+          "minutes_language": "zh"
+        },
+        "transcript": [
+          "Meeting notes should stay on this computer."
+        ],
+        "required": [
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "录音|音频|录制"
+        ],
+        "max_sections": 2,
+        "translation_checks": [
+          {
+            "seq": 1,
+            "target": "zh",
+            "required": [
+              "会议(?:笔记|记录|纪要)",
+              "本机|本地|电脑|计算机"
+            ],
+            "forbidden": [
+              "录音|音频|录制"
+            ]
+          }
+        ]
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "38586350-4410-480a-8f31-641ef657c726",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.057,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 1.423276604,
+              "peak_tree_rss_mib": 1493.09375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot": {
+            "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+            "sha256": "2b88c92305e592bbfb5bbaeccab705f92cf4cb56912de7f0057d0779b8929b03"
+          },
+          "persisted_notes_cursor": 1,
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "generation_diagnostic_last_only": true,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "validation_error": null,
+              "prose_body": "会议纪要应留在此电脑上。",
+              "selected": [
+                {
+                  "id": "38586350-4410-480a-8f31-641ef657c726:1:1",
+                  "revision": 1,
+                  "seq": 1
+                }
+              ],
+              "usage": {
+                "completion_tokens": 10,
+                "prompt_tokens": 145,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "timings": {
+                  "cache_n": 0,
+                  "predicted_ms": 112.478,
+                  "predicted_n": 10,
+                  "predicted_per_second": 80.01564750440087,
+                  "predicted_per_token_ms": 12.497555555555556,
+                  "prompt_ms": 101.721,
+                  "prompt_n": 145,
+                  "prompt_per_second": 1425.4677008680603,
+                  "prompt_per_token_ms": 0.7015241379310345
+                },
+                "total_tokens": 155
+              },
+              "input_tokens": 128,
+              "elapsed_ms": 231,
+              "first_token_ms": 102,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output_equals_prose": true
+            }
+          ],
+          "trace_event_counts": {
+            "started": 2,
+            "worker": 2,
+            "chunk": 1,
+            "generation": 2,
+            "batch": 1,
+            "finished": 2,
+            "retrieval": 1,
+            "article_state": 1,
+            "article_prompt": 1
+          },
+          "repair_events": [],
+          "raw_artifacts": [
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/process.json",
+              "sha256": "a0a54bbba76ee9b801c5aa5fafe056a9c217c3dedbf39dc92838bff720833c95"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+              "sha256": "2b88c92305e592bbfb5bbaeccab705f92cf4cb56912de7f0057d0779b8929b03"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stderr.txt",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/last-generation.json",
+              "sha256": "98de55b51dbaae5825139ab4cd2461e90d803e693e0d9dca00b906b1b17ad8ba"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/last-writer-resource.json",
+              "sha256": "53af9c0a2095bdcb38be4ad29e89ad3b96a5119f61c7d1c0e193dd6a7a004ef3"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "afa4ff204c9447d040019d563d72aeedfff2a3c4927726ee5b92b7d258bf3258"
+            }
+          ],
+          "runtime": {
+            "artifact": {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/llm-runtime.log",
+              "sha256": "013d44eb75d5ced70ff7e3981741f9d2207d13d98dfde613fec61948ef67e408"
+            },
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "apple_m5_observed": true,
+            "mtl0_observed": true
+          }
+        }
+      ],
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "38586350-4410-480a-8f31-641ef657c726:1:1",
+          "meeting_id": "38586350-4410-480a-8f31-641ef657c726",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Meeting notes should stay on this computer."
+        }
+      ],
+      "final_notes": [
+        {
+          "anchor_ms": 0,
+          "content": "",
+          "id": "eb330f3f-5800-42e3-ae48-c407fa0be752",
+          "kind": "document",
+          "meeting_id": "38586350-4410-480a-8f31-641ef657c726",
+          "updated_at": "2026-10-28T15:47:45.899437+00:00"
+        }
+      ],
+      "final_notes_cursor": 1,
+      "final_captions": {
+        "38586350-4410-480a-8f31-641ef657c726:1:1": {
+          "cache_key": "87c266fdea985c6defb11e7f4d51843b2b97daa338bb77681db7275ff76c2b39",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "38586350-4410-480a-8f31-641ef657c726:1:1",
+          "target": "zh",
+          "text": "会议纪要应留在此电脑上。"
+        }
+      },
+      "final_article": [
+        {
+          "focus": "会议纪要",
+          "id": "8520c6f8-354c-44d6-bf59-59eca6323620",
+          "kind": "section",
+          "meeting_id": "38586350-4410-480a-8f31-641ef657c726",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Meeting notes should stay on this computer.",
+              "revision": 1,
+              "segment_id": "38586350-4410-480a-8f31-641ef657c726:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "会议纪要应留在此电脑上。"
+        }
+      ],
+      "borrowed_model_cleanup": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_notes_only_retention.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "assistant_draft_semantic_review": {
+        "result": "PASS narrow control",
+        "finding": "Meeting notes remain on this computer; neither caption nor article adds recording/audio. Translation-off mode has no captions."
+      }
+    },
+    {
+      "mode": "auto",
+      "case": "zh_recording_retention_local",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "original_status": "文档已同步 · 1 个章节",
+      "original_coverage": 1,
+      "case_seconds": 7.125,
+      "raw_report": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.json",
+        "sha256": "0041288d53ad6eb0e4a8cda754ea70511623841b98e6cac958c386edbc86887c"
+      },
+      "input_artifact": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/input.json",
+        "sha256": "1c85ad5703eabe2c7a468aa42e0c61a795243d5d318a4918dd37c9e0e959dcc6"
+      },
+      "input": {
+        "name": "zh_recording_retention_local",
+        "focus": "",
+        "preferences": {
+          "minutes_language": "zh"
+        },
+        "transcript": [
+          "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        ],
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机",
+          "周五|星期五",
+          "不是|并非|不.*截止"
+        ],
+        "max_sections": 2,
+        "translation_checks": [
+          {
+            "seq": 1,
+            "target": "zh",
+            "required": [
+              "录音|音频|录制",
+              "会议(?:笔记|记录|纪要)",
+              "本机|本地|电脑|计算机"
+            ],
+            "forbidden": []
+          }
+        ]
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 7.118,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 27,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 2.2271155,
+              "peak_tree_rss_mib": 1498.34375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot": {
+            "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stdout.txt",
+            "sha256": "484c25ff0397e9feb91ce0d438f264feb02d7fcc2aaab09f588cdd0883a52aa0"
+          },
+          "persisted_notes_cursor": 1,
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "generation_diagnostic_last_only": true,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "validation_error": null,
+              "prose_body": "星期五不是截止日期。会议笔记中的录音应保留在这台电脑上。",
+              "selected": [
+                {
+                  "id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57:1:1",
+                  "revision": 1,
+                  "seq": 1
+                }
+              ],
+              "usage": {
+                "completion_tokens": 18,
+                "prompt_tokens": 154,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "timings": {
+                  "cache_n": 0,
+                  "predicted_ms": 207.868,
+                  "predicted_n": 18,
+                  "predicted_per_second": 81.78266977120096,
+                  "predicted_per_token_ms": 12.227529411764706,
+                  "prompt_ms": 100.323,
+                  "prompt_n": 154,
+                  "prompt_per_second": 1535.041814937751,
+                  "prompt_per_token_ms": 0.6514480519480519
+                },
+                "total_tokens": 172
+              },
+              "input_tokens": 137,
+              "elapsed_ms": 339,
+              "first_token_ms": 101,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output_equals_prose": true
+            }
+          ],
+          "trace_event_counts": {
+            "started": 2,
+            "worker": 2,
+            "chunk": 1,
+            "generation": 2,
+            "batch": 1,
+            "finished": 2,
+            "retrieval": 1,
+            "article_state": 1,
+            "article_prompt": 1
+          },
+          "repair_events": [],
+          "raw_artifacts": [
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/process.json",
+              "sha256": "28f2f115a4145a78941ce31179d777ab2a350899d7747ebb88379e0f967edb07"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stdout.txt",
+              "sha256": "484c25ff0397e9feb91ce0d438f264feb02d7fcc2aaab09f588cdd0883a52aa0"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stderr.txt",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/last-generation.json",
+              "sha256": "920782b1f9e1ecb8cfa06ce4ac0eee7308fd0f83cce9937ebbb2fd5ca103bdee"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/last-writer-resource.json",
+              "sha256": "da58b78f69ce820a95366461e185b2a5f32b57ecb8528217692bf1331f33170c"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "7909796a48a026cd2db03d4e46af48b95ddef4cb78d6a2bfd4677f1bd6ac6daf"
+            }
+          ],
+          "runtime": {
+            "artifact": {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/llm-runtime.log",
+              "sha256": "1ad3aaf949a26c1e40d21abce7d6b97ecfe24a388f406e7283d450dec216cc34"
+            },
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "apple_m5_observed": true,
+            "mtl0_observed": true
+          }
+        }
+      ],
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57:1:1",
+          "meeting_id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        }
+      ],
+      "final_notes": [
+        {
+          "anchor_ms": 0,
+          "content": "",
+          "id": "887f1f1f-056f-47aa-921a-6427efbc546b",
+          "kind": "document",
+          "meeting_id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57",
+          "updated_at": "2026-10-28T15:47:38.629637+00:00"
+        }
+      ],
+      "final_notes_cursor": 1,
+      "final_captions": {
+        "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57:1:1": {
+          "cache_key": "b356072a63960481e1d6748c956aa7d2de4298d9b1cde83d0af6a74e06ea5cde",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57:1:1",
+          "target": "zh",
+          "text": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。"
+        }
+      },
+      "final_article": [
+        {
+          "focus": "会议纪要",
+          "id": "0ad9f433-26f1-4b7c-b689-3b4a9023e5dc",
+          "kind": "section",
+          "meeting_id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+              "revision": 1,
+              "segment_id": "dd78fae0-c1a0-4449-8a97-d7a1e8fbee57:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "星期五不是截止日期。会议笔记中的录音应保留在这台电脑上。"
+        }
+      ],
+      "borrowed_model_cleanup": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_recording_retention_local.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "assistant_draft_semantic_review": {
+        "result": "PASS narrow recording fields",
+        "finding": "Final output retains Friday is NOT the deadline, recording IN meeting notes and retention on this computer. IN is not changed to AND; the prior no-other-device/copy prohibition and template instructions are absent. Both automatic caption/article and the separate explicit-minute article retain the required facts."
+      }
+    },
+    {
+      "mode": "auto",
+      "case": "zh_windows_uppercase_asr",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "original_status": "文档已同步 · 1 个章节",
+      "original_coverage": 5,
+      "case_seconds": 11.854,
+      "raw_report": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.json",
+        "sha256": "c4a3ba73b520d7c02f6d2c225e31455ddda777789df8845a97522c1f29c10fed"
+      },
+      "input_artifact": {
+        "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/input.json",
+        "sha256": "18c73615cf6ea94467fb4a553dd53387d4e1e54dc19eda4b7c934586c6d8db89"
+      },
+      "input": {
+        "name": "zh_windows_uppercase_asr",
+        "focus": "",
+        "transcript": [
+          "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+          "LICE WILL CHECK THE ENVY A CARD",
+          "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+          "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+          "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        ],
+        "preferences": {
+          "minutes_language": "zh"
+        },
+        "required": [
+          "周四|星期四",
+          "周五|星期五",
+          "预算",
+          "未|不.*批准",
+          "本机|本地|电脑|计算机",
+          "3000|三千",
+          "ILLMIS\\s+CRIBE",
+          "LLAS\\s+CRIBE",
+          "(?<![A-Za-z0-9])LICE(?![A-Za-z0-9])",
+          "ENVY A CARD",
+          "ALICE",
+          "UN VIDEO CARD",
+          "录音|音频|录制"
+        ],
+        "max_sections": 2,
+        "merged_sources": true,
+        "forbidden": [
+          "三万美元",
+          "30000"
+        ],
+        "translation_checks": [
+          {
+            "seq": 5,
+            "target": "zh",
+            "required": [
+              "ALICE",
+              "UN VIDEO CARD",
+              "未|没有|尚",
+              "检查|检验|核对"
+            ],
+            "forbidden": [
+              "IT HAS NOT BEEN APPROVED",
+              "NVIDIA|英伟达",
+              "UN VIDEO CARD[^。！？；;\\n]{0,24}(?:检查|核对|检验)[^。！？；;\\n]{0,24}ALICE",
+              "它尚未批准"
+            ]
+          },
+          {
+            "seq": 3,
+            "target": "zh",
+            "required": [
+              "录音|音频|录制",
+              "会议(?:笔记|记录|纪要)",
+              "本机|本地|电脑|计算机",
+              "周五|星期五",
+              "不是|并非|不.*截止"
+            ],
+            "forbidden": []
+          }
+        ]
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "automatic-scheduler",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 5,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "settle",
+              "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+              "120"
+            ],
+            "code": 0,
+            "seconds": 11.842,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 45,
+              "processes_seen": 3,
+              "cpu_seconds_sampled": 3.585171528,
+              "peak_tree_rss_mib": 1517.9375,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot": {
+            "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stdout.txt",
+            "sha256": "503e7d7d581188a56b236aef8c5988fd6fbbbbe46236af122d1443635c3b6928"
+          },
+          "persisted_notes_cursor": 5,
+          "diagnostic_cursor_after_not_persisted_cursor": 5,
+          "generation_diagnostic_last_only": true,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "validation_error": null,
+              "prose_body": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。  \nLICE 将检查 ENVY A CARD  \n星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。  \n这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元  \n尚未获批。 ALICE将检查UN VIDEO CARD",
+              "selected": [
+                {
+                  "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:1",
+                  "revision": 1,
+                  "seq": 1
+                },
+                {
+                  "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:2",
+                  "revision": 1,
+                  "seq": 2
+                },
+                {
+                  "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:3",
+                  "revision": 1,
+                  "seq": 3
+                },
+                {
+                  "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:4",
+                  "revision": 1,
+                  "seq": 4
+                },
+                {
+                  "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:5",
+                  "revision": 1,
+                  "seq": 5
+                }
+              ],
+              "usage": {
+                "completion_tokens": 103,
+                "prompt_tokens": 353,
+                "prompt_tokens_details": {
+                  "cached_tokens": 3
+                },
+                "timings": {
+                  "cache_n": 3,
+                  "predicted_ms": 1359.434,
+                  "predicted_n": 103,
+                  "predicted_per_second": 75.03122623091669,
+                  "predicted_per_token_ms": 13.32778431372549,
+                  "prompt_ms": 159.693,
+                  "prompt_n": 350,
+                  "prompt_per_second": 2191.705334610784,
+                  "prompt_per_token_ms": 0.45626571428571433
+                },
+                "total_tokens": 456
+              },
+              "input_tokens": 336,
+              "elapsed_ms": 1559,
+              "first_token_ms": 160,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output_equals_prose": true
+            }
+          ],
+          "trace_event_counts": {
+            "started": 3,
+            "worker": 3,
+            "chunk": 6,
+            "generation": 7,
+            "validation_failed": 1,
+            "batch": 2,
+            "finished": 3,
+            "retrieval": 1,
+            "article_state": 1,
+            "article_prompt": 1
+          },
+          "repair_events": [],
+          "raw_artifacts": [
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/process.json",
+              "sha256": "dfc1d2f2a79411e5d75ba4aa266e9d42ca1ea92ef1906a7f4fe36cd4f133ab30"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stdout.txt",
+              "sha256": "503e7d7d581188a56b236aef8c5988fd6fbbbbe46236af122d1443635c3b6928"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/stderr.txt",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/last-generation.json",
+              "sha256": "bdde67c71d3d8acd0c6c41a283e8e82a97b2767176da23ca85192028e5ff47dc"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/last-writer-resource.json",
+              "sha256": "ee69a69e0823f7ab74eed3fef9217798a0367765b109056f6cc67b177ae21cd4"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "d03350534a613cc74eba96be8592ab58de080f0c9ec34c974949136125c237c3"
+            }
+          ],
+          "runtime": {
+            "artifact": {
+              "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/zh_windows_uppercase_asr/phase-1/batch-1/llm-runtime.log",
+              "sha256": "57dd8dde7e61aa40660a4e7cf91f582f32ddbfaf024617b3b4d53bbd6fdc3248"
+            },
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "apple_m5_observed": true,
+            "mtl0_observed": true
+          }
+        }
+      ],
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:1",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A"
+        },
+        {
+          "end_ms": 20000,
+          "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:2",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "revision": 1,
+          "run": 1,
+          "seq": 2,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 10000,
+          "text": "LICE WILL CHECK THE ENVY A CARD"
+        },
+        {
+          "end_ms": 30000,
+          "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:3",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "revision": 1,
+          "run": 1,
+          "seq": 3,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 20000,
+          "text": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER"
+        },
+        {
+          "end_ms": 40000,
+          "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:4",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "revision": 1,
+          "run": 1,
+          "seq": 4,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 30000,
+          "text": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN"
+        },
+        {
+          "end_ms": 50000,
+          "id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:5",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "revision": 1,
+          "run": 1,
+          "seq": 5,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 40000,
+          "text": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD"
+        }
+      ],
+      "final_notes": [
+        {
+          "anchor_ms": 0,
+          "content": "",
+          "id": "84ee6f2f-e509-4a2c-b670-0961bb5459b6",
+          "kind": "document",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "updated_at": "2026-10-28T15:47:26.621941+00:00"
+        }
+      ],
+      "final_notes_cursor": 5,
+      "final_captions": {
+        "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:1": {
+          "cache_key": "f6af18d4c87bd02839ab1593cdb6650852636358aa2bc3374a2ce53ecf3ba331",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:1",
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。"
+        },
+        "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:2": {
+          "cache_key": "02c8f73db608fcb60c6d08539b3a2be5cfd13dfde19798f08e3b6ab1c30d130a",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:2",
+          "target": "zh",
+          "text": "LICE 将检查 ENVY A CARD"
+        },
+        "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:3": {
+          "cache_key": "20d167265893919dc11be3fb3b64c005704a5937a92d4a0b9701a855121e3bbf",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:3",
+          "target": "zh",
+          "text": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。"
+        },
+        "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:4": {
+          "cache_key": "c47b00a56e312c6172cfc72b8e4969e43041750c44d26a7db90619cfe8565da3",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:4",
+          "target": "zh",
+          "text": "这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元"
+        },
+        "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:5": {
+          "cache_key": "51df7c7f78da1b16770c8af77efaf8fb2138937b66fb6e343e7fc10bb5d3fa5e",
+          "model": "qwen3-1.7b",
+          "revision": 1,
+          "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:5",
+          "target": "zh",
+          "text": "尚未获批。 ALICE将检查UN VIDEO CARD。"
+        }
+      },
+      "final_article": [
+        {
+          "focus": "会议纪要",
+          "id": "f6dc41d9-11b9-4d9e-a61b-bdab1348cec7",
+          "kind": "section",
+          "meeting_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8",
+          "sources": [
+            {
+              "end_ms": 50000,
+              "quote": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+              "revision": 1,
+              "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:5",
+              "speaker_name": null,
+              "start_ms": 40000
+            },
+            {
+              "end_ms": 20000,
+              "quote": "LICE WILL CHECK THE ENVY A CARD",
+              "revision": 1,
+              "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 40000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS LLAS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN",
+              "revision": 1,
+              "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:4",
+              "speaker_name": null,
+              "start_ms": 30000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "THIS IS A FICTIONAL TEST MEETING THE PROJECT IS ILLMIS CRIBE WE WILL TEST THE WINDOWS VERSION ON THURSDAY THE BUDGET IS THREE THOUSAND DOLLARS IN IT HAS NOT BEEN APPROVED A",
+              "revision": 1,
+              "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "FRIDAY IS NOT THE DEADLINE RECORDING IN MEETING NOTES SHOULD STAY ON THIS COMPUTER",
+              "revision": 1,
+              "segment_id": "ddce5988-30e4-4126-ae7c-7590fe3eafd8:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "这是虚构的测试，项目是 ILLMIS CRIBE，我们将在星期四测试Windows版本。预算为3000美元，其中尚未批准。 LICE 将检查 ENVY A CARD 星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。 这是虚构的测试，项目是 LLAS CRIBE，我们将在星期四测试Windows版本，预算为3000美元 尚未获批。 ALICE将检查UN VIDEO CARD"
+        }
+      ],
+      "borrowed_model_cleanup": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "last_translation_diagnostic": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-auto-20261028/zh_windows_uppercase_asr.artifacts/workspace/translation-diagnostic.json",
+          "sha256": "2698d44c9645a2bb0ba2c3a5be947b0927a3a498b80d072cb0f920c8711d6db5"
+        },
+        "error": "chunk_evidence_mismatch: 译文遗漏或改写原文名称，须保留提供的原始拼写",
+        "input": "IT HAS NOT BEEN APPROVED ALICE WILL CHECK THE UN VIDEO CARD",
+        "raw": "{\n  \"translation\": \"未批准 ALICE 将检查 UN 视频卡\"\n}",
+        "stage": "validation",
+        "last_only_not_all_generated_responses": true,
+        "not_a_final_committed_output": true
+      },
+      "assistant_draft_semantic_review": {
+        "result": "PASS narrow five-source inspection",
+        "finding": "Final captions and article preserve separate ILLMIS CRIBE/LLAS CRIBE source spellings, LICE checking ENVY A CARD, ALICE checking UN VIDEO CARD, the future Thursday Windows test, 3000 dollars, unapproved/passive state, Friday NOT the deadline, recording IN meeting notes and local retention. The incomplete original tails are not guessed into additional facts. Seq3 contains no copied prompt instructions or invented copy/device restriction. The final article remains repetitive with rough punctuation; this narrow factual check does not claim polished summary quality."
+      }
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_notes_only_retention",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "original_status": "文档已同步 · 1 个章节",
+      "original_coverage": 1,
+      "case_seconds": 1.519,
+      "raw_report": {
+        "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.json",
+        "sha256": "0814441e8e28602e1bd9a364af6ef8f1f18827f57a8b9bf6d45716c0a473e1f3"
+      },
+      "input_artifact": {
+        "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/input.json",
+        "sha256": "365e676f040e000968cf3b7398ad365fee776ca8275802b375708dcf1a397f33"
+      },
+      "input": {
+        "name": "zh_notes_only_retention",
+        "focus": "",
+        "preferences": {
+          "minutes_language": "zh"
+        },
+        "transcript": [
+          "Meeting notes should stay on this computer."
+        ],
+        "required": [
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机"
+        ],
+        "forbidden": [
+          "录音|音频|录制"
+        ],
+        "max_sections": 2,
+        "translation_checks": [
+          {
+            "seq": 1,
+            "target": "zh",
+            "required": [
+              "会议(?:笔记|记录|纪要)",
+              "本机|本地|电脑|计算机"
+            ],
+            "forbidden": [
+              "录音|音频|录制"
+            ]
+          }
+        ]
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "explicit-generation",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "generate",
+              "d346db8f-e319-4fad-b9e3-ad0856439278"
+            ],
+            "code": 0,
+            "seconds": 1.513,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 6,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 0.999803354,
+              "peak_tree_rss_mib": 1494.546875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot": {
+            "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+            "sha256": "3554a430af54199415ebe8ad6863b6828c5327b14ff182adf2b4a046a09f7014"
+          },
+          "persisted_notes_cursor": 1,
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "generation_diagnostic_last_only": false,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "validation_error": null,
+              "prose_body": "会议记录应保持在本计算机上。",
+              "selected": [
+                {
+                  "id": "d346db8f-e319-4fad-b9e3-ad0856439278:1:1",
+                  "revision": 1,
+                  "seq": 1
+                }
+              ],
+              "usage": {
+                "completion_tokens": 10,
+                "prompt_tokens": 144,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "timings": {
+                  "cache_n": 0,
+                  "predicted_ms": 106.519,
+                  "predicted_n": 10,
+                  "predicted_per_second": 84.49196856898769,
+                  "predicted_per_token_ms": 11.835444444444445,
+                  "prompt_ms": 84.3,
+                  "prompt_n": 144,
+                  "prompt_per_second": 1708.185053380783,
+                  "prompt_per_token_ms": 0.5854166666666667
+                },
+                "total_tokens": 154
+              },
+              "input_tokens": 127,
+              "elapsed_ms": 280,
+              "first_token_ms": 85,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output_equals_prose": true
+            }
+          ],
+          "trace_event_counts": {
+            "started": 1,
+            "retrieval": 1,
+            "article_state": 1,
+            "worker": 1,
+            "article_prompt": 1,
+            "generation": 1,
+            "finished": 1
+          },
+          "repair_events": [],
+          "raw_artifacts": [
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/process.json",
+              "sha256": "12f9aba9b162c5e70b9b4fa9f3bd03e116ae5b99d8e8ab2edebe45ac756135f5"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stdout.txt",
+              "sha256": "3554a430af54199415ebe8ad6863b6828c5327b14ff182adf2b4a046a09f7014"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/stderr.txt",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/last-generation.json",
+              "sha256": "82a15eb2b1ed33afa0611153b92e3cfe4c640ad7b5f769a47a7883021fe88370"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/last-writer-resource.json",
+              "sha256": "fcb9b52df88aeaf09cc791d664a3ca7b49ea1c44ca7b7a8769da0408462e8094"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "ddc33779051d2c95c3a5de276ebab9d79c90cbd791be248758d7982d05cdc492"
+            }
+          ],
+          "runtime": {
+            "artifact": {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/zh_notes_only_retention/phase-1/batch-1/llm-runtime.log",
+              "sha256": "f4460e262d1326cfd68a34191e925fb6365ba43dd2ba3aef4f91e1952b578269"
+            },
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "apple_m5_observed": true,
+            "mtl0_observed": true
+          }
+        }
+      ],
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "d346db8f-e319-4fad-b9e3-ad0856439278:1:1",
+          "meeting_id": "d346db8f-e319-4fad-b9e3-ad0856439278",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Meeting notes should stay on this computer."
+        }
+      ],
+      "final_notes": [
+        {
+          "anchor_ms": 0,
+          "content": "",
+          "id": "0808f249-56a1-4252-a91a-7b6dd9c831ba",
+          "kind": "document",
+          "meeting_id": "d346db8f-e319-4fad-b9e3-ad0856439278",
+          "updated_at": "2026-10-28T15:47:56.299677+00:00"
+        }
+      ],
+      "final_notes_cursor": 1,
+      "final_captions": {},
+      "final_article": [
+        {
+          "focus": "会议纪要",
+          "id": "1c6f2397-7d47-4d70-ae62-06ead47dbd4f",
+          "kind": "section",
+          "meeting_id": "d346db8f-e319-4fad-b9e3-ad0856439278",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Meeting notes should stay on this computer.",
+              "revision": 1,
+              "segment_id": "d346db8f-e319-4fad-b9e3-ad0856439278:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "会议记录应保持在本计算机上。"
+        }
+      ],
+      "borrowed_model_cleanup": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_notes_only_retention.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "assistant_draft_semantic_review": {
+        "result": "PASS narrow control",
+        "finding": "Meeting notes remain on this computer; neither caption nor article adds recording/audio. Translation-off mode has no captions."
+      }
+    },
+    {
+      "mode": "minutes",
+      "case": "zh_recording_retention_local",
+      "original_automatic_pass": true,
+      "original_errors": [],
+      "original_status": "文档已同步 · 1 个章节",
+      "original_coverage": 1,
+      "case_seconds": 2.982,
+      "raw_report": {
+        "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.json",
+        "sha256": "6abc1c4ccc5babcb1e1210903940f895861671efb2cc74a6d087c52320160c8d"
+      },
+      "input_artifact": {
+        "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/input.json",
+        "sha256": "1c85ad5703eabe2c7a468aa42e0c61a795243d5d318a4918dd37c9e0e959dcc6"
+      },
+      "input": {
+        "name": "zh_recording_retention_local",
+        "focus": "",
+        "preferences": {
+          "minutes_language": "zh"
+        },
+        "transcript": [
+          "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        ],
+        "required": [
+          "录音|音频|录制",
+          "会议(?:笔记|记录|纪要)",
+          "本机|本地|电脑|计算机",
+          "周五|星期五",
+          "不是|并非|不.*截止"
+        ],
+        "max_sections": 2,
+        "translation_checks": [
+          {
+            "seq": 1,
+            "target": "zh",
+            "required": [
+              "录音|音频|录制",
+              "会议(?:笔记|记录|纪要)",
+              "本机|本地|电脑|计算机"
+            ],
+            "forbidden": []
+          }
+        ]
+      },
+      "preferences": {
+        "inference_backend": "metal",
+        "threads": 1,
+        "context_size": 2048,
+        "resource_mode": "balanced",
+        "memory_budget_mib": 4096,
+        "llm_keep_alive_seconds": 0,
+        "auto_notes": false,
+        "translation_mode": "off",
+        "diarization": false,
+        "use_memory": false,
+        "use_knowledge": false,
+        "llm_model": "qwen3-1.7b"
+      },
+      "execution": "explicit-generation",
+      "runs": [
+        {
+          "phase": 1,
+          "batch": 1,
+          "status": "文档已同步 · 1 个章节",
+          "coverage": 1,
+          "process": {
+            "command": [
+              "/Users/eazylee/build/omascribe/target/debug/omascribe-cli",
+              "generate",
+              "88dd84df-8811-41de-9f0c-8fd9f5faa2dd"
+            ],
+            "code": 0,
+            "seconds": 2.974,
+            "failure": null,
+            "resources": {
+              "schema": 1,
+              "method": "psutil sampled descendant tree",
+              "psutil_version": "7.1.3",
+              "interval_seconds": 0.25,
+              "samples": 11,
+              "processes_seen": 2,
+              "cpu_seconds_sampled": 1.7444195580000001,
+              "peak_tree_rss_mib": 1513.421875,
+              "peak_tree_pss_mib": null,
+              "gpu_memory_mib": null,
+              "energy_joules": null,
+              "sample_errors": 0,
+              "sampler_stopped": true,
+              "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+            }
+          },
+          "snapshot": {
+            "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stdout.txt",
+            "sha256": "06642a3ffe23974c89d2c1e85c55a3f51e1012380f61e58230d33adaafa009fb"
+          },
+          "persisted_notes_cursor": 1,
+          "diagnostic_cursor_after_not_persisted_cursor": 1,
+          "generation_diagnostic_last_only": false,
+          "attempts": [
+            {
+              "attempt": 1,
+              "mode": "compose",
+              "validation_error": "纪要输出语言与选择不符，原话仍待整理",
+              "prose_body": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+              "selected": [
+                {
+                  "id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd:1:1",
+                  "revision": 1,
+                  "seq": 1
+                }
+              ],
+              "usage": {
+                "completion_tokens": 17,
+                "prompt_tokens": 152,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "timings": {
+                  "cache_n": 0,
+                  "predicted_ms": 189.622,
+                  "predicted_n": 17,
+                  "predicted_per_second": 84.37839491198278,
+                  "predicted_per_token_ms": 11.851375,
+                  "prompt_ms": 102.172,
+                  "prompt_n": 152,
+                  "prompt_per_second": 1487.6874290412247,
+                  "prompt_per_token_ms": 0.6721842105263157
+                },
+                "total_tokens": 169
+              },
+              "input_tokens": 135,
+              "elapsed_ms": 396,
+              "first_token_ms": 103,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output_equals_prose": true
+            },
+            {
+              "attempt": 2,
+              "mode": "translate_source_relations",
+              "validation_error": null,
+              "prose_body": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。",
+              "selected": [
+                {
+                  "id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd:1:1",
+                  "revision": 1,
+                  "seq": 1
+                }
+              ],
+              "usage": {
+                "completion_tokens": 45,
+                "prompt_tokens": 119,
+                "prompt_tokens_details": {
+                  "cached_tokens": 3
+                },
+                "timings": {
+                  "cache_n": 3,
+                  "predicted_ms": 1249.819,
+                  "predicted_n": 45,
+                  "predicted_per_second": 35.205097698146695,
+                  "predicted_per_token_ms": 28.404977272727272,
+                  "prompt_ms": 62.656,
+                  "prompt_n": 116,
+                  "prompt_per_second": 1851.3789581205313,
+                  "prompt_per_token_ms": 0.5401379310344827
+                },
+                "total_tokens": 164
+              },
+              "input_tokens": 103,
+              "elapsed_ms": 1322,
+              "first_token_ms": 63,
+              "translation_plan": null,
+              "week_qualifier_corrections": 0,
+              "unitless_yuan_corrections": 0,
+              "raw_model_output": "[\n  {\n    \"translation\": \"星期五不是截止日期。\"\n  },\n  {\n    \"translation\": \"会议笔记中的录音应保留在这台电脑上。\"\n  }\n]"
+            }
+          ],
+          "trace_event_counts": {
+            "started": 1,
+            "retrieval": 1,
+            "article_state": 1,
+            "worker": 1,
+            "article_prompt": 1,
+            "generation": 2,
+            "article_repair": 1,
+            "finished": 1
+          },
+          "repair_events": [
+            {
+              "at": "2026-10-28T15:47:54.592458+00:00",
+              "elapsed_ms": 1437,
+              "job": "3c2694d1-1d42-4f1b-8d36-36d845d4c842",
+              "metrics": {
+                "mode": "source_relations",
+                "source_predicates": 2,
+                "source_slots": 2
+              },
+              "phase": "article_repair",
+              "schema": 1,
+              "task": "minutes"
+            }
+          ],
+          "raw_artifacts": [
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/process.json",
+              "sha256": "6893860e27dccfa76eaac752263cd9a4671e54064f04a5234df4f3879e6c6695"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stdout.txt",
+              "sha256": "06642a3ffe23974c89d2c1e85c55a3f51e1012380f61e58230d33adaafa009fb"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/stderr.txt",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/last-generation.json",
+              "sha256": "20e067938ac259be7aaba089511b82c8223669e0cd846f42a461cf1189b72f1a"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/last-writer-resource.json",
+              "sha256": "e8539b58d648b98860ffc3c3ca9f7adba5490a91af9ce76d966dc7e1dd929af9"
+            },
+            {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/inference-trace.jsonl",
+              "sha256": "0eebd80bac5531b67250f9708f21eb941af0e391d287d57e2b0cf76f07ba53a9"
+            }
+          ],
+          "runtime": {
+            "artifact": {
+              "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/zh_recording_retention_local/phase-1/batch-1/llm-runtime.log",
+              "sha256": "f3e72ebb773e626fbe1baf1d1bb5411e3072d2a8d5b878e002ec1e1a34f75a3a"
+            },
+            "offloaded_layers": [
+              [
+                29,
+                29
+              ]
+            ],
+            "apple_m5_observed": true,
+            "mtl0_observed": true
+          }
+        }
+      ],
+      "source_segments": [
+        {
+          "end_ms": 10000,
+          "id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd:1:1",
+          "meeting_id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd",
+          "revision": 1,
+          "run": 1,
+          "seq": 1,
+          "speaker": null,
+          "speaker_manual": false,
+          "start_ms": 0,
+          "text": "Friday is not the deadline. Recording in meeting notes should stay on this computer."
+        }
+      ],
+      "final_notes": [
+        {
+          "anchor_ms": 0,
+          "content": "",
+          "id": "67fbd4c4-71c3-4435-8a51-0338cc48be07",
+          "kind": "document",
+          "meeting_id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd",
+          "updated_at": "2026-10-28T15:47:53.146751+00:00"
+        }
+      ],
+      "final_notes_cursor": 1,
+      "final_captions": {},
+      "final_article": [
+        {
+          "focus": "会议纪要",
+          "id": "b0510523-ddc2-4a3d-b21c-c5430b78822e",
+          "kind": "section",
+          "meeting_id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Friday is not the deadline. Recording in meeting notes should stay on this computer.",
+              "revision": 1,
+              "segment_id": "88dd84df-8811-41de-9f0c-8fd9f5faa2dd:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "星期五不是截止日期。 会议笔记中的录音应保留在这台电脑上。"
+        }
+      ],
+      "borrowed_model_cleanup": {
+        "artifact": {
+          "path": "artifacts/benchmarks/closed-retention-minutes-20261028/zh_recording_retention_local.artifacts/workspace/model-copy-cleanup.json",
+          "sha256": "9e67a0f4be7099e550286e7439c0c6a109b5abbcf0e06a3c3c0722aee2f03864"
+        },
+        "released": true,
+        "logical_bytes": 1107409537,
+        "note": "Borrowed copies/links only; logical bytes are not guaranteed disk space reclaimed. Source model store retained."
+      },
+      "assistant_draft_semantic_review": {
+        "result": "PASS narrow recording fields",
+        "finding": "Final output retains Friday is NOT the deadline, recording IN meeting notes and retention on this computer. IN is not changed to AND; the prior no-other-device/copy prohibition and template instructions are absent. Both automatic caption/article and the separate explicit-minute article retain the required facts."
+      }
+    }
+  ],
+  "resource_observations": {
+    "calls_with_saved_samples": 5,
+    "case_elapsed_seconds_sum": 30.545,
+    "saved_process_elapsed_seconds_sum": 30.504,
+    "sampled_cpu_seconds_sum": 9.979787,
+    "largest_sampled_tree_rss_mib": 1517.9375,
+    "all_phase_runtime_logs_m5_mtl0_29_of_29": true,
+    "method": "Saved psutil descendant-tree samples with per-call data and phase runtime path/hash; workspace log copies are not double-counted.",
+    "limit": "The uppercase case completed in11.854s versus earlier roughly120s failed runs, but this is not a paired controlled speedup comparison. No percentage/energy/whole-meeting performance claim follows. Sampled CPU can miss tails; summed RSS may double-count shared mappings; GPU allocation/PSS/energy are unmeasured."
+  },
+  "cleanup": {
+    "borrowed_model_workspaces": 5,
+    "all_release_markers_true": true,
+    "all_saved_own_samplers_stopped": true,
+    "logical_bytes_per_workspace": [
+      1107409537
+    ],
+    "limit": "Only borrowed copies/links and own samplers are covered. Logical bytes are not physical disk reclamation; original models and raw failure evidence remain."
+  },
+  "historical_context": [
+    {
+      "artifact": {
+        "path": "artifacts/retention-context-evidence-draft.json",
+        "sha256": "03d7c17e1dda319d637aa36a639ee2dd5a19f028824210b9e17d799f0204af2a"
+      },
+      "revision": "c6b2f074bce8257a68fa16e224b34121a110d6bd",
+      "note": "Separate prior5-run draft with3PASS/2FAIL, including committed template leakage/exclusive restriction and omitted Friday. Those raw failures remain retained and are not rewritten as passed."
+    },
+    {
+      "artifact": {
+        "path": "artifacts/source-fields-evidence-draft.json",
+        "sha256": "ac611bf98c589b2f95161f42c6b370f5c0545ea24eda1e385be542acc8d7383b"
+      },
+      "revision": "be3f20dfa4ae238a3d02521b60b0a9c9d22fc3e6",
+      "note": "Separate earlier8-run draft5PASS/3FAIL; not combined into this five-case acceptance scope."
+    }
+  ],
+  "next_scope": "Parent independently reviews and may publish this draft. Any candidate8/full61 evaluation is a separate frozen run and remains pending here.",
+  "limits": [
+    "DRAFT assistant compilation for parent review, not human or release approval.",
+    "Seeded text only: no actual ASR/microphone/live meeting/native UI/installation/upgrade or new physical GPU-fallback/energy test is established.",
+    "No SDK/GPU component/installer/default model or backend promotion is implied. Existing pinned resources were reused; broader research and prior rejected candidates remain open."
+  ],
+  "artifact_reference_convention": "Raw artifact paths are repository-relative with SHA-256. The fixture SHA is over the specified frozen Git object. Actual sources/notes/final captions/articles are copied from retained snapshots. Raw model replies and restored prose are distinguished; generation cursor_after is not the persisted notes_cursor.",
+  "independent_review": {
+    "path": "artifacts/closed-retention-semantic-review.json",
+    "sha256": "54ae9efb3682db81e430743a925be12f718f44f60896491f73ce7c59f9e6e484"
+  }
+}

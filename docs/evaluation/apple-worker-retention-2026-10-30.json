@@ -1,0 +1,943 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "kind": "apple-worker-retention-resource-evidence",
+  "status": "six_registered_arms_passed_after_sampler_producer_fix",
+  "release_eligible": false,
+  "quality_gate_satisfied": false,
+  "default_promotion": false,
+  "default_llm_keep_alive_seconds": 0,
+  "source_revision": "7dec40069d290c7605138ef92d87be86f3226331",
+  "pr": "https://github.com/EazyLee30/omascribe/pull/13",
+  "scope": "Bounded public read-speech paced replay with actual CPU ASR and Metal LLM translation/minutes on one Apple M5. Confirms measured process lifecycle/resource observation only; not an installed-candidate, microphone, three-platform, semantic-gold or release acceptance.",
+  "protocol": {
+    "command": "python3 tests/benchmark_keep_alive.py --cli <fixed-7dec-cli> --fixtures <pinned-fleurs> --runtime <unchanged-installed-runtime> --asr-model-dir <owned-zipformer-clone> --llm-model-dir <owned-qwen-clone> --output <fresh-report.json>",
+    "order": [
+      [
+        0,
+        10,
+        30
+      ],
+      [
+        30,
+        10,
+        0
+      ]
+    ],
+    "per_arm_audio_seconds": 78,
+    "per_arm_settle_ceiling_seconds": 90,
+    "per_arm_idle_seconds": 32,
+    "per_arm_timeout_seconds": 230,
+    "first_failed_arm_stops": true,
+    "preferences": {
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 1,
+      "context_size": 2048,
+      "memory_budget_mib": 4096,
+      "inference_backend": "metal",
+      "resource_mode": "balanced",
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "minutes_language": "zh",
+      "diarization": false,
+      "use_memory": false,
+      "use_knowledge": false
+    },
+    "invocations": {
+      "original_e9": 1,
+      "producer_fixed_7dec": 1
+    },
+    "inputs_thresholds_cost_accounting_unchanged": true,
+    "producer_only_changes": [
+      "tests/process_resources.py",
+      "tests/test_process_resources.py"
+    ],
+    "no_sdk_model_download_or_gpu_rebuild": true
+  },
+  "identities": {
+    "new_environment": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "7dec40069d290c7605138ef92d87be86f3226331",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "9aad1b59ae63da5915bb0d40c0a9c7ca190c1d24891863194ec27f15ea452ae9",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "156649c9b7d49a1c8a7140e2d28ea7a3c17315a389f9ce7ec2df914924b66fb8",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "ffe6aa797f3972d500a921a4529475ffd44dda20db97ca39d1099891989f4589",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "7dec40069d290c7605138ef92d87be86f3226331",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "original_failed_environment": {
+      "cli_build": {
+        "profile": "release",
+        "revision_at_compile": "e9c1490b4aa8d6169f5b487a7222255cec1d1234",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "9aad1b59ae63da5915bb0d40c0a9c7ca190c1d24891863194ec27f15ea452ae9",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "8d2bc23dfd9dea732a7bcb16623b3ad20e28f374b80b68d91ced205961337726",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "64796c92ea557e47ee8d41210b5433634de8a6a3a3fb6504bf45e0e4cb76abe3",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "e9c1490b4aa8d6169f5b487a7222255cec1d1234",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "hardware": {
+      "chip": "Apple M5",
+      "physical_memory_bytes": 25769803776,
+      "llama_devices": "Available devices:\n  MTL0: Apple M5 (18186 MiB, 18185 MiB free)\n",
+      "llama_probe_stderr": "",
+      "note": "No model loaded. Unified-memory estimate is not independent VRAM."
+    },
+    "psutil_version": "7.1.3",
+    "runtime_inventory": {
+      "build-info.json": {
+        "bytes": 93,
+        "sha256": "fd21b5aedbed7606f8297a8cae5b65148d1607f73b6856b3385cbcb6e771488e"
+      },
+      "llama-server": {
+        "bytes": 18953328,
+        "sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816"
+      }
+    },
+    "llama_runtime_build_info": {
+      "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+      "metal": true,
+      "format": 1
+    },
+    "asr_worker": {
+      "name": "omascribe-asr",
+      "bytes": 26296592,
+      "sha256": "c42b59fe44e812b4005e01cbf1eb670e9418883c74430dc2835920c64f40bde6"
+    },
+    "ffmpeg": {
+      "path": "/opt/homebrew/Cellar/ffmpeg/7.1.1_2/bin/ffmpeg",
+      "sha256": "48cc76fa936aec61e6459da4366ad8d99da34e4a7f98be66ff5a9130d8ab366f"
+    },
+    "fixture": {
+      "case": {
+        "name": "fleurs_mixed_zh_en_02",
+        "language": "mixed",
+        "file": "fleurs_mixed_zh_en_02.wav",
+        "reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+        "sha256": "dd812d13c76ace12fbb023e372b3ddd8e90dd0582dc0b7787d4df1d6f9ba28db",
+        "kind": "constructed-language-switches",
+        "gap_ms": 250,
+        "pieces": [
+          {
+            "case": "fleurs_en_us_1771",
+            "file": "en_us-2589557553267364799-16k.wav",
+            "sha256": "a391840f808d7e487bd612497ff1385abf3fe9ee616068896d5c0018972dd76b",
+            "start_sample": 0,
+            "end_sample": 143040
+          },
+          {
+            "case": "fleurs_cmn_hans_cn_1843",
+            "file": "cmn_hans_cn-14716260585206763911-16k.wav",
+            "sha256": "4554124b47de848335d6e1bcb028b6a80754752c7e347be786265d37108e20e5",
+            "start_sample": 147040,
+            "end_sample": 285280
+          },
+          {
+            "case": "fleurs_en_us_1914",
+            "file": "en_us-621925716775998155-16k.wav",
+            "sha256": "96f6c50da52309d088aaffab75a7b18b9c9da13ecbe81d3ae5c3d8d1e6ffbd76",
+            "start_sample": 289280,
+            "end_sample": 383360
+          }
+        ],
+        "limitation": "Spliced held-out utterances, not natural code-switching or diarization labels"
+      },
+      "source_manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69",
+      "source_wav_sha256": "dd812d13c76ace12fbb023e372b3ddd8e90dd0582dc0b7787d4df1d6f9ba28db",
+      "replayed_wav_sha256": "ff4f1c89f5bccc9d971201cb3efa77ece75c1959dac4a10e13cd5516937080f0",
+      "expected_and_actual_pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+      "audio_samples_each": 1248000
+    },
+    "models": [
+      {
+        "model": "zipformer-small",
+        "name": "encoder-epoch-99-avg-1.int8.onnx",
+        "bytes": 42980793,
+        "sha256": "db6f51551762e40e549166fe041ea3e45464370b595e9ad23f06478ec3794fbb"
+      },
+      {
+        "model": "zipformer-small",
+        "name": "decoder-epoch-99-avg-1.onnx",
+        "bytes": 13877276,
+        "sha256": "89be509a83175261695bdef5fd1c7b9ab1129a663d1284e7ba9f8507b21e0906"
+      },
+      {
+        "model": "zipformer-small",
+        "name": "joiner-epoch-99-avg-1.int8.onnx",
+        "bytes": 3228485,
+        "sha256": "bdda356d6f9b8c2d7cee9ee0e26075fa537490f7fd06520be408d287073667b9"
+      },
+      {
+        "model": "zipformer-small",
+        "name": "tokens.txt",
+        "bytes": 56317,
+        "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3"
+      },
+      {
+        "model": "zipformer-small",
+        "name": "bpe.model",
+        "bytes": 244836,
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01"
+      },
+      {
+        "model": "qwen3-1.7b",
+        "name": "Qwen3-1.7B-Q4_K_M.gguf",
+        "bytes": 1107409472,
+        "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+      }
+    ],
+    "sampler_producer_sha256": "3fcbc303fe4ceca958a1eda50dd8f43e4c1e93480f58c56ce8d7d65db002b266",
+    "sampler_tests_sha256": "01fdf5957c35ee5669d7b2591c02ba2acc9e8dad25ff1f98eb90157430a87e14",
+    "unchanged_benchmark_consumer_sha256": "f3c7cc8c8fdc5fef3dacf8e72d8e7ba0cb6e384e9f553f347f5e53a1f9e20b9a"
+  },
+  "original_failure": {
+    "revision": "e9c1490b4aa8d6169f5b487a7222255cec1d1234",
+    "status": "FAIL_preserved_not_retroactively_passed",
+    "arms_executed": [
+      {
+        "trial": 1,
+        "ttl_seconds": 0
+      }
+    ],
+    "arms_not_started": [
+      [
+        1,
+        10
+      ],
+      [
+        1,
+        30
+      ],
+      [
+        2,
+        30
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        2,
+        0
+      ]
+    ],
+    "report": {
+      "path": "artifacts/p1-resource-e9c1490-2026-10-30/report.json",
+      "sha256": "31d67b0173d2d8ece5b44320f042ac4c77e4b798f8f26cb81b2f7af0cadcf45d"
+    },
+    "error": [
+      "ValueError: Incomplete sampler/exit evidence or a process survived"
+    ],
+    "cause": "Darwin child memory_full_info AccessDenied is treated as inaccessible and makes each opt-in RSS timeline sample unknown; required sampler completeness correctly rejects this run. No process leak was observed.",
+    "required_sample_errors": 1041,
+    "timeline_samples": 418,
+    "rss_timeline": "unknown; invalid for RSS-area or TTL benefit comparisons",
+    "processes_exit_confirmed": true,
+    "observed_processes_verified_absent": 12,
+    "cost": {
+      "runs": 1,
+      "failed_runs": 1,
+      "process_seconds": 113.62,
+      "cpu_seconds_sampled": 10.151220308000001,
+      "attempted_requests": 12,
+      "observed_responses": 12,
+      "validation_failures": 3,
+      "request_ms": 9566,
+      "input_tokens": 2554,
+      "output_tokens": 638,
+      "cached_tokens": 18,
+      "prefill_ms": 1549.657,
+      "decode_ms": 7998.234
+    },
+    "harness_wall_seconds": 115.2455958329956
+  },
+  "producer_fix": {
+    "revision": "7dec40069d290c7605138ef92d87be86f3226331",
+    "boundary": "Optional PSS failure cannot discard already-readable required RSS/CPU. AccessDenied/OSError/NotImplementedError/AttributeError/TypeError or absent/invalid PSS remain None with separate optional_pss_unavailable/errors. Required RSS/CPU failure/invalid or nonfinite aggregate remains unknown plus original sample_errors; no zero imputation, broad RuntimeError swallowing or consumer gate relaxation.",
+    "unit_results": {
+      "sampler": 18,
+      "keep_alive": 34,
+      "harness": 30,
+      "recording_contention": 4,
+      "failed": 0
+    },
+    "expected_red_logs": [
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/red.log",
+        "sha256": "b9d5fafbc6760cf9b1e0714b5a6e1ee8b53afa0329d6139d0f9f6675a780f715"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/api-overflow-red.log",
+        "sha256": "f9743db1f5dabdd46a4a578c5ca9932b17f279003bd50cb7039681ac9886f995"
+      }
+    ],
+    "real_no_model_probe_limit": "Four complete Darwin child RSS/CPU samples preserved despite full-info AccessDenied; one trailing exited-child NoSuchProcess sample remained unknown. An overbroad post-probe assertion failed and is retained in real-probe-review.json; probe was not rerun or treated as full resource acceptance."
+  },
+  "measured_result": {
+    "report": {
+      "path": "artifacts/p1-resource-7dec400-2026-10-30/report.json",
+      "sha256": "651e94577c8ae67cc30d7d8054f196a65b172baf43e0f8435158e2a2b242f9fc"
+    },
+    "harness_exit_code": 0,
+    "harness_wall_seconds": 683.103735791985,
+    "registered_arms_complete": true,
+    "original_harness_passed": true,
+    "same_recording_sources_hypothesis_and_request_counts": true,
+    "per_arm": [
+      {
+        "arm": "1-ttl-0",
+        "passed": true,
+        "process_seconds": 113.86,
+        "cpu_seconds_sampled": 10.217142336,
+        "rss_peak_mib": 1702.515625,
+        "rss_area_mib_seconds": 37038.320734375004,
+        "idle_rss_area_mib_seconds": 2494.62648756319,
+        "rss_covered_seconds": 113.584,
+        "rss_uncovered_head_seconds": 0.00016141700325533748,
+        "rss_uncovered_tail_seconds": 0.2757368330052117,
+        "sample_count": 420,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1046,
+        "optional_pss_errors": 1046,
+        "processes_exit_confirmed": true,
+        "cold_workers": 8,
+        "worker_reuses": 1,
+        "cold_startup_ms": 3349,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9515,
+          "observed_request_ms": 9515,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 18,
+          "prefill_ms": 1559.356,
+          "decode_ms": 7937.540999999999
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 6,
+          "lease_releases": 2,
+          "other_releases": 0,
+          "releases": 8,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 0
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      },
+      {
+        "arm": "1-ttl-10",
+        "passed": true,
+        "process_seconds": 113.191,
+        "cpu_seconds_sampled": 9.261299,
+        "rss_peak_mib": 1722.78125,
+        "rss_area_mib_seconds": 132736.8974218752,
+        "idle_rss_area_mib_seconds": 17086.760471354202,
+        "rss_covered_seconds": 113.137,
+        "rss_uncovered_head_seconds": 0.00013191602192819118,
+        "rss_uncovered_tail_seconds": 0.05357691698847589,
+        "sample_count": 419,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1278,
+        "optional_pss_errors": 1278,
+        "processes_exit_confirmed": true,
+        "cold_workers": 2,
+        "worker_reuses": 7,
+        "cold_startup_ms": 840,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9749,
+          "observed_request_ms": 9749,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 46,
+          "prefill_ms": 1732.491,
+          "decode_ms": 7991.578
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 0,
+          "lease_releases": 0,
+          "other_releases": 0,
+          "releases": 2,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 2
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      },
+      {
+        "arm": "1-ttl-30",
+        "passed": true,
+        "process_seconds": 113.283,
+        "cpu_seconds_sampled": 9.021328312,
+        "rss_peak_mib": 1723.046875,
+        "rss_area_mib_seconds": 165221.3568515623,
+        "idle_rss_area_mib_seconds": 44127.12008018869,
+        "rss_covered_seconds": 113.104,
+        "rss_uncovered_head_seconds": 0.00014395901234820485,
+        "rss_uncovered_tail_seconds": 0.17772350000869608,
+        "sample_count": 419,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1369,
+        "optional_pss_errors": 1369,
+        "processes_exit_confirmed": true,
+        "cold_workers": 1,
+        "worker_reuses": 8,
+        "cold_startup_ms": 421,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9725,
+          "observed_request_ms": 9725,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 51,
+          "prefill_ms": 1781.1200000000001,
+          "decode_ms": 7913.777
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 0,
+          "lease_releases": 0,
+          "other_releases": 0,
+          "releases": 1,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 1
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      },
+      {
+        "arm": "2-ttl-30",
+        "passed": true,
+        "process_seconds": 113.36,
+        "cpu_seconds_sampled": 9.045863815999999,
+        "rss_peak_mib": 1722.859375,
+        "rss_area_mib_seconds": 168416.7473906249,
+        "idle_rss_area_mib_seconds": 46250.28326041666,
+        "rss_covered_seconds": 113.061,
+        "rss_uncovered_head_seconds": 0.00012224999954923987,
+        "rss_uncovered_tail_seconds": 0.2984669159771869,
+        "sample_count": 420,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1368,
+        "optional_pss_errors": 1368,
+        "processes_exit_confirmed": true,
+        "cold_workers": 1,
+        "worker_reuses": 8,
+        "cold_startup_ms": 422,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9737,
+          "observed_request_ms": 9737,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 51,
+          "prefill_ms": 1774.013,
+          "decode_ms": 7938.516
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 0,
+          "lease_releases": 0,
+          "other_releases": 0,
+          "releases": 1,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 1
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      },
+      {
+        "arm": "2-ttl-10",
+        "passed": true,
+        "process_seconds": 113.331,
+        "cpu_seconds_sampled": 9.097601496,
+        "rss_peak_mib": 1724.828125,
+        "rss_area_mib_seconds": 127424.78657031266,
+        "idle_rss_area_mib_seconds": 15817.197148437506,
+        "rss_covered_seconds": 113.122,
+        "rss_uncovered_head_seconds": 0.00013987498823553324,
+        "rss_uncovered_tail_seconds": 0.2089061250388653,
+        "sample_count": 420,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1277,
+        "optional_pss_errors": 1277,
+        "processes_exit_confirmed": true,
+        "cold_workers": 2,
+        "worker_reuses": 7,
+        "cold_startup_ms": 824,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9617,
+          "observed_request_ms": 9617,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 46,
+          "prefill_ms": 1696.746,
+          "decode_ms": 7893.794
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 0,
+          "lease_releases": 0,
+          "other_releases": 0,
+          "releases": 2,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 2
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      },
+      {
+        "arm": "2-ttl-0",
+        "passed": true,
+        "process_seconds": 113.852,
+        "cpu_seconds_sampled": 10.124315784,
+        "rss_peak_mib": 1663.765625,
+        "rss_area_mib_seconds": 30969.505007812484,
+        "idle_rss_area_mib_seconds": 1651.6454512867645,
+        "rss_covered_seconds": 113.567,
+        "rss_uncovered_head_seconds": 0.00014233298134058714,
+        "rss_uncovered_tail_seconds": 0.28397750003310307,
+        "sample_count": 426,
+        "required_sample_errors": 0,
+        "optional_pss_unavailable": 1059,
+        "optional_pss_errors": 1059,
+        "processes_exit_confirmed": true,
+        "cold_workers": 8,
+        "worker_reuses": 1,
+        "cold_startup_ms": 3352,
+        "translation_requests": 9,
+        "minutes_requests": 3,
+        "cost": {
+          "trace_error_count": 0,
+          "trace_errors": {},
+          "observed_attempted_requests": 12,
+          "observed_generation_rows": 12,
+          "unmeasured_response_costs": 0,
+          "attempted_requests": 12,
+          "observed_responses": 12,
+          "completed_responses": 12,
+          "validation_failures": 3,
+          "request_ms": 9646,
+          "observed_request_ms": 9646,
+          "input_tokens": 2554,
+          "output_tokens": 638,
+          "cached_tokens": 18,
+          "prefill_ms": 1549.113,
+          "decode_ms": 8077.103
+        },
+        "confirmed_release_counts": {
+          "admission_refusals": 0,
+          "batch_releases": 6,
+          "lease_releases": 2,
+          "other_releases": 0,
+          "releases": 8,
+          "resource_stops": 0,
+          "retention_refusals": 0,
+          "schema": 1,
+          "ttl_releases": 0
+        },
+        "last_metal_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "asr_mer": 0.2784313725490196,
+        "asr_lag_p95_ms": 320.0
+      }
+    ],
+    "means_by_ttl": [
+      {
+        "ttl_seconds": 0,
+        "runs": 2,
+        "process_seconds": 113.856,
+        "cpu_seconds_sampled": 10.17072906,
+        "rss_peak_mib": 1683.140625,
+        "rss_area_mib_seconds": 34003.912871093744,
+        "idle_rss_area_mib_seconds": 2073.1359694249772,
+        "cold_workers": 8,
+        "worker_reuses": 1,
+        "cold_startup_ms": 3350.5,
+        "generation_request_ms": 9580.5
+      },
+      {
+        "ttl_seconds": 10,
+        "runs": 2,
+        "process_seconds": 113.261,
+        "cpu_seconds_sampled": 9.179450247999998,
+        "rss_peak_mib": 1723.8046875,
+        "rss_area_mib_seconds": 130080.84199609394,
+        "idle_rss_area_mib_seconds": 16451.978809895852,
+        "cold_workers": 2,
+        "worker_reuses": 7,
+        "cold_startup_ms": 832,
+        "generation_request_ms": 9683
+      },
+      {
+        "ttl_seconds": 30,
+        "runs": 2,
+        "process_seconds": 113.3215,
+        "cpu_seconds_sampled": 9.033596064,
+        "rss_peak_mib": 1722.953125,
+        "rss_area_mib_seconds": 166819.0521210936,
+        "idle_rss_area_mib_seconds": 45188.701670302675,
+        "cold_workers": 1,
+        "worker_reuses": 8,
+        "cold_startup_ms": 421.5,
+        "generation_request_ms": 9731
+      }
+    ],
+    "total_cost": {
+      "runs": 6,
+      "failed_runs": 0,
+      "process_seconds": 680.877,
+      "cpu_seconds_sampled": 56.767550744,
+      "attempted_requests": 72,
+      "observed_responses": 72,
+      "validation_failures": 18,
+      "request_ms": 57989,
+      "input_tokens": 15324,
+      "output_tokens": 3828,
+      "cached_tokens": 230,
+      "prefill_ms": 10092.839,
+      "decode_ms": 47752.309
+    },
+    "all_attempts_including_old_failure": {
+      "runs": 7,
+      "failed_runs": 1,
+      "process_seconds": 794.497,
+      "cpu_seconds_sampled": 66.918771052,
+      "attempted_requests": 84,
+      "observed_responses": 84,
+      "validation_failures": 21,
+      "request_ms": 67555,
+      "input_tokens": 17878,
+      "output_tokens": 4466,
+      "cached_tokens": 248,
+      "prefill_ms": 11642.496,
+      "decode_ms": 55750.543000000005
+    },
+    "rss_area_ratio_to_ttl0": {
+      "ttl10": 3.825466865805137,
+      "ttl30": 4.905878119188577
+    },
+    "interpretation": "Positive TTL reduced cold process starts and sampled CPU in this workload, but retained workers increased sampled whole-workload RSS area about 3.83x/4.91x and generation request time was not lower. End-to-end durations are dominated by fixed paced audio and idle. Keep default0; do not infer general speed, physical unified-memory, power, GPU-memory or PSS benefit."
+  },
+  "postconditions": {
+    "observed_pid_create_time_identities": 40,
+    "all_sampled_processes_exited_or_pid_reused": true,
+    "signal_cleanup_used": false,
+    "original_weight_hashes_and_stat_identities_unchanged": true,
+    "runtime_asr_decoder_fixture_fixed_cli_and_source_unchanged": true,
+    "old_failure_raw_report_sha256_unchanged": "31d67b0173d2d8ece5b44320f042ac4c77e4b798f8f26cb81b2f7af0cadcf45d",
+    "raw_report_and_per_arm_evidence_hashes_verified": true,
+    "preflight_owned_model_clones_removed": true,
+    "harness_owned_temp_models_removed": true,
+    "all_per_arm_model_links_removed": true,
+    "owned_release_cache_removed": true,
+    "fixed_cli_and_all_raw_public_evidence_retained": true,
+    "cleanup_note": "Only run-owned APFS model/cache clones and links removed. Installed weights/runtime/SDK retained; logical clone bytes are not physical bytes reclaimed."
+  },
+  "actual_quality_evidence": {
+    "shared_final_text": "Identical final source, translation and article text across all six 7dec arms; source and article also identical to the preserved e9 first arm.",
+    "source_translation_pairs": [
+      {
+        "seq": 1,
+        "start_ms": 0,
+        "end_ms": 9088,
+        "revision": 1,
+        "text": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LAY INTO THE NIGHT",
+        "translation_target": "zh",
+        "translation_text": "记住，即使主舞台上的音乐已经结束，嘉年华也可能有部分区域继续演奏音乐直到夜幕降临。"
+      },
+      {
+        "seq": 2,
+        "start_ms": 9088,
+        "end_ms": 18368,
+        "revision": 1,
+        "text": "当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+        "translation_target": "en",
+        "translation_text": "Professor PAMELA FURGO森 of 当迪大学 pointed out that if journalists publish information such as photographs of the suspect, it may indeed be harmful."
+      },
+      {
+        "seq": 3,
+        "start_ms": 26064,
+        "end_ms": 35024,
+        "revision": 1,
+        "text": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISH THERE MAY BE SECTIONS OF THE FESTIFUL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+        "translation_target": "zh",
+        "translation_text": "记住，即使主舞台上的音乐可能已经结束，但节日的某些部分可能将持续演奏直到深夜。"
+      },
+      {
+        "seq": 4,
+        "start_ms": 35024,
+        "end_ms": 44304,
+        "revision": 1,
+        "text": "邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+        "translation_target": "en",
+        "translation_text": "Professor 潘 MALE FERGUSON of 邓迪大学 pointed out that if journalists publish information such as photographs of the suspect, it may indeed be harmful."
+      },
+      {
+        "seq": 5,
+        "start_ms": 51984,
+        "end_ms": 60896,
+        "revision": 1,
+        "text": "REMEMBER THAT EVEN THOUGH MUSIC ON THE MAIN STAGES MAY HAVE FINISHED THERE MAY BE SECTIONS OF THE FESTIVAL THAT WILL KEEP PLAYING MUSIC UNTIL LATE INTO THE NIGHT",
+        "translation_target": "zh",
+        "translation_text": "记住，即使主舞台上的音乐已经结束， festival 中的某些部分可能还会继续演奏到深夜。"
+      },
+      {
+        "seq": 6,
+        "start_ms": 60896,
+        "end_ms": 70176,
+        "revision": 1,
+        "text": "大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性",
+        "translation_target": "en",
+        "translation_text": "Professor 潘 MALE FERGUSTON of the university pointed out that it seems there may be harmful consequences if journalists publish information such as photographs of the suspect."
+      }
+    ],
+    "article_text": [
+      "记住，即使主舞台上的音乐已经结束，嘉年华也可能有部分区域继续演奏音乐直到夜幕降临。 当迪大学的 PAMELA FURGO森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 记住，即使主舞台上的音乐可能已经结束，但节日的某些部分可能将持续演奏直到深夜。 邓迪大学的潘 MALE FERGUSON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。 记住，即使主舞台上的音乐已经结束， festival 中的某些部分可能还会继续演奏到深夜。 大学的潘 MALE FERGUSTON教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。"
+    ],
+    "original_fixture_reference": "remember that even though music on the main stages may have finished there may be sections of the festival that will keep playing music until late into the night 邓 迪 大 学 university of dundee 的 pamela ferguson 教 授 指 出 记 者 如 果 公 布 嫌 疑 人 的 照 片 等 信 息 的 话 似 乎 确 实 存 在 危 害 性 twentieth century research has shown that there are two pools of genetic variation hidden and expressed",
+    "findings": [
+      "Article repeats three music and three professor-risk passages rather than integrating them into minutes.",
+      "seq1/5 translations and article say main-stage music already ended without retaining source may-have uncertainty; seq3 retains possible. Even though/即使 alone does not prove that hedge survived.",
+      "seq1 translates the late-night endpoint as nightfall, changing the time meaning.",
+      "ASR university/professor name variants remain unreconciled in translations/article. This fixture provides no user term intervention, so it does not validate automatic note-to-term correction.",
+      "ASR output omits the public fixture genetic-variation utterance. Fixed MER0.2784313725 passes the original0.45 smoke ceiling; that is not completeness.",
+      "All six source IDs/revisions/times/quotes and cursor6 pass the existing identity checks. Those checks do not prove factual or historical prose coverage.",
+      "Each arm incurs three rejected translation attempts before successful commits; all18 rejections and their tokens/timing remain in total cost."
+    ],
+    "q16_unresolved": true,
+    "no_quality_release_admission": true
+  },
+  "limitations": [
+    "One M5, two sequential reversed blocks, not a full Latin square or controlled OS page-cache experiment.",
+    "Summed descendant RSS can double-count shared pages; CPU and area are sampled lower bounds, short descendants/tails may be missed. Required boundary coverage was checked; no unknown endpoint was imputed.",
+    "PSS, GPU allocations, physical unified-memory usage and energy remain unknown.",
+    "Existing installed Metal runtime and model weights were reused unchanged; system/dependency inventory is incomplete.",
+    "Public spliced read speech is not natural code-switching, microphone capture, diarization gold or an all-platform test.",
+    "Old e9 failed sampling remains invalid for memory comparison and is retained with all incurred costs.",
+    "Resource protocol PASS does not resolve Q16, repair source/article semantics, change defaults or authorize stable0.3.5 publication."
+  ],
+  "raw_evidence": {
+    "storage": "Local ignored artifacts retained; this versioned file binds their hashes and includes the actual public text. Raw artifact payloads are not implied uploaded to GitHub.",
+    "files": [
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/report.json",
+        "sha256": "651e94577c8ae67cc30d7d8054f196a65b172baf43e0f8435158e2a2b242f9fc"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/preflight.json",
+        "sha256": "3fb2e9514100d9f0e2c619bc0d0b0b137b3e315a33f85e7945935d362cfdacd4"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/run-command.json",
+        "sha256": "7d959abaacbcb7fcd69c91e36df8fa0efe90ac1f2677c38bda2c974ade078b0d"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/harness-process.json",
+        "sha256": "21e6621897b996cab5f90774e6a6e079b9da9fa68605e4c0aadb2a4644b09c2f"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/resource-review.json",
+        "sha256": "1aa155839b3137f44a9fb0776174f21a0ccd0fe6aacb0fbc947bd59d39f4805f"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/manual-semantic-review.json",
+        "sha256": "b9a592949e93288f5b5249d45fbac7ec10c008f681627c7a5fded4974c8f672f"
+      },
+      {
+        "path": "artifacts/p1-resource-7dec400-2026-10-30/post-run-audit.json",
+        "sha256": "ad8fac75f2e16fc223ed96889acd10415e69b8461bab0d39da5c53d25aa302d7"
+      },
+      {
+        "path": "artifacts/p1-resource-e9c1490-2026-10-30/report.json",
+        "sha256": "31d67b0173d2d8ece5b44320f042ac4c77e4b798f8f26cb81b2f7af0cadcf45d"
+      },
+      {
+        "path": "artifacts/p1-resource-e9c1490-2026-10-30/preflight.json",
+        "sha256": "31eb983ae71f779d0fb22c7d979c000af6a15ed5f404fe71de8e985de5b498e9"
+      },
+      {
+        "path": "artifacts/p1-resource-e9c1490-2026-10-30/harness-process.json",
+        "sha256": "06a09751461822cd8ea466e782f800a445da09a7bdd092d58f2bf6d4884c4a69"
+      },
+      {
+        "path": "artifacts/p1-resource-e9c1490-2026-10-30/failure-diagnosis.json",
+        "sha256": "9f48e8433821b6f136ad5d0b284df6584b2a3c213c2f4263540f7cb582ffd6f4"
+      },
+      {
+        "path": "artifacts/p1-resource-e9c1490-2026-10-30/post-run-audit.json",
+        "sha256": "1bc18c7f5984110fd1618ee914433e21332966a45e4c15aa425a3ed4e761632c"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/evidence.json",
+        "sha256": "05426afe5a03a23c1a2c286511e237ebfa1449d80850dd281fed02b95a6960ac"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/affected-checks.json",
+        "sha256": "91b80c7fbb14cb93d7d6afce89620e179be8feb30507c54924a0391b1d9b4594"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/red.log",
+        "sha256": "b9d5fafbc6760cf9b1e0714b5a6e1ee8b53afa0329d6139d0f9f6675a780f715"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/api-overflow-red.log",
+        "sha256": "f9743db1f5dabdd46a4a578c5ca9932b17f279003bd50cb7039681ac9886f995"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/real-no-model-producer.json",
+        "sha256": "ad9761a734f6e7ebf479ffd3545513df82d98abca3a7f777656908cc7bccb06f"
+      },
+      {
+        "path": "artifacts/p1-sampler-optional-pss-2026-10-30/real-probe-review.json",
+        "sha256": "f32247ad32c72015c88563a0335579c511fdc84ad483ba8160482d53e23fe926"
+      }
+    ],
+    "per_arm_snapshot_hashes": [
+      {
+        "arm": "1-ttl-0",
+        "sha256": "2b95cdda2cc07ed531e0d9ecdf64c692a83a748f6f6f4f9d582c3ef761b22483"
+      },
+      {
+        "arm": "1-ttl-10",
+        "sha256": "df4a5f858f33fcacf5c4f512e90f3dff3d02caa0429b7baa2c6d6eb3d7a92d26"
+      },
+      {
+        "arm": "1-ttl-30",
+        "sha256": "35423c951a5b816c2cafe05a470db78ea2a5b0709586a639c39426f339253107"
+      },
+      {
+        "arm": "2-ttl-30",
+        "sha256": "858e5a450607acee1bdd7965b3b3541ae95474993d9938e977b0feb134843986"
+      },
+      {
+        "arm": "2-ttl-10",
+        "sha256": "83d0472e6e00d2e04c6d07bff3b68f5418ac3aad5450d8bcf4cd2342058ddc48"
+      },
+      {
+        "arm": "2-ttl-0",
+        "sha256": "37b73bfa58998b9736aa54a36bfbdcb9ec47cabf887d2e536ef3ba13f2c0b689"
+      }
+    ],
+    "all_per_arm_raw_hashes": "All36 raw response/snapshot/telemetry/resource/trace/writer hashes are transitively bound by the complete report SHA above and reverified in post-run-audit.json."
+  }
+}

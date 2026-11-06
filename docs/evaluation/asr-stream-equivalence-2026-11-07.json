@@ -1,0 +1,271 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "source_revision": "a6afb8e61f7cf34191a77999067635ff66dc44a9",
+  "core_source_sha256": "4bdf81b82309ea07ca12aa442772455239ae30168f13b4edc552ff159f7a1184",
+  "kind": "Paired Legacy/Stream fixed-context ASR equivalence; not decoder promotion",
+  "protocol": {
+    "clips": 100,
+    "arms": [
+      "baseline",
+      "positive note",
+      "negative note"
+    ],
+    "modes": [
+      "legacy",
+      "stream"
+    ],
+    "actual_asr_invocations": 600,
+    "pairs": 300,
+    "alternating_mode_order": true,
+    "wall_limit_seconds": 900,
+    "actual_wall_seconds": 508.775,
+    "append_limit_seconds": 20,
+    "retries": 0,
+    "input": "Existing frozen English public FLEURS name calibration; all inputs and original assets revalidated"
+  },
+  "identities": {
+    "cli_sha256": "11cd81a9637bc2a8cc87aa4376a487c811a306a0c6044094cf35859692d8bde1",
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "a5d3432c57161faa7de79d75ec0238ea3fbec787",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "4bdf81b82309ea07ca12aa442772455239ae30168f13b4edc552ff159f7a1184",
+      "target": "aarch64-apple-darwin"
+    },
+    "worker_sha256": "d28d8c7948b95a29a2886d97468dc561bd722487e04a42180cfe4502424a8ff8",
+    "worker_build_revision": "b0f0999065f7edeb17ddc2477cfe71a7f62baa59",
+    "worker_source_match": "Current ASR sources and manifests match the pinned worker build; no worker rebuild was needed",
+    "selection_sha256": "28ea560d9b4a077637c117355f8ebecc523ab94f84a0c5343a43e1acbfd210d6",
+    "audio_manifest_sha256": "957c4fa032fe0938c48b461c6072319fc533f699d6d7c4a01ef9bf9c2b57d640"
+  },
+  "result": {
+    "equivalence_passed": true,
+    "exact_matched_pairs": 300,
+    "compared": [
+      "raw worker-final text",
+      "corrected persisted text",
+      "sequence and timestamps",
+      "revisions and speaker fields",
+      "duration and processed tail",
+      "PCM and recorded WAV hashes",
+      "published hotwords and necessary coverage"
+    ],
+    "identities_unchanged": true,
+    "all_owned_process_exits_confirmed": true,
+    "decoder_promotion": false,
+    "release_admission": false
+  },
+  "metrics": {
+    "legacy": {
+      "baseline": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.38068906848149725,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.38068906848149725,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        }
+      },
+      "positive": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3530412590387069,
+          "name_recall": 0.45,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3509145044661846,
+          "name_recall": 0.5,
+          "forbidden_insertion_rate": 0
+        }
+      },
+      "negative": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3675031901318588,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3675031901318588,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        }
+      }
+    },
+    "stream": {
+      "baseline": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.38068906848149725,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.38068906848149725,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        }
+      },
+      "positive": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3530412590387069,
+          "name_recall": 0.45,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3509145044661846,
+          "name_recall": 0.5,
+          "forbidden_insertion_rate": 0
+        }
+      },
+      "negative": {
+        "acoustic_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3675031901318588,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        },
+        "corrected_metrics": {
+          "measured": 100,
+          "expected": 100,
+          "wer": 0.3675031901318588,
+          "name_recall": 0.3,
+          "forbidden_insertion_rate": 0
+        }
+      }
+    }
+  },
+  "resource_observations": {
+    "legacy": {
+      "invocations": 300,
+      "wall_seconds": 222.261,
+      "cpu_seconds_sampled": 182.151398558,
+      "max_peak_tree_rss_mib": 207.296875,
+      "interpretation": "Uncontrolled cache/order; observation only, no energy/GPU claim"
+    },
+    "stream": {
+      "invocations": 300,
+      "wall_seconds": 221.274,
+      "cpu_seconds_sampled": 181.399694052,
+      "max_peak_tree_rss_mib": 205.046875,
+      "interpretation": "Uncontrolled cache/order; observation only, no energy/GPU claim"
+    }
+  },
+  "cleanup": {
+    "released": true,
+    "bytes": 86852031,
+    "scope": "Only six task-owned model/worker copies and the ownership marker; original models, runtime, user data and raw evidence retained",
+    "public_audio_deduplication": {
+      "files": 1200,
+      "unique_audio_files": 200,
+      "duplicate_bytes_released": 346761200,
+      "method": "Content-identical public audio evidence shares inodes within this completed run. Every original path and byte sequence is retained; no links to original input/model directories.",
+      "all_paths_and_unique_content_verified": true
+    }
+  },
+  "historical_comparison": {
+    "different_revision": "52c2b95",
+    "changed_raw_arms": 7,
+    "interpretation": "Historical worker/source differs. These changes are not caused by switching the current decoder mode; they still require review before any default promotion.",
+    "counts": {
+      "historical_52c2_raw_positive": 44,
+      "historical_52c2_corrected_positive": 47,
+      "prior_frozen_corrected_replay": {
+        "before": 47,
+        "after": 49,
+        "new_asr_calls": 0,
+        "meaning": "47 to 49 was corrected-text replay over unchanged historical raw ASR, not raw recognition."
+      },
+      "current_raw_positive": 45,
+      "current_corrected_positive": 50,
+      "historical_raw_baseline": 30,
+      "current_raw_baseline": 30,
+      "historical_raw_negative_expected_name": 30,
+      "current_raw_negative_expected_name": 30,
+      "negative_forbidden_names_before_after": [
+        0,
+        0
+      ],
+      "raw_differences_by_arm": {
+        "baseline": 0,
+        "positive": 5,
+        "negative": 2
+      },
+      "raw_target_gains": [
+        "fleurs_en_hotword_098:positive"
+      ],
+      "raw_target_losses": [],
+      "corrected_target_gains": [
+        "fleurs_en_hotword_075:positive",
+        "fleurs_en_hotword_078:positive",
+        "fleurs_en_hotword_098:positive"
+      ]
+    },
+    "all_baseline_raw_unchanged": true,
+    "numeric_regression": {
+      "case": "fleurs_en_hotword_051",
+      "arm": "negative",
+      "before": "TEN THOUSAND",
+      "after": "TUNNING",
+      "wer_edits_before_after": [
+        6,
+        6
+      ],
+      "interpretation": "A real number transcription regression is hidden by unchanged aggregate WER. Current modes are equal, so this is not a Stream-specific regression."
+    },
+    "review_limits": [
+      "Six differences have directly observed filtering/search-path changes plus exact baseline-output witnesses; this explains their provenance, not semantic improvement.",
+      "Case098 has a directly observed hotword-wire change and new raw name hit, but unique causal attribution to that one source edit remains unisolated across historical binaries.",
+      "No difference is attributed to Stream: current Legacy and Stream are exactly equal in all300 pairs.",
+      "Case051 is a real non-target number transcription regression despite unchanged WER and zero forbidden-name insertion; historical no-regression must not be claimed.",
+      "F1, Chişinău, Recep Tayyip Erdoğan and Asunción remain missed. Rejected necessary coverage is not a successful proper-name correction.",
+      "No default flag, decoding policy, model, or release admission changed in this review."
+    ]
+  },
+  "remaining_gates": [
+    "Current-worker rejected-update context retention and recovery in Stream mode",
+    "Current-worker Ready/pause-to-first-PCM refresh ordering in Stream mode",
+    "Current-worker dynamic nonempty updates, clear/re-enable and silent/noise boundaries",
+    "Mixed-language live microphone/caption behavior and platform owner acceptance"
+  ],
+  "limits": [
+    "All 300 same-source pairs are equal; this is not a new acoustic accuracy improvement.",
+    "Current positive raw name recall is 45/100 and corrected recall 50/100; names still remain missed.",
+    "Fixed-context fresh processes cannot establish reduced model reloads during editing; observed wall/CPU/RSS are not causal speed or energy gains.",
+    "Q16 minutes quality remains open; no LLM, installer or GPU-component build was run."
+  ],
+  "raw_evidence": "artifacts/stream-name-equivalence-2026-11-06",
+  "raw_sha256": {
+    "run.py": "f17d6e6b26107aaa746e035a87ea08428b79e4b66e0650ac42468444260d859a",
+    "README.md": "172ce21390114a1f9edfdaf9878daec8f785477ae574043b7cce4ae6657740a6",
+    "run/report.json": "47c434c049d5e77adf63899c889c2b8c2937f9cbd363eae38e5e24dddf241949",
+    "run/completion.json": "ac7ced546ca37ef9a8d092089586692752b26dd71cc13749e7d3202d20766ae7",
+    "run/cleanup.json": "9dc662f3788736bde441d1fb65488e606150335ff9c4b2b16f575ab3150bde98",
+    "historical-review.json": "1a40484cb25919807c98104b18ed2d909208ebe389c1b296190012509d593769",
+    "run/public-audio-deduplication.json": "3e6395f4071ab4df59d7ff0091580faa0d796f1257c89d356b38a742a33e840e"
+  }
+}

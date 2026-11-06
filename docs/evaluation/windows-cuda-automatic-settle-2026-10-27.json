@@ -1,0 +1,2355 @@
+{
+  "schema": 1,
+  "kind": "windows_signed_cuda_synthetic_automatic_post_stop_settlement",
+  "date": "2026-10-27",
+  "passed": true,
+  "release_eligible": false,
+  "semantic_summary_quality": "not accepted; separate shared model-quality failures remain",
+  "source_commit": "a8feebed7d48db43175dc91af28a2e25868fdb16",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "8bcc1f7fef819a90505d4fb35510927c0e728b98",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "fd94e23e71ae6cf59a36aa505c3dc9ea871e81e8a888f4e9f7cd64c7afd4bee5",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "207f7b8d6f63b0ff39dd6c22a3ae102482eff92d2cb68027e5ff62e20e75082b",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "3888e981a689986adea30674152354a5331c24ea8db3846f71ef1af950590d47",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "a8feebed7d48db43175dc91af28a2e25868fdb16",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "shared_base": "cc10b6e6d7e957d6d8e339c3e6af49c12d01a166",
+  "fixture": {
+    "method": "Synthetic Zira fictional paced replay; no microphone",
+    "seconds": 92,
+    "wav_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+    "expected_pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980"
+  },
+  "preferences": {
+    "appearance": {
+      "mode": "system",
+      "theme": "neutral",
+      "accent": "#d83b36",
+      "background": "",
+      "foreground": "",
+      "font": "system",
+      "font_size": 13
+    },
+    "asr_model": "zipformer-small",
+    "llm_model": "qwen3-1.7b",
+    "threads": 2,
+    "context_size": 2048,
+    "inference_backend": "auto",
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "auto_notes": true,
+    "translation_mode": "bilingual",
+    "minutes_language": "zh",
+    "diarization": false,
+    "speaker_count": 0,
+    "use_knowledge": false,
+    "use_memory": false
+  },
+  "method": "Fresh fictional92s replay-settle with90s automatic post-stop budget, real normal-key signed CUDA component and persisted normal test activation. No translate/generate invocations or manual buttons during this arm. Both experimental switches0.",
+  "first_stopped_telemetry": {
+    "asr_rtf": 0.04134734565217391,
+    "captured_ms": 92000,
+    "has_error": false,
+    "notes_busy": false,
+    "notes_cursor": 8,
+    "processed_ms": 92000,
+    "recording": false,
+    "schema": 1,
+    "sections": 1,
+    "segments": 16,
+    "transcribing": false,
+    "translation_busy": false,
+    "translations": 15,
+    "wall_ms": 92402,
+    "worker": {
+      "idle_pid": null,
+      "leased": false,
+      "reuses": 1,
+      "starts": 14
+    }
+  },
+  "settle": {
+    "budget_seconds": 90,
+    "completed": true,
+    "wait_ms": 82681,
+    "wall_ms": 175084
+  },
+  "telemetry": {
+    "samples": 860,
+    "interval_ms": 200,
+    "largest_sample_gap_ms": 658,
+    "lag_p50_ms": 240.0,
+    "lag_p95_ms": 444.0,
+    "lag_max_ms": 1792,
+    "capture_wall_overhead_ms": 402,
+    "asr_compute_rtf": 0.04134734565217391,
+    "live_translations": 15,
+    "live_notes_cursor": 8,
+    "live_worker_samples": 242,
+    "worker_starts": 17,
+    "worker_reuses": 1
+  },
+  "final": {
+    "cursor": 16,
+    "segments": 16,
+    "translations": 16,
+    "runtime": {
+      "asr_rtf": 0.04134734565217391,
+      "diarization_busy": false,
+      "diarization_meeting_id": null,
+      "diarization_status": "",
+      "elapsed_ms": 92000,
+      "error": null,
+      "level": 0.0,
+      "meeting_id": "bab40535-6b12-4e52-8b0e-a6522ae14978",
+      "notes_busy": false,
+      "notes_elapsed_ms": 3306,
+      "notes_status": "文档已同步 · 1 个章节",
+      "partial": "",
+      "paused": false,
+      "processed_ms": 92000,
+      "recording": false,
+      "transcribing": false,
+      "translation_busy": false,
+      "translation_status": ""
+    },
+    "exact_citations": true
+  },
+  "asr_units_equal_to_83d3287_replay": true,
+  "raw_stage": {
+    "schema": 1,
+    "mode": "settle",
+    "passed": true,
+    "source": "a8feebed7d48db43175dc91af28a2e25868fdb16",
+    "environment": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "8bcc1f7fef819a90505d4fb35510927c0e728b98",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "schema": 1,
+        "source_sha256": "fd94e23e71ae6cf59a36aa505c3dc9ea871e81e8a888f4e9f7cd64c7afd4bee5",
+        "target": "x86_64-pc-windows-msvc"
+      },
+      "core_and_harness_source_sha256": "207f7b8d6f63b0ff39dd6c22a3ae102482eff92d2cb68027e5ff62e20e75082b",
+      "inference_source_tree_dirty": false,
+      "platform": "Windows-10-10.0.19045-SP0",
+      "machine": "AMD64",
+      "python": "3.12.14",
+      "cli_sha256": "3888e981a689986adea30674152354a5331c24ea8db3846f71ef1af950590d47",
+      "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+      "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+      "suite_revision": "a8feebed7d48db43175dc91af28a2e25868fdb16",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "removed_overrides": [
+      "CUDA_PATH",
+      "CUDA_PATH_V11_5"
+    ],
+    "path_restricted": true,
+    "preferences": {
+      "appearance": {
+        "mode": "system",
+        "theme": "neutral",
+        "accent": "#d83b36",
+        "background": "",
+        "foreground": "",
+        "font": "system",
+        "font_size": 13
+      },
+      "asr_model": "zipformer-small",
+      "llm_model": "qwen3-1.7b",
+      "threads": 2,
+      "context_size": 2048,
+      "inference_backend": "auto",
+      "resource_mode": "balanced",
+      "memory_budget_mib": 4096,
+      "llm_keep_alive_seconds": 0,
+      "auto_notes": true,
+      "translation_mode": "bilingual",
+      "minutes_language": "zh",
+      "diarization": false,
+      "speaker_count": 0,
+      "use_knowledge": false,
+      "use_memory": false
+    },
+    "trace_events": [
+      {
+        "at": "2026-10-27T00:13:38.207149700+00:00",
+        "elapsed_ms": 0,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:46.141669+00:00",
+        "elapsed_ms": 7934,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2154
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:46.143790700+00:00",
+        "elapsed_ms": 7936,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {
+          "input_tokens": 106,
+          "resumed": false,
+          "source_bytes": 172
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:47.065374200+00:00",
+        "elapsed_ms": 8858,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 447,
+          "request_ms": 920,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 472.863,
+            "input_tokens": 122,
+            "output_tokens": 36,
+            "prefill_ms": 443.561
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:47.076213100+00:00",
+        "elapsed_ms": 8869,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:47.080425300+00:00",
+        "elapsed_ms": 8873,
+        "job": "1148a8de-0a14-42f4-9060-ee9944317732",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:47.080997800+00:00",
+        "elapsed_ms": 0,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:47.492552800+00:00",
+        "elapsed_ms": 411,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "cursor": 3,
+          "selected": 3
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:47.493312100+00:00",
+        "elapsed_ms": 412,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 3
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:47.501378+00:00",
+        "elapsed_ms": 420,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": true,
+          "startup_ms": 3
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:47.505393600+00:00",
+        "elapsed_ms": 424,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "input_tokens": 254,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:49.443725600+00:00",
+        "elapsed_ms": 2362,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 785,
+          "request_ms": 1936,
+          "usage": {
+            "cached_tokens": 3,
+            "decode_ms": 1150.93,
+            "input_tokens": 271,
+            "output_tokens": 85,
+            "prefill_ms": 782.357
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:50.965611200+00:00",
+        "elapsed_ms": 3884,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 744,
+          "request_ms": 1518,
+          "usage": {
+            "cached_tokens": 153,
+            "decode_ms": 774.034,
+            "input_tokens": 407,
+            "output_tokens": 57,
+            "prefill_ms": 739.965
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:50.976973300+00:00",
+        "elapsed_ms": 3895,
+        "job": "f6f19d80-9fb6-487c-b4be-be3a064ab986",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:13:52.212521500+00:00",
+        "elapsed_ms": 0,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:54.574917500+00:00",
+        "elapsed_ms": 2362,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2356
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:54.576394200+00:00",
+        "elapsed_ms": 2363,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 31
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:55.104017200+00:00",
+        "elapsed_ms": 2891,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 331,
+          "request_ms": 527,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 195.429,
+            "input_tokens": 82,
+            "output_tokens": 15,
+            "prefill_ms": 327.631
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:55.114828800+00:00",
+        "elapsed_ms": 2902,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "input_tokens": 77,
+          "resumed": false,
+          "source_bytes": 82
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:55.532644100+00:00",
+        "elapsed_ms": 3320,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 109,
+          "request_ms": 417,
+          "usage": {
+            "cached_tokens": 64,
+            "decode_ms": 307.262,
+            "input_tokens": 93,
+            "output_tokens": 23,
+            "prefill_ms": 104.976
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:55.541133400+00:00",
+        "elapsed_ms": 3328,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:13:55.545824600+00:00",
+        "elapsed_ms": 3333,
+        "job": "a1c809a2-a65f-437d-a3f7-9a0776814f13",
+        "metrics": {
+          "committed": true,
+          "items": 2
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:00.224570700+00:00",
+        "elapsed_ms": 0,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:02.381457300+00:00",
+        "elapsed_ms": 2156,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2150
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:02.383262600+00:00",
+        "elapsed_ms": 2158,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {
+          "input_tokens": 97,
+          "resumed": false,
+          "source_bytes": 143
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:03.447042+00:00",
+        "elapsed_ms": 3222,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 428,
+          "request_ms": 1062,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 634.289,
+            "input_tokens": 113,
+            "output_tokens": 35,
+            "prefill_ms": 417.528
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:03.456234100+00:00",
+        "elapsed_ms": 3231,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:03.460579700+00:00",
+        "elapsed_ms": 3236,
+        "job": "bac2253e-6a1a-46d3-bc32-854feb75edf3",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:04.231928500+00:00",
+        "elapsed_ms": 0,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:06.176741300+00:00",
+        "elapsed_ms": 1944,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1937
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:06.178103100+00:00",
+        "elapsed_ms": 1946,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {
+          "input_tokens": 71,
+          "resumed": false,
+          "source_bytes": 59
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:06.811851400+00:00",
+        "elapsed_ms": 2579,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 326,
+          "request_ms": 633,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 306.814,
+            "input_tokens": 87,
+            "output_tokens": 24,
+            "prefill_ms": 322.212
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:06.820004500+00:00",
+        "elapsed_ms": 2588,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:06.824423800+00:00",
+        "elapsed_ms": 2592,
+        "job": "de1486a4-3f1c-4752-820c-9ea9894d05a5",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:10.241574+00:00",
+        "elapsed_ms": 0,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:12.252310+00:00",
+        "elapsed_ms": 2010,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 1938
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:12.253786700+00:00",
+        "elapsed_ms": 2012,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {
+          "input_tokens": 77,
+          "resumed": false,
+          "source_bytes": 83
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:12.861755500+00:00",
+        "elapsed_ms": 2620,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 312,
+          "request_ms": 607,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 294.416,
+            "input_tokens": 93,
+            "output_tokens": 23,
+            "prefill_ms": 308.808
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:12.868261400+00:00",
+        "elapsed_ms": 2626,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:12.872689600+00:00",
+        "elapsed_ms": 2631,
+        "job": "eead3325-4da2-4d77-876a-c471365681c2",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:16.248718800+00:00",
+        "elapsed_ms": 0,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:18.409109100+00:00",
+        "elapsed_ms": 2160,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2152
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:18.411114+00:00",
+        "elapsed_ms": 2162,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 32
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:18.892321200+00:00",
+        "elapsed_ms": 2643,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 334,
+          "request_ms": 480,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 145.284,
+            "input_tokens": 82,
+            "output_tokens": 11,
+            "prefill_ms": 326.999
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:18.898950100+00:00",
+        "elapsed_ms": 2650,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:18.904149600+00:00",
+        "elapsed_ms": 2655,
+        "job": "12e8ed50-5e41-46df-8c15-1fb0747d33fa",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:20.254368500+00:00",
+        "elapsed_ms": 0,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:22.422849600+00:00",
+        "elapsed_ms": 2168,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2158
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:22.424633600+00:00",
+        "elapsed_ms": 2170,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {
+          "input_tokens": 76,
+          "resumed": false,
+          "source_bytes": 73
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:23.021912+00:00",
+        "elapsed_ms": 2767,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 333,
+          "request_ms": 596,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 263.18,
+            "input_tokens": 92,
+            "output_tokens": 20,
+            "prefill_ms": 328.764
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:23.029536500+00:00",
+        "elapsed_ms": 2775,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:23.035058+00:00",
+        "elapsed_ms": 2780,
+        "job": "cf368b79-31e5-41fa-af19-696db3de640d",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:24.257904900+00:00",
+        "elapsed_ms": 0,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:24.265729700+00:00",
+        "elapsed_ms": 7,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "cursor": 8,
+          "selected": 8
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:24.266436500+00:00",
+        "elapsed_ms": 8,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 8
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:26.422581400+00:00",
+        "elapsed_ms": 2164,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2149
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:26.426537+00:00",
+        "elapsed_ms": 2168,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "input_tokens": 391,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:29.427549600+00:00",
+        "elapsed_ms": 5169,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 1240,
+          "request_ms": 2999,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 1758.834,
+            "input_tokens": 408,
+            "output_tokens": 121,
+            "prefill_ms": 1232.821
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:31.498753+00:00",
+        "elapsed_ms": 7240,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 962,
+          "request_ms": 2062,
+          "usage": {
+            "cached_tokens": 3,
+            "decode_ms": 1100.162,
+            "input_tokens": 332,
+            "output_tokens": 79,
+            "prefill_ms": 956.455
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:31.666588800+00:00",
+        "elapsed_ms": 7408,
+        "job": "aa41cdc0-ddd2-4a05-b3b9-991e3ecea129",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:14:32.262946500+00:00",
+        "elapsed_ms": 0,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:34.420997800+00:00",
+        "elapsed_ms": 2158,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2150
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:34.422986400+00:00",
+        "elapsed_ms": 2160,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "input_tokens": 84,
+          "resumed": false,
+          "source_bytes": 99
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:35.154857800+00:00",
+        "elapsed_ms": 2891,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 388,
+          "request_ms": 731,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 342.212,
+            "input_tokens": 100,
+            "output_tokens": 25,
+            "prefill_ms": 383.902
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:35.163721600+00:00",
+        "elapsed_ms": 2900,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "input_tokens": 65,
+          "resumed": false,
+          "source_bytes": 26
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:35.432912700+00:00",
+        "elapsed_ms": 3169,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 89,
+          "request_ms": 268,
+          "usage": {
+            "cached_tokens": 64,
+            "decode_ms": 178.542,
+            "input_tokens": 81,
+            "output_tokens": 14,
+            "prefill_ms": 82.901
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:35.443304700+00:00",
+        "elapsed_ms": 3180,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:35.449336300+00:00",
+        "elapsed_ms": 3186,
+        "job": "14d530ba-cd55-4bb9-98f1-771422f4a38e",
+        "metrics": {
+          "committed": true,
+          "items": 2
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:36.267705500+00:00",
+        "elapsed_ms": 0,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:38.426870100+00:00",
+        "elapsed_ms": 2159,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2151
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:38.428991900+00:00",
+        "elapsed_ms": 2161,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {
+          "input_tokens": 70,
+          "resumed": false,
+          "source_bytes": 56
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:38.975985300+00:00",
+        "elapsed_ms": 2708,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 361,
+          "request_ms": 546,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 184.65,
+            "input_tokens": 86,
+            "output_tokens": 14,
+            "prefill_ms": 351.147
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:38.985220+00:00",
+        "elapsed_ms": 2717,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:38.991698+00:00",
+        "elapsed_ms": 2724,
+        "job": "ea0e63b0-0960-4fd5-a1de-cc100a092fae",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:40.273714600+00:00",
+        "elapsed_ms": 0,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:42.435102800+00:00",
+        "elapsed_ms": 2161,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2151
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:42.437140400+00:00",
+        "elapsed_ms": 2163,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {
+          "input_tokens": 66,
+          "resumed": false,
+          "source_bytes": 32
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:42.939347700+00:00",
+        "elapsed_ms": 2665,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 357,
+          "request_ms": 501,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 143.883,
+            "input_tokens": 82,
+            "output_tokens": 11,
+            "prefill_ms": 351.546
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:42.946338500+00:00",
+        "elapsed_ms": 2672,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:42.951957900+00:00",
+        "elapsed_ms": 2678,
+        "job": "98dae1d6-ac76-4d57-a682-54f4f7629820",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:44.278982900+00:00",
+        "elapsed_ms": 0,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:46.506425800+00:00",
+        "elapsed_ms": 2227,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2153
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:46.507994600+00:00",
+        "elapsed_ms": 2229,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {
+          "input_tokens": 75,
+          "resumed": false,
+          "source_bytes": 72
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:47.348382300+00:00",
+        "elapsed_ms": 3069,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 523,
+          "request_ms": 839,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 316.649,
+            "input_tokens": 91,
+            "output_tokens": 21,
+            "prefill_ms": 518.472
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:47.357413100+00:00",
+        "elapsed_ms": 3078,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:47.362450800+00:00",
+        "elapsed_ms": 3083,
+        "job": "ebd4dff3-bf43-40ea-9115-69afcc48ae33",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:50.291120700+00:00",
+        "elapsed_ms": 0,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:52.662630100+00:00",
+        "elapsed_ms": 2371,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2361
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:52.664319+00:00",
+        "elapsed_ms": 2373,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {
+          "input_tokens": 84,
+          "resumed": false,
+          "source_bytes": 99
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:53.494756500+00:00",
+        "elapsed_ms": 3203,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 404,
+          "request_ms": 829,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 398.474,
+            "input_tokens": 100,
+            "output_tokens": 25,
+            "prefill_ms": 395.513
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:53.508260500+00:00",
+        "elapsed_ms": 3217,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:53.515464400+00:00",
+        "elapsed_ms": 3224,
+        "job": "376ee6a0-0846-4b2d-9f53-566272d4c20d",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:54.296125900+00:00",
+        "elapsed_ms": 0,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:57.061475100+00:00",
+        "elapsed_ms": 2765,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2757
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:57.063256400+00:00",
+        "elapsed_ms": 2767,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {
+          "input_tokens": 65,
+          "resumed": false,
+          "source_bytes": 26
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:57.591198800+00:00",
+        "elapsed_ms": 3295,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 345,
+          "request_ms": 527,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 181.13,
+            "input_tokens": 81,
+            "output_tokens": 14,
+            "prefill_ms": 338.372
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:57.599045600+00:00",
+        "elapsed_ms": 3302,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:57.605228100+00:00",
+        "elapsed_ms": 3309,
+        "job": "79639f0a-a5e1-4d31-8370-790bd11bc28a",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:14:58.301856700+00:00",
+        "elapsed_ms": 0,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:00.457979500+00:00",
+        "elapsed_ms": 2156,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2148
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:00.459525600+00:00",
+        "elapsed_ms": 2157,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {
+          "input_tokens": 70,
+          "resumed": false,
+          "source_bytes": 56
+        },
+        "phase": "chunk",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:00.960326800+00:00",
+        "elapsed_ms": 2658,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 319,
+          "request_ms": 500,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 180.885,
+            "input_tokens": 86,
+            "output_tokens": 14,
+            "prefill_ms": 315.472
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:00.968250400+00:00",
+        "elapsed_ms": 2666,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        },
+        "phase": "batch",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:00.973050100+00:00",
+        "elapsed_ms": 2671,
+        "job": "918c12a9-4fb6-4b94-9051-57fdd0c8b3d7",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "translation"
+      },
+      {
+        "at": "2026-10-27T00:15:18.362132200+00:00",
+        "elapsed_ms": 0,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:18.373845900+00:00",
+        "elapsed_ms": 11,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "cursor": 13,
+          "selected": 13
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:18.374858500+00:00",
+        "elapsed_ms": 12,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 13
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:20.817546900+00:00",
+        "elapsed_ms": 2455,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2370
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:20.822680600+00:00",
+        "elapsed_ms": 2460,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "input_tokens": 505,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:25.167189600+00:00",
+        "elapsed_ms": 6805,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 1600,
+          "request_ms": 4342,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 2740.047,
+            "input_tokens": 522,
+            "output_tokens": 171,
+            "prefill_ms": 1594.895
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:27.189092500+00:00",
+        "elapsed_ms": 8826,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "attempt": 2,
+          "completed": true,
+          "first_token_ms": 1310,
+          "request_ms": 2011,
+          "usage": {
+            "cached_tokens": 3,
+            "decode_ms": 700.259,
+            "input_tokens": 446,
+            "output_tokens": 45,
+            "prefill_ms": 1300.361
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:15:27.401223100+00:00",
+        "elapsed_ms": 9039,
+        "job": "a95fb7f6-272e-4f55-bbf4-cd8362e7280e",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:14.516718600+00:00",
+        "elapsed_ms": 0,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {},
+        "phase": "started",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:14.528021700+00:00",
+        "elapsed_ms": 11,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "cursor": 16,
+          "selected": 16
+        },
+        "phase": "retrieval",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:14.529041100+00:00",
+        "elapsed_ms": 12,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "enabled": false,
+          "fresh": null,
+          "mode": "full",
+          "selected": 16
+        },
+        "phase": "article_state",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:16.979937400+00:00",
+        "elapsed_ms": 2463,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "backend": "cuda",
+          "budget_mib": 4096,
+          "reused": false,
+          "startup_ms": 2357
+        },
+        "phase": "worker",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:16.985920700+00:00",
+        "elapsed_ms": 2469,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "input_tokens": 577,
+          "mode": "full"
+        },
+        "phase": "article_prompt",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:20.456108200+00:00",
+        "elapsed_ms": 5939,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "attempt": 1,
+          "completed": true,
+          "first_token_ms": 1819,
+          "request_ms": 3468,
+          "usage": {
+            "cached_tokens": 0,
+            "decode_ms": 1648.84,
+            "input_tokens": 594,
+            "output_tokens": 104,
+            "prefill_ms": 1815.002
+          }
+        },
+        "phase": "generation",
+        "schema": 1,
+        "task": "minutes"
+      },
+      {
+        "at": "2026-10-27T00:16:20.615447400+00:00",
+        "elapsed_ms": 6098,
+        "job": "27573acb-ea7b-468a-9914-fc0d69f9c2c5",
+        "metrics": {
+          "committed": true,
+          "items": 1
+        },
+        "phase": "finished",
+        "schema": 1,
+        "task": "minutes"
+      }
+    ],
+    "observed_owned_children": {
+      "23828": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "24192": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "5736": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "2420": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "9284": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "11960": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "25124": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "22080": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "23016": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "12476": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "18408": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "7808": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "24848": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "19948": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "17076": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "24368": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe",
+      "11148": "D:\\omascribe\\artifacts\\windows-gpu-lifecycle-40367160891\\data\\accelerators\\cuda-windows-x86_64\\acceleration-ci-40367160891\\llama-server.exe"
+    },
+    "module_audits": [
+      {
+        "pid": 23828,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 24192,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 5736,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 2420,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 9284,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 11960,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 25124,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 22080,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 23016,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 12476,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 18408,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 7808,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 24848,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 19948,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 17076,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 24368,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      },
+      {
+        "pid": 11148,
+        "modules": [
+          {
+            "name": "cublas64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cublaslt64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "cudart64_12.dll",
+            "source": "component"
+          },
+          {
+            "name": "nvcuda.dll",
+            "source": "system_driver"
+          }
+        ]
+      }
+    ],
+    "killed_owned_gpu_pid": null,
+    "errors": [],
+    "fixture": {
+      "method": "Synthetic Zira fictional paced replay; no microphone",
+      "seconds": 92,
+      "wav_sha256": "8e61ba5d32d7e0a95363670a648eb33f1642effea8b700162705de0c9d74b218",
+      "expected_pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980"
+    },
+    "meeting": "bab40535-6b12-4e52-8b0e-a6522ae14978",
+    "exit_code": 0,
+    "settle": {
+      "budget_seconds": 90,
+      "completed": true,
+      "wait_ms": 82681,
+      "wall_ms": 175084
+    },
+    "remaining_owned_children": [],
+    "worker_backends": [
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda",
+      "cuda"
+    ],
+    "snapshot_at_stop": {
+      "cursor": 16,
+      "sections": 1,
+      "segments": 16,
+      "translations": 16,
+      "runtime": {
+        "asr_rtf": 0.04134734565217391,
+        "diarization_busy": false,
+        "diarization_meeting_id": null,
+        "diarization_status": "",
+        "elapsed_ms": 92000,
+        "error": null,
+        "level": 0.0,
+        "meeting_id": "bab40535-6b12-4e52-8b0e-a6522ae14978",
+        "notes_busy": false,
+        "notes_elapsed_ms": 3306,
+        "notes_status": "文档已同步 · 1 个章节",
+        "partial": "",
+        "paused": false,
+        "processed_ms": 92000,
+        "recording": false,
+        "transcribing": false,
+        "translation_busy": false,
+        "translation_status": ""
+      }
+    },
+    "telemetry_sha256": "2ae94b32a27c4075d552577af1c608b766b44c7de4bbc4c2ef0a11dcff2bf5ee",
+    "live_clock_lead_ms": 22,
+    "pcm_sha256": "059118ee30d4b129c5140d85d2d1601c6ba96e5fee303cbe70f7c10b8e2b1980",
+    "audio_samples": 1472000,
+    "telemetry": {
+      "samples": 860,
+      "interval_ms": 200,
+      "largest_sample_gap_ms": 658,
+      "lag_p50_ms": 240.0,
+      "lag_p95_ms": 444.0,
+      "lag_max_ms": 1792,
+      "capture_wall_overhead_ms": 402,
+      "asr_compute_rtf": 0.04134734565217391,
+      "live_translations": 15,
+      "live_notes_cursor": 8,
+      "live_worker_samples": 242,
+      "worker_starts": 17,
+      "worker_reuses": 1
+    }
+  },
+  "errors": [],
+  "asr_config": {
+    "decoder": "greedy_search",
+    "default_hotword_buffer_present": false,
+    "fallback": null,
+    "hotword_count": 0,
+    "hotword_update_mode": "recognizer",
+    "initial_load_ms": 1743,
+    "last_update_ms": 0,
+    "model_load_attempts": 1,
+    "stream_updates": 0,
+    "threads": 2
+  },
+  "dependencies": {
+    "candidate": "acceleration-ci-40367160891",
+    "driver": "NVIDIA621.01",
+    "asr_worker_sha256": "de1e7662c812bd6bf00500960976ec52c12521a47b7b025344b1e5c79aa6817b",
+    "ffmpeg_sha256": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+    "gguf_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+  },
+  "limits": [
+    "One synthetic file-replay operational workflow, not physical microphone, natural speech accuracy, semantic minutes gold or broad performance proof.",
+    "90s post-stop budget is explicit and bounded; final wait time is reported, not instant completion. Admission gate stays2500ms.",
+    "Preverified/warm OS caches, frequency and thermal state uncontrolled. SDK paths/overrides excluded; pre-existing toolkit remains installed.",
+    "Prior stop8/16, first manual13/16 failure, second manual16/16 and older failed startup cases keep their separate source identities; not retroactively passed.",
+    "Allocation OOM, physical capture and broader summary quality remain release gates. No stable pointer, installer or new SDK/catalog publication."
+  ],
+  "raw_evidence_sha256": {
+    "cli-settle-01.json": "a0d1f24938f7e3a6ef09afafb317030f2c4270eb4cb1a3cfdefe89e98b2d1c3c",
+    "cli-settle-01-stdout.json": "aa015abbe91bc5fbfd55f09bc1e45385b29e5ea87d1c03e5167a93610d7b3242",
+    "cli-settle-01-telemetry.jsonl": "2ae94b32a27c4075d552577af1c608b766b44c7de4bbc4c2ef0a11dcff2bf5ee"
+  }
+}

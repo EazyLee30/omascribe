@@ -1,19 +1,22 @@
 import { bindWindowDrag, macDesktop } from "./window-drag";
 import { uiIcon } from "./ui-icons";
 import { tr } from "./workspace-ui";
-import { passageHTML, translationSelect } from "./translation-ui";
+import {
+  passageHTML,
+  translationChoices,
+  translationSelect,
+} from "./translation-ui";
 import { getPreferences, savePreferences } from "./preferences-client";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   getViewSettings,
-  setViewSettings,
   patchViewSettings,
   type ViewPreferences,
 } from "./views-client";
-import type { Snapshot } from "./types";
-import { t } from "./i18n";
+import type { SnapshotPoll, TranscriptSnapshot } from "./types";
+import { onLocaleChange, t } from "./i18n";
 import "./style.css";
 import "./workspace.css";
 import "./floating.css";
@@ -34,9 +37,12 @@ const time = (ms: number) => {
     .join(":");
 };
 let prefs: ViewPreferences,
-  snapshot: Snapshot | null = null,
+  snapshot: TranscriptSnapshot | null = null,
+  revision: string | null = null,
   signature = "",
-  busy = false,
+  scope = 0,
+  pendingScope: number | null = null,
+  pollRequested = false,
   audioUrl: string | null = null;
 const root = document.querySelector<HTMLElement>("#app")!;
 function error(e: unknown) {
@@ -46,7 +52,29 @@ function error(e: unknown) {
     el.hidden = false;
   }
 }
+function clearAudio() {
+  const player = root.querySelector<HTMLAudioElement>("#float-player")!;
+  player.pause();
+  player.removeAttribute("src");
+  player.hidden = true;
+  if (audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = null;
+}
+function reset() {
+  // Clear obsolete content immediately while any existing lookup drains.
+  scope++;
+  revision = null;
+  snapshot = null;
+  signature = "";
+  clearAudio();
+  renderControls();
+  renderRows();
+}
 function apply(p: ViewPreferences) {
+  const selectionChanged =
+    prefs &&
+    (prefs.follow_recording !== p.follow_recording ||
+      prefs.transcript_mode !== p.transcript_mode);
   prefs = p;
   document.documentElement.style.setProperty(
     "--transcript-font",
@@ -56,91 +84,238 @@ function apply(p: ViewPreferences) {
   document.querySelector<HTMLElement>("#float-collapse")!.title = t(
     p.compact ? "expand" : "collapse",
   );
+  if (selectionChanged) {
+    reset();
+    void poll();
+  } else renderControls();
 }
-async function render() {
-  if (busy || prefs.transcript_mode !== "floating") return;
-  busy = true;
-  try {
-    snapshot = await invoke<Snapshot | null>("transcript_snapshot");
-    const pane = document.querySelector<HTMLElement>("#float-transcript")!;
-    if (!snapshot) {
-      pane.innerHTML = `<div class="empty-transcript"><p>${t("emptyTranscript")}</p></div>`;
-      return;
-    }
-    document.querySelector("#float-title")!.textContent =
-      snapshot.meeting.title;
-    const own = snapshot.runtime.meeting_id === snapshot.meeting.id;
-    const recording = own && snapshot.runtime.recording,
-      paused = own && snapshot.runtime.paused;
-    root.dataset.recording = recording
-      ? "recording"
-      : paused
-        ? "paused"
-        : "ready";
-    document.querySelector("#float-elapsed")!.textContent = time(
-      snapshot.meeting.duration_ms,
-    );
-    const pause = root.querySelector<HTMLButtonElement>(
-      "[data-action='pause']",
-    )!;
-    pause.hidden = !recording && !paused;
-    pause.innerHTML = uiIcon(paused ? "play" : "pause");
-    pause.title = paused ? t("resume") : t("pause");
-    pause.setAttribute("aria-label", pause.title);
-    (root.querySelector("[data-action='stop']") as HTMLElement).hidden =
-      !recording && !paused;
-    (root.querySelector("[data-action='record']") as HTMLElement).hidden =
-      recording || paused;
+function renderControls() {
+  document.querySelector("#float-title")!.textContent =
+    snapshot?.meeting.title || "OmaScribe";
+  const own = snapshot?.runtime.meeting_id === snapshot?.meeting.id;
+  const recording = own && snapshot?.runtime.recording,
+    paused = own && snapshot?.runtime.paused;
+  root.dataset.recording = recording
+    ? "recording"
+    : paused
+      ? "paused"
+      : "ready";
+  document.querySelector("#float-elapsed")!.textContent = time(
+    snapshot?.meeting.duration_ms || 0,
+  );
+  const pause = root.querySelector<HTMLButtonElement>("[data-action='pause']")!;
+  pause.hidden = !recording && !paused;
+  pause.innerHTML = uiIcon(paused ? "play" : "pause");
+  pause.title = paused ? t("resume") : t("pause");
+  pause.setAttribute("aria-label", pause.title);
+  root.querySelector<HTMLElement>("[data-action='stop']")!.hidden =
+    !recording && !paused;
+  const record = root.querySelector<HTMLButtonElement>(
+    "[data-action='record']",
+  )!;
+  record.hidden = !!(recording || paused);
+  record.disabled = !snapshot;
+  if (snapshot)
     root.querySelector<HTMLSelectElement>("#float-translation-mode")!.value =
       snapshot.translation_mode;
-    root
-      .querySelector("[data-action='captions']")!
-      .setAttribute("aria-pressed", String(prefs.captions.enabled));
-    document.querySelector("#float-state")!.textContent = paused
-      ? t("paused")
-      : recording
-        ? t("live")
-        : t("transcript");
-    const query = (
-      document.querySelector<HTMLInputElement>("#float-search")!.value || ""
-    ).toLocaleLowerCase();
-    const partial =
-      snapshot.runtime.meeting_id === snapshot.meeting.id
-        ? snapshot.runtime.partial
-        : "";
-    const next =
-      JSON.stringify(snapshot.segments) +
-      JSON.stringify(snapshot.meeting.speaker_names) +
-      JSON.stringify(snapshot.translations) +
-      snapshot.translation_mode +
-      partial +
-      query;
-    if (next === signature) return;
-    signature = next;
-    const bottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
-    pane.innerHTML =
-      snapshot.segments
-        .filter((s) =>
-          (s.text + " " + (snapshot?.translations?.[s.id]?.text || ""))
-            .toLocaleLowerCase()
-            .includes(query),
-        )
-        .map(
-          (s) =>
-            `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span>${passageHTML(s, snapshot!)}</article>`,
-        )
-        .join("") +
-      (!query && partial
-        ? `<article class="segment partial"><span class="partial-label">${t("live")}</span><p>${esc(partial)}</p></article>`
-        : "");
-    document.querySelector("#float-preview")!.textContent =
-      partial || snapshot.segments.at(-1)?.text || t("emptyTranscript");
-    if (bottom && !query) pane.scrollTop = pane.scrollHeight;
-  } catch (e) {
-    error(e);
-  } finally {
-    busy = false;
+  root
+    .querySelector("[data-action='captions']")!
+    .setAttribute("aria-pressed", String(prefs.captions.enabled));
+  document.querySelector("#float-state")!.textContent = paused
+    ? t("paused")
+    : recording
+      ? t("live")
+      : t("transcript");
+}
+function queryText() {
+  return root
+    .querySelector<HTMLInputElement>("#float-search")!
+    .value.toLocaleLowerCase();
+}
+function nearBottom(pane: HTMLElement) {
+  return pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
+}
+function renderPartial() {
+  const pane = root.querySelector<HTMLElement>("#float-transcript")!;
+  const partial =
+    snapshot?.runtime.meeting_id === snapshot?.meeting.id
+      ? snapshot?.runtime.partial || ""
+      : "";
+  const query = queryText();
+  const bottom = nearBottom(pane);
+  let row = pane.querySelector<HTMLElement>(".partial");
+  if (partial && !query) {
+    if (!row) {
+      row = document.createElement("article");
+      row.className = "segment partial";
+      row.innerHTML = '<span class="partial-label"></span><p></p>';
+      pane.append(row);
+    }
+    row.querySelector(".partial-label")!.textContent = t("live");
+    row.querySelector("p")!.textContent = partial;
+  } else row?.remove();
+  document.querySelector("#float-preview")!.textContent =
+    partial || snapshot?.segments.at(-1)?.text || t("emptyTranscript");
+  if (bottom && !query) pane.scrollTop = pane.scrollHeight;
+}
+function renderRows() {
+  const pane = root.querySelector<HTMLElement>("#float-transcript")!;
+  if (!snapshot) {
+    pane.innerHTML = `<div class="empty-transcript"><p>${t("emptyTranscript")}</p></div>`;
+    renderPartial();
+    return;
   }
+  const query = queryText();
+  const next = JSON.stringify([
+    snapshot.meeting.id,
+    snapshot.segments,
+    snapshot.meeting.speaker_names,
+    snapshot.translations,
+    snapshot.translation_mode,
+    query,
+  ]);
+  if (next !== signature) {
+    signature = next;
+    const bottom = nearBottom(pane);
+    pane.innerHTML = snapshot.segments
+      .filter((s) =>
+        (s.text + " " + (snapshot?.translations?.[s.id]?.text || ""))
+          .toLocaleLowerCase()
+          .includes(query),
+      )
+      .map(
+        (s) =>
+          `<article class="segment"><button class="timestamp" data-start="${s.start_ms}" data-end="${s.end_ms}">${time(s.start_ms)}</button><span class="speaker-chip">${esc(speakerName(s, snapshot!.meeting))}</span>${passageHTML(s, snapshot!)}</article>`,
+      )
+      .join("");
+    if (bottom && !query) pane.scrollTop = pane.scrollHeight;
+  }
+  renderPartial();
+}
+async function poll() {
+  if (prefs.transcript_mode !== "floating") return;
+  if (pendingScope !== null) {
+    // Coalesce selection changes instead of queueing more full-history reads
+    // behind a slow database/receipt lookup.
+    if (pendingScope !== scope) pollRequested = true;
+    return;
+  }
+  const requestScope = scope;
+  pendingScope = requestScope;
+  pollRequested = false;
+  try {
+    const response = await invoke<SnapshotPoll<TranscriptSnapshot> | null>(
+      "poll_transcript",
+      { revision },
+    );
+    if (requestScope !== scope || prefs.transcript_mode !== "floating") return;
+    if (!response) {
+      reset();
+    } else if (response.kind === "full") {
+      if (snapshot?.meeting.id !== response.snapshot.meeting.id) clearAudio();
+      snapshot = response.snapshot;
+      revision = response.revision;
+      renderControls();
+      renderRows();
+    } else if (snapshot) {
+      snapshot.runtime = response.runtime;
+      snapshot.meeting.duration_ms = response.duration_ms;
+      renderControls();
+      // Runtime ticks only touch the live row, never saved history or its signature.
+      renderPartial();
+    } else revision = null;
+    root.querySelector<HTMLElement>("#float-error")!.hidden = true;
+  } catch (e) {
+    if (requestScope === scope) {
+      reset();
+      error(e);
+    }
+  } finally {
+    pendingScope = null;
+    if (pollRequested && prefs.transcript_mode === "floating") {
+      pollRequested = false;
+      void poll();
+    }
+  }
+}
+function localize() {
+  for (const [action, label, icon] of [
+    ["stop", tr("结束", "End", "結束"), "stop"],
+    ["dock", tr("停靠到主窗口", "Dock in main window", "停靠至主視窗"), "dock"],
+    ["search", tr("搜索转写", "Search transcript", "搜尋轉寫"), "search"],
+    [
+      "collapse",
+      tr("收起 / 展开", "Collapse / expand", "收起 / 展開"),
+      "collapse",
+    ],
+    [
+      "settings",
+      tr("字幕与显示设置…", "Caption & display settings…", "字幕及顯示設定…"),
+      "",
+    ],
+    ["return", tr("回到会议", "Back to meeting", "回到會議"), "return"],
+  ] as const)
+    root.querySelector(`[data-action='${action}']`)!.innerHTML =
+      (icon ? uiIcon(icon, 16) : "") + label;
+  for (const [selector, label] of [
+    ["[data-action='record']", t("record")],
+    ["[data-action='captions']", tr("实时字幕", "Live captions", "即時字幕")],
+    [
+      "[data-action='maximize']",
+      tr("最大化 / 还原", "Maximize / restore", "最大化 / 還原"),
+    ],
+    ["[data-action='close']", t("close")],
+    [".float-resize", t("resizeWindow")],
+    [".float-more summary", tr("更多操作", "More actions", "更多操作")],
+  ]) {
+    const element = root.querySelector<HTMLElement>(selector)!;
+    element.title = label;
+    element.setAttribute("aria-label", label);
+  }
+  const search = root.querySelector<HTMLInputElement>("#float-search")!;
+  search.placeholder = t("search");
+  search.setAttribute("aria-label", t("search"));
+  const snap = root.querySelector<HTMLSelectElement>("#float-snap")!;
+  snap.setAttribute("aria-label", t("snapTo"));
+  snap.parentNode!.firstChild!.textContent = tr(
+    "屏幕位置",
+    "Screen position",
+    "螢幕位置",
+  );
+  for (const [value, label] of [
+    ["free", t("freePosition")],
+    ["left", t("screenLeft")],
+    ["right", t("screenRight")],
+  ])
+    snap.querySelector(`option[value='${value}']`)!.textContent = label;
+  const mode = root.querySelector<HTMLSelectElement>(
+    "#float-translation-mode",
+  )!;
+  for (const [value, label] of translationChoices())
+    mode.querySelector(`option[value='${value}']`)!.textContent = label;
+  mode.setAttribute(
+    "aria-label",
+    tr("实时翻译模式", "Live translation mode", "即時翻譯模式"),
+  );
+  mode.title = tr(
+    "本地翻译 · 原始转写保留",
+    "Local translation · Original transcript preserved",
+    "本機翻譯 · 保留原始轉寫",
+  );
+  root.querySelector<HTMLElement>(".float-drag")!.title = tr(
+    "拖动独立浮窗",
+    "Drag this window",
+    "拖曳獨立浮窗",
+  );
+  root.querySelector<HTMLElement>(".float-language")!.title = tr(
+    "本地翻译 · 保留原文",
+    "On-device translation · Original kept",
+    "本機翻譯 · 保留原文",
+  );
+  signature = "";
+  apply(prefs);
+  renderControls();
+  renderRows();
 }
 async function init() {
   await initAppearance();
@@ -155,7 +330,8 @@ async function init() {
       const p = await getPreferences();
       p.translation_mode = mode.value as typeof p.translation_mode;
       await savePreferences(p);
-      await render();
+      reset();
+      await poll();
     } catch (e) {
       error(e);
     }
@@ -228,6 +404,8 @@ async function init() {
           return;
       }
       if (button.dataset.start && snapshot) {
+        const audioScope = scope;
+        const audioMeeting = snapshot.meeting.id;
         const encoded = await invoke<string>("audio_clip", {
           id: snapshot.meeting.id,
           startMs: Number(button.dataset.start),
@@ -236,6 +414,8 @@ async function init() {
             Number(button.dataset.start) + 90000,
           ),
         });
+        if (audioScope !== scope || snapshot?.meeting.id !== audioMeeting)
+          return;
         if (audioUrl) URL.revokeObjectURL(audioUrl);
         audioUrl = URL.createObjectURL(
           new Blob([Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0))], {
@@ -253,8 +433,7 @@ async function init() {
     }
   });
   root.querySelector("#float-search")!.addEventListener("input", () => {
-    signature = "";
-    render();
+    renderRows();
   });
   root.querySelector("#float-snap")!.addEventListener("change", () =>
     patchViewSettings({
@@ -266,10 +445,11 @@ async function init() {
     apply(event.payload),
   );
   await listen("view-meeting", () => {
-    signature = "";
-    render();
+    reset();
+    void poll();
   });
-  await render();
-  setInterval(render, 700);
+  await onLocaleChange(localize);
+  await poll();
+  setInterval(poll, 700);
 }
 init().catch(error);

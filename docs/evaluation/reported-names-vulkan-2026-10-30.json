@@ -1,0 +1,387 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "source_commit": "eea96f05e782a143fe4c5526ded39ca54de30f1d",
+  "trial_source": "819a23ccc6861487a411f07b2bbf2830bcdfc76a",
+  "status": "Reported spelling veto/caption protection and Vulkan selector binding retained; unproven global writer name legend withdrawn after the only manual trial failed",
+  "reported_spelling_fix": {
+    "red": "Existing Terms::validate_writer_names accepted an inserted space inside a mixed-script professor/doctor label. Owner/task-name collection did not include the already-known literal caption name pattern.",
+    "retained": "Reuse exact bounded professor/doctor label spans for per-source captions; minutes only reject a newly emitted recognized label absent from selected source or an explicit user canonical map. Do not require all historical names, infer aliases, promote names to actor permission, or alter ASR hotwords/normalizer.",
+    "bounds": "12 labels/240 characters for legends/required caption protection; final caption selection must still cover all recognized labels, otherwise report incomplete. Minutes membership scans full selected source for each bounded body candidate; no truncated source legend as authority.120000-byte original evidence ceiling, with no-title fast path for longer plain captions.",
+    "cache": "SOURCE_REPORTED_NAMES_VERSION is bound in translation environment and experimental article scope; ASR terminology fingerprint unchanged.",
+    "limits": "Recognized explicit mixed-script professor/doctor frames and listed English title/delimiter forms only, not complete NER or general claim entailment. Omission, arbitrary spoken names and person-topic association are not proved."
+  },
+  "withdrawn_writer_input": {
+    "trial": "Global source_reported_names input field, not a new prompt instruction or request budget.",
+    "outcome": "The only original manual Q16 failed; do not promote a producer input change merely because literal names survive.",
+    "final": "writer.rs restored byte-for-byte to7f58468; unused production wrapper removed and data-helper left test-only. Caption and spelling veto remain. No model rerun after withdrawal.",
+    "causality_limit": "The failed result rejects promotion; it does not prove a general causal effect of the field. The restored final producer has not passed the original manual quality gate."
+  },
+  "vulkan_selection": {
+    "common_keys": [
+      "GGML_VK_VISIBLE_DEVICES",
+      "VK_DRIVER_FILES",
+      "VK_ICD_FILENAMES",
+      "VK_ADD_DRIVER_FILES",
+      "VK_LOADER_DRIVERS_SELECT",
+      "VK_LOADER_DRIVERS_DISABLE",
+      "VK_LAYER_PATH",
+      "VK_ADD_LAYER_PATH",
+      "VK_IMPLICIT_LAYER_PATH",
+      "VK_ADD_IMPLICIT_LAYER_PATH",
+      "VK_INSTANCE_LAYERS",
+      "VK_LOADER_LAYERS_ENABLE",
+      "VK_LOADER_LAYERS_DISABLE",
+      "VK_LOADER_LAYERS_ALLOW",
+      "DRI_PRIME",
+      "MESA_VK_DEVICE_SELECT",
+      "MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE"
+    ],
+    "linux_only_keys": [
+      "HOME",
+      "XDG_CONFIG_HOME",
+      "XDG_CONFIG_DIRS",
+      "XDG_DATA_HOME",
+      "XDG_DATA_DIRS",
+      "__NV_PRIME_RENDER_OFFLOAD",
+      "__VK_LAYER_NV_optimus"
+    ],
+    "red": "Three real worker_key isolated-child controls reused a key after GGML ordering, DRI_PRIME or driver-manifest environment values changed.",
+    "retained": "Fixed OsString snapshot shared by listing/trial/worker command/certificate/worker key. Empty/unset/native strings distinct, explicit child set/remove, no parent mutation or loader-priority simulation. Preserve existing CUDA/CPU/Metal/MLX digest bytes and installed component reuse.",
+    "proof": "3 worker-key controls,5 snapshot controls, CUDA command/worker controls and13 acceleration controls pass without driver/model execution; full integration checks are recorded below.",
+    "limits": [
+      "Selection configuration only; not loaded driver or layer identity.",
+      "Same-path manifest changes, directory membership, symlinks, actual so/DLL identity remain open.",
+      "Unknown layer-specific env and ggml Vulkan performance/memory tuning remain open."
+    ],
+    "primary_sources": [
+      {
+        "url": "https://github.com/ggml-org/llama.cpp/blob/5aeac37a35b44fde4bdffaec9159f2fcb253b622/ggml/src/ggml-vulkan/ggml-vulkan.cpp#L5291",
+        "revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+        "git_blob_sha1": "fa038bb5b61f626018714587c450e4072d0e6775",
+        "scope": "Actual pinned GGML_VK_VISIBLE_DEVICES behavior"
+      },
+      {
+        "url": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md",
+        "scope": "Documented loader interface, not installed loader identity"
+      },
+      {
+        "url": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md",
+        "sha256": "1edb5c024cd4b41ee330c2c29bb02e31ec3a00a4de821dbab49cf62b439656d8",
+        "bytes": 111562,
+        "scope": "Read document; owned temporary removed"
+      },
+      {
+        "url": "https://docs.mesa3d.org/envvars.html",
+        "scope": "DRI_PRIME Vulkan ordering and exclusive selection"
+      },
+      {
+        "url": "https://gitlab.freedesktop.org/mesa/mesa/-/raw/main/src/vulkan/device-select-layer/device_select_layer.c",
+        "sha256": "e59c4645e950ee2753e844166be0dce6409e1a5aba59dd9ffdcc7f92ac7432c3",
+        "bytes": 18168,
+        "scope": "Mesa layer interface only; owned temporary removed"
+      },
+      {
+        "url": "https://http.download.nvidia.com/XFree86/Linux-x86_64/550.40.07/README/primerenderoffload.html",
+        "version": "550.40.07",
+        "interface_evidence_only": true,
+        "read_by": "root official-document verification",
+        "bytes": 10289,
+        "sha256": "87db2ea6e1436fb252e97cd580815547dc7fe201f28385c03cc3009fdf0b6eea",
+        "independent_read": true
+      }
+    ]
+  },
+  "original_manual_trial": {
+    "source": "819a23ccc6861487a411f07b2bbf2830bcdfc76a",
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "execution": "Exactly one original manual run; same existing weights/runtime, default preferences plus fixture zh, source preparation off, no auto, no prompt/fixture/seed/context/output/quota changes or retries.",
+    "harness_passed": false,
+    "semantic_accepted": false,
+    "identity_audit_passed": true,
+    "actual": {
+      "cursor": 6,
+      "articles": 1,
+      "history_rows": 2,
+      "original_sources_exact": true,
+      "citation_count": 6,
+      "citation_quotes_revisions_ranges_exact": true
+    },
+    "costs": {
+      "requests": 2,
+      "responses": 2,
+      "completed_responses": 2,
+      "validation_failures": 0,
+      "input_tokens": 970,
+      "output_tokens": 161,
+      "request_ms": 9373,
+      "total_tokens": 1131
+    },
+    "wall_seconds": 17.523,
+    "harness_errors": [
+      "Missing: 当迪大学",
+      "Missing: 邓迪大学"
+    ],
+    "independent_failures": [
+      "PAMELA FURGO森 is assigned the music report although source2 only reports photo-disclosure risk; music source1/3/5 is unnamed.",
+      "迪大学的演出 creates an unsupported university-performance relation from festival sections/music.",
+      "Both original university labels omitted; photo-risk content repeats."
+    ],
+    "conditional_state": "即使 remains. Initial strengthened-completion assessment was corrected; state strengthening is unproven and is not a failure finding. Original review and correction provenance are retained.",
+    "commit_limit": "Both batches actually committed (cursor5→6, one final article, history2, six exact citations); current validation did not prevent the semantic errors. Citation correctness is not semantic coverage.",
+    "performance_limit": "Two requests/1131tokens and17.523s do not prove an efficiency improvement; quality failed and this is not a controlled whole-meeting speed comparison."
+  },
+  "checks": {
+    "final_core_passed": 481,
+    "core_ignored": 10,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 26,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "python_ran": 126,
+    "python_skipped": 1,
+    "identity": "160 source/config hashes unchanged for each pre-trial/final check phase. Final writer equals7f58468 exactly.",
+    "pre_trial_core_passed": 482,
+    "pre_trial_source_ci": "Exact819a23c Linux,Ubuntu22,Windows-core,prepare,validate SUCCESS;build/catalog SKIPPED. Final eea96f0 source CI checked separately.",
+    "final_source_ci": {
+      "source": "eea96f05e782a143fe4c5526ded39ca54de30f1d",
+      "checks": {
+        "linux": "SUCCESS",
+        "ubuntu22": "SUCCESS",
+        "prepare": "SUCCESS",
+        "validate": "SUCCESS",
+        "windows-core": "SUCCESS",
+        "build": "SKIPPED",
+        "catalog": "SKIPPED"
+      },
+      "physical_hardware_acceptance": false
+    }
+  },
+  "cleanup": {
+    "owned_model_clones_removed": 6,
+    "owned_model_directory_removed": true,
+    "borrowed_links_released": true,
+    "owned_processes_alive": [],
+    "owned_processes_unknown": [],
+    "signals_sent": 0,
+    "original_models_unchanged": true,
+    "runtime_unchanged": true,
+    "raw_and_database_retained": true,
+    "physical_reclaimed_bytes": null
+  },
+  "resources": "No model/SDK/runtime download, installer rebuild, GPU component build or user meeting data; one existing-model controlled trial only. Final CLI rebuild is for matching development artifacts, not another inference run.",
+  "source_files_sha256": {
+    "crates/core/src/acceleration.rs": "967f13dccf6c9914f7d214f5245372ae63d3692a199f4c5294139dd0854ecc1b",
+    "crates/core/src/inference/selector_env.rs": "80d83ee1891687f69ce010a1cdb907a59e367d45a827343ed8087ce81dadce4a",
+    "crates/core/src/inference_cache.rs": "26058ffa005ec32983c90064ab7223945ff1147e0b4a5d57c383f1f91328e004",
+    "crates/core/src/inference_worker.rs": "497f35b319bd0973041012cd2c13ed91c74aa911d3841c03391db8992065dfe0",
+    "crates/core/src/notes/incremental.rs": "7baaacd24f56da381985ca9b4dcb5e0344f1afc087b6b42898ebaf52d27c81e1",
+    "crates/core/src/notes/writer.rs": "8b9e2832a348edb22dde48853f5ad08fc3de05ebf74a32d3a9b2a0827d956538",
+    "crates/core/src/terminology.rs": "8a2d03e36681937b254d37bc0d7ec5e7f5f0370468120adae97a46a796c2048e",
+    "crates/core/src/translation.rs": "8c2b9368db4c81cf45dd3550b084b4dd979e8b2d123ef7c8401c32c2c98ac5e9",
+    "crates/core/src/translation/names.rs": "d615c17f3fb92ebdf92a2c337d7be4712c02f2b65aadf6248de2fd81dd4b881a"
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/fixture-binding.json",
+      "sha256": "02835bac82de7132c65665adcbb3ed3128c9d44e603c6c4cce8009811485a151"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/model-clones.json",
+      "sha256": "9d7bff8e51cc10fab7254b07ef7671e96a295a337b709b49665fa04eb2a38f65"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/run-trial.py",
+      "sha256": "1b91734d46f6aaa4bc894aefc924e0f7867393d0f30f59e0f0c6ef8e0e1560b8"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/actual-review-at-cleanup.json",
+      "sha256": "2726333f26cd00b5ee7371671eb17acc646d83477f96b8194cf744b8f4916cf0"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/actual-review.json",
+      "sha256": "d2e37e81329c685f1cf8ed6617cf6716265d864dabd58cf4b8859d25d1da6246"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/cleanup.json",
+      "sha256": "c68524f9d1372c322c51679f03fa0c884c0feba20727c23167c44f23a01d11ad"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/committed-article.json",
+      "sha256": "2ddb5ae56d9dd85753d959bd4e9733b1d7d075cbee6cb031464d0f922cba8ba9"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/final-body.txt",
+      "sha256": "5fd74280af87bbde281c14566889014d29013235c57e6c1a900214d1b934c7dd"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/report.json",
+      "sha256": "b1e7652802f9f35fd24031dca4906f3043f33c50f658b03a2f8a02e67bc4f4ad"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/review-correction.json",
+      "sha256": "8a44dbc3b6a629a368fdf98ab0cc003e2fda8c05d9fd1406935e424f007c17da"
+    },
+    {
+      "path": "artifacts/q16-reported-spellings-2026-10-30/trial/state.json",
+      "sha256": "4b153237c2377ea834a873f2311d697ae176d26f331f5572b138c1ebad11358e"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/build-cli.log",
+      "sha256": "bbe9c4c7f76d4c4de54bff19a191a859922d9a0727595e78b433511e9d6d488e"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/clippy.log",
+      "sha256": "4eab6c9ff9a6a5f807235590e0b70c0a1ff172b60e9aad3d385e64a2c715c856"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/core-asr.log",
+      "sha256": "9571952fea173e35ca7f5a0736276f9cbf962af043eef32ac4ea28cad41cfecc"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/build-cli.log",
+      "sha256": "baea96a426a4c872b231f8737cb795dbfbd0812e05c08341ee4c25cfcfda312d"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/cli-build-info.json",
+      "sha256": "ed24e842747a085c3abfac0d6b00138afdfc674b170b92d0b17ce4a83c8f8021"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/clippy.log",
+      "sha256": "f367ad54aab8a75cd5ded22b6b28e41f7d9515d4d11b29bbc80020a9909b4852"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/core-asr.log",
+      "sha256": "6f66e6cb631756f867c6751eaf7da5f0055f62e6c12fba25704d0da734ca4aee"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/exact-source-ci.json",
+      "sha256": "e2b9c25dab748173941341bc99abaa989f43b1f88508bc57d0c8cc4732145267"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/source-after.json",
+      "sha256": "60957ea4a666374f25ab083986e68fdbfff7f273edfd912385544f513c6c64cc"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/final/source-before.json",
+      "sha256": "60957ea4a666374f25ab083986e68fdbfff7f273edfd912385544f513c6c64cc"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/python.log",
+      "sha256": "db164b87fee53e5d0ec37ba45eb7b488fbae7202994b83143f82c6836f72a77c"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/source-after.json",
+      "sha256": "03ef42cf88f16507291865baa4149daaee492a84fed6fea1ca02f74a869be251"
+    },
+    {
+      "path": "artifacts/reported-vulkan-2026-10-30/source-before.json",
+      "sha256": "03ef42cf88f16507291865baa4149daaee492a84fed6fea1ca02f74a869be251"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/format.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/green.log",
+      "sha256": "d1e0d923c7d3f701397d51970cba66338c3feda17fe05ccc3ff804995585555e"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/intermediate-failure-provenance.json",
+      "sha256": "549f4be33fd286df68073b352a3753d6fb35996f25f8d2b522271edcf072ca6d"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/intermediate-failure.log",
+      "sha256": "7b73809818bd711cd0faac4358cd19fea624982b44b29a10239e2498d579a6ea"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/red.log",
+      "sha256": "db8dbd3a21f341a4646d2f71c24994fcc6673b98d1e6fcea3a9240ebb46c8ab1"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/rollback-check.log",
+      "sha256": "e0ee434454a51445072ec19bb76a6544cb26ae74b8632a85cf825004c02fb68f"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/rollback-format.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/rollback-terminology.log",
+      "sha256": "fc3c318715d725a72e2234d129b0a18662de489747cfc48c998ec8a9ed94c5a8"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/rollback-translation.log",
+      "sha256": "d468c39969f7da40fd63574de4673fdcc930d37c1a2948bf70a38460f53f3034"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/rollback-writer.log",
+      "sha256": "92ca652f972af322c4e19fe62269d3d8ebc8c1617cc0459c2204844a3a24e818"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/terminology.log",
+      "sha256": "7f8cbd0d262a5caefab3ad832d58e341842c56ac6800e73237fca10d3de54c53"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/translation.log",
+      "sha256": "d8ad8e071b9f336056c36e9ae941b285ed43db3d510db19dad757e753d17243b"
+    },
+    {
+      "path": "artifacts/source-reported-spellings-2026-10-30/writer.log",
+      "sha256": "61976b23c7e85b7b2eef2380fc91905017ba259b4537daafa0a381f6c1d1d4d2"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/acceleration-green.log",
+      "sha256": "257babd64a9a68f999c4a1de027ee5907abcce8e00511e8ebaf181cf6c203b3b"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/cuda-command-green.log",
+      "sha256": "1bd5973239e868ed15399786fb46f419dc29c07b79921ab88bdae80eccee3b27"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/cuda-worker-green.log",
+      "sha256": "eb4a117cf4ddc081459a91b7320cc87b07a0daf23d96fdf7152885d1b2fbc476"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/evidence.json",
+      "sha256": "1e333920aa533257eea0fda45741e781f84479a55c3788a67efe3361da3f4bc2"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/red.log",
+      "sha256": "650b6bee99f7b57794d1e9f485616b2b6a18cc528977b368151cdc3bd58f266e"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/red.patch",
+      "sha256": "7783e884b541c2f54199af255304807bc1722a819c7089f91672cae221b3404d"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/snapshot-green.log",
+      "sha256": "376da83c1fe7e578bf1d40959aee116ab5c0a911dad7eb6d078105de89c01ee2"
+    },
+    {
+      "path": "artifacts/vulkan-selector-env-2026-10-30/worker-green.log",
+      "sha256": "99382540453e5b17863f049f3f9754a4556da76e312deda34449d299544749e2"
+    }
+  ],
+  "release": "0.3.5 remains unpublished, stable0.3.4. Q16 semantic attribution/coverage, actual ASR/recording/platform/installation and full P0/P1/P2/P3/G1/G2 gates remain open.",
+  "final_cli_build": {
+    "profile": "release",
+    "revision_at_compile": "eea96f05e782a143fe4c5526ded39ca54de30f1d",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "schema": 1,
+    "source_sha256": "161278fcbacabad77d9a6636c3e7664ee67de8e644fbb70a56dead88436d6bae",
+    "target": "aarch64-apple-darwin",
+    "cli_sha256": "95cb7bf8fc255902bb48e3c0cac6e98115db2d33b2069a075b7e319dbcabf131",
+    "model_requests_after_withdrawal": 0
+  }
+}

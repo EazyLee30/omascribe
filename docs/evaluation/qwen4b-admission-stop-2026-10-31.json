@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "status": "REJECTED after the predeclared single paired Q16 diagnostic; catalog candidate withdrawn",
+  "source_trial": "4ef5fbd716331ffa8158d14e1858f2b31b62a0c3",
+  "source_restored": "1e199c1d9f09f138585700b7b103d05652149d80",
+  "restored_inference_files_equal_to": "67219fee15a68435d1900a75d0fb2ef7489af4d3",
+  "candidate": {
+    "id": "qwen3-4b-instruct-2507",
+    "vendor_model_card": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507",
+    "quantization_publisher": "unsloth",
+    "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+    "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "bytes": 2497281120,
+    "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+    "bundled": false,
+    "automatic_route_added": false,
+    "initial_memory_mib": 4096,
+    "memory_estimate_note": "Conservative unmeasured admission value, not a validated model working set."
+  },
+  "protocol": {
+    "same_source_cli_runtime_producer_fixture": true,
+    "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+    "case": "zh_recorded_mixed_prose_fidelity",
+    "backend": "metal",
+    "context_size": 2048,
+    "threads": 1,
+    "process_budget_mib": 4096,
+    "output_tokens": 440,
+    "request_quota_per_job": 2,
+    "minutes_language": "zh",
+    "translation_mode": "off",
+    "trials_per_arm": 1,
+    "order": "1.7B then4B; diagnostic, not a randomized/reversed performance experiment",
+    "followup68_or18_runs": 0,
+    "wire_body": "not captured; two-message compose protocol bound to frozen source/CLI, absent trace message_count remains unknown"
+  },
+  "arms": [
+    {
+      "model": "qwen3-1.7b",
+      "harness_invocations": 1,
+      "harness_passed": false,
+      "exit_code": 1,
+      "accepted": false,
+      "job_count": 1,
+      "requests_by_job": {
+        "397cc39b-8468-4a83-bba9-56cc1841722e": 2
+      },
+      "costs": {
+        "trace_error_count": 0,
+        "trace_errors": {},
+        "observed_attempted_requests": 2,
+        "observed_generation_rows": 2,
+        "unmeasured_response_costs": 0,
+        "attempted_requests": 2,
+        "observed_responses": 2,
+        "completed_responses": 2,
+        "validation_failures": 2,
+        "request_ms": 4829,
+        "observed_request_ms": 4829,
+        "input_tokens": 905,
+        "output_tokens": 332,
+        "cached_tokens": 200,
+        "prefill_ms": 326.52,
+        "decode_ms": 4498.574
+      },
+      "native_runtime": [
+        {
+          "file": "baseline-1.7b/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/llm-runtime.log",
+          "sha256": "d6d96cca993caf46680d3e85389b597d0580d9e0f929d282c69e1c9259490fd4",
+          "metal_init_observed": true,
+          "native_offload": [
+            {
+              "layers": 29,
+              "total": 29
+            }
+          ],
+          "contexts": [
+            2048
+          ],
+          "model_loaded": true
+        }
+      ],
+      "sampled_resources": {
+        "method": "psutil sampled descendant tree",
+        "interval_seconds": 0.25,
+        "samples": 24,
+        "cpu_seconds_sampled": 2.23151554,
+        "peak_tree_rss_mib": 1449.875,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "tree_rss_mib_seconds_sampled": 7397.116675932145,
+        "sampler_stopped": true,
+        "processes_exit_confirmed": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "actual_database": {
+        "notes_cursor": 0,
+        "articles": 0,
+        "citations": 0
+      },
+      "selected_source_sequences": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "source6_selected": false,
+      "raw_input_trimmed": false
+    },
+    {
+      "model": "qwen3-4b-instruct-2507",
+      "harness_invocations": 1,
+      "harness_passed": false,
+      "exit_code": 1,
+      "accepted": false,
+      "job_count": 1,
+      "requests_by_job": {
+        "02818693-9135-4e72-a97d-3b0caaeeeb94": 2
+      },
+      "costs": {
+        "trace_error_count": 0,
+        "trace_errors": {},
+        "observed_attempted_requests": 2,
+        "observed_generation_rows": 2,
+        "unmeasured_response_costs": 0,
+        "attempted_requests": 2,
+        "observed_responses": 2,
+        "completed_responses": 2,
+        "validation_failures": 2,
+        "request_ms": 5709,
+        "observed_request_ms": 5709,
+        "input_tokens": 891,
+        "output_tokens": 198,
+        "cached_tokens": 200,
+        "prefill_ms": 917.982,
+        "decode_ms": 4788.157
+      },
+      "native_runtime": [
+        {
+          "file": "candidate-4b/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/llm-runtime.log",
+          "sha256": "191d099b14d09736f992064a50734a7b0be35349e308d95c084bd8a85ffb8d4f",
+          "metal_init_observed": true,
+          "native_offload": [
+            {
+              "layers": 37,
+              "total": 37
+            }
+          ],
+          "contexts": [
+            2048
+          ],
+          "model_loaded": true
+        }
+      ],
+      "sampled_resources": {
+        "method": "psutil sampled descendant tree",
+        "interval_seconds": 0.25,
+        "samples": 29,
+        "cpu_seconds_sampled": 2.534945404,
+        "peak_tree_rss_mib": 2858.453125,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "tree_rss_mib_seconds_sampled": 17282.289803933458,
+        "sampler_stopped": true,
+        "processes_exit_confirmed": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "actual_database": {
+        "notes_cursor": 0,
+        "articles": 0,
+        "citations": 0
+      },
+      "selected_source_sequences": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "source6_selected": false,
+      "raw_input_trimmed": false
+    }
+  ],
+  "result": {
+    "both_actual_first_guards": "Reported-name spelling; downstream document-level attribution/fact/language checks were not reached",
+    "baseline": "Copies English music passages and changes PAMELA FURGO森 spacing; no committed article",
+    "candidate_first": "Changes name case and both exact university names; introduces editing/version commentary and an unsupported absence of conclusion/official-denial statement",
+    "candidate_repair": "Chinese music possibility/late-night and conditional photo-publication risk retained; still changes 潘 MALE FERGUSON case, omits 当迪大学 and its PAMELA report",
+    "manual_review_cautions": [
+      "Same-view wording does not explicitly assert the same person; no proven identity merge is claimed.",
+      "Public-safety wording is phrased as a question, not a definite actual threat; its new risk target lacks source support.",
+      "Possible completion remained modal in the4B draft; do not label this run a possibility-to-certainty inversion.",
+      "Source6 is retained in the database but was not selected after the first job made no progress.",
+      "Higher-quality wording and correct native offload do not establish an acceptable article."
+    ]
+  },
+  "scope": "Native compatibility observed only for this pinned model/runtime/2048ctx/Metal host. Both quality results FAIL; no model/default/automatic escalation promotion or whole-app resource-saving claim.",
+  "asset_and_process_audit": {
+    "seven_protected_source_files_sha_and_identity_unchanged_before_owned_cleanup": true,
+    "four_installed_runtime_files_sha_and_identity_unchanged": true,
+    "observed_process_identities_exit_confirmed_by_independent_review": 8,
+    "owned_and_borrowed_model_directories_removed": true,
+    "rejected_download_removed": true,
+    "logical_owned_download_bytes_removed": 2497281120,
+    "physical_disk_space_reclaimed": "not measured",
+    "raw_sqlite_logs_drafts_failed_costs_preserved": true
+  },
+  "checks": {
+    "candidate_catalog_core_passed": 551,
+    "candidate_catalog_core_ignored": 12,
+    "cli_tests": 2,
+    "integration_tests": 29,
+    "catalog_format": "PASS",
+    "runner_small_data_controls": 10,
+    "source_cli_restoration_verified": true,
+    "sdk_gpu_archive_installer_builds": 0
+  },
+  "preparation_correction": "The initial metadata script used compile_revision instead of revision_at_compile. A separate shell command started only the authorized isolated weight download; exact revision and full source digest were then checked before any model execution. No failed preflight is counted as a model result.",
+  "witnesses": [
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/admission-plan.json",
+      "sha256": "d2ce799de8a4bb168276da07858ebcf8a8dd48a3860c0143ad53b80ecd618963"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/runner-freeze.json",
+      "sha256": "c0983888708c7d1c05e3d7329b31f35b60481b78020d3bd294d4fd9ea64784d0"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/state.json",
+      "sha256": "34606cea251e324afc4a0cea25bb32bb5394ed3960784f61d9b444fddd089e80"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/download-verified.json",
+      "sha256": "67160b4fc5d7802f8e55a8feeac933b5931c282973535955e9379d83fb257e66"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/independent-semantic-review.json",
+      "sha256": "22b72bfbbc768ac4d3ba781263f5be92e817ccfc0bd868d42a8e67175ecb2c88"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/independent-result.json",
+      "sha256": "7844e10a11641f4ca0c72be687996253dc4c4eb5ebb83cbb52e78ac05b264945"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/cleanup.json",
+      "sha256": "d31d9aa809ae07d84af62138a1efac9bad0de721deda6407075e173229e8faff"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/restored-cli.json",
+      "sha256": "3dd67381b1dfbdbfd963c00ccab379cde1e1d0a62581f0c4208b9efa03910e38"
+    },
+    {
+      "path": "artifacts/qwen4b-admission-2026-10-31/prepare-correction.json",
+      "sha256": "a0ca001ea99b6d48da9e214cb5c8c68e9ff6827fab4cc8e0faadeae0083cda82"
+    }
+  ],
+  "release": "Stable0.3.4;0.3.5 unpublished. Q16 remains a release blocker. The full optimization goal remains active."
+}

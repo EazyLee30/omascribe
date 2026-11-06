@@ -1,0 +1,1375 @@
+{
+  "schema": 1,
+  "scope": "Explicit task owner direction, original spellings, build-task qualifiers and consent state only; not general semantic, natural ASR or release acceptance.",
+  "targeted_owner_gate_passed": true,
+  "full_semantic_acceptance": false,
+  "release_accepted": false,
+  "source_revision": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "f9efa8fa5ee25e3df49b554832de382dedefa4cc0870ff9c8f5721df733a2696",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "dec7f8c1c3bf78c8d1047980f655dadf641916b4442feab728492c458c42309e",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "e74f8408ded40f9acba996319cb232974055a2123efe3f2b0ea935578d8d5284",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_case_count": 45,
+  "static_checks": {
+    "core_library": {
+      "passed": 200,
+      "ignored": 7,
+      "log_sha256": "b73e4e8a3937525cd302c351aca466d71d277872c27c2456e09d011287aa68d4"
+    },
+    "strict_core_all_targets_clippy": {
+      "passed": true,
+      "log_sha256": "179d36effec1f65d6715cf7c5f9672b3fe4ac2bacdca3622659e6f2b65bcd1ec"
+    },
+    "python_harness": {
+      "passed": 23,
+      "log_sha256": "57f008cb99e8c22fffbd260cbef92e3289bba7ca57b3b30cdec4cbcc37a6d343"
+    }
+  },
+  "original_failure": {
+    "source_revision": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+    "reference": "apple-source-scoped-parts-2026-10-28.json",
+    "caption": "Offline model download is responsible for Chen Ming, and download must obtain user consent.",
+    "red_unit_log_sha256": "6e1bbb3786289b92998795439ca63ef1c752330dc2ff8e3e8e9faede9be97fac"
+  },
+  "retained_development_trials": [
+    {
+      "folder": "task-roles-auto-20261028",
+      "results": [
+        {
+          "case": "en_future_named_task_owner",
+          "pattern_passed": false,
+          "seconds": 6.915,
+          "errors": [
+            "Missing: not yet|not.*obtained|pending",
+            "Translation 1 missing: not yet|not.*obtained|pending"
+          ],
+          "minutes": [
+            "Model download will be handled by 陈明, but currently no user consent has been obtained."
+          ],
+          "raw_report": "artifacts/benchmarks/task-roles-auto-20261028/en_future_named_task_owner.json",
+          "report_sha256": "9cfd98b96b37c6c3c9685043d301122a43689197ff387876d119eafb04813e6c"
+        },
+        {
+          "case": "en_generic_task_actor",
+          "pattern_passed": false,
+          "seconds": 6.909,
+          "errors": [
+            "Missing: build",
+            "Translation 1 missing: build"
+          ],
+          "minutes": [
+            "The task is handled by the server, and no human intervention is required."
+          ],
+          "raw_report": "artifacts/benchmarks/task-roles-auto-20261028/en_generic_task_actor.json",
+          "report_sha256": "dc39cec539ef28161733fbb4c83325fac6d7bc4ae83cda6e0aea8d6c81997862"
+        },
+        {
+          "case": "en_named_download_owner",
+          "pattern_passed": true,
+          "seconds": 7.528,
+          "errors": [],
+          "minutes": [
+            "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-roles-auto-20261028/en_named_download_owner.json",
+          "report_sha256": "5ed71eebcee3fefb8fa06a08bad1c7ea1c5393a4113911b7ebdd7b717a79aa38"
+        },
+        {
+          "case": "en_other_named_task_owner",
+          "pattern_passed": false,
+          "seconds": 7.541,
+          "errors": [
+            "Missing: build",
+            "Translation 1 missing: build"
+          ],
+          "minutes": [
+            "李华 is responsible for the check and cannot be published until it is completed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-roles-auto-20261028/en_other_named_task_owner.json",
+          "report_sha256": "2a15dc98c81ca6a20003ccb1d7cc683f3e177993b698485500baef90f048b047"
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "pattern_passed": true,
+          "seconds": 11.964,
+          "errors": [],
+          "minutes": [
+            "人工确认：预算仍未确定，先等测试报告。",
+            "预算还没有确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+          ],
+          "raw_report": "artifacts/benchmarks/task-roles-auto-20261028/zh_human_paragraph_protected.json",
+          "report_sha256": "423ad38041169c3ef9200c7c88f9b05175112c3168bd2a70562eee68ac3b633e"
+        }
+      ]
+    },
+    {
+      "folder": "task-source-parts-auto-20261028",
+      "results": [
+        {
+          "case": "en_future_named_task_owner",
+          "pattern_passed": false,
+          "seconds": 7.106,
+          "errors": [
+            "Missing: not yet|not.*obtained|no user consent has been obtained|pending",
+            "Translation 1 missing: not yet|not.*obtained|no user consent has been obtained|pending"
+          ],
+          "minutes": [
+            "Model download will be handled by 陈明. Currently, the user has not given consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-source-parts-auto-20261028/en_future_named_task_owner.json",
+          "report_sha256": "6c610356bdd592c15b676ca819845cacf8f7c0d1e576799dab0668eb7b5c0478"
+        },
+        {
+          "case": "en_generic_task_actor",
+          "pattern_passed": false,
+          "seconds": 120.249,
+          "errors": [
+            "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/task-source-parts-auto-20261028/en_generic_task_actor.artifacts/en_generic_task_actor/phase-1/batch-1"
+          ],
+          "minutes": [],
+          "raw_report": "artifacts/benchmarks/task-source-parts-auto-20261028/en_generic_task_actor.json",
+          "report_sha256": "a2f59f70c645a5300544589d78e7d29ce93872c1799242d9b800927914f918c3"
+        },
+        {
+          "case": "en_named_download_owner",
+          "pattern_passed": true,
+          "seconds": 7.528,
+          "errors": [],
+          "minutes": [
+            "陈明 is responsible for downloading the offline model, The download must obtain user consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-source-parts-auto-20261028/en_named_download_owner.json",
+          "report_sha256": "54f3c4b83915028833a9d72a1e981a4d62017cf48962f7fe801daf73efebb7ff"
+        },
+        {
+          "case": "en_other_named_task_owner",
+          "pattern_passed": false,
+          "seconds": 120.068,
+          "errors": [
+            "RuntimeError: Exit 1; see /Users/eazylee/build/omascribe/artifacts/benchmarks/task-source-parts-auto-20261028/en_other_named_task_owner.artifacts/en_other_named_task_owner/phase-1/batch-1"
+          ],
+          "minutes": [
+            "李华 is responsible for constructing the check, and it cannot be published until completed. It cannot be published until completed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-source-parts-auto-20261028/en_other_named_task_owner.json",
+          "report_sha256": "654e6e5b07a705de11988a419e7063d46910b1418bff5a5f3118c94d133a2903"
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "pattern_passed": true,
+          "seconds": 11.937,
+          "errors": [],
+          "minutes": [
+            "人工确认：预算仍未确定，先等测试报告。",
+            "预算还没有确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+          ],
+          "raw_report": "artifacts/benchmarks/task-source-parts-auto-20261028/zh_human_paragraph_protected.json",
+          "report_sha256": "3c2dcd0f0bf9165dc619b289bcc0c37a4af6a3fda402d118677c7d868afa9e0b"
+        }
+      ]
+    },
+    {
+      "folder": "task-qualifier-auto-20261028",
+      "results": [
+        {
+          "case": "en_future_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 6.897,
+          "errors": [],
+          "minutes": [
+            "Model download will be handled by 陈明. Currently, the user has not given consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-qualifier-auto-20261028/en_future_named_task_owner.json",
+          "report_sha256": "bf400b597981aef6f90815950faa08a4a2880b21196785500d470e9ae77a0802"
+        },
+        {
+          "case": "en_generic_task_actor",
+          "pattern_passed": true,
+          "seconds": 6.914,
+          "errors": [],
+          "minutes": [
+            "The build task is responsible for the server and no human intervention is needed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-qualifier-auto-20261028/en_generic_task_actor.json",
+          "report_sha256": "8a27ac1e6731d3aacd7a3496c17860430ed27403880444c97e4773b097a99492"
+        },
+        {
+          "case": "en_named_download_owner",
+          "pattern_passed": true,
+          "seconds": 7.528,
+          "errors": [],
+          "minutes": [
+            "陈明 is responsible for downloading the offline model, The download must obtain user consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-qualifier-auto-20261028/en_named_download_owner.json",
+          "report_sha256": "6786c06b2ea93e1ecd43daf18aca79892eb6bb943ab2a81deaca256d726069fe"
+        },
+        {
+          "case": "en_other_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 7.72,
+          "errors": [],
+          "minutes": [
+            "李华 is responsible for build checking, and it cannot be published until completed. It cannot be published until completed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-qualifier-auto-20261028/en_other_named_task_owner.json",
+          "report_sha256": "d785550588d403ea44f9b8195b6bd9d45c9d29db076c6947beaa81e00c0b2fbd"
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "pattern_passed": true,
+          "seconds": 12.115,
+          "errors": [],
+          "minutes": [
+            "人工确认：预算仍未确定，先等测试报告。",
+            "预算还没有确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+          ],
+          "raw_report": "artifacts/benchmarks/task-qualifier-auto-20261028/zh_human_paragraph_protected.json",
+          "report_sha256": "19db67959511b91399aa0d688e6d2d42f1dc6f219923c42f23d820b1038290cc"
+        }
+      ]
+    },
+    {
+      "folder": "task-role-direction-auto-20261028",
+      "results": [
+        {
+          "case": "en_future_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 7.071,
+          "errors": [],
+          "minutes": [
+            "Model download will be handled by 陈明. Currently, the user has not given consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-auto-20261028/en_future_named_task_owner.json",
+          "report_sha256": "96f64bd347c9bc6dd8c2711fe4e4684206bc95e53d667993fe4df5ecf384e172"
+        },
+        {
+          "case": "en_generic_task_actor",
+          "pattern_passed": true,
+          "seconds": 6.915,
+          "errors": [],
+          "minutes": [
+            "The build task is handled by the server. No human intervention is needed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-auto-20261028/en_generic_task_actor.json",
+          "report_sha256": "f7abd19497ea03385ecbfe53d23e2775db28b4cc0aec78be8cbec06f01be3d44"
+        },
+        {
+          "case": "en_named_download_owner",
+          "pattern_passed": true,
+          "seconds": 7.509,
+          "errors": [],
+          "minutes": [
+            "陈明 is responsible for downloading the offline model, The download must obtain user consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-auto-20261028/en_named_download_owner.json",
+          "report_sha256": "62d42223be63714e0fbf90b5b6338a4e09b6d4680d7f6b7b465d7052f4c1fbff"
+        },
+        {
+          "case": "en_other_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 7.733,
+          "errors": [],
+          "minutes": [
+            "李华 is responsible for build checking, and it cannot be published until completed. It cannot be published until completed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-auto-20261028/en_other_named_task_owner.json",
+          "report_sha256": "62cae5083a769247ff39e629c30b987ac200f67492e6b573a6b471d74e312b6a"
+        },
+        {
+          "case": "zh_human_paragraph_protected",
+          "pattern_passed": true,
+          "seconds": 11.912,
+          "errors": [],
+          "minutes": [
+            "人工确认：预算仍未确定，先等测试报告。",
+            "预算还没有确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-auto-20261028/zh_human_paragraph_protected.json",
+          "report_sha256": "3a17db68d3b3c55bd6571a63a63c6c31d24bc3936336dd87c9baa0cc9ceb8810"
+        }
+      ]
+    },
+    {
+      "folder": "task-role-direction-minutes-20261028",
+      "results": [
+        {
+          "case": "en_future_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 2.497,
+          "errors": [],
+          "minutes": [
+            "Model download will be handled by 陈明. Currently, user consent has not been obtained. Model download will be handled by (A). Currently, user consent has not been obtained."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-minutes-20261028/en_future_named_task_owner.json",
+          "report_sha256": "d539adc0bf23fc929043d02b3b6da266b20cacb983f7331d170523fd07d7139c"
+        },
+        {
+          "case": "en_generic_task_actor",
+          "pattern_passed": true,
+          "seconds": 2.284,
+          "errors": [],
+          "minutes": [
+            "The build task is handled by the server, and human intervention is not required. The build task is handled by the server, and human intervention is not required."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-minutes-20261028/en_generic_task_actor.json",
+          "report_sha256": "f15f06c0bdad136e2f7e729e45c9ef5168318b1e80c7de48a1921391fd41c5ca"
+        },
+        {
+          "case": "en_named_download_owner",
+          "pattern_passed": true,
+          "seconds": 1.921,
+          "errors": [],
+          "minutes": [
+            "陈明 is responsible for downloading the offline model, The download must obtain user consent."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-minutes-20261028/en_named_download_owner.json",
+          "report_sha256": "841f682e380725629b563e26f725b862ad17be95b7b9f6b3415ab0a9b4e0cb50"
+        },
+        {
+          "case": "en_other_named_task_owner",
+          "pattern_passed": true,
+          "seconds": 2.146,
+          "errors": [],
+          "minutes": [
+            "李华 is responsible for build checking, and it cannot be published until completed. It cannot be published until completed."
+          ],
+          "raw_report": "artifacts/benchmarks/task-role-direction-minutes-20261028/en_other_named_task_owner.json",
+          "report_sha256": "17a6de6adb0ca4343c561556118407de740d1912fdad6393796533e7a4dfc198"
+        }
+      ]
+    }
+  ],
+  "rejected_trial_analysis": [
+    "994dcf1 preserves the original named owner but drops build qualifiers in new cases. Its future-consent pattern failure was a checker false negative, not actual consent approval.",
+    "af391fe comma partitioning retains source bytes but still times out on dropped build qualifiers. Future no-consent wording remains correct despite a second checker false negative.",
+    "ea52f0e passes automatic patterns while reversing a generic server role; independent review rejects that semantic result.",
+    "564075c task-comma arrays repeat statements and explicit future minutes leak (A). Those pattern passes are rejected. Task-comma partitioning is removed in final source; the earlier independent-qualified-sentence mechanism remains."
+  ],
+  "assertion_correction": {
+    "description": "Accepted equivalent no-consent/has-not-given-consent wordings with a test that rejects obtained consent. No timeout/retry/semantic fact requirement was relaxed. Added independent forbidden unresolved aliases and reversed server responsibility.",
+    "harness_tests": 23
+  },
+  "final_results": [
+    {
+      "mode": "automatic",
+      "case": "en_future_named_task_owner",
+      "passed": true,
+      "seconds": 6.891,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "模型下载将由陈明负责，目前尚未获得用户同意。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "c95be52f-2ff6-4770-abf0-297b7f9952df",
+          "kind": "section",
+          "meeting_id": "40358046-65d0-4d06-b4ef-e89ba7686829",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "模型下载将由陈明负责，目前尚未获得用户同意。",
+              "revision": 1,
+              "segment_id": "40358046-65d0-4d06-b4ef-e89ba7686829:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-auto-20261028/en_future_named_task_owner.json",
+      "report_sha256": "0155bd46d06e9814be9cb51687748e767c47405006c89962a22cdf24b60c170b",
+      "final_snapshot_sha256": "183897b3b0529e626df5caab3d87f86650ce6c1e18b81887a9b9cc2f4e0c2969"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_generic_task_actor",
+      "passed": true,
+      "seconds": 6.895,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "构建任务由服务器负责，人工不需要介入。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "The build task is handled by the server, and no human intervention is required."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "0209eb98-d7b5-40ff-8042-645487f3ae7b",
+          "kind": "section",
+          "meeting_id": "d1a24bb0-985c-431c-9409-4b932e8cd319",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "构建任务由服务器负责，人工不需要介入。",
+              "revision": 1,
+              "segment_id": "d1a24bb0-985c-431c-9409-4b932e8cd319:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The build task is handled by the server, and no human intervention is required."
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-auto-20261028/en_generic_task_actor.json",
+      "report_sha256": "29236472b655c1d25fdf8242d3aa55d731f3fd6db45199fd425446926ced5ce7",
+      "final_snapshot_sha256": "649439134c14f5a06098f8b10f9d7791485d7b3924130228eb57a9bb7cd11ec0"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_named_download_owner",
+      "passed": true,
+      "seconds": 7.546,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "d616af0d-e0e2-4a20-9cad-d853b87d5954",
+          "kind": "section",
+          "meeting_id": "14a132d4-250b-44ab-8d98-ce4de3b1e28a",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+              "revision": 1,
+              "segment_id": "14a132d4-250b-44ab-8d98-ce4de3b1e28a:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-auto-20261028/en_named_download_owner.json",
+      "report_sha256": "23563c90272f66191f3f8319bcdc790a36f8874913292a7b43d063bff0bee206",
+      "final_snapshot_sha256": "5259d116948d4eea8e3bcc139cca28cbda0231220ece59d4bd25eee175081eaa"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_other_named_task_owner",
+      "passed": true,
+      "seconds": 7.544,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "构建检查由李华负责，完成前不能发布。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "李华 is responsible for build checking, and it cannot be published until completed."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "968e4ac3-d255-4b59-bde4-05fa2bd616e2",
+          "kind": "section",
+          "meeting_id": "15e8cfe4-c6bb-4087-9484-9bf7dadd2921",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "构建检查由李华负责，完成前不能发布。",
+              "revision": 1,
+              "segment_id": "15e8cfe4-c6bb-4087-9484-9bf7dadd2921:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "李华 is responsible for build checking, and it cannot be published until completed."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-auto-20261028/en_other_named_task_owner.json",
+      "report_sha256": "4282233248eea05adeccda4f40f288366ff73daae68f657d3e5c6ad13bd857a5",
+      "final_snapshot_sha256": "c4bfc2543c48693f91f0bb0ba9e99f25db8e8012289742e24ab4e8a2b9114771"
+    },
+    {
+      "mode": "automatic",
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "seconds": 11.975,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "预算还没有确定，先等测试报告。"
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        },
+        {
+          "seq": 3,
+          "revision": 1,
+          "text": "模型下载可以联网，会议录音不会上传。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "The budget has not yet been determined; wait for the test report."
+        },
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        },
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "Model download can be connected to the internet, meeting recordings will not be uploaded."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "1bf99dc7-ee64-466e-8c09-5656785bd6ab",
+          "kind": "section",
+          "meeting_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "预算还没有确定，先等测试报告。",
+              "revision": 1,
+              "segment_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "accepted",
+          "text": "人工确认：预算仍未确定，先等测试报告。"
+        },
+        {
+          "focus": "会议纪要",
+          "id": "46132778-8912-4bfd-8cdb-65c34ef71d9b",
+          "kind": "section",
+          "meeting_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+              "revision": 1,
+              "segment_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "预算还没有确定，先等测试报告。",
+              "revision": 1,
+              "segment_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            },
+            {
+              "end_ms": 30000,
+              "quote": "模型下载可以联网，会议录音不会上传。",
+              "revision": 1,
+              "segment_id": "2f7a0aff-3e2b-4be0-8c5e-b48c2a4d1d83:1:3",
+              "speaker_name": null,
+              "start_ms": 20000
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "预算还没有确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-auto-20261028/zh_human_paragraph_protected.json",
+      "report_sha256": "be4e169f91e40ec2a8abed2f874d0802531c4ad653703c37fe45968beb21030a",
+      "final_snapshot_sha256": "c0ddf03456cc9e0b0ff11354e7ce71ae1f1252890a16b542ee27158c99793b53"
+    },
+    {
+      "mode": "automatic",
+      "case": "bilingual_scope",
+      "passed": true,
+      "seconds": 7.293,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The offline transcription prototype is ready for review. We will test it on Friday."
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "离线转录原型已准备好审查。我们将于周五进行测试。"
+        },
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "This phase only implements microphone recording and real-time transcription, with system audio capture postponed to the next version."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "af6816de-034a-43ba-9579-20bbadca644b",
+          "kind": "section",
+          "meeting_id": "1e0be610-5163-4740-87b5-a35198f343d9",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。",
+              "revision": 1,
+              "segment_id": "1e0be610-5163-4740-87b5-a35198f343d9:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline transcription prototype is ready for review. We will test it on Friday.",
+              "revision": 1,
+              "segment_id": "1e0be610-5163-4740-87b5-a35198f343d9:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线转录原型已准备好审查。我们将于周五进行测试。本阶段只实现麦克风录音与实时转写，系统音频采集推迟到下个版本。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-controls-20261028/bilingual_scope.json",
+      "report_sha256": "3e2ebf9aa03ffaf648b0e1df70fe73a7263d0096de006f10df88cf8bb0e03e9e",
+      "final_snapshot_sha256": "e094162bba6bd6ac0e98063d3c23405eaeaeb04f616b18853b7c02987c148cd8"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_compound_scope_and_request",
+      "passed": true,
+      "seconds": 7.284,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "c32d7e5c-e429-4b47-93c5-98b1ffb42fa8",
+          "kind": "section",
+          "meeting_id": "08fe9e56-3558-4540-9043-12384c167a0b",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "本阶段只实现麦克风录音与实时转写。实时转写和实时字幕，入口放在工具栏，别藏到二级菜单。这两项入口调整还没有完成。",
+              "revision": 1,
+              "segment_id": "08fe9e56-3558-4540-9043-12384c167a0b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "This phase only implements microphone recording and real-time transcription. The entry points for real-time transcription and live captions should be placed in the toolbar, not hidden in a secondary menu. These adjustments have not yet been completed."
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 4
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-controls-20261028/en_compound_scope_and_request.json",
+      "report_sha256": "3dbae75f8f60d97c5fe1684119424b15e9a36f0943504811b01612a86cc80809",
+      "final_snapshot_sha256": "728538fd8e90e36f58c08fbc087c75a86ed732d8d55249052a043d0b9174a46a"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "seconds": 7.081,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan将于周四发送发布报告。我们尚未批准发布日期。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "ffb617b4-dae1-45e8-bcf6-c802918610a0",
+          "kind": "section",
+          "meeting_id": "abc83e11-3028-4990-849d-06b743a1bf59",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "Morgan will send the release report on Thursday. We have not approved the launch date yet.",
+              "revision": 1,
+              "segment_id": "abc83e11-3028-4990-849d-06b743a1bf59:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 2
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-controls-20261028/en_owner_and_deadline.json",
+      "report_sha256": "f178ad661cdf97b5135a21f97b1c6532cd6dbd1e96eccb7396d63a5d70868941",
+      "final_snapshot_sha256": "77dc0b31c11de937586c59079ca2cf2bf9305558632e87c981f87cb2c8aa8f50"
+    },
+    {
+      "mode": "automatic",
+      "case": "en_toolbar_existing_state",
+      "passed": true,
+      "seconds": 7.098,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。"
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "en",
+          "text": "The entry for real-time transcription and real-time subtitles has been placed in the toolbar, not in a secondary menu."
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "83cfe174-18c4-4942-9226-2429dcd9aa11",
+          "kind": "section",
+          "meeting_id": "5533950d-28f1-4104-8518-a33352a20d1e",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "实时转写和实时字幕的入口已经放在工具栏，没有藏在二级菜单。",
+              "revision": 1,
+              "segment_id": "5533950d-28f1-4104-8518-a33352a20d1e:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The entry for real-time transcription and real-time subtitles has been placed in the toolbar, not in a secondary menu."
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 1,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 1
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-controls-20261028/en_toolbar_existing_state.json",
+      "report_sha256": "6bd25a41d59cde059c7cc8469f91c6588b3f6fda36b619db7197d2bfbb3a0231",
+      "final_snapshot_sha256": "e69e2617c2e41d897054a8855ce5077f6998c2cefc7d0d6d097ed39f5c307823"
+    },
+    {
+      "mode": "automatic",
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "seconds": 7.07,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "The offline recorder is ready for internal testing. The public release is not approved yet."
+        },
+        {
+          "seq": 2,
+          "revision": 1,
+          "text": "Morgan owns the latency report and will deliver it on Thursday."
+        }
+      ],
+      "captions": [
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。"
+        },
+        {
+          "revision": 1,
+          "target": "zh",
+          "text": "Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "643145f0-8c3c-4cab-b3a3-0ee5eedc8a4d",
+          "kind": "section",
+          "meeting_id": "226ba5bf-cbed-43d5-b7dc-286a426f5b51",
+          "sources": [
+            {
+              "end_ms": 20000,
+              "quote": "Morgan owns the latency report and will deliver it on Thursday.",
+              "revision": 1,
+              "segment_id": "226ba5bf-cbed-43d5-b7dc-286a426f5b51:1:2",
+              "speaker_name": null,
+              "start_ms": 10000
+            },
+            {
+              "end_ms": 10000,
+              "quote": "The offline recorder is ready for internal testing. The public release is not approved yet.",
+              "revision": 1,
+              "segment_id": "226ba5bf-cbed-43d5-b7dc-286a426f5b51:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "离线记录器已准备好进行内部测试。公开发布尚未批准。Morgan负责提供延迟报告，并将于周四交付。"
+        }
+      ],
+      "source_repairs": [],
+      "translation_batches": [
+        {
+          "committed": 2,
+          "deferred": 0,
+          "remaining_selected": 0,
+          "requests": 3
+        }
+      ],
+      "raw_report": "artifacts/benchmarks/task-owner-single-controls-20261028/zh_minutes_from_en.json",
+      "report_sha256": "c0416ec625dd597ad6ae02581203760f7728231d3b102370b274a400ab7ae4a7",
+      "final_snapshot_sha256": "f948a874517953dc9acbc00e9c6037e45880fcaa092882d14f061b473acec3ae"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_future_named_task_owner",
+      "passed": true,
+      "seconds": 1.698,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "模型下载将由陈明负责，目前尚未获得用户同意。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "1fd61766-a3bf-46d1-b517-5c19d099cd4d",
+          "kind": "section",
+          "meeting_id": "76f4569c-63fa-4d6a-9aac-c8164702df4b",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "模型下载将由陈明负责，目前尚未获得用户同意。",
+              "revision": 1,
+              "segment_id": "76f4569c-63fa-4d6a-9aac-c8164702df4b:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "Model download will be handled by 陈明, but currently no user consent has been obtained."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 0,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [],
+      "raw_report": "artifacts/benchmarks/task-owner-single-minutes-20261028/en_future_named_task_owner.json",
+      "report_sha256": "68bb3ffefd9362c04f7fdac9c1cbff731a9d012142963739e698f96b7ac139c0",
+      "final_snapshot_sha256": "ebe81f7db65f5b32e11d364cb54e79503e1389f74141b59c0bb4d8efe32d2074"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_generic_task_actor",
+      "passed": true,
+      "seconds": 1.751,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "构建任务由服务器负责，人工不需要介入。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "Meeting minutes",
+          "id": "aed67d46-e895-46e9-9151-ca80db391dbb",
+          "kind": "section",
+          "meeting_id": "c0a69264-c201-43f4-9798-a4aeb3850e6c",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "构建任务由服务器负责，人工不需要介入。",
+              "revision": 1,
+              "segment_id": "c0a69264-c201-43f4-9798-a4aeb3850e6c:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The build task is handled by the server, and no human intervention is required."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [],
+      "raw_report": "artifacts/benchmarks/task-owner-single-minutes-20261028/en_generic_task_actor.json",
+      "report_sha256": "fce8cc619ebe489f02cc24a8a013e52d58a2c75f5da5be38005cbf278a2359c1",
+      "final_snapshot_sha256": "db1002162e393affb69c8a0aeadbfc8b5601aff48cec6c55a96e1e50aa110798"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_named_download_owner",
+      "passed": true,
+      "seconds": 2.311,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "离线模型下载由陈明负责，下载必须获得用户同意。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "43ad4a2a-b0e7-4abe-a27a-accb4b535174",
+          "kind": "section",
+          "meeting_id": "36dbc353-9df9-47da-b695-3f2975afadb6",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "离线模型下载由陈明负责，下载必须获得用户同意。",
+              "revision": 1,
+              "segment_id": "36dbc353-9df9-47da-b695-3f2975afadb6:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "陈明 is responsible for downloading the offline model, and the download must obtain user consent."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [],
+      "raw_report": "artifacts/benchmarks/task-owner-single-minutes-20261028/en_named_download_owner.json",
+      "report_sha256": "a385035c85765673785aa5875c9faa7f15c1bdab9ecc80d82942cd290db25fba",
+      "final_snapshot_sha256": "775a281048969f07fe653ea48ddefdd83cc2a5a39f8558e45b0e0057ec7c7fb2"
+    },
+    {
+      "mode": "explicit_minutes",
+      "case": "en_other_named_task_owner",
+      "passed": true,
+      "seconds": 1.924,
+      "errors": [],
+      "source_segments": [
+        {
+          "seq": 1,
+          "revision": 1,
+          "text": "构建检查由李华负责，完成前不能发布。"
+        }
+      ],
+      "captions": [],
+      "minutes": [
+        {
+          "focus": "会议纪要",
+          "id": "f89c171a-38a2-474f-af26-e323532e7046",
+          "kind": "section",
+          "meeting_id": "45be1e71-bfff-4f38-9f0c-81f4c812b212",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "构建检查由李华负责，完成前不能发布。",
+              "revision": 1,
+              "segment_id": "45be1e71-bfff-4f38-9f0c-81f4c812b212:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "李华 is responsible for build checking, and it cannot be published until completed."
+        }
+      ],
+      "source_repairs": [
+        {
+          "mode": "source_relations",
+          "source_predicates": 1,
+          "source_slots": 1
+        }
+      ],
+      "translation_batches": [],
+      "raw_report": "artifacts/benchmarks/task-owner-single-minutes-20261028/en_other_named_task_owner.json",
+      "report_sha256": "69c16f442b6714ac4c3adcd73183dcf812fe4f2e4f42ba56ef8de5c209dbf4ac",
+      "final_snapshot_sha256": "0d16a70398ba87505519e3e73c84c57a3f24122f1db307adf6e64d4932e7c988"
+    }
+  ],
+  "assistant_review": {
+    "targeted_pass": true,
+    "review_kind": "assistant output/source inspection, not human review",
+    "observations": [
+      "陈明 and 李华 keep literal source spelling and remain responsible for the task, never the object of responsibility.",
+      "The build qualifier is retained; the server remains a translated generic role and handles the task.",
+      "Future download remains future and user consent remains unreceived; the manual paragraph is preserved.",
+      "Current ordinary-task repairs use a single original-source object, without the trial arrays duplicate statements or unresolved (A).",
+      "Old report send/ownership, phase scope and toolbar state controls pass on the same final CLI."
+    ],
+    "limits": [
+      "The build-check publication referent remains implicit in source/output; this does not prove general condition-subject binding.",
+      "English prose and broader citation relevance still need review; the separate 小标/brackets issue and metric hallucination remain open."
+    ]
+  },
+  "bounds": {
+    "translation_requests_per_batch": 8,
+    "retries_per_chunk": 1,
+    "recording_translation_seconds": 8,
+    "minutes_attempts": 2,
+    "minutes_output_tokens": 440,
+    "automatic_settle_seconds": 120,
+    "changed": false,
+    "ordinary_task_repair_source_slots": 1
+  },
+  "resource_configuration": {
+    "backend": "metal",
+    "model": "qwen3-1.7b",
+    "threads": 1,
+    "context_size": 2048,
+    "memory_budget_mib": 4096,
+    "llm_keep_alive_seconds": 0,
+    "incremental_minutes": false,
+    "minutes_catchup": false,
+    "automatic_translation": "bilingual",
+    "explicit_translation": "off"
+  },
+  "runtime_logs": [
+    {
+      "case": "en_future_named_task_owner",
+      "mode": "automatic",
+      "sha256": "83bf34ffe03767d3e41a66e5a45f967cf3b32bce3375c7f8b8cbe1162b803767",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_generic_task_actor",
+      "mode": "automatic",
+      "sha256": "b1d3563bc6293a096292e979e62866c8ae2f72c75506fa756e6b4494e6addae1",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_named_download_owner",
+      "mode": "automatic",
+      "sha256": "10bac2b7c8de59425aff2124aff84a25c80cc34606eb8492da08611dbca68e5a",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "mode": "automatic",
+      "sha256": "fe7057fd85962bca19eaf1276989576646d3899057d46d58517940ea1035ff94",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "mode": "automatic",
+      "sha256": "325fb987010ce52f98b73f99da817233cdf3baaaf46c8378af04acb71ef57b82",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "bilingual_scope",
+      "mode": "automatic",
+      "sha256": "81a6d9bd66ef37a2d450e6b6db134233d6f23f1eda8c5d1e245eaf9922526e52",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "mode": "automatic",
+      "sha256": "ed6cdaa30fa7a21907db85492527aa86fb6ebab781988050496b7bf3b39c1d9f",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "mode": "automatic",
+      "sha256": "090a540d05e27239860ea0780278b16ade65632ed4913546bb7fefcdbea5870e",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "mode": "automatic",
+      "sha256": "484467b0cb2763d0c8fe6b0c314ba22a6f88f658596895685960f80a43366775",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "mode": "automatic",
+      "sha256": "03b2d4ebe74c960a3e5b38c567530a1dfa5e962e6e8417509260841b5461bd63",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "mode": "explicit_minutes",
+      "sha256": "300795f4345482b497bfe554bd629da009978a2385be618b3a2ae44f073f3353",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_generic_task_actor",
+      "mode": "explicit_minutes",
+      "sha256": "9fcc0015f02aaa8ba65bbd628fd86b14965d02d46d9041a621a8b23c72f09875",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_named_download_owner",
+      "mode": "explicit_minutes",
+      "sha256": "16b49e6902e226ba0bccccd3ea067b0957392615ff1c7749b5940cc9ecf751a8",
+      "m5_metal_29_of_29": true
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "mode": "explicit_minutes",
+      "sha256": "e025e776b6ca9bf4ff6ae90d914fdcfc3a100cbaac026efea8bdbe5a327deb6e",
+      "m5_metal_29_of_29": true
+    }
+  ],
+  "cleanup": {
+    "final_model_directories": 14,
+    "final_released": 14,
+    "trial_model_directories": 24,
+    "trial_released": 24,
+    "installed_source_models_retained": true,
+    "note": "Borrowed links/copies released; logical bytes do not establish reclaimed disk space. Raw success/failure evidence retained."
+  },
+  "platform_checkpoint": {
+    "source": "b5eb12cf01fbea9615ed6e1f661eab10fa38daac",
+    "windows_targeted_cases": 2,
+    "passed": 2,
+    "comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6454401618",
+    "note": "Prior-source CUDA evidence only; not final-source Windows, full corpus, natural microphone, install or release acceptance."
+  },
+  "still_open": [
+    "Candidate 6 remains rejected; no new candidate frozen.",
+    "Full same-source semantic regression, real recording and install/upgrade/model retention are pending.",
+    "General role/condition entailment, marker translation, metrics and real ASR proper names remain open.",
+    "Full P0-P3/G1-G2 objective retained; no new AMD hardware or backend/installer/component promotion."
+  ],
+  "performance_limits": [
+    "The previously timed-out build cases complete on this source, but no general speed/energy/VRAM claim follows from these fictional text cases.",
+    "Runtime, model and signed optional GPU components are reused; no installer or SDK was rebuilt."
+  ],
+  "windows_current_source_targeted": {
+    "source_revision": "b63a8eba07bb598468263bafe687fe2e82704c2e",
+    "passed": 2,
+    "cases": [
+      {
+        "case": "en_named_download_owner",
+        "mode": "translation-off explicit English minutes",
+        "seconds": 11.266
+      },
+      {
+        "case": "en_future_named_task_owner",
+        "mode": "automatic bilingual",
+        "seconds": 17.422
+      }
+    ],
+    "actual_cuda_and_29_of_29_offload_reported": true,
+    "core_passed": 199,
+    "core_ignored": 6,
+    "identifier_passed": 7,
+    "strict_clippy_passed": true,
+    "comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6455405944",
+    "peer_evidence": "https://github.com/EazyLee30/omascribe/blob/f25489e61ed5ca008cd50f52fb08dd57bc898002/docs/evaluation/windows-b63a8eb-targeted-2026-10-28.json",
+    "limits": "Verified peer PR report, not an independent rerun. Seeded text only, not full 45-case, physical microphone, install or release acceptance. Unused ASR worker came from 9b, not a same-build release artifact."
+  }
+}

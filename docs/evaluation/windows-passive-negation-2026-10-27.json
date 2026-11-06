@@ -1,0 +1,494 @@
+{
+  "schema": 1,
+  "kind": "windows_shared_cc10_passive_contracted_negation",
+  "date": "2026-10-27",
+  "passed": false,
+  "release_eligible": false,
+  "source_commit": "8bcc1f7fef819a90505d4fb35510927c0e728b98",
+  "shared_base": "cc10b6e6d7e957d6d8e339c3e6af49c12d01a166",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "8bcc1f7fef819a90505d4fb35510927c0e728b98",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "fd94e23e71ae6cf59a36aa505c3dc9ea871e81e8a888f4e9f7cd64c7afd4bee5",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "207f7b8d6f63b0ff39dd6c22a3ae102482eff92d2cb68027e5ff62e20e75082b",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "3888e981a689986adea30674152354a5331c24ea8db3846f71ef1af950590d47",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "8bcc1f7fef819a90505d4fb35510927c0e728b98",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "preferences": {
+    "asr_model": "zipformer-small",
+    "llm_model": "qwen3-1.7b",
+    "threads": 2,
+    "context_size": 2048,
+    "inference_backend": "cpu",
+    "resource_mode": "balanced",
+    "memory_budget_mib": 4096,
+    "auto_notes": false,
+    "translation_mode": "off",
+    "minutes_language": "en",
+    "llm_keep_alive_seconds": 0
+  },
+  "path_restricted": true,
+  "removed_overrides": [
+    "CUDA_PATH",
+    "CUDA_PATH_V11_5"
+  ],
+  "code_checks": {
+    "core_passed": 130,
+    "core_opt_in_ignored": 6,
+    "clippy_all_targets": "passed -D warnings",
+    "native_ui": "not repeated for validation-only delta",
+    "gpu": "not repeated; replay evidence remains bound to83d3287"
+  },
+  "raw_harness_passed": false,
+  "raw_harness_failure": "All3 exact-byte source checks rejected the existing Budget canonical-capitalization step. Raw failure/report retained; these are not polarity failures.",
+  "narrow_checks_passed": true,
+  "narrow_cases_passed": 3,
+  "narrow_cases_total": 3,
+  "manual_full_summary_cases_passed": 1,
+  "manual_full_summary_cases_total": 3,
+  "metadata_trace": [
+    {
+      "at": "2026-10-27T00:09:35.145980400+00:00",
+      "elapsed_ms": 0,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {},
+      "phase": "started",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:35.599492800+00:00",
+      "elapsed_ms": 453,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "cursor": 1,
+        "selected": 1
+      },
+      "phase": "retrieval",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:35.600743300+00:00",
+      "elapsed_ms": 454,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "enabled": false,
+        "fresh": null,
+        "mode": "full",
+        "selected": 1
+      },
+      "phase": "article_state",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:38.258460500+00:00",
+      "elapsed_ms": 3112,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "backend": "cpu",
+        "budget_mib": 4096,
+        "reused": false,
+        "startup_ms": 2142
+      },
+      "phase": "worker",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:38.263193800+00:00",
+      "elapsed_ms": 3117,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "input_tokens": 175,
+        "mode": "full"
+      },
+      "phase": "article_prompt",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:43.067444100+00:00",
+      "elapsed_ms": 7921,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "attempt": 1,
+        "completed": true,
+        "first_token_ms": 3814,
+        "request_ms": 4802,
+        "usage": {
+          "cached_tokens": 0,
+          "decode_ms": 987.767,
+          "input_tokens": 192,
+          "output_tokens": 14,
+          "prefill_ms": 3811.185
+        }
+      },
+      "phase": "generation",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:43.203197500+00:00",
+      "elapsed_ms": 8057,
+      "job": "be9ac4f6-aa7e-4620-a1ab-125c409ca0ed",
+      "metrics": {
+        "committed": true,
+        "items": 1
+      },
+      "phase": "finished",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:43.435199100+00:00",
+      "elapsed_ms": 0,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {},
+      "phase": "started",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:43.835139700+00:00",
+      "elapsed_ms": 399,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "cursor": 1,
+        "selected": 1
+      },
+      "phase": "retrieval",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:43.835954300+00:00",
+      "elapsed_ms": 400,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "enabled": false,
+        "fresh": null,
+        "mode": "full",
+        "selected": 1
+      },
+      "phase": "article_state",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:46.211543100+00:00",
+      "elapsed_ms": 2776,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "backend": "cpu",
+        "budget_mib": 4096,
+        "reused": false,
+        "startup_ms": 1942
+      },
+      "phase": "worker",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:46.215071800+00:00",
+      "elapsed_ms": 2779,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "input_tokens": 175,
+        "mode": "full"
+      },
+      "phase": "article_prompt",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:56.124888+00:00",
+      "elapsed_ms": 12689,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "attempt": 1,
+        "completed": true,
+        "first_token_ms": 4420,
+        "request_ms": 9907,
+        "usage": {
+          "cached_tokens": 0,
+          "decode_ms": 5487.556,
+          "input_tokens": 192,
+          "output_tokens": 73,
+          "prefill_ms": 4417.24
+        }
+      },
+      "phase": "generation",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:56.261626400+00:00",
+      "elapsed_ms": 12826,
+      "job": "5f2bd914-2810-43c6-9f45-0b441717dead",
+      "metrics": {
+        "committed": true,
+        "items": 1
+      },
+      "phase": "finished",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:56.351000100+00:00",
+      "elapsed_ms": 0,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {},
+      "phase": "started",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:56.738412600+00:00",
+      "elapsed_ms": 387,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "cursor": 1,
+        "selected": 1
+      },
+      "phase": "retrieval",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:56.739266100+00:00",
+      "elapsed_ms": 388,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "enabled": false,
+        "fresh": null,
+        "mode": "full",
+        "selected": 1
+      },
+      "phase": "article_state",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:59.131875700+00:00",
+      "elapsed_ms": 2780,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "backend": "cpu",
+        "budget_mib": 4096,
+        "reused": false,
+        "startup_ms": 1939
+      },
+      "phase": "worker",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:09:59.135414100+00:00",
+      "elapsed_ms": 2784,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "input_tokens": 174,
+        "mode": "full"
+      },
+      "phase": "article_prompt",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:10:08.150404400+00:00",
+      "elapsed_ms": 11799,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "attempt": 1,
+        "completed": true,
+        "first_token_ms": 3979,
+        "request_ms": 9012,
+        "usage": {
+          "cached_tokens": 0,
+          "decode_ms": 5033.347,
+          "input_tokens": 191,
+          "output_tokens": 68,
+          "prefill_ms": 3976.125
+        }
+      },
+      "phase": "generation",
+      "schema": 1,
+      "task": "minutes"
+    },
+    {
+      "at": "2026-10-27T00:10:08.286936+00:00",
+      "elapsed_ms": 11935,
+      "job": "309580be-07f8-40db-9ad7-4be65353b05c",
+      "metrics": {
+        "committed": true,
+        "items": 1
+      },
+      "phase": "finished",
+      "schema": 1,
+      "task": "minutes"
+    }
+  ],
+  "worker_backends": [
+    "cpu",
+    "cpu",
+    "cpu"
+  ],
+  "results": [
+    {
+      "name": "passive",
+      "raw_harness_passed": false,
+      "raw_harness_errors": [
+        "Original source changed"
+      ],
+      "narrow_digit_polarity_citation_checks_passed": true,
+      "source_before": "The budget of 3000 has not been approved.",
+      "source_after": "The Budget of 3000 has not been approved.",
+      "source_revision": 2,
+      "source_observation": "The existing terminology step applies the Budget note spelling (budget -> Budget). Exact-byte preservation assertion failed; digits, negation and contraction are unchanged, and citations bind revision2.",
+      "manual_full_summary": {
+        "passed": true,
+        "unsupported": []
+      },
+      "sections": [
+        {
+          "focus": "Meeting minutes",
+          "id": "a86f4fd1-9b8f-4a1f-89c3-e101c44827df",
+          "kind": "section",
+          "meeting_id": "d651117e-43c9-4703-9a13-78e6c75ff9af",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The Budget of 3000 has not been approved.",
+              "revision": 2,
+              "segment_id": "d651117e-43c9-4703-9a13-78e6c75ff9af:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The Budget of 3000 has not been approved."
+        }
+      ],
+      "diagnostic_sha256": "fc5d8edfc21fd1f7222335a6a1b987c63a6c187bee2688b6c9717a5b0c1fc614",
+      "stdout_sha256": "84d2dd6469c8a1410af3d3e455bc433c33e0990acb646551c9dc61f8d5e5706d",
+      "metadata_trace_sha256": "6bb9de510e8c848fe74f273e48fa76e187bfde5ff6d541da1a1ddeeecb21167f"
+    },
+    {
+      "name": "ascii_contraction",
+      "raw_harness_passed": false,
+      "raw_harness_errors": [
+        "Original source changed"
+      ],
+      "narrow_digit_polarity_citation_checks_passed": true,
+      "source_before": "The budget of 3000 hasn't been approved.",
+      "source_after": "The Budget of 3000 hasn't been approved.",
+      "source_revision": 2,
+      "source_observation": "The existing terminology step applies the Budget note spelling (budget -> Budget). Exact-byte preservation assertion failed; digits, negation and contraction are unchanged, and citations bind revision2.",
+      "manual_full_summary": {
+        "passed": false,
+        "unsupported": [
+          "The meeting concluded",
+          "no further action was taken",
+          "did not discuss any other topics",
+          "No corrections or additional information was provided",
+          "the meeting ended"
+        ]
+      },
+      "sections": [
+        {
+          "focus": "Meeting minutes",
+          "id": "5641b5a1-e545-4a57-991a-116eea232077",
+          "kind": "section",
+          "meeting_id": "079b7236-960b-46d5-841e-bec5c4c87e48",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The Budget of 3000 hasn't been approved.",
+              "revision": 2,
+              "segment_id": "079b7236-960b-46d5-841e-bec5c4c87e48:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The Budget of 3000 has not been approved. The meeting concluded with the status of the Budget remaining unresolved, and no further action was taken. The meeting did not discuss any other topics, as the only substantive matter was the unapproved Budget. No corrections or additional information was provided, and the meeting ended with the status of the Budget unchanged."
+        }
+      ],
+      "diagnostic_sha256": "c11d7d66cc543a6bb2af1b9dc8270600b13e9238527e8bc77d54e3efaeac0133",
+      "stdout_sha256": "aee9ab5bc658547102e983913ab4939e5f15a970819080ff045020c0dd6fee57",
+      "metadata_trace_sha256": "378bda17b840e4db03123bbfb49b86464c3cea6c8a64ef3f930579b7a1299b02"
+    },
+    {
+      "name": "curly_contraction",
+      "raw_harness_passed": false,
+      "raw_harness_errors": [
+        "Original source changed"
+      ],
+      "narrow_digit_polarity_citation_checks_passed": true,
+      "source_before": "The budget of 3000 isn’t approved.",
+      "source_after": "The Budget of 3000 isn’t approved.",
+      "source_revision": 2,
+      "source_observation": "The existing terminology step applies the Budget note spelling (budget -> Budget). Exact-byte preservation assertion failed; digits, negation and contraction are unchanged, and citations bind revision2.",
+      "manual_full_summary": {
+        "passed": false,
+        "unsupported": [
+          "The meeting concluded",
+          "no further action has been taken",
+          "no additional information was provided",
+          "did not reach a consensus"
+        ]
+      },
+      "sections": [
+        {
+          "focus": "Meeting minutes",
+          "id": "b8e15b73-278a-4519-a447-1e9a0dc0242f",
+          "kind": "section",
+          "meeting_id": "b1fdf764-17dd-4fdb-94e5-fa926c096a8d",
+          "sources": [
+            {
+              "end_ms": 10000,
+              "quote": "The Budget of 3000 isn’t approved.",
+              "revision": 2,
+              "segment_id": "b1fdf764-17dd-4fdb-94e5-fa926c096a8d:1:1",
+              "speaker_name": null,
+              "start_ms": 0
+            }
+          ],
+          "stale": false,
+          "status": "pending",
+          "text": "The Budget of 3000 was not approved. The meeting concluded with the determination that the Budget remains unapproved, and no further action has been taken. The issue was raised by the speaker, and no additional information was provided. The meeting did not reach a consensus on the matter, and the status remains as unapproved."
+        }
+      ],
+      "diagnostic_sha256": "c521fd1a32998bb9946fa5f1f2c627209102b196a107b42e9d18c12e8b5bb124",
+      "stdout_sha256": "da504f9e5ae1fd95060988e66e88ed072c0d2f11ab66747325aa86afb09eb3fe",
+      "metadata_trace_sha256": "cdcc6926033e346aa7531d57d23c8f93d6c08ad6e9d5a9d7888c88aa9bda7baf"
+    }
+  ],
+  "gguf_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+  "cpu_runtime_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+  "raw_report_sha256": "0dfa1c080455d065f450294ede20beed1548c567e4804ea96df395cb483605f5",
+  "limits": [
+    "Fictional source and Budget note; explicit production legacy CPU generation, both experiment flags0. Native facts probe not invoked.",
+    "Manual1/3 source-grounding result rejects unsupported meeting/conclusion/action/topic/consensus assertions. Narrow digit/polarity/citation checks do not accept those claims.",
+    "This is not the complete22-case suite, native UI/GPU regression, paired cost comparison or a new default fact-ledger integration.",
+    "No pre-change control for these3 samples; unsupported boilerplate was already seen at3286081 and is not attributed as introduced bycc10b6e.",
+    "Earlier ASR/GPU/quality evidence retains frozen source identities. No release or stable-catalog approval."
+  ]
+}

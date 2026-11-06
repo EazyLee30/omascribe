@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "22d680c6b94cdffb0abbe4d4354bef92fe9ca7f0",
+  "problem": "Changing the caption translation mode set a cancellation flag but deferred acceptance of the obsolete worker stop until a watchdog poll. The existing watchdog was already bounded; this was not an uncancelled full-generation claim.",
+  "observed_red": {
+    "test": "translation_mode_changes_accept_an_immediate_owned_stop_without_cancelling_minutes",
+    "passed": 0,
+    "failed": 1,
+    "test_source_sha256": "95d18f1a17aa9493877fb60469e21094637df7c228762e550d40add0ec7d1660",
+    "observation": "Actual update_preferences(off) during a TERM-ignoring SSE child: cancellation flag true, owned stop not yet accepted."
+  },
+  "changes": [
+    "After successfully saving and publishing preferences, a changed translation mode synchronously requests the registered worker stop only while translation_busy remains true.",
+    "The status lock orders mode changes against the translation-to-minutes handoff; the configuration gate blocks unrelated new task admission. The preference lock is released before signalling.",
+    "The existing owned PID/StopState closing and one-stop gate is reused. No pool invalidation, synchronous reap, new epoch, new model invocation or platform-specific stop policy."
+  ],
+  "validation": {
+    "regression": "Passed: bilingual to off, bilingual to zh-en, unchanged bilingual, and independent minutes. Each observes the real preference entry before cleanup, with actual child/SSE content.",
+    "core_lib": {
+      "passed": 811,
+      "failed": 0,
+      "explicitly_ignored": 15
+    },
+    "strict_core_all_targets_clippy": "passed",
+    "rust_format": "passed after formatting the new test tuple",
+    "independent_review": "No P1/P2 found in final scope; lock ordering, handoff, spawn-after-cancel and stopped-worker reuse reviewed."
+  },
+  "limits": [
+    "Native SSE regression ran on macOS/Unix. It manually drains the existing watchdog stop after acceptance, so it does not measure actual watchdog scheduling latency or Windows native latency.",
+    "Actual process exit still uses the existing watchdog and fixed grace/forced-stop mechanism. No measured energy, GPU memory or whole-meeting performance claim.",
+    "No new models, GPU components or installers were built. Q9 and Q16 remain open; 0.3.5 remains unreleased."
+  ],
+  "source_files": [
+    {
+      "path": "crates/core/src/models.rs",
+      "sha256": "b9f2952c37fe932ca552ab6785d67454d2a7dbb65d64c336c8197c6235bb68a2"
+    },
+    {
+      "path": "crates/core/src/translation.rs",
+      "sha256": "e47880954335542b4c2e6c495eca7d61f28d91aa1665ab007657026f31ad860a"
+    },
+    {
+      "path": "crates/core/src/inference_worker.rs",
+      "sha256": "defb9872dd6fddf7c882bb35e73b3e5937512c90af0a3a256078b10337eab7a2"
+    }
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/red.log",
+      "sha256": "45df5b889684f08be4baa3b450dd13725c53343e121432e1abe7aad676b7e2e0"
+    },
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/green.log",
+      "sha256": "d5434cf82aa412193914d7d89c83278a44fc3103cf3514366ae6d40256e0d476"
+    },
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/core.log",
+      "sha256": "0b76b06062d9ae722dc0fe3d6d94867731b7ffd4ebd908bcd025201edf84adf4"
+    },
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/clippy.log",
+      "sha256": "730314f5212113431f1f756f9827bf4abc99aefa5b3cb724759873c512f84cd6"
+    },
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/format.log",
+      "sha256": "50f895d3bee17a5078f5c21b56d1825a8167f6dd93d4a67c3cdba197eb2d3ab2"
+    },
+    {
+      "path": "artifacts/translation-mode-stop-2026-11-07/format-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

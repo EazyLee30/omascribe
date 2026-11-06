@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "production_commit": "b858d66078f0f0859b6ac9ef5196d4b1175e3af0",
+  "restored_checked_source": "6dc54e5dfb02078c25100fc280663a30fb04b612",
+  "problem": "After a note spelling save, a document-write failure previously left corrected ASR/checks persisted but old stale minutes. Saving the same note again returned success without completing the minutes replay.",
+  "change": {
+    "outer": "Store::with_terminology_savepoint owns the only SQLite transaction after requiring is_autocommit; private SAVEPOINT commits only when outer RELEASE succeeds. Explicit operation or RELEASE failure rolls back; Drop handles unwinding without panicking on stderr logging errors. Existing caller transaction is rejected without mutation.",
+    "closure": "Engine correction reads terms and schedules/edits/revisions/marks queue+checks/cache/meeting/prose+citations/history+ack under the same Store mutex and outer boundary. User note save is outside and persists; external meeting file sync occurs only after successful RELEASE and unlock.",
+    "inner": "Native nested savepoints replace transactions only in mark_terminology_batch, edit_segment_text and repair_terminology_documents; commit_document unchanged.",
+    "no_new_cache_journal_flags": true,
+    "stale_human_accepted_ambiguity_permissions": "Unchanged; this patch does not broaden which articles or source spellings may be rewritten."
+  },
+  "before_fix": {
+    "original_red_log_sha256": "8e8430f7771e57cea99b85b48fd23ac7fac0110a4b6f5c8c3648ed38e54d73e1",
+    "original_red_patch_sha256": "2c36e8e9bb193740503ccacc60fae579c4e9d6de57da558a3ec3b432b0c6780c",
+    "observed": "A document replay write failure left note+corrected ASR persisted, old stale minutes and consumed queue. Same-ID/content save returned success but retained the old article spelling."
+  },
+  "checks": {
+    "full_core_pass": 558,
+    "full_core_ignored": 12,
+    "cli_pass": 2,
+    "integration_pass": 30,
+    "strict_workspace_clippy": "PASS",
+    "format": "PASS",
+    "exact_production_commit_ci": "5 SUCCESS; GPU build/catalog SKIPPED",
+    "release_cli_build_matches_source": true,
+    "retry_has_zero_inference_jobs": true
+  },
+  "evidence": {
+    "red_freeze": "af87db08adeaaf600043b54b51577ed385c3fb2e4674743cc1494cb3833e09fb",
+    "affected_checks": "515e8f417aa828defe5c941a53d85758df592f213141f7cade4a46ef3285c293",
+    "restored_checks": "7b4e869627a592b628e04ff4af504402344a3181de29e9e689c6e9d8b7d0d2ef",
+    "matching_cli": "e31818e13330568f8bd9e5e9aaaa0302df28461fd36321ea5ab1d30b36850dfb",
+    "production_ci": "a6392c597cb45b51d75df8d297e251c6bae7e0609116767dda978c82869c256d",
+    "prior_evaluation_jsons_unchanged": 104
+  },
+  "limits": [
+    "No migration of half-committed databases produced by older versions.",
+    "No relaxation of stale, human, accepted, ambiguous-name, source-revision or transaction guards.",
+    "Synthetic storage/retry tests do not prove arbitrary real-audio name recall or AI article quality.",
+    "No model/default/prompt/SDK/GPU-component/installer change for this production fix."
+  ],
+  "release": {
+    "stable": "0.3.4",
+    "0.3.5": "unpublished",
+    "pr_1": "draft"
+  }
+}

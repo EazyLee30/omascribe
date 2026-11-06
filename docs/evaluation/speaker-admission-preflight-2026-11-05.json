@@ -1,0 +1,128 @@
+{
+  "status": "CHECKED_PRODUCTION_RESOURCE_FIX_NOT_MODEL_QUALITY_ADMISSION",
+  "production_source": "6d99c19da6a31ef4600c4fc50b05738cd50fbf2e",
+  "equivalent_private_source": "747c8abfdcbae94d02c6ec66ca769ac13f98a08a",
+  "behavior_red_source": "5153a782abce3e97b14b3176b732eba6f77fbca3",
+  "changes": [
+    "Reject already-ineligible speaker analysis using current meeting metadata and indexed current-run EXISTS; no preflight snapshot or source-text decoding.",
+    "Release configuration/Store/preferences locks before model verification. Public calls always use the real pinned verifier and platform memory reader.",
+    "Keep the complete original post-verifier admission, full snapshot, receipt, duration, memory, spawn and commit checks. The advisory hint cannot authorize changed execution state."
+  ],
+  "checks": {
+    "speaker_controls_pass": 8,
+    "speaker_default_ignored": 1,
+    "public_pinned_real_asset_control_pass": 1,
+    "core_pass": 713,
+    "core_explicit_ignored": 14,
+    "integration_pass": 34,
+    "desktop_shell_pass": 4,
+    "asr_pass": 18,
+    "cli_pass": 2,
+    "workspace_exit": 0,
+    "strict_clippy_exit": 0,
+    "fmt_exit": 0
+  },
+  "actual_read_observations": {
+    "fixture_refusals": [
+      "recording",
+      "empty",
+      "over_two_hours",
+      "insufficient_memory"
+    ],
+    "each_tiny_fixture_before_bytes": 8,
+    "each_tiny_fixture_after_bytes": 0,
+    "real_public_recording_refusal_before_bytes": 41134267,
+    "real_public_recording_refusal_after_bytes": 0,
+    "real_control_setup_and_integrity_read_bytes_each_execution": 123402801,
+    "normal_eligible_verifier_still_hashes_fixture_bytes": 8,
+    "post_verifier_ineligible_changes": [
+      "recording_started",
+      "new_current_run_empty",
+      "segments_deleted",
+      "duration_now_over_limit",
+      "available_memory_now_insufficient"
+    ],
+    "old_run_rows_do_not_authorize_empty_current_run": true,
+    "worker_started_by_these_controls": false
+  },
+  "integrity_and_cleanup": {
+    "real_asset_sha256_and_inode_mtime_ctime_unchanged": true,
+    "two_owned_cow_models_removed_after_each_real_control": true,
+    "original_post_verifier_body_sha256": "4df367a274344d22718594cac08f659f3eb79b6835b23bf5ba5cce35b92780d7",
+    "original_red_assertions_unchanged": true
+  },
+  "evidence": {
+    "370ef6f-fixture-red.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/370ef6f-fixture-red.log",
+      "sha256": "386dd024924e7c4293d26eb0aa8a5e247c8d0cb1a94fd6d332f5404bcdbcf8ef"
+    },
+    "5153a78-fixture-red.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/5153a78-fixture-red.log",
+      "sha256": "d1c241cf6bab6bb4621e6c5ce2484bd67a13dc9f0bb5a49a3ab7b97b9f236aa6"
+    },
+    "5153a78-public-red.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/5153a78-public-red.log",
+      "sha256": "1ceab163c8669bb831e75d67ac272757042a5bb87f82b8a8e646fbf83552b95d"
+    },
+    "747c8ab-target.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/747c8ab-target.log",
+      "sha256": "c01189d11492f18661129801672f9237a4f79879402738ea8a733669b6996cc2"
+    },
+    "747c8ab-public-green.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/747c8ab-public-green.log",
+      "sha256": "f19828940a12fa7a8376912dcc83419fe286558902cb534d61baeba82ba61a76"
+    },
+    "6d99c19-workspace.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/6d99c19-workspace.log",
+      "sha256": "53a92db73f5324323c36bcb1ef48426fb32acb7e5f9055813930dc85869a4ee6"
+    },
+    "6d99c19-clippy.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/6d99c19-clippy.log",
+      "sha256": "1307711436fe4b75fff5d36694028b2392e96def1c9c9bca3a2603d27db9d351"
+    },
+    "6d99c19-fmt.log": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/6d99c19-fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "root-source-review.json": {
+      "path": "artifacts/speaker-admission-preflight-2026-11-05/root-source-review.json",
+      "sha256": "111ab748d0343862f9a289a3b6cd7557224e3fb557ccb338956e0a69418e9c05"
+    }
+  },
+  "first_fixture_failure": "370ef6f did not compile because a private verifier was inaccessible. A cfg(test)-only forwarding helper fixed the fixture; this compiler error is not counted as behavior RED.",
+  "limits": [
+    "The measured saving is cold refused-call weight hashing only; setup/integrity I/O is separate, not zero. No whole-app latency/CPU/RSS/energy percentage claimed.",
+    "No ONNX/ASR/LLM inference, GPU/SDK/component downloads, installer build or installed app change.",
+    "Q9 real-audio name recall, Q16 complete article quality and real-device platform acceptance remain open; 0.3.5 is unpublished."
+  ],
+  "same_source_windows_linux_ci": {
+    "checked_source": "27be8e419afadcdea90292b51ad329240055fcb4",
+    "production_source": "6d99c19da6a31ef4600c4fc50b05738cd50fbf2e",
+    "conclusion": "success",
+    "runs": [
+      {
+        "name": "CI",
+        "id": 42046990698,
+        "conclusion": "success"
+      },
+      {
+        "name": "Linux compatibility",
+        "id": 42046991161,
+        "conclusion": "success"
+      },
+      {
+        "name": "Website validation",
+        "id": 42046991138,
+        "conclusion": "success"
+      },
+      {
+        "name": "Optional acceleration components",
+        "id": 42046990849,
+        "conclusion": "success"
+      }
+    ],
+    "windows_core_job": 127312613794,
+    "optional_gpu_build_and_catalog": "skipped",
+    "scope": "Same production code passed shared CI; physical GPU, native recording and install/upgrade acceptance remain open."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "base_revision": "a5d3432c57161faa7de79d75ec0238ea3fbec787",
+  "scope": "Cancel cold inference admission and reject generated report names hidden by horizontal title spacing",
+  "admission": {
+    "change": "Model verification checks cancellation between 64 KiB reads, while waiting for an identical verification, and before publishing or reusing a receipt. Cold translation environment admission uses the same cancellable model path. Worker admission and startup check cancellation before progressing.",
+    "error_semantics": "Typed cancellation is neither model corruption nor a GPU failure eligible for CPU retry. Existing successful receipts are not revoked by a cancelled cache lookup.",
+    "trace": "Bounded stage/status/duration metadata for model verification, backend selection, runtime verification and worker checkout. Preparation costs stay separate from chat tokens and request time; cancelled, failed or incomplete observations never qualify as a successful benchmark.",
+    "limitations": [
+      "Cannot interrupt an operating-system read already in progress.",
+      "Runtime executable hashing is checked before and after, not between reads.",
+      "Cold environment refresh preceding translation admission is not included in the four worker-admission stage durations.",
+      "The previous real Metal cancellation trial had no worker/request observation and remains indeterminate. These changes do not retroactively make it pass.",
+      "No measured whole-meeting CPU, memory, energy or GPU speed improvement is claimed."
+    ]
+  },
+  "generated_report_validation": {
+    "reproduction": "An ordinary all-Chinese article with PAN MALE FERGUSON followed by a horizontal space and 教授 passed final validation although the current source spelling was 潘 MALE FERGUSON. The original failing result is retained.",
+    "stopped_experiment": "Cross-line name recovery was withheld: preceding line scope could not be established from current sources, and broadening recovery exposed the existing title-gap validation hole. No keyword-denylist workaround or model retry was used to force a pass.",
+    "raw_evidence": "artifacts/admission-and-report-lines-2026-11-06",
+    "quality_gate": "Q16 remains open; detecting unsupported content is not a demonstration that the model generates a complete faithful article.",
+    "change": "Only generated-body validation uses a temporary horizontal title-gap view. Original source name inventory, institution/report authority, stored text and recovery APIs remain strict and unchanged.",
+    "source_gap_control": "Independent review reproduced an intermediate mistake: normalizing a source-only ALICE SMITH title gap admitted a different university. Removed source normalization. Sources without strict literal name evidence conservatively reject rather than grant new authority; both original red results remain archived."
+  },
+  "validation": {
+    "python": {
+      "tests_run": 177,
+      "skipped": 1,
+      "result": "passed"
+    },
+    "rust": {
+      "core_passed": 775,
+      "core_ignored": 14,
+      "integration_passed": 48,
+      "desktop_shell_passed": 8,
+      "asr_passed": 18,
+      "cli_passed": 2,
+      "result": "passed"
+    },
+    "report_name_cases": 10,
+    "strict_clippy": "passed",
+    "fmt": "passed",
+    "frontend_format": "passed",
+    "raw_sha256": {
+      "report-name-gap-diagnostic.log": "e453386d3bf5e882b01a04f0d111130bc25a2c3d31fed59bbf7fbae2e884bfc7",
+      "source-title-gap-red.log": "06e2cf8446688d9a2a8bfac8579388c191995ea0d30abfee07d9ec6dbf9d2c0e",
+      "stopped-newline-recovery.patch": "843eda2f0af167739adfa2ad5622988f6837a6fdf8d6b854bfd11b25cc3160c2",
+      "rust-workspace-final.log": "76d488b57e0136a3702e4f260bab57df0fa9bc87fd4f0513d4b279a7e72e4b1e",
+      "clippy-final.log": "025a144291e9ad347930282446762b8c199b471b59dd213e98429784285203e8",
+      "fmt-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "python-full.log": "7f621c67ae4ed4de8845f64bf3feb9147636f09b11051e6262b36b013c02e966",
+      "frontend-format.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d"
+    },
+    "core_source_sha256": "4bdf81b82309ea07ca12aa442772455239ae30168f13b4edc552ff159f7a1184"
+  },
+  "delivery": {
+    "installer_built": false,
+    "gpu_components_rebuilt": false,
+    "release_admission": false,
+    "coordination": "Shared source goes to PR #1 after checks. Windows/Linux device validation and PR #14 hybrid-GPU selection remain with their existing owners. CUDA/Vulkan remain optional downloads; Apple Silicon retains Metal."
+  },
+  "completed_date": "2026-11-07"
+}

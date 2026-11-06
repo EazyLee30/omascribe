@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+from runtime_inventory import assert_base_runtime
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOCK = json.loads((ROOT / "models.lock.json").read_text(encoding="utf-8"))
@@ -35,8 +36,54 @@ def download(url, target):
         shutil.copyfileobj(source, output)
 
 
-def prepare(target):
+def base_runtime_recipe(target, *, windows, macos):
+    """Format 2 is the bundled static CPU/Metal recipe, never an optional GPU payload.
+
+    Consumers must still bind the actual admitted executable and descriptors.
+    These build settings are not a hash or a claim about arbitrary runtimes.
+    """
     metal = target == "aarch64-apple-darwin"
+    metadata = {"revision": LOCK["llama_cpp"]["revision"], "metal": metal, "optional_gpu_backends": [], "format": 2}
+    flags = [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=OFF",
+        "-DGGML_BACKEND_DL=OFF",
+        "-DGGML_NATIVE=OFF",
+        "-DGGML_METAL=" + ("ON" if metal else "OFF"),
+        "-DGGML_METAL_EMBED_LIBRARY=" + ("ON" if metal else "OFF"),
+        "-DGGML_ACCELERATE=" + ("ON" if metal else "OFF"),
+        "-DGGML_BLAS=OFF",
+        "-DGGML_OPENMP=OFF",
+        "-DGGML_CUDA=OFF",
+        "-DGGML_HIP=OFF",
+        "-DGGML_VULKAN=OFF",
+        "-DGGML_SYCL=OFF",
+        "-DLLAMA_OPENSSL=OFF",
+        "-DLLAMA_CURL=OFF",
+        "-DLLAMA_BUILD_TESTS=OFF",
+        "-DLLAMA_BUILD_EXAMPLES=OFF",
+        "-DLLAMA_BUILD_UI=OFF",
+        "-DLLAMA_USE_PREBUILT_UI=OFF",
+        "-DLLAMA_BUILD_SERVER=ON",
+    ]
+    if target.startswith("x86_64"):
+        flags += [
+            "-DGGML_AVX=ON",
+            "-DGGML_AVX2=ON",
+            "-DGGML_FMA=ON",
+            "-DGGML_F16C=ON",
+            "-DGGML_AVX512=OFF",
+        ]
+    if windows:
+        flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
+    elif macos:
+        flags += ["-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"]
+    return metadata, flags
+
+
+def prepare(target):
+    expected, flags = base_runtime_recipe(target, windows=WINDOWS, macos=MACOS)
+    metal = expected["metal"]
     RUNTIME.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, OMASCRIBE_MODELS_DIR=str(ASSETS / "models"))
     run("python", ROOT / "scripts/setup.py", "--models-only", env=env)
@@ -74,41 +121,9 @@ def prepare(target):
     )
     run("git", "-C", llama, "checkout", "--detach", "FETCH_HEAD")
     runtime_stamp = RUNTIME / "llama/build-info.json"
-    expected = {"revision": LOCK["llama_cpp"]["revision"], "metal": metal, "format": 1}
     if not ((RUNTIME / "llama" / ("llama-server" + SUFFIX)).is_file()
             and runtime_stamp.is_file() and json.loads(runtime_stamp.read_text()) == expected):
         build = llama / "build-native"
-        flags = [
-            "-DCMAKE_BUILD_TYPE=Release",
-            "-DBUILD_SHARED_LIBS=OFF",
-            "-DGGML_BACKEND_DL=OFF",
-            "-DGGML_NATIVE=OFF",
-            "-DGGML_METAL=" + ("ON" if metal else "OFF"),
-            "-DGGML_METAL_EMBED_LIBRARY=" + ("ON" if metal else "OFF"),
-            "-DGGML_ACCELERATE=" + ("ON" if metal else "OFF"),
-            "-DGGML_BLAS=OFF",
-            "-DGGML_OPENMP=OFF",
-            "-DGGML_CUDA=OFF",
-            "-DLLAMA_OPENSSL=OFF",
-            "-DLLAMA_CURL=OFF",
-            "-DLLAMA_BUILD_TESTS=OFF",
-            "-DLLAMA_BUILD_EXAMPLES=OFF",
-            "-DLLAMA_BUILD_UI=OFF",
-            "-DLLAMA_USE_PREBUILT_UI=OFF",
-            "-DLLAMA_BUILD_SERVER=ON",
-        ]
-        if target.startswith("x86_64"):
-            flags += [
-                "-DGGML_AVX=ON",
-                "-DGGML_AVX2=ON",
-                "-DGGML_FMA=ON",
-                "-DGGML_F16C=ON",
-                "-DGGML_AVX512=OFF",
-            ]
-        if WINDOWS:
-            flags += ["-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", "-DLLAMA_STATIC=ON"]
-        elif MACOS:
-            flags += ["-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"]
         run("cmake", "-S", llama, "-B", build, *flags)
         run(
             "cmake",
@@ -125,6 +140,7 @@ def prepare(target):
         (RUNTIME / "llama").mkdir(exist_ok=True)
         shutil.copy2(server, RUNTIME / "llama" / server.name)
         runtime_stamp.write_text(json.dumps(expected, indent=2) + "\n")
+    assert_base_runtime(RUNTIME)
     run(
         "cargo",
         "build",
@@ -142,6 +158,7 @@ def prepare(target):
             ROOT / "target" / target / "release" / (name + SUFFIX),
             RUNTIME / (name + SUFFIX),
         )
+    assert_base_runtime(ASSETS)
     if not WINDOWS:
         for binary in [
             RUNTIME / "omascribe-cli",

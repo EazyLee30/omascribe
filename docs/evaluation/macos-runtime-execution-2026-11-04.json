@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "parent_commit": "ea926f2af968ea8ec6c175c5c7914d5db9f8146f",
+  "status": "LOCAL_REGRESSIONS_AND_STRICT_WORKSPACE_PASS_CI_PENDING",
+  "source_sha256": {
+    "crates/core/src/inference_cache/runtime_file.rs": "3cf3010c0eee03528d50a5bbfc823a79eb99321bdd55fbb868aaf862141286d4",
+    "crates/core/src/inference_cache/runtime_file/macos.rs": "acde74a109db543d8d44b795d2fe32b04803ac478f5c7bcd99c0c503bef2cc0d"
+  },
+  "observed_problem": {
+    "introduced_by": "cff909c",
+    "platform": "macOS",
+    "native_probe": "Executing the unchanged installed llama-server --help emits a file-only NOTE_ATTRIB event as access time advances; inode, size, mtime and ctime remain unchanged.",
+    "product_trial": "Isolated Qwen3.5-2B trial stopped during runtime startup before any chat request, model generation or quality assessment.",
+    "attempted_requests": 0,
+    "completed_responses": 0,
+    "quality_evaluated": false
+  },
+  "behavior": [
+    "Allow only file-specific EVFILT_VNODE NOTE_ATTRIB with zero data and known registration flags; held and named identity checks still run.",
+    "Inspect both registered event records so an access-time event cannot conceal a queued parent mutation.",
+    "Writes, replacement, parent events, links, observer errors and unknown flags still invalidate the receipt permanently.",
+    "No Linux or Windows observer changes."
+  ],
+  "checks": {
+    "original_red": "Actual copied /usr/bin/true execution advances atime with unchanged identity and fails against the original observer.",
+    "runtime_receipts": 12,
+    "core": 599,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": [
+      8,
+      2,
+      24
+    ],
+    "strict_workspace_clippy": "passed",
+    "fmt_and_diff": "passed",
+    "platform_ci": "pending"
+  },
+  "limits": [
+    "The repaired product startup and actual candidate generation still require a separate frozen-source trial.",
+    "Q9 real-audio proper-name recall and Q16 minutes fidelity remain open.",
+    "Complete native dependency/driver identity, writable mmap and remote filesystem guarantees remain outside this patch.",
+    "No installer or release has been produced by this repair."
+  ],
+  "evidence_directory": "artifacts/qwen35-admission-2026-11-04",
+  "raw_sha256": {
+    "vnode-probe.c": "6608fcf66f1c090740fae360ef28a0e4267bfc2ec9f5e927da1d32a75499fb0e",
+    "vnode-probe.log": "ba6a8d4e85844cda4cbbf630ec7faca7291ffc98764d7bb1d81f9f26d38d5b8f",
+    "vnode-execute-red.log": "6f838b75504c71c3bce37b04fd3296d63f56a77b60ac87d7d049b2555555cf22",
+    "vnode-receipts-green.log": "c9160118e5d942b09582c9897bb4a4ba87f77a5f357579e364abc2a12591b860",
+    "vnode-core-all.log": "eff66936ce2d07580869d755e5defd605ac76e1044ad804fac4e24f0cdda8f73",
+    "vnode-workspace-clippy.log": "d4fc9941072843af84ec616a72470c273dd58acdc8813b953a632e8783da319c",
+    "state.json": "edcda6f50b82256cb2577ca2423df361b2cc0cc5a1ca40bf3f3171b733299328",
+    "download-verified.json": "ab03387facbc4719a7dfd450528c79514a7ca4890cdf512cbe2e0c7b97985e88"
+  },
+  "installer_built": false,
+  "release_published": false
+}

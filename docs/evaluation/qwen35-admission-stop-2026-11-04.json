@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "date": "2026-11-04",
+  "status": "SEMANTIC_FAIL_STOP_NO_PROMOTION",
+  "production_runtime_commit": "b894660",
+  "private_generation_commit": "b4940909d3ed38fec6046711913eb394093e4f80",
+  "candidate_scope": "Isolated temporary catalog entry and passive public-fixture request recorder; no production model catalog change.",
+  "case": "zh_recorded_mixed_prose_fidelity",
+  "fixture_sha256": "529bea4062fa4c382ff43ec15f7484fc4d24e24ae9739a9ed619b49391efc20b",
+  "model": {
+    "id": "qwen3.5-2b-admission",
+    "quantization": "Q4_K_M",
+    "bytes": 1280835840,
+    "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+    "verified_product_download": true
+  },
+  "prior_infrastructure_stop": {
+    "source": "642b09582153076e608a2770aea93668deb15fab",
+    "state": "/Users/eazylee/build/omascribe/artifacts/qwen35-admission-2026-11-04/state.json",
+    "sha256": "edcda6f50b82256cb2577ca2423df361b2cc0cc5a1ca40bf3f3171b733299328",
+    "classification": "inference_not_reached",
+    "prior_chat_requests": 0,
+    "infrastructure_repair_retry": true
+  },
+  "trial": {
+    "harness_invocations": 1,
+    "attempted_requests": 2,
+    "completed_replies": 2,
+    "cursor_before": 0,
+    "cursor_after": 0,
+    "published_articles": 0,
+    "citations": 0,
+    "source6_selected": false,
+    "accepted": false,
+    "processes_exit_confirmed": true,
+    "arm_seconds": 19.36,
+    "runner_seconds": 35.15
+  },
+  "actual_requests": {
+    "full_outgoing_json_observed": true,
+    "messages": [
+      "system",
+      "user"
+    ],
+    "exact_selected_sequences": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "seed": 42,
+    "max_tokens": 440,
+    "temperature": 0.1,
+    "enable_thinking": false,
+    "grammar_or_response_format": false
+  },
+  "native": {
+    "model_loaded": true,
+    "backend": "metal",
+    "offloaded_layers": 25,
+    "total_layers": 25,
+    "context": 2048
+  },
+  "raw_attempts": [
+    {
+      "attempt": 1,
+      "stage": "compose",
+      "draft": "迪大学潘 MALE FERGUSON 教授指出，即使主舞台上的音乐已停止，狂欢节中仍有部分区域会持续到深夜继续播放音乐。\n\n当迪大学的 PAMELA FURGO 森教授指出记者如果公布嫌疑人的照片等信息的话似乎确实存在危害性。",
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "elapsed_ms": 6816
+    },
+    {
+      "attempt": 2,
+      "stage": "repair",
+      "draft": "迪大学 PAMELA FURGO 森教授指出，即使主舞台上的音乐可能已经结束，但仍有部分区域会持续到深夜继续播放音乐。\n\n邓迪大学的潘 MALE FERGUSON 教授同样强调，若公布嫌疑人的照片等信息，确实存在潜在危害。",
+      "validation_error": "纪要改写了原话中的报道人名：PAMELA FURGO 森。保留来源中的专有名称拼写，不猜测其他姓名。",
+      "elapsed_ms": 5733
+    }
+  ],
+  "manual_semantic_review": {
+    "schema": 1,
+    "source": "b4940909d3ed38fec6046711913eb394093e4f80",
+    "result": "SEMANTIC_FAIL_STOP_NO_PROMOTION",
+    "findings": [
+      "Both replies attribute the unrelated music statement to a professor whose actual source passage only discusses conditional harm from publishing suspect photographs.",
+      "Both replies shorten a university name to 迪大学 and insert a space in the supplied PAMELA FURGO森 spelling.",
+      "Both replies turn the possible existence of festival sections continuing music into an unqualified assertion of such sections.",
+      "The first reply retains 即使, so its 已停止 clause alone is not treated as a categorical certainty error.",
+      "The name validator rejects both replies; additional semantic findings are manual observations, not claims that downstream validators executed."
+    ],
+    "source6": "All six original sources exist in the database, but source6 is unselected because the first batch fails. No 0→5→6 or source6-citation acceptance.",
+    "envelopes": "Separate passive recorder verifies complete exact sources1–5 and two system/user messages in both attempts. Legacy trace-only message fields do not include this separate observation.",
+    "limits": [
+      "HTTP framing, Authorization and final tokenizer rendering are not observed.",
+      "No unchanged rerun, prompt tuning, relaxed validator or production model promotion."
+    ],
+    "reviewers": [
+      "root",
+      "minutes_next_step"
+    ]
+  },
+  "costs": {
+    "trace_error_count": 0,
+    "trace_errors": {},
+    "observed_attempted_requests": 2,
+    "observed_generation_rows": 2,
+    "unmeasured_response_costs": 0,
+    "attempted_requests": 2,
+    "observed_responses": 2,
+    "completed_responses": 2,
+    "validation_failures": 2,
+    "request_ms": 12523,
+    "observed_request_ms": 12523,
+    "input_tokens": 844,
+    "output_tokens": 124,
+    "cached_tokens": 0,
+    "prefill_ms": 2262.4449999999997,
+    "decode_ms": 10022.003
+  },
+  "resource_observation": {
+    "interval_seconds": 0.25,
+    "samples": 64,
+    "cpu_seconds_sampled": 5.3817056,
+    "peak_tree_rss_mib": 1543.75,
+    "peak_tree_pss_mib": null,
+    "gpu_memory_mib": null,
+    "energy_joules": null,
+    "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+  },
+  "source_checks": {
+    "commit": "b894660",
+    "local_core": 599,
+    "ignored_explicit_model_tests": 12,
+    "cli": 2,
+    "integration": 34,
+    "strict_workspace_clippy": "passed",
+    "windows_core": "passed",
+    "linux": "passed",
+    "ubuntu22": "passed",
+    "prepare": "passed",
+    "website_validate": "passed",
+    "gpu_payload_build": "skipped",
+    "gpu_catalog": "skipped"
+  },
+  "limits": [
+    "HTTP framing, Authorization and final tokenizer rendering are not observed.",
+    "No unchanged rerun, prompt tuning, relaxed validator or production model promotion.",
+    "Sampled process-tree RSS is not unique or total system/Metal memory. No same-input baseline or efficiency improvement claim.",
+    "Q9 real-audio name recall, Q16 minutes fidelity, native Windows/Linux GPU and installation/upgrade gates remain open."
+  ],
+  "evidence_directory": "artifacts/qwen35-runtime-repair-2026-11-04",
+  "raw_sha256": {
+    "state.json": "9511516c6921e38cf5921b3b02d89ca30d0df51b9adea8987d474d610041befd",
+    "run-once.py": "645c2f7a03550584f3a2182d009cba6691ba7d90b9d4b1291d8df7a8ba72c118",
+    "plan.json": "e5ffc7cc686ee58630f06825da097b1a7ccb8b9c23220e789f4cabea5c3252ee",
+    "download-verified.json": "2e154ffb4e1db6a5a142beea3308628016a8e8e14f2ae708138fffe19256e6b2",
+    "cli-build-info.json": "aabe14221e42ac25058000d10202233bf9e82e2ec4133f3259e07b91ecb47df2",
+    "cli-verification-processes.json": "0e21ebe41daca355f3d7b747e94964cee79e346e99b918bd6ab8b83b1f9109d5",
+    "envelope-audit.json": "f549efcab856b8ff60ebeb477d4f0bff2a6f50e97e0a9a9e808d602ecb238b96",
+    "manual-review.json": "efe5f16b47f4a60f36337c342a54659324d8b16034a3e8d067b67c21f1864ad6",
+    "candidate-2b/report.json": "b2b9a2d7b91671098493977e12d1380ea95e81d4cfd76f45b89c9f8a8e54e050",
+    "candidate-2b/resources.json": "c80ab725c3259d171be99324a0b853acefe65ab97888124e91e478591882ca9d",
+    "platform-ci.json": "86a062ab344ad08f06179b1d005070f37754aa1a6aab4c44752aef5b611a8716",
+    "candidate-2b/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/last-generation.json": "20aebc5be20bc15610c4e251f6098ae82a2378458e142b2d0847e0038b618ad8",
+    "candidate-2b/report.artifacts/zh_recorded_mixed_prose_fidelity/phase-1/batch-1/llm-runtime.log": "2d171915db454b2e376e133cb06e66076c731111d1da502f6926ce1750f9485f"
+  },
+  "installer_built": false,
+  "release_published": false
+}

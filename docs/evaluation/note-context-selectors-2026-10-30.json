@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "parent": "5db93f2f76cb95c2b30005a8362de8ff947e9d80",
+  "status": "Production save/terminology races and CUDA selector binding fixed; model-quality Q16 and full release/hardware gates still open",
+  "frontend": {
+    "red": "Actual persist/flushNotes functions extracted by TypeScript AST, deferred IPC:2 of4 controls fail. Failed A is restored after B queued and flush resends A; double failure also restores A instead of B.",
+    "fix": "Only the latest queued job may restore a failed draft; an existing newer unsent draft retains precedence. Original serial saves and error propagation remain.",
+    "green": "4/4 deferred controls PASS, including B success, B failure recovery, newer C draft and current failed-save retry."
+  },
+  "terminology": {
+    "red": "Two deterministic one-shot thread-local test barriers pause an old correction after its old Terms capture, then public save_note/save_library_entry completes B. Old worker resumes and rolls source, minutes, quote and terms key back to A.",
+    "fix": "Move unchanged terms-only SQL reader to Store. Engine::terminology reads current notes+terms under one Store guard; correction derives Terms and updates sources/citations/cache key under that same guard.",
+    "green": "Both original note/glossary races PASS; current source and quote revision stay2, protected human source/accepted minutes and unrelated meeting stay unchanged, original archived ASR retained, inference jobs remain0.",
+    "limits": "No claim of arbitrary phonetic recognition, real speech, whole-meeting speedup or all concurrent editing paths."
+  },
+  "cuda_selectors": {
+    "red": "Real worker_key in isolated test child processes with fixed synthetic DB/runtime/model identity and device CUDA0 returns same key for CUDA_VISIBLE_DEVICES 0,1 and1,0.",
+    "fix": "Immutable backend-specific OsString snapshot of CUDA_VISIBLE_DEVICES/CUDA_DEVICE_ORDER. Absent, empty and non-Unicode values stay distinct. Same snapshot is explicitly set/removed for device listing and GPU trial/worker command, bound to certificate configuration schema3 and worker key; capture occurs outside30-second hardware cache. Changed selector/binding/cancellation refuses report/certificate writes.",
+    "green": "Original real worker-key red now PASS, plus stable/unrelated-env, absent/empty/order, non-Unicode, list/server command and certificate-write controls. CPU trial/fallback gets fresh CPU scope. Independent read-only review found no blocker.",
+    "compatibility": "Old environment-unbound certificate requires a fresh local test; existing signed component/model bytes are reused. No new SDK/driver dependency or bundled GPU library.",
+    "limits": [
+      "No CUDA/Vulkan GPU execution or physical multi-card/driver claim in this batch.",
+      "Vulkan loader selectors, actual loaded userspace driver/library identity and in-session driver update detection remain G1 work.",
+      "No new backend/default/offload policy or speedup claim."
+    ],
+    "primary_source": "https://docs.nvidia.com/cuda/archive/13.1.1/cuda-programming-guide/05-appendices/environment-variables.html"
+  },
+  "rejected_boundary_change": {
+    "production_change_retained": false,
+    "model_requests": 0,
+    "reason": "Complete exact source lines do not prove independent grammatical scope across ASR boundaries. Inserting sentence stops can sever report predicates or negation. Original positive green of the rejected proposal is not safety/quality acceptance.",
+    "retained": "Only a two-case cross-source subject/predicate and negation regression. Original ordinary-line attribution false rejection and Q16 remain unresolved."
+  },
+  "windows_peer": {
+    "commit": "da162a2adc50bcae9350dee7980a7e5cb807af3f",
+    "path": "docs/evaluation/windows-fresh-hotword-pair-2026-10-30.json",
+    "sha256": "4b33fe0226ed2b2ba03e8b4ecce02daa53f68eeb1f6262d2a9f02b8a79c9bc63",
+    "verified": "Fetched original bytes and matched published SHA. Independent Windows9b84 baseline expected RED/fd2 candidate expected GREEN timing observations.",
+    "limits": "Synthetic silence worker timing only; not note-save integration, acoustic accuracy, microphone, GPU, performance or current release acceptance. No Windows re-run on Mac."
+  },
+  "checks": {
+    "core_passed": 464,
+    "core_ignored": 10,
+    "asr_passed": 9,
+    "cli_passed": 2,
+    "integration_passed": 26,
+    "python_ran": 126,
+    "python_skipped": 1,
+    "strict_workspace_clippy": "PASS",
+    "rustfmt": "PASS",
+    "frontend_build": "PASS; existing >500kB chunk warning remains",
+    "frontend_format": "PASS",
+    "source_identity_before_after": "160 source/config files unchanged during full checks",
+    "source_ci": {
+      "commit": "bdc8c4fc11b6a0e53257d085ae36aa292c77a445",
+      "linux": "SUCCESS",
+      "ubuntu22": "SUCCESS",
+      "windows_core": "SUCCESS",
+      "prepare": "SUCCESS",
+      "validate": "SUCCESS",
+      "gpu_build": "SKIPPED",
+      "gpu_catalog": "SKIPPED",
+      "meaning": "Same-source platform checks; not physical device, real recording, model-quality or installer acceptance."
+    }
+  },
+  "resources": {
+    "model_inference_requests": 0,
+    "gpu_component_rebuilds": 0,
+    "installer_rebuilds": 0,
+    "model_or_sdk_downloads": 0,
+    "real_user_meeting_data_used": false,
+    "synthetic_test_tempdirs": "Owned by tests and removed on completion; small raw failure/check evidence retained. No user model or recording cleanup performed."
+  },
+  "source_files_sha256": {
+    "src/main.ts": "e693cb32fc0bd2db72ecff3d1764358eb76a4df163fdc5427e9e20e9ff33c87d",
+    "tests/note-save-queue.mjs": "529011af5540cf6e6865bdb252bd5739b2809bf6229aefecfe735e284b513f5b",
+    "tests/test_note_save_queue.py": "c5392559e86fe7cb56d3a1edf5dd5ecee9342d8535b3f4d743799ce672eecebc",
+    "crates/core/src/library.rs": "58d70bc5ea6ac7d3337560e55e125fc2cbbc57c71f59daf54e4f53b22ce1f6ad",
+    "crates/core/src/terminology.rs": "42bd5290299ba6a09ea53fa1275c7991519aaa46b0286f683abdae218ad9608b",
+    "crates/core/src/notes/writer.rs": "8b9e2832a348edb22dde48853f5ad08fc3de05ebf74a32d3a9b2a0827d956538",
+    "crates/core/src/acceleration.rs": "19ebc0636e72b90fcb8d27fbe85e88a4159c9f73441f4a2196ca8c041ac4d831",
+    "crates/core/src/inference.rs": "11ddf12409fc16d13d08e16fc72a81ba27d7957bda96cec6a4419778f7efb0fc",
+    "crates/core/src/inference_worker.rs": "d63b994c9312a69c7e55427d1d8d61689091a7d24362d898d37ce6eabe4865ac",
+    "crates/core/src/inference/selector_env.rs": "303f30b613ca498ca02e01838cc31138afb6016056bfc50e4abbb3bcc6d81520"
+  },
+  "witnesses": [
+    {
+      "path": "artifacts/note-save-queue-2026-10-30/red.log",
+      "sha256": "f8182afdd9690d11b98643ce2d6f500b821e9c9144cfa3c7e39e22155cb8258d"
+    },
+    {
+      "path": "artifacts/note-save-queue-2026-10-30/green.log",
+      "sha256": "45522ec418bee83b71a891aa05e1622202ce38b043db9d13f6c533092463f401"
+    },
+    {
+      "path": "artifacts/note-save-queue-2026-10-30/harness.log",
+      "sha256": "cbf0054a7b922908843a620138ba48fe142dd241b598b0008dfc782e82a5958c"
+    },
+    {
+      "path": "artifacts/terminology-snapshot-race-2026-10-30/red.log",
+      "sha256": "45985aa826937b4308390416f955627293a9acc7396b42ca539e076bf6b71f98"
+    },
+    {
+      "path": "artifacts/terminology-snapshot-race-2026-10-30/green.log",
+      "sha256": "a75057416644eb4ebfa352c107c28fa7e1338c84bdbe705b9a31c6974f4975f4"
+    },
+    {
+      "path": "artifacts/terminology-snapshot-race-2026-10-30/green-note.log",
+      "sha256": "a5e126fb80dbfe2852e6103160fc68e057470ffee3b3067186f0e93fce022760"
+    },
+    {
+      "path": "artifacts/terminology-snapshot-race-2026-10-30/green-glossary.log",
+      "sha256": "378a2cc46a8245df032477b76fc863bdc05aa291a30b3c3aa9400d00cf6afe75"
+    },
+    {
+      "path": "artifacts/terminology-snapshot-race-2026-10-30/integration.log",
+      "sha256": "0be0898ab7087c5bf132ecefcea024cc1ba1dff26e2ab3bd049835829236c499"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/red.patch",
+      "sha256": "3098a2a3399238af9048921fe11bfcecf673cf9a2c3dde8c775a09de49402a6b"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/red.log",
+      "sha256": "1be96a687f5edc7476a9daa14d9c266b45d700bf29b5104785ab003bbb9f0fd2"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/worker-green.log",
+      "sha256": "852f062a5c48ba4edc120654ba93104e5d450276faffc4c0ee8b0fdb37527321"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/snapshot-green.log",
+      "sha256": "1f2bd671d508bcef42697efde10a7f5142bbc85fff4d1eda465c35a06c049c72"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/command-green.log",
+      "sha256": "f561690d32368d9cb3f0a9cd4395264a21917dd6696e696fa7a11bdc07fd4b46"
+    },
+    {
+      "path": "artifacts/gpu-selector-env-2026-10-30/acceleration-green.log",
+      "sha256": "479fb0dca635f325d3fd88415b6aba6f516b7357c208183d99845d98168fd732"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/red.log",
+      "sha256": "6c336f999b0c478c288c360d67ec6fe6119cea4d186f1444bafc2d93e221b488"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/unsafe-authorization-red.log",
+      "sha256": "66491a0eaa20a46dd2b13ef0cb3fb7df92df0316ce5e9e0bf2753a94a528266c"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/rejected-plain-line-proposal.patch",
+      "sha256": "362d3205fa5b174176fbe1dc268fce8ce3bb5e4b941fbf7b03a47dfc8c5268d1"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/disposition.json",
+      "sha256": "7e340c47a19bbd28fbee9042eed10469932afd15d0888ee9f8855221d4da9071"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/withdrawal-writer.log",
+      "sha256": "6eda190de85c4107b9a37849f2ca46b82c2d15b91f132e2697c349cbe3cf8adc"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/withdrawal-conditional-role.log",
+      "sha256": "18133a632388d9a0dd3f547d2e9704d4955d9df9cac35b8a680020f6b0aac715"
+    },
+    {
+      "path": "artifacts/source-line-boundaries-2026-10-30/withdrawal-attribution.log",
+      "sha256": "70ff8f89942338b3ea91565d309d01940cdd71227557e4b75832c99b1cc551f9"
+    },
+    {
+      "path": "artifacts/windows-fresh-hotword-peer-2026-10-30.json",
+      "sha256": "4b33fe0226ed2b2ba03e8b4ecce02daa53f68eeb1f6262d2a9f02b8a79c9bc63"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/clippy.log",
+      "sha256": "5d9cb4fc2d4ec4c67d1f7dbd81864ab4fec6c3fbe94ade78b969ac836cfaa823"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/core-asr.log",
+      "sha256": "5230f4563592ee751a9df7a428281d1659c8bcd351981e77c3493390487ec135"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/frontend-build.log",
+      "sha256": "0a327c5b6a424f52669c41be283f88c67be9660855f723ab1b9edd8e104ce621"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/frontend-format.log",
+      "sha256": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/python.log",
+      "sha256": "f6b95b83d1dc09e11a69983b840a625a51106ef5b8bf55b725689d658f011eab"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/source-after.json",
+      "sha256": "b9817f608fca53bd3d30c030b8cf5e4ab1b45e0d67515e9a3fcd42f8edc7767f"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/source-before.json",
+      "sha256": "b9817f608fca53bd3d30c030b8cf5e4ab1b45e0d67515e9a3fcd42f8edc7767f"
+    },
+    {
+      "path": "artifacts/note-context-selector-2026-10-30/exact-source-ci.json",
+      "sha256": "aa293e71a337ba6030ce75eb5e46410eeba434ad5901443366ff1d5e17109d20"
+    }
+  ],
+  "release": "0.3.5 unpublished;stable0.3.4. This batch closes concrete save/env races, not original manual Q16, full real-recording/install/platform gates or the P0/P1/P2/P3/G1/G2 objective.",
+  "source_commit": "bdc8c4fc11b6a0e53257d085ae36aa292c77a445"
+}

@@ -1,0 +1,542 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "kind": "apple_default_scheduler_recording_contention",
+  "passed_for_recording_contention_and_settlement": true,
+  "release_eligible": false,
+  "production_source_checkpoint": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+  "harness_commit": "47eb6b06e0e3f6c02c67e39ba6728388401f359a",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "6ac25b48e7ee755fb15ae581ab5a82d14c490f9d",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "404bfbec1b8b8b8b42603da5f013bb7cab4ef70fad4b95dcd3cee85679925221",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "212b4fd69df11cfaaeaed4dc5fdc30bdf923c31eb592f7aa743aae928473a1e5",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "add6b4c28992f197e032c38303c5b24df2a3a81638a326b75e46b4a8df721948",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "47eb6b06e0e3f6c02c67e39ba6728388401f359a",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "raw_report_sha256": "a102e4e229ae82284d942a696c4dea6e4666f27663e1b1045fcef0bbcdf0c73f",
+  "fixture": {
+    "seconds": 78,
+    "expected_pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+    "input_wav_sha256": "ff4f1c89f5bccc9d971201cb3efa77ece75c1959dac4a10e13cd5516937080f0",
+    "manifest_sha256": "76bcdade9d87b472a53e5f1e801d4aeaa32b5932c18c2a79f43c2f43eee9eb69"
+  },
+  "case": "fleurs_mixed_zh_en_02",
+  "post_capture_budget_seconds": 90,
+  "experimental_catchup_enabled": false,
+  "incremental_minutes_enabled": false,
+  "trial_order": [
+    [
+      "asr-only",
+      "metal-concurrent"
+    ],
+    [
+      "metal-concurrent",
+      "asr-only"
+    ]
+  ],
+  "trials": [
+    {
+      "trial": 1,
+      "arm": "asr-only",
+      "passed": true,
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": false,
+        "translation_mode": "off",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+      "audio_samples": 1248000,
+      "asr_score": {
+        "substitutions": 13,
+        "deletions": 57,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.2784313725490196
+      },
+      "telemetry": {
+        "samples": 379,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 212,
+        "lag_p50_ms": 192.0,
+        "lag_p95_ms": 320.0,
+        "lag_max_ms": 400,
+        "capture_wall_overhead_ms": 250,
+        "asr_compute_rtf": 0.05502485717948718,
+        "live_translations": 0,
+        "live_notes_cursor": 0,
+        "live_worker_samples": 0,
+        "worker_starts": 0,
+        "worker_reuses": 0
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 0,
+        "wall_ms": 78250
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0
+      },
+      "process_seconds": 78.349,
+      "resource_sample": {
+        "schema": 1,
+        "method": "psutil sampled descendant tree",
+        "psutil_version": "7.1.3",
+        "interval_seconds": 0.25,
+        "samples": 292,
+        "processes_seen": 3,
+        "cpu_seconds_sampled": 5.493103304000001,
+        "peak_tree_rss_mib": 213.0625,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "sample_errors": 0,
+        "sampler_stopped": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "metal_evidence": {
+        "last_worker_layers": [],
+        "log_sha256": null,
+        "fallback": false,
+        "worker_events": []
+      },
+      "telemetry_sha256": "ff4ce413fc7d5c95cf30b9851db693cda812ef2bfe68d5c7a8e5a8f68da09511"
+    },
+    {
+      "trial": 1,
+      "arm": "metal-concurrent",
+      "passed": true,
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+      "audio_samples": 1248000,
+      "asr_score": {
+        "substitutions": 13,
+        "deletions": 57,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.2784313725490196
+      },
+      "telemetry": {
+        "samples": 551,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 214,
+        "lag_p50_ms": 192.0,
+        "lag_p95_ms": 320.0,
+        "lag_max_ms": 384,
+        "capture_wall_overhead_ms": 371,
+        "asr_compute_rtf": 0.05341007561538461,
+        "live_translations": 6,
+        "live_notes_cursor": 4,
+        "live_worker_samples": 50,
+        "worker_starts": 8,
+        "worker_reuses": 1
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 4,
+        "sections": 1,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 35922,
+        "wall_ms": 114294
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 6,
+        "sections": 1
+      },
+      "process_seconds": 114.36,
+      "resource_sample": {
+        "schema": 1,
+        "method": "psutil sampled descendant tree",
+        "psutil_version": "7.1.3",
+        "interval_seconds": 0.25,
+        "samples": 426,
+        "processes_seen": 11,
+        "cpu_seconds_sampled": 12.180743008,
+        "peak_tree_rss_mib": 1652.8125,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "sample_errors": 0,
+        "sampler_stopped": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "metal_evidence": {
+        "last_worker_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "log_sha256": "4a0383d9050f1c0ada1b791f8fde54ee3f1c1b7883dc0a2096f76bc04b85f44f",
+        "fallback": false,
+        "worker_events": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 833
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 423
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 415
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 419
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 407
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 421
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 419
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 411
+          }
+        ]
+      },
+      "telemetry_sha256": "37069bbf05bd1b4cf5183421c7d4c3d0d79dde2d65ee5807b27c92368b48f189"
+    },
+    {
+      "trial": 2,
+      "arm": "metal-concurrent",
+      "passed": true,
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": true,
+        "translation_mode": "bilingual",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+      "audio_samples": 1248000,
+      "asr_score": {
+        "substitutions": 13,
+        "deletions": 57,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.2784313725490196
+      },
+      "telemetry": {
+        "samples": 551,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 214,
+        "lag_p50_ms": 192.0,
+        "lag_p95_ms": 320.0,
+        "lag_max_ms": 384,
+        "capture_wall_overhead_ms": 292,
+        "asr_compute_rtf": 0.048262530666666664,
+        "live_translations": 6,
+        "live_notes_cursor": 4,
+        "live_worker_samples": 48,
+        "worker_starts": 8,
+        "worker_reuses": 1
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 4,
+        "sections": 1,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 36062,
+        "wall_ms": 114354
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 6,
+        "notes_cursor": 6,
+        "sections": 1
+      },
+      "process_seconds": 114.438,
+      "resource_sample": {
+        "schema": 1,
+        "method": "psutil sampled descendant tree",
+        "psutil_version": "7.1.3",
+        "interval_seconds": 0.25,
+        "samples": 427,
+        "processes_seen": 11,
+        "cpu_seconds_sampled": 11.551318784,
+        "peak_tree_rss_mib": 1680.5625,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "sample_errors": 0,
+        "sampler_stopped": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "metal_evidence": {
+        "last_worker_layers": [
+          [
+            29,
+            29
+          ]
+        ],
+        "log_sha256": "cca3fd2596c8ecfb7b6b7dd2f5dde127050b4d57eeb6a1a06488b5a99624dcd2",
+        "fallback": false,
+        "worker_events": [
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 408
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": true,
+            "startup_ms": 0
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 411
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 422
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 412
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 422
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 413
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 418
+          },
+          {
+            "backend": "metal",
+            "budget_mib": 4096,
+            "reused": false,
+            "startup_ms": 418
+          }
+        ]
+      },
+      "telemetry_sha256": "7ca48a0eea44e3fc4ba77cb4afa3e738f9ab359bc283c816390825815ad0fe5e"
+    },
+    {
+      "trial": 2,
+      "arm": "asr-only",
+      "passed": true,
+      "preferences": {
+        "asr_model": "zipformer-small",
+        "llm_model": "qwen3-1.7b",
+        "threads": 1,
+        "context_size": 2048,
+        "memory_budget_mib": 4096,
+        "inference_backend": "metal",
+        "resource_mode": "balanced",
+        "auto_notes": false,
+        "translation_mode": "off",
+        "minutes_language": "zh",
+        "diarization": false,
+        "llm_keep_alive_seconds": 0
+      },
+      "pcm_sha256": "02b2d1e62ca420f89c6cc012a483e8dbd829c7579f926a4b131d921c8b475965",
+      "audio_samples": 1248000,
+      "asr_score": {
+        "substitutions": 13,
+        "deletions": 57,
+        "insertions": 1,
+        "reference_units": 255,
+        "metric": "MER",
+        "error_rate": 0.2784313725490196
+      },
+      "telemetry": {
+        "samples": 380,
+        "interval_ms": 200,
+        "largest_sample_gap_ms": 212,
+        "lag_p50_ms": 192.0,
+        "lag_p95_ms": 320.0,
+        "lag_max_ms": 384,
+        "capture_wall_overhead_ms": 229,
+        "asr_compute_rtf": 0.05543372616666666,
+        "live_translations": 0,
+        "live_notes_cursor": 0,
+        "live_worker_samples": 0,
+        "worker_starts": 0,
+        "worker_reuses": 0
+      },
+      "at_stop": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0,
+        "notes_busy": false,
+        "translation_busy": false
+      },
+      "settle": {
+        "budget_seconds": 90,
+        "completed": true,
+        "wait_ms": 0,
+        "wall_ms": 78230
+      },
+      "at_settled": {
+        "segments": 6,
+        "translations": 0,
+        "notes_cursor": 0,
+        "sections": 0
+      },
+      "process_seconds": 78.283,
+      "resource_sample": {
+        "schema": 1,
+        "method": "psutil sampled descendant tree",
+        "psutil_version": "7.1.3",
+        "interval_seconds": 0.25,
+        "samples": 292,
+        "processes_seen": 3,
+        "cpu_seconds_sampled": 5.57550556,
+        "peak_tree_rss_mib": 214.875,
+        "peak_tree_pss_mib": null,
+        "gpu_memory_mib": null,
+        "energy_joules": null,
+        "sample_errors": 0,
+        "sampler_stopped": true,
+        "limitation": "Sampled CPU lower bound; short descendants/tails can be missed. Summed RSS can double-count shared pages; PSS/platform/GPU/energy may be unavailable. No command lines collected."
+      },
+      "metal_evidence": {
+        "last_worker_layers": [],
+        "log_sha256": null,
+        "fallback": false,
+        "worker_events": []
+      },
+      "telemetry_sha256": "5e98e92a072d23094cad57eef40810bf6b2647ea7973991e6abf90a76b619caf"
+    }
+  ],
+  "quality_followup": {
+    "semantic_acceptance": false,
+    "observations": [
+      "Read-speech is spliced and repeated, not natural meeting-summary gold.",
+      "The generated prose renders the original MAY HAVE FINISHED as 已经结束 in the music clause; uncertainty preservation still needs a source-bound reproduction.",
+      "Some ASR place-name spellings were changed again in generated prose. This run does not establish name or translation accuracy."
+    ]
+  },
+  "limitations": [
+    "Engine replay uses ffmpeg pacing, not physical microphone/hardware capture. Read-speech splice, not natural conversation. ASR processing lag is sampled every 200 ms, not visible caption latency. Background progress and exact citations are checked, not translation/minutes semantic gold. The requested post-capture settlement budget and all incurred costs are applied equally to both arms; with no budget, pending work is reported at stop. Sampled CPU is a lower bound; RSS may double-count shared pages; GPU allocation, energy, pressure/device faults and older M-series are unmeasured.",
+    "This is an ASR-only versus concurrent-workload comparison, not an old/new scheduler optimization ablation.",
+    "Actual Metal offload is shown in the saved last-worker log; worker trace backend declarations are not per-worker device-utilization measurements.",
+    "A 35.9–36.1 second post-stop wait remains; no default scheduling interval or quality threshold was changed.",
+    "Windows original PCM/CUDA, physical microphone speech, Linux devices and final installation/upgrade acceptance remain separate."
+  ],
+  "all_pcm_identical": true,
+  "all_asr_hypotheses_identical": true
+}

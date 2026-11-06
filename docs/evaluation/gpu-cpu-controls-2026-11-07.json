@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "c1c0461a440c2db339915c672794d18ba2c44847",
+  "changes": [
+    "CPU and other non-Automatic preferences disable optional GPU testing. An explicit Switch to Automatic action changes only that preference; testing remains a separate action. Opening settings or checking/downloading a catalog does not change the backend.",
+    "Preference change events capture values before entering the save queue. A delayed Automatic save cannot overwrite a later CPU choice; final selector and component controls reflect saved preferences.",
+    "A retained verified component is shown as not enabled while CPU is selected. Testing waits for pending local preference saves; native backend admission remains unchanged."
+  ],
+  "observed_failures": [
+    "Original real mountSettings DOM allowed verify_acceleration while CPU was selected; actual browser regression failed.",
+    "First patch lost a later CPU choice behind a pending Automatic save: backend and selector became auto. The independent review regression failed before the event snapshot fix."
+  ],
+  "validation": {
+    "browser": "Headless installed Google Chrome; real production settings and DOM handlers with fictional IPC/hardware fixtures, not native Windows/Linux testing.",
+    "passed_suites": [
+      "settings-acceleration-controls.mjs (Windows/Linux; pending saves and failed saves)",
+      "acceleration-ui.mjs (Windows/Linux component controls)",
+      "settings-model-poll.mjs (macOS/Windows/Linux lifecycle)",
+      "component-cleanup-ui.mjs (Windows/Linux confirmation, catalog and download identity)"
+    ],
+    "typescript_and_frontend_build": "passed; existing bundle-size advisory remains",
+    "src_prettier": "passed",
+    "independent_review": "P2 save ordering reproduced and fixed; no remaining P1/P2 found",
+    "unaffected_checks": "No local Rust/model/corpus rerun; production changes are TypeScript only."
+  },
+  "coordination": {
+    "pr14_head": "a693919ff257178344c83fa2a6618faebd68bd24",
+    "pr14": "Not merged. Existing UMA topology P2 remains unresolved; no duplicate Windows device selection implementation.",
+    "quality": "Read-only Q16 audit found no new minimal generation fix. Previously stopped prompt/model/protocol experiments were not repeated. Original 68-item requirements unchanged.",
+    "release": "0.3.5 is not released; stable app remains 0.3.4. Release checklist consolidated with permanent historical links."
+  },
+  "source_files": [
+    {
+      "path": "src/acceleration-ui.ts",
+      "sha256": "70ae80352b888b8dec0b9cdb7426ce68855dddb0e4a59e4dd56eb670d0e63ce0"
+    },
+    {
+      "path": "src/settings.ts",
+      "sha256": "1a07c712543df558d6063bb456680ab0b0ba3ff565115425fdae643bf2fe5cf7"
+    },
+    {
+      "path": "tests/acceleration-ui.mjs",
+      "sha256": "02f5d1b51f984068c4022bd10957a31a900ac3739a928374fc5ad4b6712980aa"
+    },
+    {
+      "path": "tests/settings-acceleration-controls.mjs",
+      "sha256": "b384838101124a4633a00be2ea7da9216e06b769a4e7c577a91e837da8be5146"
+    }
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/controls-red.log",
+      "sha256": "1c4ee4361279b5e5d4af20ae2eeeebe52530c57dc750a3a10a2db91915e5ecdc"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/queue-race-red.log",
+      "sha256": "a405cf83e37c3dc584674dc704230b113739ee71b56d683f6443397135c11bbf"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/controls-final.log",
+      "sha256": "5eb3b493f9518d1faadd2231a9ee5a871171e385234c6024d14bb27313b24785"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/component-ui.log",
+      "sha256": "cb7e4cff517f4c1196c1c81b946d098e0387c6e156aed697e47eb1e6000126b4"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/settings-poll.log",
+      "sha256": "ffe45ad917ea5dc547a8d6dd921c8061927b49337c53cc529b69a007f00a4f00"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/component-cleanup.log",
+      "sha256": "471e34b628cec4172b841b4d7d512970f16ec1953508c60ef517f51371fe93d9"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/build-final.log",
+      "sha256": "b01ad0832b6aca2898725a8bc5e442485b5ec32f2c53886df6232c17bb5f179b"
+    },
+    {
+      "path": "artifacts/gpu-cpu-controls-2026-11-07/format.log",
+      "sha256": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d"
+    }
+  ],
+  "limits": [
+    "Zero new model requests, GPU downloads or native package builds. No speed, power or resource improvement claim from UI fixtures.",
+    "Saved preference changes from other windows are still subject to existing settings refresh behavior; native admission rechecks Automatic."
+  ]
+}

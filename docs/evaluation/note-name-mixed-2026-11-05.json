@@ -1,0 +1,146 @@
+{
+  "status": "CHECKED_PRODUCTION_SOURCE_NOT_A_RELEASE",
+  "code_commit": "8a3a258c70bd6044d61a692b54d3252c655e508f",
+  "base_commit": "424dbe47bd3d86ca922d5cef3bead7abbb864f22",
+  "source_sha256": {
+    "crates/core/src/terminology.rs": "95811e6d09c042aa2b6f7bf20c91a050168821e71a15fe36107f978852614d36",
+    "crates/core/src/terminology/document.rs": "bd4e91bd67a6c7813c4b3d957097c937fbd53f6f2e7c03a7abf60f812a2cbb9c"
+  },
+  "changes": [
+    "Changed-source name replay and already-canonical-source AI name recovery share the same captured fresh-document admission, single archive and atomic writes.",
+    "An identified name change without sufficient repair proof stays pending and cannot pass an unchanged checkpoint.",
+    "No-source-change recovery checks names and budget before reading/decoding irrelevant cited source records."
+  ],
+  "preserved": [
+    "Existing explicit name mappings, exact whole-source canonical evidence and complete own citation identities.",
+    "Preexisting stale/accepted/human protection, archived original ASR and source revision semantics.",
+    "Original request budget, final writer/name/fact/language checks, Scope and commit permissions."
+  ],
+  "observed_phases": [
+    {
+      "name": "mixed source RED",
+      "commit": "86580f540cbdc869a145b9007fd8aae078349305",
+      "exit": 101,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/86580f5-red.log",
+        "sha256": "7d4f2d5c039ef76dac523fd4e59ef8711a979e3577b7d77b6385c3bb752fb2b7"
+      }
+    },
+    {
+      "name": "first fix, original controls green",
+      "private_commit": "20d5c826c7812ae831e16e6de471f22cd209a21f",
+      "target_pass": 8,
+      "target": {
+        "path": "artifacts/note-name-mixed-2026-11-05/20d5c82-target.log",
+        "sha256": "de52a8b84b22f102911d4b631e2e9f4b5797898655ecab10ebb20a86e5763672"
+      },
+      "workspace_exit": 0,
+      "workspace": {
+        "path": "artifacts/note-name-mixed-2026-11-05/integrated-workspace.log",
+        "sha256": "f3d871111bf12e85d33c08a61a012baa8f03d35988242a366975c794b27b70c6"
+      },
+      "qualification": "Not promoted: subsequent actual checkpoint RED refuted readiness."
+    },
+    {
+      "name": "unresolved paraphrase incorrectly acknowledged RED",
+      "commit": "ee89bce348cefb5c8c9014c1ec5ba823779447e8",
+      "exit": 101,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/ee89bce-red.log",
+        "sha256": "4aef339a8685385ceca86ec6f57bc5c96aa0a6531992de758c9a2a994310c5e0"
+      }
+    },
+    {
+      "name": "checkpoint/resource fix, ordering fixture setup failure",
+      "private_commit": "d4ddb0205ffcc173511d7495ca7c0a6ee7aa149f",
+      "target_pass": 9,
+      "target_fail": 1,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/final-target.log",
+        "sha256": "af355e8991dd2b1ac758a6a04810d8149e16762c52f9e23e75000f20900bf83f"
+      },
+      "qualification": "Raw malformed JSON was rejected by the existing segment queue SQL trigger during setup, before reaching the helper. No production conclusion from that control."
+    },
+    {
+      "name": "root ordering fixture corrected",
+      "commit": "8a3a258c70bd6044d61a692b54d3252c655e508f",
+      "production_change": false,
+      "fixture": "Valid JSON scalar can pass SQL json_extract setup but cannot deserialize as Segment; no-name helper returns 0, relevant-name helper errors. Only fixture setup changed, original mixed/checkpoint assertions unchanged."
+    }
+  ],
+  "checks": {
+    "target": {
+      "pass": 10,
+      "exit": 0,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/final-target-fixture-fixed.log",
+        "sha256": "c135152ee92b87fb04c530ed8e2e2974266331e1e6f221dd507b6ed0e7e58030"
+      }
+    },
+    "workspace": {
+      "exit": 0,
+      "core_pass": 697,
+      "core_explicit_asset_model_ignored": 13,
+      "integration_pass": 34,
+      "desktop_shell_pass": 4,
+      "asr_pass": 18,
+      "cli_pass": 2,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/8a3a258-workspace.log",
+        "sha256": "3312ec4f254ffc686e5b0554190cb4dbf92e29a44f5e49f890ad094124cc13fd"
+      }
+    },
+    "clippy": {
+      "exit": 0,
+      "workspace_all_targets": true,
+      "deny_warnings": true,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/8a3a258-clippy.log",
+        "sha256": "bcf54c0f1124d8059073f19468e688f97a1850a404494c3bbacdd74e80c8b023"
+      }
+    },
+    "format": {
+      "exit": 0,
+      "log": {
+        "path": "artifacts/note-name-mixed-2026-11-05/8a3a258-fmt.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "resource_evidence": {
+    "new_inference_jobs_in_actual_auto_notes_disabled_save_controls": 0,
+    "archives_per_mixed_save": 1,
+    "second_real_document_write_failure_rolls_back_sources_revisions_prose_citations_history_terms_and_checkpoint": true,
+    "irrelevant_source_decode_bypass": "actual production savepoint/helper control; does not prove zero database IO or measured speed/energy savings"
+  },
+  "article_repetition": {
+    "manual_sentence_deletion": "not implemented; counts/steps may be lost and normalization can manufacture adjacency",
+    "received_6b_repetition": "still unresolved",
+    "sampling_contract": {
+      "path": "artifacts/note-name-mixed-2026-11-05/official-sampling-feasibility.json",
+      "sha256": "18d4ade6e5346a8b92ec31c2abd75068861f1638e560092f367f20bcb565ea7d"
+    },
+    "sampling_contract_status": "read-only official fixed-source interface feasibility; no implementation, run, default change or quality/performance claim"
+  },
+  "limitations": [
+    "Canonical recovery still requires whole-source exact support; arbitrary paraphrased prose can remain pending.",
+    "Q16 full faithful coherent article availability, source6, Q9 actual audio and installed/native qualification remain open."
+  ],
+  "model_downloads": 0,
+  "component_downloads": 0,
+  "installer_builds": 0,
+  "optional_gpu_scope": "No packaging/GPU changes; CUDA/Vulkan remain separate signed optional downloads with hardware recommendations, actual local qualification and CPU fallback.",
+  "release_0_3_5": "unpublished",
+  "goal_status": "active",
+  "independent_review": {
+    "path": "artifacts/note-name-mixed-2026-11-05/independent-review.json",
+    "sha256": "79775254cd21a71744ec8fea8e0d2f31948342ca500b79b056f0073aa6c9ce47",
+    "scope": "Exact final source including fixture correction. Review-time strict-check status is historical; final root exit codes are in checks."
+  },
+  "name_repair_validation_stage_inference_requests": 0,
+  "later_independent_sampling_trial": {
+    "requests": 4,
+    "evidence": "writer-official-sampling-stop-2026-11-05.json",
+    "scope": "Later stage, not part of name-repair save controls; all cost counted separately."
+  }
+}

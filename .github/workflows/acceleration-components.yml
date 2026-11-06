@@ -1,0 +1,250 @@
+name: Optional acceleration components
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - .github/workflows/acceleration-components.yml
+      - scripts/acceleration-components.py
+      - scripts/acceleration-release.py
+      - scripts/runtime_inventory.py
+      - tests/test_acceleration_components.py
+      - tests/test_acceleration_release.py
+      - tests/test_release_metadata.py
+      - crates/core/**
+      - crates/asr/**
+      - tests/fixtures/document-cases.json
+      - Cargo.toml
+      - Cargo.lock
+      - models.lock.json
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Immutable component version (acceleration-REVISION-N)
+        required: true
+        default: acceleration-5aeac37-1
+      publish:
+        description: Sign and publish an immutable candidate after all build gates
+        type: boolean
+        default: false
+      promote:
+        description: Also update acceleration-v1 (explicit final device acceptance required)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  # Quick source checks must not queue behind a two-hour optional SDK build.
+  group: acceleration-${{ github.event.pull_request.number || inputs.version }}-${{ github.event_name == 'workflow_dispatch' && 'full' || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') && 'full' || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') && 'windows-vulkan' || 'core' }}
+  cancel-in-progress: false
+env:
+  PYTHONUTF8: "1"
+  REQUESTED_VERSION: ${{ inputs.version }}
+  SIGN_REQUESTED: ${{ inputs.publish }}
+  PROMOTE_REQUESTED: ${{ inputs.promote }}
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.context.outputs.source_sha }}
+      version: ${{ steps.context.outputs.version }}
+      sign: ${{ steps.context.outputs.sign }}
+      promote: ${{ steps.context.outputs.promote }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - id: context
+        name: Bind exact source and candidate-only publication authority
+        run: python3 scripts/acceleration-release.py context
+  windows-core:
+    needs: prepare
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check component packaging without compiling GPU runtimes
+        run: python -m unittest discover -s tests -p 'test_acceleration_*.py'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.99.0"
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p omascribe-core -p omascribe-asr --locked
+      - name: Link the CPU ASR worker against the pinned Windows SDK
+        run: cargo build -p omascribe-asr --locked
+      - run: cargo clippy -p omascribe-core -p omascribe-asr --all-targets --locked -- -D warnings
+      - name: Inventory probe without opening a user workspace
+        run: cargo run -p omascribe-core --locked --bin omascribe-cli -- --hardware-probe
+  build:
+    needs: prepare
+    env:
+      COMPONENT_VERSION: ${{ needs.prepare.outputs.version }}
+    # Source pushes keep the Windows checks; expensive SDK builds are opt-in.
+    if: github.event_name == 'workflow_dispatch' || (!startsWith(github.event.label.name, 'sign-acceleration-run-') && (contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') || contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan')))
+    strategy:
+      fail-fast: false
+      matrix:
+        # Manual dispatch and the full-build label always keep all four jobs.
+        include: >-
+          ${{ fromJSON(
+            github.event_name != 'workflow_dispatch' &&
+            contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') &&
+            !contains(github.event.pull_request.labels.*.name, 'build-acceleration-components') &&
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100}]' ||
+            '[{"runner":"windows-2022","target":"windows-x86_64","backend":"cuda","timeout":180},{"runner":"windows-2022","target":"windows-x86_64","backend":"vulkan","timeout":100},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"cuda","timeout":180},{"runner":"ubuntu-22.04","target":"linux-x86_64","backend":"vulkan","timeout":100}]'
+          ) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate requested release name and packaging contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_acceleration_*.py'
+          python -c 'import os,re; assert re.fullmatch(r"acceleration-[A-Za-z0-9][A-Za-z0-9_.-]{0,85}", os.environ["COMPONENT_VERSION"]), "Invalid release version"'
+      - name: Pinned CMake for Blackwell architecture suffixes
+        run: python -m pip install cmake==3.31.10
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+      - name: Linux build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build patchelf binutils
+      - name: CUDA SDK on Windows (build runner only)
+        if: runner.os == 'Windows' && matrix.backend == 'cuda'
+        uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+          log-file-suffix: ${{ matrix.target }}
+      - name: CUDA SDK on Linux (build runner only)
+        if: runner.os == 'Linux' && matrix.backend == 'cuda'
+        uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "cudart-dev", "driver-dev", "cccl"]'
+          non-cuda-sub-packages: '["libcublas", "libcublas-dev"]'
+          log-file-suffix: ${{ matrix.target }}
+      - name: Vulkan SDK (build runner only)
+        if: matrix.backend == 'vulkan'
+        uses: humbletim/install-vulkan-sdk@30ba978f977e81b72d091fc8888feb1fb26f9aff
+        with:
+          version: "1.4.363.0"
+          cache: true
+      - name: Complete Windows SDK using the supported copy-only installer
+        if: matrix.backend == 'vulkan' && runner.os == 'Windows'
+        run: |
+          python - <<'PY'
+          import os,pathlib,subprocess
+          sdk=pathlib.Path(os.environ['VULKAN_SDK'])
+          if not (sdk/'Include/vulkan/vulkan.h').is_file():
+              sdk=sdk.with_name('VULKAN_SDK_FULL')
+              installer=pathlib.Path('vulkan_sdk.exe').resolve()
+              subprocess.run([str(installer),'--root',str(sdk),'--accept-licenses','--default-answer','--confirm-command','install','copy_only=1'],check=True,timeout=300)
+              with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as out: out.write('VULKAN_SDK='+str(sdk)+'\n')
+              with open(os.environ['GITHUB_PATH'],'a',encoding='utf-8') as out: out.write(str(sdk/'Bin')+'\n')
+          assert (sdk/'Include/vulkan/vulkan.h').is_file(), 'Vulkan development headers missing'
+          PY
+      - name: Build the pinned optional runtime
+        run: python scripts/acceleration-components.py build --backend '${{ matrix.backend }}' --output build-assets/component-runtime
+      - name: Package and hash the separate download
+        run: python scripts/acceleration-components.py package --backend '${{ matrix.backend }}' --target '${{ matrix.target }}' --runtime build-assets/component-runtime --version "$COMPONENT_VERSION" --output release-assets/accelerators
+      - name: Base installer directory must remain untouched
+        run: python -c 'from pathlib import Path; assert not Path("build-assets/native").exists(), "Optional SDK contaminated the base installer"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accelerator-${{ matrix.target }}-${{ matrix.backend }}
+          path: release-assets/accelerators/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+  catalog:
+    # A targeted developer build cannot assemble or publish a partial catalog.
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.pull_request.labels.*.name, 'build-windows-vulkan') || contains(github.event.pull_request.labels.*.name, 'build-acceleration-components')
+    needs: [prepare, build, windows-core]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      COMPONENT_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+      - name: Require green core/application CI before signing
+        if: needs.prepare.outputs.sign == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/acceleration-release.py check-ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: accelerator-*
+          merge-multiple: true
+          path: release-assets/accelerators
+      - name: Require every platform/backend and recheck all member hashes
+        run: python3 scripts/acceleration-components.py index --directory release-assets/accelerators --version "$COMPONENT_VERSION"
+      - uses: actions/setup-node@v4
+        if: needs.prepare.outputs.sign == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+        if: needs.prepare.outputs.sign == 'true'
+      - name: Sign exact catalog bytes with the app release key
+        if: needs.prepare.outputs.sign == 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: npx tauri signer sign --app-version "$COMPONENT_VERSION" release-assets/accelerators/index.payload
+      - name: Wrap signed payload without reserializing it
+        if: needs.prepare.outputs.sign == 'true'
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('release-assets/accelerators')
+          payload=(root/'index.payload').read_bytes().decode('utf-8')
+          signature=(root/'index.payload.sig').read_text(encoding='utf-8').strip()
+          (root/'index.json').write_text(json.dumps(dict(payload=payload,signature=signature)),encoding='utf-8')
+          config=json.loads(pathlib.Path('src-tauri/tauri.conf.json').read_text())
+          (root/'updater.pub').write_text(config['plugins']['updater']['pubkey'],encoding='utf-8')
+          PY
+      - uses: dtolnay/rust-toolchain@stable
+        if: needs.prepare.outputs.sign == 'true'
+        with:
+          toolchain: "1.99.0"
+      - name: Verify catalog signature and bound version using the app verifier
+        if: needs.prepare.outputs.sign == 'true'
+        run: |
+          cargo build -p omascribe-core --locked --bin omascribe-cli
+          target/debug/omascribe-cli verify-update release-assets/accelerators/index.payload release-assets/accelerators/index.payload.sig release-assets/accelerators/updater.pub "$COMPONENT_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acceleration-catalog
+          path: release-assets/accelerators/index.*
+          if-no-files-found: error
+      - name: Publish complete verified candidate; stable pointer requires separate manual promotion
+        if: needs.prepare.outputs.sign == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/acceleration-release.py publish

@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "source_revision": "e60ea246c74f86c43144b7de31048f6fb71b3201",
+  "result": "STOP: the existing larger bilingual model is not admitted for automatic second-pass transcript replacement.",
+  "scope": "One frozen public-audio discovery trial, not a new Q9 acceptance set. Same real CLI diagnose/edit-note/append chain, original documents, published hotwords and canonical PCM; Legacy mode, one thread, original decoder settings. Actual owned worker model directory was independently observed.",
+  "protocol": {
+    "planned_asr_calls": 42,
+    "actual_asr_calls": 8,
+    "per_command_seconds": 20,
+    "total_budget_seconds": 300,
+    "actual_wall_seconds": 12.477070290944539,
+    "retries": 0,
+    "complete": false,
+    "stopped_before_remaining_calls": 34
+  },
+  "observations": [
+    {
+      "case": "fleurs_en_hotword_004",
+      "arm": "positive",
+      "target": "Bishkek",
+      "small_raw_hit": false,
+      "bilingual_raw_hit": true,
+      "note": "The complete name was recovered acoustically, separately from canonical spelling correction."
+    },
+    {
+      "case": "fleurs_en_hotword_013",
+      "arm": "positive",
+      "target": "Mitchell Gourley",
+      "small_raw_hit": false,
+      "bilingual_raw_hit": false,
+      "small_kept": "FINISHED ELEVENTH",
+      "bilingual_observation": "The finished-eleventh clause is absent, not a different spelling of the ordinal. Sixteenth remains in both outputs.",
+      "stop": "Loss of a protected correct number present in the paired small-model arm; affects both raw and corrected transcript."
+    }
+  ],
+  "measured_costs": {
+    "zipformer-small": {
+      "invocations": 4,
+      "append_wall_seconds": 3.822,
+      "sampled_cpu_seconds": 2.5162457529999998,
+      "peak_tree_rss_mib": 203.1875
+    },
+    "zipformer-bilingual": {
+      "invocations": 4,
+      "append_wall_seconds": 5.607,
+      "sampled_cpu_seconds": 5.1440764880000005,
+      "peak_tree_rss_mib": 409.359375
+    }
+  },
+  "resource_limits": "Four invocations per model only; stopped discovery sample, uncontrolled OS caches. CPU is sampled lower-bound process-tree CPU, RSS is summed tree peak and can double-count shared memory. Not whole-meeting speed, energy, streaming latency or representative accuracy.",
+  "guards": {
+    "same_note_wire_pcm_and_tail": true,
+    "actual_model_path_observed": true,
+    "original_source_cli_assets_unchanged": true,
+    "all_owned_process_exits_confirmed": true,
+    "task_owned_copies_removed_bytes": 285908222,
+    "original_models_retained": true,
+    "no_llm_or_translation_requests": true,
+    "quality_gate_passed": false,
+    "release_admission": false
+  },
+  "decision": [
+    "Do not implement an automatic second-pass adapter or enable the larger model by default from this trial. Do not remove the numeric stop or rerun changed hints/decoder parameters.",
+    "Retain the first name gain and the later numerical loss together; aggregate WER improvement cannot justify dropping the protected fact. The remaining 34 calls, including the 051 numeric sentinel, were not executed.",
+    "Q9 full 100-case name recall and its existing 051 regression remain open. Q16 mixed-language minutes remains open. No model/runtime download or installer build occurred."
+  ],
+  "raw_evidence": [
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/run.py",
+      "sha256": "6315c5ae99aeaf83311e4eadf00274f1f0415ae79fcef517101a7d7fdb8c642a"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/PROTOCOL.md",
+      "sha256": "710a15b49bc7251d393ed68422765bf5c02f649c411a019d732a130e38994315"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/freeze.json",
+      "sha256": "7fb19421eb4abf57e653464a14e1b48f1468fb07fb72aab18bcd51afc28b874e"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/preparation-check.json",
+      "sha256": "140a89987d1c1df9c1818626386591c4940a2e3377d1c6e953fc8689a3c49fee"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/execution.log",
+      "sha256": "57ce4d1ccddc9a76632b7f746ba52a690c2595177911eecfbae319ba90870e98"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/run/report.json",
+      "sha256": "4d2c89fbc2fd32b48f130aa7b26c51229c976656ac265426c84a30bc18c4b97b"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/run/cleanup.json",
+      "sha256": "2ffcb265dc15b0535bac409d2128fd30b4ff7f971c6adb865a2ae75bd8425afb"
+    },
+    {
+      "path": "artifacts/asr-second-pass-feasibility-2026-11-07/run/completion.json",
+      "sha256": "7eae443a47ae4ff06ec0644f3149f8711900a670d25f73d83ae5e15aafc411cf"
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "base_revision": "a6a63dcc3a9fe6b3082d0e5fa4051a7cc7c1aaaf",
+  "result": "Fixed active LLM workload yielding when ASR remains behind after capture ends/pauses or during file import.",
+  "production_failure": {
+    "path": "crates/core/src/inference_worker.rs: spawn_session watchdog",
+    "cause": "ASR lag accumulated only while recording=true. Capture completion/pause and imports leave recording=false with transcribing=true, so an already-running translation/minutes worker could continue occupying resources despite sustained ASR backlog.",
+    "why_scheduler_did_not_fix_it": "The scheduler skips busy LLM work; its transcribing/backlog admission check prevents later work but cannot stop an already-running worker.",
+    "original_behavior_red": "Existing production decision extracted without behavioral changes; two regressions fail under recording-only logic, including a real child remaining unselected for an ASR stop. All child processes are cleaned before failed assertions."
+  },
+  "change": [
+    "Include recording OR transcribing when accumulating ASR backlog.",
+    "Keep the existing strictly greater than 4000 ms lag, six consecutive 500 ms watchdog samples, explicit-cancel priority and bounded owned-child stop/reap path. No new threads, locks, models or thresholds.",
+    "Preserve backlog count across capture-to-pause transition; reset only after actual catch-up or no active capture/transcription.",
+    "Equivalent De Morgan rewrite of terminology::phrase::full_boundary fixes a strict Clippy finding in the preexisting expression. Character boundaries, short-circuit order and iterator consumption are unchanged."
+  ],
+  "verification": [
+    {
+      "command": "cargo test -p omascribe-core watchdog_ --lib -- --test-threads=1",
+      "phase": "red",
+      "passed": 6,
+      "failed": 2,
+      "log": "red.log"
+    },
+    {
+      "command": "cargo test -p omascribe-core watchdog_ --lib -- --test-threads=1",
+      "phase": "final",
+      "passed": 8,
+      "failed": 0,
+      "log": "final-watchdog.log"
+    },
+    {
+      "command": "cargo test -p omascribe-core phrase --lib",
+      "phase": "final",
+      "passed": 15,
+      "failed": 0,
+      "log": "phrase.log"
+    },
+    {
+      "command": "cargo test -p omascribe-core --lib",
+      "phase": "final",
+      "passed": 813,
+      "failed": 0,
+      "ignored": 15,
+      "log": "final-core.log"
+    },
+    {
+      "command": "cargo clippy -p omascribe-core --all-targets -- -D warnings",
+      "passed": true,
+      "log": "final-clippy.log"
+    },
+    {
+      "command": "cargo fmt --all --check",
+      "passed": true,
+      "log": "fmt.log"
+    }
+  ],
+  "regression_scope": {
+    "real_child_processes": 5,
+    "tested_states": [
+      "Live capture with sustained ASR lag: stop accepted and confirmed exit.",
+      "Capture ended/import with transcribing=true: stop accepted and confirmed exit.",
+      "Paused capture with transcribing=true: stop accepted and confirmed exit.",
+      "ASR complete with stale elapsed/processed timestamps: no stop; child alive before explicit test cleanup.",
+      "Paused ASR with exactly 4000 ms lag: no stop; child alive before explicit test cleanup."
+    ],
+    "additional_controls": [
+      "Five live backlog samples followed by paused capture still stop on the sixth sample.",
+      "Catch-up resets the count before the next backlog period.",
+      "ASR completion clears the count.",
+      "Explicit cancellation remains authoritative.",
+      "Processed time ahead of elapsed does not underflow into a false backlog."
+    ],
+    "ownership": "Uses production workload decision, finish_watchdog_stop, Server::try_wait, retained lease lifecycle and independent ReapProbe. Existing stopped-child/new-owner/return-to-pool regressions remain green."
+  },
+  "limits": [
+    "Watchdog snapshots are advanced directly in the regression, not by a real microphone/file import or wall-clock loop. No end-to-end timing, throughput, energy or whole-meeting speedup is measured.",
+    "Actual child processes run the test fixture without model weights; this is resource ownership/control verification, not ASR or minutes quality.",
+    "No new ASR discovery/model request, GPU component download, app installation or installer build. Q9/Q16 and all release gates remain open."
+  ],
+  "retained_failures": [
+    "Initial new test fixture failed to compile because SessionLease has no DerefMut; fixed access through owned session.",
+    "Initial strict Clippy failed on an existing nonminimal boolean in phrase.rs; equivalent expression fix and targeted phrase regressions pass."
+  ],
+  "source_files": {
+    "crates/core/src/inference_worker.rs": "086809a34fe9b0a4372a8cc3100747103749e18ee2fefecdb10ea789f1505eaf",
+    "crates/core/src/terminology/phrase.rs": "7f36aa179b712f505238e263df9161a10f12f58e8375a47c0ec4d1adb245c127"
+  },
+  "raw_evidence": [
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/fixture-compile.log",
+      "sha256": "4b9949f6c053544120a2761a943ef6c299498203f736c8f847008f669515ad79"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/red.patch",
+      "sha256": "d8d30b0db0491909d3a4aca7b5d8363ad0d26714870e4343f4a4791b98370264"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/red.log",
+      "sha256": "4c1ea4f40d5987593c72e92207ea45556fecaf438d69b100cc4afcd0c7d0cd64"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/green.log",
+      "sha256": "de6414c8bad58db4a8db285aac1fcfed6efde2999048bcb79573daa389d5e21d"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/core.log",
+      "sha256": "c17a53b45c23983940f1359953aa3c6e2f155856c60ab85eaf3ac030a7524130"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/clippy.log",
+      "sha256": "a04f3a70fd3d0122fd4b661cc10e3586592183940082085a77cf37f4a7d320aa"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/final-watchdog.log",
+      "sha256": "704d563cca5030f31fb05fa744fb0b3ae4136bc9eefe90b91f8c45e1012d321c"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/phrase.log",
+      "sha256": "eadb1c8a1c0d363808276b2ae321939ebe4adeb6a8ebf723d56d822d4b7a9161"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/final-clippy.log",
+      "sha256": "1b283061053bc7fc3c1500e6e6bd117a5644a1fc285f9650fc7cb5f481cee94e"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/asr-backlog-preemption-2026-11-07/final-core.log",
+      "sha256": "baa7243c801c9833bea3319576e485d6afca1c15836adfd0c57dfd9520bed4c2"
+    }
+  ]
+}

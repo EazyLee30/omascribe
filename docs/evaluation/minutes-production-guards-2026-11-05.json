@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "date": "2026-11-05",
+  "source": "7b491746d4067f51046a8a10678e1157d6bfafa6",
+  "status": "PRODUCTION_GUARDS_INTEGRATED_LOCAL_CHECKS_AND_SOURCE_CI_PASS_NATIVE_ACCEPTANCE_OPEN",
+  "behavior": [
+    "Recheck source-present names on the actual final writer prose after document line folding. Keep the existing early name, fact, citation, source-replacement and language gates; do not normalize actor typography or change source/human text.",
+    "For bounded explicit confirmation predicates, keep the same literal object and latest selected source sequence. A pending-to-confirmed claim requires a newer explicit assertion in the same meeting/run, with its exact source ID/revision in this paragraph's own citations. Supported quoted/conditional scopes, another object, notes and unselected sources cannot authorize it.",
+    "Keep supported quotations out of confirmation evidence across sentence stops, commas and line breaks, including escaped double quotes. Only ASCII alphanumeric neighbors classify ' or ’ as a word-internal apostrophe; the valid explicit update followed by it's ready stays eligible. This is a bounded quote grammar, not general linguistic scope resolution.",
+    "The confirmation view uses checked byte accumulation (262144 bytes total) and a total 64-frame/object ceiling. It adds no inference request and does not extend caption/ASR validation or infer cross-language object aliases."
+  ],
+  "original_failures": {
+    "confirmation": {
+      "red_source": "158e4d821b7337a8866ea1223a07847af726a369",
+      "red": {
+        "passed": 2,
+        "failed": 7
+      },
+      "observation": "The ordinary writer path accepted unsupported confirmation for four Chinese objects and two English objects, borrowed other/uncited/note-only evidence, and accepted confirmed drafts even when later confirmation-looking evidence was only quoted or conditional. Canonical source names were unchanged.",
+      "fix_source": "6a4d376a736ece4cc13a04b5890bc6549b9dc8c2",
+      "fixed": {
+        "passed": 14,
+        "failed": 0
+      },
+      "oracle": "The original nine controls remain byte-identical; five controls were appended for reopening/latest state, sequence/scope, embedded object names, cross-line scope and the total frame bound."
+    },
+    "final_names": {
+      "initial_source": "76cb8970cb14e6d80b82af7e84f2c00e191c6659",
+      "initial": {
+        "passed": 2,
+        "failed": 2,
+        "classification": "EARLY_PRECONDITION_FAILURE_NOT_BEHAVIORAL_RED"
+      },
+      "initial_observation": "Both negative cases stopped at checked_writer_prose(raw).is_ok(), before the final writer assertion; these failures are retained and are not counted as reproducing the final-stage bypass.",
+      "corrected_red_source": "86a9fb86a9a79b6ecb1f5ad99ab6e43454fbe1f1",
+      "corrected_red": {
+        "passed": 2,
+        "failed": 2,
+        "classification": "FINAL_BEHAVIOR_ASSERTION_FAILURE"
+      },
+      "corrected_observation": "Place the line break at the actual unscanned mixed-script name/title boundary. Both wrong ALENA and PAN labels passed early checking and document folding, then reached and failed the final rejection assertion. The PAN control is a synthetic mixed-script frame variant, not the original Q16 recording.",
+      "fix_source": "434b70d0f585a049ecb04d4e580cc3a93619846b",
+      "fixed": {
+        "passed": 4,
+        "failed": 0
+      },
+      "preserved_controls": "Ordinary wrapping, unchanged names, source/human state and the exact-source completion bridge remain accepted; changed source revision remains rejected."
+    },
+    "quoted_confirmation": {
+      "red_source": "9ed955834441c68aafb12a5fc46a68c36a3c0950",
+      "red": {
+        "passed": 0,
+        "failed": 1,
+        "classification": "FINAL_BEHAVIOR_ASSERTION_FAILURE"
+      },
+      "observation": "After a pending source, a paragraph citing only Do not treat 'Earlier example. The supplier response is confirmed. End example.' as fact. was incorrectly allowed to confirm the response. The original actual failure is retained.",
+      "fix_source": "7b491746d4067f51046a8a10678e1157d6bfafa6",
+      "fixed": {
+        "passed": 16,
+        "failed": 0
+      },
+      "oracle": "Original fourteen confirmation controls unchanged. Two appended controls cover single-quoted multi-sentence/comma examples, quoted It's, escaped double quotes and the legitimate unquoted it's ready update."
+    }
+  },
+  "checks": {
+    "executor": "root; no model execution in these checks",
+    "final_core_passed": 643,
+    "ignored_explicit_model_tests": 12,
+    "cli_passed": 2,
+    "integration_passed": [
+      8,
+      2,
+      24
+    ],
+    "strict_workspace_clippy": "passed offline; final quoted-final-clippy.log",
+    "cargo_fmt_check": "passed (root-observed)",
+    "initial_integrated_clippy": "Failed manual_pattern_char_comparison; retained raw log. A mechanical character-array replacement was applied, followed by final full core and strict workspace checks. No lint suppression or semantic change.",
+    "platform_ci": {
+      "source": "7b491746d4067f51046a8a10678e1157d6bfafa6",
+      "windows_core": "success",
+      "windows_url": "https://github.com/EazyLee30/omascribe/actions/runs/41953605909/job/127003159281",
+      "linux": "success",
+      "linux_url": "https://github.com/EazyLee30/omascribe/actions/runs/41953606024/job/127003100904",
+      "ubuntu22": "success",
+      "ubuntu22_url": "https://github.com/EazyLee30/omascribe/actions/runs/41953605687/job/127003099011",
+      "prepare": "success",
+      "validate": "success",
+      "build": "skipped",
+      "catalog": "skipped",
+      "verification": "Terminal results checked by root at this exact source; CI does not replace native GPU/audio/install acceptance."
+    },
+    "final_core_log": "quoted-final-core.log",
+    "independent_source_review": "Read-only approval of the two production guards including quote handling by minutes_next_step (root-reported); not an article-quality or release qualification.",
+    "acceptance_binaries": {
+      "source": "7b491746d4067f51046a8a10678e1157d6bfafa6",
+      "status": "CLI and ASR release builds prepared offline, exit 0",
+      "target": "aarch64-apple-darwin",
+      "build_info_source_sha256": "0430e71aac17e49f5d39f0669d8b7fd66c809d19e30cd8687ca440929eb448e6",
+      "binary_sha256": {
+        "public-cli": "379f9e8edd8000b4cc3d65129f968c50621b182eee97129dfa1db6894068ecd0",
+        "public-asr": "18feca86ec531a0564946f4e698e47d8d87af2b74862008c266e7ac791df8e30"
+      },
+      "manifest": "public-built.json",
+      "scope": "For the next fixed-source acceptance only; neither binary was used for model/ASR execution here. No app, installer or release was built."
+    }
+  },
+  "limits": [
+    "These are deterministic ordinary-production validation controls, not a new model-generated article evaluation. Original Q16 was not rerun on this candidate and remains open; this does not qualify its fidelity, availability or source-6 coverage.",
+    "No model/ASR execution, new payload or weight download, app/installer build or release was performed for this change. Matching source-built CLI/ASR acceptance binaries are prepared for a later run. No measured resource, latency, memory or energy gain is claimed.",
+    "The confirmation guard handles supported predicates, literal objects and explicit later sequence evidence only. Apostrophe classification requires ASCII alphanumeric neighbors; unsupported boundaries do not gain general entailment/alias authority. This is not general NLI, arbitrary translation matching or an acoustic-recall fix. Same-source native three-platform and installation acceptance remain open."
+  ],
+  "evidence_directory": "artifacts/minutes-production-guards-2026-11-05",
+  "raw_sha256": {
+    "confirmation-fixed-controls.log": "9d0a8c001f227eddcd9f1ae99a0a3122433624e2fd1ac1423bcde44351b386c4",
+    "confirmation-original-red.log": "d304be039511e4a36c72c58fffa33b2464d15ffb532c3ac362936aedcfaea491",
+    "final-names-boundary-red.log": "6539290bf916a9b9a9234479b3fa47822dffe0fdb3edb2843b0f6bf71e8ff0ff",
+    "final-names-fixed-controls.log": "9e58c3b72d483cadaf470f85cccffbaba78f10def4cbbefcab9e08e9c931afdf",
+    "final-names-original-red.log": "9e7ee2e79693baac6745ab63b39f07d20c56d2349f653b627a381de73977dee6",
+    "integrated-clippy-rerun.log": "55073bd537f276f5f73e3e61ea5166bf28e127683a2f43b31663a676cb692f22",
+    "integrated-clippy.log": "84506b1f6614323e6a405ebe3de0b1a830611f023318f27efdb7a1c000ec4658",
+    "integrated-core.log": "e3f2da3b58fd6df1a95ae385ef72c0c2cc0398bc7a5930e570b4146300e71e42",
+    "integrated-final-core.log": "5e27681c11a1db0995be1a796a5f64c3e8218fdf13e9f65719b4e7c2dd0c85cc",
+    "public-asr-build.log": "729a5784d10db703c6ca3767c5ca3ccfa629155ace3b6f16210bc65054be9c9b",
+    "public-cli-build.log": "3b2bab6841c2f66be7079e8328c8a446540d3bba409d7258479bc25cb6df357d",
+    "quoted-final-clippy.log": "095aac4a2bf85645635dcb8316a154cb010a5e6790397f076929759f07d88ba8",
+    "quoted-final-core.log": "2a43aa19322b83a7fe113a9cfbe12ae6ec71d0180727df61f6e9187b7f48bf7f",
+    "single-quote-fixed-controls.log": "3c48177d8a0a5f96676db818fa57a4e940ccb84a37c9c7f0fc209dcedacdc982",
+    "single-quote-original-red.log": "c34c7cac286e0c4a4d7555032363911da292edacc0f825cc20cf5d145f589c69",
+    "public-built.json": "95b432609e3d73a41b6291eaf7d6f8d976a4c83c2a01e1457e14a79b315f3676"
+  },
+  "source_sha256": {
+    "crates/core/src/notes.rs": "e4b28d9685502df304efa43e34c4c7c02b113b43d145f829629bde95373c9072",
+    "crates/core/src/notes/confirmation.rs": "fc138d7253c5a6aadd2acc35b147befba7f4558cdb1e35b7baf208cdb8cb2b56",
+    "crates/core/src/notes/attribution_roles.rs": "844b9070ed16cfe65ecd3ec3b15984ff94f0d22ea6e51d21f3e7c39ff4d88620",
+    "crates/core/src/notes/validation.rs": "428e59fbdb0bb222a6380e3ee27616055597ca81ce2bce6c4342c0b7b2f8e11d",
+    "crates/core/src/notes/confirmation_state_tests.rs": "f953359a5e9c32cac3dfb1d1b1b2562c936db9671a4d0ce5487b81ea10be25b7",
+    "crates/core/src/notes/writer_final_guard_tests.rs": "68ffef11a1d46aa2e4e2e83d5bd42a5ab6f4d2b500189d841f1ea9c1bd19a53e"
+  },
+  "release_published": false,
+  "initial_integration_source": "2493de2f8901709fa09dd45b2ae72143ac98e9b5"
+}

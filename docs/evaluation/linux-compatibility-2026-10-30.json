@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "stable_release": "0.3.4",
+  "release_eligible": false,
+  "full_plan_complete": false,
+  "scope": "Ubuntu22 installer compatibility fixes only; no new model, SDK, GPU runtime, ASR accuracy or performance claim.",
+  "candidate14": {
+    "source": "49d8ef5b2bb5cf156ebaac18af40f47f942e0d7b",
+    "branch": "codex/release-0.3.5-candidate-14",
+    "branch_unchanged": true,
+    "native_run": "https://github.com/EazyLee30/omascribe/actions/runs/40921374918",
+    "publish": false,
+    "ubuntu22_result": "failure",
+    "original_failure_tests": [
+      "audio::tests::paced_replay_preserves_pcm_without_an_initial_read_burst",
+      "model_integrity::tests::same_size_corruption_invalidates_cached_receipt"
+    ],
+    "other_native_jobs": "in progress when this record was written; do not restart them"
+  },
+  "baseline": {
+    "actual_checkout": "98dccb8edfcd73782188d78482a7a74bae6e74fe",
+    "run": "https://github.com/EazyLee30/omascribe/actions/runs/40924550144",
+    "result": {
+      "receipt": "failure",
+      "audio": "failure"
+    },
+    "environment": {
+      "source": "1e61202c0dcdeb59956279164459457472e57d2c",
+      "kernel": "6.8.0-1070-azure",
+      "system": "Linux",
+      "machine": "x86_64",
+      "scope": "Synthetic local files only; no user data/models or inference",
+      "filesystem": "ext2/ext3",
+      "same_stamp_write": {
+        "found": true,
+        "iterations": 1,
+        "limit": 10000,
+        "before": {
+          "device": 66305,
+          "inode": 6711186,
+          "bytes": 4,
+          "mtime_ns": 1793296044381163022,
+          "ctime_ns": 1793296044381163022
+        },
+        "after": {
+          "device": 66305,
+          "inode": 6711186,
+          "bytes": 4,
+          "mtime_ns": 1793296044381163022,
+          "ctime_ns": 1793296044381163022
+        },
+        "sha256_before": "770e607624d689265ca6c44884d0807d9b054d23c473c106c72be9de08b7376c",
+        "sha256_after": "b5c1fb2efc6d6b4674c2fdcc48ce01b43a3b7c03763c0c3355de0099ee0f8c73"
+      },
+      "ffmpeg_version": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
+      "original_replay_option_probe": {
+        "exit_code": 1,
+        "pcm_bytes": 0,
+        "stderr": "Unrecognized option 'readrate_initial_burst'.\nError splitting the argument list: Option not found\n"
+      }
+    },
+    "source_field_note": "Baseline environment.source recorded GITHUB_SHA (PR event merge context), not the explicitly checked-out PR head. Follow-up records git rev-parse HEAD separately from event_revision.",
+    "raw_sha256": {
+      "audio.log": "cb61b139b40a099dc72a057a3796d06a2bdbf249d87221524840d13275664eb5",
+      "environment.json": "87e9a2416165d243818e75b9a9d3aaf4e2f5f695e9f42e186b50ca2e4f2e862a",
+      "receipt.log": "04657b516a88082dbeea7c65b5e9ddb71ff7a6214e80331914f30c9ab1102839",
+      "result.json": "67b8e0f45bb175cdd2d766ebe5f150100b5f3e924e699f114ee6d13935af8067"
+    }
+  },
+  "fix": {
+    "base_source": "98dccb8edfcd73782188d78482a7a74bae6e74fe",
+    "source_sha256": {
+      ".github/workflows/linux-compat.yml": "b0e0348ea229f1c837d57e7942573404caccf7dddfed1d7e9f79c6aa4fab18a6",
+      "crates/core/src/audio.rs": "dc35a9da5e3df9185106329ea19501766b254e965d646f8b965a52bac94d5787",
+      "crates/core/src/capture.rs": "7b3e4ebce0c27ca69eac49d590b071f691d9dcbc043b4c1f2d544e70200ff1d9",
+      "crates/core/src/model_integrity.rs": "d2a07a92be484d178ed53124e7367857d5777967149bda92d576c9f68efeb4b3",
+      "crates/core/src/model_integrity/linux.rs": "d238eaf57d33053c6a82a18b960a71b9b08bc40c20910d1bf0ba6d7167868c33"
+    },
+    "linux_receipts": "Receipt-local nonblocking/CLOEXEC inotify observer watches directory and every asset before the first snapshot/hash; queued mutations, overflow, read errors and lost watches invalidate all owners. Read-only reuse does not rehash. Cache drops final receipts outside its map mutex.",
+    "linux_limits": [
+      "ordinary local writes only; writable mmap and network writes are not established by this observer",
+      "native loaders still reopen paths; no native descriptor pinning claim"
+    ],
+    "paced_replay": "Probe exact resolved FFmpeg executable for option support with a bounded no-output child; retain supported command flags, use a 20ms byte-preserving monotonic reader only for legacy paced replay. Normal imports and real capture unchanged.",
+    "replay_limits": [
+      "naturally completed replay retains original exact PCM and 250ms maximum-lead assertion",
+      "legacy early stop drains producer output without further pacing; queued tail duration is not established as equivalent to modern FFmpeg"
+    ],
+    "original_assertions_retained": true,
+    "linux_tests": "All 9 new observer tests executed and passed on actual Ubuntu22.",
+    "actual_ubuntu22_validation": "PASS: 28 model-integrity tests and 10 audio tests, with the original immediate-corruption and exact PCM/250ms lead checks retained.",
+    "source": "a710e97a332448cfa1052a7e3dae63029ef1bfc5"
+  },
+  "local_checks": {
+    "base_source": "98dccb8edfcd73782188d78482a7a74bae6e74fe",
+    "patch_sha256": {
+      ".github/workflows/linux-compat.yml": "b0e0348ea229f1c837d57e7942573404caccf7dddfed1d7e9f79c6aa4fab18a6",
+      "crates/core/src/audio.rs": "dc35a9da5e3df9185106329ea19501766b254e965d646f8b965a52bac94d5787",
+      "crates/core/src/capture.rs": "7b3e4ebce0c27ca69eac49d590b071f691d9dcbc043b4c1f2d544e70200ff1d9",
+      "crates/core/src/model_integrity.rs": "d2a07a92be484d178ed53124e7367857d5777967149bda92d576c9f68efeb4b3",
+      "crates/core/src/model_integrity/linux.rs": "d238eaf57d33053c6a82a18b960a71b9b08bc40c20910d1bf0ba6d7167868c33"
+    },
+    "core": {
+      "command": "cargo test -p omascribe-core --locked",
+      "exit_code": 0,
+      "unit_passed": 379,
+      "unit_ignored": 8,
+      "integration_passed": [2, 7, 2, 12]
+    },
+    "clippy": {
+      "command": "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "exit_code": 0
+    },
+    "format": {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "linux_execution": "Actual Ubuntu22 follow-up passed; see fix_validation.",
+    "model_or_sdk_downloads": 0,
+    "inference_runs": 0
+  },
+  "raw_local_root": "artifacts/linux-compat-2026-10-30/fix-local",
+  "quality_regression": "Candidate14 seeded-text 68/68 result remains scoped to its fixed source; not rerun or relabeled by this platform patch.",
+  "fix_validation": {
+    "scope": "Source/core compatibility gates; no installer, physical audio device, GPU or new seeded-text run claim.",
+    "ubuntu22": {
+      "run": "https://github.com/EazyLee30/omascribe/actions/runs/40926786897",
+      "result": {
+        "receipt": "success",
+        "audio": "success"
+      },
+      "environment": {
+        "source": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "event_revision": "dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b",
+        "kernel": "6.8.0-1070-azure",
+        "system": "Linux",
+        "machine": "x86_64",
+        "scope": "Synthetic local files only; no user data/models or inference",
+        "filesystem": "ext2/ext3",
+        "same_stamp_write": {
+          "found": true,
+          "iterations": 1,
+          "limit": 10000,
+          "before": {
+            "device": 66305,
+            "inode": 6720083,
+            "bytes": 4,
+            "mtime_ns": 1793296900396044846,
+            "ctime_ns": 1793296900396044846
+          },
+          "after": {
+            "device": 66305,
+            "inode": 6720083,
+            "bytes": 4,
+            "mtime_ns": 1793296900396044846,
+            "ctime_ns": 1793296900396044846
+          },
+          "sha256_before": "770e607624d689265ca6c44884d0807d9b054d23c473c106c72be9de08b7376c",
+          "sha256_after": "b5c1fb2efc6d6b4674c2fdcc48ce01b43a3b7c03763c0c3355de0099ee0f8c73"
+        },
+        "ffmpeg_version": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
+        "original_replay_option_probe": {
+          "exit_code": 1,
+          "pcm_bytes": 0,
+          "stderr": "Unrecognized option 'readrate_initial_burst'.\nError splitting the argument list: Option not found\n"
+        }
+      },
+      "integrity_passed": 28,
+      "audio_passed": 10,
+      "audio_child_fixture_ignored": 1
+    },
+    "ci": {
+      "linux-ci.json": {
+        "databaseId": 40926786913,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926786913"
+      },
+      "windows-ci.json": {
+        "databaseId": 40926787023,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926787023"
+      },
+      "website-ci.json": {
+        "databaseId": 40926787387,
+        "status": "completed",
+        "conclusion": "success",
+        "headSha": "a710e97a332448cfa1052a7e3dae63029ef1bfc5",
+        "url": "https://github.com/EazyLee30/omascribe/actions/runs/40926787387"
+      }
+    },
+    "raw_sha256": {
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/audio.log": "fac4fb9573e392ee1403e4c8e1d56f77ded0ad6730fd79ac2b31b27d2a02bcfe",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/environment.json": "f864996f923fa245a97c6dab5443a441f01a667007896ca9b7e4ed5d573d5743",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/receipt.log": "dc16c5c258603b554fcd34175355c73b9ba3471f8792ad5e1919dd77c58b4295",
+      "download/linux-compat-dcc9f8eb08f5256194ed7e3aee8cb56f28f3c48b/result.json": "5ece362da34834fd7878dbc4a5fdea0b20b069ae3a678ef8f7342b97d50f3985",
+      "job.log": "e8a1d7dfde1003a6b5aded321de51c0f807d678df4c80ad6e76d7329515a3e67",
+      "linux-ci.json": "f0318f10d25ee7a07a5f952158d9692f9ab2ddf6cf3abd96b57df6f1fc901937",
+      "run.json": "38d2cabcd4e18cfe80cfdfb905cba0543587cdf73aaafd3c3e0c0f8b78a630c0",
+      "website-ci.json": "0bd4258b5a821f929ec125f67df3dd9812c0d692e2a87fa9028a01a9c81b7432",
+      "windows-ci.json": "294975d9025ae2d4153146ca1959434504552f634cf212f7c4b15cb8dc76b3bb",
+      "windows-core.log": "8927114970dc0922c21c449f2e79cd3b558acb60f7fbd6a9fee457544632dd3e"
+    },
+    "windows_tests": {
+      "asr": 9,
+      "core": 378,
+      "core_ignored": 7,
+      "integration": [2, 7, 2, 12]
+    }
+  }
+}

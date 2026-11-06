@@ -1,0 +1,206 @@
+{
+  "passed": true,
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "164371e285a499e9261afa5239d1d563a1aadb57",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "1449f88edb4e402c06b34a5989439f61be4521ee278af76991add60806537186",
+      "target": "x86_64-pc-windows-msvc"
+    },
+    "core_and_harness_source_sha256": "f94463fdb96d00aef85102f0995035eb3acfe94f09a6cd8fa4e474f6fc07098f",
+    "inference_source_tree_dirty": false,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "machine": "AMD64",
+    "python": "3.12.14",
+    "cli_sha256": "49909d29207070db79c3f77fe1facdde9840f25cd3626cb1b549a50eabc69c13",
+    "model_catalog_sha256": "4b76ce69827c3e04782e2ec1cde704afda23fb54a0bec8bcd250c6389f1ed227",
+    "models_lock_sha256": "48fb5103218ea5ab46a7760c065207dccba7fd22560181303db0cfc679af7270",
+    "suite_revision": "164371e285a499e9261afa5239d1d563a1aadb57",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "model_sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+  "process_driver_override": false,
+  "driver_manifest_sha256": null,
+  "limitation": "Two fictional extraction requests, cold start; no warm throughput, ASR/minutes quality, power or broad compatibility claim. Resource samples unavailable. Runtime-only: production settings download, activation and persistence require separate end-to-end acceptance.",
+  "trials": [
+    {
+      "passed": true,
+      "backend": "cpu",
+      "server_sha256": "e128cac55fbd9f91d0c5d20983f9fba1b1461a56044d714bc5ce67117a43fec5",
+      "startup_ms": 1937,
+      "runs": [
+        {
+          "ms": 4516,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 86,
+            "total_tokens": 120,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        },
+        {
+          "ms": 4625,
+          "facts": {
+            "day": "thursday",
+            "rejected_day": "friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 36,
+            "prompt_tokens": 83,
+            "total_tokens": 119,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        }
+      ],
+      "total_ms": 11141,
+      "offloaded_layers": 0,
+      "peak_rss_mib": null,
+      "gpu_memory_mib": null,
+      "dependency_audit": [],
+      "formal_environment": true,
+      "removed_override_keys": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ]
+    },
+    {
+      "passed": true,
+      "backend": "vulkan",
+      "server_sha256": "2b98f4400eeb8e7fef01027d59ac72fc282aebecc98b6d0f26190910568c59c1",
+      "startup_ms": 5734,
+      "runs": [
+        {
+          "ms": 2156,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 28,
+            "prompt_tokens": 86,
+            "total_tokens": 114,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        },
+        {
+          "ms": 719,
+          "facts": {
+            "day": "Thursday",
+            "rejected_day": "Friday",
+            "budget": 3000,
+            "approved": false
+          },
+          "usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 83,
+            "total_tokens": 117,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "correct": true
+        }
+      ],
+      "total_ms": 8797,
+      "offloaded_layers": 29,
+      "peak_rss_mib": null,
+      "gpu_memory_mib": null,
+      "dependency_audit": [
+        {
+          "name": "vulkan-1.dll",
+          "source": "system_driver"
+        }
+      ],
+      "formal_environment": true,
+      "removed_override_keys": [
+        "CUDA_PATH",
+        "CUDA_PATH_V11_5"
+      ]
+    }
+  ],
+  "kind": "formal_component_runtime_acceptance",
+  "component": {
+    "manifest_sha256": "193092c5efa1046918c36c72267f3063687d8c9dc39b3e04280f739d78aa85c9",
+    "archive_sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+    "files_verified": 3,
+    "backend": "vulkan",
+    "target": "windows-x86_64",
+    "runtime_revision": "5aeac37a35b44fde4bdffaec9159f2fcb253b622",
+    "archive_name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+  },
+  "schema": 1,
+  "date": "2026-10-27",
+  "workflow": {
+    "run_id": 40367160891,
+    "url": "https://github.com/EazyLee30/omascribe/actions/runs/40367160891",
+    "head_sha": "164371e285a499e9261afa5239d1d563a1aadb57",
+    "version": "acceleration-ci-40367160891",
+    "artifact_id": 12671164339,
+    "artifact_zip_sha256": "c209cb2f48f4665c9b54b8ea10f417f393f2d36460d547043c137cfb44a9b40a"
+  },
+  "driver": {
+    "nvidia": "621.01",
+    "windows_display_version": "32.0.16.2101",
+    "cuda_driver_api": 13050,
+    "vulkan_loader": "1.4.357.0",
+    "vulkan_build_sdk": "1.4.363.0"
+  },
+  "component_manifest": {
+    "archive": {
+      "bytes": 12674455,
+      "name": "OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2",
+      "sha256": "0a65c3ed869f2d84d75542083fb585b9dbd5fe1e60ef1c0cca2ed6a0432dffc5",
+      "url": "https://github.com/EazyLee30/omascribe/releases/download/acceleration-ci-40367160891/OmaScribe-vulkan-windows-x86_64-acceleration-ci-40367160891.tar.bz2"
+    },
+    "backend": "vulkan",
+    "entrypoint": "llama-server.exe",
+    "files": [
+      {
+        "bytes": 135,
+        "name": "build-info.json",
+        "sha256": "17aa4d876351d816f54f267bd80eec36dbe089816cdddeaa674617e01f67efda",
+        "url": ""
+      },
+      {
+        "bytes": 51814400,
+        "name": "llama-server.exe",
+        "sha256": "2b98f4400eeb8e7fef01027d59ac72fc282aebecc98b6d0f26190910568c59c1",
+        "url": ""
+      },
+      {
+        "bytes": 1099,
+        "name": "llama.cpp-LICENSE.txt",
+        "sha256": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285",
+        "url": ""
+      }
+    ],
+    "id": "vulkan-windows-x86_64",
+    "license": "MIT",
+    "name": "VULKAN · windows-x86_64",
+    "target": "windows-x86_64"
+  },
+  "toolkit_limitation": "D:\\CUDA 11.5 already exists on the host; process PATH and SDK/driver overrides were excluded and observed modules audited. This is not a literally SDK-free machine.",
+  "signed_settings_lifecycle": "pending signed candidate; not tested"
+}

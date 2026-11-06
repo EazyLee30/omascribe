@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "baseline": "d14bab33346f707de0a8949431c973cdbcfcce0b",
+  "scope": "Source-anchored spelling correction for explicitly marked complete multiword note phrases, propagated through the existing save_note transaction. No ASR decoder, model, GPU recipe or installer change.",
+  "behavior": {
+    "admission": "3–6 ASCII alphabetic words; one long-word mismatch with two or more exact anchors; existing edit-distance, length and shared-affix limits. Conflicting names, ambiguous or overlapping phrases, absent names, Unicode/identifier boundaries and budget overflow abstain.",
+    "permissions": "Independent spelling-only ownership. No global writer/caption name obligations. All-uppercase marked phrases no longer leak component-word name permissions.",
+    "synchronization": "Original ASR and article history retained; source, cited quote/revision and supported article spelling update atomically. Human edits remain authoritative. Removing context restores archived ASR and marks the old article stale. Supported paraphrase spelling does not certify its facts.",
+    "resources": "No added model jobs. Extra declared-name scan/guard construction is lazy and skipped without an eligible phrase. No measured whole-app resource claim."
+  },
+  "validation": {
+    "core_passed": 759,
+    "core_ignored": 14,
+    "integration_passed": 48,
+    "desktop_shell_passed": 8,
+    "asr_passed": 18,
+    "cli_passed": 2,
+    "python_passed": 172,
+    "python_skipped": 1,
+    "strict_workspace_clippy": "passed",
+    "rust_format": "passed",
+    "save_note_red_green": "Four tests failed on unchanged production text, then passed after the fix. Full regression exposed uppercase component-name leakage; fixed with whole marked-span extraction. Initial compile error in a new SQLite test was fixed (usize to i64)."
+  },
+  "frozen_replay": {
+    "cases": 100,
+    "arms": 300,
+    "source_report_sha256": "12248a8b1a349ac9f71f7eab3b7d6d31c2c6c04ea3d5420507f075fcf637c65c",
+    "manifest_sha256": "28ea560d9b4a077637c117355f8ebecc523ab94f84a0c5343a43e1acbfd210d6",
+    "baseline": "Existing compiled 6a8c00f CLI reproduced all 300 frozen corrected outputs without changes.",
+    "candidate_build": {
+      "profile": "debug",
+      "revision_at_compile": "d14bab33346f707de0a8949431c973cdbcfcce0b",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "schema": 1,
+      "source_sha256": "37be3113ae0e1412545c1a45f69f4e9c01d2ec887796abfa1e03e386b99a594c",
+      "target": "aarch64-apple-darwin"
+    },
+    "changed": [
+      "fleurs_en_hotword_075:positive",
+      "fleurs_en_hotword_078:positive"
+    ],
+    "positive_complete_names_before": 47,
+    "positive_complete_names_after": 49,
+    "remaining_positive_misses": 51,
+    "other_arms_unchanged": true,
+    "all_source_histories_preserved": true,
+    "idempotent": true,
+    "asr_calls": 0,
+    "llm_calls": 0,
+    "harness_initial_error": "First baseline comparison joined passages with newlines while the original report used spaces; per-segment comparison and identical aggregate joins fixed the harness. Both failed and corrected reports retained."
+  },
+  "limits": [
+    "Frozen public English read-speech outputs, not new acoustic inference, live microphone, Chinese/code-switching, natural meetings or physical GPU validation.",
+    "Two recovered source spellings do not solve arbitrary phonetic errors, the 51 remaining positive misses or general ASR calibration.",
+    "Q16 mixed-language minutes generation remains failed; no new generation attempt or release admission in this slice.",
+    "CUDA/Vulkan archives remain separately distributed; existing package recipes and signed components unchanged.",
+    "Stable remains v0.3.4; v0.3.5 is not published."
+  ],
+  "code_sha256": {
+    "crates/core/src/terminology.rs": "98c10d81600da7bf599a711ff731c6b1bf5ada8302f79e17340b1acd1af6a04c",
+    "crates/core/src/terminology/phrase.rs": "ab8daab94610eb6b10f27ae12b79e0233fb0309e6f3fbd997cb3fa7aa1b47896",
+    "crates/core/src/terminology/document.rs": "fd1ad680e244306aa30cf3ab1bc8753ba6f9e5e240dfac3c2d600fd140160149",
+    "crates/core/tests/note_context_corrections.rs": "6e6777edeceb2310afa0aa768aa584f51805368fc6d619df47b08ccf07c0d3e8",
+    "tests/replay_name_corrections.py": "cf66ca63b2eb5fc87621f4cf3aa57ebda48e2f7ff3c47efeadb55ae193eddbbe"
+  },
+  "evidence_sha256": {
+    "baseline-replay-v2.json": "c724c2d614ff7a0260cd479f56268e4af3f9760a807056717e6996c52ec1ae68",
+    "baseline-replay-v2.log": "636624e149879ceb233dbb3bd49cfd9722179873e8a574d4dd8e9ae72a75ab90",
+    "baseline-replay.json": "d5255582b8b8bb6eb1c88a189d1a586fd5fd71b88aeab599f7d4ca5203b11bf8",
+    "baseline-replay.log": "dcf6b681349eecf306ee48cbb57c037be1b5840a1832b655751fbefaaea431dd",
+    "cli-build.log": "448eca1192eba8d93590bf7566a0cf97c3d657a770c505e11a050e567995fdb0",
+    "clippy.log": "97e2eee9cc3144e4a5f612ef36ead4644be14b2d3995ad6fbcb49fd1ce2f0a63",
+    "current-replay.json": "f9a3ed8f07d357a25bea1ce087b691d4baa347088e8da6bc05afa0feb68f096a",
+    "current-replay.log": "46411a37b31aabf78ed2fec099b1baa74fa0686ed725179c9321dd819b1ff01b",
+    "integration-green.log": "f932fd76c1586590f1e950325ff98a3bbb0551aed1cd86d6c308bc0da227c2c3",
+    "python-tests.log": "20e2917fdb6d66e27f725a2189d5ba002a7aeab082dcf8b61544e2fb7fbbe413",
+    "red.log": "88445037eccc2998a13b4de4d32fd1ffe418c58aa1d073aca7cb86f1358876ab",
+    "terminology-tests.log": "c7b16b8b602ec0e26328bf2cb34c11787b9483d7ed6e6d53d2501933bf0cbfde",
+    "workspace-tests-v2.log": "7c20d793fb2d54501ec9902579c99f6098262103d770b8908ecf5eca950fbeff",
+    "workspace-tests.log": "11bf6d6946b002791fdd050adcdea5ab424a3017fb2213f7e910697e5d0971fe"
+  }
+}

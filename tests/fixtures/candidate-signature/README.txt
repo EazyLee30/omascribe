@@ -1,0 +1,1 @@
+Synthetic candidate catalog, signed with a discarded test-only ephemeral key. No release key or private key is retained. An empty catalog isolates signature/version/cache tests; production publication still requires the full four-component matrix.

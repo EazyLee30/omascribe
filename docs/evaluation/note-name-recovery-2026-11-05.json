@@ -1,0 +1,109 @@
+{
+  "status": "CHECKED_SOURCE_NOT_A_RELEASE",
+  "code_commit": "e3e051bef4a182661f370209677090283d3434a7",
+  "base_commit": "91336ea59d8194df0fc9e74579377c7eec4a2484",
+  "source_files": {
+    "crates/core/src/notes.rs": "584efcae9c5a16d14b5bf37069d375ad46d2cabf05c65c8c5455abc85053c2fd",
+    "crates/core/src/notes/affiliation.rs": "00ab0f1ead894ae00f79cc48cd4ab50734ee3cd1ead4fc258642fe6c16586a8a",
+    "crates/core/src/notes/validation.rs": "aa12bc88c4c4b0b33df82740ad31612e1614a906e40a010bdb647adc2786065a",
+    "crates/core/src/notes/affiliation_recovery_tests.rs": "787a57b422491607e4aa28ac410e1d5a379f8b5cabc601f21bf140bd64c93020",
+    "crates/core/src/notes/affiliation_provenance_tests.rs": "ba5fa82d6f32e94b831580ac22188f97396b36a648b2320d337d1872f1a62ea3",
+    "crates/core/src/terminology.rs": "59cf25758302dbddc5bd1f4aa2bd14d4f97337c9a605a162791b6788a1b829a6",
+    "crates/core/src/terminology/document.rs": "f7d95278c61d07dc43bf522f86a41f66029c230bd4ba419801432a9d33b807c2"
+  },
+  "notes_save": {
+    "red_commit": "85444aea92c5f4bfa33b370a651cab946e50c8d1",
+    "red_exit": 101,
+    "red_observation": {
+      "actual": "ALMA SCRIBE尚未修复，预算仍未批准。",
+      "expected": "OmaScribe尚未修复，预算仍未批准。"
+    },
+    "red_log": {
+      "path": "artifacts/note-name-recovery-2026-11-05/85444ae-red.log",
+      "sha256": "849cc98a2b9cb7e0292fe788898a83e3e761a6815e838af4dc9ca6ba562a86f9"
+    },
+    "private_fix": "fbb12297cba4eea0173d2471950808ca0a22c344",
+    "target_pass": 4,
+    "target_log": {
+      "path": "artifacts/note-name-recovery-2026-11-05/fbb1229-target.log",
+      "sha256": "a330bd7f006448e03a54a1b89f3ed4bbecea66a9c6210bba66765ea6eb9f4ee0"
+    },
+    "source_revisions_unchanged": true,
+    "citations_unchanged": true,
+    "inference_jobs_created": 0,
+    "scope": "Changed terms, no source-text changes, pending non-stale prose exactly matches a unique current unedited own-cited canonical source after existing name normalization. Other facts cannot change."
+  },
+  "generated_draft": {
+    "private_source": "a3e4b5107951c3be23e89418881384b076748cbc",
+    "received_raw_sha256": "6b2d199a121fb636919e87f939a63cd933520d6c642bc72a1b39050dda595216",
+    "original_source_seq": 4,
+    "source_suffix_bytes": 110,
+    "source_suffix_sha256": "dbe45fb0b6e5bbe29556b7ade10d10c420936dc7d5af7c50516d82cc732d346d",
+    "observed_replay_edit": {
+      "old": "迪大学",
+      "new": "邓迪大学",
+      "count": 1
+    },
+    "target_pass": 18,
+    "target_log": {
+      "path": "artifacts/note-name-recovery-2026-11-05/integrated-affiliation-target.log",
+      "sha256": "64b3f212deb5e96a8a4b033f715bb760af0a0ec23a5b66cd7e930f9cf7c843d3"
+    },
+    "full_final_validation_preserved": true,
+    "source_quotes_unchanged": true,
+    "bridge_permission_inherited": false,
+    "fresh_model_runs": 0,
+    "new_model_requests_for_recovery": 0,
+    "scope": "One-shot fresh ordinary generated draft only; unique current own citation, exact complete report suffix and complete person, one institution, strict missing institution prefix. Qualified/quoted/generic/ambiguous/history/prepared/incremental/translation modes abstain."
+  },
+  "checks": {
+    "workspace": {
+      "exit": 0,
+      "core_pass": 691,
+      "core_explicit_asset_model_ignored": 13,
+      "app_pass": 4,
+      "asr_pass": 18,
+      "cli_pass": 2,
+      "integration_pass": 34,
+      "log": {
+        "path": "artifacts/note-name-recovery-2026-11-05/e3e051b-workspace.log",
+        "sha256": "bee3b73a6b47f27869e105787818fa296a43a81d59324af5e8ff66cd3ee36efe"
+      }
+    },
+    "clippy": {
+      "exit": 0,
+      "workspace_all_targets": true,
+      "deny_warnings": true,
+      "log": {
+        "path": "artifacts/note-name-recovery-2026-11-05/e3e051b-clippy.log",
+        "sha256": "70090d762c753ff66b3f10f33a4ae249257c883a9c04c6b35016e6c38473485b"
+      }
+    },
+    "format": {
+      "exit": 0,
+      "log": {
+        "path": "artifacts/note-name-recovery-2026-11-05/e3e051b-fmt.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "limitations": [
+    "Mixed changed-source plus unchanged canonical-source prose still follows the old source replay/stale flow.",
+    "Canonical-source recovery does not cover arbitrary paraphrased articles.",
+    "Received music repetition remains; source6 has not been generated/validated in a new real-model run.",
+    "Q16 faithful coherent full article availability, Q9 real audio and installed/native device acceptance remain open."
+  ],
+  "packaging": {
+    "installer_builds": 0,
+    "new_model_or_component_downloads": 0,
+    "cuda_vulkan_in_base_installer": false,
+    "hardware_detection_and_separately_verified_signed_components_retained": true,
+    "scope": "No packaging/runtime changes in this patch; CPU/Metal base and separate signed optional GPU components retain their baseline behavior. This is not new physical-device acceptance."
+  },
+  "release_0_3_5": "unpublished",
+  "independent_review": {
+    "path": "artifacts/note-name-recovery-2026-11-05/independent-review.json",
+    "sha256": "7321de88d1758476e4c2011cfb2c8e4f949c02a10c9687e37f71a7b3b64f6743",
+    "scope": "Read-only exact-code review; its workspace-pending field records review time, the terminal workspace result is in checks above."
+  }
+}

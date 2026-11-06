@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, UserNote};
+use omascribe_core::{Device, Diagnostics, Engine, Meeting, Snapshot, SnapshotPoll, UserNote};
 use std::{
     path::PathBuf,
     sync::{
@@ -17,6 +17,8 @@ mod overlay;
 #[path = "overlay_native.rs"]
 mod overlay;
 mod profiles;
+#[cfg(feature = "ui-test")]
+mod ui_test_probe;
 mod updates;
 mod views;
 mod workspace;
@@ -25,8 +27,8 @@ use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::DialogExt;
 use updates::*;
 use views::{
-    display_monitors, drag_transcript, get_view_settings, set_view_meeting, set_view_settings,
-    show_main_window, transcript_snapshot,
+    display_monitors, drag_transcript, get_view_settings, poll_transcript, set_view_meeting,
+    set_view_settings, show_main_window, transcript_snapshot,
 };
 use workspace::*;
 type AppState = Arc<Engine>;
@@ -49,6 +51,18 @@ fn snapshot(engine: State<AppState>, id: String) -> Reply<Snapshot> {
     engine.snapshot(&id).map_err(err)
 }
 #[tauri::command]
+async fn poll_snapshot(
+    engine: State<'_, AppState>,
+    id: String,
+    revision: Option<String>,
+) -> Reply<SnapshotPoll> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || engine.poll_snapshot(&id, revision.as_deref()))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+#[tauri::command]
 async fn extract_focus_terms(content: String) -> Vec<String> {
     tauri::async_runtime::spawn_blocking(move || omascribe_core::notes::extract_focus(&content))
         .await
@@ -63,6 +77,29 @@ async fn list_devices() -> Reply<Vec<Device>> {
     tauri::async_runtime::spawn_blocking(|| omascribe_core::audio::devices().map_err(err))
         .await
         .map_err(err)?
+}
+#[tauri::command]
+fn microphone_test_status(engine: State<AppState>) -> omascribe_core::microphone::InputLevel {
+    engine.microphone_level()
+}
+#[tauri::command]
+async fn start_microphone_test(
+    engine: State<'_, AppState>,
+    device: String,
+) -> Reply<omascribe_core::microphone::InputLevel> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.start_microphone_preview(device).map_err(err))
+        .await
+        .map_err(err)?
+}
+#[tauri::command]
+async fn stop_microphone_test(
+    engine: State<'_, AppState>,
+) -> Reply<omascribe_core::microphone::InputLevel> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.stop_microphone_preview())
+        .await
+        .map_err(err)
 }
 #[tauri::command]
 fn update_meeting(
@@ -128,8 +165,11 @@ fn stop_recording(engine: State<AppState>) -> Reply<()> {
     engine.stop_recording().map_err(err)
 }
 #[tauri::command]
-fn retranscribe(engine: State<AppState>, id: String) -> Reply<()> {
-    engine.inner().retranscribe(&id).map_err(err)
+async fn retranscribe(engine: State<'_, AppState>, id: String) -> Reply<()> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.retranscribe(&id).map_err(err))
+        .await
+        .map_err(err)?
 }
 #[tauri::command]
 fn generate_notes(engine: State<AppState>, id: String) -> Reply<()> {
@@ -325,6 +365,13 @@ fn main() {
         cancel_download,
         delete_model,
         hardware_profile,
+        acceleration_components,
+        check_acceleration_components,
+        download_acceleration_component,
+        remove_acceleration_component,
+        cancel_acceleration_download,
+        verify_acceleration,
+        disable_acceleration,
         storage_usage,
         list_library,
         save_library_entry,
@@ -348,9 +395,13 @@ fn main() {
         list_meetings,
         create_meeting,
         snapshot,
+        poll_snapshot,
         diagnostics,
         extract_focus_terms,
         list_devices,
+        microphone_test_status,
+        start_microphone_test,
+        stop_microphone_test,
         update_meeting,
         save_note,
         edit_segment,
@@ -363,6 +414,7 @@ fn main() {
         set_view_settings,
         set_view_meeting,
         transcript_snapshot,
+        poll_transcript,
         show_main_window,
         drag_transcript,
         companion::set_companion_expanded,
@@ -386,7 +438,9 @@ fn main() {
         ui_test_screenshot,
         ui_test_resize,
         ui_test_replay,
-        ui_test_windows
+        ui_test_windows,
+        ui_test_probe::ui_test_window_probe,
+        ui_test_probe::ui_test_window_result
     ];
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -403,12 +457,14 @@ fn main() {
         .manage(ExitPermit(AtomicBool::new(false)))
         .invoke_handler(move |request| {
             #[cfg(feature = "ui-test")]
-            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay", "ui_test_windows"].contains(&request.message.command()) {
+            if ["ui_test_report", "ui_test_screenshot", "ui_test_resize", "ui_test_replay", "ui_test_windows", "ui_test_window_probe", "ui_test_window_result"].contains(&request.message.command()) {
                 return tester(request);
             }
             regular(request)
         })
         .setup(|app| {
+            #[cfg(feature = "ui-test")]
+            app.manage(ui_test_probe::Probes::default());
             // Single-instance forwarding runs before taking the workspace lock.
             let engine = Engine::open(omascribe_core::engine::default_root())?;
             let view_state = views::Views::new(engine.root.clone());
@@ -434,6 +490,8 @@ fn main() {
                 eprintln!("Configuration link registration unavailable: {error}. Configuration files can still be imported in Settings.");
             }
             views::start(app.handle());
+            #[cfg(target_os = "linux")]
+            companion::start_anchor_sync(app.handle());
             #[cfg(feature = "ui-test")]
             if let Ok(path) = std::env::var("OMASCRIBE_UI_TEST_SCRIPT") {
                 let script = std::fs::read_to_string(path)?;

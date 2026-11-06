@@ -26,11 +26,18 @@ with tempfile.TemporaryDirectory(prefix='omascribe-translation-test-') as folder
     assert 'not' in en.lower() and 'friday' in en.lower(),en
     assert any(w in zh for w in ['未','不','没有']) and any(day in zh for day in ['周四','星期四','礼拜四']),zh
     assert [s['text'] for s in snapshot['segments']]==originals
+    # A repeated request must use validated results without starting a model again.
+    def worker_events():
+        return sum(json.loads(line).get('phase')=='worker' for line in (root/'inference-trace.jsonl').read_text().splitlines())
+    before=worker_events();cached_start=time.monotonic();repeated=cli('translate',mid)
+    cache_hit_seconds=round(time.monotonic()-cached_start,3)
+    assert len(repeated['translations'])==2 and worker_events()==before
+    assert all(value.get('cache_key') for value in repeated['translations'].values())
     for mode,target in [('zh-en','en'),('en-zh','zh'),('off',None)]:
         prefs['translation_mode']=mode;(root/'preferences.json').write_text(json.dumps(prefs))
         current=cli('snapshot',mid)
         assert len(current['translations'])==(1 if target else 0)
         if target:assert list(current['translations'].values())[0]['target']==target
-    report=dict(passed=True,seconds=round(time.monotonic()-start,2),translations=values,checks=['real Chinese-to-English and English-to-Chinese','negation and weekday preserved','originals unchanged','four modes select correct cached target'])
+    report=dict(passed=True,seconds=round(time.monotonic()-start,2),cache_hit_seconds=cache_hit_seconds,translations=values,checks=['real Chinese-to-English and English-to-Chinese','negation and weekday preserved','originals unchanged','four modes select correct cached target','repeated translation starts no worker'])
     pathlib.Path('/tmp/omascribe-032-translation.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
     print(json.dumps(report,ensure_ascii=False))

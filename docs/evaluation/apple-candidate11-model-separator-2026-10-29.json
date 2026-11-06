@@ -1,0 +1,1180 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "date_timezone": "Asia/Shanghai",
+  "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+  "frozen_branch": "codex/release-0.3.5-candidate-11",
+  "overall_result": "64/64 original automatic checks PASS; no new visible factual drift in independent review; existing fidelity and platform limits remain",
+  "release_eligible": false,
+  "stable_release_published": false,
+  "installer_built": false,
+  "full_semantic_acceptance": false,
+  "scope": [
+    "Fix one actual known-model separator rejection, retaining complete source-bound identifiers and protected name spellings.",
+    "Original fixture source, required/forbidden patterns, request/retry and 120-second settle budgets retained. No prompt/model/backend promotion.",
+    "Reuse installed original runtime and existing SDK/model assets; no proxy in acceptance, no SDK/GPU/installer rebuild."
+  ],
+  "identity": {
+    "before": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "3b512db058d388bba8489f6234b7522c7ce61ab454c1e5b06d8b5f567bb37ebd",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "35f434cf27941175f70e8854a0cb492b91ab4ea8c290f42dc5d5cdf743f0cbd9",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "7f1fd62d8f09b8791661114ac34d8ae9582d578deff41aed1413b0336a54c4fd",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "after": {
+      "cli_build": {
+        "profile": "debug",
+        "revision_at_compile": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+        "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+        "schema": 1,
+        "source_sha256": "3b512db058d388bba8489f6234b7522c7ce61ab454c1e5b06d8b5f567bb37ebd",
+        "target": "aarch64-apple-darwin"
+      },
+      "core_and_harness_source_sha256": "35f434cf27941175f70e8854a0cb492b91ab4ea8c290f42dc5d5cdf743f0cbd9",
+      "inference_source_tree_dirty": false,
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64",
+      "python": "3.13.3",
+      "cli_sha256": "7f1fd62d8f09b8791661114ac34d8ae9582d578deff41aed1413b0336a54c4fd",
+      "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+      "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+      "suite_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+      "corpus": "public or fictional only",
+      "network_during_evaluation": "disabled optional services; inference uses local processes"
+    },
+    "equal": true,
+    "assets": {
+      "path": "artifacts/hotword-number-assets-before.json",
+      "bytes": 5593,
+      "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+    },
+    "asset_files": 23
+  },
+  "automatic": {
+    "result": "PASS",
+    "completed": 64,
+    "expected": 64,
+    "terminal_exit_code": 0,
+    "execution": "One uninterrupted automatic run using the fixed CLI, all64 original fixture assertions. This is distinct from C10 interrupted/resumed execution.",
+    "status": {
+      "path": "artifacts/candidate11-full-auto-status.json",
+      "bytes": 2257,
+      "sha256": "aaf76b4dcb46850b6eb010418532b9e3ee39b4d03137ab9dfd3ed2da72c85b53"
+    },
+    "log": {
+      "path": "artifacts/candidate11-full-auto.log",
+      "bytes": 7313,
+      "sha256": "8919e4b6c4f0c5da5e068f4452eb1bb55474c3000145afd496fc786280b45568"
+    },
+    "driver": {
+      "path": "artifacts/run-candidate11-full.py",
+      "bytes": 2046,
+      "sha256": "59d133e6dd3bbf7d1ea1e341051b319fba775b7c0db1d88dae3ac37b894d6698"
+    },
+    "fixture": {
+      "path": "tests/fixtures/document-cases.json",
+      "bytes": 61374,
+      "sha256": "06069c0bea09144a48c201ebc62f60603b1171d4d03953fc7a3205d9bdb69ffd"
+    }
+  },
+  "independent_reviews": {
+    "expected_cases": 64,
+    "reviewed_cases": 64,
+    "snapshots": 76,
+    "captions": 145,
+    "article_citations": 143,
+    "bindings": "Each current ID, meeting/run, revision, complete quote, time and speaker checked against its own current source.",
+    "original63_complete_visible_payloads_byte_equal_candidate10": true,
+    "new64th_case": "Reviewed separately against original41 FAIL; new English MX2750 and both negative states retained, raw spoken source unchanged.",
+    "refs": [
+      {
+        "path": "artifacts/candidate11-review-part0.json",
+        "bytes": 175770,
+        "sha256": "83304b6d5d9b6b2cc3c0e5ae04d597f1ce91c880ed3d0b9701d7e70e29b998af"
+      },
+      {
+        "path": "artifacts/candidate11-review-part1.json",
+        "bytes": 259970,
+        "sha256": "45ad9a7b337486e63c0416720eb8649811e528f34515a5d34d7898fa3dab42b8"
+      },
+      {
+        "path": "artifacts/candidate11-review-part2.json",
+        "bytes": 117759,
+        "sha256": "1a4cc50b2c16236bd8b4a1533e79c9a9e7eb13d64db7580005aef0723ce489a6"
+      }
+    ]
+  },
+  "development": {
+    "schema": 2,
+    "kind": "retained-development-history-and-affected-checks",
+    "prepared_at_utc": "2026-10-29T10:34:10.847289+00:00",
+    "frozen_checkpoints": {
+      "previous": {
+        "candidate": 10,
+        "revision": "17380f64783c26ce77def7dd13429699958f5259",
+        "expected_revision": "17380f64783c26ce77def7dd13429699958f5259",
+        "branch": "codex/release-0.3.5-candidate-10",
+        "unchanged": true,
+        "original63_case_evidence": {
+          "path": "docs/evaluation/apple-candidate10-note-sync-2026-10-29.json",
+          "bytes": 267168,
+          "sha256": "30127e34ca3c15b00ab777d349027dcf4e96d0e6e245fa75edbd9704067ddd5d"
+        }
+      },
+      "current": {
+        "candidate": 11,
+        "revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+        "branch": "codex/release-0.3.5-candidate-11",
+        "pushed": "Parent-confirmed; immutable branch points to exact affected-check source.",
+        "full64_state": "TERMINAL_EXIT0_SESSION78551",
+        "full64_result": "64/64 original automatic checks PASS",
+        "note": "Terminal whole-run identity matched; all three independent review partitions complete."
+      }
+    },
+    "changes": [
+      {
+        "revision": "c5756ab0a9139e8232083283d093b4dbd23bc769",
+        "scope": "Bound uppercase UTF-8 hotword payload to16000bytes/complete terms; classify rejected startup/refresh and preserve prior valid refresh context."
+      },
+      {
+        "revision": "41d87f4fbe8a0a8d72cc8ed7bc3acc9ec9ec4507",
+        "scope": "Keep complete source-bound model prefix/digit identity separate from ordinary number/date/count evidence; retain negative/protected-edit tests and cache invalidation."
+      },
+      {
+        "revision": "bbdbcff65ed29d8d588dbecf70b23b98c4f013ff",
+        "scope": "Static private-safe caption rejection categories only; not a quality fix or same-runtime acceptance."
+      },
+      {
+        "revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+        "scope": "Observed single ASCII hyphen in a known model reading is safely normalized in the production caption path. Original digits, states, fixtures and budgets are retained; malformed separators, changed digits/prefixes/suffixes and unrelated counts remain rejected."
+      }
+    ],
+    "latest_static_checks": {
+      "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+      "core_passed": 325,
+      "core_ignored": 7,
+      "model_identifier_integration_passed": 7,
+      "note_context_integration_passed": 8,
+      "total_integration_passed": 15,
+      "core_log": {
+        "path": "artifacts/caption-model-hyphen-core-final.log",
+        "bytes": 35468,
+        "sha256": "49df6ea7854d689cf51e5b0160237c36e71382bfdf6286295be99b723bdca001"
+      },
+      "strict_workspace_clippy": {
+        "parent_confirmed_all_targets": true,
+        "log": {
+          "path": "artifacts/caption-model-hyphen-clippy.log",
+          "bytes": 291,
+          "sha256": "9db5e9feccbd03fbf5ccbe0da2c77dbf8aba236b2c70d9e4ad86d4d88e4398ec"
+        }
+      },
+      "exact_source_ci": {
+        "reference": {
+          "path": "artifacts/candidate11-github-ci.json",
+          "bytes": 1730,
+          "sha256": "d29c0dbf171c1eb61f5aacb3f0a83d81c737a07c0f8bc22ae8cbdba3345ccfd5"
+        },
+        "successful_runs": [
+          "Website validation",
+          "CI",
+          "Optional acceleration components"
+        ],
+        "successful_jobs": [
+          "linux",
+          "prepare",
+          "windows-core"
+        ],
+        "skipped_jobs": [
+          "build",
+          "catalog"
+        ]
+      }
+    },
+    "affected_actual_model_check": {
+      "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+      "result": "5_ORIGINAL_AUTOMATIC_CASES_PASS_AFFECTED_SCOPE_ONLY",
+      "terminal": {
+        "path": "artifacts/caption-separator-ed9d2e7-status.json",
+        "bytes": 371,
+        "sha256": "b62af74b45200d51248e88b264f8be4b81b5f82551138f03e9f14b855ce08605"
+      },
+      "original_results": {
+        "path": "artifacts/benchmarks/release035-caption-separator-ed9d2e7/results.json",
+        "bytes": 543,
+        "sha256": "44aa3daa104ec241daa6e040c1d9e31353307d93344c58590f1460aad21784d1"
+      },
+      "independent_review": {
+        "path": "artifacts/caption-separator-ed9d2e7-output-review.json",
+        "bytes": 37132,
+        "sha256": "c49c1e1701060ca92eabda263598fa1ece6ae53c488b72ff3162cc3477054833"
+      },
+      "identity_before": {
+        "path": "artifacts/caption-separator-ed9d2e7-before.json",
+        "bytes": 1023,
+        "sha256": "babb1039826a26e6f465ce11d18348729244d9b1203e7ae96f25b0da0c8fc704"
+      },
+      "identity_after": {
+        "path": "artifacts/caption-separator-ed9d2e7-after.json",
+        "bytes": 1023,
+        "sha256": "babb1039826a26e6f465ce11d18348729244d9b1203e7ae96f25b0da0c8fc704"
+      },
+      "identity_equal": true,
+      "installed_original_runtime_used": true,
+      "proxy_used": false,
+      "fixture_unchanged_from41": true,
+      "fixture": {
+        "path": "tests/fixtures/document-cases.json",
+        "bytes": 61374,
+        "sha256": "06069c0bea09144a48c201ebc62f60603b1171d4d03953fc7a3205d9bdb69ffd"
+      },
+      "original_budget_unchanged": true,
+      "reviewed_snapshots": 6,
+      "caption_bindings": 10,
+      "exact_article_citations": 11,
+      "old4_visible_payloads_byte_equal41": [
+        "zh_windows_gpu_keyword_lines",
+        "zh_windows_long_acceptance",
+        "en_windows_long_acceptance",
+        "en_late_note_spelling_sync"
+      ],
+      "raw_review_refs_independently_rehashed": 39,
+      "new_case": {
+        "raw_report": {
+          "path": "artifacts/benchmarks/release035-caption-separator-ed9d2e7/zh_adjacent_spoken_model.json",
+          "bytes": 13626,
+          "sha256": "1048fd6efd55faf44ec574db8e7fddde87a02f4878faf37ec0c9667096b87506"
+        },
+        "source": "设备代号是MX二七五零，测试尚未完成，预算尚未批准。",
+        "source_revision": 1,
+        "caption": "Device code is MX2750, testing has not been completed, and the budget has not been approved.",
+        "article_preserves_complete_raw_source": true,
+        "not_completed_and_not_approved_retained": true,
+        "new_audio_or_asr_test": false
+      },
+      "late_note": {
+        "source_and_citation_revision": [
+          1,
+          2
+        ],
+        "same_article_source_ids": true,
+        "name_only_body_and_source_change": true,
+        "new_inference_jobs": 0,
+        "old_caption_cache_invalidated": true,
+        "new_caption_generated_in_note_phase": false,
+        "auto_notes_in_this_run": true
+      }
+    },
+    "retained_original_failure": {
+      "source_revision": "41d87f4fbe8a0a8d72cc8ed7bc3acc9ec9ec4507",
+      "original_pass": 4,
+      "original_fail": 1,
+      "status": {
+        "path": "artifacts/hotword-number-minutes-status.json",
+        "bytes": 234,
+        "sha256": "0d4869800e16e653d67a3ff0999898c67a80baff420ffe43ada39b4fba58cdf5"
+      },
+      "original_results": {
+        "path": "artifacts/benchmarks/release035-hotword-number-41d87f4/results.json",
+        "bytes": 745,
+        "sha256": "0bdd0ea6cbe1197edd9c83b3c548c58c8dc2439e1f141999e881d37471e7049f"
+      },
+      "full_output_review": {
+        "path": "artifacts/hotword-number-41d87f4-output-review.json",
+        "bytes": 55643,
+        "sha256": "312bd7b21c2bbed11398896888c81f7eb332976c738d2096a2911495a2a62873"
+      },
+      "failure": "Adjacent-model article and citation correct, caption absent; four translation jobs/eight attempts rejected, settle120.14s exit1. No old result relabeling."
+    },
+    "separate_diagnostics": {
+      "static_category": {
+        "source_revision": "bbdbcff65ed29d8d588dbecf70b23b98c4f013ff",
+        "report": {
+          "path": "artifacts/benchmarks/adjacent-caption-diagnostic-bbdbcff/report.json",
+          "bytes": 3967,
+          "sha256": "d76c13a832ef172bffdbfe0e4fd5fc931da2902fb0c1e3dd9f0b879bfaac9ba5"
+        },
+        "translation_commands": 1,
+        "rejected_generations": 2,
+        "kind": "source_number_date",
+        "committed": false
+      },
+      "public_response_capture": {
+        "source_revision": "bbdbcff65ed29d8d588dbecf70b23b98c4f013ff",
+        "report": {
+          "path": "artifacts/benchmarks/public-caption-capture-bbdbcff/report.json",
+          "bytes": 6423,
+          "sha256": "8d86718cd337d58fafc5835e78621ca09b88db4c09d32f155f08e4d08c5ff71c"
+        },
+        "read_only_integrity_review": {
+          "path": "artifacts/public-caption-capture-bbdbcff-verification.json",
+          "bytes": 5431,
+          "sha256": "4423a928f997f048798019f7bb2ba228bdd28b01a663abc6f27172afbd211438"
+        },
+        "complete_captured_responses": 2,
+        "captured_model_spelling": "MX-2750, single ASCII hyphen; both not-completed/not-approved states retained.",
+        "response_bytes_hashes_match": true,
+        "inputs_and_original_db_unchanged": true,
+        "owned_proxy_backend_cleaned": true,
+        "runtime_transport_identity_changed": true,
+        "acceptance_or_performance_result": false
+      }
+    },
+    "original_native_asr_contract": {
+      "source_revision": "41d87f4fbe8a0a8d72cc8ed7bc3acc9ec9ec4507",
+      "raw_report": {
+        "path": "artifacts/benchmarks/hotword-input-contract-41d87f4.json",
+        "bytes": 15015,
+        "sha256": "cf27782613a68dfee8d17d18bb3c336a6007af0aac936e0e6718a4b0353b708c"
+      },
+      "audit": {
+        "path": "artifacts/hotword-input-contract-41d87f4-review.json",
+        "bytes": 7578,
+        "sha256": "3d81c6a933d05c545ba7729aeb60ecf8160c497f69c25d2ad8ac430fc5c11594"
+      },
+      "passed_branches": 8,
+      "no_audio_startup_cases": 3,
+      "one_second_synthetic_silence_refresh_phases": 5,
+      "identity_equal": true,
+      "native_load_attempts": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "spoken_name_accuracy_verified": false,
+      "meaningful_peak_rss_mib": null,
+      "efficiency_improvement_proved": false,
+      "limit": "StartupRSS0.03125MiB missed model residency and is not a true peak. Short startup sampling/zero-audio RTF and unsampled refresh phases do not prove memory, speed or energy savings."
+    },
+    "unchanged_assets": {
+      "before_manifest": {
+        "path": "artifacts/hotword-number-assets-before.json",
+        "bytes": 5593,
+        "sha256": "98d327e674a964f5b3325427b0e41f547300339bccceb21bf7c2d3632bc1d8d6"
+      },
+      "read_only_rehash": {
+        "path": "artifacts/hotword-number-assets-after-readonly-review.json",
+        "bytes": 11566,
+        "sha256": "bb24fe4065b9ea2c58d6fbe4e8904d90e5d80754fa42abfa21774c232ba00d6d"
+      },
+      "files": 23,
+      "categories": {
+        "existing_static_sdk_libraries": 15,
+        "asr_model_assets": 5,
+        "qwen_weight": 1,
+        "installed_llama_runtime_files": 2
+      },
+      "latest_affected_review_rehashed_same23": true,
+      "original_runtime_executable_sha256": "c524c01820e8d7606ae4faaf054fdb29bfba2ffa2645147daf9f72e8c8dfb816",
+      "downloads_sdk_rebuilds_installer_rebuilds_for_reviewer": 0
+    },
+    "original_reds_retained": [
+      {
+        "path": "artifacts/adjacent-model-red.log",
+        "bytes": 1125,
+        "sha256": "190bc77dce4fa546c8ebe35516d4918195bab0007fc0a00681bbd76738c0560e"
+      },
+      {
+        "path": "artifacts/adjacent-model-identity-red.log",
+        "bytes": 3632,
+        "sha256": "4e2ca74b6c9b43291a8c24a2a680a9d09f096f60892790ee6f1295fa323f68f0"
+      },
+      {
+        "path": "artifacts/adjacent-model-compatibility-red.log",
+        "bytes": 1956,
+        "sha256": "0805846038897d283b43821c98feff798fdd8f6d604e8ba0d0f78e73ec1bb282"
+      },
+      {
+        "path": "artifacts/adjacent-model-suffix-red.log",
+        "bytes": 1177,
+        "sha256": "1731afec90c6fdd1e5b642c0118e7168dbd397b82de90380b7266c51e12c2d99"
+      },
+      {
+        "path": "artifacts/caption-model-hyphen-red.log",
+        "bytes": 1070,
+        "sha256": "bb7a7b288e649842e76aa0338456a28c9960b42eef427dcb0edd353570ad9b0d"
+      },
+      {
+        "path": "artifacts/caption-model-hyphen-boundary-red.log",
+        "bytes": 1049,
+        "sha256": "9b7c9336ffa9d6835ddcdc2136229b9b6bf369419e273250665af66b9a5a8617"
+      }
+    ],
+    "release_gates": {
+      "observed_single_hyphen_blocker_affected_check_passed": true,
+      "full64_finished": true,
+      "full64_result": "64/64 original automatic checks PASS",
+      "physical_asr_name_accuracy_passed": false,
+      "physical_platform_audio_stop_tail_verified": false,
+      "installation_upgrade_verified": false,
+      "new_035_installer_built_for_this_checkpoint": false,
+      "stable_release_published": false,
+      "model_default_promoted": false,
+      "late_note_revision2_caption_observed": true,
+      "late_note_strict_zero_later_generation_test_passed": false
+    },
+    "limits": [
+      "Do not pool source41 failures, sourcebb temporary-runtime diagnostics and sourceed9 affected passes into one same-source result.",
+      "Candidate10 stays immutable. Candidate11 original64 automatic checks and three independent review partitions are complete; these do not establish unrestricted semantic, real ASR or release acceptance.",
+      "Retain prior lexical limits (接受检查/记录 and 预算未通过), short unmarked Chinese names and real OmaScribe/NVIDIA misses.",
+      "Late note removes the stale caption cache and updates prose/evidence; that note-only phase does not regenerate revision2 bilingual captions or separately establish disabled-auto behavior.",
+      "CUDA/Vulkan remain optional outside the base installer; signed assets/models/SDK and OS Metal are reused. No new GPU/energy/performance claim."
+    ]
+  },
+  "postnote_caption_followup": {
+    "original_test_result": "FAIL_PRESERVED",
+    "interpretation": "The cloned-state settle command itself succeeded and produced a revision2 CedarLedger caption. The stricter unchanged-meeting/article and zero-later-minutes expectations did not pass; do not relabel the original script as PASS.",
+    "first_attempt": "Stopped before inference on the cleanup auto_notes=false flag. Original retained phase2 snapshot had auto_notes=true.",
+    "second_attempt": "Restored only the retained scheduling flag in a new isolated clone; settle exited0 in3.934s, original script exited1 at the meeting-equality assertion.",
+    "observed_caption": "CedarLedger 未完成本地测试。预算未通过。",
+    "observations": [
+      "Source and notes unchanged; same article ID/status and exact revision2 source/citation retained.",
+      "Meeting notes_fingerprint was refreshed; article changed from a comma-connected sentence to two sentences, preserving facts.",
+      "One translation generation and one minutes generation occurred; minutes jobs1→2. Saving the note in the original five/64-case phase still added0 inference jobs.",
+      "“预算未通过” remains the inherited weaker wording for unapproved; this is not a claim of exact budget-state phrasing or live ASR accuracy."
+    ],
+    "original_review": {
+      "path": "artifacts/candidate11-postnote-captions-failed-followup-review.json",
+      "bytes": 11804,
+      "sha256": "00c17e2b50964e9be1835582942253c0667b06f85ddf7bd92a8c0c5984b374c4"
+    },
+    "original_logs": [
+      {
+        "path": "artifacts/candidate11-postnote-captions.log",
+        "bytes": 263,
+        "sha256": "67a5c2a36c79714d179bacd67f3dbbbdff600f3517856edfa091e36fd4e3c2bf"
+      },
+      {
+        "path": "artifacts/candidate11-postnote-captions-restored-auto.log",
+        "bytes": 273,
+        "sha256": "b36425c3d043b29fff93444b3834c86c3182ff7fe58b3bdfa5f070788bac7ca4"
+      }
+    ],
+    "no_assertion_changes_or_rerun_after_second_failure": true,
+    "limit": "Persisted public-fixture catch-up, not microphone/ASR, a continuous live application session, or physical window acceptance."
+  },
+  "prior_candidate10": {
+    "path": "docs/evaluation/apple-candidate10-note-sync-2026-10-29.json",
+    "bytes": 267168,
+    "sha256": "30127e34ca3c15b00ab777d349027dcf4e96d0e6e245fa75edbd9704067ddd5d"
+  },
+  "open_fidelity_items": [
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "scope": "article/caption language",
+      "finding": "Ordinary festival remains English; noisy LAY/night rendering remains ambiguous, not a proved reversal.",
+      "status": "inherited_language_quality_review"
+    },
+    {
+      "case": "zh_long_context_state",
+      "scope": "other captions",
+      "finding": "Existing user-edited/must-save and first-sequence qualifiers are less explicit in captions2/4/10, and not-sharing becomes an allowed rule in7; these bytes are unchanged from candidate8. Chinese article retains full original requirements.",
+      "status": "inherited_source_qualifier_clarity_review"
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "scope": "caption",
+      "finding": "Publication condition uses an ambiguous it antecedent; not asserted as a confirmed object reversal.",
+      "status": "inherited_reference_clarity_review"
+    }
+  ],
+  "static_checks": {
+    "core_passed": 325,
+    "core_ignored": 7,
+    "original_integration_passed": 7,
+    "note_context_integration_passed": 8,
+    "workspace_clippy": "PASS strict -D warnings; existing Sherpa prebuilt libraries reused",
+    "refs": [
+      {
+        "path": "artifacts/caption-model-hyphen-core-final.log",
+        "bytes": 35468,
+        "sha256": "49df6ea7854d689cf51e5b0160237c36e71382bfdf6286295be99b723bdca001"
+      },
+      {
+        "path": "artifacts/caption-model-hyphen-clippy.log",
+        "bytes": 291,
+        "sha256": "9db5e9feccbd03fbf5ccbe0da2c77dbf8aba236b2c70d9e4ad86d4d88e4398ec"
+      },
+      {
+        "path": "artifacts/caption-model-hyphen-cli-build.log",
+        "bytes": 140,
+        "sha256": "63aa1dcf74af6b50bac834780541dd7703a349a15cbf2b14bb6d723749eadfc5"
+      }
+    ],
+    "exact_source_ci": {
+      "revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+      "runs": [
+        {
+          "name": "Website validation",
+          "id": 40857004200,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004200",
+          "head": "ed9d2e7f7800219f98156fec41fec279d76f1681"
+        },
+        {
+          "name": "CI",
+          "id": 40857004233,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004233",
+          "head": "ed9d2e7f7800219f98156fec41fec279d76f1681"
+        },
+        {
+          "name": "Optional acceleration components",
+          "id": 40857004448,
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004448",
+          "head": "ed9d2e7f7800219f98156fec41fec279d76f1681"
+        }
+      ],
+      "jobs": [
+        {
+          "name": "linux",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004233/job/123390365385"
+        },
+        {
+          "name": "prepare",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004448/job/123390365533"
+        },
+        {
+          "name": "windows-core",
+          "conclusion": "success",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004448/job/123390423346"
+        },
+        {
+          "name": "build",
+          "conclusion": "skipped",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004448/job/123390425604"
+        },
+        {
+          "name": "catalog",
+          "conclusion": "skipped",
+          "url": "https://github.com/EazyLee30/omascribe/actions/runs/40857004448/job/123391351069"
+        }
+      ]
+    }
+  },
+  "case_results": [
+    {
+      "case": "zh_budget_guess",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_budget_guess.json",
+        "bytes": 15241,
+        "sha256": "5a13728e787f73dd1337d041a3857ce1bcf840b3667d1f1b8de05b2a14ab9cdf"
+      }
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_owner_and_deadline.json",
+        "bytes": 15412,
+        "sha256": "341a8fa5d1c3965ae8795fef86b70f5bfa8491bbd0a6263ec8a813e261c1eb34"
+      }
+    },
+    {
+      "case": "zh_correction",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_correction.json",
+        "bytes": 15705,
+        "sha256": "b202b71c60b44db36e9210ef8a1a4c3c86414288acc9e9c3dbcc7f6528f95d9d"
+      }
+    },
+    {
+      "case": "bilingual_scope",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/bilingual_scope.json",
+        "bytes": 17671,
+        "sha256": "e8643935bbc4a568689928102b9e40b66b0f1c01839fffe3ea37692dfaa181bf"
+      }
+    },
+    {
+      "case": "zh_calendar_citations",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_calendar_citations.json",
+        "bytes": 15926,
+        "sha256": "d45a92732dcffebd46e502195c29598b5015a22765fdbf09dfd76164c486f9c1"
+      }
+    },
+    {
+      "case": "zh_connected_minutes",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_connected_minutes.json",
+        "bytes": 25518,
+        "sha256": "7349db43dae6d80a89da43c97290c372196acfb6a0ca67f7d77ff81b3dc95c16"
+      }
+    },
+    {
+      "case": "zh_product_spelling",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_product_spelling.json",
+        "bytes": 15618,
+        "sha256": "06af21b7ce02ff40a23850c97edfcba0919b6ace9bdd7c31b4a961cca0e6b24a"
+      }
+    },
+    {
+      "case": "zh_empty_greetings",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_empty_greetings.json",
+        "bytes": 9406,
+        "sha256": "a366f66c8949974c5204bb9baf424d3206f72da8015ebacd8f6fdbe19e417cc5"
+      }
+    },
+    {
+      "case": "zh_phased_correction",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_phased_correction.json",
+        "bytes": 32436,
+        "sha256": "efc6ee161a0b11ecca7b351b1c3987ff045a1deab3df066c7f623989092a9ee8"
+      }
+    },
+    {
+      "case": "zh_named_speakers",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_named_speakers.json",
+        "bytes": 17551,
+        "sha256": "1d2060d531425e10d8455231fbf92096aea282789aca551d87b60557148250e6"
+      }
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_minutes_from_zh.json",
+        "bytes": 16164,
+        "sha256": "a08ce417aa5397663cdaa6ee6353b5e3dde7980fff03e4fe52aa50d59c5323b1"
+      }
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_minutes_from_en.json",
+        "bytes": 17456,
+        "sha256": "59d1f62edf24616dabeec61b496665c7d32cfb69f90f40c3d87074546a4ce929"
+      }
+    },
+    {
+      "case": "zh_actual_report_publication",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_actual_report_publication.json",
+        "bytes": 15063,
+        "sha256": "94910d6d288aecf19f4379cbeda1d6a5d63ce1a154ee7611a16cce7bd4b18705"
+      }
+    },
+    {
+      "case": "zh_report_delivery_variant",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_report_delivery_variant.json",
+        "bytes": 15280,
+        "sha256": "196d0e6a57d9c63dc328bfb410724fc932a9436ef5bad4c0e058f3db40b67603"
+      }
+    },
+    {
+      "case": "zh_physical_report_ownership",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_physical_report_ownership.json",
+        "bytes": 15225,
+        "sha256": "f3d1ca67c90ca50adc70583c154009229c101e65a36494df62c45b49af543b57"
+      }
+    },
+    {
+      "case": "zh_long_context_state",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_long_context_state.json",
+        "bytes": 54816,
+        "sha256": "5f81522c0abc331b3df84807ed21396a8941bd10e5dda05404c57dddaad41670"
+      }
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_human_paragraph_protected.json",
+        "bytes": 30819,
+        "sha256": "34cc389bc3ca0bff18f274e35421795fe8743eac71d31021c812705e1aad484d"
+      }
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_note_name_spelling.json",
+        "bytes": 15820,
+        "sha256": "df5eccdf787ecc781a9a98d5abc2c773befdbe6cd0fe3a92cdb3923676a95eab"
+      }
+    },
+    {
+      "case": "en_generic_note_name",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_generic_note_name.json",
+        "bytes": 13621,
+        "sha256": "443f7c7faa9624039da37171165a51e096611afe41716cbffaab0c8941d764c5"
+      }
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_name_context_is_not_evidence.json",
+        "bytes": 13756,
+        "sha256": "51826144d8cd1e5ce7ee50ff94e3909dde8ccdb9e5dc69b43fee5da4e0b35a52"
+      }
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_noisy_name_no_added_topics.json",
+        "bytes": 24807,
+        "sha256": "3775d4ccfd3e33d111c04761163745e746f6f0e8116a05a39743cf8c04d17df0"
+      }
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_windows_gpu_keyword_lines.json",
+        "bytes": 15724,
+        "sha256": "0dd24753d4f36f9ad1fb6f690609aea9114fa5626ec1ee7f0ffece329fe07bdb"
+      }
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_incremental_separate_topics.json",
+        "bytes": 58633,
+        "sha256": "4b06c3755cc1c07cdab1ec0b01c9891f8885638e6a296b4ddf0693df66a2eb0f"
+      }
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_incremental_withdrawal.json",
+        "bytes": 49616,
+        "sha256": "a4fb2717db7090ca5a5f9c1074f83bc512a135b5feb1e22d8ed0c224b91eb18f"
+      }
+    },
+    {
+      "case": "en_incremental_completion",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_incremental_completion.json",
+        "bytes": 27130,
+        "sha256": "15aa77faf6f9a39d9bd9559838c446f771f2c76617583cfbfdaf94a351bca634"
+      }
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_sparse_unapproved.json",
+        "bytes": 13320,
+        "sha256": "4dc3e9935d03095fd14db8fcbe9533c88dcf48653515f34802252cb1e3ac8e16"
+      }
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_sparse_unapproved_passive.json",
+        "bytes": 13393,
+        "sha256": "0b74a1a9379373dc4d462230546df719f8a8f1f78641b3b0173031f3e4f43e69"
+      }
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_explicit_meeting_closure.json",
+        "bytes": 13514,
+        "sha256": "5ca7ab4951b2c281595ededff1ee7cb5d5c523f16e750ae45d32de9f323b7fd5"
+      }
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_budget_invoice_same_amount.json",
+        "bytes": 18993,
+        "sha256": "80133df97f3f3e102e7551e25b98f8502567170c397859787a4fe3ee6cecb82c"
+      }
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_completion_independent_pending.json",
+        "bytes": 29902,
+        "sha256": "73282075a40cc02a0a6a7ce99e0756fe92199ee07158323f6c940e603fa336f1"
+      }
+    },
+    {
+      "case": "zh_incremental_completion",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_incremental_completion.json",
+        "bytes": 26617,
+        "sha256": "cb671ef6e3a10166005839881f59d3003c5b5c14559a024c4d69f1b65de9921c"
+      }
+    },
+    {
+      "case": "zh_windows_long_acceptance",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_windows_long_acceptance.json",
+        "bytes": 18451,
+        "sha256": "f4184a1ce01d3013f4f7b9008ef3beacd95ac4eeb3d6f3bf609c38e8114c3fa3"
+      }
+    },
+    {
+      "case": "en_windows_long_acceptance",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_windows_long_acceptance.json",
+        "bytes": 19077,
+        "sha256": "1c32905b9f218b5ba7a5d3d99ae676e0275640919049ef1c2d4933b7d86f3e5c"
+      }
+    },
+    {
+      "case": "zh_windows_uppercase_asr",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_windows_uppercase_asr.json",
+        "bytes": 25404,
+        "sha256": "f206612558991ac41ccbedb68d6c7b7ce826d61a4750f04220d48b314f7e9478"
+      }
+    },
+    {
+      "case": "zh_recorded_mixed_prose_fidelity",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_recorded_mixed_prose_fidelity.json",
+        "bytes": 36776,
+        "sha256": "36d94b3efcff274be5b91f7bce0788191a0536250d83a13d6f3ae9fce4fca943"
+      }
+    },
+    {
+      "case": "zh_mixed_script_task_owner",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_mixed_script_task_owner.json",
+        "bytes": 13291,
+        "sha256": "519a758420e299d7f6cd8c811cb069e0c330fb3771ca53d34bb58730afc63174"
+      }
+    },
+    {
+      "case": "en_phase_exclusive_scope",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_phase_exclusive_scope.json",
+        "bytes": 13774,
+        "sha256": "62b959107d524829c59900c489e08909cc492a331ae5c6f0f4b6934b5bf06841"
+      }
+    },
+    {
+      "case": "en_phase_nonexclusive_scope",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_phase_nonexclusive_scope.json",
+        "bytes": 13552,
+        "sha256": "0ab066f4902d5c9fcf323842c9b2d405a56fed4709b159766701bd14b2a13e0d"
+      }
+    },
+    {
+      "case": "en_toolbar_existing_state",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_toolbar_existing_state.json",
+        "bytes": 13906,
+        "sha256": "ab2c53d8e987695fcd4d7c38fa079645e3f1c7236b8a2215d9ec0cd75ff2815d"
+      }
+    },
+    {
+      "case": "en_toolbar_requested_state",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_toolbar_requested_state.json",
+        "bytes": 17719,
+        "sha256": "895cd66ab928e0bba624b17c6aaa510019198978bab5436a3784fa996e67d1c0"
+      }
+    },
+    {
+      "case": "en_compound_scope_and_request",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_compound_scope_and_request.json",
+        "bytes": 19500,
+        "sha256": "54c2f968a19dc0215944889868742f21073318bef4b87473e9717c8e769362f7"
+      }
+    },
+    {
+      "case": "en_named_download_owner",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_named_download_owner.json",
+        "bytes": 18852,
+        "sha256": "91a43c3cc23c92da95441293fd774401ec2dc79a323962445c1d739a0c9ddc11"
+      }
+    },
+    {
+      "case": "en_other_named_task_owner",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_other_named_task_owner.json",
+        "bytes": 18678,
+        "sha256": "fb222f213e4a21054fee01fa63ce1d68721f5940f8eaa86fac63c6331306c80c"
+      }
+    },
+    {
+      "case": "en_future_named_task_owner",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_future_named_task_owner.json",
+        "bytes": 15405,
+        "sha256": "1a5de7413ca0a7b8fe4b081eecf5387da884d0cf0cf81969539d8f10b5c47319"
+      }
+    },
+    {
+      "case": "en_generic_task_actor",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_generic_task_actor.json",
+        "bytes": 15327,
+        "sha256": "5a87fe8e21176905c735c2acd004da0f43afb0a205902f5d0f4e62280ecac211"
+      }
+    },
+    {
+      "case": "en_metric_report_requirements",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_metric_report_requirements.json",
+        "bytes": 15790,
+        "sha256": "46c02a6736619944802749d541713763e4d623ace11533fe83c7227685641c8f"
+      }
+    },
+    {
+      "case": "en_word_metric_only",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_word_metric_only.json",
+        "bytes": 13886,
+        "sha256": "035284e78f9c73b21ca952a71ee41011d3d5a4e9ba9dce6a0e1eb9cc04093239"
+      }
+    },
+    {
+      "case": "en_sentence_metric_allowed",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_sentence_metric_allowed.json",
+        "bytes": 13924,
+        "sha256": "a4e37858f3eaa582cea870a8cc610a81f91c4cbfacaab9f0e92cca38d6e5b7e2"
+      }
+    },
+    {
+      "case": "en_closed_metric_request",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_closed_metric_request.json",
+        "bytes": 15271,
+        "sha256": "6cfadf23d5aded61d95fa8996a523c579c5e68cccfdb4cc8d4af4a9317778bb2"
+      }
+    },
+    {
+      "case": "zh_metric_acronyms",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_metric_acronyms.json",
+        "bytes": 13727,
+        "sha256": "a26a5b09b7fbd4ef59dddc48cf55d13082978bed71af1b7e7f4b8374d154e90c"
+      }
+    },
+    {
+      "case": "en_metric_with_following_fact",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_metric_with_following_fact.json",
+        "bytes": 15570,
+        "sha256": "f87739e3ca76db372773b6a5381346e581c788ccee6b5613bfe14784b94d5f00"
+      }
+    },
+    {
+      "case": "en_submission_schedule",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_submission_schedule.json",
+        "bytes": 15562,
+        "sha256": "9d7b643c0c5b2fe3d097bfd1dbce3075d97c8aebc64b10febca1c2a1b71b92f7"
+      }
+    },
+    {
+      "case": "en_test_link_schedule",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_test_link_schedule.json",
+        "bytes": 15731,
+        "sha256": "87cdf1f6eb51cec3949cb9f6a274913ace6ddfe7a1e7ade074abc90fdb7f0fc2"
+      }
+    },
+    {
+      "case": "en_actual_submission_completion",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_actual_submission_completion.json",
+        "bytes": 13388,
+        "sha256": "ffa21834f9cbffaa16541e4092987f830391e0d7e650bb05e97595369cab2ae2"
+      }
+    },
+    {
+      "case": "en_actual_page_publication",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_actual_page_publication.json",
+        "bytes": 13690,
+        "sha256": "89aa1e578282bc15efcbb755023f09bcbafbc14882fdacfe7fcbada9ff82a1ff"
+      }
+    },
+    {
+      "case": "zh_explicit_this_weekday",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_explicit_this_weekday.json",
+        "bytes": 13768,
+        "sha256": "b170908a02196f81fab823bf60b87d8cdce9ba43bf695305c5ea0af78d87b7d1"
+      }
+    },
+    {
+      "case": "zh_explicit_next_weekday",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_explicit_next_weekday.json",
+        "bytes": 13725,
+        "sha256": "c345cd560cc312ab42070cb6a61cdf0e6b3191ec18035e19d38db551d9567567"
+      }
+    },
+    {
+      "case": "zh_absolute_weekday_scope",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_absolute_weekday_scope.json",
+        "bytes": 13374,
+        "sha256": "78e4b445af6b81af93795ca07f3ed595617ba0bf811ae51a434ac5614abb2c61"
+      }
+    },
+    {
+      "case": "zh_recording_retention_local",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_recording_retention_local.json",
+        "bytes": 12903,
+        "sha256": "4ad09f171356b07661bcb3b6155d095e762ffe7e49996b4b107981ca727f365a"
+      }
+    },
+    {
+      "case": "zh_notes_only_retention",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_notes_only_retention.json",
+        "bytes": 13366,
+        "sha256": "c24168e27da5cb59d40d80da91a6b471ac3146a093ee0fab9418e05ae363082c"
+      }
+    },
+    {
+      "case": "zh_unqualified_weekday",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_unqualified_weekday.json",
+        "bytes": 14021,
+        "sha256": "93ae0b0a6f4f2dd66e4cf7d9f14ce899202e24441ca8c53d7a0d1716214a6cc6"
+      }
+    },
+    {
+      "case": "zh_unspoken_honorific_note",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_unspoken_honorific_note.json",
+        "bytes": 12891,
+        "sha256": "86c416103141d44093144881ac01bdb9dfc14385c98b6792bee40d3f4a10a8d1"
+      }
+    },
+    {
+      "case": "en_late_note_spelling_sync",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/en_late_note_spelling_sync.json",
+        "bytes": 14523,
+        "sha256": "5469f4e3eeadde3f73e1ea6864055d2f4dc0d7b96181985382530e722e9e4dc4"
+      }
+    },
+    {
+      "case": "zh_adjacent_spoken_model",
+      "passed": true,
+      "original_report": {
+        "path": "artifacts/benchmarks/release035-candidate11-full-auto/zh_adjacent_spoken_model.json",
+        "bytes": 13620,
+        "sha256": "ff9cefa5dcc44747f889f45939fb6a003510730dd53128678fd70a5fbe6d541d"
+      }
+    }
+  ],
+  "cleanup": {
+    "full_case_owned_borrowed_model_directories_released": 64,
+    "user_models_and_audio_retained": true,
+    "raw_outputs_and_databases_retained": true,
+    "logical_bytes_are_not_disk_space_reclaimed": true
+  },
+  "windows_peer": {
+    "source_revision": "ed9d2e7f7800219f98156fec41fec279d76f1681",
+    "primary_comment": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6494316987",
+    "reported": "16/16 model-boundary and2/2 separator tests; existing private rejected drafts read-only validator check.",
+    "limitation": "Peer report, no new ASR/model generation or committed minutes; not hardware/semantic/installer acceptance."
+  },
+  "remaining_release_gates": [
+    "Windows real capture/ASR proper names and stop/tail investigation; do not infer accuracy from note word presence.",
+    "Linux/Omarchy real audio/desktop and component recovery acceptance.",
+    "Necessary native and candidate installation/upgrade checks preserving existing models/components."
+  ],
+  "limits": [
+    "All64 cases use public/fictional seeded text, not evidence of end-to-end real microphone recognition accuracy.",
+    "Identical full visible content retains C10 language, qualifier, pronoun, repetition and citation-relevance limitations; source binding alone does not prove every fact is expressed.",
+    "No general speed, memory, GPU or energy improvement claim from this bug fix. The original failed timeout is not a successful translation performance baseline.",
+    "The post-note strict no-regeneration test remains failed and separate from the original64 PASS. Later resource scheduling can be improved in a separate scoped change.",
+    "No0.3.5 downloadable stable package or platform installation acceptance is created by this evidence."
+  ]
+}

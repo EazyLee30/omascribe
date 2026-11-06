@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "kind": "scheduler-idle-snapshot-read-reduction",
+  "base_revision": "2a3fdca2523bac7a78fc58db30b27632932c5148",
+  "scope": "Production two-second scheduler skips full snapshots only after a verified unchanged no-work decision. No transcript body or model state is retained in the cache.",
+  "eligibility": {
+    "required": [
+      "No capture, transcription, notes, translation, diarization or maintenance activity",
+      "No pending minutes, including when automatic minutes are off",
+      "No pending speaker work, including cancelled or delayed work",
+      "Valid pre-read SQLite data_version and total_changes on the same persistent connection in autocommit mode"
+    ],
+    "invalidation": [
+      "Local or external database changes",
+      "All preferences, context revision, selected meeting or runtime meeting changes",
+      "Active work, failed reads, transactions, removed scheduler targets"
+    ],
+    "external_receipts": "Selected/current translation-on targets always materialize snapshots and validate receipts outside SQLite.",
+    "ordering": "Existing in-flight completion handling remains ahead of idle reuse. A pre-snapshot database stamp ensures an external commit during reads invalidates the next check."
+  },
+  "measurement": {
+    "fixture": "Synthetic synced meeting with 5000 source segments; selected and runtime meeting fixed, translations off; no model call.",
+    "checks": 10,
+    "baseline": {
+      "entry": "Engine::snapshot",
+      "materializations": 10,
+      "rows": 50000
+    },
+    "candidate": {
+      "entry": "Engine::scheduler_snapshot",
+      "materializations": 1,
+      "rows": 5000
+    },
+    "method": "Thread-local test counter directly after Store::segments materializes actual database results; identical fixture and read count. Assertions verify both paths.",
+    "claim_boundary": "90% fewer segment rows materialized over these ten checks only. Not a measured whole-app CPU, memory, energy or transcription-speed improvement."
+  },
+  "regressions": [
+    "5000-source actual read counts and removed-target eviction",
+    "Local/external commits, preferences/context and selected/runtime target changes",
+    "External commit after snapshot reads, before decision insertion",
+    "Actual save_note and edit_segment wake a cached idle meeting while selection stays fixed",
+    "Active runtime/atomic workers, pending minutes with auto_notes off, pending cancelled speaker work",
+    "Open transaction and malformed snapshot fail closed"
+  ],
+  "validation": {
+    "focused_first_pass": "5/5; read-count output in focused.log",
+    "workspace": {
+      "core_passed": 765,
+      "core_explicitly_ignored": 14,
+      "integration_passed": 48,
+      "desktop_shell_passed": 8,
+      "asr_passed": 18,
+      "cli_passed": 2
+    },
+    "first_clippy": "Failed test-only callback type_complexity; extracted a type alias without changing behavior. Original log retained.",
+    "raw_root": "artifacts/scheduler-idle-read-2026-11-06",
+    "strict_workspace_clippy": "Passed after test-only type alias fix; clippy-final.log",
+    "rustfmt": "Passed after final test type alias fix",
+    "repository_format": "Passed: prettier --check src; no frontend changes",
+    "log_sha256": {
+      "artifacts/scheduler-idle-read-2026-11-06/clippy-final.log": "e14c742201fd3252467a2e461a1150d60322bfb3a859e5ebd00eafb28b06e5d2",
+      "artifacts/scheduler-idle-read-2026-11-06/clippy.log": "ce4ec955a4b19d5f1a43e7ac8df1b5d3310dae1425ded2b284f3ad16ebfbd342",
+      "artifacts/scheduler-idle-read-2026-11-06/fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifacts/scheduler-idle-read-2026-11-06/focused.log": "256b1f98b89eb9702719672add6910aa011ea81ecc04281a8a69963f3d48a571",
+      "artifacts/scheduler-idle-read-2026-11-06/format.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d",
+      "artifacts/scheduler-idle-read-2026-11-06/workspace.log": "40c5f2775a1eebb70e1ba639c4996f5d43ecffbc1d979f552c9b3c57a1fca7be"
+    },
+    "diff_check": "Passed"
+  },
+  "limits": [
+    "Meeting metadata is still enumerated on each tick",
+    "Unrelated database writes conservatively invalidate all idle entries",
+    "External concurrent commits may be seen on the next two-second tick",
+    "Pending or active work retains the existing snapshot path",
+    "No native installer rebuild or model inference for this change",
+    "Q9 acoustic proper-name quality and Q16 mixed-language minutes quality remain open; no 0.3.5 release qualification"
+  ],
+  "source_sha256": {
+    "crates/core/src/engine.rs": "9ff1645bc2719afa582ad5ccd26ce4876d6e65ef2cc208b5826e03b36b614eb0",
+    "crates/core/src/engine/scheduler.rs": "c87671c0b0123764ce82867356beb6bd9677966fb2b305a1c6bc758830fbf9b3"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "baseline": "6a8c00fa2d34e58edf50c3881f269838d87d762e",
+  "scope": "Floating transcript polling and authoritative desktop caption cache reads; no new model or native release build.",
+  "floating": {
+    "saved_passages": 5000,
+    "full_notebook_json_bytes": 1346429,
+    "runtime_json_bytes": 453,
+    "projection": "Floating replies exclude notes and suggestions. Original-text mode uses session/view/meeting/SQLite revision; changed content returns the projected saved transcript. Translation enabled still checks receipts on every full refresh.",
+    "browser": "Mounted real production module in Chromium with controlled native IPC. Runtime deltas preserve 5,000 saved row nodes, text selection and scroll position; only current partial/clock/status changes. Search/locale are local, corrections and revoked translations repaint. Audio and old responses cannot cross a selection.",
+    "slow_requests": "Review found resets could queue more native calls. Fixed to one in-flight request plus one coalesced latest-scope poll. 25 meeting switches while an unresolved request is held issue zero additional requests, then exactly one request for the final selection."
+  },
+  "captions": {
+    "correctness": "Desktop overlay uses the same current source, terminology and runtime provenance as main transcript. Note term edits, source/revision changes and missing runtime reject stale generated text and retain current source. Literal legacy caches retain current-name checks. Empty or deleted selections cannot show another meeting partial.",
+    "warm_generated_fixture": {
+      "historical_passages": 1000,
+      "selected_passages": 1,
+      "repeat_lookups": 5,
+      "selected_rows_read": 5,
+      "selected_query_fullscan_steps": 0,
+      "selected_query_vm_steps_upper_bound": 1000,
+      "current_terms_history_materializations": 0,
+      "additional_runtime_hashed_bytes": 0,
+      "inference_worker_starts": 0
+    },
+    "scheduling": "One in-flight blocking lookup away from UI thread. Native render verifies current meeting/mode and observed selection generation; changed selection clears the previous frame."
+  },
+  "checks": {
+    "core_passed": 748,
+    "core_ignored": 14,
+    "integration_passed": 44,
+    "desktop_shell_passed": 8,
+    "asr_passed": 18,
+    "cli_passed": 2,
+    "python_passed": 172,
+    "python_skipped": 1,
+    "strict_clippy": "passed",
+    "rust_format": "passed",
+    "frontend_build_and_format": "passed",
+    "chromium": [
+      "floating-transcript-poll.mjs",
+      "main-meeting-poll.mjs"
+    ]
+  },
+  "limits": [
+    "Payload sizes and bounded-query controls do not establish whole-app CPU, latency, memory or energy improvements.",
+    "Translation-enabled floating refreshes still carry all transcript rows. Initial transcript history remains fully rendered.",
+    "Actual matching literal captions still build current terminology from history. Cold or changed source-context receipts may scan source context once. Only unchanged generated-caption cache reads avoid this repeated materialization.",
+    "Chromium IPC is mocked. Native caption scheduling tests cover the state machine; this batch does not qualify installed native UI, GPU execution or package upgrades.",
+    "CUDA/Vulkan packaging and hardware recommendation code are unchanged. Existing signed optional archives remain separate. Real-device acceptance, Q9 and Q16 remain open; stable release is v0.3.4 and v0.3.5 is not published."
+  ],
+  "code_sha256": {
+    "crates/core/src/engine.rs": "7babf7377c56c81209c6d0da5a37a1bc80aa35d151ee51058904ac73b0051954",
+    "crates/core/src/translation.rs": "4cb9d44ecf283f01755437e4e712692218c2a2d71db053eed4f2251c2a5e6e37",
+    "crates/core/src/types.rs": "bcfd92ad1568915a718525b182fd651ce6545d9dba1369db868d1ce7b120847a",
+    "src-tauri/src/main.rs": "6264b9a49e0693083a80c0238e794a9b87e6c267e06d68f277a1d58c322648a3",
+    "src-tauri/src/views.rs": "667fe67f2b2a17f1ca9f61f21df996af0b755145b4a74d289b87a3138a6b43a5",
+    "src/transcript-window.ts": "ee002aaa881894614c79e8d80b7e1a2f291ad721b5fdc3ed7fa4ad2838494ae0",
+    "src/translation-ui.ts": "6eeadd4f12cdc060fdebf1714501fda6e4de3d267db1f63c2136be6b8f06ef2c",
+    "src/types.ts": "3e1c7b72135e2eed55c7bff6094e097a33be58714fcb9ce83bd28ca9b287bc4e",
+    "tests/floating-transcript-poll.mjs": "66594f877279806007bf8d31ae13eefde3cdb66d8905dc78a2a9263e415b966a"
+  },
+  "log_sha256": {
+    "core-poll.log": "dff88d5008c274c4e25e6aaf45644ac71c50d6298e92606be682d5588014aed5",
+    "core-translations.log": "7b2f6398df18aad00d012db8cc8cc516bd3365fa5e0fea1120f0f7a308f89c55",
+    "workspace-tests.log": "a43a9c423692845adb07e1b1ace3e23b4b37af626ef30233b3fd440042704cc9",
+    "clippy.log": "1d492c0a584cadd327a42e2b659385665ac2c265d8e903177b34a8e796d27c2d",
+    "frontend-build.log": "1718b10a06972d088894c030483945c6cda634425e24516112d98e3d0c9c7274",
+    "format.log": "8764d82e5702c1c9c83731b9e92b5575798358165988309a75413156b7698d1d",
+    "floating-browser.log": "7630b59ad9e84dd4a4861d004948bb9efe8d57bb6b0e738d7d010b8e40bdaf5b",
+    "main-browser.log": "e672f66bce9b8b8ec6b66c1cd2cbc9572e69961097df511e976b97ab43eb534b",
+    "python-tests.log": "c5100b0ef75b3175bc02529d37cb638e0794b152cf7d38a9d53af45b306288a3"
+  }
+}

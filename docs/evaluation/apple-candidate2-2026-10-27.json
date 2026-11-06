@@ -1,0 +1,335 @@
+{
+  "schema": 1,
+  "candidate": 2,
+  "application_revision": "5d8e8d0581c1a9edda666432a14830b909d46563",
+  "passed": false,
+  "release_eligible": false,
+  "execution": "explicit-generation",
+  "scope": "Full 28-case fictional-source production minutes on Metal; automatic pattern pass is not semantic or installation acceptance",
+  "environment": {
+    "cli_build": {
+      "profile": "debug",
+      "revision_at_compile": "5d8e8d0581c1a9edda666432a14830b909d46563",
+      "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+      "schema": 1,
+      "source_sha256": "1bfd34df97ed9df673012ba7ee6c5416059d53dd404f4eea9f6e499d29e5ac84",
+      "target": "aarch64-apple-darwin"
+    },
+    "core_and_harness_source_sha256": "a1aec24285024de411d876a40435f973a50b91901f924d5abb974e6516649672",
+    "inference_source_tree_dirty": false,
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "python": "3.13.3",
+    "cli_sha256": "1a6d3ac4eaffb19d0bcd9a23082bd4d570bd8047ddc5844899a0fbdb5212dda5",
+    "model_catalog_sha256": "838bb1f598f4fb51249b7f81419539750685a36126278472fa6af0e109b0c9f2",
+    "models_lock_sha256": "dcc12f0fb5e3cbe1d31a8f6f11addf7452bfeed5b9c9c6fd8115f00c193e4a36",
+    "suite_revision": "5d8e8d0581c1a9edda666432a14830b909d46563",
+    "corpus": "public or fictional only",
+    "network_during_evaluation": "disabled optional services; inference uses local processes"
+  },
+  "fixture_sha256": "dc5b58adafc7df38fb3d44d2fce3955deda2d64a19d123615834ff3f5fb60a67",
+  "automated_passed": 28,
+  "total_cases": 28,
+  "blocking_findings": [
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "kind": "Noise translation/usability",
+      "detail": "Final translation instruction overrides fragment filtering; mic checks and unclear travel-like fragment enter the article."
+    },
+    {
+      "case": "zh_phased_correction",
+      "kind": "Article layout",
+      "detail": "Single newlines with Markdown hard breaks keep source-by-source rows instead of flowing prose."
+    },
+    {
+      "platform": "Windows CPU",
+      "case": "zh_minutes_from_en",
+      "kind": "Added stage qualifier",
+      "detail": "public release becomes 公测发布, an unstated public-beta stage.",
+      "reported_by": "https://github.com/EazyLee30/omascribe/pull/1#issuecomment-6434711717"
+    }
+  ],
+  "backend_verification": {
+    "commands": 38,
+    "positive_offload_commands": 38,
+    "full_29_layer_commands": 38,
+    "command_manifest_sha256": "042fafd6aa6397f0d3064a09007b537f943525a46d5431796ba36e4f0766251d"
+  },
+  "source_checks": {
+    "core_passed": 148,
+    "core_ignored": 7,
+    "asr_passed": 5,
+    "desktop_passed": 4,
+    "workspace_clippy": true,
+    "ui_test_feature_clippy": true
+  },
+  "cases": [
+    {
+      "case": "zh_budget_guess",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["张老师周五给测试结果，预算先不定，下周再看。"],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_budget_guess.json",
+      "raw_report_sha256": "818ce24f228e5e58c3316929d7a6bbc70b85d8a9155dab3b8680962976ab698c"
+    },
+    {
+      "case": "en_owner_and_deadline",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "Morgan will send the release report on Thursday. We have not approved the launch date yet."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_owner_and_deadline.json",
+      "raw_report_sha256": "6c119c982dad2ae9496e56f642972189f2d1bc5bd27e9f9f74006f373dfe8374"
+    },
+    {
+      "case": "zh_correction",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "预算先按3000算，李明负责。更正一下，预算最终确定为2000元，负责人改为王华，李明不再负责。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_correction.json",
+      "raw_report_sha256": "49ab4ffc648b595d16cd97d327c01f6a783cc69bc9fc37fb6a1b4ce05259cc85"
+    },
+    {
+      "case": "bilingual_scope",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "离线转录原型已准备好进行评审。我们将于周五进行测试。 本阶段仅实现麦克风录音与实时转写，系统音频采集推迟到下一个版本。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/bilingual_scope.json",
+      "raw_report_sha256": "255df9a0127b7f28185fab749ab101f983f987906aadd315172a135c711982ab"
+    },
+    {
+      "case": "zh_calendar_citations",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "本次讨论的是录音和转写流程，结束一段后可以接着录下一段。会议日期是二〇二四年五月八日，本次先确认测试安排。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_calendar_citations.json",
+      "raw_report_sha256": "c2c7dce6e4426c359b02a9fdb4da77da55577b0b1e769ff935ed2eb04d30acba"
+    },
+    {
+      "case": "zh_connected_minutes",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "实时转写已显示，但AI纪要仍是一小句一小句地显示，阅读不连贯。引用放在正文旁边的小标里，点一下再看原话。实时转写和实时字幕的入口放在工具栏，别藏到二级菜单。这两项调整尚未完成，先记录下来，完成以后再一起验证。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_connected_minutes.json",
+      "raw_report_sha256": "1591c0266af501c8de98a2ecf68f3dac5f06898e3ebaf2310966811857a79d05"
+    },
+    {
+      "case": "zh_product_spelling",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "我正在测试OmaScribe的转写功能。OmaScribe的会议纪要仍然需要优化，这项调整尚未完成。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_product_spelling.json",
+      "raw_report_sha256": "4b61f5b0bb3d3b7d215da25b84dd908f2995060316f2cfe63a4573c5232da165"
+    },
+    {
+      "case": "zh_empty_greetings",
+      "automated_passed": true,
+      "errors": [],
+      "body": [],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_empty_greetings.json",
+      "raw_report_sha256": "b27474b91f264a7fdc3b6ab6dffe67238cc720cb8d4bbee055ddb0650d8290ee"
+    },
+    {
+      "case": "zh_phased_correction",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "预算暂按3000元安排，负责人是李明。  \n离线转写先覆盖麦克风录音，系统音频还没有做。  \n离线转写需要保留原始录音，失败后能够重新处理。  \n模型下载是可选联网功能，录音内容不会上传。  \n更正前面的预算和负责人：最终预算改为2000元，王华负责，李明不再负责。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_phased_correction.json",
+      "raw_report_sha256": "6a130c30f0426d1ba4b8a8c8b87a0e3d74c622b4db96da2294040ec177ce9071"
+    },
+    {
+      "case": "zh_named_speakers",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "林悦负责实时转写的延迟测试，结果周四提交。陈明负责双语字幕界面，这周还不能交付，交付时间尚未确定。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_named_speakers.json",
+      "raw_report_sha256": "0fb77390d277443dc108c95699a48e927202b4adf9e5a39ed41c4eba7caed03e"
+    },
+    {
+      "case": "en_minutes_from_zh",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "This session only performed offline transcription, with the model downloaded by the user. The recording, transcription, and summary were not uploaded to the server. System audio collection has not been implemented yet."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_minutes_from_zh.json",
+      "raw_report_sha256": "3ec3381169bf36966e3ac125a368cf27db6872546ef80b283c037fafd4e78c84"
+    },
+    {
+      "case": "zh_minutes_from_en",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "离线记录器已准备好进行内部测试。公版发布尚未批准。Morgan拥有延迟报告，并将于周四交付。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_minutes_from_en.json",
+      "raw_report_sha256": "a94a80ee95528926aa430c5b8c97dbb1f281f5291b0d810c3730fb62a72e72a1"
+    },
+    {
+      "case": "zh_long_context_state",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "离线转写工具由林悦负责测试，目前只是内部验证，公开发布尚未批准。要保存每一段原始录音，用户修改后的转写不能被自动结果覆盖。录音中暂停应该保留音频边界，继续录音之后的时间戳必须连续。噪声场景先测风扇和键盘声音，不要把安静时段编成文字。英文和中文都要测试，混合说话时保留英文产品名称的正确拼写。字幕界面需要明确展示原文和翻译，翻译使用本地模型。模型下载需要联网，录音和纪要处理完全离线，不共享会议内容。测试报告要包括字错率、词错率和转写延迟，不能只写处理成功。今天只讨论这些验收要求，没有完成系统音频采集，也没有确定新版本发布日期。最后确认，公开发布仍然没有批准，林悦先在周四提交测试报告。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_long_context_state.json",
+      "raw_report_sha256": "b7db88bced6f0ad81dfdac6da27135dcde2e799d8f359a81653aead123855806"
+    },
+    {
+      "case": "zh_human_paragraph_protected",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "人工确认：预算仍未确定，先等测试报告。",
+        "预算尚未确定，先等测试报告。离线模型下载由陈明负责，下载必须获得用户同意。模型下载可以联网，会议录音不会上传。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_human_paragraph_protected.json",
+      "raw_report_sha256": "8ec36b436996cff3c85d5241e1700199416e20de2ab4d3e58b72f6e3d6deac8f"
+    },
+    {
+      "case": "zh_note_name_spelling",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "OmaScribe 的实时转写存在延迟，说话人分配也存在问题，尚未修复。我们下次再测试字幕，目前还没有完成。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_note_name_spelling.json",
+      "raw_report_sha256": "8b86a31697c1c77ebc3bddd10e4b27419b97e782c717793d8514477043d9d5ed"
+    },
+    {
+      "case": "en_generic_note_name",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "The PixelLedger import still fails. We will investigate it after the review."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_generic_note_name.json",
+      "raw_report_sha256": "6f9710c8d8b9b3b61822f3d84f1729f2c99cd82902e43ee78ecdbbbdc85afcef"
+    },
+    {
+      "case": "zh_name_context_is_not_evidence",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["今天只讨论麦克风权限，尚未决定使用哪个产品，预算也没有确定。"],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_name_context_is_not_evidence.json",
+      "raw_report_sha256": "369c52f9baf4fe4ad9e3fb2081bc10d99f8e8664a6b79c914cbd0de7df372737"
+    },
+    {
+      "case": "zh_noisy_name_no_added_topics",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "检查检查，嗯，试试我的，几乎要出发了，嗯，和，这个 PixelLedger 的人员分配好像有问题，转写还需要核对。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_noisy_name_no_added_topics.json",
+      "raw_report_sha256": "73b9cbdcb9a3223e0bb33b4ea56bbaf70e949c7ed05919bc81feb5988b9f61b9"
+    },
+    {
+      "case": "zh_windows_gpu_keyword_lines",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "这个 OmaScribe 的功能目前还没有正常运行。gtx1650 需要针对 nvidia 显卡进行优化，优化尚未完成。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_windows_gpu_keyword_lines.json",
+      "raw_report_sha256": "e4715e07fab11600a23da77ac97d98125fdaa7030df4169535cf6ce57b0fa017"
+    },
+    {
+      "case": "en_incremental_separate_topics",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "Morgan owns the budget review, and the review deadline is Thursday. Riley will test keyboard accessibility on Tuesday, but no accessibility test has been completed yet. The budget amount is corrected to 5000, but it is still not approved. Morgan keeps the Thursday deadline."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_incremental_separate_topics.json",
+      "raw_report_sha256": "6f037c69433ff868899a2c7e47a307ae1e6da7a9da141d955bedd8183828f61a"
+    },
+    {
+      "case": "zh_incremental_withdrawal",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "展览暂定周五开放，刘老师负责布置；周五开放的安排撤回了，新日期还没决定，刘老师继续负责布置，预算改为5000元但仍未确定；参观预约页面由陈老师负责，下周三发测试链接，页面尚未完成。"
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_incremental_withdrawal.json",
+      "raw_report_sha256": "d3822611c31a1e08ebb8babc85af4f1754396706935a6164d17a106a53dce5b5"
+    },
+    {
+      "case": "en_incremental_completion",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "Morgan confirmed that the upload verification has now been completed successfully on Thursday. There are no remaining upload tasks."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_incremental_completion.json",
+      "raw_report_sha256": "130262e50a707cfe802cd8f2cfcea96b1166c1ccb2915963db3e96313142bb37"
+    },
+    {
+      "case": "en_sparse_unapproved",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["The Budget of 3000 is not approved."],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_sparse_unapproved.json",
+      "raw_report_sha256": "f40b42146b3e8a45f1a105513b0854f9901de4aca989b2bee8911f4d5ff78a0e"
+    },
+    {
+      "case": "en_sparse_unapproved_passive",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["The Budget of 3000 has not been approved."],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_sparse_unapproved_passive.json",
+      "raw_report_sha256": "01daab7f623027ef2defffb6ffcece4784a9a0935849d37554055b26a001dcab"
+    },
+    {
+      "case": "en_explicit_meeting_closure",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["The meeting has ended. No further action has been taken."],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_explicit_meeting_closure.json",
+      "raw_report_sha256": "92dd649be1df27277582af817661c80d50d189f684c1bb849142118b5711ff0d"
+    },
+    {
+      "case": "en_budget_invoice_same_amount",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "An invoice for 3000 is awaiting review. The budget amount is corrected to 5000, still not approved."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_budget_invoice_same_amount.json",
+      "raw_report_sha256": "06b5dfdd0937565447ececc1e2c10d87e5a35d1231622deb91076884b93605ec"
+    },
+    {
+      "case": "en_completion_independent_pending",
+      "automated_passed": true,
+      "errors": [],
+      "body": [
+        "The invoice review has not been completed, and Riley will run it on Friday. Morgan confirms that the upload verification has been completed successfully on Thursday, with no remaining upload tasks."
+      ],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/en_completion_independent_pending.json",
+      "raw_report_sha256": "a3ea1b4780b7a876eed2b1a6715135c9b614ca8171ee3f566253b46a8000d93d"
+    },
+    {
+      "case": "zh_incremental_completion",
+      "automated_passed": true,
+      "errors": [],
+      "body": ["发票核对尚未完成。上传验证现已完成。"],
+      "raw_report": "artifacts/benchmarks/release035-candidate2-metal-full/zh_incremental_completion.json",
+      "raw_report_sha256": "8c41b70dc449eacafc79a876dea42a686549e1939c762dd03fffb9eb074551b7"
+    }
+  ]
+}
